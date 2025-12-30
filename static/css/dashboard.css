@@ -1,0 +1,1364 @@
+/*
+ * Whendoist - Dashboard Styles
+ * Uses unified Mode ↔ Clarity token system from app.css
+ */
+
+/* =============================================================================
+   Layout
+   ============================================================================= */
+
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+    height: calc(100vh - 104px); /* 72px header + 32px padding */
+    overflow: hidden;
+    align-items: stretch;
+}
+
+.connection-banner {
+    background: var(--impact-medium-tint);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--impact-medium);
+    color: var(--text);
+}
+
+.connection-banner a {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.connection-banner a:hover {
+    color: var(--primary-hover);
+}
+
+/* =============================================================================
+   Tasks Panel
+   ============================================================================= */
+
+.tasks-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+/* =============================================================================
+   Energy Selector (Mode Segmented Control)
+   ============================================================================= */
+
+.energy-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.625rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-sizing: border-box;
+}
+
+.energy-title {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.energy-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.energy-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.energy-btn:hover {
+    background: var(--surface2);
+}
+
+.energy-btn[data-energy="1"].active {
+    background: var(--executable-tint);
+    border-color: var(--executable-color);
+    color: var(--executable-color);
+}
+
+.energy-btn[data-energy="2"].active {
+    background: var(--defined-tint);
+    border-color: var(--defined-color);
+    color: var(--defined-color);
+}
+
+.energy-btn[data-energy="3"].active {
+    background: var(--exploratory-tint);
+    border-color: var(--exploratory-color);
+    color: var(--exploratory-color);
+}
+
+.energy-emoji {
+    font-size: 1.125rem;
+    line-height: 1;
+}
+
+.energy-name {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+/* =============================================================================
+   Task List Container & Header
+   ============================================================================= */
+
+.task-list-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    padding-top: 0;
+    background: var(--bg);
+}
+
+.task-list-scroll {
+    padding-top: 0.5rem;
+}
+
+.task-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem calc(1.125rem + 2px) 0.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header-task {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.header-meta {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.header-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.header-duration { width: 48px; }
+.header-impact { width: 52px; }
+.header-clarity { width: 76px; }
+
+/* =============================================================================
+   Project Groups (Foldable)
+   ============================================================================= */
+
+.project-group {
+    margin-bottom: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.project-group:last-child {
+    margin-bottom: 0;
+}
+
+.project-group > summary {
+    list-style: none;
+}
+
+.project-group > summary::-webkit-details-marker {
+    display: none;
+}
+
+.project-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.project-header:hover {
+    background: var(--surface2);
+}
+
+.project-header::before {
+    content: "\25B6";
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+    opacity: 0.6;
+}
+
+.project-group[open] .project-header::before {
+    transform: rotate(90deg);
+}
+
+.project-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text);
+}
+
+.task-count {
+    font-size: 0.65rem;
+    font-weight: 500;
+    background: var(--surface2);
+    color: var(--text-muted);
+    padding: 0.125rem 0.4rem;
+    border-radius: 8px;
+}
+
+/* =============================================================================
+   Task List & Subtasks
+   ============================================================================= */
+
+.task-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem;
+    gap: 0.375rem;
+}
+
+.subtask-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.task-item.subtask {
+    padding: 0.375rem 0.625rem;
+    background: var(--surface);
+    border-left-color: transparent;
+}
+
+.task-item.subtask .task-content {
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--border);
+    margin-left: 0.5rem;
+}
+
+.task-item.subtask .task-text {
+    font-size: 0.8rem;
+    color: var(--text);
+}
+
+/* Parent tasks with subtasks - not schedulable */
+.task-item.has-subtasks {
+    border-bottom: none;
+    margin-bottom: 0;
+    cursor: default;
+}
+
+.task-item.has-subtasks .task-text {
+    color: var(--text-muted);
+}
+
+.task-item.has-subtasks:hover {
+    background: var(--row-bg);
+}
+
+/* =============================================================================
+   Task Item
+   ============================================================================= */
+
+.task-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.625rem;
+    background: var(--row-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: grab;
+    transition: background 0.15s ease;
+}
+
+.task-item:hover {
+    background: var(--row-hover);
+}
+
+.task-item:active {
+    cursor: grabbing;
+}
+
+/* Impact-based left accent (2px, subtle) */
+.task-item.impact-4 { border-left: 2px solid var(--impact-high-border); }
+.task-item.impact-3 { border-left: 2px solid var(--impact-medium); }
+.task-item.impact-2 { border-left: 2px solid var(--impact-low); }
+.task-item.impact-1 { border-left: 2px solid var(--impact-min); }
+
+.task-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.task-text {
+    font-size: 0.85rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.task-due {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.recurring-icon {
+    margin-right: 0.2rem;
+    opacity: 0.7;
+}
+
+/* =============================================================================
+   Task Metadata Chips
+   ============================================================================= */
+
+.task-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+}
+
+.task-meta > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0 0.4rem;
+    border-radius: 3px;
+    line-height: 1;
+}
+
+/* Duration chip */
+.meta-duration {
+    width: 48px;
+    color: var(--text-muted);
+    background: transparent;
+    font-weight: 500;
+}
+
+/* Impact chips */
+.meta-impact { width: 52px; }
+.meta-impact.impact-4 { background: var(--impact-high-tint); color: var(--impact-high); }
+.meta-impact.impact-3 { background: var(--impact-medium-tint); color: var(--impact-medium); }
+.meta-impact.impact-2 { background: var(--impact-low-tint); color: #157A4E; }
+.meta-impact.impact-1 { background: var(--impact-min-tint); color: var(--impact-min); }
+
+/* Clarity chips */
+.meta-clarity { width: 76px; }
+.meta-clarity.clarity-executable { background: var(--executable-tint); color: var(--executable-color); }
+.meta-clarity.clarity-defined { background: var(--defined-tint); color: var(--defined-color); }
+.meta-clarity.clarity-exploratory { background: var(--exploratory-tint); color: #8A18A0; }
+.meta-clarity.clarity-none { background: var(--surface2); color: var(--text-muted); }
+
+/* =============================================================================
+   Energy/Mode-based Task Filtering
+   ============================================================================= */
+
+/* Always hide tasks without clarity tag */
+.task-item[data-clarity="none"] {
+    display: none;
+}
+
+/* Zombie mode: only executable tasks */
+body[data-energy-level="1"] .task-item[data-clarity="defined"],
+body[data-energy-level="1"] .task-item[data-clarity="exploratory"] {
+    display: none;
+}
+
+/* Normal mode: executable + defined */
+body[data-energy-level="2"] .task-item[data-clarity="exploratory"] {
+    display: none;
+}
+
+/* Focus mode: all tasks available (except none) */
+
+/* Hide projects with no visible tasks */
+.project-group:not(:has(.task-item:not([style*="display: none"]))) {
+    display: none;
+}
+
+/* Hide projects where all tasks are hidden by energy filter */
+body[data-energy-level="1"] .project-group:not(:has(.task-item[data-clarity="executable"])) {
+    display: none;
+}
+
+body[data-energy-level="2"] .project-group:not(:has(.task-item[data-clarity="executable"], .task-item[data-clarity="defined"])) {
+    display: none;
+}
+
+body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="executable"], .task-item[data-clarity="defined"], .task-item[data-clarity="exploratory"])) {
+    display: none;
+}
+
+/* =============================================================================
+   Calendar Panel
+   ============================================================================= */
+
+.calendar-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+}
+
+/* Go to Today button */
+.go-to-today-btn {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.15s ease;
+}
+
+.go-to-today-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.go-to-today-btn[style*="opacity: 0"] {
+    visibility: hidden;
+}
+
+/* Horizontal carousel container */
+.calendar-carousel {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    flex: 1;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.calendar-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.day-calendar {
+    flex: 0 0 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--surface);
+    overflow: hidden;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
+
+/* Past days: slightly dimmed */
+.day-calendar.past {
+    opacity: 0.7;
+}
+
+/* Today: full prominence */
+.day-calendar.today {
+    opacity: 1;
+}
+
+/* Future days: slightly dimmed */
+.day-calendar.future {
+    opacity: 0.85;
+}
+
+/* Calendar header - matches energy-selector structure */
+.calendar-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.625rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-sizing: border-box;
+}
+
+.calendar-title {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.calendar-day-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+}
+
+.day-name {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text);
+}
+
+.day-date {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+}
+
+/* All Day Events */
+.all-day-section {
+    padding: 0.5rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+}
+
+.all-day-section:empty,
+.all-day-section:not(:has(.all-day-event)) {
+    display: none;
+}
+
+.all-day-event {
+    background: var(--defined-tint);
+    border: 1px solid var(--defined-color);
+    border-left: 3px solid var(--defined-color);
+    border-radius: 4px;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.all-day-event:last-child {
+    margin-bottom: 0;
+}
+
+/* Hour Grid */
+.hour-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    position: relative;  /* For time selection overlay positioning */
+}
+
+.hour-grid.collapsed {
+    /* No longer collapsed - same scrolling behavior */
+}
+
+.hour-row {
+    display: flex;
+    border-bottom: 1px solid var(--calendar-grid-line);
+    min-height: 60px;
+}
+
+.hour-row:last-child {
+    border-bottom: none;
+}
+
+.hour-label {
+    width: 50px;
+    flex-shrink: 0;
+    padding: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--calendar-hour-text);
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+}
+
+.hour-slot {
+    flex: 1;
+    padding: 0.25rem 0.5rem;
+    min-height: 60px;
+    position: relative;
+    overflow: visible;
+}
+
+.hour-slot[data-droppable="true"] {
+    transition: background 0.15s ease;
+}
+
+.hour-slot[data-droppable="true"]:hover {
+    background: var(--surface2);
+}
+
+/* Calendar Event (Google Calendar - neutral grey) */
+.calendar-event {
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--text-muted);
+    border-radius: 4px;
+    padding: 1px 0.4rem;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 4;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.event-left {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 32px;
+}
+
+.event-time {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.event-duration {
+    color: var(--text-muted);
+}
+
+.event-title {
+    color: var(--text);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+/* Duration-based line clamping for calendar events */
+.calendar-event.duration-short .event-title {
+    -webkit-line-clamp: 1;
+}
+
+.calendar-event.duration-medium .event-title {
+    -webkit-line-clamp: 2;
+}
+
+.calendar-event.duration-long .event-title {
+    -webkit-line-clamp: unset;
+}
+
+/* =============================================================================
+   All-day Events (neutral grey like calendar events)
+   ============================================================================= */
+
+.all-day-event {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--text-muted);
+}
+
+/* =============================================================================
+   Drag and Drop
+   ============================================================================= */
+
+/* Task being dragged */
+.task-item.dragging {
+    opacity: 0.2;
+    transform: scale(0.98);
+    background: var(--surface2);
+}
+
+/* Task that has been scheduled */
+.task-item.scheduled {
+    opacity: 0.5;
+    border-style: dashed;
+}
+
+/* Hour slot as valid drop target */
+.hour-slot.drag-over {
+    background: transparent;
+}
+
+/* Scheduled task on calendar */
+.scheduled-task {
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--text-muted);
+    border-radius: 4px;
+    padding: 1px 0.4rem;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    cursor: grab;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 5;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.scheduled-task:active {
+    cursor: grabbing;
+}
+
+.scheduled-task.dragging {
+    opacity: 0.4;
+}
+
+.scheduled-task-left {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 32px;
+}
+
+.scheduled-task-time {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.scheduled-task-duration {
+    color: var(--text-muted);
+}
+
+.scheduled-task-text {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    color: var(--text);
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+/* Duration-based line clamping */
+.scheduled-task.duration-short .scheduled-task-text {
+    -webkit-line-clamp: 1;
+}
+
+.scheduled-task.duration-medium .scheduled-task-text {
+    -webkit-line-clamp: 2;
+}
+
+.scheduled-task.duration-long .scheduled-task-text {
+    -webkit-line-clamp: unset;
+}
+
+/* Clarity-based coloring for scheduled tasks */
+.scheduled-task.clarity-executable {
+    background: var(--executable-tint);
+    border-left-color: var(--executable-color);
+}
+.scheduled-task.clarity-executable .scheduled-task-time {
+    color: var(--executable-color);
+}
+
+.scheduled-task.clarity-defined {
+    background: var(--defined-tint);
+    border-left-color: var(--defined-color);
+}
+.scheduled-task.clarity-defined .scheduled-task-time {
+    color: var(--defined-color);
+}
+
+.scheduled-task.clarity-exploratory {
+    background: var(--exploratory-tint);
+    border-left-color: var(--exploratory-color);
+}
+.scheduled-task.clarity-exploratory .scheduled-task-time {
+    color: var(--exploratory-color);
+}
+
+/* Drop indicator showing task duration */
+.drop-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--defined-tint);
+    border: 2px dashed var(--defined-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--defined-color);
+    pointer-events: none;
+    z-index: 10;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* =============================================================================
+   Empty State & Responsive
+   ============================================================================= */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+}
+
+.empty-state p {
+    margin: 0.25rem 0;
+}
+
+@media (max-width: 900px), (orientation: portrait) {
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 3fr 2fr;  /* Tasks slightly larger */
+        height: calc(100vh - 44px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        gap: 0.25rem;
+        padding: 0 0.125rem;
+    }
+
+    .tasks-panel {
+        width: 100%;
+        border-radius: 6px;
+    }
+
+    .calendar-panel {
+        width: 100%;
+        border-radius: 6px;
+    }
+
+    /* Compact energy selector */
+    .energy-selector {
+        padding: 0.25rem 0.375rem;
+        gap: 0.125rem;
+    }
+
+    .energy-title {
+        font-size: 0.5rem;
+        margin-bottom: -0.125rem;
+    }
+
+    .energy-buttons {
+        gap: 0.25rem;
+    }
+
+    .energy-btn {
+        padding: 0.25rem 0.375rem;
+        gap: 0.25rem;
+    }
+
+    .energy-emoji {
+        font-size: 0.875rem;
+    }
+
+    .energy-name {
+        font-size: 0.6rem;
+    }
+
+    /* Compact calendar header */
+    .calendar-header {
+        padding: 0.25rem 0.5rem;
+        gap: 0.125rem;
+    }
+
+    .calendar-title {
+        font-size: 0.5rem;
+    }
+
+    .calendar-day-info {
+        padding: 0.25rem 0.375rem;
+        gap: 0.375rem;
+    }
+
+    .day-name, .day-date {
+        font-size: 0.65rem;
+    }
+
+    /* Smaller hour rows for mobile */
+    .hour-row {
+        min-height: 40px;
+    }
+
+    .hour-label {
+        width: 36px;
+        padding: 0.25rem;
+        font-size: 0.6rem;
+    }
+
+    .hour-slot {
+        min-height: 40px;
+        padding: 0.125rem 0.25rem;
+    }
+
+    /* Compact task list */
+    .task-list-container {
+        padding: 0.25rem;
+        padding-top: 0;
+    }
+
+    .task-list-header {
+        padding: 0.25rem 0.25rem 0.125rem 0.25rem;
+    }
+
+    .task-list-scroll {
+        padding-top: 0.125rem;
+    }
+
+    /* Compact project groups */
+    .project-group {
+        margin-bottom: 0.25rem;
+        border-radius: 6px;
+    }
+
+    .project-header {
+        padding: 0.25rem 0.375rem;
+        gap: 0.25rem;
+    }
+
+    .project-name {
+        font-size: 0.7rem;
+    }
+
+    .task-count {
+        font-size: 0.55rem;
+        padding: 0.0625rem 0.25rem;
+    }
+
+    /* Compact task items */
+    .task-list {
+        padding: 0.125rem;
+        gap: 0.125rem;
+    }
+
+    .task-item {
+        padding: 0.25rem 0.25rem;
+        gap: 0.25rem;
+        border-radius: 4px;
+    }
+
+    .task-content {
+        gap: 0.25rem;
+    }
+
+    .task-text {
+        font-size: 0.75rem;
+    }
+
+    .task-due {
+        font-size: 0.55rem;
+    }
+
+    .task-meta {
+        gap: 0.125rem;
+    }
+
+    /* Remove subtask indentation in compact mode for alignment */
+    .task-item.subtask {
+        padding: 0.25rem 0.25rem;  /* Match regular task-item padding */
+    }
+
+    .task-item.subtask .task-content {
+        padding-left: 0;
+        margin-left: 0;
+        border-left: none;
+    }
+
+    .task-item.subtask .task-text {
+        font-size: 0.7rem;  /* Slightly smaller than parent */
+    }
+
+    .subtask-list {
+        padding-left: 0.375rem;
+        border-left: 1px solid var(--border);
+        margin-left: 0.125rem;
+    }
+
+    .task-meta > span {
+        height: 16px;
+        font-size: 0.55rem;
+        padding: 0 0.25rem;
+    }
+
+    /* Compact commit bar */
+    .commit-bar {
+        padding: 0.375rem 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .commit-count {
+        font-size: 0.7rem;
+    }
+
+    .commit-action-btn {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.65rem;
+    }
+
+    /* Plan button */
+    .plan-mode-btn {
+        top: calc(2.5rem + 0.25rem);
+        right: 0.375rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.6rem;
+    }
+
+    .plan-helper {
+        top: calc(2.5rem + 0.25rem + 1.75rem);
+        right: 0.375rem;
+        font-size: 0.55rem;
+        padding: 0.375rem 0.5rem;
+    }
+
+    /* Scheduled tasks and events - smaller on mobile */
+    .calendar-event,
+    .scheduled-task {
+        font-size: 0.55rem;
+        padding: 1px 0.25rem;
+    }
+
+    .event-left,
+    .scheduled-task-left {
+        width: 32px;
+        white-space: nowrap;
+    }
+
+    .event-time,
+    .scheduled-task-time {
+        white-space: nowrap;
+    }
+}
+
+/* Compact labels for narrow screens (< 580px) */
+@media (max-width: 580px) {
+    /* Narrower column widths */
+    .header-duration, .meta-duration { width: 36px; white-space: nowrap; }
+    .header-impact, .meta-impact { width: 28px; }
+    .header-clarity, .meta-clarity { width: 28px; }
+
+    /* Headers: hide text, show abbreviations */
+    .header-duration,
+    .header-impact,
+    .header-clarity {
+        color: transparent;
+        position: relative;
+    }
+    .header-duration::after,
+    .header-impact::after,
+    .header-clarity::after {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        color: var(--text-muted);
+    }
+    .header-duration::after { content: 'DUR'; }
+    .header-impact::after { content: 'IMPCT'; }
+    .header-clarity::after { content: 'CLRT'; }
+
+    /* Impact: hide text, show abbreviations */
+    .task-meta > span.meta-impact {
+        font-size: 0;
+        position: relative;
+    }
+    .task-meta > span.meta-impact::after {
+        font-size: 0.6rem;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .task-meta > span.meta-impact.impact-4::after { content: 'High'; color: var(--impact-high); }
+    .task-meta > span.meta-impact.impact-3::after { content: 'Mid'; color: var(--impact-medium); }
+    .task-meta > span.meta-impact.impact-2::after { content: 'Low'; color: #157A4E; }
+    .task-meta > span.meta-impact.impact-1::after { content: 'Min'; color: var(--impact-min); }
+
+    /* Clarity: hide text, show abbreviations */
+    .task-meta > span.meta-clarity {
+        font-size: 0;
+        position: relative;
+    }
+    .task-meta > span.meta-clarity::after {
+        font-size: 0.6rem;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .task-meta > span.meta-clarity.clarity-executable::after { content: 'Exec'; color: var(--executable-color); }
+    .task-meta > span.meta-clarity.clarity-defined::after { content: 'Def'; color: var(--defined-color); }
+    .task-meta > span.meta-clarity.clarity-exploratory::after { content: 'Xplr'; color: #8A18A0; }
+    .task-meta > span.meta-clarity.clarity-none::after { content: '—'; color: var(--text-muted); }
+}
+
+/* =============================================================================
+   Commit Bar
+   ============================================================================= */
+
+.commit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: var(--defined-tint);
+    border-bottom: 1px solid var(--defined-color);
+    gap: 1rem;
+    box-sizing: border-box;
+}
+
+.commit-count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--defined-color);
+}
+
+.commit-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Base style for both buttons (like Plan button) */
+.commit-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+/* Discard button - muted/gray style */
+.discard-btn {
+    background: var(--surface2);
+    border: 1px solid var(--text-muted);
+    color: var(--text-muted);
+}
+
+.discard-btn:hover {
+    background: var(--surface);
+    border-color: var(--impact-high);
+    color: var(--impact-high);
+}
+
+/* Commit button - lavender/primary style */
+.commit-btn {
+    background: var(--defined-tint);
+    border: 1px solid var(--defined-color);
+    color: var(--defined-color);
+}
+
+.commit-btn:hover {
+    background: var(--defined-color);
+    color: white;
+}
+
+.commit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.commit-btn.success {
+    background: var(--impact-low-tint);
+    border-color: var(--impact-low);
+    color: var(--impact-low);
+}
+
+.commit-btn.error {
+    background: var(--impact-high-tint);
+    border-color: var(--impact-high);
+    color: var(--impact-high);
+}
+
+/* =============================================================================
+   Plan Mode Button (floating in calendar panel)
+   ============================================================================= */
+
+.plan-mode-btn {
+    position: absolute;
+    top: calc(4.5rem + 0.5rem);
+    right: 0.75rem;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    background: var(--exploratory-tint);
+    border: 1px solid var(--exploratory-color);
+    border-radius: 6px;
+    color: var(--exploratory-color);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.plan-mode-btn:hover {
+    background: var(--exploratory-color);
+    color: white;
+}
+
+.plan-mode-btn.active {
+    background: var(--exploratory-color);
+    color: white;
+}
+
+/* Plan helper tooltip */
+.plan-helper {
+    position: absolute;
+    top: calc(4.5rem + 0.75rem + 2.5rem);
+    right: 0.75rem;
+    z-index: 20;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+}
+
+/* Selection mode active */
+.day-calendar.selection-mode {
+    outline: 2px solid var(--exploratory-color);
+    outline-offset: -2px;
+}
+
+.day-calendar.selection-mode .hour-grid {
+    cursor: crosshair;
+}
+
+/* =============================================================================
+   Time Range Selection (Plan Tasks)
+   ============================================================================= */
+
+.time-selection-overlay {
+    position: absolute;
+    left: 50px;  /* After hour label */
+    right: 0;
+    background: var(--exploratory-tint);
+    border: 2px dashed var(--exploratory-color);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--exploratory-color);
+    z-index: 15;
+    pointer-events: auto;
+    box-sizing: border-box;
+}
+
+.time-selection-range {
+    margin-bottom: 0.25rem;
+}
+
+.plan-tasks-btn {
+    padding: 0.5rem 1rem;
+    background: var(--exploratory-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.15s ease;
+    margin-top: auto;
+}
+
+.plan-tasks-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}

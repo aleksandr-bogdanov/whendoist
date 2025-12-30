@@ -1,0 +1,29 @@
+{
+  "name": "Whendoist",
+  "short_name": "Whendoist",
+  "description": "When do I do my tasks? Merge Todoist with Google Calendar.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F7F8FC",
+  "theme_color": "#6D5EF6",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/static/img/favicon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/img/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/img/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}

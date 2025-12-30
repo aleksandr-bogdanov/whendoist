@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Whendoist{% endblock %}
+
+{% block content %}
+<article style="max-width: 400px; margin: 4rem auto;">
+    <header>
+        <h1>Whendoist</h1>
+        <p>WHEN do I do my tasks?</p>
+    </header>
+    <p>Connect your accounts to get started.</p>
+    <a href="/auth/google" role="button" style="width: 100%;">
+        Sign in with Google
+    </a>
+    <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--pico-muted-color);">
+        Sign in with Google to access your calendar, then connect Todoist for your tasks.
+    </p>
+</article>
+{% endblock %}

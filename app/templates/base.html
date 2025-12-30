@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{% block title %}Whendoist{% endblock %}</title>
+
+    <!-- PWA / Add to Home Screen -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#6D5EF6">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Whendoist">
+    <link rel="apple-touch-icon" href="/static/img/favicon-256x256.png">
+
+    <!-- Favicon -->
+    <link rel="icon" href="/static/img/favicon-32x32.png" type="image/png" sizes="32x32">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    {% block extra_css %}{% endblock %}
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="brand">
+                <img src="/static/img/logo.png" alt="Whendoist" class="brand-logo">
+            </a>
+            {% if user %}
+            <nav class="header-nav">
+                <a href="/dashboard" class="nav-item{% if request.url.path == '/dashboard' %} active{% endif %}">Dashboard</a>
+                <a href="/settings" class="nav-item{% if request.url.path == '/settings' %} active{% endif %}">Settings</a>
+            </nav>
+            <div class="header-actions">
+                <a href="/auth/logout" class="btn-logout">Logout</a>
+            </div>
+            {% endif %}
+        </div>
+    </header>
+    <main class="container-fluid">
+        {% block content %}{% endblock %}
+    </main>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,49 @@
+[project]
+name = "whendoist"
+version = "0.3.0"
+description = "Todoist companion app - WHEN do I do my tasks?"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "Alex Bogdanov", email = "alex@bogdanov.wtf" }
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.30.0",
+    "pydantic-settings>=2.6.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.12",
+    "httpx>=0.28.0",
+    "itsdangerous>=2.2.0",
+    "cryptography>=44.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "aiosqlite>=0.20.0",
+    "ruff>=0.8.0",
+    "black>=24.10.0",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
+ignore = [
+    "B008",   # Allow Depends() in FastAPI function defaults
+    "E712",   # SQLAlchemy requires == True for boolean comparisons
+]
+
+[tool.black]
+target-version = ["py313"]
+line-length = 120
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
