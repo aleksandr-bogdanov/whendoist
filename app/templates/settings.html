@@ -4,10 +4,11 @@
 
 {% block extra_css %}
 <style>
-/* Settings Page Styles */
+/* Settings Page - Minimalist Design */
 .settings-layout {
-    max-width: 800px;
+    max-width: 560px;
     margin: 0 auto;
+    padding: 1.5rem 0;
 }
 
 .settings-header {
@@ -15,154 +16,176 @@
 }
 
 .settings-header h1 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.75rem;
-    color: #1e293b;
-}
-
-.settings-header p {
     margin: 0;
-    color: #64748b;
-    font-size: 0.95rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text, #1e293b);
 }
 
-/* Section Card */
+/* Section */
 .settings-section {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    margin-bottom: 1.5rem;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
 }
 
-.section-header {
-    padding: 1rem 1.25rem;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+.section-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #64748b);
+    margin-bottom: 0.75rem;
 }
 
-.section-header h2 {
-    margin: 0;
+/* Domain List */
+.domain-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.domain-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 6px;
+    transition: border-color 0.15s;
+}
+
+.domain-item:hover {
+    border-color: var(--text-muted, #94a3b8);
+}
+
+.domain-icon {
     font-size: 1rem;
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.section-content {
-    padding: 1.25rem;
-}
-
-/* Connection Cards */
-.connection-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-}
-
-.connection-card {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-}
-
-.connection-card:hover {
-    border-color: #cbd5e1;
-}
-
-.connection-card.connected {
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-    border-color: #86efac;
-}
-
-.connection-icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fff;
-    border-radius: 10px;
-    font-size: 1.5rem;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.connection-info {
-    flex: 1;
-}
-
-.connection-name {
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: #1e293b;
-    margin-bottom: 0.25rem;
-}
-
-.connection-status {
-    font-size: 0.8rem;
-    color: #64748b;
-}
-
-.connection-status.connected {
-    color: #16a34a;
-}
-
-.connection-action {
+    width: 1.5rem;
+    text-align: center;
     flex-shrink: 0;
 }
 
-.btn-connect {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
+.domain-name {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--text, #1e293b);
+}
+
+.domain-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.domain-item:hover .domain-actions {
+    opacity: 1;
+}
+
+.domain-action-btn {
+    padding: 0.25rem 0.5rem;
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.domain-action-btn:hover {
+    background: var(--surface2, #f1f5f9);
+    color: var(--text, #1e293b);
+}
+
+.domain-action-btn.delete:hover {
+    color: #dc2626;
+}
+
+/* Add Domain */
+.add-domain-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.add-domain-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: var(--surface, #fff);
+    color: var(--text, #1e293b);
+}
+
+.add-domain-input:focus {
+    outline: none;
+    border-color: var(--primary, #6366f1);
+}
+
+.add-domain-input::placeholder {
+    color: var(--text-muted, #94a3b8);
+}
+
+.add-domain-btn {
     padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: #fff;
+    background: var(--primary, #6366f1);
     border: none;
     border-radius: 6px;
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    text-decoration: none;
+    color: #fff;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background 0.15s;
 }
 
-.btn-connect:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+.add-domain-btn:hover {
+    background: var(--primary-hover, #4f46e5);
 }
 
-/* Calendar List */
+.add-domain-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.empty-domains {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.875rem;
+    border: 1px dashed var(--border, #e2e8f0);
+    border-radius: 6px;
+}
+
+/* Calendar Section */
+.calendar-section-desc {
+    font-size: 0.8125rem;
+    color: var(--text-muted, #64748b);
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
 .calendar-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem;
 }
 
 .calendar-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-}
-
-.calendar-item:hover {
-    border-color: #cbd5e1;
+    padding: 0.625rem 0.75rem;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 6px;
 }
 
 .calendar-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
     flex-shrink: 0;
 }
 
@@ -172,18 +195,17 @@
 }
 
 .calendar-name {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #1e293b;
+    font-size: 0.875rem;
+    color: var(--text, #1e293b);
 }
 
 .calendar-badge {
-    font-size: 0.65rem;
+    font-size: 0.625rem;
     font-weight: 500;
-    background: #dbeafe;
-    color: #1d4ed8;
+    background: var(--primary-tint, #e0e7ff);
+    color: var(--primary, #6366f1);
     padding: 0.125rem 0.375rem;
-    border-radius: 4px;
+    border-radius: 3px;
     margin-left: 0.5rem;
 }
 
@@ -191,145 +213,269 @@
     flex-shrink: 0;
 }
 
-.toggle-btn {
-    padding: 0.375rem 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
+.toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--border, #e2e8f0);
+    border-radius: 10px;
+    border: none;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: background 0.2s;
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
     background: #fff;
-    color: #64748b;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-.toggle-btn.enabled {
-    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-    border-color: #86efac;
-    color: #166534;
+.toggle-switch.enabled {
+    background: var(--primary, #6366f1);
 }
 
-.toggle-btn:hover {
-    border-color: #cbd5e1;
+.toggle-switch.enabled::after {
+    transform: translateX(16px);
 }
 
 .empty-calendars {
+    padding: 1.5rem;
     text-align: center;
-    padding: 2rem;
-    color: #94a3b8;
-    font-size: 0.9rem;
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.875rem;
 }
 
-/* Reference Section */
-.reference-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-}
-
-.reference-block h3 {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0 0 0.75rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.reference-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.reference-item {
+/* Connection Card */
+.connection-card {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 6px;
 }
 
-.ref-badge {
-    display: inline-flex;
+.connection-card.connected {
+    border-color: #86efac;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.connection-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 50px;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 600;
-}
-
-.ref-badge.impact-high { background: #fee2e2; color: #dc2626; }
-.ref-badge.impact-med { background: #ffedd5; color: #ea580c; }
-.ref-badge.impact-low { background: #dbeafe; color: #2563eb; }
-.ref-badge.impact-none { background: #f1f5f9; color: #94a3b8; }
-
-.ref-badge.clarity-exec { background: #dcfce7; color: #166534; }
-.ref-badge.clarity-def { background: #fef9c3; color: #854d0e; }
-.ref-badge.clarity-exp { background: #ede9fe; color: #5b21b6; }
-
-.ref-desc {
-    color: #64748b;
-}
-
-.ref-label {
-    font-family: ui-monospace, monospace;
-    font-size: 0.75rem;
-    color: #6366f1;
-    background: #eef2ff;
-    padding: 0.125rem 0.375rem;
-    border-radius: 3px;
-}
-
-/* Energy Info */
-.energy-info {
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid #e2e8f0;
-}
-
-.energy-info h3 {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0 0 0.75rem 0;
-}
-
-.energy-list {
-    display: flex;
-    gap: 1rem;
-}
-
-.energy-item {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: #f8fafc;
+    background: var(--surface2, #f1f5f9);
     border-radius: 6px;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
 }
 
-.energy-num {
-    font-weight: 700;
-    color: #6366f1;
+.connection-card.connected .connection-icon {
+    background: #fff;
 }
 
-.energy-desc {
-    color: #64748b;
+.connection-info {
+    flex: 1;
 }
 
-@media (max-width: 600px) {
-    .connection-grid,
-    .reference-grid {
-        grid-template-columns: 1fr;
-    }
+.connection-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text, #1e293b);
+}
 
-    .energy-list {
-        flex-direction: column;
-    }
+.connection-status {
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+}
+
+.connection-status.connected {
+    color: #16a34a;
+}
+
+.btn-connect {
+    padding: 0.375rem 0.75rem;
+    background: var(--primary, #6366f1);
+    border: none;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-connect:hover {
+    background: var(--primary-hover, #4f46e5);
+}
+
+/* Domain Edit Modal */
+.domain-edit-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+}
+
+.domain-edit-overlay.open {
+    display: flex;
+}
+
+.domain-edit-modal {
+    background: var(--surface, #fff);
+    border-radius: 8px;
+    padding: 1.25rem;
+    width: 300px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.domain-edit-modal h3 {
+    margin: 0 0 1rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.domain-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.domain-edit-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.domain-edit-row input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.domain-edit-row input:focus {
+    outline: none;
+    border-color: var(--primary, #6366f1);
+}
+
+.icon-input {
+    width: 50px !important;
+    text-align: center;
+}
+
+.domain-edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+.domain-edit-actions button {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-cancel-edit {
+    background: var(--surface2, #f1f5f9);
+    border: 1px solid var(--border, #e2e8f0);
+    color: var(--text, #1e293b);
+}
+
+.btn-cancel-edit:hover {
+    background: var(--border, #e2e8f0);
+}
+
+.btn-save-edit {
+    background: var(--primary, #6366f1);
+    border: none;
+    color: #fff;
+}
+
+.btn-save-edit:hover {
+    background: var(--primary-hover, #4f46e5);
+}
+
+/* Import Section */
+.import-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-import {
+    padding: 0.5rem 1rem;
+    background: var(--primary, #6366f1);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.btn-import:hover {
+    background: var(--primary-hover, #4f46e5);
+}
+
+.btn-import:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-danger {
+    padding: 0.5rem 1rem;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #dc2626;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.btn-danger:hover {
+    background: #fecaca;
+}
+
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.import-status {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0;
+    color: var(--text-muted, #64748b);
+}
+
+.import-status.success {
+    color: #16a34a;
+}
+
+.import-status.error {
+    color: #dc2626;
 }
 </style>
 {% endblock %}
@@ -338,151 +484,301 @@
 <div class="settings-layout">
     <header class="settings-header">
         <h1>Settings</h1>
-        <p>Manage your integrations and preferences</p>
     </header>
 
-    <!-- Connections Section -->
+    <!-- Life Domains Section -->
     <section class="settings-section">
-        <div class="section-header">
-            <h2>Integrations</h2>
-        </div>
-        <div class="section-content">
-            <div class="connection-grid">
-                <div class="connection-card {% if todoist_connected %}connected{% endif %}">
-                    <div class="connection-icon">T</div>
-                    <div class="connection-info">
-                        <div class="connection-name">Todoist</div>
-                        <div class="connection-status {% if todoist_connected %}connected{% endif %}">
-                            {% if todoist_connected %}Connected{% else %}Not connected{% endif %}
-                        </div>
-                    </div>
-                    {% if not todoist_connected %}
-                    <div class="connection-action">
-                        <a href="/auth/todoist" class="btn-connect">Connect</a>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div class="connection-card {% if google_connected %}connected{% endif %}">
-                    <div class="connection-icon">G</div>
-                    <div class="connection-info">
-                        <div class="connection-name">Google Calendar</div>
-                        <div class="connection-status {% if google_connected %}connected{% endif %}">
-                            {% if google_connected %}Connected{% else %}Not connected{% endif %}
-                        </div>
-                    </div>
-                    {% if not google_connected %}
-                    <div class="connection-action">
-                        <a href="/auth/google" class="btn-connect">Connect</a>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Calendars Section -->
-    {% if google_connected %}
-    <section class="settings-section">
-        <div class="section-header">
-            <h2>Calendars</h2>
-        </div>
-        <div class="section-content">
-            {% if calendars %}
-            <div class="calendar-list">
-                {% for cal in calendars %}
-                <div class="calendar-item">
-                    <div class="calendar-color" style="background-color: {{ cal.background_color }};"></div>
-                    <div class="calendar-info">
-                        <span class="calendar-name">{{ cal.summary }}</span>
-                        {% if cal.primary %}<span class="calendar-badge">Primary</span>{% endif %}
-                    </div>
-                    <div class="calendar-toggle">
-                        <button
-                            class="toggle-btn {% if cal.enabled %}enabled{% endif %}"
-                            hx-post="/api/calendars/{{ cal.id }}/toggle"
-                            hx-swap="none"
-                            hx-on::after-request="this.classList.toggle('enabled'); this.textContent = this.classList.contains('enabled') ? 'Enabled' : 'Disabled'"
-                        >
-                            {{ 'Enabled' if cal.enabled else 'Disabled' }}
-                        </button>
+        <div class="section-label">Life Domains</div>
+        <div class="domain-list" id="domain-list">
+            {% if domains %}
+                {% for domain in domains %}
+                <div class="domain-item" data-domain-id="{{ domain.id }}">
+                    <span class="domain-icon">{{ domain.icon or '📁' }}</span>
+                    <span class="domain-name">{{ domain.name }}</span>
+                    <div class="domain-actions">
+                        <button type="button" class="domain-action-btn edit" onclick="editDomain({{ domain.id }}, '{{ domain.name }}', '{{ domain.icon or '' }}')">Edit</button>
+                        <button type="button" class="domain-action-btn delete" onclick="deleteDomain({{ domain.id }})">Delete</button>
                     </div>
                 </div>
                 {% endfor %}
-            </div>
             {% else %}
-            <div class="empty-calendars">No calendars found</div>
+                <div class="empty-domains">No domains yet. Create your first domain below.</div>
             {% endif %}
         </div>
+        <div class="add-domain-row">
+            <input type="text" id="new-domain-name" class="add-domain-input" placeholder="New domain name..." maxlength="100">
+            <button type="button" class="add-domain-btn" onclick="addDomain()">Add</button>
+        </div>
+    </section>
+
+    <!-- Google Calendars Section -->
+    {% if google_connected %}
+    <section class="settings-section">
+        <div class="section-label">Google Calendars</div>
+        <p class="calendar-section-desc">
+            Enable calendars to see their events on your schedule. This helps you find free time slots when planning tasks.
+        </p>
+        {% if calendars %}
+        <div class="calendar-list">
+            {% for cal in calendars %}
+            <div class="calendar-item">
+                <div class="calendar-color" style="background-color: {{ cal.background_color }};"></div>
+                <div class="calendar-info">
+                    <span class="calendar-name">{{ cal.summary }}</span>
+                    {% if cal.primary %}<span class="calendar-badge">Primary</span>{% endif %}
+                </div>
+                <div class="calendar-toggle">
+                    <button
+                        type="button"
+                        class="toggle-switch {% if cal.enabled %}enabled{% endif %}"
+                        hx-post="/api/calendars/{{ cal.id }}/toggle"
+                        hx-swap="none"
+                        hx-on::after-request="this.classList.toggle('enabled')"
+                        aria-label="Toggle calendar"
+                    ></button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-calendars">No calendars found</div>
+        {% endif %}
     </section>
     {% endif %}
 
-    <!-- Quick Reference Section -->
+    <!-- Integrations Section -->
     <section class="settings-section">
-        <div class="section-header">
-            <h2>Quick Reference</h2>
+        <div class="section-label">Integrations</div>
+        <div class="connection-card {% if google_connected %}connected{% endif %}">
+            <div class="connection-icon">G</div>
+            <div class="connection-info">
+                <div class="connection-name">Google Calendar</div>
+                <div class="connection-status {% if google_connected %}connected{% endif %}">
+                    {% if google_connected %}Connected{% else %}Not connected{% endif %}
+                </div>
+            </div>
+            {% if not google_connected %}
+            <a href="/auth/google" class="btn-connect">Connect</a>
+            {% endif %}
         </div>
-        <div class="section-content">
-            <div class="reference-grid">
-                <div class="reference-block">
-                    <h3>Impact (Todoist Priority)</h3>
-                    <div class="reference-list">
-                        <div class="reference-item">
-                            <span class="ref-badge impact-high">High</span>
-                            <span class="ref-desc">P4 in Todoist - Urgent tasks</span>
-                        </div>
-                        <div class="reference-item">
-                            <span class="ref-badge impact-med">Med</span>
-                            <span class="ref-desc">P3 in Todoist - Important tasks</span>
-                        </div>
-                        <div class="reference-item">
-                            <span class="ref-badge impact-low">Low</span>
-                            <span class="ref-desc">P2 in Todoist - Normal tasks</span>
-                        </div>
-                        <div class="reference-item">
-                            <span class="ref-badge impact-none">—</span>
-                            <span class="ref-desc">P1 in Todoist - Low priority</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="reference-block">
-                    <h3>Clarity Labels</h3>
-                    <div class="reference-list">
-                        <div class="reference-item">
-                            <span class="ref-badge clarity-exec">Exec</span>
-                            <span class="ref-label">@executable</span>
-                        </div>
-                        <div class="reference-item">
-                            <span class="ref-badge clarity-def">Def</span>
-                            <span class="ref-label">@defined</span>
-                        </div>
-                        <div class="reference-item">
-                            <span class="ref-badge clarity-exp">Exp</span>
-                            <span class="ref-label">@exploratory</span>
-                        </div>
-                    </div>
+        <div class="connection-card {% if todoist_connected %}connected{% endif %}" style="margin-top: 0.5rem;">
+            <div class="connection-icon">T</div>
+            <div class="connection-info">
+                <div class="connection-name">Todoist</div>
+                <div class="connection-status {% if todoist_connected %}connected{% endif %}">
+                    {% if todoist_connected %}Connected{% else %}Not connected{% endif %}
                 </div>
             </div>
-
-            <div class="energy-info">
-                <h3>Energy Modes</h3>
-                <div class="energy-list">
-                    <div class="energy-item">
-                        <span class="energy-num">1</span>
-                        <span class="energy-desc">Zombie - Only executable tasks</span>
-                    </div>
-                    <div class="energy-item">
-                        <span class="energy-num">2</span>
-                        <span class="energy-desc">Normal - Executable + defined</span>
-                    </div>
-                    <div class="energy-item">
-                        <span class="energy-num">3</span>
-                        <span class="energy-desc">Deep Focus - All tasks visible</span>
-                    </div>
-                </div>
-            </div>
+            {% if not todoist_connected %}
+            <a href="/auth/todoist" class="btn-connect">Connect</a>
+            {% endif %}
         </div>
     </section>
+
+    <!-- Todoist Import Section -->
+    {% if todoist_connected %}
+    <section class="settings-section">
+        <div class="section-label">Todoist Import</div>
+        <p class="calendar-section-desc">
+            Import your projects and tasks from Todoist. Projects become domains, tasks are imported with their priorities and due dates.
+        </p>
+        <div class="import-buttons">
+            <button type="button" class="btn-import" id="btn-import-todoist" onclick="importFromTodoist()">
+                Import from Todoist
+            </button>
+            <button type="button" class="btn-danger" id="btn-wipe-data" onclick="wipeAllData()">
+                Wipe All Data
+            </button>
+        </div>
+        <div id="import-status" class="import-status"></div>
+    </section>
+    {% endif %}
 </div>
+
+<!-- Domain Edit Modal -->
+<div class="domain-edit-overlay" id="domain-edit-overlay" onclick="if(event.target === this) closeDomainEdit()">
+    <div class="domain-edit-modal">
+        <h3>Edit Domain</h3>
+        <form class="domain-edit-form" onsubmit="saveDomainEdit(event)">
+            <input type="hidden" id="edit-domain-id">
+            <div class="domain-edit-row">
+                <input type="text" id="edit-domain-icon" class="icon-input" placeholder="📁" maxlength="2">
+                <input type="text" id="edit-domain-name" placeholder="Domain name" required maxlength="100">
+            </div>
+            <div class="domain-edit-actions">
+                <button type="button" class="btn-cancel-edit" onclick="closeDomainEdit()">Cancel</button>
+                <button type="submit" class="btn-save-edit">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+async function addDomain() {
+    const input = document.getElementById('new-domain-name');
+    const name = input.value.trim();
+    if (!name) return;
+
+    try {
+        const response = await fetch('/api/domains', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const err = await response.json();
+            alert(err.detail || 'Failed to create domain');
+        }
+    } catch (e) {
+        alert('Failed to create domain');
+    }
+}
+
+function editDomain(id, name, icon) {
+    document.getElementById('edit-domain-id').value = id;
+    document.getElementById('edit-domain-name').value = name;
+    document.getElementById('edit-domain-icon').value = icon;
+    document.getElementById('domain-edit-overlay').classList.add('open');
+    document.getElementById('edit-domain-name').focus();
+}
+
+function closeDomainEdit() {
+    document.getElementById('domain-edit-overlay').classList.remove('open');
+}
+
+async function saveDomainEdit(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-domain-id').value;
+    const name = document.getElementById('edit-domain-name').value.trim();
+    const icon = document.getElementById('edit-domain-icon').value.trim();
+
+    if (!name) return;
+
+    try {
+        const response = await fetch(`/api/domains/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, icon: icon || null })
+        });
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const err = await response.json();
+            alert(err.detail || 'Failed to update domain');
+        }
+    } catch (e) {
+        alert('Failed to update domain');
+    }
+}
+
+async function deleteDomain(id) {
+    if (!confirm('Delete this domain? Tasks will be moved to Inbox.')) return;
+
+    try {
+        const response = await fetch(`/api/domains/${id}`, {
+            method: 'DELETE'
+        });
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const err = await response.json();
+            alert(err.detail || 'Failed to delete domain');
+        }
+    } catch (e) {
+        alert('Failed to delete domain');
+    }
+}
+
+// Enter key to add domain
+document.getElementById('new-domain-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addDomain();
+    }
+});
+
+// Escape to close modal
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDomainEdit();
+});
+
+// Import functions
+async function importFromTodoist() {
+    const btn = document.getElementById('btn-import-todoist');
+    const status = document.getElementById('import-status');
+
+    btn.disabled = true;
+    btn.textContent = 'Importing...';
+    status.textContent = 'Connecting to Todoist...';
+    status.className = 'import-status';
+
+    try {
+        const response = await fetch('/api/import/todoist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            status.textContent = `Imported ${data.domains_created} domains, ${data.tasks_created} tasks. Skipped ${data.domains_skipped + data.tasks_skipped} existing items.`;
+            status.className = 'import-status success';
+            // Reload page after short delay to show new domains
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            const errorMsg = data.errors?.join(', ') || data.detail || 'Import failed';
+            status.textContent = errorMsg;
+            status.className = 'import-status error';
+        }
+    } catch (e) {
+        status.textContent = 'Failed to connect to server';
+        status.className = 'import-status error';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Import from Todoist';
+    }
+}
+
+async function wipeAllData() {
+    if (!confirm('This will permanently delete ALL your tasks and domains. Are you sure?')) {
+        return;
+    }
+
+    const btn = document.getElementById('btn-wipe-data');
+    const status = document.getElementById('import-status');
+
+    btn.disabled = true;
+    btn.textContent = 'Wiping...';
+    status.textContent = '';
+    status.className = 'import-status';
+
+    try {
+        const response = await fetch('/api/import/wipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            status.textContent = `Deleted ${data.tasks_deleted} tasks and ${data.domains_deleted} domains.`;
+            status.className = 'import-status success';
+            // Reload page after short delay
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            status.textContent = data.detail || 'Wipe failed';
+            status.className = 'import-status error';
+        }
+    } catch (e) {
+        status.textContent = 'Failed to connect to server';
+        status.className = 'import-status error';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Wipe All Data';
+    }
+}
+</script>
 {% endblock %}

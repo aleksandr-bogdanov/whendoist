@@ -11,15 +11,17 @@ from typing import Any
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import GoogleCalendarSelection, GoogleToken, TodoistToken, User
+from app.models import Domain, GoogleCalendarSelection, GoogleToken, Task, TodoistToken, User
 from app.routers.auth import get_current_user
 from app.services.gcal import GoogleCalendarClient
-from app.services.labels import clarity_display, parse_labels
-from app.services.todoist import TodoistClient, TodoistProject, TodoistTask
+from app.services.labels import Clarity, clarity_display
+from app.services.recurrence_service import RecurrenceService
+from app.services.task_service import TaskService
 
 logger = logging.getLogger(__name__)
 
@@ -32,110 +34,82 @@ templates = Jinja2Templates(directory="app/templates")
 # -----------------------------------------------------------------------------
 
 TaskItem = dict[str, Any]  # Task with metadata and subtasks
-ProjectWithTasks = dict[str, Any]  # Project with its tasks
+DomainWithTasks = dict[str, Any]  # Domain with its tasks
 
 
 # -----------------------------------------------------------------------------
-# Task Processing Helpers
+# Native Task Processing Helpers
 # -----------------------------------------------------------------------------
 
 
-def build_task_item(task: TodoistTask) -> TaskItem:
-    """Create a task item dict with parsed metadata."""
-    metadata = parse_labels(task.labels, task.description)
+def build_native_task_item(task: Task, next_instances: dict[int, date] | None = None) -> TaskItem:
+    """Create a task item dict from native Task model."""
+    import contextlib
+
+    # Map clarity string to Clarity enum for display
+    clarity = None
+    if task.clarity:
+        with contextlib.suppress(ValueError):
+            clarity = Clarity(task.clarity)
+
+    # Get next occurrence for recurring tasks
+    next_occurrence = None
+    if task.is_recurring and next_instances:
+        next_occurrence = next_instances.get(task.id)
+
+    # Only access subtasks if already eagerly loaded (avoids lazy loading in async context)
+    subtasks = []
+    if "subtasks" in sa_inspect(task).dict:
+        subtasks = [build_native_task_item(s, next_instances) for s in (task.subtasks or [])]
+
     return {
         "task": task,
-        "metadata": metadata,
-        "clarity_display": clarity_display(metadata.clarity),
-        "subtasks": [],
+        "clarity_display": clarity_display(clarity),
+        "next_occurrence": next_occurrence,
+        "subtasks": subtasks,
     }
 
 
-def build_task_hierarchy(
-    tasks: list[TodoistTask],
-    current_user_id: str,
-) -> dict[str, TaskItem]:
-    """
-    Build task lookup with subtasks attached to parents.
-
-    Filters out tasks assigned to other users.
-    Calculates parent duration as sum of subtask durations.
-    """
-    task_lookup: dict[str, TaskItem] = {}
-    subtasks_by_parent: dict[str, list[TaskItem]] = {}
-
-    # First pass: create all task items
-    for task in tasks:
-        # Only include tasks assigned to current user or unassigned
-        if task.assignee_id and task.assignee_id != current_user_id:
-            continue
-
-        task_item = build_task_item(task)
-        task_lookup[task.id] = task_item
-
-        if task.parent_id:
-            subtasks_by_parent.setdefault(task.parent_id, []).append(task_item)
-
-    # Second pass: attach subtasks and calculate parent durations
-    for parent_id, subtasks in subtasks_by_parent.items():
-        if parent_id in task_lookup:
-            task_lookup[parent_id]["subtasks"] = subtasks
-            # Parent duration = sum of subtask durations
-            total_duration = sum(s["metadata"].duration_minutes or 0 for s in subtasks)
-            if total_duration > 0:
-                task_lookup[parent_id]["metadata"].duration_minutes = total_duration
-
-    return task_lookup
-
-
-def task_sort_key(task_item: TaskItem) -> tuple:
-    """Sort key: priority (desc), then due datetime (asc)."""
+def native_task_sort_key(task_item: TaskItem) -> tuple:
+    """Sort key: impact (asc = highest first), then position."""
     task = task_item["task"]
-    due = task.due
-
-    if due and due.datetime_:
-        dt = due.datetime_
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=UTC)
-        return (-task.priority, dt)
-
-    # No datetime → sort to end
-    return (-task.priority, datetime.max.replace(tzinfo=UTC))
+    return (task.impact, task.position, task.created_at)
 
 
-def group_tasks_by_project(
-    task_lookup: dict[str, TaskItem],
-    projects_map: dict[str, TodoistProject],
-) -> list[ProjectWithTasks]:
-    """Group top-level tasks by project, sorted by priority/due."""
-    tasks_by_project: dict[str, list[TaskItem]] = {}
+def group_tasks_by_domain(
+    tasks: list[Task],
+    domains: list[Domain],
+    next_instances: dict[int, date] | None = None,
+) -> list[DomainWithTasks]:
+    """Group tasks by domain, sorted by impact."""
+    domains_map = {d.id: d for d in domains}
+    tasks_by_domain: dict[int | None, list[TaskItem]] = {}
 
-    for task_item in task_lookup.values():
-        # Skip subtasks (they're nested under parents)
-        if task_item["task"].parent_id:
-            continue
+    for task in tasks:
+        task_item = build_native_task_item(task, next_instances)
+        domain_id = task.domain_id
+        tasks_by_domain.setdefault(domain_id, []).append(task_item)
 
-        project_id = task_item["task"].project_id
-        tasks_by_project.setdefault(project_id, []).append(task_item)
+    # Sort tasks within each domain
+    domains_with_tasks: list[DomainWithTasks] = []
 
-    # Sort tasks and subtasks within each project
-    projects_with_tasks: list[ProjectWithTasks] = []
-    for project_id, project_tasks in tasks_by_project.items():
-        project_tasks.sort(key=task_sort_key)
-        for task_item in project_tasks:
-            task_item["subtasks"].sort(key=task_sort_key)
+    # First add domains that have tasks
+    for domain_id, domain_tasks in tasks_by_domain.items():
+        domain_tasks.sort(key=native_task_sort_key)
+        for task_item in domain_tasks:
+            task_item["subtasks"].sort(key=native_task_sort_key)
 
-        projects_with_tasks.append(
+        domains_with_tasks.append(
             {
-                "project": projects_map.get(project_id),
-                "tasks": project_tasks,
+                "domain": domains_map.get(domain_id) if domain_id else None,
+                "tasks": domain_tasks,
             }
         )
 
-    # Sort projects alphabetically (Inbox last)
-    projects_with_tasks.sort(key=lambda p: p["project"].name.lower() if p["project"] else "zzz")
+    # Sort: named domains alphabetically, Inbox (None) last
+    domains_with_tasks.sort(key=lambda d: (d["domain"] is None, d["domain"].name.lower() if d["domain"] else "zzz"))
 
-    return projects_with_tasks
+    return domains_with_tasks
 
 
 # -----------------------------------------------------------------------------
@@ -160,17 +134,13 @@ async def dashboard(
     db: AsyncSession = Depends(get_db),
     user: User | None = Depends(get_current_user),
 ):
-    """Dashboard with task list grouped by project and calendar events."""
+    """Dashboard with task list grouped by domain and calendar events."""
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    # Check API connections
-    todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
-
+    # Check Google connection (Todoist no longer required for native tasks)
     google_token = (await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))).scalar_one_or_none()
 
-    projects_with_tasks: list[ProjectWithTasks] = []
-    scheduled_tasks_by_date: dict[date, list[dict]] = {}
     today = date.today()
 
     # Generate date range: 7 days before and after today (15 days total)
@@ -187,40 +157,75 @@ async def dashboard(
             }
         )
 
-    # Fetch and process Todoist tasks
-    if todoist_token:
-        try:
-            async with TodoistClient(todoist_token.access_token) as client:
-                tasks = await client.get_all_tasks()
-                projects = await client.get_projects()
-                current_user_id = await client.get_current_user_id()
+    # ==========================================================================
+    # Native Task Loading
+    # ==========================================================================
+    task_service = TaskService(db, user.id)
+    recurrence_service = RecurrenceService(db, user.id)
 
-                projects_map = {p.id: p for p in projects}
-                task_lookup = build_task_hierarchy(tasks, current_user_id)
-                projects_with_tasks = group_tasks_by_project(task_lookup, projects_map)
+    # Ensure recurring task instances are materialized
+    await recurrence_service.ensure_instances_materialized()
 
-                # Collect tasks with due_datetime for calendar display
-                for task in tasks:
-                    if task.due and task.due.datetime_:
-                        task_date = task.due.datetime_.date()
-                        metadata = parse_labels(task.labels, task.description)
-                        scheduled_tasks_by_date.setdefault(task_date, []).append(
-                            {
-                                "task": task,
-                                "metadata": metadata,
-                                "start": task.due.datetime_,
-                                "duration_minutes": task.duration_minutes or metadata.duration_minutes or 30,
-                                "clarity": metadata.clarity.value if metadata.clarity else "none",
-                            }
-                        )
-        except Exception as e:
-            # Token is invalid (likely 401) - delete it so user can reconnect
-            logger.warning(f"Todoist API error, clearing token: {e}")
-            await db.delete(todoist_token)
-            await db.commit()
-            todoist_token = None
+    # Get domains and tasks
+    domains = await task_service.get_domains()
+    tasks = await task_service.get_tasks(status="pending", top_level_only=True)
 
-    # Fetch Google Calendar events
+    # Get next occurrence date for each recurring task
+    next_instances: dict[int, date] = {}
+    recurring_task_ids = [t.id for t in tasks if t.is_recurring]
+    if recurring_task_ids:
+        instances = await recurrence_service.get_next_instances_for_tasks(recurring_task_ids)
+        next_instances = {inst.task_id: inst.instance_date for inst in instances}
+
+    domains_with_tasks = group_tasks_by_domain(tasks, domains, next_instances)
+
+    # Get scheduled tasks for calendar display
+    start_date = today - timedelta(days=7)
+    end_date = today + timedelta(days=8)
+
+    scheduled_tasks_by_date: dict[date, list[dict]] = {}
+
+    # Non-recurring scheduled tasks
+    scheduled_tasks = await task_service.get_scheduled_tasks_for_range(start_date, end_date)
+    for task in scheduled_tasks:
+        if task.scheduled_date:
+            scheduled_datetime = datetime.combine(
+                task.scheduled_date,
+                task.scheduled_time or datetime.min.time(),
+                tzinfo=UTC,
+            )
+            scheduled_tasks_by_date.setdefault(task.scheduled_date, []).append(
+                {
+                    "task": task,
+                    "is_instance": False,
+                    "start": scheduled_datetime,
+                    "duration_minutes": task.duration_minutes or 30,
+                    "clarity": task.clarity or "none",
+                }
+            )
+
+    # Recurring task instances
+    instances = await recurrence_service.get_instances_for_range(start_date, end_date, status="pending")
+    for instance in instances:
+        instance_datetime = instance.scheduled_datetime or datetime.combine(
+            instance.instance_date,
+            instance.task.scheduled_time or datetime.min.time(),
+            tzinfo=UTC,
+        )
+        scheduled_tasks_by_date.setdefault(instance.instance_date, []).append(
+            {
+                "task": instance.task,
+                "instance": instance,
+                "is_instance": True,
+                "start": instance_datetime,
+                "duration_minutes": instance.task.duration_minutes or 30,
+                "clarity": instance.task.clarity or "none",
+            }
+        )
+
+    # ==========================================================================
+    # Google Calendar Events
+    # ==========================================================================
     if google_token:
         try:
             selections = (
@@ -237,8 +242,6 @@ async def dashboard(
             )
 
             if selections:
-                start_date = today - timedelta(days=7)
-                end_date = today + timedelta(days=8)
                 time_min = datetime.combine(start_date, datetime.min.time(), tzinfo=UTC)
                 time_max = datetime.combine(end_date, datetime.min.time(), tzinfo=UTC)
 
@@ -249,7 +252,6 @@ async def dashboard(
                             cal_events = await client.get_events(selection.calendar_id, time_min, time_max)
                             events.extend(cal_events)
                         except Exception as e:
-                            # Skip calendars that fail (might have been deleted or permissions changed)
                             logger.debug(f"Failed to fetch calendar {selection.calendar_id}: {e}")
                             continue
 
@@ -266,10 +268,9 @@ async def dashboard(
                 for day in calendar_days:
                     day["events"] = events_by_date.get(day["date"], [])
         except Exception as e:
-            # Google API error - log but continue without events
             logger.warning(f"Google Calendar API error: {e}")
 
-    # Assign scheduled Todoist tasks to calendar days
+    # Assign scheduled tasks to calendar days
     for day in calendar_days:
         day["scheduled_tasks"] = scheduled_tasks_by_date.get(day["date"], [])
 
@@ -278,11 +279,12 @@ async def dashboard(
         {
             "request": request,
             "user": user,
-            "todoist_connected": todoist_token is not None,
             "google_connected": google_token is not None,
-            "projects_with_tasks": projects_with_tasks,
+            "domains_with_tasks": domains_with_tasks,
+            "domains": domains,
             "calendar_days": calendar_days,
             "today": today,
+            "timedelta": timedelta,  # For adjacent day calculations in template
         },
     )
 
@@ -293,13 +295,16 @@ async def settings(
     db: AsyncSession = Depends(get_db),
     user: User | None = Depends(get_current_user),
 ):
-    """Settings page - Google Calendar selection."""
+    """Settings page - domains and calendar selection."""
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
+    # Get user's domains
+    task_service = TaskService(db, user.id)
+    domains = await task_service.get_domains()
 
     google_token = (await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))).scalar_one_or_none()
+    todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
 
     calendars = []
     if google_token:
@@ -341,8 +346,9 @@ async def settings(
         {
             "request": request,
             "user": user,
-            "todoist_connected": todoist_token is not None,
+            "domains": domains,
             "google_connected": google_token is not None,
+            "todoist_connected": todoist_token is not None,
             "calendars": calendars,
         },
     )

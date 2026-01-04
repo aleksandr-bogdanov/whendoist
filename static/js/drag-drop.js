@@ -54,14 +54,13 @@
     // STATE
     // ==========================================================================
 
-    /** @type {Map<string, {day: string, hour: number, minutes: number, element: HTMLElement}>} */
-    const scheduledTasks = new Map();
-
     let draggedElement = null;
     let draggedTaskId = null;
     let draggedDuration = DEFAULT_DURATION;
     let isDraggingScheduledTask = false;
     let dropIndicator = null;
+    let wasDroppedSuccessfully = false;
+    let trashBin = null;
 
     // ==========================================================================
     // INITIALIZATION
@@ -72,14 +71,22 @@
      */
     function init() {
         const tasks = document.querySelectorAll('.task-item[draggable="true"]');
+        const scheduledFromDb = document.querySelectorAll('.scheduled-task.from-db');
         const slots = document.querySelectorAll('.hour-slot[data-droppable="true"]');
 
-        log.info(`Initializing: ${tasks.length} tasks, ${slots.length} slots`);
+        log.info(`Initializing: ${tasks.length} tasks, ${scheduledFromDb.length} scheduled, ${slots.length} slots`);
 
         // Attach task drag handlers
         tasks.forEach(task => {
             task.addEventListener('dragstart', handleDragStart);
             task.addEventListener('dragend', handleDragEnd);
+        });
+
+        // Attach drag handlers to scheduled tasks from DB (for rescheduling/unscheduling)
+        scheduledFromDb.forEach(task => {
+            task.draggable = true;
+            task.addEventListener('dragstart', handleDragStart);
+            task.addEventListener('dragend', handleDragEnd); // Same handler now
         });
 
         // Attach slot drop handlers
@@ -90,10 +97,6 @@
             slot.addEventListener('drop', handleDrop);
         });
 
-        // Commit/discard buttons
-        document.getElementById('commit-btn')?.addEventListener('click', commitToTodoist);
-        document.getElementById('discard-btn')?.addEventListener('click', discardAll);
-
         // Initial overlap calculation for pre-existing events
         document.querySelectorAll('.day-calendar').forEach(cal => {
             if (cal.querySelectorAll('[data-start-mins]').length > 0) {
@@ -101,7 +104,122 @@
             }
         });
 
-        updateCommitBar();
+        // Create trash bin
+        createTrashBin();
+    }
+
+    // ==========================================================================
+    // TRASH BIN
+    // ==========================================================================
+
+    function createTrashBin() {
+        trashBin = document.createElement('div');
+        trashBin.className = 'trash-bin';
+        trashBin.innerHTML = '🗑️';
+        trashBin.style.display = 'none';
+        document.body.appendChild(trashBin);
+
+        // Trash bin event handlers
+        trashBin.addEventListener('dragover', handleTrashDragOver);
+        trashBin.addEventListener('dragenter', handleTrashDragEnter);
+        trashBin.addEventListener('dragleave', handleTrashDragLeave);
+        trashBin.addEventListener('drop', handleTrashDrop);
+    }
+
+    function showTrashBin() {
+        if (trashBin) {
+            trashBin.style.display = 'flex';
+            // Animate in
+            requestAnimationFrame(() => {
+                trashBin.classList.add('visible');
+            });
+        }
+    }
+
+    function hideTrashBin() {
+        if (trashBin) {
+            trashBin.classList.remove('visible', 'drag-over');
+            // Wait for animation then hide
+            setTimeout(() => {
+                if (trashBin && !trashBin.classList.contains('visible')) {
+                    trashBin.style.display = 'none';
+                }
+            }, 200);
+        }
+    }
+
+    function handleTrashDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleTrashDragEnter(e) {
+        e.preventDefault();
+        trashBin.classList.add('drag-over');
+    }
+
+    function handleTrashDragLeave(e) {
+        trashBin.classList.remove('drag-over');
+    }
+
+    async function handleTrashDrop(e) {
+        e.preventDefault();
+        trashBin.classList.remove('drag-over');
+
+        let taskData;
+        try {
+            taskData = JSON.parse(e.dataTransfer.getData('text/plain'));
+        } catch {
+            log.error('Invalid drag data for trash');
+            return;
+        }
+
+        const { taskId } = taskData;
+        if (!taskId) return;
+
+        wasDroppedSuccessfully = true; // Prevent unschedule logic
+
+        // Remove all task elements from UI immediately
+        const taskElements = document.querySelectorAll(`[data-task-id="${taskId}"]`);
+        const removedElements = [];
+        taskElements.forEach(el => {
+            const parent = el.parentElement;
+            const dayCalendar = el.closest('.day-calendar');
+            removedElements.push({ el, parent, dayCalendar });
+            el.remove();
+            if (dayCalendar) recalculateOverlaps(dayCalendar);
+        });
+
+        // Delete via API
+        try {
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                log.info(`Deleted task ${taskId}`);
+            } else {
+                log.error(`Failed to delete task ${taskId}`);
+                // Restore elements on failure
+                removedElements.forEach(({ el, parent, dayCalendar }) => {
+                    if (parent) {
+                        parent.appendChild(el);
+                        if (dayCalendar) recalculateOverlaps(dayCalendar);
+                    }
+                });
+                alert('Failed to delete task');
+            }
+        } catch (err) {
+            log.error(`Failed to delete task ${taskId}:`, err);
+            // Restore elements on failure
+            removedElements.forEach(({ el, parent, dayCalendar }) => {
+                if (parent) {
+                    parent.appendChild(el);
+                    if (dayCalendar) recalculateOverlaps(dayCalendar);
+                }
+            });
+            alert('Failed to delete task. Please try again.');
+        }
     }
 
     // ==========================================================================
@@ -112,12 +230,30 @@
         draggedElement = e.target.closest('.task-item, .scheduled-task');
         if (!draggedElement) return;
 
+        // Prevent dragging task-items that are already scheduled
+        if (draggedElement.classList.contains('task-item') && draggedElement.classList.contains('scheduled')) {
+            e.preventDefault();
+            return;
+        }
+
         isDraggingScheduledTask = draggedElement.classList.contains('scheduled-task');
         draggedTaskId = draggedElement.dataset.taskId;
+        wasDroppedSuccessfully = false; // Reset flag
 
-        const content = draggedElement.querySelector('.task-text, .scheduled-task-text')?.textContent || '';
+        // Get content - for scheduled tasks, exclude the occurrence-day span text
+        const textElement = draggedElement.querySelector('.task-text, .scheduled-task-text');
+        let content = '';
+        if (textElement) {
+            // Clone and remove occurrence-day span to get clean text
+            const clone = textElement.cloneNode(true);
+            const occSpan = clone.querySelector('.occurrence-day');
+            if (occSpan) occSpan.remove();
+            content = clone.textContent.trim();
+        }
         const duration = draggedElement.dataset.duration || '';
         const clarity = draggedElement.dataset.clarity || 'none';
+        const instanceId = draggedElement.dataset.instanceId || '';
+        const instanceDate = draggedElement.dataset.instanceDate || '';
 
         draggedDuration = parseInt(duration, 10) || DEFAULT_DURATION;
 
@@ -128,30 +264,102 @@
             duration,
             clarity,
             isScheduled: isDraggingScheduledTask,
+            instanceId,
+            instanceDate,
         }));
 
-        requestAnimationFrame(() => draggedElement.classList.add('dragging'));
+        // Delay style changes until after browser captures drag image
+        setTimeout(() => {
+            if (draggedElement) {
+                draggedElement.classList.add('dragging');
+                if (isDraggingScheduledTask) {
+                    draggedElement.style.visibility = 'hidden';
+                }
+            }
+        }, 0);
+
+        // Show trash bin when dragging
+        showTrashBin();
+
         log.debug(`Drag start: ${draggedTaskId}, ${draggedDuration}min`);
     }
 
-    function handleDragEnd(e) {
-        // Check if scheduled task was dragged out of calendar
-        if (isDraggingScheduledTask && draggedTaskId) {
-            const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
-            if (!dropTarget?.closest('.hour-slot[data-droppable="true"]')) {
-                removeScheduledTask(draggedTaskId);
+    /**
+     * Handle drag end - unschedule if a scheduled task was dropped outside calendar
+     */
+    async function handleDragEnd(e) {
+        const taskId = draggedTaskId;
+        const element = draggedElement;
+        const wasScheduledTask = element?.classList.contains('scheduled-task');
+        const shouldUnschedule = !wasDroppedSuccessfully && wasScheduledTask && taskId && element;
+
+        if (element) {
+            element.classList.remove('dragging');
+            // Only reset inline styles if we're NOT about to remove the element
+            if (!shouldUnschedule) {
+                element.style.visibility = '';
+                element.style.opacity = '';
+                element.style.pointerEvents = '';
             }
         }
 
-        if (draggedElement) {
-            draggedElement.classList.remove('dragging');
+        // Unschedule if a scheduled task was dropped outside calendar
+        if (shouldUnschedule) {
+            // Element is still hidden from drag, now remove from DOM (no flash)
+            const parent = element.parentElement;
+            const dayCalendar = element.closest('.day-calendar');
+            element.remove();
+
+            // Unschedule via API
+            try {
+                const response = await fetch(`/api/tasks/${taskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        scheduled_date: null,
+                        scheduled_time: null,
+                    }),
+                });
+
+                if (response.ok) {
+                    // Recalculate overlaps after removal
+                    if (dayCalendar) recalculateOverlaps(dayCalendar);
+                    // Check if task exists in task list
+                    const taskInList = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+                    if (taskInList) {
+                        // Just remove the scheduled styling
+                        taskInList.classList.remove('scheduled');
+                    } else {
+                        // Task doesn't exist in task list (was DB-scheduled), need to reload
+                        window.location.reload();
+                    }
+                } else {
+                    log.error('Failed to unschedule task');
+                    // Restore element on failure
+                    if (parent) {
+                        parent.appendChild(element);
+                        element.style.visibility = '';
+                    }
+                    if (dayCalendar) recalculateOverlaps(dayCalendar);
+                }
+            } catch (err) {
+                log.error('Failed to unschedule task:', err);
+                // Restore element on failure
+                if (parent) {
+                    parent.appendChild(element);
+                    element.style.visibility = '';
+                }
+                if (dayCalendar) recalculateOverlaps(dayCalendar);
+            }
         }
 
         // Reset state
         draggedElement = null;
         draggedTaskId = null;
         isDraggingScheduledTask = false;
+        wasDroppedSuccessfully = false;
         removeDropIndicator();
+        hideTrashBin();
 
         document.querySelectorAll('.hour-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
     }
@@ -181,7 +389,7 @@
         }
     }
 
-    function handleDrop(e) {
+    async function handleDrop(e) {
         e.preventDefault();
 
         const slot = e.target.closest('.hour-slot');
@@ -198,13 +406,14 @@
             return;
         }
 
-        const { taskId, content, duration, clarity } = taskData;
+        const { taskId, content, duration, clarity, instanceId, instanceDate } = taskData;
         if (!taskId) return;
 
         const hourRow = slot.closest('.hour-row');
         const dayCalendar = slot.closest('.day-calendar');
         const hour = parseInt(hourRow?.dataset.hour, 10);
-        const day = dayCalendar?.dataset.day;
+        // Use actual-date for adjacent day hours, otherwise use the day calendar's date
+        const day = hourRow?.dataset.actualDate || dayCalendar?.dataset.day;
 
         if (isNaN(hour) || !day) {
             log.error('Invalid drop location');
@@ -213,25 +422,58 @@
 
         const { minutes } = calculateDropPosition(e, slot);
 
-        // Remove from previous position if rescheduling
-        if (scheduledTasks.has(taskId)) {
-            scheduledTasks.get(taskId).element.remove();
-            scheduledTasks.delete(taskId);
+        // Remove the dragged element if it's a scheduled task being rescheduled
+        if (draggedElement?.classList.contains('scheduled-task')) {
+            const oldCalendar = draggedElement.closest('.day-calendar');
+            draggedElement.remove();
+            if (oldCalendar && oldCalendar !== dayCalendar) {
+                recalculateOverlaps(oldCalendar);
+            }
         }
 
-        // Create and place scheduled task
-        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, clarity);
+        // Create and place scheduled task immediately for visual feedback
+        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, clarity, instanceId, instanceDate);
         slot.appendChild(element);
+        wasDroppedSuccessfully = true; // Mark successful drop
 
-        scheduledTasks.set(taskId, { day, hour, minutes, element });
-        log.info(`Scheduled ${taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
-
-        // Mark original task
+        // Mark original task in task list
         const original = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
         if (original) original.classList.add('scheduled');
 
         recalculateOverlaps(dayCalendar);
-        updateCommitBar();
+
+        // Save to API immediately
+        const scheduledDate = day;
+        const scheduledTime = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+
+        try {
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scheduled_date: scheduledDate,
+                    scheduled_time: scheduledTime,
+                }),
+            });
+
+            if (response.ok) {
+                log.info(`Scheduled ${taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
+                // No reload needed - optimistic update is sufficient
+            } else {
+                log.error(`Failed to schedule task ${taskId}`);
+                // Remove the optimistic element on failure
+                element.remove();
+                if (original) original.classList.remove('scheduled');
+                recalculateOverlaps(dayCalendar);
+                alert('Failed to schedule task. Please try again.');
+            }
+        } catch (error) {
+            log.error(`Failed to schedule task ${taskId}:`, error);
+            element.remove();
+            if (original) original.classList.remove('scheduled');
+            recalculateOverlaps(dayCalendar);
+            alert('Failed to schedule task. Please try again.');
+        }
     }
 
     // ==========================================================================
@@ -282,9 +524,11 @@
      * @param {number} hour - Hour (0-23)
      * @param {number} minutes - Minutes (0, 15, 30, 45)
      * @param {string} clarity - Clarity level
+     * @param {string} instanceId - Instance ID (for recurring tasks)
+     * @param {string} instanceDate - Instance date ISO string (for recurring tasks)
      * @returns {HTMLElement} Scheduled task element
      */
-    function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, clarity = 'none') {
+    function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, clarity = 'none', instanceId = '', instanceDate = '') {
         const durationMins = parseInt(duration, 10) || DEFAULT_DURATION;
         const startMins = hour * 60 + minutes;
         const endMins = startMins + durationMins;
@@ -303,6 +547,15 @@
         el.style.height = `${heightPx}px`;
         el.style.top = `${topPx}px`;
 
+        // Add instance data for recurring tasks
+        if (instanceId) {
+            el.dataset.instanceId = instanceId;
+            el.classList.add('recurring-instance');
+        }
+        if (instanceDate) {
+            el.dataset.instanceDate = instanceDate;
+        }
+
         // Duration class for CSS styling
         if (durationMins < 30) el.classList.add('duration-short');
         else if (durationMins < 60) el.classList.add('duration-medium');
@@ -311,12 +564,20 @@
         const timeStr = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
         const durationStr = durationMins >= 30 ? formatDuration(durationMins) : '';
 
+        // Format occurrence day for recurring instances
+        let occurrenceBadge = '';
+        if (instanceDate) {
+            const occDate = new Date(instanceDate);
+            const dayName = occDate.toLocaleDateString('en-US', { weekday: 'short' });
+            occurrenceBadge = `<span class="occurrence-day">${dayName}</span>`;
+        }
+
         el.innerHTML = `
             <div class="scheduled-task-left">
                 <span class="scheduled-task-time">${timeStr}</span>
                 ${durationStr ? `<span class="scheduled-task-duration">${durationStr}</span>` : ''}
             </div>
-            <span class="scheduled-task-text">${escapeHtml(content)}</span>
+            <span class="scheduled-task-text">${escapeHtml(content)}${occurrenceBadge}</span>
         `;
 
         el.addEventListener('dragstart', handleDragStart);
@@ -325,135 +586,6 @@
         return el;
     }
 
-    // ==========================================================================
-    // TASK MANAGEMENT
-    // ==========================================================================
-
-    function removeScheduledTask(taskId) {
-        const data = scheduledTasks.get(taskId);
-        if (!data) return;
-
-        const dayCalendar = data.element.closest('.day-calendar');
-        data.element.remove();
-        scheduledTasks.delete(taskId);
-
-        const original = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-        if (original) original.classList.remove('scheduled');
-
-        if (dayCalendar) recalculateOverlaps(dayCalendar);
-        updateCommitBar();
-
-        log.debug(`Removed scheduled task ${taskId}`);
-    }
-
-    function discardAll() {
-        if (scheduledTasks.size === 0) return;
-
-        log.info(`Discarding ${scheduledTasks.size} tasks`);
-        const calendars = new Set();
-
-        scheduledTasks.forEach(({ element }, taskId) => {
-            const cal = element.closest('.day-calendar');
-            if (cal) calendars.add(cal);
-            element.remove();
-
-            const original = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-            if (original) original.classList.remove('scheduled');
-        });
-
-        scheduledTasks.clear();
-        calendars.forEach(cal => recalculateOverlaps(cal));
-        updateCommitBar();
-    }
-
-    // ==========================================================================
-    // COMMIT TO TODOIST
-    // ==========================================================================
-
-    async function commitToTodoist() {
-        if (scheduledTasks.size === 0) return;
-
-        const btn = document.getElementById('commit-btn');
-        const textEl = btn?.querySelector('.commit-btn-text');
-        const loadingEl = btn?.querySelector('.commit-btn-loading');
-
-        // Prepare payload
-        const tasks = [];
-        scheduledTasks.forEach(({ day, hour, minutes, element }, taskId) => {
-            const duration = parseInt(element.dataset.duration, 10) || DEFAULT_DURATION;
-            const dueDateTime = `${day}T${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
-            tasks.push({ task_id: taskId, due_datetime: dueDateTime, duration_minutes: duration });
-        });
-
-        // Loading state
-        if (btn) btn.disabled = true;
-        if (textEl) textEl.style.display = 'none';
-        if (loadingEl) loadingEl.style.display = 'inline';
-        btn?.classList.remove('success', 'error');
-
-        try {
-            const response = await fetch('/api/tasks/commit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tasks }),
-            });
-
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            const result = await response.json();
-            log.info(`Commit: ${result.success_count} succeeded, ${result.failure_count} failed`);
-
-            if (result.failure_count === 0) {
-                scheduledTasks.clear();
-                if (textEl) textEl.textContent = `${result.success_count} committed!`;
-                btn?.classList.add('success');
-                if (loadingEl) loadingEl.style.display = 'none';
-                if (textEl) textEl.style.display = 'inline';
-
-                setTimeout(() => {
-                    window.location = window.location.href + '?t=' + Date.now();
-                }, 1500);
-            } else {
-                handleCommitErrors(result, btn, textEl);
-            }
-        } catch (error) {
-            log.error('Commit failed:', error);
-            if (textEl) textEl.textContent = 'Commit failed';
-            btn?.classList.add('error');
-            resetCommitButton(btn, textEl, loadingEl);
-        }
-    }
-
-    function handleCommitErrors(result, btn, textEl) {
-        const failed = result.results.filter(r => !r.success);
-        log.error('Failed tasks:', failed);
-
-        if (textEl) {
-            textEl.textContent = `${result.failure_count} failed`;
-            textEl.style.display = 'inline';
-        }
-        btn?.classList.add('error');
-
-        // Remove successful tasks
-        result.results.filter(r => r.success).forEach(r => removeScheduledTask(r.task_id));
-
-        setTimeout(() => {
-            if (textEl) textEl.textContent = 'Commit';
-            btn?.classList.remove('error');
-            if (btn) btn.disabled = false;
-            updateCommitBar();
-        }, 3000);
-    }
-
-    function resetCommitButton(btn, textEl, loadingEl) {
-        setTimeout(() => {
-            if (textEl) textEl.textContent = 'Commit';
-            btn?.classList.remove('error');
-            if (btn) btn.disabled = false;
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (textEl) textEl.style.display = 'inline';
-        }, 3000);
-    }
 
     // ==========================================================================
     // OVERLAP DETECTION
@@ -518,15 +650,6 @@
     // UI HELPERS
     // ==========================================================================
 
-    function updateCommitBar() {
-        const bar = document.getElementById('commit-bar');
-        const countEl = document.getElementById('scheduled-count');
-        const count = scheduledTasks.size;
-
-        if (bar) bar.style.display = count > 0 ? 'flex' : 'none';
-        if (countEl) countEl.textContent = count;
-    }
-
     function formatDuration(mins) {
         if (mins >= 60) {
             const h = Math.floor(mins / 60);
@@ -546,11 +669,9 @@
     // EXPORTS
     // ==========================================================================
 
-    // Expose functions needed by plan-tasks.js
-    window.scheduledTasks = scheduledTasks;
+    // Expose functions needed by other modules
     window.createScheduledTaskElement = createScheduledTaskElement;
     window.recalculateOverlaps = recalculateOverlaps;
-    window.updateCommitBar = updateCommitBar;
 
     document.addEventListener('DOMContentLoaded', init);
 

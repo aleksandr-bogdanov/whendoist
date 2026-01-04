@@ -141,6 +141,24 @@ img.brand-logo {
     flex-shrink: 0;
 }
 
+.version-badge {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--text-muted, #888);
+    background: var(--surface2, #f3f4f6);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+    align-self: flex-end;
+    margin-bottom: 0.25rem;
+}
+
+.brand:hover .version-badge {
+    opacity: 1;
+}
+
 .header-nav {
     display: flex;
     align-items: center;

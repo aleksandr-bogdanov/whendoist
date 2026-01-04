@@ -208,6 +208,7 @@
     let selectionAnchor = null;
     let selectionStart = null;
     let selectionEnd = null;
+    let selectionSection = null; // 'prev-day', 'main-day', or 'next-day'
     let selectionDayCalendar = null;
     let selectionOverlay = null;
     let planBtn = null;
@@ -257,14 +258,11 @@
     }
 
     function createPlanButton(calendarPanel) {
-        if (calendarPanel.querySelector('.plan-mode-btn')) return;
-
-        planBtn = document.createElement('button');
-        planBtn.className = 'plan-mode-btn';
-        planBtn.textContent = 'Plan';
-        planBtn.type = 'button';
-        planBtn.addEventListener('click', handlePlanButtonClick);
-        calendarPanel.appendChild(planBtn);
+        // Use the existing header button instead of creating a floating one
+        planBtn = document.getElementById('plan-day-btn');
+        if (planBtn) {
+            planBtn.addEventListener('click', handlePlanButtonClick);
+        }
     }
 
     function setupGlobalEventListeners() {
@@ -290,7 +288,7 @@
     function handleOutsideClick(e) {
         if (!isInSelectionMode) return;
         if (e.target.closest('.day-calendar') === selectionDayCalendar) return;
-        if (e.target.closest('.plan-mode-btn, .plan-helper')) return;
+        if (e.target.closest('#plan-day-btn, .plan-helper, .calendar-header')) return;
         exitSelectionMode();
     }
 
@@ -377,10 +375,20 @@
         const hourSlot = e.target.closest('.hour-slot');
         if (!hourSlot) return;
 
+        const hourRow = hourSlot.closest('.hour-row');
+
         e.preventDefault();
         isSelecting = true;
 
-        const hourRow = hourSlot.closest('.hour-row');
+        // Track which section we're selecting in
+        if (hourRow.classList.contains('prev-day')) {
+            selectionSection = 'prev-day';
+        } else if (hourRow.classList.contains('next-day')) {
+            selectionSection = 'next-day';
+        } else {
+            selectionSection = 'main-day';
+        }
+
         const hour = parseInt(hourRow.dataset.hour, 10);
         const slotRect = hourSlot.getBoundingClientRect();
         const clickY = e.clientY - slotRect.top;
@@ -401,12 +409,22 @@
         const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
         if (!hourGrid) return;
 
+        // Get reference row and bounds based on selection section
+        const { refRow, minMins, maxMins } = getSectionBounds(hourGrid, selectionSection);
+        if (!refRow) return;
+
+        const refOffset = refRow.offsetTop;
+        const rowHeight = refRow.offsetHeight;
+
         const gridRect = hourGrid.getBoundingClientRect();
         const moveY = e.clientY - gridRect.top + hourGrid.scrollTop;
-        const hourHeight = getHourHeight();
-        const totalMins = FIRST_HOUR * 60 + (moveY / hourHeight) * 60;
+
+        // Calculate minutes relative to reference row
+        const adjustedY = moveY - refOffset;
+        const refHour = parseInt(refRow.dataset.hour, 10);
+        const totalMins = refHour * 60 + (adjustedY / rowHeight) * 60;
         const roundedMins = Math.round(totalMins / 15) * 15;
-        const clampedMins = Math.max(0, Math.min(roundedMins, 24 * 60));
+        const clampedMins = Math.max(minMins, Math.min(roundedMins, maxMins));
 
         // Support bidirectional selection
         if (clampedMins >= selectionAnchor) {
@@ -417,7 +435,34 @@
             selectionEnd = selectionAnchor + MIN_SELECTION_MINUTES;
         }
 
+        // Clamp to section bounds
+        selectionStart = Math.max(minMins, selectionStart);
+        selectionEnd = Math.min(maxMins, selectionEnd);
+
         updateSelectionOverlay();
+    }
+
+    /**
+     * Get reference row and time bounds for a section.
+     */
+    function getSectionBounds(hourGrid, section) {
+        let refRow, minMins, maxMins;
+
+        if (section === 'prev-day') {
+            refRow = hourGrid.querySelector('.hour-row.prev-day[data-hour="21"]');
+            minMins = 21 * 60; // 21:00
+            maxMins = 24 * 60; // 24:00 (midnight)
+        } else if (section === 'next-day') {
+            refRow = hourGrid.querySelector('.hour-row.next-day[data-hour="0"]');
+            minMins = 0;       // 00:00
+            maxMins = 6 * 60;  // 06:00
+        } else {
+            refRow = hourGrid.querySelector('.hour-row[data-hour="0"]:not(.adjacent-day)');
+            minMins = 0;        // 00:00
+            maxMins = 24 * 60;  // 24:00
+        }
+
+        return { refRow, minMins, maxMins };
     }
 
     function handleSelectionEnd() {
@@ -445,10 +490,20 @@
         const hourSlot = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.hour-slot');
         if (!hourSlot) return;
 
+        const hourRow = hourSlot.closest('.hour-row');
+
         e.preventDefault();  // Prevent scroll while selecting
         isSelecting = true;
 
-        const hourRow = hourSlot.closest('.hour-row');
+        // Track which section we're selecting in
+        if (hourRow.classList.contains('prev-day')) {
+            selectionSection = 'prev-day';
+        } else if (hourRow.classList.contains('next-day')) {
+            selectionSection = 'next-day';
+        } else {
+            selectionSection = 'main-day';
+        }
+
         const hour = parseInt(hourRow.dataset.hour, 10);
         const slotRect = hourSlot.getBoundingClientRect();
         const touchY = touch.clientY - slotRect.top;
@@ -475,12 +530,22 @@
         const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
         if (!hourGrid) return;
 
+        // Get reference row and bounds based on selection section
+        const { refRow, minMins, maxMins } = getSectionBounds(hourGrid, selectionSection);
+        if (!refRow) return;
+
+        const refOffset = refRow.offsetTop;
+        const rowHeight = refRow.offsetHeight;
+
         const gridRect = hourGrid.getBoundingClientRect();
         const touchY = touch.clientY - gridRect.top + hourGrid.scrollTop;
-        const hourHeight = getHourHeight();
-        const totalMins = FIRST_HOUR * 60 + (touchY / hourHeight) * 60;
+
+        // Calculate minutes relative to reference row
+        const adjustedY = touchY - refOffset;
+        const refHour = parseInt(refRow.dataset.hour, 10);
+        const totalMins = refHour * 60 + (adjustedY / rowHeight) * 60;
         const roundedMins = Math.round(totalMins / 15) * 15;
-        const clampedMins = Math.max(0, Math.min(roundedMins, 24 * 60));
+        const clampedMins = Math.max(minMins, Math.min(roundedMins, maxMins));
 
         // Support bidirectional selection
         if (clampedMins >= selectionAnchor) {
@@ -490,6 +555,10 @@
             selectionStart = Math.min(clampedMins, selectionAnchor - MIN_SELECTION_MINUTES);
             selectionEnd = selectionAnchor + MIN_SELECTION_MINUTES;
         }
+
+        // Clamp to section bounds
+        selectionStart = Math.max(minMins, selectionStart);
+        selectionEnd = Math.min(maxMins, selectionEnd);
 
         updateSelectionOverlay();
     }
@@ -542,10 +611,33 @@
     function updateSelectionOverlay() {
         if (!selectionOverlay) return;
 
-        const hourHeight = getHourHeight();
+        const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
+        if (!hourGrid) return;
+
+        // Find the actual row element for the start hour based on section
+        const startHour = Math.floor(selectionStart / 60);
+        const startMinutes = selectionStart % 60;
+
+        let startRow;
+        if (selectionSection === 'prev-day') {
+            startRow = hourGrid.querySelector(`.hour-row.prev-day[data-hour="${startHour}"]`);
+        } else if (selectionSection === 'next-day') {
+            startRow = hourGrid.querySelector(`.hour-row.next-day[data-hour="${startHour}"]`);
+        } else {
+            startRow = hourGrid.querySelector(`.hour-row[data-hour="${startHour}"]:not(.adjacent-day)`);
+        }
+
+        if (!startRow) return;
+
+        // Get actual row height from DOM (accounts for borders, etc.)
+        const rowHeight = startRow.offsetHeight;
+
+        // Calculate position: row's top + offset within the hour
+        const topPx = startRow.offsetTop + (startMinutes / 60) * rowHeight;
+
+        // Calculate height based on duration
         const duration = selectionEnd - selectionStart;
-        const topPx = (selectionStart / 60) * hourHeight;
-        const heightPx = (duration / 60) * hourHeight;
+        const heightPx = (duration / 60) * rowHeight;
 
         selectionOverlay.style.top = `${topPx}px`;
         selectionOverlay.style.height = `${heightPx}px`;
@@ -563,6 +655,7 @@
         selectionAnchor = null;
         selectionStart = null;
         selectionEnd = null;
+        selectionSection = null;
     }
 
     function showPlanTasksButton() {
@@ -597,7 +690,16 @@
             return;
         }
 
-        const day = selectionDayCalendar.dataset.day;
+        // Get the actual date - for adjacent sections, use data-actual-date
+        let day = selectionDayCalendar.dataset.day;
+        if (selectionSection === 'prev-day' || selectionSection === 'next-day') {
+            const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
+            const sectionRow = hourGrid?.querySelector(`.hour-row.${selectionSection}`);
+            if (sectionRow?.dataset.actualDate) {
+                day = sectionRow.dataset.actualDate;
+            }
+        }
+
         const tasks = collectEligibleTasks(day);
 
         if (tasks.length === 0) {
@@ -716,7 +818,15 @@
         const minutes = item.startMins % 60;
         const { task } = item;
 
-        const hourRow = dayCalendar.querySelector(`.hour-row[data-hour="${hour}"]`);
+        // Find the correct hour row based on section
+        let hourRow;
+        if (selectionSection === 'prev-day') {
+            hourRow = dayCalendar.querySelector(`.hour-row.prev-day[data-hour="${hour}"]`);
+        } else if (selectionSection === 'next-day') {
+            hourRow = dayCalendar.querySelector(`.hour-row.next-day[data-hour="${hour}"]`);
+        } else {
+            hourRow = dayCalendar.querySelector(`.hour-row[data-hour="${hour}"]:not(.adjacent-day)`);
+        }
         const hourSlot = hourRow?.querySelector('.hour-slot');
         if (!hourSlot) return;
 

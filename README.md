@@ -183,19 +183,21 @@ OAuth, dashboard, energy filtering, clarity labels
 ### ✅ v0.2 — Drag & Drop
 Visual scheduling, calendar carousel, overlap detection
 
-### ✅ v0.3 — Auto-Planning (Current)
+### ✅ v0.3 — Auto-Planning
 Plan feature, mobile PWA, touch support
 
-### 🔜 v0.4 — Polish
-- Persistent scheduled tasks (before commit)
+### ✅ v0.4 — Native Tasks (Current)
+Native task management, Todoist import, recurring tasks, drag-to-delete
+
+### 🔜 v0.5 — Polish
 - Undo/redo for scheduling
 - Calendar sync improvements
-- Multiple scheduling strategies
+- Time blocking templates
 
 ### 🔜 Future
-- Time blocking templates
-- Recurring task patterns
+- Multiple scheduling strategies
 - Analytics and insights
+- Team collaboration
 
 ---
 

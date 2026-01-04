@@ -9,7 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.config import get_settings
 from app.database import create_tables
 from app.logging_config import setup_logging
-from app.routers import api, auth, pages
+from app.routers import api, auth, domains, import_data, instances, pages, tasks
 
 # Setup logging first
 setup_logging()
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
-    version="0.1.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -65,4 +65,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Include routers
 app.include_router(auth.router)
 app.include_router(api.router)
+app.include_router(domains.router)
+app.include_router(tasks.router)
+app.include_router(instances.router)
+app.include_router(import_data.router)
 app.include_router(pages.router)

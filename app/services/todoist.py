@@ -33,7 +33,7 @@ class TodoistTask:
     labels: list[str]
     due: TodoistDue | None
     duration_minutes: int | None
-    priority: int  # 1=normal, 4=urgent (Todoist uses inverted priority)
+    priority: int  # 1=P1 (highest), 4=P4 (lowest/normal)
     order: int
     url: str
     parent_id: str | None  # None for top-level tasks, set for subtasks
