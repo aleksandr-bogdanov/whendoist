@@ -58,6 +58,7 @@
     let draggedTaskId = null;
     let draggedDuration = DEFAULT_DURATION;
     let isDraggingScheduledTask = false;
+    let isDraggingDateOnlyTask = false;
     let dropIndicator = null;
     let wasDroppedSuccessfully = false;
     let trashBin = null;
@@ -72,9 +73,10 @@
     function init() {
         const tasks = document.querySelectorAll('.task-item[draggable="true"]');
         const scheduledFromDb = document.querySelectorAll('.scheduled-task.from-db');
+        const dateOnlyTasks = document.querySelectorAll('.date-only-task[draggable="true"]');
         const slots = document.querySelectorAll('.hour-slot[data-droppable="true"]');
 
-        log.info(`Initializing: ${tasks.length} tasks, ${scheduledFromDb.length} scheduled, ${slots.length} slots`);
+        log.info(`Initializing: ${tasks.length} tasks, ${scheduledFromDb.length} scheduled, ${dateOnlyTasks.length} date-only, ${slots.length} slots`);
 
         // Attach task drag handlers
         tasks.forEach(task => {
@@ -86,7 +88,13 @@
         scheduledFromDb.forEach(task => {
             task.draggable = true;
             task.addEventListener('dragstart', handleDragStart);
-            task.addEventListener('dragend', handleDragEnd); // Same handler now
+            task.addEventListener('dragend', handleDragEnd);
+        });
+
+        // Attach drag handlers to date-only tasks in banner
+        dateOnlyTasks.forEach(task => {
+            task.addEventListener('dragstart', handleDragStart);
+            task.addEventListener('dragend', handleDragEnd);
         });
 
         // Attach slot drop handlers
@@ -95,6 +103,15 @@
             slot.addEventListener('dragenter', handleDragEnter);
             slot.addEventListener('dragleave', handleDragLeave);
             slot.addEventListener('drop', handleDrop);
+        });
+
+        // Attach Anytime banner drop handlers
+        const anytimeBanners = document.querySelectorAll('.date-only-banner[data-droppable="anytime"]');
+        anytimeBanners.forEach(banner => {
+            banner.addEventListener('dragover', handleAnytimeDragOver);
+            banner.addEventListener('dragenter', handleAnytimeDragEnter);
+            banner.addEventListener('dragleave', handleAnytimeDragLeave);
+            banner.addEventListener('drop', handleAnytimeDrop);
         });
 
         // Initial overlap calculation for pre-existing events
@@ -115,8 +132,7 @@
     function createTrashBin() {
         trashBin = document.createElement('div');
         trashBin.className = 'trash-bin';
-        trashBin.innerHTML = '🗑️';
-        trashBin.style.display = 'none';
+        trashBin.innerHTML = '<span class="trash-icon">🗑️</span><span class="trash-label">Delete</span>';
         document.body.appendChild(trashBin);
 
         // Trash bin event handlers
@@ -159,8 +175,16 @@
     }
 
     function handleTrashDragLeave(e) {
-        trashBin.classList.remove('drag-over');
+        // Only remove if leaving the trash bin entirely (not moving to child element)
+        if (!trashBin.contains(e.relatedTarget)) {
+            trashBin.classList.remove('drag-over');
+        }
     }
+
+    // Track pending deletion for undo
+    let pendingDeletion = null;
+    let deletionTimeout = null;
+    const DELETION_DELAY = 5000; // 5 seconds to undo
 
     async function handleTrashDrop(e) {
         e.preventDefault();
@@ -174,23 +198,83 @@
             return;
         }
 
-        const { taskId } = taskData;
+        const { taskId, content } = taskData;
         if (!taskId) return;
 
         wasDroppedSuccessfully = true; // Prevent unschedule logic
+
+        // Cancel any pending deletion
+        cancelPendingDeletion();
 
         // Remove all task elements from UI immediately
         const taskElements = document.querySelectorAll(`[data-task-id="${taskId}"]`);
         const removedElements = [];
         taskElements.forEach(el => {
             const parent = el.parentElement;
+            const nextSibling = el.nextSibling;
             const dayCalendar = el.closest('.day-calendar');
-            removedElements.push({ el, parent, dayCalendar });
+            removedElements.push({ el, parent, nextSibling, dayCalendar });
             el.remove();
             if (dayCalendar) recalculateOverlaps(dayCalendar);
         });
 
-        // Delete via API
+        // Store for undo
+        pendingDeletion = { taskId, removedElements };
+
+        // Show toast with undo
+        const taskTitle = content || 'Task';
+        const displayTitle = taskTitle.length > 30 ? taskTitle.substring(0, 30) + '...' : taskTitle;
+
+        if (window.Toast) {
+            Toast.show(`"${displayTitle}" deleted`, {
+                onUndo: () => undoDelete()
+            });
+        }
+
+        // Schedule actual deletion after delay
+        deletionTimeout = setTimeout(() => executeDelete(taskId), DELETION_DELAY);
+    }
+
+    /**
+     * Undo the pending deletion - restore UI elements.
+     */
+    function undoDelete() {
+        if (!pendingDeletion) return;
+
+        const { removedElements } = pendingDeletion;
+
+        // Cancel the scheduled deletion
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
+
+        // Restore elements
+        removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
+            if (parent) {
+                if (nextSibling && nextSibling.parentNode === parent) {
+                    parent.insertBefore(el, nextSibling);
+                } else {
+                    parent.appendChild(el);
+                }
+                if (dayCalendar) recalculateOverlaps(dayCalendar);
+            }
+        });
+
+        pendingDeletion = null;
+        log.info('Deletion undone');
+    }
+
+    /**
+     * Execute the actual deletion after delay.
+     */
+    async function executeDelete(taskId) {
+        if (!pendingDeletion || pendingDeletion.taskId !== taskId) return;
+
+        const { removedElements } = pendingDeletion;
+        pendingDeletion = null;
+        deletionTimeout = null;
+
         try {
             const response = await fetch(`/api/tasks/${taskId}`, {
                 method: 'DELETE',
@@ -201,24 +285,49 @@
             } else {
                 log.error(`Failed to delete task ${taskId}`);
                 // Restore elements on failure
-                removedElements.forEach(({ el, parent, dayCalendar }) => {
+                removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                     if (parent) {
-                        parent.appendChild(el);
+                        if (nextSibling && nextSibling.parentNode === parent) {
+                            parent.insertBefore(el, nextSibling);
+                        } else {
+                            parent.appendChild(el);
+                        }
                         if (dayCalendar) recalculateOverlaps(dayCalendar);
                     }
                 });
-                alert('Failed to delete task');
+                if (window.Toast) {
+                    Toast.show('Failed to delete task', { showUndo: false });
+                }
             }
         } catch (err) {
             log.error(`Failed to delete task ${taskId}:`, err);
-            // Restore elements on failure
-            removedElements.forEach(({ el, parent, dayCalendar }) => {
+            removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                 if (parent) {
-                    parent.appendChild(el);
+                    if (nextSibling && nextSibling.parentNode === parent) {
+                        parent.insertBefore(el, nextSibling);
+                    } else {
+                        parent.appendChild(el);
+                    }
                     if (dayCalendar) recalculateOverlaps(dayCalendar);
                 }
             });
-            alert('Failed to delete task. Please try again.');
+            if (window.Toast) {
+                Toast.show('Failed to delete task', { showUndo: false });
+            }
+        }
+    }
+
+    /**
+     * Cancel any pending deletion (used when starting a new drag).
+     */
+    function cancelPendingDeletion() {
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
+        // If there was a pending deletion, execute it immediately
+        if (pendingDeletion) {
+            executeDelete(pendingDeletion.taskId);
         }
     }
 
@@ -227,7 +336,7 @@
     // ==========================================================================
 
     function handleDragStart(e) {
-        draggedElement = e.target.closest('.task-item, .scheduled-task');
+        draggedElement = e.target.closest('.task-item, .scheduled-task, .date-only-task');
         if (!draggedElement) return;
 
         // Prevent dragging task-items that are already scheduled
@@ -237,11 +346,12 @@
         }
 
         isDraggingScheduledTask = draggedElement.classList.contains('scheduled-task');
+        isDraggingDateOnlyTask = draggedElement.classList.contains('date-only-task');
         draggedTaskId = draggedElement.dataset.taskId;
         wasDroppedSuccessfully = false; // Reset flag
 
-        // Get content - for scheduled tasks, exclude the occurrence-day span text
-        const textElement = draggedElement.querySelector('.task-text, .scheduled-task-text');
+        // Get content - for scheduled/date-only tasks, exclude the occurrence-day span text
+        const textElement = draggedElement.querySelector('.task-text, .scheduled-task-text, .date-only-task-text');
         let content = '';
         if (textElement) {
             // Clone and remove occurrence-day span to get clean text
@@ -252,6 +362,7 @@
         }
         const duration = draggedElement.dataset.duration || '';
         const clarity = draggedElement.dataset.clarity || 'none';
+        const impact = draggedElement.dataset.impact || '4';
         const instanceId = draggedElement.dataset.instanceId || '';
         const instanceDate = draggedElement.dataset.instanceDate || '';
 
@@ -263,16 +374,22 @@
             content: content.trim(),
             duration,
             clarity,
+            impact,
             isScheduled: isDraggingScheduledTask,
+            isDateOnly: isDraggingDateOnlyTask,
             instanceId,
             instanceDate,
         }));
+
+        // Add body class to freeze hover states
+        document.body.classList.add('is-dragging');
 
         // Delay style changes until after browser captures drag image
         setTimeout(() => {
             if (draggedElement) {
                 draggedElement.classList.add('dragging');
-                if (isDraggingScheduledTask) {
+                // Hide scheduled/date-only tasks to prevent double display
+                if (isDraggingScheduledTask || isDraggingDateOnlyTask) {
                     draggedElement.style.visibility = 'hidden';
                 }
             }
@@ -280,6 +397,11 @@
 
         // Show trash bin when dragging
         showTrashBin();
+
+        // Show Anytime dropzone hint when dragging any task
+        document.querySelectorAll('.date-only-banner').forEach(banner => {
+            banner.classList.add('drop-hint');
+        });
 
         log.debug(`Drag start: ${draggedTaskId}, ${draggedDuration}min`);
     }
@@ -291,12 +413,14 @@
         const taskId = draggedTaskId;
         const element = draggedElement;
         const wasScheduledTask = element?.classList.contains('scheduled-task');
+        const wasDateOnlyTask = element?.classList.contains('date-only-task');
         const shouldUnschedule = !wasDroppedSuccessfully && wasScheduledTask && taskId && element;
 
         if (element) {
             element.classList.remove('dragging');
             // Only reset inline styles if we're NOT about to remove the element
-            if (!shouldUnschedule) {
+            // For date-only tasks that were successfully dropped, they'll be removed by handleDrop
+            if (!shouldUnschedule && !(wasDateOnlyTask && wasDroppedSuccessfully)) {
                 element.style.visibility = '';
                 element.style.opacity = '';
                 element.style.pointerEvents = '';
@@ -357,10 +481,16 @@
         draggedElement = null;
         draggedTaskId = null;
         isDraggingScheduledTask = false;
+        isDraggingDateOnlyTask = false;
         wasDroppedSuccessfully = false;
         removeDropIndicator();
         hideTrashBin();
 
+        // Remove body drag class
+        document.body.classList.remove('is-dragging');
+
+        // Clean up dropzone hints
+        document.querySelectorAll('.date-only-banner.drop-hint').forEach(b => b.classList.remove('drop-hint'));
         document.querySelectorAll('.hour-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
     }
 
@@ -406,7 +536,7 @@
             return;
         }
 
-        const { taskId, content, duration, clarity, instanceId, instanceDate } = taskData;
+        const { taskId, content, duration, clarity, impact, instanceId, instanceDate } = taskData;
         if (!taskId) return;
 
         const hourRow = slot.closest('.hour-row');
@@ -431,8 +561,19 @@
             }
         }
 
+        // Remove the date-only task from banner when dropped on a time slot
+        if (draggedElement?.classList.contains('date-only-task')) {
+            draggedElement.remove();
+        } else {
+            // When dragging from task panel, also remove any corresponding Anytime task
+            const anytimeTask = document.querySelector(`.date-only-task[data-task-id="${taskId}"]`);
+            if (anytimeTask) {
+                anytimeTask.remove();
+            }
+        }
+
         // Create and place scheduled task immediately for visual feedback
-        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, clarity, instanceId, instanceDate);
+        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, impact, instanceId, instanceDate);
         slot.appendChild(element);
         wasDroppedSuccessfully = true; // Mark successful drop
 
@@ -528,7 +669,7 @@
      * @param {string} instanceDate - Instance date ISO string (for recurring tasks)
      * @returns {HTMLElement} Scheduled task element
      */
-    function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, clarity = 'none', instanceId = '', instanceDate = '') {
+    function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, impact = '4', instanceId = '', instanceDate = '') {
         const durationMins = parseInt(duration, 10) || DEFAULT_DURATION;
         const startMins = hour * 60 + minutes;
         const endMins = startMins + durationMins;
@@ -537,10 +678,10 @@
         const topPx = (minutes / 60) * hourHeight;
 
         const el = document.createElement('div');
-        el.className = `scheduled-task clarity-${clarity}`;
+        el.className = `scheduled-task impact-${impact}`;
         el.dataset.taskId = taskId;
         el.dataset.duration = durationMins;
-        el.dataset.clarity = clarity;
+        el.dataset.impact = impact;
         el.dataset.startMins = startMins;
         el.dataset.endMins = endMins;
         el.draggable = true;
@@ -644,6 +785,138 @@
         });
 
         log.debug(`${dayCalendar.dataset.day}: ${groups.length} overlap groups`);
+    }
+
+    // ==========================================================================
+    // ANYTIME BANNER HANDLERS
+    // ==========================================================================
+
+    function handleAnytimeDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleAnytimeDragEnter(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleAnytimeDragLeave(e) {
+        // Only remove if leaving the banner entirely
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+    }
+
+    async function handleAnytimeDrop(e) {
+        e.preventDefault();
+        const banner = e.currentTarget;
+        banner.classList.remove('drag-over');
+
+        let taskData;
+        try {
+            taskData = JSON.parse(e.dataTransfer.getData('text/plain'));
+        } catch {
+            log.error('Invalid drag data for Anytime');
+            return;
+        }
+
+        const { taskId, content, duration, clarity, impact, isScheduled, isDateOnly } = taskData;
+        if (!taskId) return;
+
+        const day = banner.dataset.day;
+        if (!day) {
+            log.error('No day on Anytime banner');
+            return;
+        }
+
+        wasDroppedSuccessfully = true;
+
+        // Remove existing scheduled task element if rescheduling from calendar
+        if (draggedElement?.classList.contains('scheduled-task')) {
+            const oldCalendar = draggedElement.closest('.day-calendar');
+            draggedElement.remove();
+            if (oldCalendar) recalculateOverlaps(oldCalendar);
+        }
+
+        // Don't add duplicate if already a date-only task being moved to same banner
+        if (draggedElement?.classList.contains('date-only-task')) {
+            const sourceBanner = draggedElement.closest('.date-only-banner');
+            if (sourceBanner === banner) {
+                // Same banner, just restore visibility
+                draggedElement.style.visibility = '';
+                return;
+            }
+            // Moving to different day's banner - remove from old
+            draggedElement.remove();
+        }
+
+        // Create date-only task element in the banner
+        const tasksContainer = banner.querySelector('.date-only-tasks');
+        const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact);
+        tasksContainer.appendChild(el);
+
+        // Mark original task in task list as scheduled
+        const original = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+        if (original) original.classList.add('scheduled');
+
+        // Save to API - scheduled_date only, no scheduled_time
+        try {
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scheduled_date: day,
+                    scheduled_time: null,
+                }),
+            });
+
+            if (response.ok) {
+                log.info(`Scheduled ${taskId} for ${day} (anytime)`);
+            } else {
+                log.error(`Failed to schedule task ${taskId} to Anytime`);
+                el.remove();
+                if (original) original.classList.remove('scheduled');
+            }
+        } catch (error) {
+            log.error(`Failed to schedule task ${taskId} to Anytime:`, error);
+            el.remove();
+            if (original) original.classList.remove('scheduled');
+        }
+    }
+
+    /**
+     * Create a date-only task element for the Anytime banner.
+     */
+    function createDateOnlyTaskElement(taskId, content, duration, clarity, impact) {
+        const durationMins = parseInt(duration, 10) || 0;
+        const impactVal = impact || '4';
+
+        const el = document.createElement('div');
+        el.className = `date-only-task impact-${impactVal} clarity-${clarity || 'none'}`;
+        el.dataset.taskId = taskId;
+        el.dataset.duration = durationMins;
+        el.dataset.clarity = clarity || 'none';
+        el.dataset.impact = impactVal;
+        el.draggable = true;
+
+        let durationHtml = '';
+        if (durationMins > 0) {
+            const durationStr = durationMins >= 60
+                ? `${Math.floor(durationMins / 60)}h${durationMins % 60 ? (durationMins % 60) + 'm' : ''}`
+                : `${durationMins}m`;
+            durationHtml = `<span class="date-only-task-duration">${durationStr}</span>`;
+        }
+
+        el.innerHTML = `
+            <span class="date-only-task-text">${escapeHtml(content)}</span>
+            ${durationHtml}
+        `;
+
+        el.addEventListener('dragstart', handleDragStart);
+        el.addEventListener('dragend', handleDragEnd);
+
+        return el;
     }
 
     // ==========================================================================

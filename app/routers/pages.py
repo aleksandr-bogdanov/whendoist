@@ -122,9 +122,9 @@ async def index(
     request: Request,
     user: User | None = Depends(get_current_user),
 ):
-    """Home page - redirect to dashboard or show login."""
+    """Home page - redirect to thoughts or show login."""
     if user:
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return RedirectResponse(url="/thoughts", status_code=303)
     return templates.TemplateResponse("login.html", {"request": request})
 
 
@@ -154,6 +154,7 @@ async def dashboard(
                 "offset": offset,
                 "events": [],
                 "scheduled_tasks": [],
+                "date_only_tasks": [],
             }
         )
 
@@ -166,9 +167,10 @@ async def dashboard(
     # Ensure recurring task instances are materialized
     await recurrence_service.ensure_instances_materialized()
 
-    # Get domains and tasks
+    # Get domains and tasks (exclude inbox/thoughts - tasks without domain)
     domains = await task_service.get_domains()
-    tasks = await task_service.get_tasks(status="pending", top_level_only=True)
+    all_tasks = await task_service.get_tasks(status="pending", top_level_only=True)
+    tasks = [t for t in all_tasks if t.domain_id is not None]
 
     # Get next occurrence date for each recurring task
     next_instances: dict[int, date] = {}
@@ -185,43 +187,72 @@ async def dashboard(
 
     scheduled_tasks_by_date: dict[date, list[dict]] = {}
 
+    # Separate date-only tasks from time-scheduled tasks
+    date_only_tasks_by_date: dict[date, list[dict]] = {}
+
     # Non-recurring scheduled tasks
     scheduled_tasks = await task_service.get_scheduled_tasks_for_range(start_date, end_date)
     for task in scheduled_tasks:
         if task.scheduled_date:
-            scheduled_datetime = datetime.combine(
-                task.scheduled_date,
-                task.scheduled_time or datetime.min.time(),
-                tzinfo=UTC,
-            )
-            scheduled_tasks_by_date.setdefault(task.scheduled_date, []).append(
-                {
-                    "task": task,
-                    "is_instance": False,
-                    "start": scheduled_datetime,
-                    "duration_minutes": task.duration_minutes or 30,
-                    "clarity": task.clarity or "none",
-                }
-            )
+            if task.scheduled_time:
+                # Task has both date and time - show on calendar grid
+                scheduled_datetime = datetime.combine(
+                    task.scheduled_date,
+                    task.scheduled_time,
+                    tzinfo=UTC,
+                )
+                scheduled_tasks_by_date.setdefault(task.scheduled_date, []).append(
+                    {
+                        "task": task,
+                        "is_instance": False,
+                        "start": scheduled_datetime,
+                        "duration_minutes": task.duration_minutes or 30,
+                        "clarity": task.clarity or "none",
+                    }
+                )
+            else:
+                # Task has date but no time - show in date-only banner
+                date_only_tasks_by_date.setdefault(task.scheduled_date, []).append(
+                    {
+                        "task": task,
+                        "is_instance": False,
+                        "duration_minutes": task.duration_minutes or 30,
+                        "clarity": task.clarity or "none",
+                    }
+                )
 
     # Recurring task instances
     instances = await recurrence_service.get_instances_for_range(start_date, end_date, status="pending")
     for instance in instances:
-        instance_datetime = instance.scheduled_datetime or datetime.combine(
-            instance.instance_date,
-            instance.task.scheduled_time or datetime.min.time(),
-            tzinfo=UTC,
-        )
-        scheduled_tasks_by_date.setdefault(instance.instance_date, []).append(
-            {
-                "task": instance.task,
-                "instance": instance,
-                "is_instance": True,
-                "start": instance_datetime,
-                "duration_minutes": instance.task.duration_minutes or 30,
-                "clarity": instance.task.clarity or "none",
-            }
-        )
+        # Check if instance has a specific time
+        has_time = instance.scheduled_datetime is not None or instance.task.scheduled_time is not None
+        if has_time:
+            instance_datetime = instance.scheduled_datetime or datetime.combine(
+                instance.instance_date,
+                instance.task.scheduled_time,
+                tzinfo=UTC,
+            )
+            scheduled_tasks_by_date.setdefault(instance.instance_date, []).append(
+                {
+                    "task": instance.task,
+                    "instance": instance,
+                    "is_instance": True,
+                    "start": instance_datetime,
+                    "duration_minutes": instance.task.duration_minutes or 30,
+                    "clarity": instance.task.clarity or "none",
+                }
+            )
+        else:
+            # Recurring instance without time - show in date-only banner
+            date_only_tasks_by_date.setdefault(instance.instance_date, []).append(
+                {
+                    "task": instance.task,
+                    "instance": instance,
+                    "is_instance": True,
+                    "duration_minutes": instance.task.duration_minutes or 30,
+                    "clarity": instance.task.clarity or "none",
+                }
+            )
 
     # ==========================================================================
     # Google Calendar Events
@@ -270,9 +301,10 @@ async def dashboard(
         except Exception as e:
             logger.warning(f"Google Calendar API error: {e}")
 
-    # Assign scheduled tasks to calendar days
+    # Assign scheduled tasks and date-only tasks to calendar days
     for day in calendar_days:
         day["scheduled_tasks"] = scheduled_tasks_by_date.get(day["date"], [])
+        day["date_only_tasks"] = date_only_tasks_by_date.get(day["date"], [])
 
     return templates.TemplateResponse(
         "dashboard.html",
@@ -285,6 +317,36 @@ async def dashboard(
             "calendar_days": calendar_days,
             "today": today,
             "timedelta": timedelta,  # For adjacent day calculations in template
+        },
+    )
+
+
+@router.get("/thoughts", response_class=HTMLResponse)
+async def thoughts(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user),
+):
+    """Thoughts page - inbox tasks without a domain."""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+
+    task_service = TaskService(db, user.id)
+
+    # Get tasks without a domain (inbox/thoughts)
+    all_tasks = await task_service.get_tasks(status="pending", top_level_only=True)
+    inbox_tasks = [t for t in all_tasks if t.domain_id is None]
+
+    # Build task items for display
+    task_items = [build_native_task_item(t) for t in inbox_tasks]
+    task_items.sort(key=native_task_sort_key)
+
+    return templates.TemplateResponse(
+        "thoughts.html",
+        {
+            "request": request,
+            "user": user,
+            "tasks": task_items,
         },
     )
 

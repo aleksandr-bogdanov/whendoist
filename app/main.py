@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 

@@ -29,6 +29,41 @@ Whendoist pulls tasks from Todoist and events from Google Calendar into one dash
 
 ---
 
+## 💡 Philosophy: Scheduled vs Due
+
+Whendoist distinguishes between two concepts that Todoist conflates:
+
+| Concept | Meaning | Example |
+|---------|---------|---------|
+| **Due Date** | Deadline — when the task *must* be done | "Report due Friday" |
+| **Scheduled Date** | Intention — when you *plan* to work on it | "Work on report Tuesday" |
+
+### Why This Matters
+
+In Todoist, setting a date means "this is due then." But that's not how work actually happens. You might have a report due Friday, but you plan to write it on Tuesday. Todoist forces you to either:
+- Set it to Friday (due date) → doesn't show up until Friday
+- Set it to Tuesday (work date) → loses the actual deadline
+
+### The Whendoist Approach
+
+When you import from Todoist, we treat the Todoist "due date" as your **scheduled date** — the day you intend to work on the task. This appears in:
+- The task list (as the date badge)
+- The calendar view (in Anytime or a specific time slot)
+
+Future versions will support separate due dates for deadline tracking while keeping scheduled dates for daily planning.
+
+### Task Properties
+
+| Property | Source | Purpose |
+|----------|--------|---------|
+| `scheduled_date` | Todoist due date | When to work on it |
+| `scheduled_time` | Todoist due time | Specific time slot |
+| `duration_minutes` | `d:30m` in description | How long it takes |
+| `impact` | Todoist priority (inverted) | P1 = highest impact |
+| `clarity` | `@executable`, `@defined`, `@exploratory` labels | Energy level required |
+
+---
+
 ## ⚡ Quick Start
 
 ```bash
@@ -186,16 +221,19 @@ Visual scheduling, calendar carousel, overlap detection
 ### ✅ v0.3 — Auto-Planning
 Plan feature, mobile PWA, touch support
 
-### ✅ v0.4 — Native Tasks (Current)
+### ✅ v0.4 — Native Tasks
 Native task management, Todoist import, recurring tasks, drag-to-delete
 
-### 🔜 v0.5 — Polish
-- Undo/redo for scheduling
-- Calendar sync improvements
-- Time blocking templates
+### ✅ v0.5 — UI Polish (Current)
+Tasks space redesign with enterprise aesthetic, grid-based layout, tint-based interactions
+
+### 🔜 v0.6 — Thoughts & Settings
+- Redesign Thoughts space
+- Redesign Settings space
+- Task completion support
 
 ### 🔜 Future
-- Multiple scheduling strategies
+- Time blocking templates
 - Analytics and insights
 - Team collaboration
 

@@ -184,7 +184,12 @@ class TodoistImportService:
         result: ImportResult,
         skip_existing: bool,
     ) -> None:
-        """Import Todoist tasks."""
+        """
+        Import Todoist tasks.
+
+        Subtasks are flattened: their title is prefixed with "Parent → "
+        and they become independent top-level tasks (no parent_id).
+        """
         # Get existing tasks with Todoist external_id
         existing = await self.db.execute(
             select(Task).where(
@@ -194,7 +199,13 @@ class TodoistImportService:
         )
         existing_by_ext_id = {t.external_id: t for t in existing.scalars().all()}
 
-        # Map of Todoist task ID to local task ID (for parent relationships)
+        # Build parent title map for subtask flattening
+        parent_titles: dict[str, str] = {t.id: t.content for t in tasks if t.parent_id is None}
+
+        # Identify tasks that have children (these will be skipped)
+        tasks_with_children: set[str] = {t.parent_id for t in tasks if t.parent_id is not None}
+
+        # Map of Todoist task ID to local task ID
         task_id_map: dict[str, int] = {}
 
         # First pass: collect existing task IDs
@@ -202,12 +213,11 @@ class TodoistImportService:
             if task.id in existing_by_ext_id:
                 task_id_map[task.id] = existing_by_ext_id[task.id].id
 
-        # Sort tasks: parent tasks first, then children
-        # This ensures parents are created before children
-        top_level = [t for t in tasks if t.parent_id is None]
-        children = [t for t in tasks if t.parent_id is not None]
-
-        for task in top_level + children:
+        for task in tasks:
+            # Skip parent tasks that have subtasks (they get flattened into subtasks)
+            if task.id in tasks_with_children:
+                result.tasks_skipped += 1
+                continue
             # Check if already imported
             if task.id in existing_by_ext_id and skip_existing:
                 result.tasks_skipped += 1
@@ -217,14 +227,17 @@ class TodoistImportService:
             domain_id = domain_map.get(task.project_id)
             # Note: domain_id can be None for Inbox tasks
 
-            # Map parent
-            parent_id = None
-            if task.parent_id and task.parent_id in task_id_map:
-                parent_id = task_id_map[task.parent_id]
+            # Flatten subtasks: prefix title with parent name, no parent_id
+            task_title = task.content
+            if task.parent_id and task.parent_id in parent_titles:
+                task_title = f"{parent_titles[task.parent_id]} → {task.content}"
 
-            # Map priority: Todoist P1 (priority 1) = highest, P4 (priority 4) = lowest
-            # Direct mapping: priority value becomes impact value
-            impact = task.priority
+            # No parent_id - all tasks are flat
+            # (parent_id field kept in model for potential future use)
+
+            # Map priority: Todoist API returns priority 4 for P1 (highest), 1 for P4 (lowest)
+            # Invert to match visual labels: P1→1, P2→2, P3→3, P4→4
+            impact = 5 - task.priority  # priority 4 → impact 1, priority 1 → impact 4
 
             # Parse due date
             due_date = None
@@ -234,10 +247,11 @@ class TodoistImportService:
 
             if task.due:
                 due_date = task.due.date
+                # Always set scheduled_date from due_date (appears in Anytime or calendar)
+                scheduled_date = due_date
                 if task.due.datetime_:
                     due_time = task.due.datetime_.time()
-                    # Also use as scheduled if has specific time
-                    scheduled_date = due_date
+                    # Also use time as scheduled if specific time provided
                     scheduled_time = due_time
 
             # Determine clarity from labels
@@ -248,12 +262,12 @@ class TodoistImportService:
             parsed_duration, cleaned_description = self._parse_duration_from_description(task.description)
             duration_minutes = parsed_duration or task.duration_minutes
 
-            # Create task
+            # Create task (flattened - no parent_id)
             new_task = Task(
                 user_id=self.user_id,
                 domain_id=domain_id,
-                parent_id=parent_id,
-                title=task.content,
+                parent_id=None,
+                title=task_title,
                 description=cleaned_description,
                 duration_minutes=duration_minutes,
                 impact=impact,

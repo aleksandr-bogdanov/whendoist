@@ -109,6 +109,7 @@ class TaskService:
         status: str | None = "pending",
         scheduled_date: date | None = None,
         is_recurring: bool | None = None,
+        clarity: str | None = None,
         include_subtasks: bool = True,
         top_level_only: bool = True,
     ) -> list[Task]:
@@ -121,6 +122,7 @@ class TaskService:
             status: Filter by status (pending/completed/archived)
             scheduled_date: Filter by scheduled date
             is_recurring: Filter recurring/non-recurring
+            clarity: Filter by clarity (executable/defined/exploratory/none)
             include_subtasks: Eager load subtasks
             top_level_only: Only return top-level tasks (parent_id is None)
         """
@@ -147,6 +149,12 @@ class TaskService:
         # Filter by recurrence
         if is_recurring is not None:
             query = query.where(Task.is_recurring == is_recurring)
+
+        # Filter by clarity
+        if clarity == "none":
+            query = query.where(Task.clarity.is_(None))
+        elif clarity is not None:
+            query = query.where(Task.clarity == clarity)
 
         # Eager load subtasks and domain
         if include_subtasks:
@@ -184,7 +192,7 @@ class TaskService:
         parent_id: int | None = None,
         duration_minutes: int | None = None,
         impact: int = 4,
-        clarity: str | None = None,
+        clarity: str = "defined",  # Default to "defined" - all tasks must have clarity
         due_date: date | None = None,
         due_time: time | None = None,
         scheduled_date: date | None = None,

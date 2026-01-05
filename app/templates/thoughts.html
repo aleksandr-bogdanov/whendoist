@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Thoughts - Whendoist{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<link rel="stylesheet" href="/static/css/dialog.css">
+{% endblock %}
+
+{% block content %}
+<div class="thoughts-layout">
+    <div class="thoughts-container">
+        <div class="thoughts-header">
+            <h1 class="thoughts-title">Thoughts</h1>
+            <p class="thoughts-subtitle">Quick capture for ideas, tasks, and notes</p>
+        </div>
+
+        <!-- Quick Add Input -->
+        <div class="quick-add-container">
+            <input type="text"
+                   id="quick-add-input"
+                   class="quick-add-input"
+                   placeholder="What's on your mind? Press Enter to add..."
+                   autocomplete="off">
+        </div>
+
+        <!-- Thoughts List -->
+        <div class="thoughts-list" id="thoughts-list">
+            {% if tasks %}
+                {% for task_item in tasks %}
+                {% set task = task_item.task %}
+                <div class="thought-item" data-task-id="{{ task.id }}">
+                    <span class="thought-text">{{ task.title }}</span>
+                    <div class="thought-actions">
+                        <button type="button" class="thought-action-btn promote-btn" title="Promote to Task">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 19V5M5 12l7-7 7 7"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="thought-action-btn delete-btn" title="Delete">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="thoughts-empty" id="thoughts-empty">
+                    <span class="empty-icon">💭</span>
+                    <p>No thoughts yet. Start typing above to capture your first idea.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.thoughts-layout {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+    min-height: calc(100vh - 120px);
+}
+
+.thoughts-container {
+    width: 100%;
+    max-width: 600px;
+}
+
+.thoughts-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.thoughts-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 0.25rem 0;
+}
+
+.thoughts-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Quick Add Input */
+.quick-add-container {
+    margin-bottom: 1.5rem;
+}
+
+.quick-add-input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+.quick-add-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-tint);
+}
+
+.quick-add-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Thoughts List */
+.thoughts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.thought-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.15s ease;
+}
+
+.thought-item:hover {
+    border-color: var(--text-muted);
+}
+
+.thought-item:hover .thought-actions {
+    opacity: 1;
+}
+
+.thought-text {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.thought-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.thought-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.thought-action-btn:hover {
+    background: var(--surface2);
+}
+
+.thought-action-btn.promote-btn:hover {
+    color: var(--primary);
+}
+
+.thought-action-btn.delete-btn:hover {
+    color: var(--impact-high);
+}
+
+/* Empty State */
+.thoughts-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+
+.thoughts-empty .empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.thoughts-empty p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .thoughts-layout {
+        padding: 1rem 0.5rem;
+    }
+
+    .thoughts-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .thoughts-title {
+        font-size: 1.25rem;
+    }
+
+    .thought-actions {
+        opacity: 1;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/recurrence-picker.js"></script>
+<script src="/static/js/task-dialog.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('quick-add-input');
+    const list = document.getElementById('thoughts-list');
+    const emptyState = document.getElementById('thoughts-empty');
+
+    // Quick add on Enter
+    input.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter' && input.value.trim()) {
+            e.preventDefault();
+            const title = input.value.trim();
+            input.value = '';
+
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title })
+                });
+
+                if (response.ok) {
+                    const task = await response.json();
+                    addThoughtToList(task);
+                }
+            } catch (err) {
+                console.error('Failed to create thought:', err);
+            }
+        }
+    });
+
+    // Add thought to DOM
+    function addThoughtToList(task) {
+        // Remove empty state if present
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        const item = document.createElement('div');
+        item.className = 'thought-item';
+        item.dataset.taskId = task.id;
+        item.innerHTML = `
+            <span class="thought-text">${escapeHtml(task.title)}</span>
+            <div class="thought-actions">
+                <button type="button" class="thought-action-btn promote-btn" title="Promote to Task">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 19V5M5 12l7-7 7 7"/>
+                    </svg>
+                </button>
+                <button type="button" class="thought-action-btn delete-btn" title="Delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+        list.insertBefore(item, list.firstChild);
+        attachItemListeners(item);
+    }
+
+    // Track pending deletion for undo
+    let pendingDeletion = null;
+    let deletionTimeout = null;
+    const DELETION_DELAY = 5000;
+
+    // Attach event listeners to thought item
+    function attachItemListeners(item) {
+        const taskId = item.dataset.taskId;
+
+        // Delete with undo
+        item.querySelector('.delete-btn').addEventListener('click', () => {
+            const title = item.querySelector('.thought-text').textContent || 'Thought';
+            const parent = item.parentElement;
+            const nextSibling = item.nextSibling;
+
+            // Cancel any existing pending deletion
+            if (pendingDeletion) {
+                executeThoughtDelete(pendingDeletion.taskId);
+            }
+
+            // Remove from UI
+            item.remove();
+
+            // Store for undo
+            pendingDeletion = { taskId, item, parent, nextSibling };
+
+            // Show toast with undo
+            const displayTitle = title.length > 30 ? title.substring(0, 30) + '...' : title;
+            if (window.Toast) {
+                Toast.show(`"${displayTitle}" deleted`, {
+                    onUndo: () => undoThoughtDelete()
+                });
+            }
+
+            // Schedule actual deletion
+            if (deletionTimeout) clearTimeout(deletionTimeout);
+            deletionTimeout = setTimeout(() => executeThoughtDelete(taskId), DELETION_DELAY);
+        });
+
+        // Promote to Task (opens task dialog)
+        item.querySelector('.promote-btn').addEventListener('click', () => {
+            if (window.TaskDialog) {
+                TaskDialog.open(parseInt(taskId, 10));
+            }
+        });
+    }
+
+    function undoThoughtDelete() {
+        if (!pendingDeletion) return;
+
+        const { item, parent, nextSibling } = pendingDeletion;
+
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
+
+        // Restore element
+        if (parent) {
+            if (nextSibling && nextSibling.parentNode === parent) {
+                parent.insertBefore(item, nextSibling);
+            } else {
+                parent.appendChild(item);
+            }
+        }
+
+        pendingDeletion = null;
+    }
+
+    async function executeThoughtDelete(taskId) {
+        if (pendingDeletion && pendingDeletion.taskId !== taskId) return;
+
+        pendingDeletion = null;
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
+
+        try {
+            await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+        } catch (err) {
+            console.error('Failed to delete:', err);
+            if (window.Toast) {
+                Toast.show('Failed to delete', { showUndo: false });
+            }
+        }
+    }
+
+    // Attach listeners to existing items
+    document.querySelectorAll('.thought-item').forEach(attachItemListeners);
+
+    // Helper to escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+});
+</script>
+{% endblock %}

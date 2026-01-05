@@ -4,12 +4,12 @@
 
 /* Dialog container */
 .task-dialog {
-    border: none;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
     border-radius: 10px;
     padding: 0;
     max-width: 450px;
     width: calc(100vw - 32px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-overlay, 0 10px 30px rgba(15, 23, 42, 0.10));
     background: #fff;
     position: fixed;
     top: 50%;
@@ -363,9 +363,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 16px;
-    border-top: 1px solid #eee;
-    background: #fafafa;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border, rgba(15, 23, 42, 0.08));
+    background: var(--dark-bg, #F8FAFC);
     border-radius: 0 0 10px 10px;
 }
 
@@ -470,7 +470,7 @@
     color: #e53935;
 }
 
-/* FAB button */
+/* Patch 26: FAB - remove consumer shadow, make it tool-like */
 .add-task-btn {
     position: fixed;
     bottom: 24px;
@@ -478,21 +478,26 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: #444;
-    border: none;
+    background: #0F172A;
+    border: 1px solid rgba(255, 255, 255, 0.10);
     color: #fff;
     font-size: 1.75rem;
     font-weight: 300;
     line-height: 1;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
     transition: all 0.2s;
     z-index: 50;
 }
 
 .add-task-btn:hover {
-    background: #333;
-    transform: scale(1.05);
+    background: #0B1220;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+}
+
+.add-task-btn:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 3px;
 }
 
 /* Mobile */

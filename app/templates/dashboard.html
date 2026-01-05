@@ -17,38 +17,24 @@
 <div class="dashboard-layout">
     <!-- LEFT PANEL: Task List -->
     <section class="tasks-panel">
-        <!-- Energy Selector -->
-        <div class="energy-selector">
-            <span class="energy-title">YOUR CURRENT ENERGY LEVEL</span>
-            <div class="energy-buttons">
-                <button type="button" data-energy="1" class="energy-btn" aria-pressed="false">
-                    <span class="energy-emoji">🧟</span>
-                    <span class="energy-name">Zombie</span>
-                </button>
-                <button type="button" data-energy="2" class="energy-btn active" aria-pressed="true">
-                    <span class="energy-emoji">☕</span>
-                    <span class="energy-name">Normal</span>
-                </button>
-                <button type="button" data-energy="3" class="energy-btn" aria-pressed="false">
-                    <span class="energy-emoji">🧠</span>
-                    <span class="energy-name">Focus</span>
-                </button>
-                <button type="button" data-energy="0" class="energy-btn energy-btn-all" aria-pressed="false" title="Show all tasks including those without clarity">
-                    <span class="energy-emoji">👁️</span>
-                    <span class="energy-name">Show All</span>
-                </button>
-            </div>
-        </div>
-
         <!-- Task List -->
         <div class="task-list-container">
-            <!-- Column Headers (sticky) -->
+            <!-- Column Headers (sticky, sortable) -->
             <div class="task-list-header">
                 <span class="header-task">Task</span>
                 <span class="header-meta">
-                    <span class="header-label header-duration"><span class="label-full">Duration</span><span class="label-compact">DUR</span></span>
-                    <span class="header-label header-impact"><span class="label-full">Impact</span><span class="label-compact">IMP</span></span>
-                    <span class="header-label header-clarity"><span class="label-full">Clarity</span><span class="label-compact">CLR</span></span>
+                    <button type="button" class="header-sort" data-sort="duration" title="Sort by duration">
+                        <span class="label-full">Duration</span><span class="label-compact">DUR</span>
+                        <span class="sort-icon"></span>
+                    </button>
+                    <button type="button" class="header-sort" data-sort="impact" title="Sort by impact">
+                        <span class="label-full">Impact</span><span class="label-compact">IMP</span>
+                        <span class="sort-icon"></span>
+                    </button>
+                    <button type="button" class="header-sort active" data-sort="clarity" data-order="asc" title="Sort by clarity">
+                        <span class="label-full">Clarity</span><span class="label-compact">CLR</span>
+                        <span class="sort-icon">↑</span>
+                    </button>
                 </span>
             </div>
             <div class="task-list-scroll">
@@ -63,25 +49,25 @@
                                 Inbox
                             {% endif %}
                         </span>
-                        <span class="task-count" data-total="{{ domain_item.tasks|length }}">{{ domain_item.tasks|length }}</span>
                     </summary>
                     <div class="task-list">
                         {% for task_item in domain_item.tasks %}
                         {% set task = task_item.task %}
-                        <div class="task-item impact-{{ task.impact }}{% if task_item.subtasks %} has-subtasks{% endif %}{% if task.scheduled_date and task.scheduled_time %} scheduled{% endif %}"
+                        <div class="task-item impact-{{ task.impact }}{% if task.scheduled_date and task.scheduled_time %} scheduled{% endif %}"
                              data-clarity="{{ task.clarity or 'none' }}"
+                             data-impact="{{ task.impact or 4 }}"
                              data-task-id="{{ task.id }}"
                              data-duration="{{ task.duration_minutes or '' }}"
-                             data-due-date="{{ task.due_date.isoformat() if task.due_date else '' }}"
+                             data-scheduled-date="{{ task.scheduled_date.isoformat() if task.scheduled_date else '' }}"
                              data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
-                             {% if not task_item.subtasks and not (task.scheduled_date and task.scheduled_time) %}draggable="true"{% endif %}>
+                             {% if not (task.scheduled_date and task.scheduled_time) %}draggable="true"{% endif %}>
                             <div class="task-content">
                                 <span class="task-text">{{ task.title }}</span>
-                                {% if task.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}
-                                {% if task_item.next_occurrence %}
-                                <span class="task-due">{{ task_item.next_occurrence.strftime('%b %d') }}</span>
-                                {% elif task.due_date %}
-                                <span class="task-due">{{ task.due_date.strftime('%b %d') }}</span>
+                                {% if task_item.next_occurrence or task.scheduled_date %}
+                                <span class="task-due">
+                                    {% if task.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}
+                                    {{ (task_item.next_occurrence or task.scheduled_date).strftime('%b %d') }}
+                                </span>
                                 {% endif %}
                             </div>
                             <div class="task-meta">
@@ -107,60 +93,14 @@
                                 </span>
                             </div>
                         </div>
-                        {% if task_item.subtasks %}
-                        <div class="subtask-list">
-                            {% for subtask_item in task_item.subtasks %}
-                            {% set subtask = subtask_item.task %}
-                            <div class="task-item subtask impact-{{ subtask.impact }}{% if subtask.scheduled_date and subtask.scheduled_time %} scheduled{% endif %}"
-                                 data-clarity="{{ subtask.clarity or 'none' }}"
-                                 data-task-id="{{ subtask.id }}"
-                                 data-duration="{{ subtask.duration_minutes or '' }}"
-                                 data-due-date="{{ subtask.due_date.isoformat() if subtask.due_date else '' }}"
-                                 data-is-recurring="{{ 'true' if subtask.is_recurring else 'false' }}"
-                                 {% if not (subtask.scheduled_date and subtask.scheduled_time) %}draggable="true"{% endif %}>
-                                <div class="task-content">
-                                    <span class="task-text">{{ subtask.title }}</span>
-                                    {% if subtask.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}
-                                    {% if subtask_item.next_occurrence %}
-                                    <span class="task-due">{{ subtask_item.next_occurrence.strftime('%b %d') }}</span>
-                                    {% elif subtask.due_date %}
-                                    <span class="task-due">{{ subtask.due_date.strftime('%b %d') }}</span>
-                                    {% endif %}
-                                </div>
-                                <div class="task-meta">
-                                    <span class="meta-duration">
-                                        {% if subtask.duration_minutes %}
-                                            {% if subtask.duration_minutes >= 60 %}
-                                            {{ subtask.duration_minutes // 60 }}h{% if subtask.duration_minutes % 60 %}{{ subtask.duration_minutes % 60 }}m{% endif %}
-                                            {% else %}
-                                            {{ subtask.duration_minutes }}m
-                                            {% endif %}
-                                        {% else %}—{% endif %}
-                                    </span>
-                                    <span class="meta-impact impact-{{ subtask.impact }}">
-                                        {% if subtask.impact == 1 %}P1
-                                        {% elif subtask.impact == 2 %}P2
-                                        {% elif subtask.impact == 3 %}P3
-                                        {% else %}P4{% endif %}
-                                    </span>
-                                    <span class="meta-clarity clarity-{{ subtask.clarity or 'none' }}">
-                                        {% if subtask.clarity %}
-                                            {{ subtask_item.clarity_display }}
-                                        {% else %}—{% endif %}
-                                    </span>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
                         {% endfor %}
                     </div>
                 </details>
                 {% endfor %}
             {% else %}
             <div class="empty-state">
-                <p>No tasks yet.</p>
-                <p>Press <kbd>q</kbd> or click + to add your first task.</p>
+                <p>No tasks with domains yet.</p>
+                <p>Create a domain in Settings, then promote thoughts to tasks.</p>
             </div>
             {% endif %}
         </div>
@@ -169,15 +109,6 @@
 
     <!-- RIGHT PANEL: Day Calendar Carousel -->
     <aside class="calendar-panel">
-        <div class="calendar-header">
-            <span class="calendar-title">SCHEDULE</span>
-            <div class="calendar-actions">
-                <button type="button" id="plan-day-btn" class="calendar-action-btn" title="Click, then drag on calendar to select time range">
-                    <span class="action-emoji">✨</span>
-                    <span class="action-name">Plan My Day</span>
-                </button>
-            </div>
-        </div>
         <button type="button" id="go-to-today-btn" class="go-to-today-btn">Today</button>
         <div class="calendar-carousel" id="calendar-carousel">
             {% for day in calendar_days %}
@@ -187,6 +118,14 @@
                  data-day-date="{{ day.date.strftime('%B %d') }}"
                  {% if day.is_today %}id="today-calendar"{% endif %}>
 
+                <div class="day-header">
+                    <span class="day-header-date">{{ day.date.strftime('%A, %b %d') }}</span>
+                    <button type="button" class="plan-day-btn" title="Plan My Day">
+                        <span class="action-emoji">✨</span>
+                        <span class="action-name">Plan My Day</span>
+                    </button>
+                </div>
+
                 {% if day.events %}
                 <div class="all-day-section">
                     {% for event in day.events if event.all_day %}
@@ -194,6 +133,29 @@
                     {% endfor %}
                 </div>
                 {% endif %}
+
+                {# Date-only tasks banner (scheduled for this day but no specific time) - always visible #}
+                <div class="date-only-banner" data-day="{{ day.date.isoformat() }}" data-droppable="anytime">
+                    <span class="date-only-label">Anytime</span>
+                    <div class="date-only-tasks">
+                        {% for item in day.date_only_tasks %}
+                        <div class="date-only-task impact-{{ item.task.impact or 4 }}"
+                             data-task-id="{{ item.task.id }}"
+                             {% if item.is_instance %}data-instance-id="{{ item.instance.id }}" data-instance-date="{{ item.instance.instance_date.isoformat() }}"{% endif %}
+                             data-duration="{{ item.duration_minutes }}"
+                             data-clarity="{{ item.clarity }}"
+                             data-impact="{{ item.task.impact or 4 }}"
+                             draggable="true">
+                            {% if item.duration_minutes %}
+                            <span class="date-only-task-duration">
+                                {% if item.duration_minutes >= 60 %}{{ item.duration_minutes // 60 }}h{% if item.duration_minutes % 60 %}{{ item.duration_minutes % 60 }}m{% endif %}{% else %}{{ item.duration_minutes }}m{% endif %}
+                            </span>
+                            {% endif %}
+                            <span class="date-only-task-text">{{ item.task.title }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
 
                 <div class="hour-grid">
                     <!-- Previous evening hours (21:00-23:59 from day before) -->
@@ -205,9 +167,9 @@
                     </div>
                     {% endfor %}
 
-                    <!-- Day separator -->
-                    <div class="day-separator">
-                        <span class="day-separator-label">{{ day.date.strftime('%A, %b %d') }}</span>
+                    <!-- Day start separator -->
+                    <div class="day-separator day-start">
+                        <span class="day-separator-label">Start of {{ day.date.strftime('%A') }}</span>
                     </div>
 
                     {% for hour in range(0, 24) %}
@@ -239,14 +201,15 @@
                             {% set duration_class = 'duration-short' if duration_mins < 30 else ('duration-medium' if duration_mins < 60 else 'duration-long') %}
                             {% set start_mins = scheduled.start.hour * 60 + scheduled.start.minute %}
                             {% set end_mins = start_mins + duration_mins %}
-                            <div class="scheduled-task clarity-{{ scheduled.clarity }} {{ duration_class }} from-db{% if scheduled.is_instance %} recurring-instance{% endif %}"
+                            <div class="scheduled-task impact-{{ scheduled.task.impact or 4 }} {{ duration_class }} from-db{% if scheduled.is_instance %} recurring-instance{% endif %}"
                                  style="height: {{ height_px }}px; top: {{ top_px }}px;"
                                  data-task-id="{{ scheduled.task.id }}"
                                  {% if scheduled.is_instance %}data-instance-id="{{ scheduled.instance.id }}" data-instance-date="{{ scheduled.instance.instance_date.isoformat() }}"{% endif %}
                                  data-start-mins="{{ start_mins }}"
                                  data-end-mins="{{ end_mins }}"
                                  data-duration="{{ duration_mins }}"
-                                 data-clarity="{{ scheduled.clarity }}">
+                                 data-clarity="{{ scheduled.clarity }}"
+                                 data-impact="{{ scheduled.task.impact or 4 }}">
                                 <div class="scheduled-task-left">
                                     <span class="scheduled-task-time">{{ scheduled.start.strftime('%H:%M') }}</span>
                                     {% if duration_mins >= 30 %}
@@ -288,6 +251,7 @@
 <script src="/static/js/recurrence-picker.js"></script>
 <script src="/static/js/task-dialog.js"></script>
 <script src="/static/js/energy-selector.js"></script>
+<script src="/static/js/task-sort.js"></script>
 <script src="/static/js/drag-drop.js"></script>
 <script src="/static/js/plan-tasks.js"></script>
 <script>

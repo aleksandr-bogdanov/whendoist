@@ -206,12 +206,16 @@
     let isInSelectionMode = false;
     let isSelecting = false;
     let selectionAnchor = null;
+    let selectionAnchorSection = null; // Section where selection started
     let selectionStart = null;
     let selectionEnd = null;
-    let selectionSection = null; // 'prev-day', 'main-day', or 'next-day'
+    let selectionStartSection = null; // Section containing start time
+    let selectionEndSection = null;   // Section containing end time
     let selectionDayCalendar = null;
     let selectionOverlay = null;
+    let selectionOverlay2 = null; // Second overlay for cross-day selection
     let planBtn = null;
+    let originalBtnText = null;
     let planHelper = null;
     let currentVisibleCalendar = null;
 
@@ -258,11 +262,11 @@
     }
 
     function createPlanButton(calendarPanel) {
-        // Use the existing header button instead of creating a floating one
-        planBtn = document.getElementById('plan-day-btn');
-        if (planBtn) {
-            planBtn.addEventListener('click', handlePlanButtonClick);
-        }
+        // Attach click listeners to all per-day plan buttons
+        const planButtons = calendarPanel.querySelectorAll('.plan-day-btn');
+        planButtons.forEach(btn => {
+            btn.addEventListener('click', handlePlanButtonClick);
+        });
     }
 
     function setupGlobalEventListeners() {
@@ -272,23 +276,30 @@
 
     function handlePlanButtonClick(e) {
         e.stopPropagation();
+        const clickedBtn = e.currentTarget;
+        const dayCalendar = clickedBtn.closest('.day-calendar');
+
         if (isInSelectionMode) {
+            // Save reference before exiting (exitSelectionMode sets it to null)
+            const wasSelectingCalendar = selectionDayCalendar;
             exitSelectionMode();
-        } else {
-            const target = currentVisibleCalendar ||
-                document.getElementById('today-calendar') ||
-                document.querySelector('.day-calendar');
-            if (target) {
-                log.info(`Starting plan for ${target.dataset.day}`);
-                enterSelectionMode(target);
+            // If clicking a different day's button, start selection on that day
+            if (dayCalendar && dayCalendar !== wasSelectingCalendar) {
+                planBtn = clickedBtn;
+                log.info(`Starting plan for ${dayCalendar.dataset.day}`);
+                enterSelectionMode(dayCalendar);
             }
+        } else if (dayCalendar) {
+            planBtn = clickedBtn;
+            log.info(`Starting plan for ${dayCalendar.dataset.day}`);
+            enterSelectionMode(dayCalendar);
         }
     }
 
     function handleOutsideClick(e) {
         if (!isInSelectionMode) return;
         if (e.target.closest('.day-calendar') === selectionDayCalendar) return;
-        if (e.target.closest('#plan-day-btn, .plan-helper, .calendar-header')) return;
+        if (e.target.closest('.plan-day-btn, .plan-helper')) return;
         exitSelectionMode();
     }
 
@@ -308,12 +319,41 @@
         isInSelectionMode = true;
         selectionDayCalendar = dayCalendar;
         dayCalendar.classList.add('selection-mode');
-        if (planBtn) planBtn.classList.add('active');
+        if (planBtn) {
+            planBtn.classList.add('active');
+            setPlanButtonToCancel();
+        }
 
         showPlanHelper();
         attachSelectionHandlers(dayCalendar);
 
         log.debug(`Selection mode entered for ${dayCalendar.dataset.day}`);
+    }
+
+    function setPlanButtonToCancel() {
+        if (!planBtn) return;
+        const nameSpan = planBtn.querySelector('.action-name');
+        const emojiSpan = planBtn.querySelector('.action-emoji');
+        if (nameSpan) {
+            originalBtnText = nameSpan.textContent;
+            nameSpan.textContent = 'Cancel';
+        }
+        if (emojiSpan) {
+            emojiSpan.textContent = '✕';
+        }
+    }
+
+    function restorePlanButton() {
+        if (!planBtn) return;
+        const nameSpan = planBtn.querySelector('.action-name');
+        const emojiSpan = planBtn.querySelector('.action-emoji');
+        if (nameSpan && originalBtnText) {
+            nameSpan.textContent = originalBtnText;
+        }
+        if (emojiSpan) {
+            emojiSpan.textContent = '✨';
+        }
+        originalBtnText = null;
     }
 
     function exitSelectionMode() {
@@ -328,6 +368,7 @@
         }
 
         if (planBtn) planBtn.classList.remove('active');
+        restorePlanButton();
         hidePlanHelper();
         removeSelectionOverlay();
         selectionDayCalendar = null;
@@ -381,13 +422,17 @@
         isSelecting = true;
 
         // Track which section we're selecting in
+        let section;
         if (hourRow.classList.contains('prev-day')) {
-            selectionSection = 'prev-day';
+            section = 'prev-day';
         } else if (hourRow.classList.contains('next-day')) {
-            selectionSection = 'next-day';
+            section = 'next-day';
         } else {
-            selectionSection = 'main-day';
+            section = 'main-day';
         }
+        selectionAnchorSection = section;
+        selectionStartSection = section;
+        selectionEndSection = section;
 
         const hour = parseInt(hourRow.dataset.hour, 10);
         const slotRect = hourSlot.getBoundingClientRect();
@@ -395,12 +440,42 @@
         const quarterIndex = Math.min(Math.floor((clickY / slotRect.height) * 4), 3);
         const minutes = quarterIndex * 15;
 
-        selectionAnchor = hour * 60 + minutes;
+        // Convert to unified time (prev-day: -3*60 to 0, main-day: 0 to 24*60, next-day: 24*60 to 30*60)
+        selectionAnchor = sectionTimeToUnified(hour * 60 + minutes, section);
         selectionStart = selectionAnchor;
         selectionEnd = selectionAnchor + MIN_SELECTION_MINUTES;
 
         createSelectionOverlay();
         updateSelectionOverlay();
+    }
+
+    /**
+     * Convert section-local time to unified timeline.
+     * prev-day (21:00-24:00) -> -180 to 0
+     * main-day (0:00-24:00) -> 0 to 1440
+     * next-day (0:00-6:00) -> 1440 to 1800
+     */
+    function sectionTimeToUnified(localMins, section) {
+        if (section === 'prev-day') {
+            // prev-day shows 21:00-24:00 of yesterday, map to -180 to 0
+            return localMins - 24 * 60;
+        } else if (section === 'next-day') {
+            // next-day shows 0:00-6:00 of tomorrow, map to 1440 to 1800
+            return localMins + 24 * 60;
+        }
+        return localMins; // main-day: 0 to 1440
+    }
+
+    /**
+     * Convert unified time back to section and local time.
+     */
+    function unifiedToSectionTime(unifiedMins) {
+        if (unifiedMins < 0) {
+            return { section: 'prev-day', localMins: unifiedMins + 24 * 60 };
+        } else if (unifiedMins >= 24 * 60) {
+            return { section: 'next-day', localMins: unifiedMins - 24 * 60 };
+        }
+        return { section: 'main-day', localMins: unifiedMins };
     }
 
     function handleSelectionMove(e) {
@@ -409,22 +484,48 @@
         const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
         if (!hourGrid) return;
 
-        // Get reference row and bounds based on selection section
-        const { refRow, minMins, maxMins } = getSectionBounds(hourGrid, selectionSection);
-        if (!refRow) return;
-
-        const refOffset = refRow.offsetTop;
-        const rowHeight = refRow.offsetHeight;
-
+        // Find which row we're hovering over
         const gridRect = hourGrid.getBoundingClientRect();
         const moveY = e.clientY - gridRect.top + hourGrid.scrollTop;
 
-        // Calculate minutes relative to reference row
-        const adjustedY = moveY - refOffset;
-        const refHour = parseInt(refRow.dataset.hour, 10);
-        const totalMins = refHour * 60 + (adjustedY / rowHeight) * 60;
-        const roundedMins = Math.round(totalMins / 15) * 15;
-        const clampedMins = Math.max(minMins, Math.min(roundedMins, maxMins));
+        // Find the hour row at current Y position
+        const hourRows = hourGrid.querySelectorAll('.hour-row');
+        let currentRow = null;
+        let currentSection = 'main-day';
+
+        for (const row of hourRows) {
+            const rowTop = row.offsetTop;
+            const rowBottom = rowTop + row.offsetHeight;
+            if (moveY >= rowTop && moveY < rowBottom) {
+                currentRow = row;
+                if (row.classList.contains('prev-day')) {
+                    currentSection = 'prev-day';
+                } else if (row.classList.contains('next-day')) {
+                    currentSection = 'next-day';
+                } else {
+                    currentSection = 'main-day';
+                }
+                break;
+            }
+        }
+
+        if (!currentRow) return;
+
+        const rowHeight = currentRow.offsetHeight;
+        const rowTop = currentRow.offsetTop;
+        const relativeY = moveY - rowTop;
+        const hour = parseInt(currentRow.dataset.hour, 10);
+        const localMins = hour * 60 + (relativeY / rowHeight) * 60;
+        const roundedMins = Math.round(localMins / 15) * 15;
+
+        // Convert to unified time
+        const unifiedMins = sectionTimeToUnified(roundedMins, currentSection);
+
+        // Get global bounds (allow cross-day but not beyond visible range)
+        const minUnified = sectionTimeToUnified(21 * 60, 'prev-day'); // -180 (21:00 yesterday)
+        const maxUnified = sectionTimeToUnified(6 * 60, 'next-day');  // 1800 (06:00 tomorrow)
+
+        const clampedMins = Math.max(minUnified, Math.min(unifiedMins, maxUnified));
 
         // Support bidirectional selection
         if (clampedMins >= selectionAnchor) {
@@ -435,9 +536,15 @@
             selectionEnd = selectionAnchor + MIN_SELECTION_MINUTES;
         }
 
-        // Clamp to section bounds
-        selectionStart = Math.max(minMins, selectionStart);
-        selectionEnd = Math.min(maxMins, selectionEnd);
+        // Clamp to global bounds
+        selectionStart = Math.max(minUnified, selectionStart);
+        selectionEnd = Math.min(maxUnified, selectionEnd);
+
+        // Update section tracking
+        const startInfo = unifiedToSectionTime(selectionStart);
+        const endInfo = unifiedToSectionTime(selectionEnd);
+        selectionStartSection = startInfo.section;
+        selectionEndSection = endInfo.section;
 
         updateSelectionOverlay();
     }
@@ -496,13 +603,17 @@
         isSelecting = true;
 
         // Track which section we're selecting in
+        let section;
         if (hourRow.classList.contains('prev-day')) {
-            selectionSection = 'prev-day';
+            section = 'prev-day';
         } else if (hourRow.classList.contains('next-day')) {
-            selectionSection = 'next-day';
+            section = 'next-day';
         } else {
-            selectionSection = 'main-day';
+            section = 'main-day';
         }
+        selectionAnchorSection = section;
+        selectionStartSection = section;
+        selectionEndSection = section;
 
         const hour = parseInt(hourRow.dataset.hour, 10);
         const slotRect = hourSlot.getBoundingClientRect();
@@ -510,7 +621,8 @@
         const quarterIndex = Math.min(Math.floor((touchY / slotRect.height) * 4), 3);
         const minutes = quarterIndex * 15;
 
-        selectionAnchor = hour * 60 + minutes;
+        // Convert to unified time
+        selectionAnchor = sectionTimeToUnified(hour * 60 + minutes, section);
         selectionStart = selectionAnchor;
         selectionEnd = selectionAnchor + MIN_SELECTION_MINUTES;
 
@@ -530,22 +642,48 @@
         const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
         if (!hourGrid) return;
 
-        // Get reference row and bounds based on selection section
-        const { refRow, minMins, maxMins } = getSectionBounds(hourGrid, selectionSection);
-        if (!refRow) return;
-
-        const refOffset = refRow.offsetTop;
-        const rowHeight = refRow.offsetHeight;
-
+        // Find which row we're touching
         const gridRect = hourGrid.getBoundingClientRect();
         const touchY = touch.clientY - gridRect.top + hourGrid.scrollTop;
 
-        // Calculate minutes relative to reference row
-        const adjustedY = touchY - refOffset;
-        const refHour = parseInt(refRow.dataset.hour, 10);
-        const totalMins = refHour * 60 + (adjustedY / rowHeight) * 60;
-        const roundedMins = Math.round(totalMins / 15) * 15;
-        const clampedMins = Math.max(minMins, Math.min(roundedMins, maxMins));
+        // Find the hour row at current Y position
+        const hourRows = hourGrid.querySelectorAll('.hour-row');
+        let currentRow = null;
+        let currentSection = 'main-day';
+
+        for (const row of hourRows) {
+            const rowTop = row.offsetTop;
+            const rowBottom = rowTop + row.offsetHeight;
+            if (touchY >= rowTop && touchY < rowBottom) {
+                currentRow = row;
+                if (row.classList.contains('prev-day')) {
+                    currentSection = 'prev-day';
+                } else if (row.classList.contains('next-day')) {
+                    currentSection = 'next-day';
+                } else {
+                    currentSection = 'main-day';
+                }
+                break;
+            }
+        }
+
+        if (!currentRow) return;
+
+        const rowHeight = currentRow.offsetHeight;
+        const rowTop = currentRow.offsetTop;
+        const relativeY = touchY - rowTop;
+        const hour = parseInt(currentRow.dataset.hour, 10);
+        const localMins = hour * 60 + (relativeY / rowHeight) * 60;
+        const roundedMins = Math.round(localMins / 15) * 15;
+
+        // Convert to unified time
+        const unifiedMins = sectionTimeToUnified(roundedMins, currentSection);
+
+        // Get global bounds (allow cross-day but not beyond visible range)
+        const minUnified = sectionTimeToUnified(21 * 60, 'prev-day'); // -180 (21:00 yesterday)
+        const maxUnified = sectionTimeToUnified(6 * 60, 'next-day');  // 1800 (06:00 tomorrow)
+
+        const clampedMins = Math.max(minUnified, Math.min(unifiedMins, maxUnified));
 
         // Support bidirectional selection
         if (clampedMins >= selectionAnchor) {
@@ -556,9 +694,15 @@
             selectionEnd = selectionAnchor + MIN_SELECTION_MINUTES;
         }
 
-        // Clamp to section bounds
-        selectionStart = Math.max(minMins, selectionStart);
-        selectionEnd = Math.min(maxMins, selectionEnd);
+        // Clamp to global bounds
+        selectionStart = Math.max(minUnified, selectionStart);
+        selectionEnd = Math.min(maxUnified, selectionEnd);
+
+        // Update section tracking
+        const startInfo = unifiedToSectionTime(selectionStart);
+        const endInfo = unifiedToSectionTime(selectionEnd);
+        selectionStartSection = startInfo.section;
+        selectionEndSection = endInfo.section;
 
         updateSelectionOverlay();
     }
@@ -614,14 +758,41 @@
         const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
         if (!hourGrid) return;
 
-        // Find the actual row element for the start hour based on section
-        const startHour = Math.floor(selectionStart / 60);
-        const startMinutes = selectionStart % 60;
+        // Convert unified times to section-local times
+        const startInfo = unifiedToSectionTime(selectionStart);
+        const endInfo = unifiedToSectionTime(selectionEnd);
+
+        // Check if selection spans multiple sections
+        const isCrossDay = startInfo.section !== endInfo.section;
+
+        if (isCrossDay) {
+            // Render two overlays for cross-day selection
+            updateCrossDayOverlays(hourGrid, startInfo, endInfo);
+        } else {
+            // Single section selection
+            updateSingleSectionOverlay(hourGrid, startInfo.section, startInfo.localMins, endInfo.localMins);
+            // Hide second overlay if exists
+            if (selectionOverlay2) {
+                selectionOverlay2.style.display = 'none';
+            }
+        }
+
+        // Update time display (use local times for display)
+        const existingBtn = selectionOverlay.querySelector('.plan-tasks-btn');
+        const startDisplay = formatTimeWithDay(selectionStart, startInfo.section);
+        const endDisplay = formatTimeWithDay(selectionEnd, endInfo.section);
+        selectionOverlay.innerHTML = `<span class="time-selection-range">${startDisplay} - ${endDisplay}</span>`;
+        if (existingBtn) selectionOverlay.appendChild(existingBtn);
+    }
+
+    function updateSingleSectionOverlay(hourGrid, section, startMins, endMins) {
+        const startHour = Math.floor(startMins / 60);
+        const startMinutes = startMins % 60;
 
         let startRow;
-        if (selectionSection === 'prev-day') {
+        if (section === 'prev-day') {
             startRow = hourGrid.querySelector(`.hour-row.prev-day[data-hour="${startHour}"]`);
-        } else if (selectionSection === 'next-day') {
+        } else if (section === 'next-day') {
             startRow = hourGrid.querySelector(`.hour-row.next-day[data-hour="${startHour}"]`);
         } else {
             startRow = hourGrid.querySelector(`.hour-row[data-hour="${startHour}"]:not(.adjacent-day)`);
@@ -629,22 +800,80 @@
 
         if (!startRow) return;
 
-        // Get actual row height from DOM (accounts for borders, etc.)
         const rowHeight = startRow.offsetHeight;
-
-        // Calculate position: row's top + offset within the hour
         const topPx = startRow.offsetTop + (startMinutes / 60) * rowHeight;
-
-        // Calculate height based on duration
-        const duration = selectionEnd - selectionStart;
+        const duration = endMins - startMins;
         const heightPx = (duration / 60) * rowHeight;
 
         selectionOverlay.style.top = `${topPx}px`;
         selectionOverlay.style.height = `${heightPx}px`;
+        selectionOverlay.style.display = 'flex';
+    }
 
-        const existingBtn = selectionOverlay.querySelector('.plan-tasks-btn');
-        selectionOverlay.innerHTML = `<span class="time-selection-range">${formatTime(selectionStart)} - ${formatTime(selectionEnd)}</span>`;
-        if (existingBtn) selectionOverlay.appendChild(existingBtn);
+    function updateCrossDayOverlays(hourGrid, startInfo, endInfo) {
+        // First overlay: from start to end of first section
+        let firstSectionEnd;
+        if (startInfo.section === 'prev-day') {
+            firstSectionEnd = 24 * 60; // End at midnight
+        } else if (startInfo.section === 'main-day') {
+            firstSectionEnd = 24 * 60; // End at midnight (24:00)
+        } else {
+            firstSectionEnd = 6 * 60; // next-day ends at 06:00
+        }
+
+        updateSingleSectionOverlay(hourGrid, startInfo.section, startInfo.localMins, firstSectionEnd);
+
+        // Create second overlay if needed
+        if (!selectionOverlay2) {
+            selectionOverlay2 = document.createElement('div');
+            selectionOverlay2.className = 'time-selection-overlay time-selection-overlay-2';
+            hourGrid.appendChild(selectionOverlay2);
+        }
+
+        // Second overlay: from start of second section to end
+        let secondSectionStart;
+        if (endInfo.section === 'next-day') {
+            secondSectionStart = 0; // Start at midnight
+        } else if (endInfo.section === 'main-day') {
+            secondSectionStart = 0;
+        } else {
+            secondSectionStart = 21 * 60;
+        }
+
+        const endHour = Math.floor(secondSectionStart / 60);
+        let endRow;
+        if (endInfo.section === 'prev-day') {
+            endRow = hourGrid.querySelector(`.hour-row.prev-day[data-hour="${endHour}"]`);
+        } else if (endInfo.section === 'next-day') {
+            endRow = hourGrid.querySelector(`.hour-row.next-day[data-hour="${endHour}"]`);
+        } else {
+            endRow = hourGrid.querySelector(`.hour-row[data-hour="${endHour}"]:not(.adjacent-day)`);
+        }
+
+        if (endRow) {
+            const rowHeight = endRow.offsetHeight;
+            const topPx = endRow.offsetTop;
+            const duration = endInfo.localMins - secondSectionStart;
+            const heightPx = (duration / 60) * rowHeight;
+
+            selectionOverlay2.style.top = `${topPx}px`;
+            selectionOverlay2.style.height = `${heightPx}px`;
+            selectionOverlay2.style.display = 'flex';
+        }
+    }
+
+    function formatTimeWithDay(unifiedMins, section) {
+        const { localMins } = unifiedToSectionTime(unifiedMins);
+        const hours = Math.floor(localMins / 60) % 24;
+        const mins = localMins % 60;
+        const timeStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+
+        if (section === 'prev-day') {
+            return `${timeStr} (yesterday)`;
+        } else if (section === 'next-day') {
+            return `${timeStr} (tomorrow)`;
+        }
+        return timeStr;
     }
 
     function removeSelectionOverlay() {
@@ -652,10 +881,16 @@
             selectionOverlay.remove();
             selectionOverlay = null;
         }
+        if (selectionOverlay2) {
+            selectionOverlay2.remove();
+            selectionOverlay2 = null;
+        }
         selectionAnchor = null;
+        selectionAnchorSection = null;
         selectionStart = null;
         selectionEnd = null;
-        selectionSection = null;
+        selectionStartSection = null;
+        selectionEndSection = null;
     }
 
     function showPlanTasksButton() {
@@ -683,6 +918,7 @@
 
     /**
      * Execute the planning algorithm on the selected time range.
+     * Supports cross-day planning (e.g., 23:00 today to 02:00 tomorrow).
      */
     function executePlan() {
         if (!selectionDayCalendar || selectionStart === null || selectionEnd === null) {
@@ -690,19 +926,38 @@
             return;
         }
 
-        // Get the actual date - for adjacent sections, use data-actual-date
-        let day = selectionDayCalendar.dataset.day;
-        if (selectionSection === 'prev-day' || selectionSection === 'next-day') {
-            const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
-            const sectionRow = hourGrid?.querySelector(`.hour-row.${selectionSection}`);
-            if (sectionRow?.dataset.actualDate) {
-                day = sectionRow.dataset.actualDate;
+        const hourGrid = selectionDayCalendar.querySelector('.hour-grid');
+
+        // Get dates for all sections
+        const mainDay = selectionDayCalendar.dataset.day;
+        const prevDayRow = hourGrid?.querySelector('.hour-row.prev-day');
+        const nextDayRow = hourGrid?.querySelector('.hour-row.next-day');
+        const prevDay = prevDayRow?.dataset.actualDate || getAdjacentDate(mainDay, -1);
+        const nextDay = nextDayRow?.dataset.actualDate || getAdjacentDate(mainDay, 1);
+
+        // Collect tasks - for cross-day, collect from both involved days
+        const involvedDays = new Set();
+        const startInfo = unifiedToSectionTime(selectionStart);
+        const endInfo = unifiedToSectionTime(selectionEnd);
+
+        if (startInfo.section === 'prev-day') involvedDays.add(prevDay);
+        if (startInfo.section === 'main-day' || endInfo.section === 'main-day') involvedDays.add(mainDay);
+        if (endInfo.section === 'next-day') involvedDays.add(nextDay);
+
+        // Collect tasks from all involved days
+        const allTasks = [];
+        const seenTaskIds = new Set();
+        for (const day of involvedDays) {
+            const dayTasks = collectEligibleTasks(day);
+            for (const task of dayTasks) {
+                if (!seenTaskIds.has(task.taskId)) {
+                    allTasks.push(task);
+                    seenTaskIds.add(task.taskId);
+                }
             }
         }
 
-        const tasks = collectEligibleTasks(day);
-
-        if (tasks.length === 0) {
+        if (allTasks.length === 0) {
             log.warn('No eligible tasks to schedule');
             exitSelectionMode();
             return;
@@ -711,81 +966,172 @@
         const occupiedSlots = collectOccupiedSlots(selectionDayCalendar);
         const targetRange = { startMins: selectionStart, endMins: selectionEnd };
 
-        const scheduled = currentStrategy.schedule(tasks, occupiedSlots, targetRange);
-        log.info(`Scheduled ${scheduled.length}/${tasks.length} tasks`);
+        const scheduled = currentStrategy.schedule(allTasks, occupiedSlots, targetRange);
+        log.info(`Scheduled ${scheduled.length}/${allTasks.length} tasks`);
 
         for (const item of scheduled) {
-            placeTaskOnCalendar(item, day, selectionDayCalendar);
+            // Determine which day this task belongs to based on its start time
+            const taskInfo = unifiedToSectionTime(item.startMins);
+            let taskDay;
+            if (taskInfo.section === 'prev-day') {
+                taskDay = prevDay;
+            } else if (taskInfo.section === 'next-day') {
+                taskDay = nextDay;
+            } else {
+                taskDay = mainDay;
+            }
+            placeTaskOnCalendar(item, taskDay, selectionDayCalendar, taskInfo.section);
         }
 
         exitSelectionMode();
     }
 
     /**
+     * Get adjacent date string (YYYY-MM-DD).
+     */
+    function getAdjacentDate(dateStr, offset) {
+        const date = new Date(dateStr);
+        date.setDate(date.getDate() + offset);
+        return date.toISOString().split('T')[0];
+    }
+
+    /**
      * Collect tasks eligible for scheduling.
      * Filters by: clarity tag, energy level, visibility, due date match.
+     * Includes both task panel items and Anytime banner tasks.
      * @param {string} targetDay - Target day in YYYY-MM-DD format
      * @returns {Task[]} Eligible tasks
      */
     function collectEligibleTasks(targetDay) {
         const energyLevel = parseInt(document.body.dataset.energyLevel || '2', 10);
         const tasks = [];
-        const candidates = document.querySelectorAll('.task-item[draggable="true"]:not(.scheduled)');
+        const seenTaskIds = new Set();
 
-        log.debug(`Evaluating ${candidates.length} candidate tasks`);
+        // Collect from task panel
+        const panelCandidates = document.querySelectorAll('.task-item[draggable="true"]:not(.scheduled)');
+        log.debug(`Evaluating ${panelCandidates.length} panel tasks`);
 
-        for (const el of candidates) {
-            const clarity = el.dataset.clarity || 'none';
-            const dueDate = el.dataset.dueDate || '';
-            const content = el.querySelector('.task-text')?.textContent?.trim() || '';
-
-            // Skip tasks without clarity tag
-            if (clarity === 'none') {
-                log.debug(`Skip "${content.slice(0, 25)}": no clarity`);
-                continue;
+        for (const el of panelCandidates) {
+            const task = extractTaskFromElement(el, targetDay, energyLevel, 'panel');
+            if (task && !seenTaskIds.has(task.taskId)) {
+                tasks.push(task);
+                seenTaskIds.add(task.taskId);
             }
+        }
 
-            // Energy level filtering
-            if (energyLevel === 1 && clarity !== 'executable') {
-                log.debug(`Skip "${content.slice(0, 25)}": ${clarity} != executable`);
-                continue;
+        // Collect from Anytime banner for the target day
+        const anytimeBanner = selectionDayCalendar?.querySelector(`.date-only-banner[data-day="${targetDay}"]`);
+        if (anytimeBanner) {
+            const anytimeCandidates = anytimeBanner.querySelectorAll('.date-only-task[draggable="true"]');
+            log.debug(`Evaluating ${anytimeCandidates.length} anytime tasks`);
+
+            for (const el of anytimeCandidates) {
+                const task = extractTaskFromAnytimeElement(el, targetDay, energyLevel);
+                if (task && !seenTaskIds.has(task.taskId)) {
+                    tasks.push(task);
+                    seenTaskIds.add(task.taskId);
+                }
             }
-            if (energyLevel === 2 && clarity === 'exploratory') {
-                log.debug(`Skip "${content.slice(0, 25)}": exploratory in normal mode`);
-                continue;
-            }
-
-            // CSS visibility check
-            const style = window.getComputedStyle(el);
-            if (style.display === 'none' || style.opacity === '0') {
-                continue;
-            }
-
-            // Due date filtering: only schedule on matching day
-            if (dueDate && dueDate !== targetDay) {
-                log.debug(`Skip "${content.slice(0, 25)}": due ${dueDate} != ${targetDay}`);
-                continue;
-            }
-
-            const priority = el.classList.contains('impact-4') ? 4 :
-                el.classList.contains('impact-3') ? 3 :
-                    el.classList.contains('impact-2') ? 2 : 1;
-
-            tasks.push({
-                taskId: el.dataset.taskId,
-                content,
-                duration: parseInt(el.dataset.duration, 10) || DEFAULT_TASK_DURATION,
-                priority,
-                clarity,
-                dueDate,
-                isRecurring: el.dataset.isRecurring === 'true',
-                hasMatchingDate: dueDate === targetDay,
-            });
-
-            log.debug(`Include "${content.slice(0, 25)}": ${tasks[tasks.length - 1].duration}min`);
         }
 
         return tasks;
+    }
+
+    /**
+     * Extract task data from a task panel element.
+     */
+    function extractTaskFromElement(el, targetDay, energyLevel, source) {
+        const clarity = el.dataset.clarity || 'none';
+        const scheduledDate = el.dataset.scheduledDate || '';
+        const content = el.querySelector('.task-text')?.textContent?.trim() || '';
+
+        // Skip tasks without clarity tag
+        if (clarity === 'none') {
+            log.debug(`Skip "${content.slice(0, 25)}": no clarity`);
+            return null;
+        }
+
+        // Energy level filtering
+        if (energyLevel === 1 && clarity !== 'executable') {
+            log.debug(`Skip "${content.slice(0, 25)}": ${clarity} != executable`);
+            return null;
+        }
+        if (energyLevel === 2 && clarity === 'exploratory') {
+            log.debug(`Skip "${content.slice(0, 25)}": exploratory in normal mode`);
+            return null;
+        }
+
+        // CSS visibility check
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.opacity === '0') {
+            return null;
+        }
+
+        // Scheduled date filtering: only schedule on matching day
+        if (scheduledDate && scheduledDate !== targetDay) {
+            log.debug(`Skip "${content.slice(0, 25)}": scheduled ${scheduledDate} != ${targetDay}`);
+            return null;
+        }
+
+        const impact = el.dataset.impact || (
+            el.classList.contains('impact-1') ? '1' :
+            el.classList.contains('impact-2') ? '2' :
+            el.classList.contains('impact-3') ? '3' : '4'
+        );
+
+        log.debug(`Include "${content.slice(0, 25)}": from ${source}`);
+
+        return {
+            taskId: el.dataset.taskId,
+            content,
+            duration: parseInt(el.dataset.duration, 10) || DEFAULT_TASK_DURATION,
+            priority: parseInt(impact, 10),
+            impact,
+            clarity,
+            scheduledDate,
+            isRecurring: el.dataset.isRecurring === 'true',
+            hasMatchingDate: scheduledDate === targetDay,
+        };
+    }
+
+    /**
+     * Extract task data from an Anytime banner element.
+     */
+    function extractTaskFromAnytimeElement(el, targetDay, energyLevel) {
+        const clarity = el.dataset.clarity || 'none';
+        const content = el.querySelector('.date-only-task-text')?.textContent?.trim() || '';
+
+        // Skip tasks without clarity tag
+        if (clarity === 'none') {
+            log.debug(`Skip anytime "${content.slice(0, 25)}": no clarity`);
+            return null;
+        }
+
+        // Energy level filtering
+        if (energyLevel === 1 && clarity !== 'executable') {
+            log.debug(`Skip anytime "${content.slice(0, 25)}": ${clarity} != executable`);
+            return null;
+        }
+        if (energyLevel === 2 && clarity === 'exploratory') {
+            log.debug(`Skip anytime "${content.slice(0, 25)}": exploratory in normal mode`);
+            return null;
+        }
+
+        const impact = el.dataset.impact || '4';
+
+        log.debug(`Include anytime "${content.slice(0, 25)}"`);
+
+        return {
+            taskId: el.dataset.taskId,
+            content,
+            duration: parseInt(el.dataset.duration, 10) || DEFAULT_TASK_DURATION,
+            priority: parseInt(impact, 10),
+            impact,
+            clarity,
+            scheduledDate: targetDay,
+            isRecurring: false,
+            hasMatchingDate: true,
+        };
     }
 
     /**
@@ -808,21 +1154,24 @@
     }
 
     /**
-     * Place a scheduled task on the calendar.
-     * @param {ScheduledTask} item - Scheduled task with timing
-     * @param {string} day - Day string
+     * Place a scheduled task on the calendar and persist to API.
+     * @param {ScheduledTask} item - Scheduled task with timing (unified time)
+     * @param {string} day - Day string (YYYY-MM-DD)
      * @param {Element} dayCalendar - Calendar element
+     * @param {string} section - Section where task should be placed
      */
-    function placeTaskOnCalendar(item, day, dayCalendar) {
-        const hour = Math.floor(item.startMins / 60);
-        const minutes = item.startMins % 60;
+    async function placeTaskOnCalendar(item, day, dayCalendar, section) {
+        // Convert unified time to local time for placement
+        const { localMins } = unifiedToSectionTime(item.startMins);
+        const hour = Math.floor(localMins / 60);
+        const minutes = localMins % 60;
         const { task } = item;
 
         // Find the correct hour row based on section
         let hourRow;
-        if (selectionSection === 'prev-day') {
+        if (section === 'prev-day') {
             hourRow = dayCalendar.querySelector(`.hour-row.prev-day[data-hour="${hour}"]`);
-        } else if (selectionSection === 'next-day') {
+        } else if (section === 'next-day') {
             hourRow = dayCalendar.querySelector(`.hour-row.next-day[data-hour="${hour}"]`);
         } else {
             hourRow = dayCalendar.querySelector(`.hour-row[data-hour="${hour}"]:not(.adjacent-day)`);
@@ -837,6 +1186,12 @@
             scheduledTasks.delete(task.taskId);
         }
 
+        // Remove from Anytime banner if present (search all calendars)
+        const anytimeTask = document.querySelector(`.date-only-task[data-task-id="${task.taskId}"]`);
+        if (anytimeTask) {
+            anytimeTask.remove();
+        }
+
         // Create and place element
         if (typeof createScheduledTaskElement !== 'function') {
             log.error('createScheduledTaskElement not available');
@@ -844,7 +1199,7 @@
         }
 
         const element = createScheduledTaskElement(
-            task.taskId, task.content, task.duration, hour, minutes, task.clarity
+            task.taskId, task.content, task.duration, hour, minutes, task.impact
         );
         hourSlot.appendChild(element);
 
@@ -858,6 +1213,34 @@
 
         if (typeof recalculateOverlaps === 'function') recalculateOverlaps(dayCalendar);
         if (typeof updateCommitBar === 'function') updateCommitBar();
+
+        // Persist to API
+        const scheduledTime = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+        try {
+            const response = await fetch(`/api/tasks/${task.taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scheduled_date: day,
+                    scheduled_time: scheduledTime,
+                }),
+            });
+
+            if (response.ok) {
+                log.info(`Scheduled ${task.taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
+            } else {
+                log.error(`Failed to schedule task ${task.taskId}`);
+                // Remove the optimistic element on failure
+                element.remove();
+                if (originalTask) originalTask.classList.remove('scheduled');
+                if (typeof recalculateOverlaps === 'function') recalculateOverlaps(dayCalendar);
+            }
+        } catch (error) {
+            log.error(`Failed to schedule task ${task.taskId}:`, error);
+            element.remove();
+            if (originalTask) originalTask.classList.remove('scheduled');
+            if (typeof recalculateOverlaps === 'function') recalculateOverlaps(dayCalendar);
+        }
     }
 
     // ==========================================================================
@@ -883,14 +1266,14 @@
 
 /**
  * @typedef {Object} Task
- * @property {string} taskId - Todoist task ID
+ * @property {string} taskId - Task ID
  * @property {string} content - Task content/title
  * @property {number} duration - Duration in minutes
  * @property {number} priority - Priority (1-4, 4=highest)
  * @property {string} clarity - Clarity level (executable|defined|exploratory)
- * @property {string} dueDate - Due date (YYYY-MM-DD) or empty
+ * @property {string} scheduledDate - Scheduled date (YYYY-MM-DD) or empty
  * @property {boolean} isRecurring - Whether task is recurring
- * @property {boolean} hasMatchingDate - Whether due date matches target day
+ * @property {boolean} hasMatchingDate - Whether scheduled date matches target day
  */
 
 /**

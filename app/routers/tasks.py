@@ -33,7 +33,7 @@ class TaskCreate(BaseModel):
     parent_id: int | None = None
     duration_minutes: int | None = None
     impact: int = 4
-    clarity: str | None = None
+    clarity: str = "defined"  # Default to "defined" - all tasks must have clarity
     due_date: date | None = None
     due_time: time | None = None
     scheduled_date: date | None = None
@@ -157,6 +157,7 @@ async def list_tasks(
     status: str = Query("pending", description="Filter by status"),
     scheduled_date: date | None = Query(None, description="Filter by scheduled date"),
     is_recurring: bool | None = Query(None, description="Filter recurring/non-recurring"),
+    clarity: str | None = Query(None, description="Filter by clarity (executable/defined/exploratory/none)"),
     parent_id: int | None = Query(None, description="Get subtasks of a task"),
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
@@ -168,6 +169,7 @@ async def list_tasks(
         status=status,
         scheduled_date=scheduled_date,
         is_recurring=is_recurring,
+        clarity=clarity,
         parent_id=parent_id,
         top_level_only=(parent_id is None),
     )

@@ -477,6 +477,85 @@
 .import-status.error {
     color: #dc2626;
 }
+
+/* Secondary Button */
+.btn-secondary {
+    padding: 0.5rem 1rem;
+    background: var(--surface2, #f1f5f9);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text, #1e293b);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-secondary:hover {
+    background: var(--border, #e2e8f0);
+}
+
+/* Unclear Tasks List */
+.unclear-tasks-container {
+    margin-top: 1rem;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 6px;
+    background: var(--surface, #fff);
+}
+
+.unclear-tasks-header {
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.unclear-task-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.unclear-task-item:last-child {
+    border-bottom: none;
+}
+
+.unclear-task-title {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--text, #1e293b);
+}
+
+.unclear-task-clarity {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.clarity-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 4px;
+    background: var(--surface, #fff);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.clarity-btn:hover {
+    border-color: var(--primary, #6366f1);
+    color: var(--primary, #6366f1);
+}
+
+.unclear-empty {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.875rem;
+}
 </style>
 {% endblock %}
 
@@ -592,6 +671,12 @@
             </button>
         </div>
         <div id="import-status" class="import-status"></div>
+        <div class="import-buttons" style="margin-top: 1rem;">
+            <button type="button" class="btn-secondary" id="btn-show-unclear" onclick="showUnclearTasks()">
+                Show Unclear Tasks
+            </button>
+        </div>
+        <div id="unclear-tasks-container" class="unclear-tasks-container" style="display: none;"></div>
     </section>
     {% endif %}
 </div>
@@ -779,6 +864,89 @@ async function wipeAllData() {
         btn.disabled = false;
         btn.textContent = 'Wipe All Data';
     }
+}
+
+// Show unclear tasks
+async function showUnclearTasks() {
+    const container = document.getElementById('unclear-tasks-container');
+    const btn = document.getElementById('btn-show-unclear');
+
+    // Toggle visibility
+    if (container.style.display !== 'none') {
+        container.style.display = 'none';
+        btn.textContent = 'Show Unclear Tasks';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+
+    try {
+        const response = await fetch('/api/tasks?clarity=none');
+        const tasks = await response.json();
+
+        if (tasks.length === 0) {
+            container.innerHTML = '<div class="unclear-empty">No unclear tasks found. All tasks have clarity assigned.</div>';
+        } else {
+            container.innerHTML = `
+                <div class="unclear-tasks-header">${tasks.length} task${tasks.length === 1 ? '' : 's'} without clarity</div>
+                ${tasks.map(task => `
+                    <div class="unclear-task-item" data-task-id="${task.id}">
+                        <span class="unclear-task-title">${escapeHtml(task.title)}</span>
+                        <div class="unclear-task-clarity">
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'executable')">Exec</button>
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'defined')">Def</button>
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'exploratory')">Expl</button>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+        }
+        container.style.display = 'block';
+    } catch (e) {
+        container.innerHTML = '<div class="unclear-empty">Failed to load tasks</div>';
+        container.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Hide Unclear Tasks';
+    }
+}
+
+async function setTaskClarity(taskId, clarity) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clarity })
+        });
+
+        if (response.ok) {
+            // Remove the item from the list
+            const item = document.querySelector(`.unclear-task-item[data-task-id="${taskId}"]`);
+            if (item) {
+                item.remove();
+                // Update count or show empty message
+                const container = document.getElementById('unclear-tasks-container');
+                const remaining = container.querySelectorAll('.unclear-task-item').length;
+                if (remaining === 0) {
+                    container.innerHTML = '<div class="unclear-empty">No unclear tasks found. All tasks have clarity assigned.</div>';
+                } else {
+                    const header = container.querySelector('.unclear-tasks-header');
+                    if (header) {
+                        header.textContent = `${remaining} task${remaining === 1 ? '' : 's'} without clarity`;
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Failed to update task clarity:', e);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 {% endblock %}
