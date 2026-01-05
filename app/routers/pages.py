@@ -227,11 +227,16 @@ async def dashboard(
         # Check if instance has a specific time
         has_time = instance.scheduled_datetime is not None or instance.task.scheduled_time is not None
         if has_time:
-            instance_datetime = instance.scheduled_datetime or datetime.combine(
-                instance.instance_date,
-                instance.task.scheduled_time,
-                tzinfo=UTC,
-            )
+            if instance.scheduled_datetime is not None:
+                instance_datetime = instance.scheduled_datetime
+            else:
+                # has_time is True and scheduled_datetime is None, so scheduled_time must exist
+                assert instance.task.scheduled_time is not None
+                instance_datetime = datetime.combine(
+                    instance.instance_date,
+                    instance.task.scheduled_time,
+                    tzinfo=UTC,
+                )
             scheduled_tasks_by_date.setdefault(instance.instance_date, []).append(
                 {
                     "task": instance.task,
