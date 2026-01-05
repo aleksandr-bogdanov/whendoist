@@ -451,31 +451,90 @@
         }
     }
 
+    // Track pending deletion for undo
+    let pendingDeletion = null;
+    let deletionTimeout = null;
+    const DELETION_DELAY = 5000; // 5 seconds to undo
+
     async function handleDelete() {
         if (!currentTaskId || isNaN(currentTaskId)) {
             console.error('Cannot delete: invalid task ID', currentTaskId);
             return;
         }
 
-        if (!confirm('Delete this task?')) {
-            return;
-        }
-
         const taskId = currentTaskId;
+        const taskTitle = dialogEl.querySelector('[name="title"]').value || 'Task';
         closeDialog();
+
+        // Cancel any existing pending deletion
+        if (pendingDeletion) {
+            executeDeleteNow(pendingDeletion.taskId, pendingDeletion.removedElements);
+        }
 
         // Remove task from UI immediately
         const taskElements = document.querySelectorAll(`[data-task-id="${taskId}"]`);
         const removedElements = [];
         taskElements.forEach(el => {
             const parent = el.parentElement;
+            const nextSibling = el.nextSibling;
             const dayCalendar = el.closest('.day-calendar');
-            removedElements.push({ el, parent, dayCalendar });
+            removedElements.push({ el, parent, nextSibling, dayCalendar });
             el.remove();
             if (dayCalendar && window.recalculateOverlaps) {
                 window.recalculateOverlaps(dayCalendar);
             }
         });
+
+        // Store for undo
+        pendingDeletion = { taskId, removedElements };
+
+        // Show toast with undo
+        const displayTitle = taskTitle.length > 30 ? taskTitle.substring(0, 30) + '...' : taskTitle;
+        if (window.Toast) {
+            Toast.show(`"${displayTitle}" deleted`, {
+                onUndo: () => undoDialogDelete()
+            });
+        }
+
+        // Schedule actual deletion after delay
+        if (deletionTimeout) clearTimeout(deletionTimeout);
+        deletionTimeout = setTimeout(() => executeDeleteNow(taskId, removedElements), DELETION_DELAY);
+    }
+
+    function undoDialogDelete() {
+        if (!pendingDeletion) return;
+
+        const { removedElements } = pendingDeletion;
+
+        // Cancel scheduled deletion
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
+
+        // Restore elements
+        removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
+            if (parent) {
+                if (nextSibling && nextSibling.parentNode === parent) {
+                    parent.insertBefore(el, nextSibling);
+                } else {
+                    parent.appendChild(el);
+                }
+                if (dayCalendar && window.recalculateOverlaps) {
+                    window.recalculateOverlaps(dayCalendar);
+                }
+            }
+        });
+
+        pendingDeletion = null;
+    }
+
+    async function executeDeleteNow(taskId, removedElements) {
+        pendingDeletion = null;
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
 
         try {
             const response = await fetch(`/api/tasks/${taskId}`, {
@@ -484,28 +543,39 @@
 
             if (!response.ok) {
                 // Restore elements on failure
-                removedElements.forEach(({ el, parent, dayCalendar }) => {
+                removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                     if (parent) {
-                        parent.appendChild(el);
+                        if (nextSibling && nextSibling.parentNode === parent) {
+                            parent.insertBefore(el, nextSibling);
+                        } else {
+                            parent.appendChild(el);
+                        }
                         if (dayCalendar && window.recalculateOverlaps) {
                             window.recalculateOverlaps(dayCalendar);
                         }
                     }
                 });
-                alert('Failed to delete task');
+                if (window.Toast) {
+                    Toast.show('Failed to delete task', { showUndo: false });
+                }
             }
         } catch (err) {
             console.error('Failed to delete task:', err);
-            // Restore elements on failure
-            removedElements.forEach(({ el, parent, dayCalendar }) => {
+            removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                 if (parent) {
-                    parent.appendChild(el);
+                    if (nextSibling && nextSibling.parentNode === parent) {
+                        parent.insertBefore(el, nextSibling);
+                    } else {
+                        parent.appendChild(el);
+                    }
                     if (dayCalendar && window.recalculateOverlaps) {
                         window.recalculateOverlaps(dayCalendar);
                     }
                 }
             });
-            alert('Failed to delete task. Please try again.');
+            if (window.Toast) {
+                Toast.show('Failed to delete task', { showUndo: false });
+            }
         }
     }
 

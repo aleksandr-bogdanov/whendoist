@@ -7,16 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Todo
+### Planned
+- Redesign Thoughts space
+- Redesign Settings space
+- Support task completion
+- Polish Todoist import UX
 
-- Rename "Inbox" to "Thoughts" (Disco Elysium reference)
-- Make Thoughts the default dashboard view with quick-add
-- Redesign "+" button
-- Improve domain management UX
-- Redesign "Plan My Day" button
-- Redesign settings page from scratch
-- Tune top bar styling
-- Fix compact (CMPCT) view
+### Known Issues
+- Multiple anytime tasks may cause calendar alignment shift between days
+
+---
+
+## [0.5.0] - 2026-01-05
+
+### Summary
+Major UI polish release focused on the **Tasks space**. Establishes a calm, enterprise-grade aesthetic with improved information hierarchy, tint-based interactions, and a consistent visual grammar across task list and calendar.
+
+### Added
+
+- **Grid-based task layout** — Duration, Impact, and Clarity in fixed-width columns with proper alignment
+- **Column separators in header** — Vertical lines centered in column gaps (header only, not rows)
+- **Inset row dividers** — Separator lines start after the impact rail, not cutting through it
+- **Hour banding on calendar** — Alternating row backgrounds for easier scanning
+- **Major hour lines** — Stronger border every 2 hours for visual rhythm
+- **Time axis gutter** — 54px label column with right-aligned tabular numbers
+
+### Changed
+
+- **Task row hover** — Now uses neutral slate tint instead of purple wash
+- **Selection state** — Purple tint reserved exclusively for selected items
+- **Impact rail** — Implemented as pseudo-element for cleaner rendering
+- **Day separator** — Changed from heavy slab to subtle line + centered pill
+- **Anytime lane** — Tray-style container with white task cards inside
+- **Text contrast** — Bumped all text colors for better readability
+- **Border system** — Refined 3-tier hierarchy (hair/normal/strong)
+- **Sort header** — Removed rounded border, text color only for active state
+- **Column widths** — Duration 68px, Impact 56px, Clarity 80px, Gap 12px
+
+### Fixed
+
+- **Calendar cell width** — No longer expands with long task text (min-width: 0)
+- **Tasks spanning day separator** — Duration display now correct across boundaries
+- **Trash bin drop zone** — Active area covers entire button, not just top portion
+- **Scheduled task positioning** — Removed conflicting position: relative override
+- **Drag rescheduling** — Tasks no longer disappear during calendar drag operations
+
+### Design System
+
+See [DESIGN.md](./DESIGN.md) for comprehensive documentation of the Tasks space design patterns.
+
+---
 
 ## [0.4.0] - 2026-01-04
 
@@ -45,6 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vertical alignment of energy buttons and Plan My Day button
 - Selection overlay positioning in hour grid with borders
 - Removed unwanted scroll behavior when entering Plan mode
+
+---
 
 ## [0.3.0] - 2025-12-30
 
@@ -76,6 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tasks without duration default to 30 minutes
 - Algorithm skips tasks that don't fit instead of advancing slots
 
+---
+
 ## [0.2.0] - 2025-12-28
 
 ### Added
@@ -89,6 +133,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commit scheduled tasks to Todoist API
 - Calendar carousel (15 days: 7 before, today, 7 after)
 - "Today" floating button for quick navigation
+
+---
 
 ## [0.1.0] - 2025-12-27
 
@@ -104,7 +150,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarity labels parsing (`@executable`, `@defined`, `@exploratory`)
 - Duration parsing from task description (`d:30m`, `d:2h`, `d:1h30m`)
 
-[unreleased]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.4.0...HEAD
+---
+
+[unreleased]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.1.0...v0.2.0

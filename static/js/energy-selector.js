@@ -5,7 +5,6 @@
  * Uses CSS-based filtering via body[data-energy-level] attribute.
  *
  * Energy Levels:
- *   0 (Show All):   All tasks visible, including those without clarity
  *   1 (Zombie):     Only @executable tasks visible
  *   2 (Normal):     @executable and @defined visible
  *   3 (Deep Focus): All tasks with clarity labels visible
@@ -27,18 +26,17 @@
 
     /**
      * Initialize energy selector.
-     * Attaches click handlers to energy buttons and applies initial state.
+     * Attaches click handlers to energy pills in header and applies initial state.
      */
     function init() {
-        const selector = document.querySelector('.energy-selector');
-        if (!selector) return;
+        const headerEnergy = document.getElementById('header-energy');
+        if (!headerEnergy) return;
 
-        const buttons = selector.querySelectorAll('.energy-btn');
-        buttons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const level = parseInt(btn.dataset.energy, 10);
-                // Allow 0 (Show All) through 3 (Focus)
-                if (level >= 0 && level <= 3) {
+        const pills = headerEnergy.querySelectorAll('.energy-pill');
+        pills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                const level = parseInt(pill.dataset.energy, 10);
+                if (level >= 1 && level <= 3) {
                     setEnergy(level);
                 }
             });
@@ -50,22 +48,22 @@
 
     /**
      * Set the current energy level and update UI.
-     * @param {number} level - Energy level (0-3)
+     * @param {number} level - Energy level (1-3)
      */
     function setEnergy(level) {
         currentEnergy = level;
 
-        // Update button states - remove active from all first
-        document.querySelectorAll('.energy-btn').forEach(btn => {
-            btn.classList.remove('active');
-            btn.setAttribute('aria-pressed', 'false');
+        // Update pill states - remove active from all first
+        document.querySelectorAll('.energy-pill').forEach(pill => {
+            pill.classList.remove('active');
+            pill.setAttribute('aria-pressed', 'false');
         });
 
-        // Then add active to the selected button
-        const activeBtn = document.querySelector(`.energy-btn[data-energy="${level}"]`);
-        if (activeBtn) {
-            activeBtn.classList.add('active');
-            activeBtn.setAttribute('aria-pressed', 'true');
+        // Then add active to the selected pill
+        const activePill = document.querySelector(`.energy-pill[data-energy="${level}"]`);
+        if (activePill) {
+            activePill.classList.add('active');
+            activePill.setAttribute('aria-pressed', 'true');
         }
 
         // Apply filter (CSS-based visibility only)
@@ -78,42 +76,6 @@
      */
     function applyEnergyFilter() {
         document.body.dataset.energyLevel = currentEnergy;
-        // Update task counts after CSS has been applied
-        requestAnimationFrame(updateTaskCounts);
-    }
-
-    /**
-     * Update task counts in domain headers to show visible/total.
-     */
-    function updateTaskCounts() {
-        const projectGroups = document.querySelectorAll('.project-group');
-
-        projectGroups.forEach(group => {
-            const taskList = group.querySelector('.task-list');
-            const countEl = group.querySelector('.task-count');
-            if (!taskList || !countEl) return;
-
-            const total = parseInt(countEl.dataset.total, 10) || 0;
-
-            // Count visible tasks (not hidden by CSS and not scheduled)
-            const tasks = taskList.querySelectorAll('.task-item:not(.scheduled)');
-            let visible = 0;
-            tasks.forEach(task => {
-                const style = window.getComputedStyle(task);
-                if (style.display !== 'none') {
-                    visible++;
-                }
-            });
-
-            // Update display: show "visible/total" if different, otherwise just total
-            if (visible < total) {
-                countEl.textContent = `${visible}/${total}`;
-                countEl.classList.add('filtered');
-            } else {
-                countEl.textContent = total;
-                countEl.classList.remove('filtered');
-            }
-        });
     }
 
     // Initialize when DOM is ready
