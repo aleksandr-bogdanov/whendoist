@@ -160,7 +160,7 @@ html, body {
     top: 0;
     z-index: 100;
     background: #FFFFFF;
-    height: 68px;
+    height: 80px;
     display: flex;
     align-items: center;
     padding: 0 !important;
@@ -173,7 +173,7 @@ html, body {
     align-items: center !important;
     justify-content: flex-start;
     width: 100%;
-    max-width: 1100px;
+    max-width: 1200px;
     height: 100%;
     padding: 0 var(--content-padding);
     margin: 0 auto;
@@ -217,10 +217,10 @@ img.brand-logo {
 }
 
 /* =============================================================================
-   Spaces Navigation (Thoughts/Tasks/Settings)
+   Page Navigation (Thoughts/Tasks/Analytics/Settings)
    ============================================================================= */
 
-.header-spaces {
+.header-nav {
     display: inline-flex !important;
     align-items: center !important;
     flex-shrink: 0 !important;
@@ -231,7 +231,7 @@ img.brand-logo {
     box-sizing: border-box;
 }
 
-.space-item {
+.nav-item {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -248,13 +248,13 @@ img.brand-logo {
     line-height: 1;
 }
 
-.space-item:hover {
+.nav-item:hover {
     color: var(--text);
     background: rgba(15, 23, 42, 0.04);
 }
 
 /* Patch 34: Active tab - subtle filled state */
-.space-item.active {
+.nav-item.active {
     background: rgba(15, 23, 42, 0.06);
     color: var(--text);
     box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
@@ -359,7 +359,7 @@ img.brand-logo {
    Mobile Responsive Header
    ============================================================================= */
 
-@media (max-width: 900px), (orientation: portrait) {
+@media (max-width: 900px) {
     .site-header {
         height: 40px;
     }
@@ -378,12 +378,12 @@ img.brand-logo {
         display: none;
     }
 
-    .header-spaces {
+    .header-nav {
         padding: 2px;
         height: 28px;
     }
 
-    .space-item {
+    .nav-item {
         padding: 0 0.5rem;
         height: 24px;
         font-size: 0.55rem;
@@ -666,7 +666,7 @@ img.brand-logo {
 }
 
 /* Show hamburger on mobile */
-@media (max-width: 900px), (orientation: portrait) {
+@media (max-width: 900px) {
     .hamburger-toggle {
         display: flex;
     }

@@ -52,7 +52,6 @@ class TaskResponse(BaseModel):
     is_recurring: bool
     duration_minutes: int | None
     priority: int
-    url: str
     parent_id: str | None
     subtask_count: int
 
@@ -167,7 +166,6 @@ async def get_tasks(
                 is_recurring=task.due.is_recurring if task.due else False,
                 duration_minutes=task.duration_minutes,
                 priority=task.priority,
-                url=task.url,
                 parent_id=task.parent_id,
                 subtask_count=subtask_counts.get(task.id, 0),
             )

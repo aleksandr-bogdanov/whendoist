@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Whendoist{% endblock %}
+{% block title %}Tasks - Whendoist{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="/static/css/dashboard.css">
@@ -14,7 +14,7 @@
 </div>
 {% endif %}
 
-<div class="dashboard-layout">
+<div class="tasks-layout">
     <!-- LEFT PANEL: Task List -->
     <section class="tasks-panel">
         <!-- Task List -->
@@ -53,14 +53,20 @@
                     <div class="task-list">
                         {% for task_item in domain_item.tasks %}
                         {% set task = task_item.task %}
-                        <div class="task-item impact-{{ task.impact }}{% if task.scheduled_date and task.scheduled_time %} scheduled{% endif %}"
+                        {% set is_completed = task.status == 'completed' or task_item.instance_completed_at %}
+                        <div class="task-item impact-{{ task.impact }}{% if task.scheduled_date and task.scheduled_time %} scheduled{% endif %}{% if task_item.completion_age_class %} {{ task_item.completion_age_class }}{% endif %}"
                              data-clarity="{{ task.clarity or 'none' }}"
                              data-impact="{{ task.impact or 4 }}"
                              data-task-id="{{ task.id }}"
+                             data-completed="{{ '1' if is_completed else '0' }}"
                              data-duration="{{ task.duration_minutes or '' }}"
                              data-scheduled-date="{{ task.scheduled_date.isoformat() if task.scheduled_date else '' }}"
                              data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
                              {% if not (task.scheduled_date and task.scheduled_time) %}draggable="true"{% endif %}>
+                            <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task.status == 'completed' else 'false' }}">
+                                <span class="complete-bar"></span>
+                                <span class="complete-check" aria-hidden="true">✓</span>
+                            </button>
                             <div class="task-content">
                                 <span class="task-text">{{ task.title }}</span>
                                 {% if task_item.next_occurrence or task.scheduled_date %}
@@ -94,6 +100,9 @@
                             </div>
                         </div>
                         {% endfor %}
+                        <div class="add-task-row" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}">
+                            <span class="add-task-text">+ Add task</span>
+                        </div>
                     </div>
                 </details>
                 {% endfor %}
@@ -139,13 +148,19 @@
                     <span class="date-only-label">Anytime</span>
                     <div class="date-only-tasks">
                         {% for item in day.date_only_tasks %}
-                        <div class="date-only-task impact-{{ item.task.impact or 4 }}"
+                        {% set item_status = item.instance.status if item.is_instance else item.task.status %}
+                        <div class="date-only-task calendar-item impact-{{ item.task.impact or 4 }}{% if item.completion_age_class %} {{ item.completion_age_class }}{% endif %}"
                              data-task-id="{{ item.task.id }}"
+                             data-completed="{{ '1' if item_status == 'completed' else '0' }}"
                              {% if item.is_instance %}data-instance-id="{{ item.instance.id }}" data-instance-date="{{ item.instance.instance_date.isoformat() }}"{% endif %}
                              data-duration="{{ item.duration_minutes }}"
                              data-clarity="{{ item.clarity }}"
                              data-impact="{{ item.task.impact or 4 }}"
                              draggable="true">
+                            <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if item_status == 'completed' else 'false' }}">
+                                <span class="complete-bar"></span>
+                                <span class="complete-check" aria-hidden="true">✓</span>
+                            </button>
                             {% if item.duration_minutes %}
                             <span class="date-only-task-duration">
                                 {% if item.duration_minutes >= 60 %}{{ item.duration_minutes // 60 }}h{% if item.duration_minutes % 60 %}{{ item.duration_minutes % 60 }}m{% endif %}{% else %}{{ item.duration_minutes }}m{% endif %}
@@ -201,15 +216,21 @@
                             {% set duration_class = 'duration-short' if duration_mins < 30 else ('duration-medium' if duration_mins < 60 else 'duration-long') %}
                             {% set start_mins = scheduled.start.hour * 60 + scheduled.start.minute %}
                             {% set end_mins = start_mins + duration_mins %}
-                            <div class="scheduled-task impact-{{ scheduled.task.impact or 4 }} {{ duration_class }} from-db{% if scheduled.is_instance %} recurring-instance{% endif %}"
+                            {% set task_status = scheduled.instance.status if scheduled.is_instance else scheduled.task.status %}
+                            <div class="scheduled-task calendar-item impact-{{ scheduled.task.impact or 4 }} {{ duration_class }} from-db{% if scheduled.is_instance %} recurring-instance{% endif %}{% if scheduled.completion_age_class %} {{ scheduled.completion_age_class }}{% endif %}"
                                  style="height: {{ height_px }}px; top: {{ top_px }}px;"
                                  data-task-id="{{ scheduled.task.id }}"
+                                 data-completed="{{ '1' if task_status == 'completed' else '0' }}"
                                  {% if scheduled.is_instance %}data-instance-id="{{ scheduled.instance.id }}" data-instance-date="{{ scheduled.instance.instance_date.isoformat() }}"{% endif %}
                                  data-start-mins="{{ start_mins }}"
                                  data-end-mins="{{ end_mins }}"
                                  data-duration="{{ duration_mins }}"
                                  data-clarity="{{ scheduled.clarity }}"
                                  data-impact="{{ scheduled.task.impact or 4 }}">
+                                <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task_status == 'completed' else 'false' }}">
+                                    <span class="complete-bar"></span>
+                                    <span class="complete-check" aria-hidden="true">✓</span>
+                                </button>
                                 <div class="scheduled-task-left">
                                     <span class="scheduled-task-time">{{ scheduled.start.strftime('%H:%M') }}</span>
                                     {% if duration_mins >= 30 %}
@@ -244,7 +265,7 @@
 </div>
 
 <!-- Add Task FAB -->
-<button type="button" class="add-task-btn" aria-label="Add Task">+</button>
+<button type="button" class="add-task-btn" aria-label="Add Task"></button>
 {% endblock %}
 
 {% block scripts %}
@@ -252,6 +273,7 @@
 <script src="/static/js/task-dialog.js"></script>
 <script src="/static/js/energy-selector.js"></script>
 <script src="/static/js/task-sort.js"></script>
+<script src="/static/js/task-complete.js"></script>
 <script src="/static/js/drag-drop.js"></script>
 <script src="/static/js/plan-tasks.js"></script>
 <script>

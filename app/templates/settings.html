@@ -4,188 +4,419 @@
 
 {% block extra_css %}
 <style>
-/* Settings Page - Minimalist Design */
-.settings-layout {
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 1.5rem 0;
+/* =============================================================================
+   Settings v0.6 - Final polish
+   User-defined labels preserved, aligned controls, proper integrations
+   ============================================================================= */
+
+/* 1) Page wrapper */
+.settings-page {
+    min-height: calc(100vh - 80px);
+    padding: 0 24px 24px;
+    display: flex;
+    justify-content: center;
 }
 
-.settings-header {
-    margin-bottom: 2rem;
+/* 2) Page surface - shared container style */
+.page-surface {
+    width: 100%;
+    max-width: 1100px;
+    background: var(--grey-bg);
+    border: 1px solid var(--border-hair);
+    border-radius: 12px;
+    padding: 32px 36px 44px;
+    box-sizing: border-box;
 }
 
-.settings-header h1 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text, #1e293b);
-}
-
-/* Section */
-.settings-section {
-    margin-bottom: 2rem;
-}
-
-.section-label {
-    font-size: 0.6875rem;
-    font-weight: 600;
+/* 3) Page title - ALL CAPS */
+.settings-title {
+    margin: 0 0 28px 0;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted, #64748b);
-    margin-bottom: 0.75rem;
+    letter-spacing: 0.10em;
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text);
 }
 
-/* Domain List */
-.domain-list {
+/* 4) Two-column grid */
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.settings-column {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 20px;
+    min-width: 0;
+    overflow: hidden;
 }
 
-.domain-item {
+/* =============================================================================
+   Panel component
+   ============================================================================= */
+
+.settings-panel {
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.settings-panel__hd {
+    background: var(--grey-bg);
+    border-bottom: 1px solid var(--border-hair);
+    padding: 12px 16px;
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 0.75rem;
-    background: var(--surface, #fff);
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: 6px;
-    transition: border-color 0.15s;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
 }
 
-.domain-item:hover {
-    border-color: var(--text-muted, #94a3b8);
+.panel-hd-left {
+    flex: 1;
 }
 
-.domain-icon {
-    font-size: 1rem;
-    width: 1.5rem;
-    text-align: center;
+.panel-title {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    margin: 0 0 4px 0;
+}
+
+.panel-desc {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.panel-hd-right {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: var(--text-faint);
+    padding-top: 2px;
     flex-shrink: 0;
 }
 
-.domain-name {
-    flex: 1;
-    font-size: 0.875rem;
-    color: var(--text, #1e293b);
-}
-
-.domain-actions {
-    display: flex;
-    gap: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.15s;
-}
-
-.domain-item:hover .domain-actions {
-    opacity: 1;
-}
-
-.domain-action-btn {
-    padding: 0.25rem 0.5rem;
-    background: none;
-    border: none;
-    font-size: 0.75rem;
-    color: var(--text-muted, #64748b);
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background 0.15s, color 0.15s;
-}
-
-.domain-action-btn:hover {
-    background: var(--surface2, #f1f5f9);
-    color: var(--text, #1e293b);
-}
-
-.domain-action-btn.delete:hover {
-    color: #dc2626;
-}
-
-/* Add Domain */
-.add-domain-row {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.add-domain-input {
-    flex: 1;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    background: var(--surface, #fff);
-    color: var(--text, #1e293b);
-}
-
-.add-domain-input:focus {
-    outline: none;
-    border-color: var(--primary, #6366f1);
-}
-
-.add-domain-input::placeholder {
-    color: var(--text-muted, #94a3b8);
-}
-
-.add-domain-btn {
-    padding: 0.5rem 1rem;
-    background: var(--primary, #6366f1);
-    border: none;
-    border-radius: 6px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.add-domain-btn:hover {
-    background: var(--primary-hover, #4f46e5);
-}
-
-.add-domain-btn:disabled {
+/* Disabled panel state */
+.settings-panel--disabled .settings-panel__bd {
     opacity: 0.5;
-    cursor: not-allowed;
+    pointer-events: none;
 }
 
-.empty-domains {
-    padding: 1.5rem;
-    text-align: center;
-    color: var(--text-muted, #94a3b8);
-    font-size: 0.875rem;
-    border: 1px dashed var(--border, #e2e8f0);
-    border-radius: 6px;
+.panel-disabled-notice {
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: rgba(15, 23, 42, 0.02);
+    border-bottom: 1px solid var(--border-hair);
 }
 
-/* Calendar Section */
-.calendar-section-desc {
-    font-size: 0.8125rem;
-    color: var(--text-muted, #64748b);
-    margin-bottom: 0.75rem;
-    line-height: 1.5;
-}
+/* =============================================================================
+   Unified Row component
+   ============================================================================= */
 
-.calendar-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.calendar-item {
+.settings-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 0.75rem;
-    background: var(--surface, #fff);
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: 6px;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-hair);
+    background: var(--light-bg);
+    transition: background 0.1s ease;
+    min-height: 44px;
+    box-sizing: border-box;
 }
 
-.calendar-color {
+.settings-row:last-child {
+    border-bottom: none;
+}
+
+.settings-row:hover {
+    background: var(--row-hover);
+}
+
+/* Right-aligned column for actions/toggles - fixed width for alignment */
+.settings-row__right {
+    margin-left: auto;
+    min-width: 80px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Row actions - hidden until hover */
+.row-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    flex-shrink: 0;
+}
+
+.settings-row:hover .row-actions,
+.settings-row:focus-within .row-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Add row variant */
+.settings-row--add {
+    background: var(--grey-bg);
+    border-bottom: none;
+    gap: 8px;
+}
+
+.settings-row--add:hover {
+    background: var(--grey-bg);
+}
+
+.settings-row--add .settings-row__right {
+    min-width: 0;
+}
+
+/* Clickable row */
+.settings-row--clickable {
+    cursor: pointer;
+}
+
+/* =============================================================================
+   Icon buttons
+   ============================================================================= */
+
+.icon-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--border-hair);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+}
+
+.icon-btn svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+.icon-btn:hover {
+    border-color: var(--border);
+    background: var(--grey-bg);
+    color: var(--text);
+}
+
+.icon-btn.edit:hover {
+    border-color: rgba(109, 94, 246, 0.35);
+    background: rgba(109, 94, 246, 0.08);
+    color: var(--primary);
+}
+
+.icon-btn.delete:hover {
+    border-color: rgba(220, 38, 38, 0.25);
+    background: rgba(220, 38, 38, 0.06);
+    color: var(--danger);
+}
+
+/* Chevron for expandable rows */
+.row-chevron {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-faint);
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+}
+
+.row-chevron.expanded {
+    transform: rotate(180deg);
+}
+
+/* =============================================================================
+   Provider/Integration rows
+   ============================================================================= */
+
+.provider-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--grey-bg);
+    border: 1px solid var(--border-hair);
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.provider-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.provider-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.provider-status {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-faint);
+    flex-shrink: 0;
+}
+
+.status-dot.connected {
+    background: #16a34a;
+}
+
+/* Muted label for locked state */
+.muted-label {
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    white-space: nowrap;
+}
+
+/* =============================================================================
+   Expandable section (for Todoist actions)
+   ============================================================================= */
+
+.expand-section {
+    display: none;
+    background: rgba(15, 23, 42, 0.02);
+    border-bottom: 1px solid var(--border-hair);
+}
+
+.expand-section.open {
+    display: block;
+}
+
+.expand-content {
+    padding: 12px 16px 14px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.expand-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+}
+
+.expand-desc {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    line-height: 1.45;
+    margin-bottom: 10px;
+}
+
+.expand-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.expand-actions__left {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.expand-status {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-hair);
+}
+
+.expand-status.success {
+    color: #16a34a;
+}
+
+.expand-status.error {
+    color: var(--danger);
+}
+
+.btn-text-danger {
+    all: unset;
+    box-sizing: border-box;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--danger);
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.btn-text-danger:hover {
+    opacity: 0.7;
+}
+
+/* Ghost/secondary button variant */
+.btn-sm--ghost {
+    background: transparent;
+    border: 1px solid var(--border-hair);
+    color: var(--text-muted);
+}
+
+.btn-sm--ghost:hover {
+    background: rgba(15, 23, 42, 0.04);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+/* =============================================================================
+   Calendar row
+   ============================================================================= */
+
+.calendar-dot {
     width: 10px;
     height: 10px;
-    border-radius: 2px;
+    border-radius: 3px;
     flex-shrink: 0;
 }
 
@@ -196,32 +427,68 @@
 
 .calendar-name {
     font-size: 0.875rem;
-    color: var(--text, #1e293b);
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.calendar-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
 }
 
 .calendar-badge {
-    font-size: 0.625rem;
-    font-weight: 500;
-    background: var(--primary-tint, #e0e7ff);
-    color: var(--primary, #6366f1);
-    padding: 0.125rem 0.375rem;
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--grey-bg);
+    color: var(--text-muted);
+    padding: 2px 6px;
     border-radius: 3px;
-    margin-left: 0.5rem;
-}
-
-.calendar-toggle {
     flex-shrink: 0;
 }
 
+/* Panel legend text */
+.panel-legend {
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    font-style: italic;
+    margin-top: 4px;
+}
+
+/* Calendar row - compact variant */
+.settings-row--calendar {
+    padding: 8px 16px;
+    min-height: 36px;
+}
+
+.settings-row--calendar .calendar-name {
+    font-size: 0.8125rem;
+}
+
+.settings-row--calendar .calendar-badge {
+    font-size: 0.5rem;
+}
+
+/* Toggle switch */
 .toggle-switch {
+    all: unset;
+    box-sizing: border-box;
     position: relative;
-    width: 36px;
-    height: 20px;
-    background: var(--border, #e2e8f0);
-    border-radius: 10px;
-    border: none;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    background: var(--border);
+    border-radius: 9px;
     cursor: pointer;
     transition: background 0.2s;
+    flex-shrink: 0;
+    vertical-align: middle;
 }
 
 .toggle-switch::after {
@@ -229,100 +496,437 @@
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     background: #fff;
     border-radius: 50%;
-    transition: transform 0.2s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    transition: transform 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12);
 }
 
 .toggle-switch.enabled {
-    background: var(--primary, #6366f1);
+    background: var(--primary);
 }
 
 .toggle-switch.enabled::after {
-    transform: translateX(16px);
+    transform: translateX(14px);
 }
 
-.empty-calendars {
-    padding: 1.5rem;
+/* =============================================================================
+   Domain row
+   ============================================================================= */
+
+.domain-icon {
+    font-size: 1rem;
+    width: 24px;
     text-align: center;
-    color: var(--text-muted, #94a3b8);
+    flex-shrink: 0;
+}
+
+.domain-name {
+    flex: 1;
     font-size: 0.875rem;
+    color: var(--text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Connection Card */
-.connection-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: var(--surface, #fff);
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: 6px;
+/* Imported domain badge */
+.domain-imported {
+    font-size: 0.55rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    flex-shrink: 0;
 }
 
-.connection-card.connected {
-    border-color: #86efac;
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-}
-
-.connection-icon {
+/* Emoji picker */
+.emoji-picker-btn {
+    all: unset;
+    box-sizing: border-box;
     width: 32px;
     height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border-hair);
+    background: #fff;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface2, #f1f5f9);
+    font-size: 1rem;
+    transition: border-color 0.15s, background 0.15s;
+    flex-shrink: 0;
+}
+
+.emoji-picker-btn:hover {
+    border-color: var(--border);
+    background: var(--grey-bg);
+}
+
+.emoji-picker-btn:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.12);
+}
+
+.emoji-picker-wrap {
+    position: relative;
+}
+
+.emoji-picker-popover {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 4px;
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: var(--shadow-overlay);
+    z-index: 100;
+    display: none;
+    width: 220px;
+}
+
+.emoji-picker-popover.open {
+    display: block;
+}
+
+/* In modal, open downward */
+.modal .emoji-picker-popover {
+    bottom: auto;
+    top: 100%;
+    margin-bottom: 0;
+    margin-top: 4px;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.emoji-option {
+    all: unset;
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.emoji-option:hover {
+    background: var(--grey-bg);
+}
+
+/* Add domain input row */
+.settings-row--add {
+    align-items: center;
+}
+
+input.add-domain-input,
+input.add-domain-input[type="text"] {
+    all: unset;
+    box-sizing: border-box;
+    flex: 1;
+    height: 32px;
+    padding: 0 10px;
+    margin: 0;
+    border: 1px solid var(--border-hair);
     border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-muted, #64748b);
-}
-
-.connection-card.connected .connection-icon {
+    font-size: 0.8125rem;
     background: #fff;
+    color: var(--text);
+    line-height: 32px;
 }
 
-.connection-info {
+input.add-domain-input:focus,
+input.add-domain-input[type="text"]:focus {
+    outline: none;
+    border-color: var(--border);
+    box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.12);
+}
+
+input.add-domain-input::placeholder {
+    color: var(--text-faint);
+}
+
+/* =============================================================================
+   Buttons
+   ============================================================================= */
+
+.btn-sm {
+    all: unset;
+    box-sizing: border-box;
+    padding: 0 12px;
+    margin: 0;
+    border-radius: 5px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    height: 28px;
+    line-height: 1;
+}
+
+.btn-sm--primary {
+    background: var(--primary);
+    color: #fff;
+}
+
+.btn-sm--primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-sm--secondary {
+    background: var(--grey-bg);
+    border: 1px solid var(--border-hair);
+    color: var(--text);
+}
+
+.btn-sm--secondary:hover {
+    background: rgba(15, 23, 42, 0.06);
+    border-color: var(--border);
+}
+
+.btn-sm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =============================================================================
+   Maintenance panel (danger only)
+   ============================================================================= */
+
+.maintenance-content {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.maintenance-info {
     flex: 1;
 }
 
-.connection-name {
-    font-size: 0.875rem;
+.maintenance-warning {
+    font-size: 0.72rem;
+    color: var(--danger);
     font-weight: 500;
-    color: var(--text, #1e293b);
+    margin-bottom: 4px;
 }
 
-.connection-status {
-    font-size: 0.75rem;
-    color: var(--text-muted, #64748b);
+.maintenance-desc {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.4;
 }
 
-.connection-status.connected {
-    color: #16a34a;
+.btn-sm--danger {
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: var(--danger);
+    flex-shrink: 0;
 }
 
-.btn-connect {
-    padding: 0.375rem 0.75rem;
-    background: var(--primary, #6366f1);
-    border: none;
-    border-radius: 5px;
-    font-size: 0.75rem;
+.btn-sm--danger:hover {
+    background: rgba(220, 38, 38, 0.14);
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* =============================================================================
+   Segmented Control
+   ============================================================================= */
+
+.segmented-control {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.segmented-btn {
+    all: unset;
+    box-sizing: border-box;
+    padding: 5px 10px;
+    font-size: 0.625rem;
     font-weight: 500;
-    color: #fff;
-    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    background: var(--light-bg);
     cursor: pointer;
-    transition: background 0.15s;
+    border-right: 1px solid var(--border-hair);
+    transition: background 0.1s, color 0.1s;
+    white-space: nowrap;
 }
 
-.btn-connect:hover {
-    background: var(--primary-hover, #4f46e5);
+.segmented-btn:last-child {
+    border-right: none;
 }
 
-/* Domain Edit Modal */
-.domain-edit-overlay {
+.segmented-btn:hover {
+    background: var(--grey-bg);
+}
+
+.segmented-btn.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+.segmented-btn.active:hover {
+    background: var(--primary-hover);
+}
+
+/* Task Display row label */
+.pref-label {
+    flex: 1;
+    font-size: 0.8125rem;
+    color: var(--text);
+    min-width: 0;
+}
+
+.backup-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.backup-info .pref-label {
+    flex: none;
+}
+
+.pref-desc {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* =============================================================================
+   Unclear tasks container
+   ============================================================================= */
+
+.unclear-tasks {
+    border-top: 1px solid var(--border-hair);
+    display: none;
+    margin-top: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.unclear-tasks.visible {
+    display: block;
+}
+
+.unclear-tasks__hd {
+    padding: 10px 0;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.unclear-hint {
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--text-faint);
+    font-size: 0.68rem;
+}
+
+.unclear-task-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-hair);
+}
+
+.unclear-task-row:last-child {
+    border-bottom: none;
+}
+
+.unclear-task-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8125rem;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.clarity-btns {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.clarity-btn {
+    all: unset;
+    box-sizing: border-box;
+    padding: 4px 10px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--border-hair);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.clarity-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(109, 94, 246, 0.05);
+}
+
+.unclear-empty {
+    padding: 16px 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+/* =============================================================================
+   Empty states
+   ============================================================================= */
+
+.empty-state {
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+/* =============================================================================
+   Domain Edit Modal
+   ============================================================================= */
+
+.modal-overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -332,384 +936,617 @@
     align-items: center;
 }
 
-.domain-edit-overlay.open {
+.modal-overlay.open {
     display: flex;
 }
 
-.domain-edit-modal {
-    background: var(--surface, #fff);
-    border-radius: 8px;
-    padding: 1.25rem;
-    width: 300px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+.modal {
+    background: var(--light-bg);
+    border-radius: 12px;
+    padding: 20px;
+    width: 320px;
+    box-shadow: var(--shadow-overlay);
 }
 
-.domain-edit-modal h3 {
-    margin: 0 0 1rem;
-    font-size: 0.9375rem;
+.modal__title {
+    margin: 0 0 16px;
+    font-size: 0.875rem;
     font-weight: 600;
+    color: var(--text);
 }
 
-.domain-edit-form {
+.modal__form {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
-.domain-edit-row {
+.modal__row {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
-.domain-edit-row input {
+.modal__row input {
     flex: 1;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border, #e2e8f0);
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.875rem;
+    color: var(--text);
 }
 
-.domain-edit-row input:focus {
+.modal__row input:focus {
     outline: none;
-    border-color: var(--primary, #6366f1);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.15);
 }
 
-.icon-input {
-    width: 50px !important;
+.modal__row .icon-input {
+    width: 54px;
+    flex: none;
     text-align: center;
 }
 
-.domain-edit-actions {
+.modal__actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
     justify-content: flex-end;
-    margin-top: 0.5rem;
+    margin-top: 8px;
 }
 
-.domain-edit-actions button {
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s;
+/* =============================================================================
+   Mobile responsive
+   ============================================================================= */
+
+@media (max-width: 900px) {
+    .settings-page {
+        padding: 16px;
+    }
+
+    .page-surface {
+        padding: 24px;
+    }
+
+    .settings-title {
+        font-size: 1.25rem;
+        margin-bottom: 20px;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Show actions always on mobile */
+    .row-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
 }
 
-.btn-cancel-edit {
-    background: var(--surface2, #f1f5f9);
-    border: 1px solid var(--border, #e2e8f0);
-    color: var(--text, #1e293b);
-}
+@media (max-width: 600px) {
+    .settings-page {
+        padding: 12px;
+    }
 
-.btn-cancel-edit:hover {
-    background: var(--border, #e2e8f0);
-}
+    .page-surface {
+        padding: 16px;
+        border-radius: 10px;
+    }
 
-.btn-save-edit {
-    background: var(--primary, #6366f1);
-    border: none;
-    color: #fff;
-}
+    .settings-panel__hd {
+        padding: 12px 14px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
 
-.btn-save-edit:hover {
-    background: var(--primary-hover, #4f46e5);
-}
+    .panel-hd-right {
+        align-self: flex-end;
+    }
 
-/* Import Section */
-.import-buttons {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-}
+    .settings-row {
+        padding: 12px 14px;
+        min-height: 48px;
+    }
 
-.btn-import {
-    padding: 0.5rem 1rem;
-    background: var(--primary, #6366f1);
-    border: none;
-    border-radius: 6px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.15s, opacity 0.15s;
-}
+    .settings-row__right {
+        min-width: 60px;
+    }
 
-.btn-import:hover {
-    background: var(--primary-hover, #4f46e5);
-}
+    .expand-content {
+        padding: 14px;
+    }
 
-.btn-import:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+    .maintenance-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 14px;
+    }
 
-.btn-danger {
-    padding: 0.5rem 1rem;
-    background: #fee2e2;
-    border: 1px solid #fecaca;
-    border-radius: 6px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: #dc2626;
-    cursor: pointer;
-    transition: background 0.15s, opacity 0.15s;
-}
+    .maintenance-info {
+        text-align: center;
+    }
 
-.btn-danger:hover {
-    background: #fecaca;
-}
-
-.btn-danger:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.import-status {
-    font-size: 0.8125rem;
-    padding: 0.5rem 0;
-    color: var(--text-muted, #64748b);
-}
-
-.import-status.success {
-    color: #16a34a;
-}
-
-.import-status.error {
-    color: #dc2626;
-}
-
-/* Secondary Button */
-.btn-secondary {
-    padding: 0.5rem 1rem;
-    background: var(--surface2, #f1f5f9);
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: 6px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--text, #1e293b);
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.btn-secondary:hover {
-    background: var(--border, #e2e8f0);
-}
-
-/* Unclear Tasks List */
-.unclear-tasks-container {
-    margin-top: 1rem;
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: 6px;
-    background: var(--surface, #fff);
-}
-
-.unclear-tasks-header {
-    padding: 0.75rem 1rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-muted, #64748b);
-    border-bottom: 1px solid var(--border, #e2e8f0);
-}
-
-.unclear-task-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 1rem;
-    border-bottom: 1px solid var(--border, #e2e8f0);
-}
-
-.unclear-task-item:last-child {
-    border-bottom: none;
-}
-
-.unclear-task-title {
-    flex: 1;
-    font-size: 0.875rem;
-    color: var(--text, #1e293b);
-}
-
-.unclear-task-clarity {
-    display: flex;
-    gap: 0.25rem;
-}
-
-.clarity-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.6875rem;
-    font-weight: 500;
-    border: 1px solid var(--border, #e2e8f0);
-    border-radius: 4px;
-    background: var(--surface, #fff);
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.clarity-btn:hover {
-    border-color: var(--primary, #6366f1);
-    color: var(--primary, #6366f1);
-}
-
-.unclear-empty {
-    padding: 1.5rem;
-    text-align: center;
-    color: var(--text-muted, #94a3b8);
-    font-size: 0.875rem;
+    .btn-sm--danger {
+        width: 100%;
+    }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="settings-layout">
-    <header class="settings-header">
-        <h1>Settings</h1>
-    </header>
+<div class="settings-page">
+    <div class="page-surface">
+        <h1 class="settings-title">Settings</h1>
 
-    <!-- Life Domains Section -->
-    <section class="settings-section">
-        <div class="section-label">Life Domains</div>
-        <div class="domain-list" id="domain-list">
-            {% if domains %}
-                {% for domain in domains %}
-                <div class="domain-item" data-domain-id="{{ domain.id }}">
-                    <span class="domain-icon">{{ domain.icon or '📁' }}</span>
-                    <span class="domain-name">{{ domain.name }}</span>
-                    <div class="domain-actions">
-                        <button type="button" class="domain-action-btn edit" onclick="editDomain({{ domain.id }}, '{{ domain.name }}', '{{ domain.icon or '' }}')">Edit</button>
-                        <button type="button" class="domain-action-btn delete" onclick="deleteDomain({{ domain.id }})">Delete</button>
+        <div class="settings-grid">
+            <!-- LEFT COLUMN: Integrations + Calendars -->
+            <div class="settings-column">
+
+                <!-- INTEGRATIONS Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Integrations</p>
+                            <p class="panel-desc">Connect external accounts used to sync tasks and events.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd">
+                        <!-- Google Calendar row -->
+                        <div class="settings-row">
+                            <div class="provider-icon">G</div>
+                            <div class="provider-info">
+                                <div class="provider-name">Google Calendar</div>
+                                <div class="provider-status">
+                                    <span class="status-dot {% if google_connected %}connected{% endif %}"></span>
+                                    {% if google_connected %}Connected{% else %}Not connected{% endif %}
+                                </div>
+                            </div>
+                            <div class="settings-row__right">
+                                {% if google_connected %}
+                                <span class="muted-label">Linked to login</span>
+                                {% else %}
+                                <a href="/auth/google" class="btn-sm btn-sm--primary">Connect</a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Todoist row (expandable when connected) -->
+                        {% if todoist_connected %}
+                        <div class="settings-row settings-row--clickable" onclick="toggleTodoistSection()" id="todoist-row">
+                            <div class="provider-icon">T</div>
+                            <div class="provider-info">
+                                <div class="provider-name">Todoist</div>
+                                <div class="provider-status">
+                                    <span class="status-dot connected"></span>
+                                    Connected
+                                </div>
+                            </div>
+                            <div class="settings-row__right">
+                                <div class="row-chevron" id="todoist-chevron">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Todoist expanded section -->
+                        <div class="expand-section" id="todoist-expand">
+                            <div class="expand-content">
+                                <div class="expand-label">Todoist Integration</div>
+                                <p class="expand-desc">
+                                    Import projects and tasks from Todoist. Projects become domains; tasks keep due dates and priorities. After import, assign clarity levels to enable energy-based filtering.
+                                </p>
+                                <div class="expand-actions">
+                                    <div class="expand-actions__left">
+                                        <button type="button" class="btn-sm btn-sm--primary" id="btn-import-todoist" onclick="event.stopPropagation(); importFromTodoist()">
+                                            Import from Todoist
+                                        </button>
+                                        <button type="button" class="btn-sm btn-sm--ghost" id="btn-show-unclear" onclick="event.stopPropagation(); showUnclearTasks()">
+                                            Assign Clarity
+                                        </button>
+                                    </div>
+                                    <button type="button" class="btn-text-danger" onclick="event.stopPropagation(); disconnectTodoist()">
+                                        Disconnect
+                                    </button>
+                                </div>
+                                <div id="import-status" class="expand-status" style="display: none;"></div>
+                                <div id="unclear-tasks-container" class="unclear-tasks"></div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="settings-row">
+                            <div class="provider-icon">T</div>
+                            <div class="provider-info">
+                                <div class="provider-name">Todoist</div>
+                                <div class="provider-status">
+                                    <span class="status-dot"></span>
+                                    Not connected
+                                </div>
+                            </div>
+                            <div class="settings-row__right">
+                                <a href="/auth/todoist" class="btn-sm btn-sm--primary">Connect</a>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-domains">No domains yet. Create your first domain below.</div>
-            {% endif %}
-        </div>
-        <div class="add-domain-row">
-            <input type="text" id="new-domain-name" class="add-domain-input" placeholder="New domain name..." maxlength="100">
-            <button type="button" class="add-domain-btn" onclick="addDomain()">Add</button>
-        </div>
-    </section>
 
-    <!-- Google Calendars Section -->
-    {% if google_connected %}
-    <section class="settings-section">
-        <div class="section-label">Google Calendars</div>
-        <p class="calendar-section-desc">
-            Enable calendars to see their events on your schedule. This helps you find free time slots when planning tasks.
-        </p>
-        {% if calendars %}
-        <div class="calendar-list">
-            {% for cal in calendars %}
-            <div class="calendar-item">
-                <div class="calendar-color" style="background-color: {{ cal.background_color }};"></div>
-                <div class="calendar-info">
-                    <span class="calendar-name">{{ cal.summary }}</span>
-                    {% if cal.primary %}<span class="calendar-badge">Primary</span>{% endif %}
+                <!-- GOOGLE CALENDARS Panel -->
+                <div class="settings-panel {% if not google_connected %}settings-panel--disabled{% endif %}">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Google Calendars</p>
+                            <p class="panel-desc">Choose which calendars are visible in the day view. Hidden calendars won't block time.</p>
+                        </div>
+                        {% if google_connected and calendars %}
+                        <span class="panel-hd-right">Toggle to show</span>
+                        {% endif %}
+                    </div>
+                    <div class="settings-panel__bd">
+                        {% if not google_connected %}
+                        <div class="panel-disabled-notice">
+                            Connect Google Calendar to choose calendars.
+                        </div>
+                        <div class="empty-state">—</div>
+                        {% elif calendars %}
+                            {% for cal in calendars %}
+                            <div class="settings-row settings-row--clickable settings-row--calendar" onclick="toggleCalendar(this, '{{ cal.id }}')">
+                                <div class="calendar-dot" style="background-color: {{ cal.background_color }};"></div>
+                                <div class="calendar-info">
+                                    <span class="calendar-name" title="{{ cal.summary }}">{{ cal.summary }}</span>
+                                    {% if cal.primary %}
+                                    <div class="calendar-meta">
+                                        <span class="calendar-badge">Primary</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="settings-row__right">
+                                    <button
+                                        type="button"
+                                        class="toggle-switch {% if cal.enabled %}enabled{% endif %}"
+                                        data-calendar-id="{{ cal.id }}"
+                                        onclick="event.stopPropagation()"
+                                        hx-post="/api/calendars/{{ cal.id }}/toggle"
+                                        hx-swap="none"
+                                        hx-on::after-request="handleCalendarToggle(this)"
+                                        aria-label="Toggle calendar"
+                                    ></button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">No calendars found</div>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="calendar-toggle">
-                    <button
-                        type="button"
-                        class="toggle-switch {% if cal.enabled %}enabled{% endif %}"
-                        hx-post="/api/calendars/{{ cal.id }}/toggle"
-                        hx-swap="none"
-                        hx-on::after-request="this.classList.toggle('enabled')"
-                        aria-label="Toggle calendar"
-                    ></button>
-                </div>
+
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-calendars">No calendars found</div>
-        {% endif %}
-    </section>
-    {% endif %}
 
-    <!-- Integrations Section -->
-    <section class="settings-section">
-        <div class="section-label">Integrations</div>
-        <div class="connection-card {% if google_connected %}connected{% endif %}">
-            <div class="connection-icon">G</div>
-            <div class="connection-info">
-                <div class="connection-name">Google Calendar</div>
-                <div class="connection-status {% if google_connected %}connected{% endif %}">
-                    {% if google_connected %}Connected{% else %}Not connected{% endif %}
+            <!-- RIGHT COLUMN: Domains + Maintenance -->
+            <div class="settings-column">
+
+                <!-- LIFE DOMAINS Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Life Domains</p>
+                            <p class="panel-desc">Domains group tasks in Whendoist. They can be imported from Todoist projects or created manually.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd" id="domain-list">
+                        {% if domains %}
+                            {% for domain in domains|sort(attribute='name') %}
+                            <div class="settings-row" data-domain-id="{{ domain.id }}">
+                                <span class="domain-icon">{{ domain.icon or '📁' }}</span>
+                                <span class="domain-name" title="{{ domain.name }}">{{ domain.name }}</span>
+                                {% if domain.external_id %}
+                                <span class="domain-imported">Imported</span>
+                                {% endif %}
+                                <div class="row-actions">
+                                    <button type="button" class="icon-btn edit" onclick="editDomain({{ domain.id }}, '{{ domain.name|e }}', '{{ domain.icon or '' }}')" title="Edit">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="icon-btn delete" onclick="deleteDomain({{ domain.id }})" title="Delete">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <path d="M18 6L6 18M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state" id="domains-empty">No domains yet</div>
+                        {% endif %}
+                        <!-- Add domain row -->
+                        <div class="settings-row settings-row--add">
+                            <div class="emoji-picker-wrap">
+                                <button type="button" class="emoji-picker-btn" id="new-domain-icon-btn" onclick="toggleEmojiPicker('new')">📁</button>
+                                <div class="emoji-picker-popover" id="emoji-picker-new"></div>
+                            </div>
+                            <input type="text" id="new-domain-name" class="add-domain-input" placeholder="Add new domain..." maxlength="100">
+                            <div class="settings-row__right">
+                                <button type="button" class="btn-sm btn-sm--primary" onclick="addDomain()">Add</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            {% if not google_connected %}
-            <a href="/auth/google" class="btn-connect">Connect</a>
-            {% endif %}
-        </div>
 
-        <div class="connection-card {% if todoist_connected %}connected{% endif %}" style="margin-top: 0.5rem;">
-            <div class="connection-icon">T</div>
-            <div class="connection-info">
-                <div class="connection-name">Todoist</div>
-                <div class="connection-status {% if todoist_connected %}connected{% endif %}">
-                    {% if todoist_connected %}Connected{% else %}Not connected{% endif %}
+                <!-- TASK DISPLAY Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Completed Tasks</p>
+                            <p class="panel-desc">Control how completed tasks appear in the Task List.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd">
+                        <!-- Show completed in task list -->
+                        <div class="settings-row">
+                            <span class="pref-label">Show in Task List</span>
+                            <div class="settings-row__right">
+                                <button
+                                    type="button"
+                                    class="toggle-switch{% if user_prefs.show_completed_in_list %} enabled{% endif %}"
+                                    onclick="togglePreference(this, 'show_completed_in_list')"
+                                    aria-label="Toggle show in list"
+                                ></button>
+                            </div>
+                        </div>
+
+                        <!-- Retention window -->
+                        <div class="settings-row">
+                            <span class="pref-label">Keep visible for</span>
+                            <div class="settings-row__right">
+                                <div class="segmented-control" data-pref="completed_retention_days">
+                                    <button type="button" class="segmented-btn{% if user_prefs.completed_retention_days == 1 %} active{% endif %}" data-value="1" onclick="setRetention(1)">1 day</button>
+                                    <button type="button" class="segmented-btn{% if user_prefs.completed_retention_days == 3 %} active{% endif %}" data-value="3" onclick="setRetention(3)">3 days</button>
+                                    <button type="button" class="segmented-btn{% if user_prefs.completed_retention_days == 7 %} active{% endif %}" data-value="7" onclick="setRetention(7)">7 days</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Move to bottom -->
+                        <div class="settings-row">
+                            <span class="pref-label">Position in Task List</span>
+                            <div class="settings-row__right">
+                                <div class="segmented-control" data-pref="completed_move_to_bottom">
+                                    <button type="button" class="segmented-btn{% if user_prefs.completed_move_to_bottom %} active{% endif %}" data-value="true" onclick="setPlacement(true)">Move to bottom</button>
+                                    <button type="button" class="segmented-btn{% if not user_prefs.completed_move_to_bottom %} active{% endif %}" data-value="false" onclick="setPlacement(false)">Keep in place</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hide recurring after completion -->
+                        <div class="settings-row">
+                            <span class="pref-label">Hide recurring after completing today</span>
+                            <div class="settings-row__right">
+                                <button
+                                    type="button"
+                                    class="toggle-switch{% if user_prefs.hide_recurring_after_completion %} enabled{% endif %}"
+                                    onclick="togglePreference(this, 'hide_recurring_after_completion')"
+                                    aria-label="Toggle hide recurring"
+                                ></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            {% if not todoist_connected %}
-            <a href="/auth/todoist" class="btn-connect">Connect</a>
-            {% endif %}
-        </div>
-    </section>
 
-    <!-- Todoist Import Section -->
-    {% if todoist_connected %}
-    <section class="settings-section">
-        <div class="section-label">Todoist Import</div>
-        <p class="calendar-section-desc">
-            Import your projects and tasks from Todoist. Projects become domains, tasks are imported with their priorities and due dates.
-        </p>
-        <div class="import-buttons">
-            <button type="button" class="btn-import" id="btn-import-todoist" onclick="importFromTodoist()">
-                Import from Todoist
-            </button>
-            <button type="button" class="btn-danger" id="btn-wipe-data" onclick="wipeAllData()">
-                Wipe All Data
-            </button>
+                <!-- BACKUP Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Backup</p>
+                            <p class="panel-desc">Export and restore your data as JSON.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd">
+                        <!-- Export -->
+                        <div class="settings-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Export Data</span>
+                                <span class="pref-desc">Download all tasks, domains, and settings as JSON</span>
+                            </div>
+                            <div class="settings-row__right">
+                                <button type="button" class="btn-sm btn-sm--primary" id="btn-export-backup" onclick="exportBackup()">
+                                    Download Backup
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Import -->
+                        <div class="settings-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Import Data</span>
+                                <span class="pref-desc">Restore from a backup file (replaces current data)</span>
+                            </div>
+                            <div class="settings-row__right">
+                                <input type="file" id="backup-file-input" accept=".json" style="display: none;" onchange="importBackup(this)">
+                                <button type="button" class="btn-sm btn-sm--ghost" id="btn-import-backup" onclick="document.getElementById('backup-file-input').click()">
+                                    Restore Backup
+                                </button>
+                            </div>
+                        </div>
+                        <div id="backup-status-wrap" class="expand-content" style="display: none; padding-top: 0;">
+                            <div id="backup-status" class="expand-status" style="margin-top: 0;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAINTENANCE Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Maintenance</p>
+                            <p class="panel-desc">Delete local Whendoist data. This cannot be undone.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd">
+                        <div class="maintenance-content">
+                            <div class="maintenance-info">
+                                <div class="maintenance-warning">Danger Zone</div>
+                                <div class="maintenance-desc">Permanently delete all tasks and domains from Whendoist.</div>
+                            </div>
+                            <button type="button" class="btn-sm btn-sm--danger" id="btn-wipe-data" onclick="wipeAllData()">
+                                Wipe All Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
-        <div id="import-status" class="import-status"></div>
-        <div class="import-buttons" style="margin-top: 1rem;">
-            <button type="button" class="btn-secondary" id="btn-show-unclear" onclick="showUnclearTasks()">
-                Show Unclear Tasks
-            </button>
-        </div>
-        <div id="unclear-tasks-container" class="unclear-tasks-container" style="display: none;"></div>
-    </section>
-    {% endif %}
+    </div>
 </div>
 
 <!-- Domain Edit Modal -->
-<div class="domain-edit-overlay" id="domain-edit-overlay" onclick="if(event.target === this) closeDomainEdit()">
-    <div class="domain-edit-modal">
-        <h3>Edit Domain</h3>
-        <form class="domain-edit-form" onsubmit="saveDomainEdit(event)">
+<div class="modal-overlay" id="domain-edit-overlay" onclick="if(event.target === this) closeDomainEdit()">
+    <div class="modal">
+        <h3 class="modal__title">Edit Domain</h3>
+        <form class="modal__form" onsubmit="saveDomainEdit(event)">
             <input type="hidden" id="edit-domain-id">
-            <div class="domain-edit-row">
-                <input type="text" id="edit-domain-icon" class="icon-input" placeholder="📁" maxlength="2">
+            <input type="hidden" id="edit-domain-icon">
+            <div class="modal__row">
+                <div class="emoji-picker-wrap">
+                    <button type="button" class="emoji-picker-btn" id="edit-domain-icon-btn" onclick="toggleEmojiPicker('edit')">📁</button>
+                    <div class="emoji-picker-popover" id="emoji-picker-edit"></div>
+                </div>
                 <input type="text" id="edit-domain-name" placeholder="Domain name" required maxlength="100">
             </div>
-            <div class="domain-edit-actions">
-                <button type="button" class="btn-cancel-edit" onclick="closeDomainEdit()">Cancel</button>
-                <button type="submit" class="btn-save-edit">Save</button>
+            <div class="modal__actions">
+                <button type="button" class="btn-sm btn-sm--secondary" onclick="closeDomainEdit()">Cancel</button>
+                <button type="submit" class="btn-sm btn-sm--primary">Save</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
+// Emoji picker
+const DOMAIN_EMOJIS = [
+    '📁', '💼', '🏠', '👤', '👥', '💪', '🧘',
+    '📚', '🎓', '💻', '🎨', '🎵', '🎮', '📷',
+    '✈️', '🚗', '🏃', '⚽', '🎯', '💰', '📈',
+    '❤️', '🌟', '🔥', '✨', '🎉', '🎁', '🏆',
+    '🍎', '🥗', '☕', '🍳', '🛒', '🏥', '💊',
+    '🐕', '🌱', '🌍', '☀️', '🌙', '⚡', '🔧'
+];
+
+let activeEmojiPicker = null;
+
+function renderEmojiPicker(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = `
+        <div class="emoji-grid">
+            ${DOMAIN_EMOJIS.map(emoji => `
+                <button type="button" class="emoji-option" onclick="selectEmoji('${containerId}', '${emoji}')">${emoji}</button>
+            `).join('')}
+        </div>
+    `;
+}
+
+function toggleEmojiPicker(type) {
+    const pickerId = `emoji-picker-${type}`;
+    const picker = document.getElementById(pickerId);
+
+    // Close any other open picker
+    if (activeEmojiPicker && activeEmojiPicker !== picker) {
+        activeEmojiPicker.classList.remove('open');
+    }
+
+    // Render if empty
+    if (!picker.innerHTML) {
+        renderEmojiPicker(pickerId);
+    }
+
+    picker.classList.toggle('open');
+    activeEmojiPicker = picker.classList.contains('open') ? picker : null;
+}
+
+function selectEmoji(pickerId, emoji) {
+    const type = pickerId.replace('emoji-picker-', '');
+    const btn = document.getElementById(`${type}-domain-icon-btn`);
+    btn.textContent = emoji;
+
+    if (type === 'edit') {
+        document.getElementById('edit-domain-icon').value = emoji;
+    }
+
+    // Close picker
+    document.getElementById(pickerId).classList.remove('open');
+    activeEmojiPicker = null;
+}
+
+// Close emoji picker on outside click
+document.addEventListener('click', (e) => {
+    if (activeEmojiPicker && !e.target.closest('.emoji-picker-wrap')) {
+        activeEmojiPicker.classList.remove('open');
+        activeEmojiPicker = null;
+    }
+});
+
+// Todoist expandable section
+function toggleTodoistSection() {
+    const expand = document.getElementById('todoist-expand');
+    const chevron = document.getElementById('todoist-chevron');
+    if (!expand) return;
+
+    expand.classList.toggle('open');
+    if (chevron) chevron.classList.toggle('expanded');
+}
+
+// Calendar toggle via row click
+function toggleCalendar(row, calendarId) {
+    const toggle = row.querySelector('.toggle-switch');
+    if (toggle) {
+        toggle.click();
+    }
+}
+
+// Handle calendar toggle response
+function handleCalendarToggle(toggle) {
+    toggle.classList.toggle('enabled');
+}
+
+// Disconnect Todoist
+async function disconnectTodoist() {
+    if (!confirm('Disconnect Todoist? You can reconnect later, but will need to re-import.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/auth/todoist/disconnect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('Failed to disconnect Todoist');
+        }
+    } catch (e) {
+        alert('Failed to disconnect Todoist');
+    }
+}
+
+// Domain CRUD
 async function addDomain() {
     const input = document.getElementById('new-domain-name');
+    const iconBtn = document.getElementById('new-domain-icon-btn');
     const name = input.value.trim();
+    const icon = iconBtn.textContent.trim();
     if (!name) return;
 
     try {
         const response = await fetch('/api/domains', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ name, icon: icon || null })
         });
         if (response.ok) {
             window.location.reload();
@@ -725,13 +1562,18 @@ async function addDomain() {
 function editDomain(id, name, icon) {
     document.getElementById('edit-domain-id').value = id;
     document.getElementById('edit-domain-name').value = name;
-    document.getElementById('edit-domain-icon').value = icon;
+    document.getElementById('edit-domain-icon').value = icon || '📁';
+    document.getElementById('edit-domain-icon-btn').textContent = icon || '📁';
     document.getElementById('domain-edit-overlay').classList.add('open');
     document.getElementById('edit-domain-name').focus();
 }
 
 function closeDomainEdit() {
     document.getElementById('domain-edit-overlay').classList.remove('open');
+    // Close any open emoji picker
+    const picker = document.getElementById('emoji-picker-edit');
+    if (picker) picker.classList.remove('open');
+    activeEmojiPicker = null;
 }
 
 async function saveDomainEdit(e) {
@@ -760,7 +1602,7 @@ async function saveDomainEdit(e) {
 }
 
 async function deleteDomain(id) {
-    if (!confirm('Delete this domain? Tasks will be moved to Inbox.')) return;
+    if (!confirm('Delete this domain? Tasks will be moved to Unsorted.')) return;
 
     try {
         const response = await fetch(`/api/domains/${id}`, {
@@ -790,7 +1632,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeDomainEdit();
 });
 
-// Import functions
+// Todoist Import
 async function importFromTodoist() {
     const btn = document.getElementById('btn-import-todoist');
     const status = document.getElementById('import-status');
@@ -798,7 +1640,8 @@ async function importFromTodoist() {
     btn.disabled = true;
     btn.textContent = 'Importing...';
     status.textContent = 'Connecting to Todoist...';
-    status.className = 'import-status';
+    status.style.display = 'block';
+    status.className = 'expand-status';
 
     try {
         const response = await fetch('/api/import/todoist', {
@@ -809,18 +1652,43 @@ async function importFromTodoist() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            status.textContent = `Imported ${data.domains_created} domains, ${data.tasks_created} tasks. Skipped ${data.domains_skipped + data.tasks_skipped} existing items.`;
-            status.className = 'import-status success';
-            // Reload page after short delay to show new domains
-            setTimeout(() => window.location.reload(), 1500);
+            // Build detailed import summary
+            const lines = [];
+
+            // Main import line
+            lines.push(`✓ Imported ${data.tasks_created} tasks, ${data.domains_created} domains`);
+
+            // Completed tasks imported
+            if (data.tasks_completed > 0) {
+                lines.push(`↳ ${data.tasks_completed} completed tasks (for analytics)`);
+            }
+
+            // Parent tasks flattened (expected behavior)
+            if (data.parents_flattened > 0) {
+                lines.push(`↳ ${data.parents_flattened} parent tasks merged into subtasks`);
+            }
+
+            // Duplicates skipped
+            const dupes = data.tasks_skipped + data.domains_skipped;
+            if (dupes > 0) {
+                lines.push(`⊘ ${dupes} already imported (skipped)`);
+            }
+
+            // Tasks needing clarity assignment
+            if (data.tasks_need_clarity > 0) {
+                lines.push(`⚠ ${data.tasks_need_clarity} tasks need clarity — use "Assign Clarity" below`);
+            }
+
+            status.innerHTML = lines.join('<br>');
+            status.className = 'expand-status success';
         } else {
             const errorMsg = data.errors?.join(', ') || data.detail || 'Import failed';
             status.textContent = errorMsg;
-            status.className = 'import-status error';
+            status.className = 'expand-status error';
         }
     } catch (e) {
         status.textContent = 'Failed to connect to server';
-        status.className = 'import-status error';
+        status.className = 'expand-status error';
     } finally {
         btn.disabled = false;
         btn.textContent = 'Import from Todoist';
@@ -828,17 +1696,18 @@ async function importFromTodoist() {
 }
 
 async function wipeAllData() {
-    if (!confirm('This will permanently delete ALL your tasks and domains. Are you sure?')) {
+    // Require typed confirmation
+    const confirmText = prompt('This will permanently delete ALL your tasks and domains.\n\nType "DELETE" to confirm:');
+    if (confirmText !== 'DELETE') {
+        if (confirmText !== null) {
+            alert('Confirmation text did not match. Operation cancelled.');
+        }
         return;
     }
 
     const btn = document.getElementById('btn-wipe-data');
-    const status = document.getElementById('import-status');
-
     btn.disabled = true;
     btn.textContent = 'Wiping...';
-    status.textContent = '';
-    status.className = 'import-status';
 
     try {
         const response = await fetch('/api/import/wipe', {
@@ -849,32 +1718,132 @@ async function wipeAllData() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            status.textContent = `Deleted ${data.tasks_deleted} tasks and ${data.domains_deleted} domains.`;
-            status.className = 'import-status success';
-            // Reload page after short delay
-            setTimeout(() => window.location.reload(), 1000);
+            alert(`Deleted ${data.tasks_deleted} tasks and ${data.domains_deleted} domains.`);
+            window.location.reload();
         } else {
-            status.textContent = data.detail || 'Wipe failed';
-            status.className = 'import-status error';
+            alert(data.detail || 'Wipe failed');
         }
     } catch (e) {
-        status.textContent = 'Failed to connect to server';
-        status.className = 'import-status error';
+        alert('Failed to connect to server');
     } finally {
         btn.disabled = false;
         btn.textContent = 'Wipe All Data';
     }
 }
 
-// Show unclear tasks
+// Backup functions
+async function exportBackup() {
+    const btn = document.getElementById('btn-export-backup');
+    const statusWrap = document.getElementById('backup-status-wrap');
+    const status = document.getElementById('backup-status');
+    btn.disabled = true;
+    btn.textContent = 'Exporting...';
+    statusWrap.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/backup/export');
+
+        if (!response.ok) {
+            throw new Error('Export failed');
+        }
+
+        // Get filename from Content-Disposition header
+        const disposition = response.headers.get('Content-Disposition');
+        const filenameMatch = disposition && disposition.match(/filename="(.+)"/);
+        const filename = filenameMatch ? filenameMatch[1] : 'whendoist_backup.json';
+
+        // Download the file
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+
+        status.textContent = '✅ Backup downloaded successfully';
+        status.className = 'expand-status success';
+        statusWrap.style.display = 'block';
+    } catch (e) {
+        status.textContent = '❌ Export failed: ' + e.message;
+        status.className = 'expand-status error';
+        statusWrap.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Download Backup';
+    }
+}
+
+async function importBackup(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Confirm before importing
+    const confirmText = prompt('This will REPLACE all your current data with the backup.\n\nType "RESTORE" to confirm:');
+    if (confirmText !== 'RESTORE') {
+        if (confirmText !== null) {
+            alert('Confirmation text did not match. Operation cancelled.');
+        }
+        input.value = '';
+        return;
+    }
+
+    const btn = document.getElementById('btn-import-backup');
+    const statusWrap = document.getElementById('backup-status-wrap');
+    const status = document.getElementById('backup-status');
+    btn.disabled = true;
+    btn.textContent = 'Restoring...';
+    statusWrap.style.display = 'none';
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/backup/import', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            status.textContent = `✅ Restored: ${data.domains} domains, ${data.tasks} tasks`;
+            status.className = 'expand-status success';
+            statusWrap.style.display = 'block';
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            // API returned an error response
+            const errorMsg = data.detail || data.message || 'Import failed';
+            throw new Error(errorMsg);
+        }
+    } catch (e) {
+        // If response wasn't JSON, e.message will contain the parse error
+        // but we want to show a more helpful message
+        let errorMessage = e.message;
+        if (e.message.includes('Unexpected token')) {
+            errorMessage = 'Server error - check logs for details';
+        }
+        status.textContent = '❌ Restore failed: ' + errorMessage;
+        status.className = 'expand-status error';
+        statusWrap.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Restore Backup';
+        input.value = '';
+    }
+}
+
+// Show tasks needing clarity assignment
 async function showUnclearTasks() {
     const container = document.getElementById('unclear-tasks-container');
     const btn = document.getElementById('btn-show-unclear');
 
     // Toggle visibility
-    if (container.style.display !== 'none') {
-        container.style.display = 'none';
-        btn.textContent = 'Show Unclear Tasks';
+    if (container.classList.contains('visible')) {
+        container.classList.remove('visible');
+        btn.textContent = 'Assign Clarity';
         return;
     }
 
@@ -886,29 +1855,32 @@ async function showUnclearTasks() {
         const tasks = await response.json();
 
         if (tasks.length === 0) {
-            container.innerHTML = '<div class="unclear-empty">No unclear tasks found. All tasks have clarity assigned.</div>';
+            container.innerHTML = '<div class="unclear-empty">All tasks have clarity assigned. Energy filtering is fully available.</div>';
         } else {
             container.innerHTML = `
-                <div class="unclear-tasks-header">${tasks.length} task${tasks.length === 1 ? '' : 's'} without clarity</div>
+                <div class="unclear-tasks__hd">
+                    ${tasks.length} task${tasks.length === 1 ? '' : 's'} need clarity
+                    <span class="unclear-hint">Assign clarity to enable energy-based filtering</span>
+                </div>
                 ${tasks.map(task => `
-                    <div class="unclear-task-item" data-task-id="${task.id}">
+                    <div class="unclear-task-row" data-task-id="${task.id}">
                         <span class="unclear-task-title">${escapeHtml(task.title)}</span>
-                        <div class="unclear-task-clarity">
-                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'executable')">Exec</button>
-                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'defined')">Def</button>
-                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'exploratory')">Expl</button>
+                        <div class="clarity-btns">
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'executable')" title="Clear next action, can do when tired">Exec</button>
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'defined')" title="Know what to do, needs some focus">Def</button>
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'exploratory')" title="Needs research or deep thinking">Expl</button>
                         </div>
                     </div>
                 `).join('')}
             `;
         }
-        container.style.display = 'block';
+        container.classList.add('visible');
     } catch (e) {
         container.innerHTML = '<div class="unclear-empty">Failed to load tasks</div>';
-        container.style.display = 'block';
+        container.classList.add('visible');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Hide Unclear Tasks';
+        btn.textContent = 'Hide';
     }
 }
 
@@ -921,17 +1893,15 @@ async function setTaskClarity(taskId, clarity) {
         });
 
         if (response.ok) {
-            // Remove the item from the list
-            const item = document.querySelector(`.unclear-task-item[data-task-id="${taskId}"]`);
+            const item = document.querySelector(`.unclear-task-row[data-task-id="${taskId}"]`);
             if (item) {
                 item.remove();
-                // Update count or show empty message
                 const container = document.getElementById('unclear-tasks-container');
-                const remaining = container.querySelectorAll('.unclear-task-item').length;
+                const remaining = container.querySelectorAll('.unclear-task-row').length;
                 if (remaining === 0) {
-                    container.innerHTML = '<div class="unclear-empty">No unclear tasks found. All tasks have clarity assigned.</div>';
+                    container.innerHTML = '<div class="unclear-empty">All tasks have clarity assigned.</div>';
                 } else {
-                    const header = container.querySelector('.unclear-tasks-header');
+                    const header = container.querySelector('.unclear-tasks__hd');
                     if (header) {
                         header.textContent = `${remaining} task${remaining === 1 ? '' : 's'} without clarity`;
                     }
@@ -947,6 +1917,50 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ============================================================================
+// Task Display Preferences
+// ============================================================================
+
+async function updatePreference(key, value) {
+    try {
+        const response = await fetch('/api/preferences', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [key]: value })
+        });
+
+        if (!response.ok) {
+            console.error('Failed to update preference:', key);
+        }
+    } catch (e) {
+        console.error('Failed to update preference:', e);
+    }
+}
+
+function togglePreference(toggle, key) {
+    const isEnabled = toggle.classList.contains('enabled');
+    const newValue = !isEnabled;
+
+    toggle.classList.toggle('enabled');
+    updatePreference(key, newValue);
+}
+
+function setRetention(days) {
+    const control = document.querySelector('[data-pref="completed_retention_days"]');
+    control.querySelectorAll('.segmented-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.value) === days);
+    });
+    updatePreference('completed_retention_days', days);
+}
+
+function setPlacement(moveToBottom) {
+    const control = document.querySelector('[data-pref="completed_move_to_bottom"]');
+    control.querySelectorAll('.segmented-btn').forEach(btn => {
+        btn.classList.toggle('active', (btn.dataset.value === 'true') === moveToBottom);
+    });
+    updatePreference('completed_move_to_bottom', moveToBottom);
 }
 </script>
 {% endblock %}

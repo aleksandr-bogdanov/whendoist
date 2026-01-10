@@ -6,61 +6,25 @@
 
 <p align="center">
   <strong>WHEN do I do my tasks?</strong><br>
-  A Todoist companion that merges your tasks with Google Calendar.
+  A day planning app that merges your tasks with Google Calendar.
 </p>
 
 <p align="center">
   <a href="#-quick-start">Quick Start</a> •
-  <a href="#-how-it-works">How It Works</a> •
+  <a href="#-features">Features</a> •
   <a href="#-setup">Setup</a> •
-  <a href="#-development">Development</a> •
-  <a href="#-roadmap">Roadmap</a>
+  <a href="#-development">Development</a>
 </p>
 
 ---
 
 ## The Problem
 
-Todoist is great at capturing *what* you need to do. Your calendar shows *when* you're busy. But neither tells you *when to actually do your tasks*.
+Calendar shows *when* you're busy. Task lists show *what* you need to do. But neither tells you *when to actually do your tasks*.
 
 ## The Solution
 
-Whendoist pulls tasks from Todoist and events from Google Calendar into one dashboard. Filter tasks by your energy level, drag them onto free time slots, and commit back to Todoist.
-
----
-
-## 💡 Philosophy: Scheduled vs Due
-
-Whendoist distinguishes between two concepts that Todoist conflates:
-
-| Concept | Meaning | Example |
-|---------|---------|---------|
-| **Due Date** | Deadline — when the task *must* be done | "Report due Friday" |
-| **Scheduled Date** | Intention — when you *plan* to work on it | "Work on report Tuesday" |
-
-### Why This Matters
-
-In Todoist, setting a date means "this is due then." But that's not how work actually happens. You might have a report due Friday, but you plan to write it on Tuesday. Todoist forces you to either:
-- Set it to Friday (due date) → doesn't show up until Friday
-- Set it to Tuesday (work date) → loses the actual deadline
-
-### The Whendoist Approach
-
-When you import from Todoist, we treat the Todoist "due date" as your **scheduled date** — the day you intend to work on the task. This appears in:
-- The task list (as the date badge)
-- The calendar view (in Anytime or a specific time slot)
-
-Future versions will support separate due dates for deadline tracking while keeping scheduled dates for daily planning.
-
-### Task Properties
-
-| Property | Source | Purpose |
-|----------|--------|---------|
-| `scheduled_date` | Todoist due date | When to work on it |
-| `scheduled_time` | Todoist due time | Specific time slot |
-| `duration_minutes` | `d:30m` in description | How long it takes |
-| `impact` | Todoist priority (inverted) | P1 = highest impact |
-| `clarity` | `@executable`, `@defined`, `@exploratory` labels | Energy level required |
+Whendoist brings tasks and calendar together. Create tasks with impact and clarity levels, see your Google Calendar events, drag tasks into free time slots, and track your completion progress.
 
 ---
 
@@ -84,31 +48,56 @@ just dev
 
 ---
 
-## 🎯 How It Works
+## ✨ Features
+
+### Four Pages
+
+| Page | Purpose |
+|------|---------|
+| **Tasks** | Day planning with task list + calendar |
+| **Thought Cabinet** | Quick capture inbox, promote thoughts to tasks |
+| **Analytics** | Completion stats, trends, streaks |
+| **Settings** | Integrations, domains, task display preferences |
 
 ### Energy-Based Filtering
 
-Tag your Todoist tasks with clarity labels:
+Filter tasks by clarity (how defined the work is):
 
-| Label | Energy | Use When |
-|-------|--------|----------|
-| `@executable` | 🧟 Zombie | Clear next action, can do when tired |
-| `@defined` | ☕ Normal | Know what to do, needs some focus |
-| `@exploratory` | 🧠 Focus | Needs research or deep thinking |
+| Clarity | Energy | Use When |
+|---------|--------|----------|
+| Executable | 🧟 Zombie | Clear next action, can do when tired |
+| Defined | ☕ Normal | Know what to do, needs some focus |
+| Exploratory | 🧠 Focus | Needs research or deep thinking |
 
-Toggle your current energy level to see only matching tasks.
+### Task Properties
 
-### Duration Tracking
-
-Add duration in task description: `d:30m`, `d:2h`, `d:1h30m`
-
-Parent task duration = sum of subtask durations (automatic).
+| Property | Purpose |
+|----------|---------|
+| **Impact** | Priority: P1 (high) → P4 (minimal) |
+| **Clarity** | Energy required: Executable, Defined, Exploratory |
+| **Duration** | Time estimate (30m, 2h, etc.) |
+| **Scheduled** | When you plan to work on it |
+| **Due** | Deadline (optional) |
+| **Recurrence** | Daily, weekly, monthly, custom |
 
 ### Visual Scheduling
 
-1. **Drag** tasks from the list to calendar time slots
-2. **Plan** — auto-schedule multiple tasks into a selected time range
-3. **Commit** — push scheduled times back to Todoist
+- **Drag** tasks from the list to calendar time slots
+- **Plan** — auto-schedule tasks into a selected time range
+- **Complete** — mark tasks done with visual aging
+
+### Analytics Dashboard
+
+Powered by ApexCharts:
+- Daily completions, completion rate, streaks
+- Domain breakdown, impact distribution
+- Day-of-week and hour-of-day patterns
+- GitHub-style contribution heatmap
+- Velocity trends with rolling averages
+
+### Optional: Import from Todoist
+
+Already have tasks in Todoist? Import them with one click.
 
 ---
 
@@ -116,19 +105,11 @@ Parent task duration = sum of subtask durations (automatic).
 
 ### Prerequisites
 
-- Python 3.13+ (we use [uv](https://github.com/astral-sh/uv) for package management)
+- Python 3.13+ (we use [uv](https://github.com/astral-sh/uv))
 - PostgreSQL (or Docker)
-- Todoist account
 - Google account with Calendar
 
-### 1. Todoist OAuth
-
-1. Go to [Todoist App Console](https://developer.todoist.com/appconsole.html)
-2. Create a new app
-3. Set OAuth redirect URL: `http://localhost:8000/auth/todoist/callback`
-4. Copy Client ID and Client Secret to `.env`
-
-### 2. Google OAuth
+### 1. Google OAuth (Required)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. Create a new project (or select existing)
@@ -137,6 +118,15 @@ Parent task duration = sum of subtask durations (automatic).
    - Application type: Web application
    - Authorized redirect URI: `http://localhost:8000/auth/google/callback`
 5. Copy Client ID and Client Secret to `.env`
+
+### 2. Todoist OAuth (Optional)
+
+Only needed if you want to import existing Todoist tasks:
+
+1. Go to [Todoist App Console](https://developer.todoist.com/appconsole.html)
+2. Create a new app
+3. Set OAuth redirect URL: `http://localhost:8000/auth/todoist/callback`
+4. Copy Client ID and Client Secret to `.env`
 
 ### 3. Environment Variables
 
@@ -150,13 +140,14 @@ Edit `.env`:
 DATABASE_URL=postgresql+asyncpg://whendoist:whendoist@localhost:5432/whendoist
 SECRET_KEY=generate-a-random-secret-key
 BASE_URL=http://localhost:8000
-TODOIST_CLIENT_ID=your-todoist-client-id
-TODOIST_CLIENT_SECRET=your-todoist-client-secret
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
+# Optional - only for Todoist import
+TODOIST_CLIENT_ID=your-todoist-client-id
+TODOIST_CLIENT_SECRET=your-todoist-client-secret
 ```
 
-> 💡 Generate a secret key: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
+> Generate a secret key: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
 
 ### 4. Run
 
@@ -165,7 +156,7 @@ just db-up   # Start PostgreSQL
 just dev     # Start dev server
 ```
 
-Open http://localhost:8000, connect Todoist, then Google Calendar.
+Open http://localhost:8000 and connect Google Calendar.
 
 ---
 
@@ -176,7 +167,6 @@ just dev      # Dev server with hot reload
 just test     # Run pytest
 just lint     # Run ruff
 just fmt      # Format code
-just sync     # Sync dependencies
 ```
 
 ### Tech Stack
@@ -184,58 +174,28 @@ just sync     # Sync dependencies
 | Layer | Technology |
 |-------|------------|
 | Backend | Python 3.13, FastAPI, SQLAlchemy 2.0 (async) |
-| Frontend | HTMX, Jinja2, Pico CSS |
+| Frontend | HTMX, Jinja2, Pico CSS, ApexCharts |
 | Database | PostgreSQL with asyncpg |
-| APIs | Todoist REST v2, Google Calendar v3 |
-| Tooling | uv, ruff, pytest, GitHub Actions |
+| APIs | Google Calendar v3, Todoist REST v2 (optional) |
+| Tooling | uv, ruff, pytest |
 
 ### Project Structure
 
 ```
 app/
 ├── main.py           # FastAPI entrypoint
-├── config.py         # Pydantic settings
-├── database.py       # Async SQLAlchemy
-├── models.py         # ORM models (User, Tokens)
-├── auth/             # OAuth2 flows
-├── services/         # API clients (Todoist, Google)
+├── models.py         # ORM models (Task, Domain, User, etc.)
+├── services/         # Task, Analytics, Preferences services
 ├── routers/          # HTTP routes
 └── templates/        # Jinja2 templates
 
 static/
 ├── css/              # Styles + design tokens
-├── js/               # Energy selector, drag-drop, planning
+├── js/               # Drag-drop, planning, dialogs
 └── img/              # Logo and favicons
 ```
 
----
-
-## 🔮 Roadmap
-
-### ✅ v0.1 — Foundation
-OAuth, dashboard, energy filtering, clarity labels
-
-### ✅ v0.2 — Drag & Drop
-Visual scheduling, calendar carousel, overlap detection
-
-### ✅ v0.3 — Auto-Planning
-Plan feature, mobile PWA, touch support
-
-### ✅ v0.4 — Native Tasks
-Native task management, Todoist import, recurring tasks, drag-to-delete
-
-### ✅ v0.5 — UI Polish (Current)
-Tasks space redesign with enterprise aesthetic, grid-based layout, tint-based interactions
-
-### 🔜 v0.6 — Thoughts & Settings
-- Redesign Thoughts space
-- Redesign Settings space
-- Task completion support
-
-### 🔜 Future
-- Time blocking templates
-- Analytics and insights
-- Team collaboration
+See `DESIGN.md` for full design system documentation.
 
 ---
 

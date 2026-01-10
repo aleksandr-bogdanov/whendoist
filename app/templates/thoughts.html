@@ -8,214 +8,423 @@
 {% endblock %}
 
 {% block content %}
-<div class="thoughts-layout">
-    <div class="thoughts-container">
-        <div class="thoughts-header">
-            <h1 class="thoughts-title">Thoughts</h1>
-            <p class="thoughts-subtitle">Quick capture for ideas, tasks, and notes</p>
-        </div>
+<!-- Page wrapper for centering -->
+<div class="thoughts-page">
+    <div class="page-surface">
+        <div class="thoughts-container">
+        <!-- Title -->
+        <h1 class="thoughts-title">Thought Cabinet</h1>
+        <p class="thoughts-subtitle">Quick capture for ideas, tasks, and notes</p>
 
-        <!-- Quick Add Input -->
-        <div class="quick-add-container">
+        <!-- Capture Card -->
+        <div class="capture-card">
             <input type="text"
                    id="quick-add-input"
-                   class="quick-add-input"
-                   placeholder="What's on your mind? Press Enter to add..."
+                   class="capture-input"
+                   placeholder="What's on your mind?"
                    autocomplete="off">
+            <div class="capture-hint-row">
+                <span class="keycap">Enter</span>
+                <span>Capture</span>
+            </div>
         </div>
 
-        <!-- Thoughts List -->
-        <div class="thoughts-list" id="thoughts-list">
-            {% if tasks %}
-                {% for task_item in tasks %}
-                {% set task = task_item.task %}
-                <div class="thought-item" data-task-id="{{ task.id }}">
-                    <span class="thought-text">{{ task.title }}</span>
-                    <div class="thought-actions">
-                        <button type="button" class="thought-action-btn promote-btn" title="Promote to Task">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 19V5M5 12l7-7 7 7"/>
-                            </svg>
-                        </button>
-                        <button type="button" class="thought-action-btn delete-btn" title="Delete">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M18 6L6 18M6 6l12 12"/>
-                            </svg>
-                        </button>
+        <!-- Thoughts Panel -->
+        <div class="thoughts-panel">
+            <div class="thoughts-panel-header">
+                <span id="thought-count">{{ tasks|length if tasks else 0 }} Thoughts</span>
+            </div>
+            <div class="thought-list" id="thought-list">
+                {% if tasks %}
+                    {% for task_item in tasks %}
+                    {% set task = task_item.task %}
+                    <div class="thought-row" data-task-id="{{ task.id }}">
+                        <div class="thought-dot"></div>
+                        <span class="thought-text">{{ task.title }}</span>
+                        <div class="thought-actions">
+                            <button type="button" class="icon-btn promote" title="Promote to Task">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="icon-btn delete" title="Delete">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="thoughts-empty" id="thoughts-empty">
-                    <span class="empty-icon">💭</span>
-                    <p>No thoughts yet. Start typing above to capture your first idea.</p>
-                </div>
-            {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="thought-row thought-empty" id="thought-empty">
+                        <div class="thought-dot"></div>
+                        <span class="thought-text">No thoughts yet. Start typing above.</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
         </div>
     </div>
 </div>
 
 <style>
-.thoughts-layout {
+/* =============================================================================
+   1) Page wrapper - centers the panel
+   ============================================================================= */
+
+.thoughts-page {
+    min-height: calc(100vh - 80px);
+    padding: 0 24px 24px;
     display: flex;
     justify-content: center;
-    padding: 2rem 1rem;
-    min-height: calc(100vh - 120px);
 }
 
-.thoughts-container {
+/* =============================================================================
+   2) Page surface - shared container style
+   ============================================================================= */
+
+.page-surface {
     width: 100%;
-    max-width: 600px;
-}
-
-.thoughts-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.thoughts-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text);
-    margin: 0 0 0.25rem 0;
-}
-
-.thoughts-subtitle {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin: 0;
-}
-
-/* Quick Add Input */
-.quick-add-container {
-    margin-bottom: 1.5rem;
-}
-
-.quick-add-input {
-    width: 100%;
-    padding: 0.875rem 1rem;
-    font-size: 0.9rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    color: var(--text);
-    transition: all 0.15s ease;
+    max-width: calc((100vw - 3rem) * 2 / 3);
+    min-width: 500px;
+    background: var(--grey-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-hair);
+    padding: 28px 32px 40px;
     box-sizing: border-box;
 }
 
-.quick-add-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-tint);
+@media (min-width: 1400px) {
+    .page-surface {
+        max-width: 900px;
+    }
 }
 
-.quick-add-input::placeholder {
+/* =============================================================================
+   3) Container - content inside panel
+   ============================================================================= */
+
+.thoughts-container {
+    max-width: 100%;
+}
+
+/* =============================================================================
+   3) Title + Subtitle - ALL CAPS system typography
+   ============================================================================= */
+
+.thoughts-title {
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    font-size: 1.75rem;
+    line-height: 1;
+    color: var(--text);
+}
+
+.thoughts-subtitle {
+    margin: 0 0 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    font-size: 0.68rem;
     color: var(--text-muted);
 }
 
-/* Thoughts List */
-.thoughts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+/* =============================================================================
+   4) Capture Card - left-aligned with container
+   ============================================================================= */
+
+.capture-card {
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 18px;
 }
 
-.thought-item {
+.capture-input {
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-hair);
+    background: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text);
+    box-sizing: border-box;
+}
+
+.capture-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.capture-input:focus {
+    outline: none;
+    border-color: var(--border);
+    box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.15);
+}
+
+.capture-hint-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    background: var(--surface);
+    gap: 10px;
+    margin-top: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.62rem;
+    font-weight: 600;
+}
+
+.keycap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid var(--border-hair);
+    color: var(--text);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+}
+
+/* =============================================================================
+   5) Thoughts Panel - same as TASKS panels
+   ============================================================================= */
+
+.thoughts-panel {
+    background: var(--light-bg);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    transition: all 0.15s ease;
+    border-radius: 12px;
+    overflow: hidden;
 }
 
-.thought-item:hover {
-    border-color: var(--text-muted);
+.thoughts-panel-header {
+    padding: 12px 16px;
+    background: var(--grey-bg);
+    border-bottom: 1px solid var(--border-hair);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    font-size: 0.62rem;
+    color: var(--text-muted);
 }
 
-.thought-item:hover .thought-actions {
-    opacity: 1;
+/* =============================================================================
+   6) Thought Rows - dense like TASKS, not cards
+   ============================================================================= */
+
+.thought-list {
+    display: flex;
+    flex-direction: column;
 }
+
+.thought-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--border-hair);
+    background: #fff;
+    transition: background 0.1s ease;
+}
+
+.thought-row:last-child {
+    border-bottom: none;
+}
+
+.thought-row:hover {
+    background: var(--row-hover);
+}
+
+.thought-row:hover .thought-text {
+    color: var(--text);
+}
+
+.thought-row.is-active {
+    background: rgba(109, 94, 246, 0.04);
+}
+
+.thought-row.is-active .thought-text {
+    color: var(--text);
+}
+
+/* =============================================================================
+   7) Dot indicator
+   ============================================================================= */
+
+.thought-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #C7CFDA;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+
+.thought-row:hover .thought-dot {
+    background: var(--primary);
+}
+
+/* =============================================================================
+   8) Text - greyer by default, darken on hover
+   ============================================================================= */
 
 .thought-text {
     flex: 1;
-    font-size: 0.9rem;
-    color: var(--text);
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 22px;
+    font-weight: 400;
+    color: rgba(51, 65, 85, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.1s ease;
 }
+
+/* =============================================================================
+   9) Actions - hidden until hover
+   ============================================================================= */
 
 .thought-actions {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 6px;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    flex-shrink: 0;
+    height: 22px;
 }
 
-.thought-action-btn {
+.thought-row:hover .thought-actions,
+.thought-row:focus-within .thought-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.icon-btn {
+    /* Reset Pico CSS button defaults */
+    all: unset;
+    box-sizing: border-box;
+
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: 1px solid var(--border-hair);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--text-muted);
+    cursor: pointer;
+
+    /* Centering */
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    margin: 0;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.15s ease;
+    flex-shrink: 0;
+
+    transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
 
-.thought-action-btn:hover {
-    background: var(--surface2);
+.icon-btn svg {
+    display: block;
+    flex-shrink: 0;
 }
 
-.thought-action-btn.promote-btn:hover {
+.icon-btn:hover {
+    border-color: var(--border);
+    background: var(--grey-bg);
+    color: var(--text);
+}
+
+.icon-btn.promote:hover {
+    border-color: rgba(109, 94, 246, 0.35);
+    background: rgba(109, 94, 246, 0.08);
     color: var(--primary);
 }
 
-.thought-action-btn.delete-btn:hover {
-    color: var(--impact-high);
+.icon-btn.delete:hover {
+    border-color: rgba(220, 38, 38, 0.25);
+    background: rgba(220, 38, 38, 0.06);
+    color: var(--danger);
 }
 
-/* Empty State */
-.thoughts-empty {
-    text-align: center;
-    padding: 3rem 1rem;
+/* =============================================================================
+   States
+   ============================================================================= */
+
+@keyframes thought-pop {
+    from { background: rgba(109, 94, 246, 0.08); }
+    to   { background: #fff; }
+}
+
+.thought-row.is-new {
+    animation: thought-pop 600ms ease-out;
+}
+
+.thought-row.is-processed .thought-text {
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.thought-row.is-processed .thought-dot {
+    background: rgba(15, 23, 42, 0.10);
+}
+
+.thought-empty {
+    pointer-events: none;
+}
+
+.thought-empty .thought-text {
     color: var(--text-muted);
 }
 
-.thoughts-empty .empty-icon {
-    font-size: 3rem;
-    display: block;
-    margin-bottom: 1rem;
-    opacity: 0.5;
+.thought-empty .thought-dot {
+    opacity: 0.4;
 }
 
-.thoughts-empty p {
-    margin: 0;
-    font-size: 0.9rem;
-}
+/* =============================================================================
+   Mobile
+   ============================================================================= */
 
-/* Mobile */
-@media (max-width: 600px) {
-    .thoughts-layout {
-        padding: 1rem 0.5rem;
+@media (max-width: 900px) {
+    .thoughts-page {
+        padding: 16px;
     }
 
-    .thoughts-header {
-        margin-bottom: 1.5rem;
+    .page-surface {
+        min-width: 0;
+        max-width: 100%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    .thoughts-page {
+        padding: 12px;
+    }
+
+    .page-surface {
+        padding: 16px;
+        border-radius: 10px;
     }
 
     .thoughts-title {
         font-size: 1.25rem;
     }
 
+    .capture-card {
+        padding: 14px;
+    }
+
     .thought-actions {
         opacity: 1;
+        pointer-events: auto;
     }
 }
 </style>
@@ -227,10 +436,16 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('quick-add-input');
-    const list = document.getElementById('thoughts-list');
-    const emptyState = document.getElementById('thoughts-empty');
+    const list = document.getElementById('thought-list');
+    const countEl = document.getElementById('thought-count');
+    const emptyState = document.getElementById('thought-empty');
 
-    // Quick add on Enter
+    let thoughtCount = {{ tasks|length if tasks else 0 }};
+
+    function updateCount() {
+        countEl.textContent = `${thoughtCount} Thought${thoughtCount !== 1 ? 's' : ''}`;
+    }
+
     input.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter' && input.value.trim()) {
             e.preventDefault();
@@ -254,62 +469,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add thought to DOM
     function addThoughtToList(task) {
-        // Remove empty state if present
         if (emptyState) {
             emptyState.remove();
         }
 
-        const item = document.createElement('div');
-        item.className = 'thought-item';
-        item.dataset.taskId = task.id;
-        item.innerHTML = `
+        const row = document.createElement('div');
+        row.className = 'thought-row is-new';
+        row.dataset.taskId = task.id;
+        row.innerHTML = `
+            <div class="thought-dot"></div>
             <span class="thought-text">${escapeHtml(task.title)}</span>
             <div class="thought-actions">
-                <button type="button" class="thought-action-btn promote-btn" title="Promote to Task">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" class="icon-btn promote" title="Promote to Task">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M12 19V5M5 12l7-7 7 7"/>
                     </svg>
                 </button>
-                <button type="button" class="thought-action-btn delete-btn" title="Delete">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button type="button" class="icon-btn delete" title="Delete">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M18 6L6 18M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
         `;
-        list.insertBefore(item, list.firstChild);
-        attachItemListeners(item);
+
+        if (list.firstChild) {
+            list.insertBefore(row, list.firstChild);
+        } else {
+            list.appendChild(row);
+        }
+
+        setTimeout(() => row.classList.remove('is-new'), 700);
+
+        attachRowListeners(row);
+        thoughtCount++;
+        updateCount();
     }
 
-    // Track pending deletion for undo
     let pendingDeletion = null;
     let deletionTimeout = null;
     const DELETION_DELAY = 5000;
 
-    // Attach event listeners to thought item
-    function attachItemListeners(item) {
-        const taskId = item.dataset.taskId;
+    function attachRowListeners(row) {
+        const taskId = row.dataset.taskId;
 
-        // Delete with undo
-        item.querySelector('.delete-btn').addEventListener('click', () => {
-            const title = item.querySelector('.thought-text').textContent || 'Thought';
-            const parent = item.parentElement;
-            const nextSibling = item.nextSibling;
+        row.querySelector('.delete').addEventListener('click', () => {
+            const title = row.querySelector('.thought-text').textContent || 'Thought';
+            const parent = row.parentElement;
+            const nextSibling = row.nextSibling;
 
-            // Cancel any existing pending deletion
             if (pendingDeletion) {
                 executeThoughtDelete(pendingDeletion.taskId);
             }
 
-            // Remove from UI
-            item.remove();
+            row.remove();
+            thoughtCount--;
+            updateCount();
 
-            // Store for undo
-            pendingDeletion = { taskId, item, parent, nextSibling };
+            pendingDeletion = { taskId, row, parent, nextSibling };
 
-            // Show toast with undo
             const displayTitle = title.length > 30 ? title.substring(0, 30) + '...' : title;
             if (window.Toast) {
                 Toast.show(`"${displayTitle}" deleted`, {
@@ -317,13 +536,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Schedule actual deletion
             if (deletionTimeout) clearTimeout(deletionTimeout);
             deletionTimeout = setTimeout(() => executeThoughtDelete(taskId), DELETION_DELAY);
         });
 
-        // Promote to Task (opens task dialog)
-        item.querySelector('.promote-btn').addEventListener('click', () => {
+        row.querySelector('.promote').addEventListener('click', () => {
             if (window.TaskDialog) {
                 TaskDialog.open(parseInt(taskId, 10));
             }
@@ -333,22 +550,23 @@ document.addEventListener('DOMContentLoaded', () => {
     function undoThoughtDelete() {
         if (!pendingDeletion) return;
 
-        const { item, parent, nextSibling } = pendingDeletion;
+        const { row, parent, nextSibling } = pendingDeletion;
 
         if (deletionTimeout) {
             clearTimeout(deletionTimeout);
             deletionTimeout = null;
         }
 
-        // Restore element
         if (parent) {
             if (nextSibling && nextSibling.parentNode === parent) {
-                parent.insertBefore(item, nextSibling);
+                parent.insertBefore(row, nextSibling);
             } else {
-                parent.appendChild(item);
+                parent.appendChild(row);
             }
         }
 
+        thoughtCount++;
+        updateCount();
         pendingDeletion = null;
     }
 
@@ -371,10 +589,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Attach listeners to existing items
-    document.querySelectorAll('.thought-item').forEach(attachItemListeners);
+    document.querySelectorAll('.thought-row:not(.thought-empty)').forEach(attachRowListeners);
 
-    // Helper to escape HTML
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;

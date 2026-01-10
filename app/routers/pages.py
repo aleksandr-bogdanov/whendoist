@@ -16,10 +16,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Domain, GoogleCalendarSelection, GoogleToken, Task, TodoistToken, User
+from app.models import Domain, GoogleCalendarSelection, GoogleToken, Task, TodoistToken, User, UserPreferences
 from app.routers.auth import get_current_user
+from app.services.analytics_service import AnalyticsService
 from app.services.gcal import GoogleCalendarClient
 from app.services.labels import Clarity, clarity_display
+from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
 from app.services.task_service import TaskService
 
@@ -42,8 +44,19 @@ DomainWithTasks = dict[str, Any]  # Domain with its tasks
 # -----------------------------------------------------------------------------
 
 
-def build_native_task_item(task: Task, next_instances: dict[int, date] | None = None) -> TaskItem:
-    """Create a task item dict from native Task model."""
+def build_native_task_item(
+    task: Task,
+    next_instances: dict[int, date] | None = None,
+    instance_completed_at: datetime | None = None,
+) -> TaskItem:
+    """
+    Create a task item dict from native Task model.
+
+    Args:
+        task: The task to build item for
+        next_instances: Dict of task_id -> next instance date for recurring tasks
+        instance_completed_at: For recurring tasks, the completion time of today's instance
+    """
     import contextlib
 
     # Map clarity string to Clarity enum for display
@@ -57,6 +70,11 @@ def build_native_task_item(task: Task, next_instances: dict[int, date] | None = 
     if task.is_recurring and next_instances:
         next_occurrence = next_instances.get(task.id)
 
+    # Determine completion age class for visual aging
+    # For recurring tasks, use instance completion time; for regular tasks, use task completion time
+    completed_at = instance_completed_at if task.is_recurring else task.completed_at
+    completion_age_class = TaskService.get_completion_age_class(completed_at)
+
     # Only access subtasks if already eagerly loaded (avoids lazy loading in async context)
     subtasks = []
     if "subtasks" in sa_inspect(task).dict:
@@ -67,6 +85,8 @@ def build_native_task_item(task: Task, next_instances: dict[int, date] | None = 
         "clarity_display": clarity_display(clarity),
         "next_occurrence": next_occurrence,
         "subtasks": subtasks,
+        "completion_age_class": completion_age_class,
+        "instance_completed_at": instance_completed_at,
     }
 
 
@@ -80,22 +100,80 @@ def group_tasks_by_domain(
     tasks: list[Task],
     domains: list[Domain],
     next_instances: dict[int, date] | None = None,
+    today_instance_completions: dict[int, datetime] | None = None,
+    user_prefs: UserPreferences | None = None,
 ) -> list[DomainWithTasks]:
-    """Group tasks by domain, sorted by impact."""
+    """
+    Group tasks by domain, sorted by impact.
+
+    Args:
+        tasks: List of tasks to group
+        domains: All user domains
+        next_instances: Dict of task_id -> next instance date for recurring tasks
+        today_instance_completions: Dict of task_id -> completed_at for today's recurring instances
+        user_prefs: User preferences for filtering/sorting
+    """
     domains_map = {d.id: d for d in domains}
     tasks_by_domain: dict[int | None, list[TaskItem]] = {}
 
+    # Get preference values with defaults
+    retention_days = user_prefs.completed_retention_days if user_prefs else 3
+    show_completed_in_list = user_prefs.show_completed_in_list if user_prefs else True
+    move_to_bottom = user_prefs.completed_move_to_bottom if user_prefs else True
+    hide_recurring_after = user_prefs.hide_recurring_after_completion if user_prefs else False
+
     for task in tasks:
-        task_item = build_native_task_item(task, next_instances)
+        # Get instance completion time for recurring tasks
+        instance_completed_at = today_instance_completions.get(task.id) if today_instance_completions else None
+
+        # Determine if task should be shown
+        # Check status, completed_at (for regular tasks), and instance_completed_at (for recurring tasks)
+        is_task_completed = task.status == "completed" or task.completed_at is not None or instance_completed_at
+        if is_task_completed:
+            # Check retention window
+            completed_at = instance_completed_at if task.is_recurring else task.completed_at
+            if not TaskService.is_within_retention_window(completed_at, retention_days):
+                continue
+
+            # Check if completed should show in list
+            if not show_completed_in_list:
+                continue
+
+            # Check hide recurring after completion setting
+            if task.is_recurring and hide_recurring_after and instance_completed_at:
+                continue
+
+        task_item = build_native_task_item(task, next_instances, instance_completed_at)
         domain_id = task.domain_id
         tasks_by_domain.setdefault(domain_id, []).append(task_item)
 
     # Sort tasks within each domain
     domains_with_tasks: list[DomainWithTasks] = []
 
-    # First add domains that have tasks
+    def is_completed_task(task_item: TaskItem) -> bool:
+        """Check if a task should be considered completed for sorting purposes."""
+        # Has visual aging class (completed_at is set)
+        if task_item["completion_age_class"]:
+            return True
+        # Task status is completed (fallback for tasks without completed_at)
+        task = task_item["task"]
+        if task.status == "completed":
+            return True
+        # Recurring task with instance completed today
+        return bool(task_item["instance_completed_at"])
+
     for domain_id, domain_tasks in tasks_by_domain.items():
-        domain_tasks.sort(key=native_task_sort_key)
+        if move_to_bottom:
+            # Sort: pending first (by impact/position), then completed (by impact/position)
+            pending = [t for t in domain_tasks if not is_completed_task(t)]
+            completed = [t for t in domain_tasks if is_completed_task(t)]
+            pending.sort(key=native_task_sort_key)
+            completed.sort(key=native_task_sort_key)
+            domain_tasks = pending + completed
+        else:
+            # Keep original order (just sort by impact/position)
+            domain_tasks.sort(key=native_task_sort_key)
+
         for task_item in domain_tasks:
             task_item["subtasks"].sort(key=native_task_sort_key)
 
@@ -159,6 +237,12 @@ async def dashboard(
         )
 
     # ==========================================================================
+    # User Preferences
+    # ==========================================================================
+    prefs_service = PreferencesService(db, user.id)
+    user_prefs = await prefs_service.get_preferences()
+
+    # ==========================================================================
     # Native Task Loading
     # ==========================================================================
     task_service = TaskService(db, user.id)
@@ -168,8 +252,9 @@ async def dashboard(
     await recurrence_service.ensure_instances_materialized()
 
     # Get domains and tasks (exclude inbox/thoughts - tasks without domain)
+    # Include both pending and completed tasks so completed ones show dimmed
     domains = await task_service.get_domains()
-    all_tasks = await task_service.get_tasks(status="pending", top_level_only=True)
+    all_tasks = await task_service.get_tasks(status=None, top_level_only=True)
     tasks = [t for t in all_tasks if t.domain_id is not None]
 
     # Get next occurrence date for each recurring task
@@ -179,7 +264,15 @@ async def dashboard(
         instances = await recurrence_service.get_next_instances_for_tasks(recurring_task_ids)
         next_instances = {inst.task_id: inst.instance_date for inst in instances}
 
-    domains_with_tasks = group_tasks_by_domain(tasks, domains, next_instances)
+    # Get today's instance completions for recurring tasks (for visual aging)
+    today_instance_completions: dict[int, datetime] = {}
+    if recurring_task_ids:
+        today_instances = await recurrence_service.get_instances_for_range(today, today, status=None)
+        for inst in today_instances:
+            if inst.status == "completed" and inst.completed_at:
+                today_instance_completions[inst.task_id] = inst.completed_at
+
+    domains_with_tasks = group_tasks_by_domain(tasks, domains, next_instances, today_instance_completions, user_prefs)
 
     # Get scheduled tasks for calendar display
     start_date = today - timedelta(days=7)
@@ -190,10 +283,19 @@ async def dashboard(
     # Separate date-only tasks from time-scheduled tasks
     date_only_tasks_by_date: dict[date, list[dict]] = {}
 
+    # Get calendar retention preference (completed tasks always show in calendar, just respect retention)
+    calendar_retention_days = user_prefs.completed_retention_days if user_prefs else 3
+
     # Non-recurring scheduled tasks
     scheduled_tasks = await task_service.get_scheduled_tasks_for_range(start_date, end_date)
     for task in scheduled_tasks:
         if task.scheduled_date:
+            # Skip completed tasks outside retention window
+            is_completed = task.status == "completed" or task.completed_at is not None
+            if is_completed and not TaskService.is_within_retention_window(task.completed_at, calendar_retention_days):
+                continue
+
+            completion_age = TaskService.get_completion_age_class(task.completed_at)
             if task.scheduled_time:
                 # Task has both date and time - show on calendar grid
                 scheduled_datetime = datetime.combine(
@@ -208,6 +310,7 @@ async def dashboard(
                         "start": scheduled_datetime,
                         "duration_minutes": task.duration_minutes or 30,
                         "clarity": task.clarity or "none",
+                        "completion_age_class": completion_age,
                     }
                 )
             else:
@@ -218,12 +321,21 @@ async def dashboard(
                         "is_instance": False,
                         "duration_minutes": task.duration_minutes or 30,
                         "clarity": task.clarity or "none",
+                        "completion_age_class": completion_age,
                     }
                 )
 
-    # Recurring task instances
-    instances = await recurrence_service.get_instances_for_range(start_date, end_date, status="pending")
+    # Recurring task instances (include completed to show them dimmed)
+    instances = await recurrence_service.get_instances_for_range(start_date, end_date, status=None)
     for instance in instances:
+        # Skip completed instances outside retention window
+        is_completed = instance.status == "completed" or instance.completed_at is not None
+        if is_completed and not TaskService.is_within_retention_window(instance.completed_at, calendar_retention_days):
+            continue
+
+        # Get completion age for instance
+        completion_age = TaskService.get_completion_age_class(instance.completed_at)
+
         # Check if instance has a specific time
         has_time = instance.scheduled_datetime is not None or instance.task.scheduled_time is not None
         if has_time:
@@ -245,6 +357,7 @@ async def dashboard(
                     "start": instance_datetime,
                     "duration_minutes": instance.task.duration_minutes or 30,
                     "clarity": instance.task.clarity or "none",
+                    "completion_age_class": completion_age,
                 }
             )
         else:
@@ -256,6 +369,7 @@ async def dashboard(
                     "is_instance": True,
                     "duration_minutes": instance.task.duration_minutes or 30,
                     "clarity": instance.task.clarity or "none",
+                    "completion_age_class": completion_age,
                 }
             )
 
@@ -322,6 +436,7 @@ async def dashboard(
             "calendar_days": calendar_days,
             "today": today,
             "timedelta": timedelta,  # For adjacent day calculations in template
+            "user_prefs": user_prefs,
         },
     )
 
@@ -365,6 +480,10 @@ async def settings(
     """Settings page - domains and calendar selection."""
     if not user:
         return RedirectResponse(url="/", status_code=303)
+
+    # Get user preferences
+    prefs_service = PreferencesService(db, user.id)
+    user_prefs = await prefs_service.get_preferences()
 
     # Get user's domains
     task_service = TaskService(db, user.id)
@@ -417,5 +536,47 @@ async def settings(
             "google_connected": google_token is not None,
             "todoist_connected": todoist_token is not None,
             "calendars": calendars,
+            "user_prefs": user_prefs,
+        },
+    )
+
+
+@router.get("/analytics", response_class=HTMLResponse)
+async def analytics(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user),
+    days: int = 7,
+):
+    """Analytics page - comprehensive stats dashboard."""
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+
+    # Validate days parameter (7, 30, or 90)
+    if days not in (7, 30, 90):
+        days = 7
+
+    today = date.today()
+    start_date = today - timedelta(days=days - 1)
+    end_date = today
+
+    analytics_service = AnalyticsService(db, user.id)
+
+    # Get comprehensive stats for all charts
+    stats = await analytics_service.get_comprehensive_stats(start_date, end_date)
+
+    # Get recent completions for the log
+    recent_completions = await analytics_service.get_recent_completions(limit=20)
+
+    return templates.TemplateResponse(
+        "analytics.html",
+        {
+            "request": request,
+            "user": user,
+            "days": days,
+            "start_date": start_date,
+            "end_date": end_date,
+            "stats": stats,
+            "recent_completions": recent_completions,
         },
     )

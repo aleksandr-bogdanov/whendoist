@@ -8,20 +8,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Redesign Thoughts space
-- Redesign Settings space
-- Support task completion
 - Polish Todoist import UX
+  - Clarify import behavior options (UI dialog before import)
+  - Option to keep/discard parent tasks as separate tasks
+  - Option to flatten subtasks or keep hierarchy
+  - Preview of what will be imported 
+- Polish Analytics page
+- Redesign domain management UX
+- Redesign CMPCT view
 
 ### Known Issues
-- Multiple anytime tasks may cause calendar alignment shift between days
+- None currently tracked
+
+---
+
+## [0.7.0] - 2026-01-11
+
+### Summary
+**Task Completion Features** — Visual aging for completed tasks, user preferences for task display, comprehensive Analytics dashboard, Todoist API v1 migration with completed task import, and JSON backup/restore.
+
+### Added
+
+- **Backup & Restore** — Export and import all user data as JSON from Settings page
+  - Download backup with timestamped filename
+  - Restore from backup file (replaces all existing data)
+  - Includes domains, tasks, task instances, and preferences
+- **Task Completion Visibility** — Completed tasks remain visible for a configurable retention window (1/3/7 days) in both Task List and Calendar
+- **Visual Aging** — Completed tasks fade based on completion time:
+  - Today: greyed text with strikethrough
+  - Older: muted grey (70% opacity) with strikethrough
+- **Analytics Dashboard** — Comprehensive statistics page with ApexCharts visualizations:
+  - Overview stats: completed, pending, completion rate, current streak
+  - Daily completions bar chart
+  - Domain breakdown donut chart
+  - Best days (day of week) distribution
+  - Active hours (hour of day) area chart
+  - GitHub-style contribution heatmap (12 weeks)
+  - Impact distribution (P1-P4 breakdown)
+  - Velocity trend with 7-day rolling average
+  - Task aging distribution
+  - Recurring task completion rates
+  - Recent completions log
+  - Date range selector (7D / 30D / 90D)
+- **Completed Tasks Settings** — Simplified settings panel:
+  - **Show in Task List** — Toggle visibility of completed tasks in Task List (Calendar always shows them as history)
+  - **Keep visible for** — Retention window (1/3/7 days) applies to both Task List and Calendar
+  - **Position in Task List** — Move completed to bottom or keep in place
+  - **Hide recurring after completing today** — For clean "remaining work only" view
+- **Todoist Completed Task Import** — Import recently completed tasks for analytics history
+- **User Preferences Model** — Backend storage for task display preferences
+
+### Changed
+
+- **Todoist API Migration** — Migrated from REST API v2 to API v1 for all operations
+- **Recurring tasks in left panel** — Now show "done today" state when instance is completed
+- **Calendar** — Always shows completed tasks (within retention window) since it's historical data
+- **Completed task opacity** — Changed from 25% to 70% for better readability
+- **Navigation** — Added Analytics to header nav, renamed CSS classes from `space-item` to `nav-item`
+
+### Technical
+
+- Migrated `TodoistClient` to Todoist API v1:
+  - Changed base URL from `rest/v2` to `api/v1`
+  - Updated pagination to cursor-based (`next_cursor`)
+  - Labels now returned as names directly (not IDs)
+  - Added `get_completed_tasks()` method
+- Added `UserPreferences` model with 4 task display preferences
+- Added `PreferencesService` for preference CRUD
+- Added `AnalyticsService` with comprehensive statistics methods
+- Added `/api/preferences` endpoints (GET/PUT)
+- Added `/analytics` page route
+- Added `completion_age_class` to task items for CSS styling
+- Added clarity parsing from completed task content (`@executable`, `@defined`, `@exploratory`)
+- Removed `url` field from `TodoistTask` (not available in API v1)
+- Integrated ApexCharts for all analytics visualizations
+- Added `BackupService` for data export/import
+- Added `/api/backup/export` and `/api/backup/import` endpoints
+
+---
+
+## [0.6.0] - 2026-01-06
+Fixed:
+2+ anytime tasks make the 'yesterday' shift calendar down comparing to the next day (when scrolled horizontally)
+Redesigned Settings page to match new design language
+Redesigned FAB button to match new design language
+Dynamic Add task for Domain section footers.
+added support 'complete task'
+
+### Summary
+Redesigned **Thought Cabinet** page to match the Tasks page aesthetic. Establishes visual consistency across the app with shared typography, layout patterns, and interaction states.
+
+### Added
+
+- **Thought Cabinet page** — Quick capture for ideas, tasks, and notes
+  - Capture input with keyboard hint (Enter to capture)
+  - Thoughts list panel with dense row styling
+  - Promote to Task action (opens task dialog)
+  - Delete with undo toast (5-second grace period)
+  - Empty state messaging
+
+### Changed
+
+- **Page layout** — Full-width grey surface with centered content (1180px max-width, same as Tasks)
+- **Typography** — ALL CAPS system with proper letter-spacing matching Tasks headers
+- **Title plate** — Subtle white background with hairline border
+- **Panel styling** — Same 12px border-radius and surfaces as Tasks panels
+- **Row density** — Compact rows (12px 16px padding) with border-bottom dividers
+- **Actions** — Hidden until hover with pointer-events control
+- **Capture card** — Centered at 860px max-width with keycap hint styling
+
+### Design Patterns
+
+- `.page-surface` — Shared grey background container (used across all pages)
+- `.thoughts-container` — Centered max-width wrapper (matches Tasks)
+- `.thought-row` — Dense row with inset dividers, hover tint, hidden actions
+- Responsive breakpoints at 900px and 600px
 
 ---
 
 ## [0.5.0] - 2026-01-05
 
 ### Summary
-Major UI polish release focused on the **Tasks space**. Establishes a calm, enterprise-grade aesthetic with improved information hierarchy, tint-based interactions, and a consistent visual grammar across task list and calendar.
+Major UI polish release focused on the **Tasks page**. Establishes a calm, enterprise-grade aesthetic with improved information hierarchy, tint-based interactions, and a consistent visual grammar across task list and calendar.
 
 ### Added
 
@@ -54,7 +162,7 @@ Major UI polish release focused on the **Tasks space**. Establishes a calm, ente
 
 ### Design System
 
-See [DESIGN.md](./DESIGN.md) for comprehensive documentation of the Tasks space design patterns.
+See [DESIGN.md](./DESIGN.md) for comprehensive documentation of the Tasks page design patterns.
 
 ---
 
@@ -152,7 +260,9 @@ See [DESIGN.md](./DESIGN.md) for comprehensive documentation of the Tasks space 
 
 ---
 
-[unreleased]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.5.0...HEAD
+[unreleased]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.2.0...v0.3.0

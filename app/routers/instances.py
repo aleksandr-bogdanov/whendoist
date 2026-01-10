@@ -101,6 +101,40 @@ async def complete_instance(
     return {"status": "completed", "instance_id": instance_id}
 
 
+@router.post("/{instance_id}/uncomplete", status_code=200)
+async def uncomplete_instance(
+    instance_id: int,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Uncomplete a specific instance of a recurring task."""
+    service = RecurrenceService(db, user.id)
+    instance = await service.uncomplete_instance(instance_id)
+    if not instance:
+        raise HTTPException(status_code=404, detail="Instance not found")
+    await db.commit()
+    return {"status": "pending", "instance_id": instance_id}
+
+
+@router.post("/{instance_id}/toggle-complete", status_code=200)
+async def toggle_instance_complete(
+    instance_id: int,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Toggle an instance's completion status."""
+    service = RecurrenceService(db, user.id)
+    instance = await service.toggle_instance_completion(instance_id)
+    if not instance:
+        raise HTTPException(status_code=404, detail="Instance not found")
+    await db.commit()
+    return {
+        "status": instance.status,
+        "instance_id": instance_id,
+        "completed": instance.status == "completed",
+    }
+
+
 @router.post("/{instance_id}/skip", status_code=200)
 async def skip_instance(
     instance_id: int,

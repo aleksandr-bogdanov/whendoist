@@ -4,7 +4,7 @@ Task API endpoints.
 Provides REST endpoints for managing native tasks.
 """
 
-from datetime import date, time
+from datetime import date, datetime, time
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -102,6 +102,8 @@ class TaskResponse(BaseModel):
     recurrence_rule: dict | None
     status: str
     position: int
+    created_at: datetime | None = None
+    completed_at: datetime | None = None
     subtasks: list[SubtaskResponse] = []
 
     class Config:
@@ -128,6 +130,8 @@ def _task_to_response(task: Task) -> TaskResponse:
         recurrence_rule=task.recurrence_rule,
         status=task.status,
         position=task.position,
+        created_at=task.created_at,
+        completed_at=task.completed_at,
         subtasks=[
             SubtaskResponse(
                 id=s.id,
@@ -308,3 +312,49 @@ async def complete_task(
     await service.complete_task(task_id)
     await db.commit()
     return {"status": "completed", "task_id": task_id}
+
+
+@router.post("/{task_id}/uncomplete", status_code=200)
+async def uncomplete_task(
+    task_id: int,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Uncomplete a task (mark as pending)."""
+    service = TaskService(db, user.id)
+    task = await service.get_task(task_id)
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    await service.uncomplete_task(task_id)
+    await db.commit()
+    return {"status": "pending", "task_id": task_id}
+
+
+@router.post("/{task_id}/toggle-complete", status_code=200)
+async def toggle_task_complete(
+    task_id: int,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Toggle a task's completion status."""
+    service = TaskService(db, user.id)
+    task = await service.get_task(task_id)
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if task.is_recurring:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot toggle recurring task directly. Use instance endpoints.",
+        )
+
+    updated_task = await service.toggle_task_completion(task_id)
+    await db.commit()
+    return {
+        "status": updated_task.status if updated_task else "error",
+        "task_id": task_id,
+        "completed": updated_task.status == "completed" if updated_task else False,
+    }

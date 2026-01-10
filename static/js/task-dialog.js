@@ -7,7 +7,8 @@
 (function () {
     'use strict';
 
-    let dialogEl = null;
+    let backdropEl = null;
+    let modalEl = null;
     let currentTaskId = null;
     let domains = [];
 
@@ -19,106 +20,475 @@
         { value: 4, label: 'P4', description: 'Maintenance' },
     ];
     const CLARITY_OPTIONS = [
-        { value: 'executable', label: 'Executable', description: 'Can do tired' },
-        { value: 'defined', label: 'Defined', description: 'Needs focus' },
-        { value: 'exploratory', label: 'Exploratory', description: 'Needs thinking' },
+        { value: 'executable', label: 'Exec', description: 'Can do tired' },
+        { value: 'defined', label: 'Def', description: 'Needs focus' },
+        { value: 'exploratory', label: 'Expl', description: 'Needs thinking' },
+    ];
+    const RECURRENCE_PRESETS = [
+        { value: null, label: 'None', freq: null },
+        { value: 'daily', label: 'Daily', freq: 'daily' },
+        { value: 'weekly', label: 'Weekly', freq: 'weekly' },
+        { value: 'monthly', label: 'Monthly', freq: 'monthly' },
+        { value: 'custom', label: 'Custom', freq: null },
     ];
 
+    /**
+     * Format a datetime string to a readable format.
+     * e.g. "Jan 5, 2026 at 2:30 PM"
+     */
+    function formatDateTime(isoString) {
+        if (!isoString) return '—';
+        const date = new Date(isoString);
+        const options = {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        };
+        return date.toLocaleString('en-US', options).replace(',', ' at');
+    }
+
     function init() {
-        createDialog();
+        createModal();
         setupEventListeners();
         loadDomains();
     }
 
-    function createDialog() {
-        dialogEl = document.createElement('dialog');
-        dialogEl.className = 'task-dialog';
-        dialogEl.innerHTML = `
-            <form method="dialog" class="task-dialog-form">
-                <div class="task-dialog-body">
-                    <input type="text" name="title" class="task-title-input" placeholder="Task name" required autofocus>
-                    <textarea name="description" class="task-desc-input" placeholder="Description" rows="1"></textarea>
+    function createModal() {
+        backdropEl = document.createElement('div');
+        backdropEl.className = 'modal-backdrop';
+        backdropEl.setAttribute('data-modal-backdrop', '');
+        backdropEl.style.display = 'none';
 
-                    <div class="task-chips">
-                        <button type="button" class="chip chip-schedule" data-chip="schedule">
-                            <span class="chip-icon">📅</span>
-                            <span class="chip-text">Schedule</span>
-                        </button>
-                        <button type="button" class="chip chip-due" data-chip="due">
-                            <span class="chip-icon">🎯</span>
-                            <span class="chip-text">Due</span>
-                        </button>
-                        <button type="button" class="chip chip-duration" data-chip="duration">
-                            <span class="chip-icon">⏱</span>
-                            <span class="chip-text">Duration</span>
-                        </button>
-                        <button type="button" class="chip chip-more" data-chip="more">
-                            <span class="chip-icon">•••</span>
-                        </button>
+        backdropEl.innerHTML = `
+            <div class="modal-window task-modal" role="dialog" aria-modal="true">
+                <form class="task-modal-form" style="display: contents;">
+                    <!-- Header -->
+                    <div class="modal-hd">
+                        <div class="modal-title" id="modal-title-text">New Task</div>
+                        <button type="button" class="modal-close-btn" aria-label="Close">&times;</button>
                     </div>
 
-                    <!-- Expandable sections -->
-                    <div class="chip-expand" id="expand-schedule" style="display:none;">
-                        <input type="date" name="scheduled_date" class="inline-input">
-                        <input type="time" name="scheduled_time" class="inline-input">
-                    </div>
-
-                    <div class="chip-expand" id="expand-due" style="display:none;">
-                        <input type="date" name="due_date" class="inline-input">
-                    </div>
-
-                    <div class="chip-expand" id="expand-duration" style="display:none;">
-                        <div class="duration-picker">
-                            ${DURATION_PRESETS.map(d =>
-                                `<button type="button" class="duration-btn" data-duration="${d}">${d >= 60 ? d / 60 + 'h' : d + 'm'}</button>`
-                            ).join('')}
-                            <input type="number" name="duration_minutes" placeholder="min" min="5" max="480" class="duration-custom">
+                    <!-- Body -->
+                    <div class="modal-body">
+                        <!-- Capture Stack (title + description) -->
+                        <div class="capture-stack">
+                            <input class="capture-field capture-title" name="title" placeholder="Task name" required autofocus spellcheck="false" autocomplete="off">
+                            <div class="capture-divider"></div>
+                            <textarea class="capture-field capture-desc" name="description" placeholder="Description (optional)" spellcheck="false"></textarea>
                         </div>
-                    </div>
 
-                    <div class="chip-expand" id="expand-more" style="display:none;">
-                        <div class="more-section">
-                            <span class="more-label">Impact</span>
-                            <div class="impact-selector">
-                                ${IMPACT_OPTIONS.map(opt =>
-                                    `<button type="button" class="impact-btn" data-impact="${opt.value}" title="${opt.description}">${opt.label}</button>`
-                                ).join('')}
+                        <!-- SCHEDULING Section -->
+                        <div class="modal-section">
+                            <div class="section-title">Scheduling</div>
+                            <div class="form-grid-2">
+                                <div class="form-field">
+                                    <div class="field-label">Schedule</div>
+                                    <div class="field-controls">
+                                        <input type="text" name="scheduled_date" class="input" placeholder="Date" readonly>
+                                        <div class="time-picker-wrapper">
+                                            <input type="text" name="scheduled_time" class="input input-time" placeholder="Time" readonly>
+                                            <div class="time-picker-dropdown" id="scheduled-time-dropdown">
+                                                <div class="time-scroller">
+                                                    <div class="scroller-column" id="hour-scroller"></div>
+                                                    <div class="scroller-separator">:</div>
+                                                    <div class="scroller-column" id="minute-scroller"></div>
+                                                </div>
+                                                <div class="time-picker-actions">
+                                                    <button type="button" class="time-clear-btn">Clear</button>
+                                                    <button type="button" class="time-confirm-btn">OK</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <div class="field-label">Due</div>
+                                    <div class="field-controls">
+                                        <input type="text" name="due_date" class="input" placeholder="Date" readonly>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="more-section">
-                            <span class="more-label">Clarity</span>
-                            <div class="clarity-selector">
-                                ${CLARITY_OPTIONS.map(opt =>
-                                    `<button type="button" class="clarity-btn" data-clarity="${opt.value}" title="${opt.description}">${opt.label}</button>`
-                                ).join('')}
+
+                        <!-- DETAILS Section (Duration + Impact + Clarity + Repeat) -->
+                        <div class="modal-section">
+                            <div class="section-title">Details</div>
+
+                            <div class="detail-row">
+                                <div class="detail-label">Duration</div>
+                                <div class="detail-control duration-control">
+                                    <div class="segmented duration-seg">
+                                        ${DURATION_PRESETS.map(d =>
+                                            `<button type="button" class="seg-btn" data-duration="${d}">${d >= 60 ? d / 60 + 'h' : d + 'm'}</button>`
+                                        ).join('')}
+                                    </div>
+                                    <div class="unit-input">
+                                        <input class="input duration-min" name="duration_minutes" inputmode="numeric" min="0" max="1440" step="5">
+                                        <span class="unit">min</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-label">Impact</div>
+                                <div class="detail-control">
+                                    <div class="segmented">
+                                        ${IMPACT_OPTIONS.map(opt =>
+                                            `<button type="button" class="seg-btn" data-impact="${opt.value}" title="${opt.description}">${opt.label}</button>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-label">Clarity</div>
+                                <div class="detail-control">
+                                    <div class="segmented">
+                                        ${CLARITY_OPTIONS.map(opt =>
+                                            `<button type="button" class="seg-btn" data-clarity="${opt.value}" title="${opt.description}">${opt.label}</button>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-label">Repeat</div>
+                                <div class="detail-control">
+                                    <div class="segmented" id="recurrence-presets">
+                                        ${RECURRENCE_PRESETS.map(opt =>
+                                            `<button type="button" class="seg-btn" data-recurrence="${opt.value || ''}" data-label="${opt.label}">${opt.label}</button>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="subrow" id="custom-recurrence" hidden>
+                                <div class="subrow-grid">
+                                    <span class="subrow-label">Every</span>
+                                    <div class="field-controls">
+                                        <input type="number" id="recurrence-interval" class="input input-sm" value="1" min="1" max="99">
+                                        <select id="recurrence-freq" class="input">
+                                            <option value="daily">days</option>
+                                            <option value="weekly">weeks</option>
+                                            <option value="monthly">months</option>
+                                        </select>
+                                    </div>
+                                    <span class="subrow-label">On</span>
+                                    <div class="days-row" id="recurrence-days">
+                                        <button type="button" class="day-btn" data-day="MO">M</button>
+                                        <button type="button" class="day-btn" data-day="TU">T</button>
+                                        <button type="button" class="day-btn" data-day="WE">W</button>
+                                        <button type="button" class="day-btn" data-day="TH">T</button>
+                                        <button type="button" class="day-btn" data-day="FR">F</button>
+                                        <button type="button" class="day-btn" data-day="SA">S</button>
+                                        <button type="button" class="day-btn" data-day="SU">S</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="more-section">
-                            <span class="more-label">Recurrence</span>
-                            <div class="recurrence-picker" id="recurrence-picker"></div>
+
+                        <!-- METADATA (compact, only visible for existing tasks) -->
+                        <div class="task-metadata" id="metadata-section" style="display: none;">
+                            <div class="meta-line" id="meta-created-at"></div>
+                            <div class="meta-line" id="meta-completed-row" style="display: none;">
+                                <span id="meta-completed-at"></span>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Footer: Domain | Delete | Complete/Reopen | Save -->
+                    <div class="modal-ft">
+                        <div class="ft-left">
+                            <div class="domain-dropdown" id="domain-dropdown">
+                                <button type="button" class="domain-dropdown-btn" id="domain-dropdown-btn">
+                                    <span class="domain-dropdown-text">📥 Inbox</span>
+                                    <svg class="domain-dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                        <path d="M1 5L5 1L9 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <div class="domain-dropdown-menu" id="domain-dropdown-menu">
+                                    <button type="button" class="domain-dropdown-item" data-value="">📥 Inbox</button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="domain_id" value="">
+                        </div>
+                        <div class="ft-center">
+                            <button type="button" class="btn btn-danger-outline" id="btn-delete" style="display: none;">Delete</button>
+                            <button type="button" class="btn btn-complete" id="btn-complete" style="display: none;">
+                                <span class="btn-complete-icon">✓</span> Complete
+                            </button>
+                        </div>
+                        <div class="ft-right">
+                            <button type="submit" class="btn btn-primary btn-submit">Add task</button>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="task_status" value="pending">
 
                     <input type="hidden" name="impact" value="4">
                     <input type="hidden" name="clarity" value="defined">
-                </div>
-
-                <footer class="task-dialog-footer">
-                    <div class="footer-left">
-                        <select name="domain_id" class="domain-select">
-                            <option value="">📥 Inbox</option>
-                        </select>
-                        <button type="button" class="btn-unschedule" id="btn-unschedule" style="display: none;">Unschedule</button>
-                        <button type="button" class="btn-delete" id="btn-delete" style="display: none;">🗑️ Delete</button>
-                    </div>
-                    <div class="footer-right">
-                        <button type="button" class="btn-cancel">Cancel</button>
-                        <button type="submit" class="btn-submit">Add task</button>
-                    </div>
-                </footer>
-            </form>
+                </form>
+            </div>
         `;
-        document.body.appendChild(dialogEl);
+
+        document.body.appendChild(backdropEl);
+        modalEl = backdropEl.querySelector('.modal-window');
+        initializeDatePickers();
+    }
+
+    // Air Datepicker instances
+    let scheduledDatePicker = null;
+    let scheduledTimePicker = null;
+    let dueDatePicker = null;
+
+    // English locale for Air Datepicker (CDN version defaults to non-English)
+    const localeEn = {
+        days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        daysMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+        months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        today: 'Today',
+        clear: 'Clear',
+        dateFormat: 'MMM d, yyyy',
+        timeFormat: 'h:mm aa',
+        firstDay: 0
+    };
+
+    function initializeDatePickers() {
+        const dateConfig = {
+            locale: localeEn,
+            dateFormat: 'yyyy-MM-dd',
+            autoClose: true,
+            position: 'bottom center',
+            container: document.body,
+            buttons: ['today', 'clear'],
+        };
+
+        scheduledDatePicker = new AirDatepicker(backdropEl.querySelector('[name="scheduled_date"]'), {
+            ...dateConfig,
+            onSelect: ({date, formattedDate}) => {
+                backdropEl.querySelector('[name="scheduled_date"]').dataset.value = formattedDate || '';
+            }
+        });
+
+        dueDatePicker = new AirDatepicker(backdropEl.querySelector('[name="due_date"]'), {
+            ...dateConfig,
+            onSelect: ({date, formattedDate}) => {
+                backdropEl.querySelector('[name="due_date"]').dataset.value = formattedDate || '';
+            }
+        });
+
+        // Initialize custom time picker
+        initializeTimePicker();
+    }
+
+    function initializeTimePicker() {
+        const timeInput = backdropEl.querySelector('[name="scheduled_time"]');
+        const dropdown = backdropEl.querySelector('#scheduled-time-dropdown');
+        const hourScroller = dropdown.querySelector('#hour-scroller');
+        const minuteScroller = dropdown.querySelector('#minute-scroller');
+        const confirmBtn = dropdown.querySelector('.time-confirm-btn');
+        const clearBtn = dropdown.querySelector('.time-clear-btn');
+
+        // Generate hours (00-23)
+        hourScroller.innerHTML = Array.from({ length: 24 }, (_, i) =>
+            `<div class="scroller-item" data-value="${i}">${i.toString().padStart(2, '0')}</div>`
+        ).join('');
+
+        // Generate minutes (00, 05, 10, ... 55)
+        minuteScroller.innerHTML = Array.from({ length: 12 }, (_, i) => i * 5).map(m =>
+            `<div class="scroller-item" data-value="${m}">${m.toString().padStart(2, '0')}</div>`
+        ).join('');
+
+        let selectedHour = 9;
+        let selectedMinute = 0;
+
+        function updateSelection() {
+            hourScroller.querySelectorAll('.scroller-item').forEach(item => {
+                item.classList.toggle('is-selected', parseInt(item.dataset.value) === selectedHour);
+            });
+            minuteScroller.querySelectorAll('.scroller-item').forEach(item => {
+                item.classList.toggle('is-selected', parseInt(item.dataset.value) === selectedMinute);
+            });
+        }
+
+        function scrollToValue(scroller, value, smooth = true) {
+            const item = scroller.querySelector(`.scroller-item[data-value="${value}"]`);
+            if (item) {
+                scroller.scrollTo({
+                    top: item.offsetTop - scroller.offsetHeight / 2 + item.offsetHeight / 2,
+                    behavior: smooth ? 'smooth' : 'auto'
+                });
+            }
+        }
+
+        // Find which item is centered in the scroller
+        function getCenteredValue(scroller) {
+            const scrollerRect = scroller.getBoundingClientRect();
+            const centerY = scrollerRect.top + scrollerRect.height / 2;
+
+            let closestItem = null;
+            let closestDistance = Infinity;
+
+            scroller.querySelectorAll('.scroller-item').forEach(item => {
+                const itemRect = item.getBoundingClientRect();
+                const itemCenterY = itemRect.top + itemRect.height / 2;
+                const distance = Math.abs(centerY - itemCenterY);
+
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestItem = item;
+                }
+            });
+
+            return closestItem ? parseInt(closestItem.dataset.value) : null;
+        }
+
+        // Snap to nearest value and select it
+        function snapAndSelect(scroller, isHour) {
+            const value = getCenteredValue(scroller);
+            if (value !== null) {
+                if (isHour) {
+                    selectedHour = value;
+                } else {
+                    selectedMinute = value;
+                }
+                updateSelection();
+                scrollToValue(scroller, value);
+            }
+        }
+
+        // Track if any scroller is being dragged (to prevent close on outside click)
+        let isAnyDragging = false;
+
+        // Drag support - snap only on release
+        function setupDrag(scroller, isHour) {
+            let isDragging = false;
+            let startY = 0;
+            let startScrollTop = 0;
+
+            scroller.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                isAnyDragging = true;
+                startY = e.clientY;
+                startScrollTop = scroller.scrollTop;
+                scroller.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                scroller.scrollTop = startScrollTop + (startY - e.clientY);
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    scroller.style.cursor = '';
+                    snapAndSelect(scroller, isHour);
+                    // Delay reset to prevent click-outside from firing
+                    setTimeout(() => { isAnyDragging = false; }, 10);
+                }
+            });
+
+            // Touch support
+            let touchStartY = 0;
+            let touchStartScrollTop = 0;
+
+            scroller.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+                touchStartScrollTop = scroller.scrollTop;
+                isAnyDragging = true;
+            }, { passive: true });
+
+            scroller.addEventListener('touchmove', (e) => {
+                scroller.scrollTop = touchStartScrollTop + (touchStartY - e.touches[0].clientY);
+            }, { passive: true });
+
+            scroller.addEventListener('touchend', () => {
+                snapAndSelect(scroller, isHour);
+                setTimeout(() => { isAnyDragging = false; }, 10);
+            }, { passive: true });
+
+            // Also snap on wheel scroll end
+            let wheelTimeout = null;
+            scroller.addEventListener('wheel', () => {
+                clearTimeout(wheelTimeout);
+                wheelTimeout = setTimeout(() => snapAndSelect(scroller, isHour), 150);
+            }, { passive: true });
+        }
+
+        setupDrag(hourScroller, true);
+        setupDrag(minuteScroller, false);
+
+        // Click on items (instant select)
+        hourScroller.addEventListener('click', (e) => {
+            const item = e.target.closest('.scroller-item');
+            if (item) {
+                selectedHour = parseInt(item.dataset.value);
+                updateSelection();
+                scrollToValue(hourScroller, selectedHour);
+            }
+        });
+
+        minuteScroller.addEventListener('click', (e) => {
+            const item = e.target.closest('.scroller-item');
+            if (item) {
+                selectedMinute = parseInt(item.dataset.value);
+                updateSelection();
+                scrollToValue(minuteScroller, selectedMinute);
+            }
+        });
+
+        // Confirm button
+        confirmBtn.addEventListener('click', () => {
+            const value = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+            timeInput.value = value;
+            timeInput.dataset.value = value;
+            dropdown.classList.remove('is-open');
+        });
+
+        // Clear button
+        clearBtn.addEventListener('click', () => {
+            timeInput.value = '';
+            timeInput.dataset.value = '';
+            dropdown.classList.remove('is-open');
+        });
+
+        // Toggle dropdown
+        timeInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wasOpen = dropdown.classList.contains('is-open');
+            dropdown.classList.toggle('is-open');
+
+            if (!wasOpen) {
+                // Parse current value or default to 09:00
+                if (timeInput.dataset.value) {
+                    const [h, m] = timeInput.dataset.value.split(':');
+                    selectedHour = parseInt(h);
+                    selectedMinute = parseInt(m);
+                } else {
+                    selectedHour = 9;
+                    selectedMinute = 0;
+                }
+                updateSelection();
+                setTimeout(() => {
+                    scrollToValue(hourScroller, selectedHour, false);
+                    scrollToValue(minuteScroller, selectedMinute, false);
+                }, 10);
+            }
+        });
+
+        // Close on outside click (but not if we were dragging)
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.time-picker-wrapper') && !isAnyDragging) {
+                dropdown.classList.remove('is-open');
+            }
+        });
     }
 
     function setupEventListeners() {
@@ -136,6 +506,13 @@
                 const taskId = parseInt(taskItem.dataset.taskId, 10);
                 openDialog(taskId);
             }
+            // Click on completion row in analytics
+            const completionRow = e.target.closest('.completion-row[data-task-id]');
+            if (completionRow) {
+                e.preventDefault();
+                const taskId = parseInt(completionRow.dataset.taskId, 10);
+                openDialog(taskId);
+            }
             // Click on scheduled task in calendar (any scheduled task with a task ID)
             const scheduledTask = e.target.closest('.scheduled-task[data-task-id]');
             if (scheduledTask && !e.target.closest('a, button, input')) {
@@ -145,89 +522,174 @@
                     openDialog(taskId);
                 }
             }
+            // Click on anytime task in calendar
+            const anytimeTask = e.target.closest('.date-only-task[data-task-id]');
+            if (anytimeTask && !e.target.closest('a, button, input')) {
+                e.preventDefault();
+                const taskId = parseInt(anytimeTask.dataset.taskId, 10);
+                if (taskId) {
+                    openDialog(taskId);
+                }
+            }
+            // Click on add-task-row in domain group
+            const addTaskRow = e.target.closest('.add-task-row');
+            if (addTaskRow) {
+                e.preventDefault();
+                const domainId = addTaskRow.dataset.domainId;
+                openDialog(null, { domainId: domainId || null });
+            }
         });
 
         // Keyboard shortcut "q" for quick add
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'q' && !e.target.matches('input, textarea, select') && !dialogEl.open) {
+            if (e.key === 'q' && !e.target.matches('input, textarea, select') && !isOpen()) {
                 e.preventDefault();
                 openDialog();
             }
             // Escape to close
-            if (e.key === 'Escape' && dialogEl.open) {
+            if (e.key === 'Escape' && isOpen()) {
                 closeDialog();
             }
         });
 
-        // Dialog internal events
-        dialogEl.querySelector('.btn-cancel').addEventListener('click', closeDialog);
-        dialogEl.querySelector('form').addEventListener('submit', handleSubmit);
-        dialogEl.querySelector('#btn-unschedule').addEventListener('click', handleUnschedule);
-        dialogEl.querySelector('#btn-delete').addEventListener('click', handleDelete);
+        // Close button
+        backdropEl.querySelector('.modal-close-btn').addEventListener('click', closeDialog);
 
-        // Click outside to close
-        dialogEl.addEventListener('click', (e) => {
-            if (e.target === dialogEl) {
+        // Form submit
+        backdropEl.querySelector('form').addEventListener('submit', handleSubmit);
+
+        // Delete and complete buttons
+        backdropEl.querySelector('#btn-delete').addEventListener('click', handleDelete);
+        backdropEl.querySelector('#btn-complete').addEventListener('click', handleComplete);
+
+        // Click backdrop to close
+        backdropEl.addEventListener('click', (e) => {
+            if (e.target === backdropEl) {
                 closeDialog();
             }
         });
 
-        // Chip toggles for expandable sections
-        dialogEl.querySelectorAll('.chip[data-chip]').forEach(chip => {
-            chip.addEventListener('click', () => {
-                const chipType = chip.dataset.chip;
-                const expandEl = dialogEl.querySelector(`#expand-${chipType}`);
-                if (expandEl) {
-                    const isVisible = expandEl.style.display !== 'none';
-                    // Hide all expand sections
-                    dialogEl.querySelectorAll('.chip-expand').forEach(el => el.style.display = 'none');
-                    dialogEl.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-                    // Toggle this one
-                    if (!isVisible) {
-                        expandEl.style.display = 'flex';
-                        chip.classList.add('active');
+        // Duration preset buttons
+        backdropEl.querySelectorAll('.seg-btn[data-duration]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const duration = parseInt(btn.dataset.duration, 10);
+                backdropEl.querySelector('[name="duration_minutes"]').value = duration;
+                backdropEl.querySelectorAll('.seg-btn[data-duration]').forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+            });
+        });
+
+        // Impact buttons
+        backdropEl.querySelectorAll('.seg-btn[data-impact]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                backdropEl.querySelector('[name="impact"]').value = btn.dataset.impact;
+                backdropEl.querySelectorAll('.seg-btn[data-impact]').forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+            });
+        });
+
+        // Clarity buttons
+        backdropEl.querySelectorAll('.seg-btn[data-clarity]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const currentVal = backdropEl.querySelector('[name="clarity"]').value;
+                if (currentVal === btn.dataset.clarity) {
+                    backdropEl.querySelector('[name="clarity"]').value = '';
+                    btn.classList.remove('is-active');
+                } else {
+                    backdropEl.querySelector('[name="clarity"]').value = btn.dataset.clarity;
+                    backdropEl.querySelectorAll('.seg-btn[data-clarity]').forEach(b => b.classList.remove('is-active'));
+                    btn.classList.add('is-active');
+                }
+            });
+        });
+
+        // Recurrence preset buttons
+        backdropEl.querySelectorAll('#recurrence-presets .seg-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const value = btn.dataset.recurrence;
+                backdropEl.querySelectorAll('#recurrence-presets .seg-btn').forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+
+                const customPanel = backdropEl.querySelector('#custom-recurrence');
+                if (value === 'custom') {
+                    customPanel.hidden = false;
+                    updateRecurrenceRule();
+                } else {
+                    customPanel.hidden = true;
+                    // Store as JSON object or empty string
+                    if (value && value !== '') {
+                        setRecurrenceRule({ freq: value, interval: 1 });
+                    } else {
+                        setRecurrenceRule(null);
                     }
                 }
             });
         });
 
-        // Duration preset buttons
-        dialogEl.querySelectorAll('.duration-btn').forEach(btn => {
+        // Custom recurrence controls
+        backdropEl.querySelector('#recurrence-interval').addEventListener('input', updateRecurrenceRule);
+        backdropEl.querySelector('#recurrence-freq').addEventListener('change', updateRecurrenceRule);
+
+        // Day buttons for weekly recurrence
+        backdropEl.querySelectorAll('#recurrence-days .day-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const duration = parseInt(btn.dataset.duration, 10);
-                dialogEl.querySelector('[name="duration_minutes"]').value = duration;
-                dialogEl.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                // Update chip text
-                const chipText = dialogEl.querySelector('.chip-duration .chip-text');
-                if (chipText) chipText.textContent = duration >= 60 ? `${duration/60}h` : `${duration}m`;
+                btn.classList.toggle('is-active');
+                updateRecurrenceRule();
             });
         });
 
-        // Impact buttons
-        dialogEl.querySelectorAll('.impact-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                dialogEl.querySelector('[name="impact"]').value = btn.dataset.impact;
-                dialogEl.querySelectorAll('.impact-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
+        // Domain dropdown
+        backdropEl.querySelector('#domain-dropdown-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDomainDropdown();
         });
 
-        // Clarity buttons
-        dialogEl.querySelectorAll('.clarity-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Toggle: click again to deselect
-                const currentVal = dialogEl.querySelector('[name="clarity"]').value;
-                if (currentVal === btn.dataset.clarity) {
-                    dialogEl.querySelector('[name="clarity"]').value = '';
-                    btn.classList.remove('active');
-                } else {
-                    dialogEl.querySelector('[name="clarity"]').value = btn.dataset.clarity;
-                    dialogEl.querySelectorAll('.clarity-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                }
-            });
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#domain-dropdown')) {
+                closeDomainDropdown();
+            }
         });
+
+        // Initial domain items click handlers
+        backdropEl.querySelectorAll('.domain-dropdown-item').forEach(item => {
+            item.addEventListener('click', () => selectDomain(item.dataset.value, item.textContent));
+        });
+    }
+
+    // Store recurrence rule as object
+    let currentRecurrenceRule = null;
+
+    function setRecurrenceRule(rule) {
+        currentRecurrenceRule = rule;
+    }
+
+    function getRecurrenceRule() {
+        return currentRecurrenceRule;
+    }
+
+    function updateRecurrenceRule() {
+        const interval = parseInt(backdropEl.querySelector('#recurrence-interval').value, 10) || 1;
+        const freq = backdropEl.querySelector('#recurrence-freq').value;
+
+        const rule = {
+            freq: freq,
+            interval: interval
+        };
+
+        if (freq === 'weekly') {
+            const days = Array.from(backdropEl.querySelectorAll('#recurrence-days .day-btn.is-active'))
+                .map(btn => btn.dataset.day);
+            if (days.length > 0) {
+                rule.days_of_week = days;
+            }
+        }
+
+        setRecurrenceRule(rule);
+    }
+
+    function isOpen() {
+        return backdropEl && backdropEl.style.display !== 'none';
     }
 
     async function loadDomains() {
@@ -243,63 +705,118 @@
     }
 
     function updateDomainSelect() {
-        const select = dialogEl.querySelector('[name="domain_id"]');
-        select.innerHTML = '<option value="">📥 Inbox</option>' +
-            domains.map(d => `<option value="${d.id}">${d.icon || '📁'} ${d.name}</option>`).join('');
+        const menu = backdropEl.querySelector('#domain-dropdown-menu');
+        menu.innerHTML = '<button type="button" class="domain-dropdown-item" data-value="">📥 Inbox</button>' +
+            domains.map(d => `<button type="button" class="domain-dropdown-item" data-value="${d.id}">${d.icon || '📁'} ${d.name}</button>`).join('');
+
+        // Re-attach click handlers
+        menu.querySelectorAll('.domain-dropdown-item').forEach(item => {
+            item.addEventListener('click', () => selectDomain(item.dataset.value, item.textContent));
+        });
     }
 
-    function openDialog(taskId = null) {
+    function selectDomain(value, text) {
+        backdropEl.querySelector('[name="domain_id"]').value = value;
+        backdropEl.querySelector('.domain-dropdown-text').textContent = text;
+        closeDomainDropdown();
+    }
+
+    function toggleDomainDropdown() {
+        const dropdown = backdropEl.querySelector('#domain-dropdown');
+        dropdown.classList.toggle('is-open');
+    }
+
+    function closeDomainDropdown() {
+        const dropdown = backdropEl.querySelector('#domain-dropdown');
+        dropdown.classList.remove('is-open');
+    }
+
+    async function openDialog(taskId = null, options = {}) {
         currentTaskId = taskId;
-        const form = dialogEl.querySelector('form');
+        const form = backdropEl.querySelector('form');
         form.reset();
 
+        // Extract options
+        const { domainId = null } = options;
+
+        // Update title
+        const titleText = backdropEl.querySelector('#modal-title-text');
+        titleText.textContent = taskId ? 'Edit Task' : 'New Task';
+
         // Reset button states
-        dialogEl.querySelectorAll('.duration-btn, .impact-btn, .clarity-btn, .chip').forEach(b => b.classList.remove('active'));
+        backdropEl.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('is-active'));
+        backdropEl.querySelectorAll('.day-btn').forEach(b => b.classList.remove('is-active'));
 
-        // Hide all expand sections
-        dialogEl.querySelectorAll('.chip-expand').forEach(el => el.style.display = 'none');
+        // Clear date/time pickers
+        if (scheduledDatePicker) scheduledDatePicker.clear();
+        if (dueDatePicker) dueDatePicker.clear();
+        backdropEl.querySelector('[name="scheduled_date"]').dataset.value = '';
+        backdropEl.querySelector('[name="due_date"]').dataset.value = '';
 
-        // Reset chip texts
-        const durationChip = dialogEl.querySelector('.chip-duration .chip-text');
-        if (durationChip) durationChip.textContent = 'Duration';
-        const scheduleChip = dialogEl.querySelector('.chip-schedule .chip-text');
-        if (scheduleChip) scheduleChip.textContent = 'Schedule';
-        const dueChip = dialogEl.querySelector('.chip-due .chip-text');
-        if (dueChip) dueChip.textContent = 'Due';
+        // Clear time picker
+        const timeInput = backdropEl.querySelector('[name="scheduled_time"]');
+        timeInput.value = '';
+        timeInput.dataset.value = '';
 
         // Set default impact
-        dialogEl.querySelector('[name="impact"]').value = '4';
-        dialogEl.querySelector('.impact-btn[data-impact="4"]').classList.add('active');
+        backdropEl.querySelector('[name="impact"]').value = '4';
+        backdropEl.querySelector('.seg-btn[data-impact="4"]').classList.add('is-active');
 
         // Set default clarity to "defined" for new tasks
-        if (!taskId) {
-            dialogEl.querySelector('[name="clarity"]').value = 'defined';
-            dialogEl.querySelector('.clarity-btn[data-clarity="defined"]')?.classList.add('active');
+        backdropEl.querySelector('[name="clarity"]').value = 'defined';
+        backdropEl.querySelector('.seg-btn[data-clarity="defined"]')?.classList.add('is-active');
+
+        // Set default recurrence to none
+        setRecurrenceRule(null);
+        backdropEl.querySelector('.seg-btn[data-recurrence=""]').classList.add('is-active');
+        backdropEl.querySelector('#custom-recurrence').hidden = true;
+
+        // Reset domain dropdown (or pre-select if domainId provided)
+        if (domainId && !taskId) {
+            // Pre-select domain for new task
+            const domain = domains.find(d => d.id === parseInt(domainId));
+            if (domain) {
+                backdropEl.querySelector('[name="domain_id"]').value = domain.id;
+                backdropEl.querySelector('.domain-dropdown-text').textContent =
+                    `${domain.icon || '📁'} ${domain.name}`;
+            } else {
+                backdropEl.querySelector('[name="domain_id"]').value = '';
+                backdropEl.querySelector('.domain-dropdown-text').textContent = '📥 Inbox';
+            }
+        } else {
+            backdropEl.querySelector('[name="domain_id"]').value = '';
+            backdropEl.querySelector('.domain-dropdown-text').textContent = '📥 Inbox';
         }
+        closeDomainDropdown();
 
         // Update submit button text
-        dialogEl.querySelector('.btn-submit').textContent = taskId ? 'Save' : 'Add task';
+        backdropEl.querySelector('.btn-submit').textContent = taskId ? 'Save' : 'Add task';
 
-        // Hide unschedule and delete buttons for new tasks
-        dialogEl.querySelector('#btn-unschedule').style.display = 'none';
-        dialogEl.querySelector('#btn-delete').style.display = 'none';
+        // Hide delete and complete buttons for new tasks
+        backdropEl.querySelector('#btn-delete').style.display = 'none';
+        const completeBtn = backdropEl.querySelector('#btn-complete');
+        completeBtn.style.display = 'none';
+        completeBtn.innerHTML = '<span class="btn-complete-icon">✓</span> Complete';
+        completeBtn.classList.remove('is-completed');
+        backdropEl.querySelector('[name="task_status"]').value = 'pending';
 
-        // Initialize recurrence picker
-        if (window.RecurrencePicker) {
-            window.RecurrencePicker.init(dialogEl.querySelector('#recurrence-picker'));
-            window.RecurrencePicker.reset();
-        }
+        // Hide metadata section initially
+        backdropEl.querySelector('#metadata-section').style.display = 'none';
 
+        // For existing tasks, load data BEFORE showing modal to prevent flicker
         if (taskId) {
-            loadTask(taskId);
+            await loadTask(taskId);
         }
 
-        dialogEl.showModal();
-        dialogEl.querySelector('[name="title"]').focus();
+        // Show modal and lock scroll
+        backdropEl.style.display = 'grid';
+        document.body.classList.add('modal-open');
+        backdropEl.querySelector('[name="title"]').focus();
     }
 
     function closeDialog() {
-        dialogEl.close();
+        backdropEl.style.display = 'none';
+        document.body.classList.remove('modal-open');
         currentTaskId = null;
     }
 
@@ -311,150 +828,148 @@
             }
             const task = await response.json();
 
-            const form = dialogEl.querySelector('form');
+            const form = backdropEl.querySelector('form');
             form.elements.title.value = task.title;
             form.elements.description.value = task.description || '';
             form.elements.domain_id.value = task.domain_id || '';
-            form.elements.scheduled_date.value = task.scheduled_date || '';
-            form.elements.scheduled_time.value = task.scheduled_time || '';
-            form.elements.due_date.value = task.due_date || '';
             form.elements.duration_minutes.value = task.duration_minutes || '';
             form.elements.impact.value = task.impact;
             form.elements.clarity.value = task.clarity || '';
 
-            // Update button states
-            dialogEl.querySelectorAll('.duration-btn').forEach(btn => {
-                btn.classList.toggle('active', parseInt(btn.dataset.duration, 10) === task.duration_minutes);
-            });
-            dialogEl.querySelectorAll('.impact-btn').forEach(btn => {
-                btn.classList.toggle('active', parseInt(btn.dataset.impact, 10) === task.impact);
-            });
-            dialogEl.querySelectorAll('.clarity-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.clarity === task.clarity);
+            // Set date values using Air Datepicker
+            if (task.scheduled_date && scheduledDatePicker) {
+                const date = new Date(task.scheduled_date + 'T00:00:00');
+                scheduledDatePicker.selectDate(date);
+                form.elements.scheduled_date.dataset.value = task.scheduled_date;
+            }
+            if (task.due_date && dueDatePicker) {
+                const date = new Date(task.due_date + 'T00:00:00');
+                dueDatePicker.selectDate(date);
+                form.elements.due_date.dataset.value = task.due_date;
+            }
+
+            // Set time using custom picker
+            if (task.scheduled_time) {
+                form.elements.scheduled_time.value = task.scheduled_time;
+                form.elements.scheduled_time.dataset.value = task.scheduled_time;
+            }
+
+            // Update domain dropdown text
+            if (task.domain_id) {
+                const domain = domains.find(d => d.id === task.domain_id);
+                if (domain) {
+                    backdropEl.querySelector('.domain-dropdown-text').textContent = `${domain.icon || '📁'} ${domain.name}`;
+                }
+            } else {
+                backdropEl.querySelector('.domain-dropdown-text').textContent = '📥 Inbox';
+            }
+
+            // Update duration buttons
+            backdropEl.querySelectorAll('.seg-btn[data-duration]').forEach(btn => {
+                btn.classList.toggle('is-active', parseInt(btn.dataset.duration, 10) === task.duration_minutes);
             });
 
-            // Show expand sections and update chip text if values exist
-            if (task.scheduled_date) {
-                dialogEl.querySelector('#expand-schedule').style.display = 'flex';
-                dialogEl.querySelector('.chip-schedule').classList.add('active');
-                const scheduleChip = dialogEl.querySelector('.chip-schedule .chip-text');
-                if (scheduleChip) scheduleChip.textContent = task.scheduled_date;
-            }
-            if (task.due_date) {
-                dialogEl.querySelector('#expand-due').style.display = 'flex';
-                dialogEl.querySelector('.chip-due').classList.add('active');
-                const dueChip = dialogEl.querySelector('.chip-due .chip-text');
-                if (dueChip) dueChip.textContent = task.due_date;
-            }
-            if (task.duration_minutes) {
-                dialogEl.querySelector('#expand-duration').style.display = 'flex';
-                dialogEl.querySelector('.chip-duration').classList.add('active');
-                const durationChip = dialogEl.querySelector('.chip-duration .chip-text');
-                if (durationChip) {
-                    durationChip.textContent = task.duration_minutes >= 60
-                        ? `${task.duration_minutes/60}h`
-                        : `${task.duration_minutes}m`;
+            // Update impact buttons
+            backdropEl.querySelectorAll('.seg-btn[data-impact]').forEach(btn => {
+                btn.classList.toggle('is-active', parseInt(btn.dataset.impact, 10) === task.impact);
+            });
+
+            // Update clarity buttons
+            backdropEl.querySelectorAll('.seg-btn[data-clarity]').forEach(btn => {
+                btn.classList.toggle('is-active', btn.dataset.clarity === task.clarity);
+            });
+
+            // Set recurrence
+            if (task.is_recurring) {
+                if (task.recurrence_rule) {
+                    const rule = task.recurrence_rule;
+                    setRecurrenceRule(rule);
+
+                    // Check if it matches a simple preset (freq only, interval 1, no days)
+                    const isSimplePreset = rule.interval === 1 && !rule.days_of_week;
+                    const presetBtn = isSimplePreset ? backdropEl.querySelector(`#recurrence-presets .seg-btn[data-recurrence="${rule.freq}"]`) : null;
+
+                    if (presetBtn) {
+                        backdropEl.querySelectorAll('#recurrence-presets .seg-btn').forEach(b => b.classList.remove('is-active'));
+                        presetBtn.classList.add('is-active');
+                    } else {
+                        // Custom recurrence
+                        backdropEl.querySelectorAll('#recurrence-presets .seg-btn').forEach(b => b.classList.remove('is-active'));
+                        backdropEl.querySelector('.seg-btn[data-recurrence="custom"]').classList.add('is-active');
+                        backdropEl.querySelector('#custom-recurrence').hidden = false;
+                        populateCustomRecurrence(rule);
+                    }
+                } else {
+                    // Task is recurring but has no rule (e.g., imported from Todoist)
+                    // Show custom as active to indicate it's recurring, but no pattern to show
+                    backdropEl.querySelectorAll('#recurrence-presets .seg-btn').forEach(b => b.classList.remove('is-active'));
+                    backdropEl.querySelector('.seg-btn[data-recurrence="custom"]').classList.add('is-active');
+                    backdropEl.querySelector('#custom-recurrence').hidden = false;
+                    // Default to daily if user wants to set a pattern
+                    backdropEl.querySelector('#recurrence-freq').value = 'daily';
+                    backdropEl.querySelector('#recurrence-interval').value = '1';
                 }
             }
 
-            // Set recurrence
-            if (window.RecurrencePicker && task.is_recurring && task.recurrence_rule) {
-                window.RecurrencePicker.setRule(task.recurrence_rule);
-            }
+            // Show delete and complete buttons for existing tasks
+            backdropEl.querySelector('#btn-delete').style.display = 'inline-flex';
 
-            // Show unschedule button if task is scheduled
-            const unscheduleBtn = dialogEl.querySelector('#btn-unschedule');
-            if (task.scheduled_date && task.scheduled_time) {
-                unscheduleBtn.style.display = 'block';
+            // Show and configure Complete/Reopen button
+            const completeBtn = backdropEl.querySelector('#btn-complete');
+            completeBtn.style.display = 'inline-flex';
+
+            // Set button state based on task completion
+            const isCompleted = task.status === 'completed';
+            backdropEl.querySelector('[name="task_status"]').value = task.status || 'pending';
+
+            if (isCompleted) {
+                completeBtn.innerHTML = '<span class="btn-complete-icon">↺</span> Reopen';
+                completeBtn.classList.add('is-completed');
             } else {
-                unscheduleBtn.style.display = 'none';
+                completeBtn.innerHTML = '<span class="btn-complete-icon">✓</span> Complete';
+                completeBtn.classList.remove('is-completed');
             }
 
-            // Show delete button for existing tasks
-            dialogEl.querySelector('#btn-delete').style.display = 'block';
+            // Show and populate metadata section
+            const metadataSection = backdropEl.querySelector('#metadata-section');
+            metadataSection.style.display = 'block';
+
+            // Created at
+            backdropEl.querySelector('#meta-created-at').textContent = 'Task created at ' + formatDateTime(task.created_at);
+
+            // Completed at (only show if task is completed)
+            const completedRow = backdropEl.querySelector('#meta-completed-row');
+            if (isCompleted && task.completed_at) {
+                completedRow.style.display = 'block';
+                backdropEl.querySelector('#meta-completed-at').textContent = 'Task completed at ' + formatDateTime(task.completed_at);
+            } else {
+                completedRow.style.display = 'none';
+            }
         } catch (err) {
             console.error('Failed to load task:', err);
             closeDialog();
         }
     }
 
-    async function handleUnschedule() {
-        if (!currentTaskId || isNaN(currentTaskId)) {
-            console.error('Cannot unschedule: invalid task ID', currentTaskId);
-            return;
+    function populateCustomRecurrence(rule) {
+        // Populate custom recurrence form from JSON rule object
+        if (rule.freq) {
+            backdropEl.querySelector('#recurrence-freq').value = rule.freq;
         }
-
-        const taskId = currentTaskId; // Capture before closing dialog
-
-        // Close dialog immediately for instant feedback
-        closeDialog();
-
-        // Find and remove ALL task elements from calendar for this task (handles duplicates)
-        const taskElements = document.querySelectorAll(`.scheduled-task[data-task-id="${taskId}"]`);
-        const elementsToRestore = [];
-
-        taskElements.forEach(el => {
-            const parent = el.parentElement;
-            const dayCalendar = el.closest('.day-calendar');
-            elementsToRestore.push({ el, parent, dayCalendar });
-            el.remove();
-            if (dayCalendar && window.recalculateOverlaps) {
-                window.recalculateOverlaps(dayCalendar);
-            }
-        });
-
-        try {
-            const response = await fetch(`/api/tasks/${taskId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    scheduled_date: null,
-                    scheduled_time: null,
-                }),
+        if (rule.interval) {
+            backdropEl.querySelector('#recurrence-interval').value = rule.interval;
+        }
+        if (rule.days_of_week) {
+            backdropEl.querySelectorAll('#recurrence-days .day-btn').forEach(btn => {
+                btn.classList.toggle('is-active', rule.days_of_week.includes(btn.dataset.day));
             });
-
-            if (response.ok) {
-                // Check if task exists in task list
-                const taskInList = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-                if (taskInList) {
-                    // Just remove the scheduled styling
-                    taskInList.classList.remove('scheduled');
-                } else {
-                    // Task doesn't exist in task list (was DB-scheduled), need to reload
-                    window.location.reload();
-                }
-            } else {
-                const error = await response.json();
-                // Restore elements on failure
-                elementsToRestore.forEach(({ el, parent, dayCalendar }) => {
-                    if (parent) {
-                        parent.appendChild(el);
-                        if (dayCalendar && window.recalculateOverlaps) {
-                            window.recalculateOverlaps(dayCalendar);
-                        }
-                    }
-                });
-                alert(error.detail || 'Failed to unschedule task');
-            }
-        } catch (err) {
-            console.error('Failed to unschedule task:', err);
-            // Restore elements on failure
-            elementsToRestore.forEach(({ el, parent, dayCalendar }) => {
-                if (parent) {
-                    parent.appendChild(el);
-                    if (dayCalendar && window.recalculateOverlaps) {
-                        window.recalculateOverlaps(dayCalendar);
-                    }
-                }
-            });
-            alert('Failed to unschedule task. Please try again.');
         }
     }
 
     // Track pending deletion for undo
     let pendingDeletion = null;
     let deletionTimeout = null;
-    const DELETION_DELAY = 5000; // 5 seconds to undo
+    const DELETION_DELAY = 5000;
 
     async function handleDelete() {
         if (!currentTaskId || isNaN(currentTaskId)) {
@@ -463,7 +978,7 @@
         }
 
         const taskId = currentTaskId;
-        const taskTitle = dialogEl.querySelector('[name="title"]').value || 'Task';
+        const taskTitle = backdropEl.querySelector('[name="title"]').value || 'Task';
         closeDialog();
 
         // Cancel any existing pending deletion
@@ -506,13 +1021,11 @@
 
         const { removedElements } = pendingDeletion;
 
-        // Cancel scheduled deletion
         if (deletionTimeout) {
             clearTimeout(deletionTimeout);
             deletionTimeout = null;
         }
 
-        // Restore elements
         removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
             if (parent) {
                 if (nextSibling && nextSibling.parentNode === parent) {
@@ -542,7 +1055,6 @@
             });
 
             if (!response.ok) {
-                // Restore elements on failure
                 removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                     if (parent) {
                         if (nextSibling && nextSibling.parentNode === parent) {
@@ -579,27 +1091,100 @@
         }
     }
 
+    /**
+     * Handle Complete/Reopen button click.
+     * Toggles task completion status immediately (no save required).
+     */
+    async function handleComplete() {
+        if (!currentTaskId || isNaN(currentTaskId)) {
+            console.error('Cannot toggle completion: invalid task ID', currentTaskId);
+            return;
+        }
+
+        const taskId = currentTaskId;
+        const completeBtn = backdropEl.querySelector('#btn-complete');
+        const isCurrentlyCompleted = backdropEl.querySelector('[name="task_status"]').value === 'completed';
+
+        // Disable button during request
+        completeBtn.disabled = true;
+
+        try {
+            const response = await fetch(`/api/tasks/${taskId}/toggle-complete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to toggle completion');
+            }
+
+            const data = await response.json();
+            const newCompleted = data.completed;
+
+            // Update hidden status field
+            backdropEl.querySelector('[name="task_status"]').value = newCompleted ? 'completed' : 'pending';
+
+            // Update button text and icon
+            if (newCompleted) {
+                completeBtn.innerHTML = '<span class="btn-complete-icon">↺</span> Reopen';
+                completeBtn.classList.add('is-completed');
+            } else {
+                completeBtn.innerHTML = '<span class="btn-complete-icon">✓</span> Complete';
+                completeBtn.classList.remove('is-completed');
+            }
+
+            // Update completed metadata immediately
+            const completedRow = backdropEl.querySelector('#meta-completed-row');
+            if (newCompleted) {
+                completedRow.style.display = 'block';
+                backdropEl.querySelector('#meta-completed-at').textContent = 'Task completed at ' + formatDateTime(new Date().toISOString());
+            } else {
+                completedRow.style.display = 'none';
+            }
+
+            // Update UI elements across the page
+            document.querySelectorAll(`[data-task-id="${taskId}"]`).forEach(el => {
+                el.dataset.completed = newCompleted ? '1' : '0';
+            });
+
+            // Show toast
+            if (window.Toast) {
+                Toast.show(newCompleted ? 'Task completed' : 'Task reopened', { showUndo: false });
+            }
+
+            completeBtn.disabled = false;
+
+        } catch (err) {
+            console.error('Failed to toggle completion:', err);
+            completeBtn.disabled = false;
+            if (window.Toast) {
+                Toast.show('Failed to update task', { showUndo: false });
+            }
+        }
+    }
+
     async function handleSubmit(e) {
         e.preventDefault();
 
         const form = e.target;
         const formData = new FormData(form);
 
-        // Get recurrence rule from picker
-        let recurrenceRule = null;
-        let isRecurring = false;
-        if (window.RecurrencePicker) {
-            recurrenceRule = window.RecurrencePicker.getRule();
-            isRecurring = recurrenceRule !== null;
-        }
+        // Get recurrence rule from our state variable
+        const recurrenceRule = getRecurrenceRule();
+        const isRecurring = recurrenceRule !== null;
+
+        // Get date/time from dataset (set by Air Datepicker)
+        const scheduledDate = backdropEl.querySelector('[name="scheduled_date"]').dataset.value || null;
+        const scheduledTime = backdropEl.querySelector('[name="scheduled_time"]').dataset.value || null;
+        const dueDate = backdropEl.querySelector('[name="due_date"]').dataset.value || null;
 
         const data = {
             title: formData.get('title'),
             description: formData.get('description') || null,
             domain_id: formData.get('domain_id') ? parseInt(formData.get('domain_id'), 10) : null,
-            scheduled_date: formData.get('scheduled_date') || null,
-            scheduled_time: formData.get('scheduled_time') || null,
-            due_date: formData.get('due_date') || null,
+            scheduled_date: scheduledDate,
+            scheduled_time: scheduledTime,
+            due_date: dueDate,
             duration_minutes: formData.get('duration_minutes') ? parseInt(formData.get('duration_minutes'), 10) : null,
             impact: parseInt(formData.get('impact'), 10) || 4,
             clarity: formData.get('clarity') || null,
@@ -611,7 +1196,7 @@
         const url = currentTaskId ? `/api/tasks/${currentTaskId}` : '/api/tasks';
 
         try {
-            const submitBtn = dialogEl.querySelector('.btn-submit');
+            const submitBtn = backdropEl.querySelector('.btn-submit');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Saving...';
 
@@ -623,20 +1208,19 @@
 
             if (response.ok) {
                 closeDialog();
-                // Reload page to show updated tasks
                 window.location.reload();
             } else {
                 const error = await response.json();
                 alert(error.detail || 'Failed to save task');
                 submitBtn.disabled = false;
-                submitBtn.textContent = currentTaskId ? 'Save Changes' : 'Add Task';
+                submitBtn.textContent = currentTaskId ? 'Save' : 'Add task';
             }
         } catch (err) {
             console.error('Failed to save task:', err);
             alert('Failed to save task. Please try again.');
-            const submitBtn = dialogEl.querySelector('.btn-submit');
+            const submitBtn = backdropEl.querySelector('.btn-submit');
             submitBtn.disabled = false;
-            submitBtn.textContent = currentTaskId ? 'Save Changes' : 'Add Task';
+            submitBtn.textContent = currentTaskId ? 'Save' : 'Add task';
         }
     }
 

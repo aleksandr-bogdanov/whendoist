@@ -1,5 +1,5 @@
 /*
- * Whendoist - Dashboard Styles
+ * Whendoist - Tasks Page Styles
  * Uses unified Mode ↔ Clarity token system from app.css
  */
 
@@ -7,11 +7,11 @@
    Layout
    ============================================================================= */
 
-.dashboard-layout {
+.tasks-layout {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: var(--layout-gap);
-    height: calc(100vh - 68px - 1.5rem);
+    height: calc(100vh - 80px - 1.5rem);
     overflow: hidden;
     align-items: stretch;
     margin-bottom: 1.5rem;
@@ -318,8 +318,8 @@
     border-radius: 0 2px 2px 0;
 }
 
-/* Last row has no divider */
-.task-item:last-child::after {
+/* Last task row has no divider (before add-task-row) */
+.task-item:last-of-type::after {
     display: none;
 }
 
@@ -355,6 +355,452 @@
 .task-item:focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 1px;
+}
+
+/* =============================================================================
+   Completion Gutter Component
+   ============================================================================= */
+
+.complete-gutter {
+    width: 22px;
+    min-width: 22px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.complete-gutter:focus {
+    outline: none;
+}
+
+.complete-gutter:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+
+.complete-bar {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--bar-color, var(--impact-min));
+    transition: opacity 120ms ease;
+}
+
+.complete-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 800;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 120ms ease, transform 120ms ease;
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--text);
+    position: relative;
+    z-index: 1;
+}
+
+/* Impact colors for the bar */
+.task-item.impact-1 .complete-bar { background: var(--impact-high-border); }
+.task-item.impact-2 .complete-bar { background: var(--impact-medium); }
+.task-item.impact-3 .complete-bar { background: var(--impact-low); }
+.task-item.impact-4 .complete-bar { background: var(--impact-min); }
+
+/* Hover-only variant (left task list) - no bar, check appears on hover */
+.complete-gutter--hover {
+    width: 28px;
+    min-width: 28px;
+}
+
+/* Dynamic padding for task items with hover gutter */
+.task-item:has(.complete-gutter--hover) {
+    padding-left: 32px; /* 28px gutter + 4px gap */
+}
+
+.complete-gutter--hover .complete-bar {
+    display: none;
+}
+
+.complete-gutter--hover .complete-check {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.task-item:hover .complete-gutter--hover .complete-check,
+.task-item:focus-within .complete-gutter--hover .complete-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Purple hover effect like FAB */
+.complete-gutter--hover:hover .complete-check {
+    background: rgba(109, 94, 246, 0.12);
+    color: var(--primary);
+}
+
+/* Completed state - base */
+.task-item[data-completed="1"] .complete-check {
+    opacity: 1;
+    transform: scale(1);
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+
+.task-item[data-completed="1"] .complete-bar {
+    opacity: 0.35;
+}
+
+.task-item[data-completed="1"] .task-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.task-item[data-completed="1"] {
+    opacity: 0.65;
+}
+
+/* =============================================================================
+   Visual Aging - Completed Task Progressive Fade
+   Applied via completion_age_class from backend
+   ============================================================================= */
+
+/* Completed today - strikethrough only, normal color */
+.task-item.completed-today .task-text {
+    text-decoration: line-through;
+}
+
+.task-item.completed-today::before {
+    opacity: 0.7;
+}
+
+/* Completed before today - muted grey with strikethrough */
+.task-item.completed-older .task-text {
+    color: rgba(15, 23, 42, 0.7);
+    text-decoration: line-through;
+}
+
+.task-item.completed-older::before {
+    opacity: 0.6;
+}
+
+/* =============================================================================
+   Calendar Checkbox + Flush-Left Domain Stripe
+   Full-height stripe attached to card edge, checkbox sits just right of it
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Geometry Tokens
+   ----------------------------------------------------------------------------- */
+
+:root {
+    --cal-rail-w: 2px;            /* Stripe width - matches old style */
+    --cal-rail-muted: 0.35;       /* Completed state opacity */
+    --cal-check-hit: 24px;        /* Checkbox hit area - fits 30px task with 1px border + 1px padding */
+    --cal-check-vis: 16px;        /* Checkbox visible size (smaller, tidier) */
+    --cal-action-slot: 36px;      /* Reserved right action column */
+}
+
+/* -----------------------------------------------------------------------------
+   Domain Stripe - flush left, full height
+   ----------------------------------------------------------------------------- */
+
+/* Reserve padding: left for rail, right for checkbox */
+/* Top/right/bottom = 1px so 30-min tasks have checkbox centered (equal spacing all sides) */
+.scheduled-task.calendar-item {
+    padding: 1px 1px 1px calc(var(--cal-rail-w) + 8px);
+}
+
+/* The stripe via ::before - flush left, full height */
+/* Rail radius inherits card radius for seamless integration */
+.scheduled-task.calendar-item::before,
+.date-only-task.calendar-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--cal-rail-w);
+    background: var(--domain-color, var(--impact-min));
+    z-index: 0;
+    transition: opacity 0.15s ease;
+}
+
+/* Timed blocks: 10px radius (matches .scheduled-task border-radius) */
+.scheduled-task.calendar-item::before {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+/* Anytime pills: 10px radius (matches .date-only-task border-radius) */
+.date-only-task.calendar-item::before {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+/* Completed: stripe quieter */
+.scheduled-task.calendar-item[data-completed="1"]::before,
+.date-only-task.calendar-item[data-completed="1"]::before {
+    opacity: var(--cal-rail-muted);
+}
+
+/* Ensure content stacks above stripe */
+.scheduled-task.calendar-item > *,
+.date-only-task.calendar-item > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* -----------------------------------------------------------------------------
+   Domain Color Mappings (fallback via impact classes)
+   ----------------------------------------------------------------------------- */
+
+.calendar-item.impact-1 { --domain-color: var(--impact-high-border); }
+.calendar-item.impact-2 { --domain-color: var(--impact-medium); }
+.calendar-item.impact-3 { --domain-color: var(--impact-low); }
+.calendar-item.impact-4 { --domain-color: var(--impact-min); }
+
+/* -----------------------------------------------------------------------------
+   Checkbox Gutter - right action slot
+   ----------------------------------------------------------------------------- */
+
+/* Calendar items use block layout for text wrapping around checkbox */
+.scheduled-task.calendar-item {
+    display: block;
+}
+
+/* Calendar items: checkbox to top-right with equal spacing */
+.scheduled-task.calendar-item .complete-gutter {
+    float: right;
+    position: relative;
+    width: var(--cal-check-hit);
+    height: var(--cal-check-hit);
+    min-width: var(--cal-check-hit);
+    margin: 1px 1px 0 0;  /* 1px top + 1px right for equal spacing from edges */
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 5;
+    border-radius: 5px;
+    transition: background 0.15s ease;
+}
+
+/* Anytime pills: add padding for absolute checkbox */
+.date-only-task.calendar-item {
+    padding-right: calc(var(--cal-check-hit) + 8px);
+}
+
+/* Anytime pills: checkbox absolutely positioned on right */
+.date-only-task.calendar-item .complete-gutter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: 4px;
+    margin: auto 0;
+    width: var(--cal-check-hit);
+    height: var(--cal-check-hit);
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 5;
+    border-radius: 5px;
+    transition: background 0.15s ease;
+}
+
+/* Hide checkbox in short duration blocks (< 30m) - too cramped */
+.scheduled-task.calendar-item.duration-short .complete-gutter {
+    display: none;
+}
+
+/* No right padding needed for short blocks without checkbox */
+.scheduled-task.calendar-item.duration-short {
+    padding-right: 8px;
+}
+
+/* Hide the bar element - stripe replaces it */
+.calendar-item .complete-gutter .complete-bar {
+    display: none;
+}
+
+/* Gutter hover feedback */
+.calendar-item .complete-gutter:hover {
+    background: rgba(15, 23, 42, 0.05);
+}
+
+/* -----------------------------------------------------------------------------
+   Checkbox Icon - 18px visual, unified states
+   ----------------------------------------------------------------------------- */
+
+.calendar-item .complete-check {
+    width: var(--cal-check-vis);
+    height: var(--cal-check-vis);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Override base opacity:0 - always visible in calendar */
+    opacity: 1;
+    transform: none;
+    position: relative;
+    z-index: 1;
+    /* Incomplete: subtle neutral fill, no heavy shadow */
+    background: #FAFBFC;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+    color: transparent;
+    transition:
+        transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+/* -----------------------------------------------------------------------------
+   Checkbox Hover States
+   ----------------------------------------------------------------------------- */
+
+/* Card hover - subtle tint for discoverability */
+.calendar-item:hover .complete-check {
+    background: #F3F4F6;
+    border-color: rgba(15, 23, 42, 0.2);
+}
+
+/* Direct checkbox hover - faint tinted background (no purple border) */
+.calendar-item .complete-gutter:hover .complete-check {
+    background: #E8ECF0;
+    border-color: rgba(15, 23, 42, 0.25);
+}
+
+/* Focus-visible for accessibility */
+.calendar-item .complete-gutter:focus-visible .complete-check {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------------------
+   Completed State - subtle green tint, not bold fill
+   ----------------------------------------------------------------------------- */
+
+.calendar-item[data-completed="1"] .complete-check {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #10b981;
+}
+
+.calendar-item[data-completed="1"]:hover .complete-check,
+.calendar-item[data-completed="1"] .complete-gutter:hover .complete-check {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* -----------------------------------------------------------------------------
+   Pop Animation - gentle feedback
+   ----------------------------------------------------------------------------- */
+
+.calendar-item .complete-check.pop {
+    animation: checkboxPop 0.2s ease-out;
+}
+
+@keyframes checkboxPop {
+    0% { transform: scale(0.95); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* -----------------------------------------------------------------------------
+   Completed Card Styling - dim text + rail only, card stays full opacity
+   ----------------------------------------------------------------------------- */
+
+/* Card background stays normal for scanability - no opacity reduction */
+
+/* Dim text only */
+.calendar-item[data-completed="1"] .scheduled-task-text,
+.calendar-item[data-completed="1"] .date-only-task-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.calendar-item[data-completed="1"] .scheduled-task-time,
+.calendar-item[data-completed="1"] .scheduled-task-duration,
+.calendar-item[data-completed="1"] .date-only-task-duration {
+    color: var(--text-muted);
+}
+
+/* Visual aging for calendar items */
+
+/* Completed today - strikethrough only, normal color */
+.calendar-item.completed-today .scheduled-task-text,
+.calendar-item.completed-today .date-only-task-text {
+    text-decoration: line-through;
+}
+
+/* Completed before today - muted grey with strikethrough */
+.calendar-item.completed-older .scheduled-task-text,
+.calendar-item.completed-older .date-only-task-text {
+    color: rgba(15, 23, 42, 0.7);
+    text-decoration: line-through;
+}
+
+/* Add task row - small footer by default, expands on hover */
+.add-task-row {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    padding-left: calc(12px + var(--rail-w));
+    cursor: pointer;
+    background: var(--grey-bg);
+    height: 16px;
+    overflow: hidden;
+    transition: height 0.15s ease, padding 0.15s ease;
+}
+
+.add-task-text {
+    opacity: 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.project-group:hover .add-task-row {
+    height: 28px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.project-group:hover .add-task-text {
+    opacity: 1;
+}
+
+.add-task-row:hover {
+    background: rgba(109, 94, 246, 0.08);
+}
+
+.add-task-row:hover .add-task-text {
+    color: var(--primary);
 }
 
 .task-content {
@@ -802,10 +1248,11 @@ body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="exe
    ============================================================================= */
 
 /* Patch 57: Anytime lane - tray style */
+/* Fixed height prevents alignment shift between days with different task counts */
 .date-only-banner {
     display: flex;
     align-items: flex-start;
-    min-height: 36px;
+    height: 72px;
     background: rgba(15, 23, 42, 0.02);
     border: 1px solid var(--border-hair);
     border-radius: 12px;
@@ -824,22 +1271,38 @@ body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="exe
     text-align: right;
     white-space: nowrap;
     opacity: 0.7;
-    min-height: 36px;
+    height: 100%;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-end;
+    padding-top: 0.5rem;
 }
 
 .date-only-tasks {
     flex: 1;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.375rem;
+    gap: 0.125rem;
     padding: 0.25rem 0.5rem 0.25rem 0;
-    min-height: 36px;
+    height: 100%;
     align-items: flex-start;
     align-content: flex-start;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Subtle scrollbar for anytime tasks */
+.date-only-tasks::-webkit-scrollbar {
+    width: 4px;
+}
+
+.date-only-tasks::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.date-only-tasks::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
 }
 
 /* Drop target styling - subtle highlight on entire banner */
@@ -925,7 +1388,7 @@ body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="exe
 .date-only-task.impact-4::before { background: var(--impact-min); }
 
 /* Mobile responsive */
-@media (max-width: 900px), (orientation: portrait) {
+@media (max-width: 900px) {
     .date-only-banner {
         min-height: 40px;
     }
@@ -978,6 +1441,14 @@ body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="exe
     overflow-y: auto;
     position: relative;  /* For time selection overlay positioning */
     background: var(--light-bg);
+    isolation: isolate;  /* Create stacking context so task z-index works across rows */
+    /* Hide scrollbar while keeping scroll functionality */
+    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;  /* IE/Edge */
+}
+
+.hour-grid::-webkit-scrollbar {
+    display: none;  /* Chrome/Safari/Opera */
 }
 
 .hour-grid.collapsed {
@@ -990,6 +1461,7 @@ body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="exe
     border-bottom: 1px solid rgba(15, 23, 42, 0.05);
     min-height: 60px;
     background: transparent;
+    overflow: visible; /* Allow tasks to extend beyond row */
 }
 
 /* Patch 47+55: Alternate banding + stronger lines every 2nd hour */
@@ -1179,27 +1651,23 @@ body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="exe
     width: 32px;
 }
 
-/* Patch 49: Event meta - simplified */
+/* Event meta - matches scheduled-task styling */
 .event-time {
-    font-size: 12px;
     font-weight: 600;
-    color: rgba(15, 23, 42, 0.55);
+    color: var(--text-muted);
 }
 
 .event-duration {
-    font-size: 12px;
-    color: rgba(15, 23, 42, 0.55);
+    color: var(--text-muted);
 }
 
-/* Patch 49: Event title - tighter, clamped */
+/* Event title - matches scheduled-task-text styling */
 .event-title {
-    font-size: 13px;
-    font-weight: 650;
-    color: var(--text);
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    color: var(--text);
     line-height: 1.2;
     word-break: break-word;
 }
@@ -1315,11 +1783,11 @@ body.is-dragging .calendar-event {
     pointer-events: none;
 }
 
-/* Events always above slot highlight */
-/* Bugfix: keep position absolute, only set z-index */
+/* Events always above slot highlight and subsequent hour rows */
+/* Bugfix: keep position absolute, use high z-index to render above later hour-row backgrounds */
 .hour-slot .scheduled-task,
 .hour-slot .calendar-event {
-    z-index: 10;
+    z-index: 100;
 }
 
 /* Scheduled task on calendar */
@@ -1381,6 +1849,20 @@ body.is-dragging .calendar-event {
     width: 32px;
 }
 
+/* Calendar: time/duration stacked vertically before text */
+.scheduled-task.calendar-item .scheduled-task-left {
+    float: left;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    margin-right: 6px;
+    line-height: 1.1;
+}
+
+.scheduled-task.calendar-item .scheduled-task-left::after {
+    content: none;
+}
+
 .scheduled-task-time {
     font-weight: 600;
     color: var(--text-muted);
@@ -1397,6 +1879,13 @@ body.is-dragging .calendar-event {
     color: var(--text);
     line-height: 1.2;
     word-break: break-word;
+}
+
+/* Calendar: text flows inline, wraps around floated checkbox */
+.scheduled-task.calendar-item .scheduled-task-text {
+    display: inline;
+    -webkit-box-orient: unset;
+    -webkit-line-clamp: unset;
 }
 
 /* Duration-based line clamping */
@@ -1520,8 +2009,8 @@ body.over-calendar .drag-ghost .task-text {
     margin: 0.25rem 0;
 }
 
-@media (max-width: 900px), (orientation: portrait) {
-    .dashboard-layout {
+@media (max-width: 900px) {
+    .tasks-layout {
         grid-template-columns: 1fr;
         grid-template-rows: 3fr 2fr;  /* Tasks slightly larger */
         height: calc(100vh - 40px - 1rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
