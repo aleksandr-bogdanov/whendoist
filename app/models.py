@@ -64,6 +64,9 @@ class User(Base):
     domains: Mapped[list["Domain"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     tasks: Mapped[list["Task"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
+    # User preferences
+    preferences: Mapped["UserPreferences | None"] = relationship(back_populates="user", uselist=False)
+
 
 class TodoistToken(Base):
     """
@@ -150,6 +153,33 @@ class GoogleCalendarSelection(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
     user: Mapped["User"] = relationship(back_populates="calendar_selections")
+
+
+class UserPreferences(Base):
+    """
+    User preferences for task display and behavior.
+
+    Each user has exactly one preferences record (created on demand).
+    """
+
+    __tablename__ = "user_preferences"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+
+    # Task Display preferences
+    show_completed_in_planner: Mapped[bool] = mapped_column(Boolean, default=True)
+    completed_retention_days: Mapped[int] = mapped_column(Integer, default=3)  # 1, 3, or 7
+    completed_move_to_bottom: Mapped[bool] = mapped_column(Boolean, default=True)
+    show_completed_in_list: Mapped[bool] = mapped_column(Boolean, default=True)  # False = calendar only
+    hide_recurring_after_completion: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped["User"] = relationship(back_populates="preferences")
 
 
 # =============================================================================

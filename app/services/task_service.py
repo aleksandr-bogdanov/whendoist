@@ -7,7 +7,7 @@ All operations are user-scoped (multi-tenant).
 
 from datetime import UTC, date, datetime, time
 
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -165,8 +165,13 @@ class TaskService:
         else:
             query = query.options(selectinload(Task.domain))
 
-        # Order by impact (highest first), then position
-        query = query.order_by(Task.impact.asc(), Task.position, Task.created_at)
+        # Order: completed tasks last, then by impact (highest first), then position
+        # Use CASE to ensure completed tasks always sort to the bottom
+        status_order = case(
+            (Task.status == "completed", 1),
+            else_=0,
+        )
+        query = query.order_by(status_order, Task.impact.asc(), Task.position, Task.created_at)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())
@@ -295,6 +300,28 @@ class TaskService:
         await self.db.flush()
         return task
 
+    async def uncomplete_task(self, task_id: int) -> Task | None:
+        """Mark a completed task as pending again."""
+        task = await self.get_task(task_id)
+        if not task:
+            return None
+
+        task.status = "pending"
+        task.completed_at = None
+        await self.db.flush()
+        return task
+
+    async def toggle_task_completion(self, task_id: int) -> Task | None:
+        """Toggle a task's completion status."""
+        task = await self.get_task(task_id)
+        if not task:
+            return None
+
+        if task.status == "completed":
+            return await self.uncomplete_task(task_id)
+        else:
+            return await self.complete_task(task_id)
+
     async def archive_task(self, task_id: int) -> Task | None:
         """Archive a task and all its subtasks (soft delete)."""
         task = await self.get_task(task_id)
@@ -363,12 +390,11 @@ class TaskService:
         start_date: date,
         end_date: date,
     ) -> list[Task]:
-        """Get non-recurring tasks scheduled within a date range."""
+        """Get non-recurring tasks scheduled within a date range (includes completed)."""
         result = await self.db.execute(
             select(Task)
             .where(
                 Task.user_id == self.user_id,
-                Task.status == "pending",
                 Task.is_recurring == False,
                 Task.scheduled_date >= start_date,
                 Task.scheduled_date <= end_date,
@@ -377,3 +403,51 @@ class TaskService:
             .order_by(Task.scheduled_date, Task.scheduled_time)
         )
         return list(result.scalars().all())
+
+    # =========================================================================
+    # Completion Filtering Helpers
+    # =========================================================================
+
+    @staticmethod
+    def get_completion_age_class(completed_at: datetime | None) -> str:
+        """
+        Get CSS class for visual aging of completed tasks.
+
+        Returns:
+            'completed-today' - Completed today (grey text)
+            'completed-older' - Completed before today (super light grey)
+            '' - Not completed
+        """
+        if not completed_at:
+            return ""
+
+        now = datetime.now(UTC)
+        today = now.date()
+        completed_date = completed_at.date()
+
+        if completed_date == today:
+            return "completed-today"
+        else:
+            return "completed-older"
+
+    @staticmethod
+    def is_within_retention_window(completed_at: datetime | None, retention_days: int) -> bool:
+        """
+        Check if a completed task is within the retention window.
+
+        Args:
+            completed_at: When task was completed
+            retention_days: Number of days to keep completed tasks (1, 3, or 7)
+
+        Returns:
+            True if task should be shown, False if it should be filtered out
+        """
+        if not completed_at:
+            return True  # Pending tasks always visible
+
+        now = datetime.now(UTC)
+        today = now.date()
+        completed_date = completed_at.date()
+
+        days_ago = (today - completed_date).days
+        return days_ago < retention_days

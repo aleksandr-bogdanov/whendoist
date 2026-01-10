@@ -1,7 +1,7 @@
 """
-Todoist REST API client.
+Todoist API v1 client.
 
-Provides async access to tasks, projects, and labels via Todoist REST API v2.
+Provides async access to tasks, projects, and labels via Todoist API v1.
 """
 
 from dataclasses import dataclass
@@ -9,7 +9,7 @@ from datetime import date, datetime
 
 import httpx
 
-TODOIST_API_URL = "https://api.todoist.com/rest/v2"
+TODOIST_API_URL = "https://api.todoist.com/api/v1"
 
 
 @dataclass
@@ -30,12 +30,11 @@ class TodoistTask:
     content: str
     description: str
     project_id: str
-    labels: list[str]
+    labels: list[str]  # Label names (not IDs)
     due: TodoistDue | None
     duration_minutes: int | None
-    priority: int  # 1=P1 (highest), 4=P4 (lowest/normal)
+    priority: int  # 1=normal (P4), 4=urgent (P1)
     order: int
-    url: str
     parent_id: str | None  # None for top-level tasks, set for subtasks
     assignee_id: str | None  # None if unassigned, user ID if assigned
 
@@ -61,7 +60,7 @@ class TodoistLabel:
 
 class TodoistClient:
     """
-    Async Todoist API client.
+    Async Todoist API v1 client.
 
     Usage:
         async with TodoistClient(access_token) as client:
@@ -90,6 +89,7 @@ class TodoistClient:
         return self._client
 
     def _parse_due(self, due_data: dict | None) -> TodoistDue | None:
+        """Parse due date from API response."""
         if not due_data:
             return None
 
@@ -106,7 +106,7 @@ class TodoistClient:
                 is_recurring=due_data.get("is_recurring", False),
                 string=due_data.get("string", ""),
             )
-        else:
+        elif due_date_str:
             # Date only
             d = date.fromisoformat(due_date_str)
             return TodoistDue(
@@ -115,8 +115,10 @@ class TodoistClient:
                 is_recurring=due_data.get("is_recurring", False),
                 string=due_data.get("string", ""),
             )
+        return None
 
     def _parse_task(self, data: dict) -> TodoistTask:
+        """Parse task from API response."""
         duration = data.get("duration")
         duration_minutes = None
         if duration:
@@ -132,66 +134,105 @@ class TodoistClient:
             content=data["content"],
             description=data.get("description", ""),
             project_id=data["project_id"],
-            labels=data.get("labels", []),
+            labels=data.get("labels", []),  # v1 returns label names directly
             due=self._parse_due(data.get("due")),
             duration_minutes=duration_minutes,
             priority=data.get("priority", 1),
-            order=data.get("order", 0),
-            url=data.get("url", ""),
+            order=data.get("child_order", 0),  # v1 uses child_order
             parent_id=data.get("parent_id"),
-            assignee_id=data.get("assignee_id"),
+            assignee_id=data.get("responsible_uid"),  # v1 uses responsible_uid
         )
 
     async def get_tasks(self, project_id: str | None = None) -> list[TodoistTask]:
-        """Fetch all active tasks, with optional project filter."""
+        """Fetch active tasks with optional project filter."""
         client = self._ensure_client()
-        params = {}
-        if project_id:
-            params["project_id"] = project_id
+        all_tasks: list[TodoistTask] = []
+        cursor: str | None = None
 
-        response = await client.get("/tasks", params=params)
-        response.raise_for_status()
-        return [self._parse_task(t) for t in response.json()]
+        while True:
+            params: dict[str, str | int] = {"limit": 100}
+            if project_id:
+                params["project_id"] = project_id
+            if cursor:
+                params["cursor"] = cursor
 
-    async def get_all_tasks(self) -> list[TodoistTask]:
-        """Fetch all active tasks by querying each project to avoid API limits."""
-        projects = await self.get_projects()
-        all_tasks = []
+            response = await client.get("/tasks", params=params)
+            response.raise_for_status()
+            data = response.json()
 
-        for project in projects:
-            project_tasks = await self.get_tasks(project_id=project.id)
-            all_tasks.extend(project_tasks)
+            results = data.get("results", [])
+            all_tasks.extend(self._parse_task(t) for t in results)
+
+            cursor = data.get("next_cursor")
+            if not cursor:
+                break
 
         return all_tasks
+
+    async def get_all_tasks(self) -> list[TodoistTask]:
+        """Fetch all active tasks across all projects."""
+        return await self.get_tasks()
 
     async def get_projects(self) -> list[TodoistProject]:
         """Fetch all projects."""
         client = self._ensure_client()
-        response = await client.get("/projects")
-        response.raise_for_status()
-        return [
-            TodoistProject(
-                id=p["id"],
-                name=p["name"],
-                color=p.get("color", "grey"),
-                order=p.get("order", 0),
-            )
-            for p in response.json()
-        ]
+        all_projects: list[TodoistProject] = []
+        cursor: str | None = None
+
+        while True:
+            params: dict[str, str | int] = {"limit": 100}
+            if cursor:
+                params["cursor"] = cursor
+
+            response = await client.get("/projects", params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            for p in data.get("results", []):
+                all_projects.append(
+                    TodoistProject(
+                        id=p["id"],
+                        name=p["name"],
+                        color=p.get("color", "grey"),
+                        order=p.get("child_order", 0),
+                    )
+                )
+
+            cursor = data.get("next_cursor")
+            if not cursor:
+                break
+
+        return all_projects
 
     async def get_labels(self) -> list[TodoistLabel]:
         """Fetch all labels."""
         client = self._ensure_client()
-        response = await client.get("/labels")
-        response.raise_for_status()
-        return [
-            TodoistLabel(
-                id=label["id"],
-                name=label["name"],
-                color=label.get("color", "grey"),
-            )
-            for label in response.json()
-        ]
+        all_labels: list[TodoistLabel] = []
+        cursor: str | None = None
+
+        while True:
+            params: dict[str, str | int] = {"limit": 100}
+            if cursor:
+                params["cursor"] = cursor
+
+            response = await client.get("/labels", params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            for label in data.get("results", []):
+                all_labels.append(
+                    TodoistLabel(
+                        id=label["id"],
+                        name=label["name"],
+                        color=label.get("color", "grey"),
+                    )
+                )
+
+            cursor = data.get("next_cursor")
+            if not cursor:
+                break
+
+        return all_labels
 
     async def get_current_user_id(self) -> str:
         """Get the current user's ID using the Sync API."""
@@ -204,6 +245,37 @@ class TodoistClient:
             response.raise_for_status()
             return response.json()["user"]["id"]
 
+    async def get_completed_tasks(self, limit: int = 200) -> list[dict]:
+        """
+        Fetch completed tasks.
+
+        Returns raw dicts since completed tasks have different structure.
+        Paginates automatically up to limit.
+        """
+        client = self._ensure_client()
+        all_items: list[dict] = []
+        offset = 0
+        page_size = 50  # API max per request
+
+        while len(all_items) < limit:
+            response = await client.get(
+                "/tasks/completed",
+                params={
+                    "limit": min(page_size, limit - len(all_items)),
+                    "offset": offset,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            items = data.get("items", [])
+            all_items.extend(items)
+
+            if not data.get("has_more", False) or not items:
+                break
+            offset += len(items)
+
+        return all_items
+
     async def update_task(
         self,
         task_id: str,
@@ -215,19 +287,18 @@ class TodoistClient:
 
         Args:
             task_id: Todoist task ID
-            due_datetime: Datetime with timezone (will be converted to Z format)
+            due_datetime: Datetime with timezone
             duration_minutes: Duration in minutes
 
         Returns:
             Updated TodoistTask
 
         Raises:
-            httpx.HTTPStatusError: On API errors
+            Exception: On API errors
         """
         payload = {}
 
         if due_datetime is not None:
-            # Format as ISO 8601 (Todoist accepts timezone-aware datetimes)
             payload["due_datetime"] = due_datetime.isoformat()
 
         if duration_minutes is not None:
@@ -237,7 +308,6 @@ class TodoistClient:
         client = self._ensure_client()
         response = await client.post(f"/tasks/{task_id}", json=payload)
 
-        # Log detailed error info before raising
         if response.status_code >= 400:
             error_body = response.text
             raise Exception(f"Todoist API error {response.status_code}: {error_body}. Payload was: {payload}")

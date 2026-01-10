@@ -83,23 +83,50 @@
             // Sort tasks
             tasks.sort((a, b) => compareTaskItems(a, b));
 
-            // Rebuild the list
+            // Rebuild the list (preserve add-task-row)
+            const addTaskRow = taskList.querySelector('.add-task-row');
             const fragment = document.createDocumentFragment();
             tasks.forEach(task => fragment.appendChild(task));
 
             // Clear and repopulate task list
             taskList.innerHTML = '';
             taskList.appendChild(fragment);
+
+            // Re-add the add-task-row at the end
+            if (addTaskRow) {
+                taskList.appendChild(addTaskRow);
+            }
         });
     }
 
     /**
+     * Check if a task element is completed.
+     * @param {HTMLElement} task - Task element
+     * @returns {boolean} - True if completed
+     */
+    function isTaskCompleted(task) {
+        // Check data-completed attribute or completion age class
+        return task.dataset.completed === '1' ||
+               task.classList.contains('completed-today') ||
+               task.classList.contains('completed-older');
+    }
+
+    /**
      * Compare two task items for sorting.
+     * Completed tasks always sort to the bottom, regardless of other sort criteria.
      * @param {HTMLElement} a - First task element
      * @param {HTMLElement} b - Second task element
      * @returns {number} - Comparison result
      */
     function compareTaskItems(a, b) {
+        // ALWAYS put completed tasks at the bottom
+        const aCompleted = isTaskCompleted(a);
+        const bCompleted = isTaskCompleted(b);
+
+        if (aCompleted && !bCompleted) return 1;  // a goes after b
+        if (!aCompleted && bCompleted) return -1; // a goes before b
+
+        // Both are completed or both are pending - apply normal sort
         const result = compareByField(a, b, currentSort.field);
 
         if (result !== 0) {

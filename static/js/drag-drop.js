@@ -363,6 +363,7 @@
         const duration = draggedElement.dataset.duration || '';
         const clarity = draggedElement.dataset.clarity || 'none';
         const impact = draggedElement.dataset.impact || '4';
+        const completed = draggedElement.dataset.completed || '0';
         const instanceId = draggedElement.dataset.instanceId || '';
         const instanceDate = draggedElement.dataset.instanceDate || '';
 
@@ -375,6 +376,7 @@
             duration,
             clarity,
             impact,
+            completed,
             isScheduled: isDraggingScheduledTask,
             isDateOnly: isDraggingDateOnlyTask,
             instanceId,
@@ -536,7 +538,7 @@
             return;
         }
 
-        const { taskId, content, duration, clarity, impact, instanceId, instanceDate } = taskData;
+        const { taskId, content, duration, clarity, impact, completed, instanceId, instanceDate } = taskData;
         if (!taskId) return;
 
         const hourRow = slot.closest('.hour-row');
@@ -573,7 +575,7 @@
         }
 
         // Create and place scheduled task immediately for visual feedback
-        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, impact, instanceId, instanceDate);
+        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, impact, completed, instanceId, instanceDate);
         slot.appendChild(element);
         wasDroppedSuccessfully = true; // Mark successful drop
 
@@ -669,21 +671,23 @@
      * @param {string} instanceDate - Instance date ISO string (for recurring tasks)
      * @returns {HTMLElement} Scheduled task element
      */
-    function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, impact = '4', instanceId = '', instanceDate = '') {
+    function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, impact = '4', completed = '0', instanceId = '', instanceDate = '') {
         const durationMins = parseInt(duration, 10) || DEFAULT_DURATION;
         const startMins = hour * 60 + minutes;
         const endMins = startMins + durationMins;
         const hourHeight = getHourHeight();
         const heightPx = (durationMins / 60) * hourHeight;
         const topPx = (minutes / 60) * hourHeight;
+        const isCompleted = completed === '1';
 
         const el = document.createElement('div');
-        el.className = `scheduled-task impact-${impact}`;
+        el.className = `scheduled-task calendar-item impact-${impact}`;
         el.dataset.taskId = taskId;
         el.dataset.duration = durationMins;
         el.dataset.impact = impact;
         el.dataset.startMins = startMins;
         el.dataset.endMins = endMins;
+        el.dataset.completed = completed;
         el.draggable = true;
         el.style.height = `${heightPx}px`;
         el.style.top = `${topPx}px`;
@@ -714,6 +718,10 @@
         }
 
         el.innerHTML = `
+            <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="${isCompleted}">
+                <span class="complete-bar"></span>
+                <span class="complete-check" aria-hidden="true">✓</span>
+            </button>
             <div class="scheduled-task-left">
                 <span class="scheduled-task-time">${timeStr}</span>
                 ${durationStr ? `<span class="scheduled-task-duration">${durationStr}</span>` : ''}
@@ -821,7 +829,7 @@
             return;
         }
 
-        const { taskId, content, duration, clarity, impact, isScheduled, isDateOnly } = taskData;
+        const { taskId, content, duration, clarity, impact, completed, isScheduled, isDateOnly } = taskData;
         if (!taskId) return;
 
         const day = banner.dataset.day;
@@ -853,7 +861,7 @@
 
         // Create date-only task element in the banner
         const tasksContainer = banner.querySelector('.date-only-tasks');
-        const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact);
+        const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed);
         tasksContainer.appendChild(el);
 
         // Mark original task in task list as scheduled
@@ -888,16 +896,18 @@
     /**
      * Create a date-only task element for the Anytime banner.
      */
-    function createDateOnlyTaskElement(taskId, content, duration, clarity, impact) {
+    function createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed = '0') {
         const durationMins = parseInt(duration, 10) || 0;
         const impactVal = impact || '4';
+        const isCompleted = completed === '1';
 
         const el = document.createElement('div');
-        el.className = `date-only-task impact-${impactVal} clarity-${clarity || 'none'}`;
+        el.className = `date-only-task calendar-item impact-${impactVal} clarity-${clarity || 'none'}`;
         el.dataset.taskId = taskId;
         el.dataset.duration = durationMins;
         el.dataset.clarity = clarity || 'none';
         el.dataset.impact = impactVal;
+        el.dataset.completed = completed;
         el.draggable = true;
 
         let durationHtml = '';
@@ -909,8 +919,12 @@
         }
 
         el.innerHTML = `
-            <span class="date-only-task-text">${escapeHtml(content)}</span>
+            <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="${isCompleted}">
+                <span class="complete-bar"></span>
+                <span class="complete-check" aria-hidden="true">✓</span>
+            </button>
             ${durationHtml}
+            <span class="date-only-task-text">${escapeHtml(content)}</span>
         `;
 
         el.addEventListener('dragstart', handleDragStart);

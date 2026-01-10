@@ -1,0 +1,836 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Whendoist{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/dialog.css">
+<style>
+/* Analytics page styles */
+.analytics-page {
+    min-height: calc(100vh - 80px);
+    padding: 0 24px 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.page-surface {
+    width: 100%;
+    max-width: 1200px;
+    background: var(--grey-bg);
+    border: 1px solid var(--border-hair);
+    border-radius: 12px;
+    padding: 32px 36px 44px;
+    box-sizing: border-box;
+}
+
+/* Header */
+.analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.analytics-title {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text);
+}
+
+.date-range-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.range-btn {
+    all: unset;
+    box-sizing: border-box;
+    padding: 6px 14px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--light-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.range-btn:hover {
+    background: var(--grey-bg);
+    border-color: var(--border-strong);
+}
+
+.range-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.date-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: 8px;
+}
+
+/* Grid layouts */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.charts-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.charts-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Stat cards */
+.stat-card {
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+}
+
+.stat-value.success { color: #16a34a; }
+.stat-value.warning { color: #f97316; }
+.stat-value.primary { color: var(--primary); }
+
+.stat-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+.stat-sub {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    margin-top: 4px;
+}
+
+.stat-change {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 4px;
+}
+.stat-change.positive { color: #16a34a; }
+.stat-change.negative { color: #dc2626; }
+
+/* Panel component */
+.panel {
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.panel__hd {
+    background: var(--grey-bg);
+    border-bottom: 1px solid var(--border-hair);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-title {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.panel__bd {
+    padding: 16px;
+}
+
+.panel__bd--flush {
+    padding: 0;
+}
+
+/* Chart containers */
+.chart-container {
+    min-height: 200px;
+}
+
+.chart-container--sm {
+    min-height: 150px;
+}
+
+.chart-container--lg {
+    min-height: 280px;
+}
+
+/* Heatmap specific */
+.heatmap-container {
+    overflow-x: auto;
+    padding: 8px 0;
+}
+
+/* Completion log */
+.completion-log {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.completion-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border-hair);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.completion-row:hover {
+    background: rgba(15, 23, 42, 0.03);
+}
+
+.completion-row:last-child {
+    border-bottom: none;
+}
+
+.completion-check {
+    color: #16a34a;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.completion-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+}
+
+.completion-date {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+/* Recurring task list */
+.recurring-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-hair);
+}
+
+.recurring-row:last-child {
+    border-bottom: none;
+}
+
+.recurring-title {
+    flex: 1;
+    font-size: 0.8125rem;
+    color: var(--text);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recurring-rate {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.recurring-bar {
+    width: 60px;
+    height: 6px;
+    background: var(--grey-bg);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.recurring-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+/* Streak display */
+.streak-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.streak-fire {
+    font-size: 1.5rem;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 1000px) {
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+    .charts-row-3 {
+        grid-template-columns: 1fr;
+    }
+    .charts-row-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .analytics-page {
+        padding: 12px;
+    }
+    .page-surface {
+        padding: 16px;
+        border-radius: 10px;
+    }
+    .stats-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .stat-value {
+        font-size: 1.75rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-page">
+    <div class="page-surface">
+        <!-- Header -->
+        <div class="analytics-header">
+            <h1 class="analytics-title">Analytics</h1>
+            <div class="date-range-selector">
+                <a href="/analytics?days=7" class="range-btn{% if days == 7 %} active{% endif %}">7D</a>
+                <a href="/analytics?days=30" class="range-btn{% if days == 30 %} active{% endif %}">30D</a>
+                <a href="/analytics?days=90" class="range-btn{% if days == 90 %} active{% endif %}">90D</a>
+                <span class="date-label">{{ start_date.strftime('%b %d') }} - {{ end_date.strftime('%b %d, %Y') }}</span>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value success">{{ stats.total_completed }}</div>
+                <div class="stat-label">Completed</div>
+                {% if stats.week_comparison.change_pct != 0 %}
+                <div class="stat-change {% if stats.week_comparison.change_pct > 0 %}positive{% else %}negative{% endif %}">
+                    {% if stats.week_comparison.change_pct > 0 %}+{% endif %}{{ stats.week_comparison.change_pct }}% vs last week
+                </div>
+                {% endif %}
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_pending }}</div>
+                <div class="stat-label">Pending</div>
+                <div class="stat-sub">{{ stats.aging_stats.buckets.older }} older than 30 days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value primary">{{ stats.completion_rate }}%</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="streak-display">
+                    {% if stats.streaks.current > 0 %}<span class="streak-fire">🔥</span>{% endif %}
+                    <div class="stat-value warning">{{ stats.streaks.current }}</div>
+                </div>
+                <div class="stat-label">Day Streak</div>
+                <div class="stat-sub">Best: {{ stats.streaks.longest }} days</div>
+            </div>
+        </div>
+
+        <!-- Daily Completions + Velocity -->
+        <div class="charts-row">
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">Daily Completions</p>
+                </div>
+                <div class="panel__bd">
+                    <div id="chart-daily" class="chart-container"></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">By Domain</p>
+                </div>
+                <div class="panel__bd">
+                    <div id="chart-domain" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productivity Patterns -->
+        <div class="charts-row-2">
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">Best Days</p>
+                </div>
+                <div class="panel__bd">
+                    <div id="chart-dow" class="chart-container--sm"></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">Active Hours</p>
+                </div>
+                <div class="panel__bd">
+                    <div id="chart-hour" class="chart-container--sm"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Impact + Heatmap -->
+        <div class="charts-row">
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">Contribution Heatmap (12 weeks)</p>
+                </div>
+                <div class="panel__bd">
+                    <div class="heatmap-container">
+                        <div id="chart-heatmap" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">By Impact</p>
+                </div>
+                <div class="panel__bd">
+                    <div id="chart-impact" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Velocity Trend + Recent Completions -->
+        <div class="charts-row">
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">Velocity (30-day trend)</p>
+                </div>
+                <div class="panel__bd">
+                    <div id="chart-velocity" class="chart-container"></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">Recent Completions</p>
+                </div>
+                <div class="panel__bd panel__bd--flush">
+                    {% if recent_completions %}
+                    <div class="completion-log">
+                        {% for item in recent_completions %}
+                        <div class="completion-row" data-task-id="{{ item.task_id }}">
+                            <span class="completion-check">✓</span>
+                            <span class="completion-title" title="{{ item.title }}">{{ item.title }}</span>
+                            <span class="completion-date">{{ item.completed_at.strftime('%b %d') if item.completed_at else '' }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">No recent completions</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recurring Tasks -->
+        {% if stats.recurring_stats %}
+        <div class="charts-row-2">
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">Recurring Task Completion</p>
+                </div>
+                <div class="panel__bd panel__bd--flush">
+                    {% for task in stats.recurring_stats %}
+                    <div class="recurring-row">
+                        <span class="recurring-title">{{ task.title }}</span>
+                        <span class="recurring-rate">{{ task.completed }}/{{ task.total }}</span>
+                        <div class="recurring-bar">
+                            <div class="recurring-bar-fill" style="width: {{ task.rate }}%;"></div>
+                        </div>
+                        <span class="recurring-rate">{{ task.rate }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel__hd">
+                    <p class="panel-title">Task Age Distribution</p>
+                </div>
+                <div class="panel__bd">
+                    <div id="chart-aging" class="chart-container--sm"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="/static/js/task-dialog.js"></script>
+<script>
+// Chart data from backend
+const stats = {{ stats | tojson }};
+
+// Common chart options
+const commonOptions = {
+    chart: {
+        fontFamily: 'inherit',
+        toolbar: { show: false },
+        animations: { enabled: true, speed: 300 },
+    },
+    colors: ['#8b5cf6'],
+    grid: {
+        borderColor: 'rgba(15, 23, 42, 0.08)',
+        strokeDashArray: 4,
+    },
+    tooltip: {
+        theme: 'light',
+    },
+};
+
+// 1. Daily Completions Bar Chart
+const dailyData = stats.daily_completions || [];
+new ApexCharts(document.querySelector('#chart-daily'), {
+    ...commonOptions,
+    chart: { ...commonOptions.chart, type: 'bar', height: 200 },
+    series: [{
+        name: 'Completed',
+        data: dailyData.map(d => d.count)
+    }],
+    xaxis: {
+        categories: dailyData.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }),
+        labels: {
+            style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' },
+            rotate: -45,
+            rotateAlways: dailyData.length > 14,
+        },
+    },
+    yaxis: {
+        labels: { style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' } },
+    },
+    plotOptions: {
+        bar: { borderRadius: 4, columnWidth: '60%' }
+    },
+    dataLabels: { enabled: false },
+}).render();
+
+// 2. Domain Donut Chart
+const domainData = stats.by_domain || [];
+if (domainData.length > 0) {
+    new ApexCharts(document.querySelector('#chart-domain'), {
+        ...commonOptions,
+        chart: { ...commonOptions.chart, type: 'donut', height: 200 },
+        series: domainData.map(d => d.count),
+        labels: domainData.map(d => d.domain_icon + ' ' + d.domain_name),
+        colors: ['#8b5cf6', '#06b6d4', '#f97316', '#22c55e', '#ec4899', '#eab308'],
+        legend: {
+            position: 'right',
+            fontSize: '11px',
+        },
+        dataLabels: { enabled: false },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '65%',
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: 'Total',
+                            fontSize: '12px',
+                            color: 'rgba(15, 23, 42, 0.5)',
+                        }
+                    }
+                }
+            }
+        },
+    }).render();
+} else {
+    document.querySelector('#chart-domain').innerHTML = '<div class="empty-state">No data</div>';
+}
+
+// 3. Day of Week Bar Chart
+const dowData = stats.by_day_of_week || [];
+new ApexCharts(document.querySelector('#chart-dow'), {
+    ...commonOptions,
+    chart: { ...commonOptions.chart, type: 'bar', height: 150 },
+    series: [{
+        name: 'Completed',
+        data: dowData.map(d => d.count)
+    }],
+    xaxis: {
+        categories: dowData.map(d => d.day),
+        labels: { style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' } },
+    },
+    yaxis: { show: false },
+    plotOptions: {
+        bar: { borderRadius: 3, columnWidth: '50%' }
+    },
+    dataLabels: {
+        enabled: true,
+        style: { fontSize: '10px', colors: ['#8b5cf6'] },
+        offsetY: -15,
+    },
+    grid: { show: false },
+}).render();
+
+// 4. Hour of Day Area Chart
+const hourData = stats.by_hour || [];
+new ApexCharts(document.querySelector('#chart-hour'), {
+    ...commonOptions,
+    chart: { ...commonOptions.chart, type: 'area', height: 150 },
+    series: [{
+        name: 'Completed',
+        data: hourData.map(d => d.count)
+    }],
+    xaxis: {
+        categories: hourData.map(d => d.hour + ':00'),
+        labels: {
+            style: { fontSize: '9px', colors: 'rgba(15, 23, 42, 0.5)' },
+            rotate: 0,
+            hideOverlappingLabels: true,
+        },
+        tickAmount: 6,
+    },
+    yaxis: { show: false },
+    stroke: { curve: 'smooth', width: 2 },
+    fill: {
+        type: 'gradient',
+        gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.4,
+            opacityTo: 0.1,
+        }
+    },
+    dataLabels: { enabled: false },
+    grid: { show: false },
+}).render();
+
+// 5. Heatmap (GitHub-style)
+const heatmapData = stats.heatmap_data || [];
+// Organize into weeks (7 days each) for heatmap
+const weeks = [];
+let currentWeek = [];
+heatmapData.forEach((d, i) => {
+    const date = new Date(d.x);
+    const dayOfWeek = date.getDay(); // 0 = Sunday
+    if (i === 0 || dayOfWeek === 0) {
+        if (currentWeek.length > 0) weeks.push(currentWeek);
+        currentWeek = [];
+    }
+    currentWeek.push({ x: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), y: d.y });
+});
+if (currentWeek.length > 0) weeks.push(currentWeek);
+
+// Create series for each day of week
+const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const heatmapSeries = dayNames.map((name, dayIdx) => ({
+    name: name,
+    data: weeks.map((week, weekIdx) => {
+        const entry = week.find((_, i) => {
+            const d = new Date(heatmapData[weekIdx * 7 + i]?.x);
+            return d.getDay() === dayIdx;
+        });
+        return entry ? entry.y : 0;
+    })
+})).reverse();
+
+new ApexCharts(document.querySelector('#chart-heatmap'), {
+    ...commonOptions,
+    chart: { ...commonOptions.chart, type: 'heatmap', height: 180 },
+    series: heatmapSeries,
+    colors: ['#8b5cf6'],
+    plotOptions: {
+        heatmap: {
+            shadeIntensity: 0.5,
+            radius: 2,
+            colorScale: {
+                ranges: [
+                    { from: 0, to: 0, color: '#e2e8f0', name: 'none' },
+                    { from: 1, to: 3, color: '#c4b5fd', name: 'low' },
+                    { from: 4, to: 7, color: '#a78bfa', name: 'medium' },
+                    { from: 8, to: 100, color: '#7c3aed', name: 'high' },
+                ]
+            }
+        }
+    },
+    dataLabels: { enabled: false },
+    xaxis: {
+        labels: { show: false },
+    },
+    yaxis: {
+        labels: { style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' } },
+    },
+    legend: { show: false },
+    stroke: { width: 2, colors: ['#fff'] },
+}).render();
+
+// 6. Impact Distribution
+const impactData = stats.impact_distribution || [];
+new ApexCharts(document.querySelector('#chart-impact'), {
+    ...commonOptions,
+    chart: { ...commonOptions.chart, type: 'bar', height: 200 },
+    series: [{
+        name: 'Completed',
+        data: impactData.map(d => d.count)
+    }],
+    xaxis: {
+        categories: impactData.map(d => d.label),
+        labels: { style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' } },
+    },
+    yaxis: {
+        labels: { style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' } },
+    },
+    colors: impactData.map(d => d.color),
+    plotOptions: {
+        bar: {
+            borderRadius: 4,
+            columnWidth: '50%',
+            distributed: true,
+        }
+    },
+    dataLabels: { enabled: false },
+    legend: { show: false },
+}).render();
+
+// 7. Velocity Trend (Mixed chart)
+const velocityData = stats.velocity_data || [];
+new ApexCharts(document.querySelector('#chart-velocity'), {
+    ...commonOptions,
+    chart: { ...commonOptions.chart, type: 'line', height: 200 },
+    series: [
+        {
+            name: 'Daily',
+            type: 'column',
+            data: velocityData.map(d => d.count)
+        },
+        {
+            name: '7-day avg',
+            type: 'line',
+            data: velocityData.map(d => d.avg)
+        }
+    ],
+    xaxis: {
+        categories: velocityData.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }),
+        labels: {
+            style: { fontSize: '9px', colors: 'rgba(15, 23, 42, 0.5)' },
+            rotate: -45,
+            hideOverlappingLabels: true,
+        },
+        tickAmount: 10,
+    },
+    yaxis: {
+        labels: { style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' } },
+    },
+    colors: ['rgba(139, 92, 246, 0.3)', '#8b5cf6'],
+    stroke: { width: [0, 3], curve: 'smooth' },
+    plotOptions: {
+        bar: { borderRadius: 2, columnWidth: '60%' }
+    },
+    dataLabels: { enabled: false },
+    legend: {
+        show: true,
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '11px',
+    },
+}).render();
+
+// 8. Task Aging Donut
+const agingData = stats.aging_stats?.buckets || {};
+const agingLabels = ['Today', 'This week', 'This month', '30+ days'];
+const agingValues = [
+    agingData.today || 0,
+    agingData.this_week || 0,
+    agingData.this_month || 0,
+    agingData.older || 0
+];
+const agingEl = document.querySelector('#chart-aging');
+if (agingEl && agingValues.some(v => v > 0)) {
+    new ApexCharts(agingEl, {
+        ...commonOptions,
+        chart: { ...commonOptions.chart, type: 'donut', height: 150 },
+        series: agingValues,
+        labels: agingLabels,
+        colors: ['#22c55e', '#eab308', '#f97316', '#dc2626'],
+        legend: {
+            position: 'right',
+            fontSize: '10px',
+        },
+        dataLabels: { enabled: false },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '60%',
+                }
+            }
+        },
+    }).render();
+}
+</script>
+{% endblock %}

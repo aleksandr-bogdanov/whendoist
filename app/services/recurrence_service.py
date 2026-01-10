@@ -249,6 +249,45 @@ class RecurrenceService:
 
         return instance
 
+    async def uncomplete_instance(self, instance_id: int) -> TaskInstance | None:
+        """Uncomplete a specific instance (mark as pending)."""
+        result = await self.db.execute(
+            select(TaskInstance)
+            .join(Task)
+            .where(
+                TaskInstance.id == instance_id,
+                Task.user_id == self.user_id,
+            )
+        )
+        instance = result.scalar_one_or_none()
+
+        if instance:
+            instance.status = "pending"
+            instance.completed_at = None
+            await self.db.flush()
+
+        return instance
+
+    async def toggle_instance_completion(self, instance_id: int) -> TaskInstance | None:
+        """Toggle an instance's completion status."""
+        result = await self.db.execute(
+            select(TaskInstance)
+            .join(Task)
+            .where(
+                TaskInstance.id == instance_id,
+                Task.user_id == self.user_id,
+            )
+        )
+        instance = result.scalar_one_or_none()
+
+        if not instance:
+            return None
+
+        if instance.status == "completed":
+            return await self.uncomplete_instance(instance_id)
+        else:
+            return await self.complete_instance(instance_id)
+
     async def skip_instance(self, instance_id: int) -> TaskInstance | None:
         """Skip a specific instance."""
         result = await self.db.execute(

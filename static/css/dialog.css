@@ -1,518 +1,1077 @@
 /**
- * Task Dialog Styles - Todoist-inspired
+ * Task Modal Styles
+ * Settings panel look + Thought Cabinet capture styling
  */
 
-/* Dialog container */
-.task-dialog {
-    border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
-    border-radius: 10px;
-    padding: 0;
-    max-width: 450px;
-    width: calc(100vw - 32px);
-    box-shadow: var(--shadow-overlay, 0 10px 30px rgba(15, 23, 42, 0.10));
-    background: #fff;
+/* =============================================================================
+   1) Modal Backdrop + Shell
+   ============================================================================= */
+
+.modal-backdrop {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    margin: 0;
-    overflow: visible;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+    background: rgba(15, 23, 42, 0.18);
+    backdrop-filter: blur(2px);
+    z-index: 200;
 }
 
-.task-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.25);
+body.modal-open {
+    overflow: hidden;
 }
 
-.task-dialog-form {
+.modal-window {
+    width: min(520px, calc(100vw - 32px));
+    max-height: calc(100vh - 96px);
+    background: var(--light-bg, #fff);
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
     display: flex;
     flex-direction: column;
 }
 
-/* Body */
-.task-dialog-body {
-    padding: 16px 16px 12px;
+/* =============================================================================
+   2) Modal Header
+   ============================================================================= */
+
+.modal-hd {
+    background: var(--grey-bg, #F1F5F9);
+    border-bottom: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+    border-radius: 12px 12px 0 0;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
 }
 
-/* Title input - borderless */
-.task-title-input {
-    width: 100%;
-    border: none;
-    outline: none;
+.modal-hd-left {
+    flex: 1;
+}
+
+.modal-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(15, 23, 42, 0.50);
+}
+
+.modal-close-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     font-size: 1rem;
-    font-weight: 500;
-    color: #1a1a1a;
-    padding: 0;
-    margin-bottom: 4px;
-    background: transparent;
+    line-height: 1;
+    transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
 
-.task-title-input::placeholder {
-    color: #b3b3b3;
-    font-weight: 400;
+.modal-close-btn:hover {
+    border-color: var(--border, rgba(15, 23, 42, 0.085));
+    background: var(--grey-bg, #F1F5F9);
+    color: var(--text, #0B1220);
 }
 
-/* Description - subtle */
-.task-desc-input {
-    width: 100%;
-    border: none;
-    outline: none;
-    font-size: 0.8125rem;
-    color: #666;
-    padding: 0;
-    margin-bottom: 12px;
-    background: transparent;
-    resize: none;
-    min-height: 20px;
+/* =============================================================================
+   3) Modal Body
+   ============================================================================= */
+
+.modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    background: var(--grey-bg, #F1F5F9);
+    flex: 1;
 }
 
-.task-desc-input::placeholder {
-    color: #b3b3b3;
-}
+/* =============================================================================
+   4) Modal Sections (Settings panel look)
+   ============================================================================= */
 
-/* Chips row */
-.task-chips {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 8px;
-}
-
-.chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 10px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    background: #fff;
-    font-size: 0.75rem;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.chip:hover {
-    background: #f5f5f5;
-    border-color: #d0d0d0;
-}
-
-.chip.active {
-    background: #f0f0f0;
-    border-color: #999;
-    color: #333;
-}
-
-.chip-icon {
-    font-size: 0.8125rem;
-}
-
-.chip-text {
-    font-weight: 500;
-}
-
-/* Expandable sections */
-.chip-expand {
-    display: flex;
-    gap: 8px;
-    padding: 8px 0;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.inline-input {
-    padding: 6px 10px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    font-size: 0.8125rem;
-    color: #333;
-    background: #fff;
-}
-
-.inline-input:focus {
-    outline: none;
-    border-color: #999;
-}
-
-/* Duration picker */
-.duration-picker {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.duration-btn {
-    padding: 5px 10px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    background: #fff;
-    color: #666;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.duration-btn:hover {
-    background: #f5f5f5;
-    border-color: #d0d0d0;
-}
-
-.duration-btn.active {
-    background: #333;
-    border-color: #333;
-    color: #fff;
-}
-
-.duration-custom {
-    width: 56px;
-    padding: 5px 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    font-size: 0.75rem;
-    color: #333;
-}
-
-.duration-custom:focus {
-    outline: none;
-    border-color: #999;
-}
-
-/* More section */
-.more-section {
+.modal-section {
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    border-radius: 12px;
+    overflow: visible;
+    background: var(--light-bg, #fff);
     margin-bottom: 10px;
 }
 
-.more-section:last-child {
+.modal-section:last-child {
     margin-bottom: 0;
 }
 
-.more-label {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 500;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin-bottom: 6px;
-}
-
-/* Impact selector */
-.impact-selector {
-    display: flex;
-    gap: 6px;
-}
-
-.impact-btn {
-    flex: 1;
-    padding: 6px 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    background: #fff;
-    font-size: 0.75rem;
+.section-title {
+    background: var(--grey-bg, #F1F5F9);
+    border-bottom: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+    padding: 10px 14px;
+    font-size: 11px;
     font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(15, 23, 42, 0.50);
 }
 
-.impact-btn:hover {
-    background: #f5f5f5;
-}
+/* =============================================================================
+   5) Capture Stack (title + description in one container)
+   ============================================================================= */
 
-.impact-btn.active {
-    background: #333;
-    border-color: #333;
-    color: #fff;
-}
-
-/* Clarity selector */
-.clarity-selector {
-    display: flex;
-    gap: 6px;
-}
-
-.clarity-btn {
-    flex: 1;
-    padding: 6px 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
+.capture-stack {
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    border-radius: 14px;
     background: #fff;
-    font-size: 0.6875rem;
-    cursor: pointer;
-    transition: all 0.15s;
-    color: #888;
+    overflow: hidden;
+    margin-bottom: 10px;
 }
 
-.clarity-btn:hover {
-    background: #f5f5f5;
+.capture-stack:focus-within {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.55);
 }
 
-.clarity-btn.active {
-    background: #333;
-    border-color: #333;
-    color: #fff;
+.capture-field {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    padding: 16px 18px;
+    font-family: inherit;
+    color: var(--text, #0B1220);
+    box-sizing: border-box;
+    margin: 0;
 }
 
-/* Recurrence - compact */
-.recurrence-presets {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
+.capture-field::placeholder {
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
 }
 
-.recurrence-preset {
-    padding: 5px 10px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    background: #fff;
-    color: #666;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.15s;
+.capture-title {
+    font-size: 1.05rem;
+    font-weight: 650;
+    height: 54px;
 }
 
-.recurrence-preset:hover {
-    background: #f5f5f5;
+.capture-divider {
+    height: 1px;
+    background: var(--border-hair, rgba(15, 23, 42, 0.055));
+    margin: 0 18px;
 }
 
-.recurrence-preset.active {
-    background: #333;
-    border-color: #333;
-    color: #fff;
+.capture-desc {
+    min-height: 96px;
+    resize: vertical;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.5;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
-.recurrence-custom {
-    background: #f9f9f9;
-    border-radius: 6px;
-    padding: 10px;
-    margin-top: 8px;
+/* =============================================================================
+   6) Form Grid (2 columns for Schedule/Due)
+   ============================================================================= */
+
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: visible;
 }
 
-.custom-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.form-field {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+    overflow: visible;
+}
+
+.form-field:last-child {
+    border-bottom: none;
+}
+
+.form-grid-2 .form-field {
+    border-right: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+}
+
+.form-grid-2 .form-field:last-child {
+    border-right: 0;
+}
+
+.field-label {
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint, rgba(15, 23, 42, 0.45));
     margin-bottom: 8px;
 }
 
-.custom-row:last-child {
-    margin-bottom: 0;
+.field-controls {
+    display: grid;
+    grid-template-columns: 1fr 100px;
+    gap: 0;
 }
 
-.custom-row label {
-    font-size: 0.75rem;
-    color: #666;
-    min-width: 45px;
+.field-controls > .input:first-child,
+.field-controls > *:first-child .input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
-.interval-input,
-.day-of-month-input {
-    width: 50px;
-    padding: 4px 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    font-size: 0.75rem;
+.field-controls > .input:last-child,
+.field-controls > *:last-child .input {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
 }
 
-.freq-select {
-    padding: 4px 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    min-width: 90px;
+/* Due date only has one input - reset joined styles */
+.field-controls > .input:only-child {
+    border-radius: 8px !important;
+    border-right: 1px solid var(--border, rgba(15, 23, 42, 0.085)) !important;
+    margin-left: 0 !important;
 }
 
-.days-of-week {
+/* =============================================================================
+   7) Detail Rows (Duration, Impact, Clarity, Recurrence)
+   ============================================================================= */
+
+.detail-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+}
+
+.detail-row:last-of-type {
+    border-bottom: 0;
+}
+
+.detail-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-faint, rgba(15, 23, 42, 0.45));
+}
+
+.detail-control {
     display: flex;
-    gap: 3px;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 0;
 }
 
-.day-checkbox {
-    cursor: pointer;
+/* Pin the whole cluster to the right, no stretching */
+.detail-control.duration-control {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
 }
 
-.day-checkbox input {
+/* Lock heights so nothing looks off-center */
+.duration-seg.segmented {
+    flex: 0 0 auto;
+}
+
+.duration-seg .seg-btn {
+    height: 32px;
+}
+
+/* Fixed-width minutes input wrapper */
+.unit-input {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.input.duration-min {
+    width: 96px;
+    height: 36px;
+    padding-right: 38px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Unit suffix inside the input */
+.unit-input .unit {
     position: absolute;
-    opacity: 0;
-}
-
-.day-checkbox span {
-    display: block;
-    padding: 3px 6px;
-    border: 1px solid #e0e0e0;
-    border-radius: 3px;
-    font-size: 0.65rem;
-    transition: all 0.15s;
-}
-
-.day-checkbox input:checked + span {
-    background: #333;
-    border-color: #333;
-    color: #fff;
-}
-
-.recurrence-preview {
-    margin-top: 6px;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 0.75rem;
-    color: #999;
-    font-style: italic;
+    color: var(--text-faint, rgba(15, 23, 42, 0.45));
+    pointer-events: none;
 }
 
-/* Footer */
-.task-dialog-footer {
-    display: flex;
-    justify-content: space-between;
+/* =============================================================================
+   8) Segmented Control
+   ============================================================================= */
+
+.segmented {
+    background: var(--light-bg, #fff);
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    border-radius: 8px;
+    height: 36px;
+    padding: 2px;
+    display: inline-flex;
     align-items: center;
-    padding: 14px 16px;
-    border-top: 1px solid var(--border, rgba(15, 23, 42, 0.08));
-    background: var(--dark-bg, #F8FAFC);
-    border-radius: 0 0 10px 10px;
+    gap: 2px;
+    flex-shrink: 1;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
-.footer-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.footer-right {
-    display: flex;
-    gap: 8px;
-}
-
-/* Domain select - minimal */
-.domain-select {
-    padding: 5px 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    font-size: 0.8125rem;
-    color: #333;
-    background: #fff;
-    cursor: pointer;
-    min-width: 100px;
-}
-
-.domain-select:focus {
-    outline: none;
-    border-color: #999;
-}
-
-/* Buttons */
-.btn-cancel {
-    padding: 7px 14px;
-    border: none;
-    border-radius: 5px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    cursor: pointer;
+.seg-btn {
+    all: unset;
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 0;
     background: transparent;
-    color: #666;
-    transition: background 0.15s;
+    font-size: 0.7rem;
+    font-weight: 650;
+    line-height: 1;
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
 }
 
-.btn-cancel:hover {
-    background: #f0f0f0;
+.seg-btn:hover {
+    background: rgba(15, 23, 42, 0.04);
+    color: var(--text, #0B1220);
 }
 
-.btn-submit {
-    padding: 7px 16px;
-    border: none;
-    border-radius: 5px;
+.seg-btn.is-active {
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--text, #0B1220);
+}
+
+/* Impact colors - text only, no filled background */
+.seg-btn[data-impact="1"] { color: var(--impact-high, #C9505A); }
+.seg-btn[data-impact="2"] { color: var(--impact-medium, #B8860B); }
+.seg-btn[data-impact="3"] { color: var(--impact-low, #1A9160); }
+.seg-btn[data-impact="4"] { color: var(--impact-min, #6B7385); }
+
+.seg-btn[data-impact].is-active {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+/* Clarity colors - text only, no filled background */
+.seg-btn[data-clarity="executable"] { color: var(--executable-color, #167BFF); }
+.seg-btn[data-clarity="defined"] { color: var(--defined-color, #6D5EF6); }
+.seg-btn[data-clarity="exploratory"] { color: var(--exploratory-color, #A020C0); }
+
+.seg-btn[data-clarity].is-active {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+/* =============================================================================
+   9) Inputs
+   ============================================================================= */
+
+.input {
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    padding: 0 12px;
+    background: #fff;
     font-size: 0.8125rem;
     font-weight: 500;
+    color: var(--text, #0B1220);
+    box-sizing: border-box;
+    margin: 0;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:hover {
+    border-color: var(--border-strong, rgba(15, 23, 42, 0.12));
+}
+
+/* Override Pico's focus styles */
+.modal-backdrop .input:focus {
+    border-color: rgba(99, 102, 241, 0.5) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.4)) !important;
+    position: relative;
+    z-index: 1;
+}
+
+.input::placeholder {
+    color: var(--text-faint, rgba(15, 23, 42, 0.45));
+}
+
+.input-sm {
+    width: 60px;
+    min-width: 50px;
+    flex: 0 0 auto;
+}
+
+
+/* =============================================================================
+   10) Modal Footer
+   ============================================================================= */
+
+.modal-ft {
+    background: var(--grey-bg, #F1F5F9);
+    border-top: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+    border-radius: 0 0 12px 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.ft-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.ft-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.ft-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+/* =============================================================================
+   11) Buttons
+   ============================================================================= */
+
+.btn {
+    all: unset;
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
     cursor: pointer;
-    background: #666;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
+}
+
+.btn-ghost:hover {
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--text, #0B1220);
+}
+
+.btn-primary {
+    background: var(--text, #0F172A);
     color: #fff;
-    transition: background 0.15s;
 }
 
-.btn-submit:hover {
-    background: #555;
+.btn-primary:hover {
+    background: #0B1220;
 }
 
-.btn-submit:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.btn-danger {
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: var(--danger, #DC2626);
 }
 
-.btn-unschedule {
-    padding: 5px 10px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
+.btn-danger:hover {
+    background: rgba(220, 38, 38, 0.14);
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* Danger outline - text only, no background */
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    color: var(--danger, #DC2626);
+}
+
+.btn-danger-outline:hover {
+    background: rgba(220, 38, 38, 0.06);
+    border-color: rgba(220, 38, 38, 0.35);
+}
+
+/* Complete button - green accent */
+.btn-complete {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: #059669;
+    gap: 4px;
+}
+
+.btn-complete:hover {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.btn-complete.is-completed {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.25);
+    color: #6366F1;
+}
+
+.btn-complete.is-completed:hover {
+    background: rgba(99, 102, 241, 0.14);
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+.btn-complete-icon {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* =============================================================================
+   11b) Metadata (compact stacked)
+   ============================================================================= */
+
+.task-metadata {
+    padding: 6px 14px 10px;
+    font-size: 0.68rem;
+    color: var(--text-faint, rgba(15, 23, 42, 0.45));
+    min-height: 2.2em;  /* Reserve space to prevent dialog resize */
+}
+
+.task-metadata .meta-line {
+    line-height: 1.5;
+}
+
+/* =============================================================================
+   12) Recurrence Custom Section
+   ============================================================================= */
+
+.subrow {
+    padding: 12px 14px;
+    background: rgba(15, 23, 42, 0.02);
+    border-top: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+}
+
+.subrow[hidden] {
+    display: none;
+}
+
+.subrow-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 12px;
+    row-gap: 12px;
+    align-items: center;
+}
+
+.subrow-label {
+    font-size: 0.68rem;
+    line-height: 36px;
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
+}
+
+.subrow .field-controls {
+    display: flex;
+    gap: 0;
+}
+
+/* Override Pico CSS for subrow inputs */
+.subrow .field-controls {
+    display: flex !important;
+    grid-template-columns: unset !important;
+    gap: 0 !important;
+}
+
+.subrow .field-controls input,
+.subrow .field-controls select {
+    height: 36px !important;
+    padding: 0 12px !important;
+    margin: 0 !important;
+    font-size: 0.8125rem !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085)) !important;
+    background: #fff !important;
+}
+
+.subrow .field-controls input {
+    width: 48px !important;
+    border-radius: 8px 0 0 8px !important;
+    border-right: none !important;
+    text-align: center !important;
+}
+
+.subrow .field-controls select {
+    min-width: 100px;
+    padding-right: 32px !important;
+    border-radius: 0 8px 8px 0 !important;
+}
+
+.days-row {
+    display: flex;
+    gap: 6px;
+    height: 36px;
+    align-items: center;
+}
+
+.day-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    background: #fff;
+    font-size: 0.65rem;
+    font-weight: 650;
+    line-height: 1;
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+/* Weekend days - subtle visual hint */
+.day-btn[data-day="SA"],
+.day-btn[data-day="SU"] {
+    color: var(--text-faint, rgba(15, 23, 42, 0.45));
+}
+
+.day-btn:hover {
+    border-color: var(--border-strong, rgba(15, 23, 42, 0.12));
+    color: var(--text, #0B1220);
+}
+
+.day-btn.is-active {
+    background: var(--text, #0F172A);
+    border-color: var(--text, #0F172A);
+    border-style: solid;
+    color: #fff;
+}
+
+/* =============================================================================
+   13) Domain Dropdown (opens upward)
+   ============================================================================= */
+
+.domain-dropdown {
+    position: relative;
+}
+
+.domain-dropdown-btn {
+    all: unset;
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    background: #fff;
     font-size: 0.75rem;
     font-weight: 500;
+    color: var(--text, #0B1220);
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.domain-dropdown-btn:hover {
+    border-color: var(--border-strong, rgba(15, 23, 42, 0.12));
+    background: var(--grey-bg, #F1F5F9);
+}
+
+.domain-dropdown-arrow {
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
+    transition: transform 0.15s ease;
+}
+
+.domain-dropdown.is-open .domain-dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.domain-dropdown-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 4px;
+    min-width: 160px;
+    max-height: 200px;
+    overflow-y: auto;
     background: #fff;
-    color: #999;
-    transition: all 0.15s;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    padding: 4px;
+    display: none;
+    z-index: 10;
 }
 
-.btn-unschedule:hover {
-    border-color: #e53935;
-    color: #e53935;
+.domain-dropdown.is-open .domain-dropdown-menu {
+    display: block;
 }
 
-.btn-delete {
-    padding: 5px 10px;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
+.domain-dropdown-item {
+    all: unset;
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 500;
+    color: var(--text, #0B1220);
     cursor: pointer;
-    background: #fff;
-    color: #999;
-    transition: all 0.15s;
+    transition: background 0.1s ease;
+    text-align: left;
 }
 
-.btn-delete:hover {
-    border-color: #e53935;
-    background: #fff5f5;
-    color: #e53935;
+.domain-dropdown-item:hover {
+    background: var(--grey-bg, #F1F5F9);
 }
 
-/* Patch 26: FAB - remove consumer shadow, make it tool-like */
+/* =============================================================================
+   14) FAB (Floating Action Button)
+   ============================================================================= */
+
 .add-task-btn {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: #0F172A;
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    color: #fff;
-    font-size: 1.75rem;
-    font-weight: 300;
-    line-height: 1;
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    padding: 0 !important;
+    margin: 0 !important;
     cursor: pointer;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
     transition: all 0.2s;
-    z-index: 50;
+    z-index: 40;
+}
+
+.add-task-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    background:
+        linear-gradient(var(--text-muted), var(--text-muted)) center / 14px 2px no-repeat,
+        linear-gradient(var(--text-muted), var(--text-muted)) center / 2px 14px no-repeat;
 }
 
 .add-task-btn:hover {
-    background: #0B1220;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+    background: var(--grey-bg);
+    border-color: var(--border-strong);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
 }
 
-.add-task-btn:focus-visible {
-    outline: 3px solid var(--focus-ring);
-    outline-offset: 3px;
+.add-task-btn:hover::before {
+    background:
+        linear-gradient(var(--primary), var(--primary)) center / 14px 2px no-repeat,
+        linear-gradient(var(--primary), var(--primary)) center / 2px 14px no-repeat;
 }
 
-/* Mobile */
-@media (max-width: 500px) {
-    .task-dialog {
-        width: calc(100vw - 16px);
+/* =============================================================================
+   15) Air Datepicker Customization
+   ============================================================================= */
+
+.air-datepicker {
+    --adp-font-family: inherit;
+    --adp-font-size: 14px;
+    --adp-width: 280px;
+    --adp-background-color: #fff;
+    --adp-background-color-hover: rgba(15, 23, 42, 0.06);
+    --adp-background-color-active: var(--text, #0F172A);
+    --adp-color: var(--text, #0B1220);
+    --adp-color-secondary: var(--text-muted, rgba(15, 23, 42, 0.64));
+    --adp-accent-color: var(--text, #0F172A);
+    --adp-color-current-date: var(--text, #0F172A);
+    --adp-cell-background-color-selected: var(--text, #0F172A);
+    --adp-cell-background-color-selected-hover: #0B1220;
+    --adp-border-color: var(--border, rgba(15, 23, 42, 0.085));
+    --adp-border-color-inner: var(--border-hair, rgba(15, 23, 42, 0.055));
+    --adp-border-radius: 12px;
+    --adp-cell-border-radius: 8px;
+    --adp-nav-height: 40px;
+    --adp-day-cell-height: 38px;
+    --adp-nav-arrow-color: var(--text-muted, rgba(15, 23, 42, 0.64));
+    --adp-pointer-size: 8px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15);
+    z-index: 9999 !important;
+}
+
+.air-datepicker-nav--title {
+    font-weight: 600;
+}
+
+.air-datepicker-nav--action:hover {
+    background: var(--adp-background-color-hover);
+    border-radius: 6px;
+}
+
+.air-datepicker-body--day-name {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-faint, rgba(15, 23, 42, 0.45));
+}
+
+.air-datepicker-cell.-current-:not(.-selected-) {
+    color: var(--text, #0B1220);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.air-datepicker-cell.-selected- {
+    color: #fff;
+}
+
+/* Air Datepicker buttons */
+.air-datepicker-buttons {
+    border-top: 1px solid var(--adp-border-color-inner);
+    padding: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.air-datepicker-button {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(15, 23, 42, 0.04);
+    color: var(--text, #0B1220);
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.air-datepicker-button:hover {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+/* =============================================================================
+   15b) Custom Time Picker - Dual Scroller
+   ============================================================================= */
+
+.time-picker-wrapper {
+    position: relative;
+}
+
+.time-picker-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: #fff;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15);
+    z-index: 9999;
+    display: none;
+    width: 160px;
+    overflow: hidden;
+}
+
+.time-picker-dropdown.is-open {
+    display: block;
+}
+
+/* Dual scroller container */
+.time-scroller {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    gap: 4px;
+    position: relative;
+}
+
+/* Selection highlight bar */
+.time-scroller::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 40px;
+    background: rgba(15, 23, 42, 0.06);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+.scroller-column {
+    height: 160px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 60px 0;
+    position: relative;
+    z-index: 1;
+    cursor: grab;
+    user-select: none;
+}
+
+.scroller-column:active {
+    cursor: grabbing;
+}
+
+.scroller-column::-webkit-scrollbar {
+    display: none;
+}
+
+.scroller-item {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--text-muted, rgba(15, 23, 42, 0.5));
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0 16px;
+    border-radius: 6px;
+}
+
+.scroller-item:hover {
+    color: var(--text, #0B1220);
+}
+
+.scroller-item.is-selected {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--text, #0B1220);
+}
+
+.scroller-separator {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text, #0B1220);
+    z-index: 1;
+}
+
+/* Action buttons */
+.time-picker-actions {
+    display: flex;
+    border-top: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+}
+
+.time-clear-btn,
+.time-confirm-btn {
+    all: unset;
+    box-sizing: border-box;
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.time-clear-btn {
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
+    border-right: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
+}
+
+.time-clear-btn:hover {
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.time-confirm-btn {
+    color: var(--text, #0B1220);
+}
+
+.time-confirm-btn:hover {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+/* =============================================================================
+   16) Mobile Responsive
+   ============================================================================= */
+
+@media (max-width: 640px) {
+    .modal-backdrop {
+        padding: 16px 12px;
     }
 
-    .task-chips {
-        gap: 4px;
+    .modal-window {
+        max-height: calc(100vh - 48px);
     }
 
-    .chip {
-        padding: 4px 8px;
-        font-size: 0.6875rem;
+    .form-grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid-2 .form-field {
+        border-right: 0;
+    }
+
+    .detail-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .detail-control {
+        justify-content: flex-start;
+    }
+
+    .detail-control.duration-control {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .unit-input {
+        width: 100%;
+    }
+
+    .input.duration-min {
+        width: 100%;
+    }
+
+    .segmented {
+        flex-wrap: wrap;
     }
 
     .add-task-btn {

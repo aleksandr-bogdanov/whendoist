@@ -9,7 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.config import get_settings
 from app.database import create_tables
 from app.logging_config import setup_logging
-from app.routers import api, auth, domains, import_data, instances, pages, tasks
+from app.routers import api, auth, backup, domains, import_data, instances, pages, preferences, tasks
 
 # Setup logging first
 setup_logging()
@@ -63,10 +63,14 @@ async def health_check():
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include routers
+# Note: tasks.router must come before api.router to avoid route conflict
+# (both define /api/tasks - native tasks should take priority)
 app.include_router(auth.router)
-app.include_router(api.router)
-app.include_router(domains.router)
 app.include_router(tasks.router)
+app.include_router(domains.router)
+app.include_router(preferences.router)
+app.include_router(backup.router)
+app.include_router(api.router)
 app.include_router(instances.router)
 app.include_router(import_data.router)
 app.include_router(pages.router)

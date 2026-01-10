@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeTimedSerializer
@@ -9,10 +11,13 @@ from app.config import get_settings
 from app.database import get_db
 from app.models import GoogleToken, TodoistToken, User
 
+logger = logging.getLogger("whendoist.auth")
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Use a separate signed serializer for OAuth state (more reliable than session for OAuth flows)
-_serializer = URLSafeTimedSerializer(get_settings().secret_key)
+_settings = get_settings()
+_serializer = URLSafeTimedSerializer(_settings.secret_key)
+_is_production = _settings.base_url.startswith("https://")
 
 
 def _sign_state(state: str) -> str:
@@ -66,8 +71,10 @@ async def todoist_login() -> Response:
         max_age=600,
         httponly=True,
         samesite="lax",
+        secure=_is_production,
         path="/",
     )
+    logger.debug(f"Set todoist_oauth_state cookie, secure={_is_production}")
     return response
 
 
@@ -133,8 +140,10 @@ async def google_login() -> Response:
         max_age=600,
         httponly=True,
         samesite="lax",
+        secure=_is_production,
         path="/",
     )
+    logger.debug(f"Set google_oauth_state cookie, secure={_is_production}")
     return response
 
 
@@ -148,7 +157,11 @@ async def google_callback(
 ) -> Response:
     """Handle Google OAuth callback."""
     if not google_oauth_state:
-        raise HTTPException(status_code=400, detail="Missing state cookie")
+        logger.warning(f"Missing google_oauth_state cookie. Cookies received: {list(request.cookies.keys())}")
+        raise HTTPException(
+            status_code=400,
+            detail="Missing state cookie. Try clearing cookies and using a non-incognito browser.",
+        )
 
     stored_state = _verify_state(google_oauth_state)
     if not stored_state or stored_state != state:
@@ -198,3 +211,23 @@ async def logout(request: Request) -> RedirectResponse:
     """Clear session and redirect to home."""
     request.session.clear()
     return RedirectResponse(url="/", status_code=303)
+
+
+@router.post("/todoist/disconnect")
+async def disconnect_todoist(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Disconnect Todoist by removing the stored token."""
+    user_id = get_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    result = await db.execute(select(TodoistToken).where(TodoistToken.user_id == user_id))
+    token = result.scalar_one_or_none()
+
+    if token:
+        await db.delete(token)
+        await db.commit()
+
+    return {"success": True}

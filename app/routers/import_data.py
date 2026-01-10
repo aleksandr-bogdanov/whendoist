@@ -36,9 +36,12 @@ class ImportResponse(BaseModel):
 
     success: bool
     domains_created: int
-    domains_skipped: int
+    domains_skipped: int  # Already existed (duplicate)
     tasks_created: int
-    tasks_skipped: int
+    tasks_skipped: int  # Already existed (duplicate)
+    tasks_completed: int  # Completed tasks imported
+    parents_flattened: int  # Parent tasks merged into subtasks
+    tasks_need_clarity: int  # Tasks without clarity label
     errors: list[str]
 
 
@@ -103,7 +106,10 @@ async def import_from_todoist(
     service = TodoistImportService(db, user.id, todoist_token.access_token)
     result = await service.import_all(skip_existing=True)
 
-    logger.info(f"User {user.id} imported from Todoist: {result.domains_created} domains, {result.tasks_created} tasks")
+    logger.info(
+        f"User {user.id} imported from Todoist: {result.domains_created} domains, "
+        f"{result.tasks_created} tasks, {result.tasks_completed} completed"
+    )
 
     return ImportResponse(
         success=len(result.errors) == 0,
@@ -111,5 +117,8 @@ async def import_from_todoist(
         domains_skipped=result.domains_skipped,
         tasks_created=result.tasks_created,
         tasks_skipped=result.tasks_skipped,
+        tasks_completed=result.tasks_completed,
+        parents_flattened=result.parents_flattened,
+        tasks_need_clarity=result.tasks_need_clarity,
         errors=result.errors,
     )
