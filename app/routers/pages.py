@@ -27,6 +27,24 @@ from app.services.task_service import TaskService
 
 logger = logging.getLogger(__name__)
 
+
+async def get_encryption_context(db: AsyncSession, user_id: int) -> dict[str, Any]:
+    """Get encryption settings for template context."""
+    result = await db.execute(select(UserPreferences).where(UserPreferences.user_id == user_id))
+    prefs = result.scalar_one_or_none()
+
+    if prefs and prefs.encryption_enabled:
+        return {
+            "encryption_enabled": True,
+            "encryption_salt": prefs.encryption_salt,
+            "encryption_test_value": prefs.encryption_test_value,
+        }
+    return {
+        "encryption_enabled": False,
+        "encryption_salt": None,
+        "encryption_test_value": None,
+    }
+
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
 
@@ -46,7 +64,7 @@ DomainWithTasks = dict[str, Any]  # Domain with its tasks
 
 def build_native_task_item(
     task: Task,
-    next_instances: dict[int, date] | None = None,
+    next_instances: dict[int, dict] | None = None,
     instance_completed_at: datetime | None = None,
 ) -> TaskItem:
     """
@@ -54,7 +72,7 @@ def build_native_task_item(
 
     Args:
         task: The task to build item for
-        next_instances: Dict of task_id -> next instance date for recurring tasks
+        next_instances: Dict of task_id -> {date, id} for recurring tasks
         instance_completed_at: For recurring tasks, the completion time of today's instance
     """
     import contextlib
@@ -67,13 +85,17 @@ def build_native_task_item(
 
     # Get next occurrence for recurring tasks
     next_occurrence = None
+    next_instance_id = None
     if task.is_recurring and next_instances:
-        next_occurrence = next_instances.get(task.id)
+        instance_info = next_instances.get(task.id)
+        if instance_info:
+            next_occurrence = instance_info["date"]
+            next_instance_id = instance_info["id"]
 
     # Determine completion age class for visual aging
     # For recurring tasks, use instance completion time; for regular tasks, use task completion time
     completed_at = instance_completed_at if task.is_recurring else task.completed_at
-    completion_age_class = TaskService.get_completion_age_class(completed_at)
+    completion_age_class = TaskService.get_completion_age_class(completed_at, task.status)
 
     # Only access subtasks if already eagerly loaded (avoids lazy loading in async context)
     subtasks = []
@@ -84,6 +106,7 @@ def build_native_task_item(
         "task": task,
         "clarity_display": clarity_display(clarity),
         "next_occurrence": next_occurrence,
+        "next_instance_id": next_instance_id,
         "subtasks": subtasks,
         "completion_age_class": completion_age_class,
         "instance_completed_at": instance_completed_at,
@@ -91,15 +114,46 @@ def build_native_task_item(
 
 
 def native_task_sort_key(task_item: TaskItem) -> tuple:
-    """Sort key: impact (asc = highest first), then position."""
+    """Sort key for unscheduled tasks: impact (asc = highest first), then position."""
     task = task_item["task"]
     return (task.impact, task.position, task.created_at)
+
+
+def scheduled_task_sort_key(task_item: TaskItem) -> tuple:
+    """Sort key for scheduled tasks: date first (soonest first), then impact.
+
+    Scheduled tasks are sorted chronologically because the date represents
+    when the task needs to be done - earlier dates are more urgent regardless
+    of impact level.
+
+    For recurring tasks, uses the next_occurrence date instead of scheduled_date.
+    """
+    task = task_item["task"]
+    # For recurring tasks, use next occurrence; for regular tasks, use scheduled_date
+    if task.is_recurring and task_item.get("next_occurrence"):
+        scheduled = task_item["next_occurrence"]
+    else:
+        scheduled = task.scheduled_date or date.max
+    return (scheduled, task.impact, task.position)
+
+
+def completed_task_sort_key(task_item: TaskItem) -> tuple:
+    """Sort key for completed tasks by completion date (most recent first), then impact.
+
+    Uses instance_completed_at for recurring tasks, task.completed_at for regular tasks.
+    """
+    task = task_item["task"]
+    # Get completion time - use instance completion for recurring tasks
+    completed_at = task_item.get("instance_completed_at") or task.completed_at
+    # Most recent first: negate timestamp for descending order, inf for None (end of list)
+    timestamp = -completed_at.timestamp() if completed_at else float("inf")
+    return (timestamp, task.impact, task.position)
 
 
 def group_tasks_by_domain(
     tasks: list[Task],
     domains: list[Domain],
-    next_instances: dict[int, date] | None = None,
+    next_instances: dict[int, dict] | None = None,
     today_instance_completions: dict[int, datetime] | None = None,
     user_prefs: UserPreferences | None = None,
 ) -> list[DomainWithTasks]:
@@ -119,12 +173,26 @@ def group_tasks_by_domain(
     # Get preference values with defaults
     retention_days = user_prefs.completed_retention_days if user_prefs else 3
     show_completed_in_list = user_prefs.show_completed_in_list if user_prefs else True
+    show_scheduled_in_list = user_prefs.show_scheduled_in_list if user_prefs else True
     move_to_bottom = user_prefs.completed_move_to_bottom if user_prefs else True
+    completed_sort_by_date = user_prefs.completed_sort_by_date if user_prefs else True
+    scheduled_to_bottom = user_prefs.scheduled_move_to_bottom if user_prefs else True
+    scheduled_sort_by_date = user_prefs.scheduled_sort_by_date if user_prefs else True
     hide_recurring_after = user_prefs.hide_recurring_after_completion if user_prefs else False
 
     for task in tasks:
         # Get instance completion time for recurring tasks
         instance_completed_at = today_instance_completions.get(task.id) if today_instance_completions else None
+
+        # Check if task is scheduled (has a date assigned)
+        is_scheduled = task.scheduled_date is not None
+
+        # Hide scheduled tasks if preference is off (they'll still show on calendar)
+        if is_scheduled and not show_scheduled_in_list:
+            # Still show completed scheduled tasks if they're within retention window
+            is_task_completed = task.status == "completed" or task.completed_at is not None or instance_completed_at
+            if not is_task_completed:
+                continue
 
         # Determine if task should be shown
         # Check status, completed_at (for regular tasks), and instance_completed_at (for recurring tasks)
@@ -162,17 +230,53 @@ def group_tasks_by_domain(
         # Recurring task with instance completed today
         return bool(task_item["instance_completed_at"])
 
+    def is_scheduled_task(task_item: TaskItem) -> bool:
+        """Check if a task has a scheduled date (counts as scheduled for separation)."""
+        task = task_item["task"]
+        return task.scheduled_date is not None
+
     for domain_id, domain_tasks in tasks_by_domain.items():
-        if move_to_bottom:
-            # Sort: pending first (by impact/position), then completed (by impact/position)
-            pending = [t for t in domain_tasks if not is_completed_task(t)]
-            completed = [t for t in domain_tasks if is_completed_task(t)]
-            pending.sort(key=native_task_sort_key)
-            completed.sort(key=native_task_sort_key)
-            domain_tasks = pending + completed
+        # Separate tasks into groups for proper sorting
+        unscheduled_pending = [t for t in domain_tasks if not is_completed_task(t) and not is_scheduled_task(t)]
+        scheduled_pending = [t for t in domain_tasks if not is_completed_task(t) and is_scheduled_task(t)]
+        completed = [t for t in domain_tasks if is_completed_task(t)]
+
+        # Sort each group:
+        # - Unscheduled: by impact (P1 first)
+        # - Scheduled: by date (soonest first) when grouped at bottom, otherwise by impact
+        # - Completed: by completion date (most recent first) when grouped at bottom, otherwise by impact
+        unscheduled_pending.sort(key=native_task_sort_key)
+        if scheduled_to_bottom and scheduled_sort_by_date:
+            scheduled_pending.sort(key=scheduled_task_sort_key)
         else:
-            # Keep original order (just sort by impact/position)
-            domain_tasks.sort(key=native_task_sort_key)
+            scheduled_pending.sort(key=native_task_sort_key)
+        if move_to_bottom and completed_sort_by_date:
+            completed.sort(key=completed_task_sort_key)
+        else:
+            completed.sort(key=native_task_sort_key)
+
+        if move_to_bottom and scheduled_to_bottom:
+            # Both completed and scheduled at bottom: unscheduled -> scheduled -> completed
+            domain_tasks = unscheduled_pending + scheduled_pending + completed
+        elif move_to_bottom and not scheduled_to_bottom:
+            # Only completed at bottom: (unscheduled + scheduled interleaved) -> completed
+            all_pending = unscheduled_pending + scheduled_pending
+            all_pending.sort(key=native_task_sort_key)
+            domain_tasks = all_pending + completed
+        elif not move_to_bottom and scheduled_to_bottom:
+            # Only scheduled at bottom: (unscheduled + completed_unscheduled) -> (scheduled + completed_scheduled)
+            completed_unscheduled = [t for t in completed if not is_scheduled_task(t)]
+            completed_scheduled = [t for t in completed if is_scheduled_task(t)]
+            all_unscheduled = unscheduled_pending + completed_unscheduled
+            all_scheduled = scheduled_pending + completed_scheduled
+            all_unscheduled.sort(key=native_task_sort_key)
+            all_scheduled.sort(key=scheduled_task_sort_key)
+            domain_tasks = all_unscheduled + all_scheduled
+        else:
+            # Neither at bottom: all tasks interleaved by impact
+            all_tasks = unscheduled_pending + scheduled_pending + completed
+            all_tasks.sort(key=native_task_sort_key)
+            domain_tasks = all_tasks
 
         for task_item in domain_tasks:
             task_item["subtasks"].sort(key=native_task_sort_key)
@@ -248,8 +352,9 @@ async def dashboard(
     task_service = TaskService(db, user.id)
     recurrence_service = RecurrenceService(db, user.id)
 
-    # Ensure recurring task instances are materialized
+    # Ensure recurring task instances are materialized and committed
     await recurrence_service.ensure_instances_materialized()
+    await db.commit()
 
     # Get domains and tasks (exclude inbox/thoughts - tasks without domain)
     # Include both pending and completed tasks so completed ones show dimmed
@@ -257,12 +362,15 @@ async def dashboard(
     all_tasks = await task_service.get_tasks(status=None, top_level_only=True)
     tasks = [t for t in all_tasks if t.domain_id is not None]
 
-    # Get next occurrence date for each recurring task
-    next_instances: dict[int, date] = {}
+    # Get next occurrence for each recurring task (date + instance ID for completion)
+    next_instances: dict[int, dict] = {}
     recurring_task_ids = [t.id for t in tasks if t.is_recurring]
     if recurring_task_ids:
         instances = await recurrence_service.get_next_instances_for_tasks(recurring_task_ids)
-        next_instances = {inst.task_id: inst.instance_date for inst in instances}
+        next_instances = {
+            inst.task_id: {"date": inst.instance_date, "id": inst.id}
+            for inst in instances
+        }
 
     # Get today's instance completions for recurring tasks (for visual aging)
     today_instance_completions: dict[int, datetime] = {}
@@ -275,6 +383,7 @@ async def dashboard(
     domains_with_tasks = group_tasks_by_domain(tasks, domains, next_instances, today_instance_completions, user_prefs)
 
     # Get scheduled tasks for calendar display
+    # Note: Redefine start_date here (was used above for instance fetching)
     start_date = today - timedelta(days=7)
     end_date = today + timedelta(days=8)
 
@@ -295,7 +404,7 @@ async def dashboard(
             if is_completed and not TaskService.is_within_retention_window(task.completed_at, calendar_retention_days):
                 continue
 
-            completion_age = TaskService.get_completion_age_class(task.completed_at)
+            completion_age = TaskService.get_completion_age_class(task.completed_at, task.status)
             if task.scheduled_time:
                 # Task has both date and time - show on calendar grid
                 scheduled_datetime = datetime.combine(
@@ -334,7 +443,7 @@ async def dashboard(
             continue
 
         # Get completion age for instance
-        completion_age = TaskService.get_completion_age_class(instance.completed_at)
+        completion_age = TaskService.get_completion_age_class(instance.completed_at, instance.status)
 
         # Check if instance has a specific time
         has_time = instance.scheduled_datetime is not None or instance.task.scheduled_time is not None
@@ -425,6 +534,9 @@ async def dashboard(
         day["scheduled_tasks"] = scheduled_tasks_by_date.get(day["date"], [])
         day["date_only_tasks"] = date_only_tasks_by_date.get(day["date"], [])
 
+    # Get encryption context for base template
+    encryption_ctx = await get_encryption_context(db, user.id)
+
     return templates.TemplateResponse(
         "dashboard.html",
         {
@@ -437,6 +549,200 @@ async def dashboard(
             "today": today,
             "timedelta": timedelta,  # For adjacent day calculations in template
             "user_prefs": user_prefs,
+            **encryption_ctx,
+        },
+    )
+
+
+@router.get("/api/task-list", response_class=HTMLResponse)
+async def task_list_partial(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user),
+):
+    """Return just the task list HTML for HTMX partial updates."""
+    if not user:
+        return HTMLResponse(status_code=401)
+
+    today = date.today()
+
+    # User Preferences
+    prefs_service = PreferencesService(db, user.id)
+    user_prefs = await prefs_service.get_preferences()
+
+    # Native Task Loading
+    task_service = TaskService(db, user.id)
+    recurrence_service = RecurrenceService(db, user.id)
+
+    # Ensure recurring task instances are materialized and committed
+    await recurrence_service.ensure_instances_materialized()
+    await db.commit()
+
+    # Get domains and tasks
+    domains = await task_service.get_domains()
+    all_tasks = await task_service.get_tasks(status=None, top_level_only=True)
+    tasks = [t for t in all_tasks if t.domain_id is not None]
+
+    # Get next occurrence for each recurring task (date + instance ID for completion)
+    next_instances: dict[int, dict] = {}
+    recurring_task_ids = [t.id for t in tasks if t.is_recurring]
+    if recurring_task_ids:
+        instances = await recurrence_service.get_next_instances_for_tasks(recurring_task_ids)
+        next_instances = {
+            inst.task_id: {"date": inst.instance_date, "id": inst.id}
+            for inst in instances
+        }
+
+    # Get today's instance completions for recurring tasks
+    today_instance_completions: dict[int, datetime] = {}
+    if recurring_task_ids:
+        today_instances = await recurrence_service.get_instances_for_range(today, today, status=None)
+        for inst in today_instances:
+            if inst.status == "completed" and inst.completed_at:
+                today_instance_completions[inst.task_id] = inst.completed_at
+
+    domains_with_tasks = group_tasks_by_domain(tasks, domains, next_instances, today_instance_completions, user_prefs)
+
+    return templates.TemplateResponse(
+        "_task_list.html",
+        {
+            "request": request,
+            "domains_with_tasks": domains_with_tasks,
+        },
+    )
+
+
+@router.get("/api/deleted-tasks", response_class=HTMLResponse)
+async def deleted_tasks_partial(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user),
+):
+    """Return deleted tasks HTML for HTMX."""
+    if not user:
+        return HTMLResponse(status_code=401)
+
+    task_service = TaskService(db, user.id)
+    deleted_tasks = await task_service.get_archived_tasks()
+
+    # Group by domain for display
+    domains = await task_service.get_domains(include_archived=True)
+    domains_map = {d.id: d for d in domains}
+
+    tasks_by_domain: dict[int | None, list] = {}
+    for task in deleted_tasks:
+        task_item = build_native_task_item(task)
+        tasks_by_domain.setdefault(task.domain_id, []).append(task_item)
+
+    # Build domain groups
+    deleted_domains_with_tasks = []
+    for domain_id, task_items in tasks_by_domain.items():
+        domain = domains_map.get(domain_id) if domain_id else None
+        deleted_domains_with_tasks.append({
+            "domain": domain,
+            "tasks": sorted(task_items, key=native_task_sort_key),
+        })
+
+    # Sort by domain name
+    deleted_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))
+
+    return templates.TemplateResponse(
+        "_deleted_tasks.html",
+        {
+            "request": request,
+            "domains_with_tasks": deleted_domains_with_tasks,
+            "total_count": len(deleted_tasks),
+        },
+    )
+
+
+@router.get("/api/scheduled-tasks", response_class=HTMLResponse)
+async def scheduled_tasks_partial(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user),
+):
+    """Return scheduled tasks HTML for HTMX."""
+    if not user:
+        return HTMLResponse(status_code=401)
+
+    task_service = TaskService(db, user.id)
+    all_tasks = await task_service.get_tasks()
+
+    # Filter to only scheduled tasks
+    scheduled_tasks = [t for t in all_tasks if t.scheduled_date is not None]
+
+    # Group by domain for display
+    domains = await task_service.get_domains()
+    domains_map = {d.id: d for d in domains}
+
+    tasks_by_domain: dict[int | None, list] = {}
+    for task in scheduled_tasks:
+        task_item = build_native_task_item(task)
+        tasks_by_domain.setdefault(task.domain_id, []).append(task_item)
+
+    # Build domain groups
+    scheduled_domains_with_tasks = []
+    for domain_id, task_items in tasks_by_domain.items():
+        domain = domains_map.get(domain_id) if domain_id else None
+        scheduled_domains_with_tasks.append({
+            "domain": domain,
+            "tasks": sorted(task_items, key=native_task_sort_key),
+        })
+
+    # Sort by domain name
+    scheduled_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))
+
+    return templates.TemplateResponse(
+        "_scheduled_tasks.html",
+        {
+            "request": request,
+            "domains_with_tasks": scheduled_domains_with_tasks,
+            "total_count": len(scheduled_tasks),
+        },
+    )
+
+
+@router.get("/api/completed-tasks", response_class=HTMLResponse)
+async def completed_tasks_partial(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user),
+):
+    """Return completed tasks HTML for HTMX."""
+    if not user:
+        return HTMLResponse(status_code=401)
+
+    task_service = TaskService(db, user.id)
+    completed_tasks = await task_service.get_tasks(status="completed")
+
+    # Group by domain for display
+    domains = await task_service.get_domains()
+    domains_map = {d.id: d for d in domains}
+
+    tasks_by_domain: dict[int | None, list] = {}
+    for task in completed_tasks:
+        task_item = build_native_task_item(task)
+        tasks_by_domain.setdefault(task.domain_id, []).append(task_item)
+
+    # Build domain groups
+    completed_domains_with_tasks = []
+    for domain_id, task_items in tasks_by_domain.items():
+        domain = domains_map.get(domain_id) if domain_id else None
+        completed_domains_with_tasks.append({
+            "domain": domain,
+            "tasks": sorted(task_items, key=lambda x: x["task"].completed_at or datetime.min, reverse=True),
+        })
+
+    # Sort by domain name
+    completed_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))
+
+    return templates.TemplateResponse(
+        "_completed_tasks.html",
+        {
+            "request": request,
+            "domains_with_tasks": completed_domains_with_tasks,
+            "total_count": len(completed_tasks),
         },
     )
 
@@ -461,12 +767,16 @@ async def thoughts(
     task_items = [build_native_task_item(t) for t in inbox_tasks]
     task_items.sort(key=native_task_sort_key)
 
+    # Get encryption context for base template
+    encryption_ctx = await get_encryption_context(db, user.id)
+
     return templates.TemplateResponse(
         "thoughts.html",
         {
             "request": request,
             "user": user,
             "tasks": task_items,
+            **encryption_ctx,
         },
     )
 
@@ -527,6 +837,9 @@ async def settings(
             # Failed to load calendars - show empty list
             logger.warning(f"Failed to load Google calendars: {e}")
 
+    # Get encryption context for base template
+    encryption_ctx = await get_encryption_context(db, user.id)
+
     return templates.TemplateResponse(
         "settings.html",
         {
@@ -537,6 +850,7 @@ async def settings(
             "todoist_connected": todoist_token is not None,
             "calendars": calendars,
             "user_prefs": user_prefs,
+            **encryption_ctx,
         },
     )
 
@@ -568,6 +882,9 @@ async def analytics(
     # Get recent completions for the log
     recent_completions = await analytics_service.get_recent_completions(limit=20)
 
+    # Get encryption context for base template
+    encryption_ctx = await get_encryption_context(db, user.id)
+
     return templates.TemplateResponse(
         "analytics.html",
         {
@@ -578,5 +895,6 @@ async def analytics(
             "end_date": end_date,
             "stats": stats,
             "recent_completions": recent_completions,
+            **encryption_ctx,
         },
     )

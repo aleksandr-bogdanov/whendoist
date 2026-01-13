@@ -6,13 +6,13 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.7 (Task Completion)
+**Current Version:** v0.8 (E2E Encryption)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
 - **Thought Cabinet** — Quick capture with promote-to-task (v0.6 design complete)
 - **Analytics** — Comprehensive completion stats with ApexCharts (v0.7)
-- **Settings** — Account configuration, Task Display panel, Backup/Restore (v0.7)
+- **Settings** — Account configuration, Task Display, Security, Backup (v0.8)
 
 ## Tech Stack
 
@@ -53,6 +53,7 @@ static/
     ├── task-dialog.js    # Create/edit task modal
     ├── task-sort.js      # Column sorting
     ├── task-complete.js  # Task completion with preference-aware behavior
+    ├── crypto.js         # Client-side E2E encryption (AES-256-GCM)
     ├── energy-selector.js
     ├── recurrence-picker.js
     └── toast.js
@@ -117,12 +118,114 @@ rail   content      duration  impact   clarity
 ## Common Commands
 
 ```bash
-just dev      # Start dev server (localhost:8000)
-just db-up    # Start PostgreSQL
-just test     # Run pytest
-just lint     # Run ruff
-just fmt      # Format code
+just dev            # Start dev server (localhost:8000)
+just db-up          # Start PostgreSQL
+just test           # Run pytest
+just lint           # Run ruff
+just fmt            # Format code
+just build-manifest # Generate build manifest for code provenance
 ```
+
+## Release Process
+
+Releases are managed via GitHub Actions with automatic tag signing and build provenance.
+
+### Creating a Release
+
+1. **Update CHANGELOG.md** — Add entry for new version:
+   ```markdown
+   ## [0.9.0] - 2026-01-15
+
+   ### Added
+   - New feature X
+
+   ### Fixed
+   - Bug Y
+   ```
+
+2. **Commit changes** — Push to master:
+   ```bash
+   git add -A && git commit -m "Prepare v0.9.0 release"
+   git push origin master
+   ```
+
+3. **Trigger release** — Go to GitHub Actions → Release → Run workflow:
+   - Enter version: `0.9.0` (or `v0.9.0`)
+   - Optional: Check "dry_run" to validate without releasing
+
+### What the Pipeline Does
+
+| Job | Description |
+|-----|-------------|
+| **Prepare** | Validates version format, checks tag doesn't exist, verifies CHANGELOG entry |
+| **Validate** | Runs linter and tests |
+| **Create Tag** | Creates signed tag (GitHub-verified ✓) |
+| **Release** | Generates hashes, creates build manifest, publishes GitHub Release |
+
+### Build Artifacts
+
+Each release includes:
+- `build-manifest.json` — Version, commit, build hash, file hashes
+- `file-hashes.txt` — SHA256 hashes for all source files
+- `sri-hashes.json` — SRI hashes for script integrity
+- `whendoist-vX.Y.Z.tar.gz` — Source archive
+
+### Backwards Compatibility
+
+You can still create releases by pushing tags manually:
+```bash
+git tag -a v0.9.0 -m "Release v0.9.0"
+git push origin v0.9.0
+```
+
+However, manually-pushed tags won't show as "Verified" unless you've configured GPG signing locally.
+
+## Testing
+
+**Full documentation:** `tests/README.md`
+
+### Test Structure
+
+```
+tests/
+├── conftest.py                 # Shared fixtures (db_session)
+├── test_labels.py              # Label parsing
+├── test_preferences.py         # PreferencesService CRUD
+├── test_task_sorting.py        # Server-side sorting (pages.py)
+├── test_js_module_contract.py  # JS module API verification
+└── e2e/
+    └── test_task_sorting_e2e.py  # Browser-based tests (Playwright)
+```
+
+### Test Categories
+
+| Category | Speed | Purpose |
+|----------|-------|---------|
+| **Unit** | Fast | Pure logic, in-memory SQLite |
+| **Contract** | Fast | Verify JS modules have correct APIs |
+| **E2E** | Slow | Full browser flow, needs running server |
+
+### Critical Pattern: JS Module Contract Tests
+
+When fixing bugs that involve JavaScript module interactions, add a **contract test** that verifies the integration point exists:
+
+```python
+# tests/test_js_module_contract.py
+def test_calls_tasksort_update_preference_after_save():
+    """
+    task-list-options.js MUST call TaskSort.updatePreference()
+    after saving. Without this, column headers use stale values.
+    """
+    assert "TaskSort.updatePreference" in task_list_options_js
+```
+
+This catches bugs where one JS module expects to call another but the API doesn't exist or the call is missing.
+
+### When Writing Tests
+
+1. **Choose the right layer** — Python bug? Unit test. JS integration? Contract test. Full flow? E2E.
+2. **Add docstring with context** — Category, related code, what bug it prevents
+3. **Link to bugs/PRs** — For regression tests, reference the original issue
 
 ## Important Patterns
 
@@ -168,67 +271,65 @@ Pico CSS aggressively styles input focus states. To override with custom glow:
 - `.modal-backdrop` prefix + `!important` needed to override Pico CSS
 - `z-index: 1` fixes joined inputs overlapping each other's borders on focus
 
-## Recent Changes (v0.7)
+## Recent Changes (v0.8)
 
-- **Todoist API Migration** — Migrated from REST v2 to API v1 for all operations
-- **Task Completion Visibility** — Completed tasks remain visible for configurable retention window (1/3/7 days) in both Task List and Calendar
-- **Visual Aging** — Simplified 2-level system:
-  - Today: grey text with strikethrough
-  - Older: muted grey (70% opacity) with strikethrough
-- **Analytics Dashboard** — Comprehensive stats with ApexCharts:
-  - Overview: completed, pending, rate, streak
-  - Daily completions bar chart
-  - Domain breakdown donut
-  - Best days (day of week)
-  - Active hours (hour of day)
-  - GitHub-style contribution heatmap
-  - Impact distribution
-  - Velocity trend with rolling average
-  - Task aging analysis
-  - Recurring task completion rates
-- **Completed Tasks Settings** — New panel in Settings with 4 preferences:
-  - Show in Task List (toggle) — Calendar always shows completed tasks as history
-  - Keep visible for (1/3/7 days) — Retention window for both
-  - Position in Task List (bottom / in place)
-  - Hide recurring after completing today — For "remaining work only" view
-- **UserPreferences Model** — Backend storage for task display preferences
-- **Completed Task Import** — Import recently completed tasks from Todoist for analytics
-- **Backup & Restore** — Export/import all user data as JSON from Settings:
-  - Download backup with timestamped filename
-  - Restore from backup (replaces all data)
-  - Includes domains, tasks, instances, preferences
+- **E2E Encryption** — Optional end-to-end encryption for task data:
+  - Uses Web Crypto API with AES-256-GCM
+  - PBKDF2 key derivation from user passphrase (100,000 iterations)
+  - Key stored in sessionStorage (cleared on logout/tab close)
+  - Security panel in Settings to enable/disable
+  - Passphrase unlock modal on page load when enabled
+- **Code Provenance** — Verify deployed code matches GitHub (Three Pillars):
+  - Build Provenance panel in Settings with version/commit info
+  - "Verify Build" modal with file hashes and verification instructions
+  - GitHub Actions release workflow with artifact attestations
+  - SHA256 hashes for all static files, SRI hashes for key files
+  - Build manifest generated at `static/build-manifest.json`
+  - API endpoints: `/api/build/info`, `/api/build/verify`, `/api/build/hashes`
+- **Todoist Import Polish** — Preview dialog with import options:
+  - Shows project/task/subtask counts before importing
+  - Option to include/exclude completed tasks
+  - Visual stats display
+- **Plan My Day Undo** — Undo button in toast after auto-scheduling
+- **Cancel Button** — Task dialogs now have Cancel + primary action buttons
+- **Compact Task Modal** — Reduced padding and heights for more compact editing
+- **Scheduled Task Separation** — Scheduled tasks appear after unscheduled in list
+- **Recurring Task Completion** — Fixed Complete button in Edit Task modal
 
-### Task Completion CSS Classes
-```css
-.completed-today .task-text {
-    text-decoration: line-through;
-    color: var(--text-muted);
-}
-.completed-older .task-text {
-    color: rgba(15, 23, 42, 0.7);  /* 70% - readable but clearly done */
-    text-decoration: line-through;
-}
+### v0.7 (Task Completion)
+- **Analytics Dashboard** — Comprehensive stats with ApexCharts
+- **Task Completion Visibility** — Configurable retention window
+- **Visual Aging** — 2-level system (today, older)
+- **Completed Tasks Settings** — 4 preferences in Settings
+- **Backup & Restore** — Export/import all data as JSON
+
+### E2E Encryption Architecture
+```javascript
+// Client-side encryption flow:
+1. User sets passphrase in Settings
+2. Salt generated (32 bytes random)
+3. Key derived: PBKDF2(passphrase, salt, 100000, SHA-256) -> AES-256
+4. Test value encrypted and sent to server with salt
+5. On subsequent visits, passphrase prompt -> key derived -> stored in sessionStorage
 ```
-
-### Recurring Task Completion
-When a recurring task's today instance is completed:
-- Parent task shows "done today" visual state in left panel
-- Task instance has separate `completed_at` timestamp
-- Can hide from list after completion (optional preference)
 
 ## Files to Read First
 
 1. `DESIGN.md` — Full design system documentation
 2. `CHANGELOG.md` — Version history and changes
-3. `static/css/app.css` — Design tokens (first 120 lines)
-4. `app/templates/dashboard.html` — Tasks page template
-5. `app/templates/analytics.html` — Analytics page with ApexCharts
-6. `app/templates/settings.html` — Settings page template
+3. `tests/README.md` — Test architecture and how to write tests
+4. `static/css/app.css` — Design tokens (first 120 lines)
+5. `static/js/crypto.js` — Client-side encryption library
+6. `app/templates/dashboard.html` — Tasks page template
+7. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
+8. `app/routers/build_info.py` — Build provenance API endpoints
+9. `.github/workflows/release.yml` — Release pipeline (signed tags, attestations, provenance)
 
 ## Known Issues
 
-- Todoist import UX needs polish
+None currently tracked.
 
-## Next Up (v0.8)
+## Next Up (v0.9)
 
 - Time blocking templates
+- Task encryption integration (encrypt on submit, decrypt on display)

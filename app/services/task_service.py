@@ -165,13 +165,15 @@ class TaskService:
         else:
             query = query.options(selectinload(Task.domain))
 
-        # Order: completed tasks last, then by impact (highest first), then position
-        # Use CASE to ensure completed tasks always sort to the bottom
-        status_order = case(
-            (Task.status == "completed", 1),
-            else_=0,
+        # Order: unscheduled first, scheduled second, completed last
+        # Then by impact (highest first), then position
+        # Note: scheduled_date alone (without time) counts as "scheduled" for separation
+        schedule_order = case(
+            (Task.status == "completed", 2),  # Completed last
+            (Task.scheduled_date.isnot(None), 1),  # Scheduled second (date only or date+time)
+            else_=0,  # Unscheduled first
         )
-        query = query.order_by(status_order, Task.impact.asc(), Task.position, Task.created_at)
+        query = query.order_by(schedule_order, Task.impact.asc(), Task.position, Task.created_at)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())
@@ -351,6 +353,41 @@ class TaskService:
             await self._archive_subtasks(subtask.id)
             subtask.status = "archived"
 
+    async def restore_task(self, task_id: int) -> Task | None:
+        """Restore an archived task back to pending status."""
+        task = await self.get_task(task_id)
+        if not task or task.status != "archived":
+            return None
+
+        # Restore subtasks recursively
+        await self._restore_subtasks(task_id)
+
+        task.status = "pending"
+        task.completed_at = None
+        await self.db.flush()
+        return task
+
+    async def _restore_subtasks(self, parent_id: int) -> None:
+        """Recursively restore all subtasks of a task."""
+        result = await self.db.execute(
+            select(Task).where(
+                Task.parent_id == parent_id,
+                Task.user_id == self.user_id,
+                Task.status == "archived",
+            )
+        )
+        subtasks = list(result.scalars().all())
+
+        for subtask in subtasks:
+            # Recursively restore children first
+            await self._restore_subtasks(subtask.id)
+            subtask.status = "pending"
+            subtask.completed_at = None
+
+    async def get_archived_tasks(self) -> list[Task]:
+        """Get all archived tasks for the user."""
+        return await self.get_tasks(status="archived", top_level_only=True)
+
     async def delete_task(self, task_id: int) -> bool:
         """Permanently delete a task."""
         task = await self.get_task(task_id)
@@ -409,26 +446,21 @@ class TaskService:
     # =========================================================================
 
     @staticmethod
-    def get_completion_age_class(completed_at: datetime | None) -> str:
+    def get_completion_age_class(completed_at: datetime | None, status: str | None = None) -> str:
         """
-        Get CSS class for visual aging of completed tasks.
+        Get CSS class for completed tasks.
+
+        Args:
+            completed_at: When task was completed (datetime)
+            status: Task status string (for fallback if completed_at is None)
 
         Returns:
-            'completed-today' - Completed today (grey text)
-            'completed-older' - Completed before today (super light grey)
+            'completed' - Task is completed (grey text with strikethrough)
             '' - Not completed
         """
-        if not completed_at:
-            return ""
-
-        now = datetime.now(UTC)
-        today = now.date()
-        completed_date = completed_at.date()
-
-        if completed_date == today:
-            return "completed-today"
-        else:
-            return "completed-older"
+        if completed_at or status == "completed":
+            return "completed"
+        return ""
 
     @staticmethod
     def is_within_retention_window(completed_at: datetime | None, retention_days: int) -> bool:

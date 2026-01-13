@@ -199,7 +199,7 @@
                         </div>
                     </div>
 
-                    <!-- Footer: Domain | Delete | Complete/Reopen | Save -->
+                    <!-- Footer: Domain | Delete | Complete/Reopen | Cancel + Save -->
                     <div class="modal-ft">
                         <div class="ft-left">
                             <div class="domain-dropdown" id="domain-dropdown">
@@ -222,6 +222,7 @@
                             </button>
                         </div>
                         <div class="ft-right">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel">Cancel</button>
                             <button type="submit" class="btn btn-primary btn-submit">Add task</button>
                         </div>
                     </div>
@@ -554,6 +555,9 @@
 
         // Close button
         backdropEl.querySelector('.modal-close-btn').addEventListener('click', closeDialog);
+
+        // Cancel button
+        backdropEl.querySelector('#btn-cancel').addEventListener('click', closeDialog);
 
         // Form submit
         backdropEl.querySelector('form').addEventListener('submit', handleSubmit);

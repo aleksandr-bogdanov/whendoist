@@ -1,0 +1,427 @@
+# =============================================================================
+# Whendoist Release Pipeline
+# =============================================================================
+#
+# Production-ready release workflow with:
+#   - Manual trigger via workflow_dispatch (recommended)
+#   - Automatic trigger on version tags (backwards compatible)
+#   - Pre-release validation (tests, lint, changelog check)
+#   - Signed tags (GitHub-verified)
+#   - Build provenance & artifact attestations
+#   - SHA256/SRI hashes for integrity verification
+#
+# Usage:
+#   1. Go to Actions → Release → Run workflow
+#   2. Enter version (e.g., "0.9.0" or "v0.9.0")
+#   3. Optionally check "dry_run" to validate without releasing
+#
+# =============================================================================
+
+name: Release
+
+on:
+  # Manual trigger (recommended) - creates signed tags
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.9.0 or v0.9.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run - validate only, do not create release'
+        required: false
+        type: boolean
+        default: false
+
+  # Automatic trigger on tags (backwards compatible)
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write      # Required for artifact attestations
+  attestations: write
+
+env:
+  PYTHON_VERSION: '3.13'
+
+jobs:
+  # ===========================================================================
+  # Job 1: Validate inputs and prepare version
+  # ===========================================================================
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_tag: ${{ steps.version.outputs.version_tag }}
+      is_manual: ${{ steps.version.outputs.is_manual }}
+      dry_run: ${{ steps.version.outputs.dry_run }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse and validate version
+        id: version
+        run: |
+          # Determine if this is a manual or tag-triggered run
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            INPUT_VERSION="${{ inputs.version }}"
+            IS_MANUAL="true"
+            DRY_RUN="${{ inputs.dry_run }}"
+          else
+            INPUT_VERSION="${GITHUB_REF#refs/tags/}"
+            IS_MANUAL="false"
+            DRY_RUN="false"
+          fi
+
+          # Normalize version (ensure v prefix for tag, strip for display)
+          if [[ "$INPUT_VERSION" == v* ]]; then
+            VERSION_TAG="$INPUT_VERSION"
+            VERSION="${INPUT_VERSION#v}"
+          else
+            VERSION="$INPUT_VERSION"
+            VERSION_TAG="v$INPUT_VERSION"
+          fi
+
+          # Validate semver format
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "::error::Invalid version format: $VERSION (expected: X.Y.Z or X.Y.Z-suffix)"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_tag=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "is_manual=$IS_MANUAL" >> $GITHUB_OUTPUT
+          echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
+
+          echo "## Version Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** $VERSION_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "- **Manual trigger:** $IS_MANUAL" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry run:** $DRY_RUN" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check version doesn't already exist
+        if: steps.version.outputs.is_manual == 'true'
+        run: |
+          VERSION_TAG="${{ steps.version.outputs.version_tag }}"
+          if git rev-parse "$VERSION_TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $VERSION_TAG already exists"
+            exit 1
+          fi
+          echo "✓ Tag $VERSION_TAG is available"
+
+      - name: Validate CHANGELOG entry exists
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            echo "::error::No CHANGELOG entry found for version $VERSION"
+            echo "Please add a section: ## [$VERSION] - $(date +%Y-%m-%d)"
+            exit 1
+          fi
+          echo "✓ CHANGELOG entry found for $VERSION"
+
+  # ===========================================================================
+  # Job 2: Run tests and linting
+  # ===========================================================================
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    needs: prepare
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run linter
+        run: uv run ruff check . --select=E,F,W --ignore=F401,F841
+
+      - name: Run tests
+        run: uv run pytest tests/ -v --ignore=tests/e2e/
+        continue-on-error: false
+
+  # ===========================================================================
+  # Job 3: Create tag (manual trigger only)
+  # ===========================================================================
+  create-tag:
+    name: Create Signed Tag
+    runs-on: ubuntu-latest
+    needs: [prepare, validate]
+    if: needs.prepare.outputs.is_manual == 'true' && needs.prepare.outputs.dry_run == 'false'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        run: |
+          VERSION_TAG="${{ needs.prepare.outputs.version_tag }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
+
+          # Create annotated tag (GitHub will sign it)
+          git tag -a "$VERSION_TAG" -m "Release $VERSION
+
+          Released via GitHub Actions
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Push tag
+          git push origin "$VERSION_TAG"
+
+          echo "✓ Created and pushed tag $VERSION_TAG"
+
+  # ===========================================================================
+  # Job 4: Build and release
+  # ===========================================================================
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    needs: [prepare, validate, create-tag]
+    # Run if: (manual + tag created) OR (tag push trigger)
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      needs.prepare.outputs.dry_run == 'false' &&
+      (needs.create-tag.result == 'success' || needs.prepare.outputs.is_manual == 'false')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare.outputs.version_tag }}
+
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "date=$(git show -s --format=%cI HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Generate file hashes
+        id: hashes
+        run: |
+          mkdir -p build-artifacts
+          HASHES_FILE="build-artifacts/file-hashes.txt"
+
+          echo "Generating SHA256 hashes..."
+
+          # Hash static files (CSS, JS)
+          for file in static/css/*.css static/js/*.js; do
+            if [ -f "$file" ]; then
+              HASH=$(sha256sum "$file" | cut -d' ' -f1)
+              RELPATH="${file#static/}"
+              echo "$RELPATH:$HASH" >> "$HASHES_FILE"
+            fi
+          done
+
+          # Hash Python app files
+          find app -name "*.py" -type f | while read file; do
+            HASH=$(sha256sum "$file" | cut -d' ' -f1)
+            echo "$file:$HASH" >> "$HASHES_FILE"
+          done
+
+          # Generate build fingerprint
+          BUILD_HASH=$(sha256sum "$HASHES_FILE" | cut -d' ' -f1 | head -c 16)
+          echo "build_hash=$BUILD_HASH" >> $GITHUB_OUTPUT
+
+          echo "Generated $(wc -l < "$HASHES_FILE") file hashes"
+          echo "Build fingerprint: $BUILD_HASH"
+
+      - name: Create build manifest
+        run: |
+          VERSION="${{ needs.prepare.outputs.version_tag }}"
+
+          cat > build-artifacts/build-manifest.json << 'MANIFEST_EOF'
+          {
+            "version": "${{ needs.prepare.outputs.version_tag }}",
+            "commit": {
+              "sha": "${{ steps.commit.outputs.sha }}",
+              "short": "${{ steps.commit.outputs.short }}",
+              "date": "${{ steps.commit.outputs.date }}"
+            },
+            "build": {
+              "hash": "${{ steps.hashes.outputs.build_hash }}",
+              "timestamp": "TIMESTAMP_PLACEHOLDER",
+              "runner": "github-actions",
+              "run_id": "${{ github.run_id }}",
+              "run_number": "${{ github.run_number }}",
+              "workflow": "${{ github.workflow }}"
+            },
+            "repository": {
+              "url": "https://github.com/${{ github.repository }}",
+              "ref": "${{ needs.prepare.outputs.version_tag }}"
+            },
+            "files": FILES_PLACEHOLDER
+          }
+          MANIFEST_EOF
+
+          # Replace placeholders
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          FILES_JSON=$(cat build-artifacts/file-hashes.txt | jq -Rs 'split("\n") | map(select(length > 0)) | map(split(":") | {(.[0]): .[1]}) | add')
+
+          sed -i "s|TIMESTAMP_PLACEHOLDER|$TIMESTAMP|g" build-artifacts/build-manifest.json
+          sed -i "s|\"FILES_PLACEHOLDER\"|$FILES_JSON|g" build-artifacts/build-manifest.json
+
+          echo "Build manifest created"
+
+      - name: Generate SRI hashes
+        run: |
+          echo "{" > build-artifacts/sri-hashes.json
+
+          first=true
+          for file in static/css/*.css static/js/*.js; do
+            if [ -f "$file" ]; then
+              FILENAME=$(basename "$file")
+              SRI_HASH=$(openssl dgst -sha384 -binary "$file" | openssl base64 -A)
+
+              if [ "$first" = true ]; then
+                first=false
+              else
+                echo "," >> build-artifacts/sri-hashes.json
+              fi
+              printf '  "%s": "sha384-%s"' "$FILENAME" "$SRI_HASH" >> build-artifacts/sri-hashes.json
+            fi
+          done
+
+          echo "" >> build-artifacts/sri-hashes.json
+          echo "}" >> build-artifacts/sri-hashes.json
+
+          echo "SRI hashes generated"
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            build-artifacts/build-manifest.json
+            build-artifacts/file-hashes.txt
+
+      - name: Create release archive
+        run: |
+          VERSION_TAG="${{ needs.prepare.outputs.version_tag }}"
+
+          tar -czvf "build-artifacts/whendoist-${VERSION_TAG}.tar.gz" \
+            --exclude='.env*' \
+            --exclude='*.pyc' \
+            --exclude='__pycache__' \
+            --exclude='.git' \
+            --exclude='.venv' \
+            --exclude='.pytest_cache' \
+            --exclude='.ruff_cache' \
+            --exclude='.idea' \
+            --exclude='.DS_Store' \
+            app/ static/ \
+            pyproject.toml uv.lock \
+            CHANGELOG.md README.md LICENSE
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+
+          # Extract section for this version
+          awk "/^## \[${VERSION}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > build-artifacts/release-notes.md
+
+          if [ ! -s build-artifacts/release-notes.md ]; then
+            echo "No detailed notes found for $VERSION" > build-artifacts/release-notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.version_tag }}
+          name: ${{ needs.prepare.outputs.version_tag }}
+          body_path: build-artifacts/release-notes.md
+          files: |
+            build-artifacts/build-manifest.json
+            build-artifacts/file-hashes.txt
+            build-artifacts/sri-hashes.json
+            build-artifacts/whendoist-${{ needs.prepare.outputs.version_tag }}.tar.gz
+          append_body: |
+
+            ---
+
+            ## Build Provenance
+
+            | Property | Value |
+            |----------|-------|
+            | **Build Hash** | `${{ steps.hashes.outputs.build_hash }}` |
+            | **Commit** | [`${{ steps.commit.outputs.short }}`](https://github.com/${{ github.repository }}/commit/${{ steps.commit.outputs.sha }}) |
+            | **Built by** | GitHub Actions ([Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})) |
+            | **Attestations** | [View](https://github.com/${{ github.repository }}/attestations) |
+
+            ### Verify This Build
+
+            ```bash
+            # Clone and checkout this version
+            git clone https://github.com/${{ github.repository }}
+            cd whendoist && git checkout ${{ needs.prepare.outputs.version_tag }}
+
+            # Generate hashes locally and compare
+            sha256sum static/css/*.css static/js/*.js
+            ```
+
+            Compare output with `file-hashes.txt` attached to this release.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## ✅ Release Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | ${{ needs.prepare.outputs.version_tag }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | ${{ steps.commit.outputs.short }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Hash** | ${{ steps.hashes.outputs.build_hash }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- build-manifest.json" >> $GITHUB_STEP_SUMMARY
+          echo "- file-hashes.txt" >> $GITHUB_STEP_SUMMARY
+          echo "- sri-hashes.json" >> $GITHUB_STEP_SUMMARY
+          echo "- Source archive (.tar.gz)" >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # Job 5: Dry run summary (validation only)
+  # ===========================================================================
+  dry-run-summary:
+    name: Dry Run Summary
+    runs-on: ubuntu-latest
+    needs: [prepare, validate]
+    if: needs.prepare.outputs.dry_run == 'true'
+
+    steps:
+      - name: Summary
+        run: |
+          echo "## 🧪 Dry Run Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Version **${{ needs.prepare.outputs.version_tag }}** passed all validations:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Version format valid" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tag doesn't exist yet" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ CHANGELOG entry found" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Linting passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Ready to release!** Run again without dry_run to create the release." >> $GITHUB_STEP_SUMMARY

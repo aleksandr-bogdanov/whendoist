@@ -380,6 +380,118 @@
     color: var(--danger);
 }
 
+.expand-status.preview {
+    color: var(--text);
+    padding: 0;
+    margin-top: 12px;
+}
+
+/* Import Preview */
+.import-preview {
+    background: rgba(15, 23, 42, 0.02);
+    border: 1px solid var(--border-hair);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.preview-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+}
+
+.preview-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.preview-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--light-bg);
+    border-radius: 6px;
+    min-width: 64px;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.preview-projects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.preview-project {
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    background: var(--light-bg);
+    border: 1px solid var(--border-hair);
+    border-radius: 4px;
+    color: var(--text-muted);
+}
+
+.preview-more {
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    color: var(--text-faint);
+}
+
+.preview-options {
+    margin-bottom: 10px;
+}
+
+.preview-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.preview-option input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+}
+
+.preview-note {
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    margin-bottom: 14px;
+    font-style: italic;
+}
+
+.preview-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.import-loading {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 12px;
+}
+
 .btn-text-danger {
     all: unset;
     box-sizing: border-box;
@@ -996,6 +1108,41 @@ input.add-domain-input::placeholder {
 }
 
 /* =============================================================================
+   Settings Footer
+   ============================================================================= */
+
+.settings-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0 6px;
+    padding: 20px 16px 8px;
+    margin-top: 12px;
+    font-size: 0.6875rem;
+    color: rgba(15, 23, 42, 0.45);
+    border-top: 1px solid var(--border-hair);
+}
+
+.footer-sep {
+    color: rgba(15, 23, 42, 0.2);
+}
+
+.footer-muted {
+    color: rgba(15, 23, 42, 0.35);
+}
+
+.footer-link {
+    color: rgba(15, 23, 42, 0.5);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.footer-link:hover {
+    color: var(--primary);
+}
+
+/* =============================================================================
    Mobile responsive
    ============================================================================= */
 
@@ -1277,66 +1424,6 @@ input.add-domain-input::placeholder {
                     </div>
                 </div>
 
-                <!-- TASK DISPLAY Panel -->
-                <div class="settings-panel">
-                    <div class="settings-panel__hd">
-                        <div class="panel-hd-left">
-                            <p class="panel-title">Completed Tasks</p>
-                            <p class="panel-desc">Control how completed tasks appear in the Task List.</p>
-                        </div>
-                    </div>
-                    <div class="settings-panel__bd">
-                        <!-- Show completed in task list -->
-                        <div class="settings-row">
-                            <span class="pref-label">Show in Task List</span>
-                            <div class="settings-row__right">
-                                <button
-                                    type="button"
-                                    class="toggle-switch{% if user_prefs.show_completed_in_list %} enabled{% endif %}"
-                                    onclick="togglePreference(this, 'show_completed_in_list')"
-                                    aria-label="Toggle show in list"
-                                ></button>
-                            </div>
-                        </div>
-
-                        <!-- Retention window -->
-                        <div class="settings-row">
-                            <span class="pref-label">Keep visible for</span>
-                            <div class="settings-row__right">
-                                <div class="segmented-control" data-pref="completed_retention_days">
-                                    <button type="button" class="segmented-btn{% if user_prefs.completed_retention_days == 1 %} active{% endif %}" data-value="1" onclick="setRetention(1)">1 day</button>
-                                    <button type="button" class="segmented-btn{% if user_prefs.completed_retention_days == 3 %} active{% endif %}" data-value="3" onclick="setRetention(3)">3 days</button>
-                                    <button type="button" class="segmented-btn{% if user_prefs.completed_retention_days == 7 %} active{% endif %}" data-value="7" onclick="setRetention(7)">7 days</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Move to bottom -->
-                        <div class="settings-row">
-                            <span class="pref-label">Position in Task List</span>
-                            <div class="settings-row__right">
-                                <div class="segmented-control" data-pref="completed_move_to_bottom">
-                                    <button type="button" class="segmented-btn{% if user_prefs.completed_move_to_bottom %} active{% endif %}" data-value="true" onclick="setPlacement(true)">Move to bottom</button>
-                                    <button type="button" class="segmented-btn{% if not user_prefs.completed_move_to_bottom %} active{% endif %}" data-value="false" onclick="setPlacement(false)">Keep in place</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Hide recurring after completion -->
-                        <div class="settings-row">
-                            <span class="pref-label">Hide recurring after completing today</span>
-                            <div class="settings-row__right">
-                                <button
-                                    type="button"
-                                    class="toggle-switch{% if user_prefs.hide_recurring_after_completion %} enabled{% endif %}"
-                                    onclick="togglePreference(this, 'hide_recurring_after_completion')"
-                                    aria-label="Toggle hide recurring"
-                                ></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- BACKUP Panel -->
                 <div class="settings-panel">
                     <div class="settings-panel__hd">
@@ -1377,6 +1464,45 @@ input.add-domain-input::placeholder {
                     </div>
                 </div>
 
+                <!-- SECURITY Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Security</p>
+                            <p class="panel-desc">End-to-end encryption protects your task data. Only you can read it.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd">
+                        <!-- Encryption status -->
+                        <div class="settings-row" id="encryption-row">
+                            <div class="backup-info">
+                                <span class="pref-label">End-to-End Encryption</span>
+                                <span class="pref-desc" id="encryption-status-text">
+                                    {% if user_prefs.encryption_enabled %}
+                                    Enabled - your data is encrypted
+                                    {% else %}
+                                    Disabled - data stored in plaintext
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="settings-row__right">
+                                {% if user_prefs.encryption_enabled %}
+                                <button type="button" class="btn-sm btn-sm--ghost" id="btn-encryption-toggle" onclick="disableEncryption()">
+                                    Disable
+                                </button>
+                                {% else %}
+                                <button type="button" class="btn-sm btn-sm--primary" id="btn-encryption-toggle" onclick="showEncryptionSetup()">
+                                    Enable
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div id="encryption-setup-wrap" class="expand-content" style="display: none; padding-top: 0;">
+                            <div id="encryption-setup-content"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- MAINTENANCE Panel -->
                 <div class="settings-panel">
                     <div class="settings-panel__hd">
@@ -1398,7 +1524,36 @@ input.add-domain-input::placeholder {
                     </div>
                 </div>
 
+
             </div>
+        </div>
+
+        <!-- Settings Footer - spans full width -->
+        <footer class="settings-footer">
+            <span id="build-version">Whendoist</span>
+            <span class="footer-sep">·</span>
+            <span id="build-commit" class="footer-muted"></span>
+            <span class="footer-sep">·</span>
+            <a href="#" onclick="showVerifyBuildModal(); return false;" class="footer-link">Build info</a>
+            <span class="footer-sep">·</span>
+            <a href="https://github.com/aleksandr-bogdanov/whendoist" target="_blank" class="footer-link">GitHub</a>
+            <span class="footer-sep">·</span>
+            <a href="https://github.com/aleksandr-bogdanov/whendoist/blob/main/LICENSE" target="_blank" class="footer-link">MIT License</a>
+            <span class="footer-sep">·</span>
+            <a href="https://github.com/aleksandr-bogdanov/whendoist#acknowledgments" target="_blank" class="footer-link">Credits</a>
+        </footer>
+    </div>
+</div>
+
+<!-- Build Verification Modal -->
+<div class="modal-overlay" id="verify-build-overlay" onclick="if(event.target === this) closeVerifyBuildModal()">
+    <div class="modal" style="width: 480px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+        <h3 class="modal__title" style="flex-shrink: 0;">Build Information</h3>
+        <div id="verify-build-content" style="font-size: 0.8125rem; overflow-y: auto; flex: 1; min-height: 0;">
+            <div class="verify-loading">Loading verification info...</div>
+        </div>
+        <div class="modal__actions" style="margin-top: 16px; flex-shrink: 0;">
+            <button type="button" class="btn-sm btn-sm--secondary" onclick="closeVerifyBuildModal()">Close</button>
         </div>
     </div>
 </div>
@@ -1632,21 +1787,117 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeDomainEdit();
 });
 
-// Todoist Import
+// Todoist Import - Preview-based flow
+let importPreviewData = null;
+
 async function importFromTodoist() {
     const btn = document.getElementById('btn-import-todoist');
     const status = document.getElementById('import-status');
 
     btn.disabled = true;
-    btn.textContent = 'Importing...';
-    status.textContent = 'Connecting to Todoist...';
+    btn.textContent = 'Loading preview...';
+    status.style.display = 'none';
+
+    try {
+        // First, fetch preview
+        const previewResponse = await fetch('/api/import/todoist/preview');
+        const preview = await previewResponse.json();
+
+        if (!previewResponse.ok) {
+            throw new Error(preview.detail || 'Failed to load preview');
+        }
+
+        importPreviewData = preview;
+
+        // Show preview dialog
+        showImportPreview(preview);
+    } catch (e) {
+        status.textContent = '❌ ' + (e.message || 'Failed to load preview');
+        status.style.display = 'block';
+        status.className = 'expand-status error';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Import from Todoist';
+    }
+}
+
+function showImportPreview(preview) {
+    const status = document.getElementById('import-status');
+
+    // Build preview HTML - show ALL projects
+    let projectsList = '';
+    if (preview.projects.length > 0) {
+        projectsList = preview.projects.map(p =>
+            `<span class="preview-project">${p.name} (${p.task_count})</span>`
+        ).join('');
+    }
+
+    const html = `
+        <div class="import-preview">
+            <div class="preview-header">Ready to Import</div>
+            <div class="preview-stats">
+                <div class="preview-stat">
+                    <span class="stat-value">${preview.projects_count}</span>
+                    <span class="stat-label">Projects</span>
+                </div>
+                <div class="preview-stat">
+                    <span class="stat-value">${preview.tasks_count}</span>
+                    <span class="stat-label">Tasks</span>
+                </div>
+                <div class="preview-stat">
+                    <span class="stat-value">${preview.subtasks_count}</span>
+                    <span class="stat-label">Subtasks</span>
+                </div>
+                <div class="preview-stat">
+                    <span class="stat-value">${preview.completed_count}</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+            </div>
+            ${projectsList ? `<div class="preview-projects">${projectsList}</div>` : ''}
+            <div class="preview-options">
+                <label class="preview-option">
+                    <input type="checkbox" id="import-completed" checked>
+                    <span>Import completed tasks (for analytics)</span>
+                </label>
+            </div>
+            <div class="preview-note">
+                Subtasks will be flattened to tasks using "Parent → Subtask" name pattern
+            </div>
+            <div class="preview-actions">
+                <button type="button" class="btn-sm btn-sm--ghost" onclick="cancelImportPreview()">Cancel</button>
+                <button type="button" class="btn-sm btn-sm--primary" onclick="executeImport()">Import Now</button>
+            </div>
+        </div>
+    `;
+
+    status.innerHTML = html;
     status.style.display = 'block';
-    status.className = 'expand-status';
+    status.className = 'expand-status preview';
+}
+
+function cancelImportPreview() {
+    const status = document.getElementById('import-status');
+    status.style.display = 'none';
+    importPreviewData = null;
+}
+
+async function executeImport() {
+    const btn = document.getElementById('btn-import-todoist');
+    const status = document.getElementById('import-status');
+    const includeCompleted = document.getElementById('import-completed')?.checked ?? true;
+
+    // Show loading state
+    status.innerHTML = '<div class="import-loading">Importing...</div>';
+    btn.disabled = true;
 
     try {
         const response = await fetch('/api/import/todoist', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                include_completed: includeCompleted,
+                skip_existing: true
+            })
         });
 
         const data = await response.json();
@@ -1683,15 +1934,15 @@ async function importFromTodoist() {
             status.className = 'expand-status success';
         } else {
             const errorMsg = data.errors?.join(', ') || data.detail || 'Import failed';
-            status.textContent = errorMsg;
+            status.textContent = '❌ ' + errorMsg;
             status.className = 'expand-status error';
         }
     } catch (e) {
-        status.textContent = 'Failed to connect to server';
+        status.textContent = '❌ Failed to connect to server';
         status.className = 'expand-status error';
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Import from Todoist';
+        importPreviewData = null;
     }
 }
 
@@ -1939,28 +2190,462 @@ async function updatePreference(key, value) {
     }
 }
 
-function togglePreference(toggle, key) {
-    const isEnabled = toggle.classList.contains('enabled');
-    const newValue = !isEnabled;
+// ============================================================================
+// E2E Encryption
+// ============================================================================
 
-    toggle.classList.toggle('enabled');
-    updatePreference(key, newValue);
+const ENCRYPTION_TEST_VALUE = 'WHENDOIST_ENCRYPTION_TEST';
+
+function showEncryptionSetup() {
+    const wrap = document.getElementById('encryption-setup-wrap');
+    const content = document.getElementById('encryption-setup-content');
+
+    content.innerHTML = `
+        <div class="expand-label">Set Up Encryption</div>
+        <p class="expand-desc">
+            Create a passphrase to encrypt your data. This passphrase is never sent to the server.
+            <strong>Warning:</strong> If you forget your passphrase, your data cannot be recovered.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <input type="password" id="encryption-passphrase" class="add-domain-input" placeholder="Enter passphrase (8+ characters)" style="width: 100%;">
+            <input type="password" id="encryption-passphrase-confirm" class="add-domain-input" placeholder="Confirm passphrase" style="width: 100%;">
+        </div>
+        <div class="expand-actions">
+            <div class="expand-actions__left">
+                <button type="button" class="btn-sm btn-sm--primary" onclick="setupEncryption()">Enable Encryption</button>
+                <button type="button" class="btn-sm btn-sm--ghost" onclick="hideEncryptionSetup()">Cancel</button>
+            </div>
+        </div>
+        <div id="encryption-setup-status" class="expand-status" style="display: none;"></div>
+    `;
+
+    wrap.style.display = 'block';
+    document.getElementById('encryption-passphrase').focus();
 }
 
-function setRetention(days) {
-    const control = document.querySelector('[data-pref="completed_retention_days"]');
-    control.querySelectorAll('.segmented-btn').forEach(btn => {
-        btn.classList.toggle('active', parseInt(btn.dataset.value) === days);
-    });
-    updatePreference('completed_retention_days', days);
+function hideEncryptionSetup() {
+    const wrap = document.getElementById('encryption-setup-wrap');
+    wrap.style.display = 'none';
 }
 
-function setPlacement(moveToBottom) {
-    const control = document.querySelector('[data-pref="completed_move_to_bottom"]');
-    control.querySelectorAll('.segmented-btn').forEach(btn => {
-        btn.classList.toggle('active', (btn.dataset.value === 'true') === moveToBottom);
-    });
-    updatePreference('completed_move_to_bottom', moveToBottom);
+async function setupEncryption() {
+    const passphrase = document.getElementById('encryption-passphrase').value;
+    const confirm = document.getElementById('encryption-passphrase-confirm').value;
+    const status = document.getElementById('encryption-setup-status');
+
+    // Validate
+    if (passphrase.length < 8) {
+        status.textContent = 'Passphrase must be at least 8 characters';
+        status.className = 'expand-status error';
+        status.style.display = 'block';
+        return;
+    }
+
+    if (passphrase !== confirm) {
+        status.textContent = 'Passphrases do not match';
+        status.className = 'expand-status error';
+        status.style.display = 'block';
+        return;
+    }
+
+    status.textContent = 'Setting up encryption...';
+    status.className = 'expand-status';
+    status.style.display = 'block';
+
+    try {
+        // Check if Crypto is available
+        if (typeof Crypto === 'undefined') {
+            throw new Error('Encryption library not loaded. Please refresh the page.');
+        }
+
+        // Generate salt and derive key
+        const { key, salt } = await Crypto.setupEncryption(passphrase);
+
+        // Encrypt test value
+        const testValue = await Crypto.encrypt(key, ENCRYPTION_TEST_VALUE);
+
+        // Send to server
+        const response = await fetch('/api/preferences/encryption/setup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                salt: salt,
+                test_value: testValue
+            })
+        });
+
+        if (response.ok) {
+            status.textContent = 'Encryption enabled! Refreshing page...';
+            status.className = 'expand-status success';
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            const data = await response.json();
+            throw new Error(data.detail || 'Failed to enable encryption');
+        }
+    } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+        status.className = 'expand-status error';
+    }
 }
+
+async function disableEncryption() {
+    const confirmText = prompt(
+        'Disabling encryption will NOT decrypt your existing data.\n' +
+        'Encrypted data will remain unreadable.\n\n' +
+        'To safely disable encryption:\n' +
+        '1. Export a backup (while encryption key is active)\n' +
+        '2. Disable encryption\n' +
+        '3. Import the backup\n\n' +
+        'Type "DISABLE" to confirm:'
+    );
+
+    if (confirmText !== 'DISABLE') {
+        if (confirmText !== null) {
+            alert('Confirmation text did not match. Operation cancelled.');
+        }
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/preferences/encryption/disable', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            // Clear stored key
+            if (typeof Crypto !== 'undefined') {
+                Crypto.clearStoredKey();
+            }
+            alert('Encryption disabled.');
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            throw new Error(data.detail || 'Failed to disable encryption');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+// ============================================================================
+// Build Provenance
+// ============================================================================
+
+let buildInfo = null;
+let verificationInfo = null;
+
+// Load build info on page load
+async function loadBuildInfo() {
+    try {
+        const response = await fetch('/api/build/info');
+        if (response.ok) {
+            buildInfo = await response.json();
+            updateBuildDisplay();
+        }
+    } catch (e) {
+        console.error('Failed to load build info:', e);
+    }
+}
+
+function updateBuildDisplay() {
+    if (!buildInfo) return;
+
+    const versionEl = document.getElementById('build-version');
+    const commitEl = document.getElementById('build-commit');
+
+    if (versionEl) {
+        versionEl.textContent = `Whendoist ${buildInfo.version}`;
+    }
+
+    if (commitEl) {
+        const commit = buildInfo.commit || {};
+        commitEl.textContent = commit.short ? `${commit.short}` : '';
+    }
+}
+
+function showVerifyBuildModal() {
+    document.getElementById('verify-build-overlay').classList.add('open');
+    loadVerificationInfo();
+}
+
+function closeVerifyBuildModal() {
+    document.getElementById('verify-build-overlay').classList.remove('open');
+}
+
+async function loadVerificationInfo() {
+    const content = document.getElementById('verify-build-content');
+
+    try {
+        const response = await fetch('/api/build/verify');
+        if (!response.ok) throw new Error('Failed to load');
+
+        verificationInfo = await response.json();
+        renderVerificationModal();
+    } catch (e) {
+        content.innerHTML = `
+            <div style="color: var(--danger);">
+                Failed to load verification info: ${e.message}
+            </div>
+        `;
+    }
+}
+
+async function verifyBuildHashes() {
+    const statusEl = document.getElementById('verify-status');
+    const btnEl = document.getElementById('btn-verify-build');
+
+    if (!verificationInfo || !verificationInfo.hashes) {
+        statusEl.innerHTML = '<span style="color: var(--danger);">No hashes available to verify</span>';
+        statusEl.style.display = 'block';
+        return;
+    }
+
+    btnEl.disabled = true;
+    btnEl.textContent = 'Verifying...';
+    statusEl.innerHTML = '<span style="color: var(--text-muted);">Computing hashes...</span>';
+    statusEl.style.display = 'block';
+
+    const expectedHashes = verificationInfo.hashes;
+    // All CSS and JS files for comprehensive verification
+    const keyFiles = [
+        'css/app.css',
+        'css/dashboard.css',
+        'css/dialog.css',
+        'js/crypto.js',
+        'js/drag-drop.js',
+        'js/energy-selector.js',
+        'js/plan-tasks.js',
+        'js/recurrence-picker.js',
+        'js/task-complete.js',
+        'js/task-dialog.js',
+        'js/task-list-options.js',
+        'js/task-sheet.js',
+        'js/task-sort.js',
+        'js/toast.js'
+    ];
+    const results = [];
+    let allPassed = true;
+
+    for (const file of keyFiles) {
+        if (!expectedHashes[file]) continue;
+
+        try {
+            // Fetch the file
+            const response = await fetch(`/static/${file}`, { cache: 'no-store' });
+            const text = await response.text();
+
+            // Compute SHA256 hash
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            const expected = expectedHashes[file];
+            const passed = computedHash === expected;
+
+            if (!passed) allPassed = false;
+
+            results.push({
+                file,
+                passed,
+                computed: computedHash,
+                expected: expected,
+                error: null
+            });
+        } catch (e) {
+            allPassed = false;
+            results.push({ file, passed: false, computed: null, expected: expectedHashes[file], error: e.message });
+        }
+    }
+
+    // Render results - show full hash comparison for mismatches
+    const resultsHtml = results.map(r => {
+        const icon = r.passed ? '✓' : '✗';
+        const color = r.passed ? '#16a34a' : 'var(--danger)';
+
+        if (r.error) {
+            return `<div style="margin-bottom: 8px; padding: 8px; background: rgba(220, 38, 38, 0.04); border-radius: 4px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="color: ${color}; font-weight: 600;">${icon}</span>
+                    <span style="flex: 1; font-weight: 500;">${r.file}</span>
+                    <span style="font-size: 0.65rem; color: var(--danger);">error</span>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--danger); margin-top: 4px; margin-left: 18px;">
+                    ${r.error}
+                </div>
+            </div>`;
+        }
+
+        if (r.passed) {
+            return `<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding: 4px 0;">
+                <span style="color: ${color}; font-weight: 600;">${icon}</span>
+                <span style="flex: 1;">${r.file}</span>
+                <span style="font-size: 0.65rem; color: var(--text-muted);">match</span>
+            </div>`;
+        }
+
+        // Mismatch - show full details
+        return `<div style="margin-bottom: 8px; padding: 8px; background: rgba(220, 38, 38, 0.04); border-radius: 4px;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                <span style="color: ${color}; font-weight: 600;">${icon}</span>
+                <span style="flex: 1; font-weight: 500;">${r.file}</span>
+                <span style="font-size: 0.65rem; color: var(--danger);">mismatch</span>
+            </div>
+            <div style="font-size: 0.62rem; font-family: monospace; margin-left: 18px;">
+                <div style="color: var(--text-muted); margin-bottom: 2px;">
+                    <span style="display: inline-block; width: 60px;">Expected:</span>
+                    <code style="background: var(--grey-bg); padding: 1px 4px; border-radius: 2px; word-break: break-all;">${r.expected}</code>
+                </div>
+                <div style="color: var(--danger);">
+                    <span style="display: inline-block; width: 60px;">Got:</span>
+                    <code style="background: rgba(220, 38, 38, 0.08); padding: 1px 4px; border-radius: 2px; word-break: break-all;">${r.computed}</code>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const matchCount = results.filter(r => r.passed).length;
+    const mismatchCount = results.filter(r => !r.passed).length;
+    const summaryColor = allPassed ? '#16a34a' : 'var(--danger)';
+    const summaryText = allPassed
+        ? `All ${matchCount} files verified ✓`
+        : `${mismatchCount} file${mismatchCount === 1 ? '' : 's'} modified (${matchCount} matched)`;
+
+    const explanation = allPassed
+        ? 'The served files match the expected hashes from the build manifest.'
+        : 'Some files differ from the build manifest. This may be expected in development, or could indicate tampering in production.';
+
+    statusEl.innerHTML = `
+        <div style="margin-bottom: 10px; padding: 10px; background: ${allPassed ? 'rgba(22, 163, 74, 0.08)' : 'rgba(220, 38, 38, 0.08)'}; border-radius: 6px;">
+            <div style="text-align: center; margin-bottom: 4px;">
+                <span style="color: ${summaryColor}; font-weight: 600;">${summaryText}</span>
+            </div>
+            <div style="text-align: center; font-size: 0.68rem; color: var(--text-muted);">
+                ${explanation}
+            </div>
+        </div>
+        <div style="font-size: 0.72rem;">${resultsHtml}</div>
+    `;
+
+    btnEl.disabled = false;
+    btnEl.textContent = 'Verify Again';
+}
+
+function renderVerificationModal() {
+    const content = document.getElementById('verify-build-content');
+    const info = verificationInfo;
+
+    if (!info) return;
+
+    const commit = info.commit || {};
+    const build = info.build || {};
+    const verification = info.verification || {};
+
+    content.innerHTML = `
+        <div style="margin-bottom: 16px;">
+            <div style="color: var(--text-muted); font-size: 0.75rem;">
+                Running from commit <code style="background: var(--grey-bg); padding: 1px 4px; border-radius: 3px;">${commit.short || 'unknown'}</code>
+                ${commit.date ? ` (${new Date(commit.date).toLocaleDateString()})` : ''}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+            <div style="background: var(--grey-bg); padding: 10px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 0.9rem; font-weight: 600; color: var(--text);">${info.version || 'unknown'}</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Version</div>
+            </div>
+            <div style="background: var(--grey-bg); padding: 10px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 0.9rem; font-weight: 600; color: var(--text); font-family: monospace;">${build.hash || 'n/a'}</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Build Hash</div>
+            </div>
+        </div>
+
+        <!-- Verify Build Section -->
+        <div style="border-top: 1px solid var(--border-hair); padding-top: 12px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">
+                    Verify Build Integrity
+                </div>
+                <button type="button" class="btn-sm btn-sm--primary" id="btn-verify-build" onclick="verifyBuildHashes()">
+                    Verify Build
+                </button>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 8px;">
+                Computes SHA256 hashes of served files (CSS/JS) and compares against the build manifest.
+                <br>The manifest contains hashes generated when the build was created.
+            </div>
+            <div id="verify-status" style="display: none;"></div>
+        </div>
+
+        <!-- Manual Verification Section -->
+        <div style="border-top: 1px solid var(--border-hair); padding-top: 12px; margin-top: 12px;">
+            <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+                Manual Verification
+            </div>
+            <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 8px;">
+                To independently verify the build, clone the repo and compare SHA256 hashes:
+            </div>
+            <div style="background: var(--grey-bg); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.68rem; white-space: pre-wrap; overflow-x: auto; position: relative;">
+<code style="display: block; line-height: 1.6;"># 1. Clone and checkout this version
+git clone https://github.com/aleksandr-bogdanov/whendoist
+cd whendoist && git checkout ${info.version || 'master'}
+
+# 2. Generate SHA256 hashes locally
+sha256sum static/css/*.css static/js/*.js</code>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 10px; margin-bottom: 6px;">
+                Expected hashes from build manifest (first 3 key files):
+            </div>
+            ${info.hashes ? `
+            <div style="background: var(--grey-bg); border-radius: 6px; padding: 8px 10px; font-family: monospace; font-size: 0.62rem; overflow-x: auto;">
+                ${['css/app.css', 'js/crypto.js', 'js/toast.js'].map(f => info.hashes[f] ?
+                    `<div style="margin-bottom: 3px; display: flex; gap: 8px;">
+                        <span style="color: var(--text-muted); flex-shrink: 0;">${f}:</span>
+                        <code style="word-break: break-all; color: var(--text);">${info.hashes[f]}</code>
+                    </div>` : '').join('')}
+                <div style="color: var(--text-faint); font-size: 0.6rem; margin-top: 4px;">
+                    + ${Object.keys(info.hashes).length - 3} more files... (click "Verify Build" to see all)
+                </div>
+            </div>
+            ` : '<div style="color: var(--text-muted); font-size: 0.68rem;">No hashes available in manifest</div>'}
+        </div>
+
+        <!-- Links Section -->
+        <div style="border-top: 1px solid var(--border-hair); padding-top: 12px; margin-top: 12px;">
+            <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+                External Links
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <a href="${verification.github_release || '#'}" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    GitHub Release
+                </a>
+                <a href="${verification.source_code || '#'}" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 18 22 12 16 6"/>
+                        <polyline points="8 6 2 12 8 18"/>
+                    </svg>
+                    View Source Code
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+// Load build info when page loads
+document.addEventListener('DOMContentLoaded', loadBuildInfo);
+
+// Escape key to close verify modal
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeVerifyBuildModal();
+    }
+});
 </script>
 {% endblock %}

@@ -170,13 +170,15 @@ body.modal-open {
 }
 
 .capture-desc {
-    min-height: 96px;
-    resize: vertical;
-    font-size: 0.95rem;
+    min-height: 44px;  /* Single line by default, grows on content */
+    max-height: 200px;
+    resize: none;
+    font-size: 0.9rem;
     font-weight: 500;
     line-height: 1.5;
-    padding-left: 15px;
-    padding-right: 15px;
+    padding: 12px 15px;
+    overflow-y: auto;
+    field-sizing: content;  /* Grows with content (modern browsers) */
 }
 
 /* =============================================================================
@@ -190,9 +192,16 @@ body.modal-open {
 }
 
 .form-field {
-    padding: 12px 18px;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
     overflow: visible;
+}
+
+/* Override Pico CSS margins on form elements inside fields */
+.form-field input,
+.form-field select,
+.form-field .time-picker-wrapper {
+    margin: 0;
 }
 
 .form-field:last-child {
@@ -248,10 +257,10 @@ body.modal-open {
 
 .detail-row {
     display: grid;
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 72px 1fr;
     align-items: center;
-    gap: 12px;
-    padding: 9px 14px;
+    gap: 10px;
+    padding: 7px 14px;
     border-bottom: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
 }
 
@@ -290,7 +299,7 @@ body.modal-open {
 }
 
 .duration-seg .seg-btn {
-    height: 32px;
+    height: 28px;
 }
 
 /* Fixed-width minutes input wrapper */
@@ -300,9 +309,9 @@ body.modal-open {
 }
 
 .input.duration-min {
-    width: 96px;
-    height: 36px;
-    padding-right: 38px;
+    width: 80px;
+    height: 32px;
+    padding-right: 32px;
     text-align: right;
     font-variant-numeric: tabular-nums;
     font-weight: 500;
@@ -327,8 +336,8 @@ body.modal-open {
 .segmented {
     background: var(--light-bg, #fff);
     border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
-    border-radius: 8px;
-    height: 36px;
+    border-radius: 6px;
+    height: 32px;
     padding: 2px;
     display: inline-flex;
     align-items: center;
@@ -341,12 +350,12 @@ body.modal-open {
 .seg-btn {
     all: unset;
     box-sizing: border-box;
-    height: 32px;
-    padding: 0 10px;
-    border-radius: 6px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 5px;
     border: 0;
     background: transparent;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 650;
     line-height: 1;
     color: var(--text-muted, rgba(15, 23, 42, 0.64));
@@ -391,12 +400,12 @@ body.modal-open {
    ============================================================================= */
 
 .input {
-    height: 40px;
-    border-radius: 8px;
+    height: 36px;
+    border-radius: 6px;
     border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
-    padding: 0 12px;
+    padding: 0 10px;
     background: #fff;
-    font-size: 0.8125rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: var(--text, #0B1220);
     box-sizing: border-box;
@@ -507,6 +516,18 @@ body.modal-open {
     background: #0B1220;
 }
 
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
+    color: var(--text-muted, rgba(15, 23, 42, 0.64));
+}
+
+.btn-secondary:hover {
+    background: rgba(15, 23, 42, 0.04);
+    border-color: var(--border-strong, rgba(15, 23, 42, 0.12));
+    color: var(--text, #0B1220);
+}
+
 .btn-danger {
     background: rgba(220, 38, 38, 0.08);
     border: 1px solid rgba(220, 38, 38, 0.2);
@@ -579,7 +600,7 @@ body.modal-open {
    ============================================================================= */
 
 .subrow {
-    padding: 12px 14px;
+    padding: 10px 14px;
     background: rgba(15, 23, 42, 0.02);
     border-top: 1px solid var(--border-hair, rgba(15, 23, 42, 0.055));
 }
@@ -589,16 +610,15 @@ body.modal-open {
 }
 
 .subrow-grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 12px;
-    row-gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     align-items: center;
 }
 
 .subrow-label {
     font-size: 0.68rem;
-    line-height: 36px;
+    line-height: 32px;
     color: var(--text-muted, rgba(15, 23, 42, 0.64));
 }
 
@@ -616,10 +636,10 @@ body.modal-open {
 
 .subrow .field-controls input,
 .subrow .field-controls select {
-    height: 36px !important;
-    padding: 0 12px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
     margin: 0 !important;
-    font-size: 0.8125rem !important;
+    font-size: 0.75rem !important;
     flex: 0 0 auto !important;
     width: auto !important;
     border: 1px solid var(--border, rgba(15, 23, 42, 0.085)) !important;
@@ -627,34 +647,34 @@ body.modal-open {
 }
 
 .subrow .field-controls input {
-    width: 48px !important;
-    border-radius: 8px 0 0 8px !important;
+    width: 44px !important;
+    border-radius: 6px 0 0 6px !important;
     border-right: none !important;
     text-align: center !important;
 }
 
 .subrow .field-controls select {
-    min-width: 100px;
-    padding-right: 32px !important;
-    border-radius: 0 8px 8px 0 !important;
+    min-width: 90px;
+    padding-right: 28px !important;
+    border-radius: 0 6px 6px 0 !important;
 }
 
 .days-row {
     display: flex;
-    gap: 6px;
-    height: 36px;
+    gap: 4px;
+    height: 28px;
     align-items: center;
 }
 
 .day-btn {
     all: unset;
     box-sizing: border-box;
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
     border: 1px solid var(--border, rgba(15, 23, 42, 0.085));
     background: #fff;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 650;
     line-height: 1;
     color: var(--text-muted, rgba(15, 23, 42, 0.64));
@@ -895,6 +915,7 @@ body.modal-open {
 
 .time-picker-wrapper {
     position: relative;
+    margin: 0;  /* Override Pico CSS default margin */
 }
 
 .time-picker-dropdown {

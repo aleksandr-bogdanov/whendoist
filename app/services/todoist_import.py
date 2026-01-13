@@ -300,6 +300,7 @@ class TodoistImportService:
                 position=task.order,
                 external_id=task.id,
                 external_source="todoist",
+                external_created_at=task.created_at,
             )
             self.db.add(new_task)
             await self.db.flush()
@@ -578,11 +579,17 @@ class TodoistImportService:
                 project_id = str(project_id)
             domain_id = domain_map.get(project_id) if project_id else None
 
-            # Parse completed_at
+            # Parse completed_at and created_at
             completed_at = None
             completed_at_str = item.get("completed_at")
             if completed_at_str:
                 completed_at = datetime.fromisoformat(completed_at_str.replace("Z", "+00:00"))
+
+            # Parse created_at for task age analytics
+            external_created_at = None
+            created_at_str = item.get("added_at") or item.get("created_at")
+            if created_at_str:
+                external_created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
 
             new_task = Task(
                 user_id=self.user_id,
@@ -594,6 +601,7 @@ class TodoistImportService:
                 clarity=clarity or "defined",
                 external_id=task_id,
                 external_source="todoist",
+                external_created_at=external_created_at,
             )
             self.db.add(new_task)
             result.tasks_completed += 1

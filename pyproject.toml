@@ -48,3 +48,9 @@ line-length = 120
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "playwright>=1.57.0",
+    "pytest-playwright>=0.7.2",
+]

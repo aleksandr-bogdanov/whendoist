@@ -64,6 +64,197 @@
     let trashBin = null;
 
     // ==========================================================================
+    // ANIMATED REORDERING
+    // ==========================================================================
+
+    /**
+     * Move a task to its sorted position in the scheduled section.
+     * Scheduled tasks are sorted by date (soonest first).
+     * Uses FLIP animation for smooth transition.
+     * @param {HTMLElement} taskEl - The task element to move
+     */
+    function moveTaskToScheduledSection(taskEl) {
+        if (!taskEl) return;
+        const taskList = taskEl.closest('.task-list');
+        if (!taskList) return;
+
+        // Get current position
+        const firstRect = taskEl.getBoundingClientRect();
+
+        // Get this task's scheduled date for sorting
+        const taskDate = taskEl.dataset.scheduledDate || '9999-12-31';
+
+        // Find the correct insertion point within the scheduled section
+        // Order: unscheduled pending → scheduled pending (by date) → completed → add-task-row
+        const tasks = Array.from(taskList.querySelectorAll('.task-item'));
+        const addTaskRow = taskList.querySelector('.add-task-row');
+        let insertBefore = null;
+        let foundScheduledSection = false;
+
+        for (const t of tasks) {
+            if (t === taskEl) continue;
+
+            const isCompleted = t.classList.contains('completed') ||
+                               t.dataset.completed === '1';
+            const isScheduled = t.dataset.scheduledDate && t.dataset.scheduledDate !== '';
+
+            // Skip unscheduled tasks - we need to go past them
+            if (!isScheduled && !isCompleted) continue;
+
+            // Found a completed task - insert before it (scheduled goes before completed)
+            if (isCompleted) {
+                insertBefore = t;
+                break;
+            }
+
+            // Found a scheduled task - compare dates
+            foundScheduledSection = true;
+            const otherDate = t.dataset.scheduledDate || '9999-12-31';
+
+            // Insert before the first scheduled task with a later date
+            if (taskDate < otherDate) {
+                insertBefore = t;
+                break;
+            }
+        }
+
+        // Insert at correct position
+        if (insertBefore) {
+            taskList.insertBefore(taskEl, insertBefore);
+        } else if (addTaskRow) {
+            taskList.insertBefore(taskEl, addTaskRow);
+        } else {
+            taskList.appendChild(taskEl);
+        }
+
+        // Get new position and animate
+        const lastRect = taskEl.getBoundingClientRect();
+        const deltaY = firstRect.top - lastRect.top;
+
+        if (Math.abs(deltaY) > 5) {
+            taskEl.style.transition = 'none';
+            taskEl.style.transform = `translateY(${deltaY}px)`;
+            taskEl.offsetHeight; // Force reflow
+            taskEl.style.transition = 'transform 0.25s ease-out';
+            taskEl.style.transform = '';
+            taskEl.addEventListener('transitionend', () => {
+                taskEl.style.transition = '';
+            }, { once: true });
+        }
+    }
+
+    /**
+     * Move a task back to its sorted position (unscheduled section).
+     * Uses impact as sort key.
+     * @param {HTMLElement} taskEl - The task element to move
+     */
+    function moveTaskToUnscheduledSection(taskEl) {
+        if (!taskEl) return;
+        const taskList = taskEl.closest('.task-list');
+        if (!taskList) return;
+
+        // Get current position
+        const firstRect = taskEl.getBoundingClientRect();
+
+        // Get this task's impact for sorting
+        const taskImpact = parseInt(taskEl.dataset.impact || '4', 10);
+
+        // Find insertion point: among non-scheduled, non-completed tasks, sorted by impact
+        const tasks = Array.from(taskList.querySelectorAll('.task-item'));
+        let insertBefore = null;
+
+        for (const t of tasks) {
+            if (t === taskEl) continue;
+            // Skip scheduled and completed tasks
+            if (t.classList.contains('scheduled') ||
+                t.classList.contains('completed') ||
+                t.dataset.completed === '1') {
+                // Insert before first scheduled/completed
+                insertBefore = t;
+                break;
+            }
+            // Insert based on impact (lower number = higher priority)
+            const otherImpact = parseInt(t.dataset.impact || '4', 10);
+            if (taskImpact < otherImpact) {
+                insertBefore = t;
+                break;
+            }
+        }
+
+        // Insert at correct position
+        if (insertBefore) {
+            taskList.insertBefore(taskEl, insertBefore);
+        } else {
+            // If nothing found, put at end of unscheduled section
+            const firstScheduled = taskList.querySelector('.task-item.scheduled');
+            if (firstScheduled) {
+                taskList.insertBefore(taskEl, firstScheduled);
+            } else {
+                taskList.appendChild(taskEl);
+            }
+        }
+
+        // Get new position and animate
+        const lastRect = taskEl.getBoundingClientRect();
+        const deltaY = firstRect.top - lastRect.top;
+
+        if (Math.abs(deltaY) > 5) {
+            taskEl.style.transition = 'none';
+            taskEl.style.transform = `translateY(${deltaY}px)`;
+            taskEl.offsetHeight; // Force reflow
+            taskEl.style.transition = 'transform 0.25s ease-out';
+            taskEl.style.transform = '';
+            taskEl.addEventListener('transitionend', () => {
+                taskEl.style.transition = '';
+            }, { once: true });
+        }
+    }
+
+    /**
+     * Update task item's scheduled date display.
+     * @param {HTMLElement} taskEl - The task element
+     * @param {string|null} dateStr - ISO date string (YYYY-MM-DD) or null to remove
+     */
+    function updateTaskScheduledDate(taskEl, dateStr) {
+        if (!taskEl) return;
+
+        // Update data attribute
+        taskEl.dataset.scheduledDate = dateStr || '';
+
+        const taskContent = taskEl.querySelector('.task-content');
+        if (!taskContent) return;
+
+        let taskDue = taskContent.querySelector('.task-due');
+
+        if (dateStr) {
+            // Format date as "Jan 06" (with leading zero to match backend)
+            const date = new Date(dateStr + 'T00:00:00');
+            const formatted = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+
+            if (taskDue) {
+                // Update existing element (preserve recurring icon if present)
+                const recurringIcon = taskDue.querySelector('.recurring-icon');
+                taskDue.textContent = formatted;
+                if (recurringIcon) {
+                    taskDue.prepend(recurringIcon);
+                }
+            } else {
+                // Create new element
+                taskDue = document.createElement('span');
+                taskDue.className = 'task-due';
+                taskDue.textContent = formatted;
+                taskContent.appendChild(taskDue);
+            }
+        } else {
+            // Remove date display (but keep if task is recurring)
+            const isRecurring = taskEl.dataset.isRecurring === 'true';
+            if (taskDue && !isRecurring) {
+                taskDue.remove();
+            }
+        }
+    }
+
+    // ==========================================================================
     // INITIALIZATION
     // ==========================================================================
 
@@ -453,8 +644,10 @@
                     // Check if task exists in task list
                     const taskInList = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
                     if (taskInList) {
-                        // Just remove the scheduled styling
+                        // Remove scheduled styling, date, and animate back to position
                         taskInList.classList.remove('scheduled');
+                        updateTaskScheduledDate(taskInList, null);
+                        moveTaskToUnscheduledSection(taskInList);
                     } else {
                         // Task doesn't exist in task list (was DB-scheduled), need to reload
                         window.location.reload();
@@ -574,14 +767,28 @@
             }
         }
 
+        // For recurring tasks, only use instance ID if the target day matches the instance date
+        // Otherwise, clear the instance ID to prevent using the wrong instance
+        let effectiveInstanceId = instanceId;
+        let effectiveInstanceDate = instanceDate;
+        if (instanceId && instanceDate && instanceDate !== day) {
+            // Dropping on a different day than the instance - clear instance to use task toggle
+            effectiveInstanceId = '';
+            effectiveInstanceDate = '';
+        }
+
         // Create and place scheduled task immediately for visual feedback
-        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, impact, completed, instanceId, instanceDate);
+        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, impact, completed, effectiveInstanceId, effectiveInstanceDate);
         slot.appendChild(element);
         wasDroppedSuccessfully = true; // Mark successful drop
 
-        // Mark original task in task list
+        // Mark original task in task list, show date, and animate to scheduled section
         const original = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-        if (original) original.classList.add('scheduled');
+        if (original) {
+            original.classList.add('scheduled');
+            updateTaskScheduledDate(original, day);
+            moveTaskToScheduledSection(original);
+        }
 
         recalculateOverlaps(dayCalendar);
 
@@ -606,14 +813,20 @@
                 log.error(`Failed to schedule task ${taskId}`);
                 // Remove the optimistic element on failure
                 element.remove();
-                if (original) original.classList.remove('scheduled');
+                if (original) {
+                    original.classList.remove('scheduled');
+                    moveTaskToUnscheduledSection(original);
+                }
                 recalculateOverlaps(dayCalendar);
                 alert('Failed to schedule task. Please try again.');
             }
         } catch (error) {
             log.error(`Failed to schedule task ${taskId}:`, error);
             element.remove();
-            if (original) original.classList.remove('scheduled');
+            if (original) {
+                original.classList.remove('scheduled');
+                moveTaskToUnscheduledSection(original);
+            }
             recalculateOverlaps(dayCalendar);
             alert('Failed to schedule task. Please try again.');
         }
@@ -864,9 +1077,13 @@
         const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed);
         tasksContainer.appendChild(el);
 
-        // Mark original task in task list as scheduled
+        // Mark original task in task list, show date, and animate to scheduled section
         const original = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-        if (original) original.classList.add('scheduled');
+        if (original) {
+            original.classList.add('scheduled');
+            updateTaskScheduledDate(original, day);
+            moveTaskToScheduledSection(original);
+        }
 
         // Save to API - scheduled_date only, no scheduled_time
         try {
@@ -884,12 +1101,18 @@
             } else {
                 log.error(`Failed to schedule task ${taskId} to Anytime`);
                 el.remove();
-                if (original) original.classList.remove('scheduled');
+                if (original) {
+                    original.classList.remove('scheduled');
+                    moveTaskToUnscheduledSection(original);
+                }
             }
         } catch (error) {
             log.error(`Failed to schedule task ${taskId} to Anytime:`, error);
             el.remove();
-            if (original) original.classList.remove('scheduled');
+            if (original) {
+                original.classList.remove('scheduled');
+                moveTaskToUnscheduledSection(original);
+            }
         }
     }
 
@@ -959,6 +1182,9 @@
     // Expose functions needed by other modules
     window.createScheduledTaskElement = createScheduledTaskElement;
     window.recalculateOverlaps = recalculateOverlaps;
+    window.moveTaskToScheduledSection = moveTaskToScheduledSection;
+    window.moveTaskToUnscheduledSection = moveTaskToUnscheduledSection;
+    window.updateTaskScheduledDate = updateTaskScheduledDate;
 
     document.addEventListener('DOMContentLoaded', init);
 

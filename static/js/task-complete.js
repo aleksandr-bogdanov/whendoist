@@ -79,12 +79,28 @@
 
         try {
             let url;
+            let body = {};
+
             if (instanceId) {
-                // Recurring task instance
+                // Recurring task instance with known ID
                 url = `/api/instances/${instanceId}/toggle-complete`;
             } else {
-                // Regular task
+                // Regular task OR recurring task without known instance
                 url = `/api/tasks/${taskId}/toggle-complete`;
+
+                // For calendar items, get the target date from the parent calendar
+                const calendarEl = taskEl.closest('.day-calendar');
+                if (calendarEl) {
+                    // Check if this is in an adjacent day section
+                    const hourRow = taskEl.closest('.hour-row');
+                    const actualDate = hourRow?.dataset.actualDate;
+                    const calendarDate = calendarEl.dataset.day;
+                    const targetDate = actualDate || calendarDate;
+
+                    if (targetDate) {
+                        body.target_date = targetDate;
+                    }
+                }
             }
 
             const response = await fetch(url, {
@@ -92,6 +108,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
             });
 
             if (!response.ok) {
@@ -121,7 +138,7 @@
             }
 
             // Apply visual aging class for completed tasks
-            applyCompletionAgingClass(taskEl, data.completed);
+            applyCompletionClass(taskEl, data.completed);
 
             // Also update the corresponding task in other locations
             // (e.g., if task appears in both list and calendar)
@@ -182,7 +199,7 @@
             }
 
             // Apply visual aging class
-            applyCompletionAgingClass(el, completed);
+            applyCompletionClass(el, completed);
 
             // Move task-items in left panel (if preference enabled)
             if (el.classList.contains('task-item') && userPrefs.completed_move_to_bottom) {
@@ -196,17 +213,15 @@
     }
 
     /**
-     * Apply visual aging class for completed tasks.
+     * Apply completed class for visual styling.
      * @param {HTMLElement} taskEl - The task element
      * @param {boolean} completed - Whether task is completed
      */
-    function applyCompletionAgingClass(taskEl, completed) {
-        // Remove all aging classes first
-        taskEl.classList.remove('completed-today', 'completed-yesterday', 'completed-older');
-
+    function applyCompletionClass(taskEl, completed) {
         if (completed) {
-            // Just completed - use "completed-today" class
-            taskEl.classList.add('completed-today');
+            taskEl.classList.add('completed');
+        } else {
+            taskEl.classList.remove('completed');
         }
     }
 

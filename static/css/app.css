@@ -89,7 +89,8 @@
     --col-duration: 68px;
     --col-impact: 56px;
     --col-clarity: 80px;
-    --col-gap: 12px;
+    --col-actions: 28px;
+    --col-gap: 6px;
 
     /* Patch 22: Now indicator (softer red) */
     --now: rgba(239, 68, 68, 0.80);
@@ -261,77 +262,6 @@ img.brand-logo {
 }
 
 /* =============================================================================
-   Header Energy Pills
-   ============================================================================= */
-
-.header-energy {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 0.5rem;
-    background: transparent;
-    border-radius: 8px;
-    padding: 4px 8px 4px 10px;
-    height: 32px;
-    box-sizing: border-box;
-}
-
-.energy-label {
-    font-size: 0.55rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-.energy-pills {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    background: transparent;
-    border-radius: 5px;
-    padding: 2px;
-}
-
-.energy-pill {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 22px;
-    padding: 0;
-    margin: 0;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.15s ease;
-}
-
-.energy-pill:hover {
-    background: var(--grey-bg);
-}
-
-.energy-pill[data-energy="1"].active {
-    background: var(--light-bg);
-    box-shadow: inset 0 0 0 1px var(--executable-color);
-}
-
-.energy-pill[data-energy="2"].active {
-    background: var(--light-bg);
-    box-shadow: inset 0 0 0 1px var(--defined-color);
-}
-
-.energy-pill[data-energy="3"].active {
-    background: var(--light-bg);
-    box-shadow: inset 0 0 0 1px var(--exploratory-color);
-}
-
-/* =============================================================================
    Logout Button
    ============================================================================= */
 
@@ -387,27 +317,6 @@ img.brand-logo {
         padding: 0 0.5rem;
         height: 24px;
         font-size: 0.55rem;
-    }
-
-    .header-energy {
-        gap: 0.25rem;
-        height: 28px;
-        padding: 3px 6px;
-    }
-
-    .energy-label {
-        display: none;
-    }
-
-    .energy-pills {
-        padding: 2px;
-        gap: 1px;
-    }
-
-    .energy-pill {
-        width: 24px;
-        height: 20px;
-        font-size: 0.75rem;
     }
 
     .btn-logout {

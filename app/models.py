@@ -171,8 +171,18 @@ class UserPreferences(Base):
     show_completed_in_planner: Mapped[bool] = mapped_column(Boolean, default=True)
     completed_retention_days: Mapped[int] = mapped_column(Integer, default=3)  # 1, 3, or 7
     completed_move_to_bottom: Mapped[bool] = mapped_column(Boolean, default=True)
+    completed_sort_by_date: Mapped[bool] = mapped_column(Boolean, default=True)  # False = sort by active column
     show_completed_in_list: Mapped[bool] = mapped_column(Boolean, default=True)  # False = calendar only
     hide_recurring_after_completion: Mapped[bool] = mapped_column(Boolean, default=False)
+    show_scheduled_in_list: Mapped[bool] = mapped_column(Boolean, default=True)  # False = calendar only
+    scheduled_move_to_bottom: Mapped[bool] = mapped_column(Boolean, default=True)
+    scheduled_sort_by_date: Mapped[bool] = mapped_column(Boolean, default=True)  # False = sort by active column
+
+    # E2E Encryption settings
+    encryption_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    encryption_salt: Mapped[str | None] = mapped_column(String(64), nullable=True)  # Base64-encoded 32-byte salt
+    # Encrypted known value for verification (e.g., encrypted "WHENDOIST_ENCRYPTION_TEST")
+    encryption_test_value: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -269,6 +279,7 @@ class Task(Base):
     # For import tracking (Todoist, Things, etc.)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     external_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    external_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="tasks")

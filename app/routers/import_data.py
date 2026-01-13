@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import TodoistToken, User
 from app.routers.auth import get_current_user
+from app.services.todoist import TodoistClient
 from app.services.todoist_import import TodoistImportService
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,24 @@ class WipeResponse(BaseModel):
     instances_deleted: int
     tasks_deleted: int
     domains_deleted: int
+
+
+class ImportPreviewResponse(BaseModel):
+    """Preview of what will be imported from Todoist."""
+
+    projects_count: int
+    tasks_count: int
+    subtasks_count: int
+    completed_count: int
+    projects: list[dict]  # {name, task_count, color}
+
+
+class ImportOptions(BaseModel):
+    """Options for Todoist import."""
+
+    include_completed: bool = True
+    completed_limit: int = 200
+    skip_existing: bool = True
 
 
 class ImportResponse(BaseModel):
@@ -80,16 +99,15 @@ async def wipe_user_data(
     )
 
 
-@router.post("/todoist", response_model=ImportResponse)
-async def import_from_todoist(
+@router.get("/todoist/preview", response_model=ImportPreviewResponse)
+async def preview_todoist_import(
     db: AsyncSession = Depends(get_db),
     user: User | None = Depends(get_current_user),
 ):
     """
-    Import all projects and tasks from connected Todoist account.
+    Preview what will be imported from Todoist.
 
-    Creates domains from Todoist projects and tasks with their attributes.
-    Skips items that have already been imported (tracked by external_id).
+    Returns counts and project list without actually importing anything.
     """
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -103,8 +121,78 @@ async def import_from_todoist(
             detail="Todoist not connected. Connect your Todoist account first.",
         )
 
+    try:
+        async with TodoistClient(todoist_token.access_token) as client:
+            # Fetch projects and tasks
+            projects = await client.get_projects()
+            tasks = await client.get_all_tasks()
+            completed = await client.get_completed_tasks(limit=200)
+
+            # Count subtasks
+            subtasks_count = sum(1 for t in tasks if t.parent_id is not None)
+            top_level_count = len(tasks) - subtasks_count
+
+            # Group tasks by project
+            project_task_counts: dict[str, int] = {}
+            for task in tasks:
+                project_task_counts[task.project_id] = project_task_counts.get(task.project_id, 0) + 1
+
+            # Build project list (exclude Inbox)
+            project_list = []
+            for p in projects:
+                if p.name.lower() != "inbox":
+                    project_list.append({
+                        "name": p.name,
+                        "task_count": project_task_counts.get(p.id, 0),
+                        "color": p.color,
+                    })
+
+            return ImportPreviewResponse(
+                projects_count=len([p for p in projects if p.name.lower() != "inbox"]),
+                tasks_count=top_level_count,
+                subtasks_count=subtasks_count,
+                completed_count=len(completed),
+                projects=sorted(project_list, key=lambda x: -x["task_count"]),
+            )
+    except Exception as e:
+        logger.error(f"Todoist preview failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.post("/todoist", response_model=ImportResponse)
+async def import_from_todoist(
+    options: ImportOptions | None = None,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user),
+):
+    """
+    Import all projects and tasks from connected Todoist account.
+
+    Creates domains from Todoist projects and tasks with their attributes.
+    Skips items that have already been imported (tracked by external_id).
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Use defaults if no options provided
+    if options is None:
+        options = ImportOptions()
+
+    # Get Todoist token
+    todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
+
+    if not todoist_token:
+        raise HTTPException(
+            status_code=400,
+            detail="Todoist not connected. Connect your Todoist account first.",
+        )
+
     service = TodoistImportService(db, user.id, todoist_token.access_token)
-    result = await service.import_all(skip_existing=True)
+    result = await service.import_all(
+        skip_existing=options.skip_existing,
+        include_completed=options.include_completed,
+        completed_limit=options.completed_limit,
+    )
 
     logger.info(
         f"User {user.id} imported from Todoist: {result.domains_created} domains, "

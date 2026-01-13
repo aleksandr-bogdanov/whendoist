@@ -8,17 +8,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Polish Todoist import UX
-  - Clarify import behavior options (UI dialog before import)
-  - Option to keep/discard parent tasks as separate tasks
-  - Option to flatten subtasks or keep hierarchy
-  - Preview of what will be imported 
-- Polish Analytics page
+- Task encryption integration (encrypt on submit, decrypt on display)
+- Time blocking templates
 - Redesign domain management UX
 - Redesign CMPCT view
+- WhenWizard setup flow (first launch or Settings → configure integrations, domains)
 
 ### Known Issues
 - None currently tracked
+
+---
+
+## [0.8.0] - 2026-01-11
+
+### Summary
+**E2E Encryption & Polish** — Optional end-to-end encryption for task data, polished Todoist import with preview, Plan My Day undo, compact task modal, and various UX improvements.
+
+### Added
+
+- **E2E Encryption** — Optional end-to-end encryption for task data:
+  - Uses Web Crypto API with AES-256-GCM encryption
+  - PBKDF2 key derivation from user passphrase (100,000 iterations, SHA-256)
+  - Key stored in sessionStorage (cleared on logout/tab close)
+  - Security panel in Settings to enable/disable encryption
+  - Passphrase unlock modal on page load when encryption is enabled
+  - Encryption salt and test value stored in UserPreferences
+- **Todoist Import Preview** — Preview dialog before importing from Todoist:
+  - Shows project count, task count, subtask count, completed count
+  - Option to include/exclude completed tasks
+  - Cancel or proceed with import
+- **Plan My Day Undo** — Toast with undo button after auto-scheduling tasks
+  - Stores original state (scheduled date/time) before scheduling
+  - Restores original state when undo clicked
+- **Cancel Button** — Task dialogs now have Cancel + primary action buttons
+- **External Created At** — `external_created_at` field on Task model for preserving Todoist creation dates
+- **Code Provenance** — Verify that deployed code matches GitHub source:
+  - Build Provenance panel in Settings with version/commit info
+  - "Verify Build" modal with file hashes and verification instructions
+  - GitHub Actions release workflow with artifact attestations
+  - SHA256 hashes for all static files, SRI hashes for key files
+  - Build manifest at `static/build-manifest.json`
+  - API endpoints: `/api/build/info`, `/api/build/verify`, `/api/build/hashes`
+
+### Changed
+
+- **Compact Task Modal** — Reduced padding, heights, and made form more compact
+- **Scheduled Task Separation** — Scheduled tasks appear below unscheduled in Task List
+  - Scheduled tasks have dashed border and muted styling
+- **Recurring Task Completion** — Fixed Complete button in Edit Task modal to properly toggle today's instance
+- **Analytics Domain Chart** — Removed Inbox from domain pie chart
+- **Analytics Task Age** — Now uses `external_created_at` (Todoist creation date) when available
+
+### Technical
+
+- Added `crypto.js` for client-side encryption/decryption
+- Added `encryption_enabled`, `encryption_salt`, `encryption_test_value` to UserPreferences
+- Added `/api/preferences/encryption` endpoints (GET status, POST setup, POST disable)
+- Added `get_encryption_context()` helper to pass encryption settings to all templates
+- Added passphrase unlock modal to base template
+- Added `get_or_create_today_instance()` to RecurrenceService for recurring task completion
+- Updated toggle-complete API endpoint to handle recurring tasks
+- Added preview endpoint `/api/import/todoist/preview` with ImportPreviewResponse
+- Added ImportOptions model with `include_completed` and `completed_limit`
+- Added `external_created_at` field to Task model and backup service
+- Modified task ordering with SQLAlchemy CASE expression for schedule-based sorting
+- Added `.btn-secondary` CSS class to dialog.css
+- Added `build_info.py` router with `/api/build/info`, `/api/build/verify`, `/api/build/hashes` endpoints
+- Added `scripts/generate-build-manifest.py` for build artifact generation
+- Added `.github/workflows/release.yml` for automated releases with signed tags and attestations
+- Settings page now includes Build Provenance panel with version info and Verify Build modal
 
 ---
 
@@ -260,7 +318,8 @@ See [DESIGN.md](./DESIGN.md) for comprehensive documentation of the Tasks page d
 
 ---
 
-[unreleased]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.7.0...HEAD
+[unreleased]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.4.0...v0.5.0

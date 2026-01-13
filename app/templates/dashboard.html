@@ -21,7 +21,23 @@
         <div class="task-list-container">
             <!-- Column Headers (sticky, sortable) -->
             <div class="task-list-header">
-                <span class="header-task">Task</span>
+                <!-- Energy selector - positioned absolutely, centered between TASK and DURATION -->
+                <div class="header-energy-inline" id="header-energy-inline">
+                    <span class="energy-label">Energy</span>
+                    <div class="energy-chips">
+                        <button type="button" data-energy="1" class="energy-pill-inline" aria-pressed="false" title="Zombie: executable only">🧟</button>
+                        <button type="button" data-energy="2" class="energy-pill-inline active" aria-pressed="true" title="Normal: executable + defined">☕</button>
+                        <button type="button" data-energy="3" class="energy-pill-inline" aria-pressed="false" title="Focus: all tasks">🧠</button>
+                    </div>
+                </div>
+                <span class="header-task">
+                    <span class="header-task-label" id="header-task-label">Task</span>
+                    <button type="button" class="header-back-btn" id="header-back-btn" hidden>
+                        <span class="back-arrow">&larr;</span>
+                        <span class="back-text">Back to tasks</span>
+                    </button>
+                    <span class="header-view-count" id="header-view-count" hidden></span>
+                </span>
                 <span class="header-meta">
                     <button type="button" class="header-sort" data-sort="duration" title="Sort by duration">
                         <span class="label-full">Duration</span><span class="label-compact">DUR</span>
@@ -36,83 +52,131 @@
                         <span class="sort-icon">↑</span>
                     </button>
                 </span>
-            </div>
-            <div class="task-list-scroll">
-            {% if domains_with_tasks %}
-                {% for domain_item in domains_with_tasks %}
-                <details class="project-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}">
-                    <summary class="project-header">
-                        <span class="project-name">
-                            {% if domain_item.domain %}
-                                {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}{{ domain_item.domain.name }}
-                            {% else %}
-                                Inbox
-                            {% endif %}
-                        </span>
-                    </summary>
-                    <div class="task-list">
-                        {% for task_item in domain_item.tasks %}
-                        {% set task = task_item.task %}
-                        {% set is_completed = task.status == 'completed' or task_item.instance_completed_at %}
-                        <div class="task-item impact-{{ task.impact }}{% if task.scheduled_date and task.scheduled_time %} scheduled{% endif %}{% if task_item.completion_age_class %} {{ task_item.completion_age_class }}{% endif %}"
-                             data-clarity="{{ task.clarity or 'none' }}"
-                             data-impact="{{ task.impact or 4 }}"
-                             data-task-id="{{ task.id }}"
-                             data-completed="{{ '1' if is_completed else '0' }}"
-                             data-duration="{{ task.duration_minutes or '' }}"
-                             data-scheduled-date="{{ task.scheduled_date.isoformat() if task.scheduled_date else '' }}"
-                             data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
-                             {% if not (task.scheduled_date and task.scheduled_time) %}draggable="true"{% endif %}>
-                            <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task.status == 'completed' else 'false' }}">
-                                <span class="complete-bar"></span>
-                                <span class="complete-check" aria-hidden="true">✓</span>
+                <span class="header-actions">
+                    <button type="button" class="header-actions-btn" id="header-actions-btn" title="Task list options" aria-haspopup="true" aria-expanded="false">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2"/>
+                            <circle cx="12" cy="12" r="2"/>
+                            <circle cx="12" cy="19" r="2"/>
+                        </svg>
+                    </button>
+                    <!-- Task List Options Menu -->
+                    <div class="task-list-options-menu" id="task-list-options-menu" hidden>
+                        <div class="options-menu-content">
+                            <!-- Section: Scheduled Tasks -->
+                            <div class="option-section" id="scheduled-options-section">
+                                <div class="option-section-header">
+                                    <span class="option-section-title">Scheduled Tasks</span>
+                                </div>
+                                <div class="option-row">
+                                    <span class="option-label">Show in list</span>
+                                    <button type="button" class="option-toggle{% if user_prefs.show_scheduled_in_list %} active{% endif %}"
+                                            data-pref="show_scheduled_in_list"
+                                            data-controls="scheduled-suboptions"
+                                            aria-pressed="{{ 'true' if user_prefs.show_scheduled_in_list else 'false' }}">
+                                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                    </button>
+                                </div>
+                                <div class="option-suboptions" id="scheduled-suboptions"{% if not user_prefs.show_scheduled_in_list %} hidden{% endif %}>
+                                    <div class="option-row">
+                                        <span class="option-label">Group at bottom</span>
+                                        <button type="button" class="option-toggle{% if user_prefs.scheduled_move_to_bottom %} active{% endif %}"
+                                                data-pref="scheduled_move_to_bottom"
+                                                data-controls="scheduled-sort-options"
+                                                aria-pressed="{{ 'true' if user_prefs.scheduled_move_to_bottom else 'false' }}">
+                                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                        </button>
+                                    </div>
+                                    <div class="option-row" id="scheduled-sort-options"{% if not user_prefs.scheduled_move_to_bottom %} hidden{% endif %}>
+                                        <span class="option-label">Sort by scheduled date</span>
+                                        <button type="button" class="option-toggle{% if user_prefs.scheduled_sort_by_date %} active{% endif %}"
+                                                data-pref="scheduled_sort_by_date"
+                                                aria-pressed="{{ 'true' if user_prefs.scheduled_sort_by_date else 'false' }}">
+                                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- View Scheduled Tasks -->
+                                <button type="button" class="option-action-btn" id="show-scheduled-tasks-btn">
+                                    <span class="option-action-icon">📅</span>
+                                    Show scheduled tasks
+                                </button>
+                            </div>
+                            <!-- Section: Completed Tasks -->
+                            <div class="option-section" id="completed-options-section">
+                                <div class="option-section-header">
+                                    <span class="option-section-title">Completed Tasks</span>
+                                </div>
+                                <div class="option-row">
+                                    <span class="option-label">Show in list</span>
+                                    <button type="button" class="option-toggle{% if user_prefs.show_completed_in_list %} active{% endif %}"
+                                            data-pref="show_completed_in_list"
+                                            data-controls="completed-suboptions"
+                                            aria-pressed="{{ 'true' if user_prefs.show_completed_in_list else 'false' }}">
+                                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                    </button>
+                                </div>
+                                <div class="option-suboptions" id="completed-suboptions"{% if not user_prefs.show_completed_in_list %} hidden{% endif %}>
+                                    <div class="option-row">
+                                        <span class="option-label">Keep visible for</span>
+                                        <div class="option-segmented" data-pref="completed_retention_days">
+                                            <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 1 %} active{% endif %}" data-value="1">1d</button>
+                                            <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 3 %} active{% endif %}" data-value="3">3d</button>
+                                            <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 7 %} active{% endif %}" data-value="7">7d</button>
+                                        </div>
+                                    </div>
+                                    <div class="option-row">
+                                        <span class="option-label">Group at bottom</span>
+                                        <button type="button" class="option-toggle{% if user_prefs.completed_move_to_bottom %} active{% endif %}"
+                                                data-pref="completed_move_to_bottom"
+                                                data-controls="completed-sort-options"
+                                                aria-pressed="{{ 'true' if user_prefs.completed_move_to_bottom else 'false' }}">
+                                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                        </button>
+                                    </div>
+                                    <div class="option-row" id="completed-sort-options"{% if not user_prefs.completed_move_to_bottom %} hidden{% endif %}>
+                                        <span class="option-label">Sort by completion date</span>
+                                        <button type="button" class="option-toggle{% if user_prefs.completed_sort_by_date %} active{% endif %}"
+                                                data-pref="completed_sort_by_date"
+                                                aria-pressed="{{ 'true' if user_prefs.completed_sort_by_date else 'false' }}">
+                                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- View Completed Tasks -->
+                                <button type="button" class="option-action-btn" id="show-completed-tasks-btn">
+                                    <span class="option-action-icon">✓</span>
+                                    Show completed tasks
+                                </button>
+                            </div>
+                            <!-- Section: Recurring Tasks -->
+                            <div class="option-section">
+                                <div class="option-section-header">
+                                    <span class="option-section-title">Recurring Tasks</span>
+                                </div>
+                                <div class="option-row">
+                                    <span class="option-label">Hide after completion</span>
+                                    <button type="button" class="option-toggle{% if user_prefs.hide_recurring_after_completion %} active{% endif %}"
+                                            data-pref="hide_recurring_after_completion"
+                                            aria-pressed="{{ 'true' if user_prefs.hide_recurring_after_completion else 'false' }}">
+                                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Divider -->
+                            <div class="option-divider"></div>
+                            <!-- View Deleted Tasks -->
+                            <button type="button" class="option-action-btn" id="show-deleted-tasks-btn">
+                                <span class="option-action-icon">🗑️</span>
+                                Show deleted tasks
                             </button>
-                            <div class="task-content">
-                                <span class="task-text">{{ task.title }}</span>
-                                {% if task_item.next_occurrence or task.scheduled_date %}
-                                <span class="task-due">
-                                    {% if task.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}
-                                    {{ (task_item.next_occurrence or task.scheduled_date).strftime('%b %d') }}
-                                </span>
-                                {% endif %}
-                            </div>
-                            <div class="task-meta">
-                                <span class="meta-duration">
-                                    {% if task.duration_minutes %}
-                                        {% if task.duration_minutes >= 60 %}
-                                        {{ task.duration_minutes // 60 }}h{% if task.duration_minutes % 60 %}{{ task.duration_minutes % 60 }}m{% endif %}
-                                        {% else %}
-                                        {{ task.duration_minutes }}m
-                                        {% endif %}
-                                    {% else %}—{% endif %}
-                                </span>
-                                <span class="meta-impact impact-{{ task.impact }}">
-                                    {% if task.impact == 1 %}P1
-                                    {% elif task.impact == 2 %}P2
-                                    {% elif task.impact == 3 %}P3
-                                    {% else %}P4{% endif %}
-                                </span>
-                                <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
-                                    {% if task.clarity %}
-                                        {{ task_item.clarity_display }}
-                                    {% else %}—{% endif %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        <div class="add-task-row" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}">
-                            <span class="add-task-text">+ Add task</span>
                         </div>
                     </div>
-                </details>
-                {% endfor %}
-            {% else %}
-            <div class="empty-state">
-                <p>No tasks with domains yet.</p>
-                <p>Create a domain in Settings, then promote thoughts to tasks.</p>
+                </span>
             </div>
-            {% endif %}
-        </div>
+            <div class="task-list-scroll" id="task-list-scroll">
+            {% include '_task_list.html' %}
+            </div>
         </div>
     </section>
 
@@ -272,6 +336,7 @@
 <script src="/static/js/recurrence-picker.js"></script>
 <script src="/static/js/task-dialog.js"></script>
 <script src="/static/js/energy-selector.js"></script>
+<script src="/static/js/task-list-options.js"></script>
 <script src="/static/js/task-sort.js"></script>
 <script src="/static/js/task-complete.js"></script>
 <script src="/static/js/drag-drop.js"></script>

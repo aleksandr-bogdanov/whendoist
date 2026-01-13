@@ -27,26 +27,16 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3/air-datepicker.js"></script>
     <script src="/static/js/toast.js"></script>
+    <script src="/static/js/crypto.js"></script>
 </head>
 <body>
     <header class="site-header">
         <div class="header-inner">
             <a href="/" class="brand">
                 <img src="/static/img/logo.png" alt="Whendoist" class="brand-logo">
-                <span class="version-badge">v0.7</span>
+                <span class="version-badge">v0.8</span>
             </a>
             {% if user %}
-            <!-- Energy Selector (visible on dashboard only) -->
-            {% if request.url.path == '/dashboard' %}
-            <div class="header-energy" id="header-energy">
-                <span class="energy-label">Energy</span>
-                <div class="energy-pills">
-                    <button type="button" data-energy="1" class="energy-pill" aria-pressed="false" title="Zombie mode">🧟</button>
-                    <button type="button" data-energy="2" class="energy-pill active" aria-pressed="true" title="Normal mode">☕</button>
-                    <button type="button" data-energy="3" class="energy-pill" aria-pressed="false" title="Focus mode">🧠</button>
-                </div>
-            </div>
-            {% endif %}
             <!-- Spacer to push right-side elements -->
             <div class="header-spacer"></div>
             <!-- Page Navigation -->
@@ -93,6 +83,173 @@
     <main class="container-fluid">
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Passphrase Unlock Modal (for E2E encryption) -->
+    {% if encryption_enabled %}
+    <div id="passphrase-modal" class="passphrase-modal" style="display: none;">
+        <div class="passphrase-modal__backdrop"></div>
+        <div class="passphrase-modal__content">
+            <div class="passphrase-modal__header">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <h3>Unlock Your Data</h3>
+            </div>
+            <p class="passphrase-modal__desc">
+                Your data is encrypted. Enter your passphrase to unlock.
+            </p>
+            <input type="password" id="unlock-passphrase" class="passphrase-modal__input" placeholder="Enter your passphrase" autocomplete="current-password">
+            <div id="unlock-error" class="passphrase-modal__error" style="display: none;"></div>
+            <button type="button" class="passphrase-modal__btn" onclick="unlockEncryption()">Unlock</button>
+        </div>
+    </div>
+    <style>
+    .passphrase-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .passphrase-modal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+    }
+    .passphrase-modal__content {
+        position: relative;
+        background: #fff;
+        border-radius: 16px;
+        padding: 28px 32px;
+        max-width: 360px;
+        width: 90%;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    }
+    .passphrase-modal__header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .passphrase-modal__header svg {
+        color: var(--primary);
+    }
+    .passphrase-modal__header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .passphrase-modal__desc {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+    }
+    .passphrase-modal__input {
+        width: 100%;
+        height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-bottom: 16px;
+    }
+    .passphrase-modal__input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(109, 94, 246, 0.15);
+    }
+    .passphrase-modal__error {
+        color: var(--danger);
+        font-size: 0.8125rem;
+        margin: -8px 0 12px;
+    }
+    .passphrase-modal__btn {
+        width: 100%;
+        height: 44px;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .passphrase-modal__btn:hover {
+        background: var(--primary-hover);
+    }
+    </style>
+    <script>
+    // Encryption unlock check
+    (function() {
+        const encryptionEnabled = {{ encryption_enabled|tojson }};
+        const encryptionSalt = {{ encryption_salt|tojson if encryption_salt else 'null' }};
+        const encryptionTestValue = {{ encryption_test_value|tojson if encryption_test_value else 'null' }};
+
+        if (encryptionEnabled && typeof Crypto !== 'undefined') {
+            // Check if key is already stored
+            if (!Crypto.hasStoredKey()) {
+                // Show unlock modal
+                document.getElementById('passphrase-modal').style.display = 'flex';
+                setTimeout(() => {
+                    document.getElementById('unlock-passphrase').focus();
+                }, 100);
+            }
+        }
+
+        // Make these available globally for the unlock function
+        window._encryptionSalt = encryptionSalt;
+        window._encryptionTestValue = encryptionTestValue;
+    })();
+
+    async function unlockEncryption() {
+        const passphrase = document.getElementById('unlock-passphrase').value;
+        const errorEl = document.getElementById('unlock-error');
+
+        if (!passphrase) {
+            errorEl.textContent = 'Please enter your passphrase';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            // Verify passphrase against test value
+            const isValid = await Crypto.verifyPassphrase(
+                passphrase,
+                window._encryptionSalt,
+                window._encryptionTestValue,
+                'WHENDOIST_ENCRYPTION_TEST'
+            );
+
+            if (isValid) {
+                // Passphrase is correct, store the key
+                await Crypto.unlockEncryption(passphrase, window._encryptionSalt);
+                document.getElementById('passphrase-modal').style.display = 'none';
+                // Reload to decrypt data
+                window.location.reload();
+            } else {
+                errorEl.textContent = 'Incorrect passphrase. Please try again.';
+                errorEl.style.display = 'block';
+                document.getElementById('unlock-passphrase').select();
+            }
+        } catch (e) {
+            errorEl.textContent = 'Error: ' + e.message;
+            errorEl.style.display = 'block';
+        }
+    }
+
+    // Enter key to unlock
+    document.getElementById('unlock-passphrase')?.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            unlockEncryption();
+        }
+    });
+    </script>
+    {% endif %}
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

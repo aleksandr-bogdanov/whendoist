@@ -17,7 +17,7 @@ from app.models import Domain, Task, TaskInstance, UserPreferences
 class BackupService:
     """Service for exporting and importing user data."""
 
-    VERSION = "0.7.0"
+    VERSION = "0.8.0"
 
     def __init__(self, db: AsyncSession, user_id: int):
         self.db = db
@@ -106,6 +106,7 @@ class BackupService:
                 completed_at=self._parse_datetime(task_data.get("completed_at")),
                 external_id=task_data.get("external_id"),
                 external_source=task_data.get("external_source"),
+                external_created_at=self._parse_datetime(task_data.get("external_created_at")),
             )
             self.db.add(task)
             await self.db.flush()
@@ -181,6 +182,7 @@ class BackupService:
             "completed_at": task.completed_at.isoformat() if task.completed_at else None,
             "external_id": task.external_id,
             "external_source": task.external_source,
+            "external_created_at": task.external_created_at.isoformat() if task.external_created_at else None,
             "instances": [self._serialize_instance(i) for i in task.instances],
         }
 

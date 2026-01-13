@@ -13,7 +13,7 @@
 | **Tasks** | Day planning: task list + calendar + drag scheduling | v0.5 | Complete |
 | **Thought Cabinet** | Quick capture inbox, promote to task | v0.6 | Complete |
 | **Analytics** | Completion stats, trends, domain breakdown | v0.7 | Complete |
-| **Settings** | Account config, integrations, domains, task display | v0.7 | Complete |
+| **Settings** | Account config, integrations, domains, security, task display | v0.8 | Complete |
 
 ### Core Concepts
 
@@ -633,7 +633,9 @@ Fixed height tray with scrollable tasks:
 | INTEGRATIONS | Left | Google Calendar, Todoist rows with status dot + Connect button |
 | GOOGLE CALENDARS | Left | Calendar rows with color dot + toggle switch (if connected) |
 | LIFE DOMAINS | Right | Domain rows with icon + hover edit/delete, add input at bottom |
-| COMPLETED TASKS | Right | Completion visibility preferences (v0.7) |
+| TASK DISPLAY | Right | Completed/scheduled task visibility and sorting preferences (v0.7) |
+| SECURITY | Right | E2E encryption setup/disable (v0.8) |
+| BUILD PROVENANCE | Right | Version info, commit hash, Verify Build modal (v0.8) |
 | BACKUP | Right | Export/import data as JSON (v0.7) |
 | MAINTENANCE | Right | Danger zone with wipe button |
 
@@ -655,6 +657,38 @@ Settings panel for controlling completed task visibility. Calendar always shows 
 
 **Example use case for "Hide recurring":**
 You have 5 daily tasks. By noon, 3 are done. With this OFF, you see all 5 (3 completed, 2 pending). With this ON, you see only 2 remaining tasks.
+
+### Security Panel (v0.8)
+
+Settings panel for E2E encryption setup.
+
+| Setting | Type | Description |
+|---------|------|-------------|
+| Encryption Status | Badge | Shows "Enabled" or "Disabled" |
+| Setup/Disable | Button | Opens passphrase modal or disables encryption |
+
+**Encryption flow:**
+1. User clicks "Enable Encryption"
+2. Modal prompts for passphrase (min 8 chars)
+3. Passphrase confirms, key derived client-side
+4. Salt and encrypted test value sent to server
+5. Key stored in sessionStorage
+
+### Build Provenance Panel (v0.8)
+
+Settings panel showing version info and code verification.
+
+| Element | Description |
+|---------|-------------|
+| Version | Current app version (e.g., v0.8.0) |
+| Commit | Git commit hash (short form) |
+| Build Date | When the build was created |
+| Verify Build | Button that opens verification modal |
+
+**Verify Build modal:**
+- Shows SHA256 hashes for all static files
+- Instructions to verify against GitHub release
+- Links to GitHub release page
 
 ### Backup Panel (v0.7)
 
@@ -1054,4 +1088,4 @@ When designing new UI:
 
 ---
 
-*Last updated: January 2026 (v0.7)*
+*Last updated: January 2026 (v0.8)*

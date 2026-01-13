@@ -57,7 +57,7 @@ just dev
 | **Tasks** | Day planning with task list + calendar |
 | **Thought Cabinet** | Quick capture inbox, promote thoughts to tasks |
 | **Analytics** | Completion stats, trends, streaks |
-| **Settings** | Integrations, domains, task display preferences |
+| **Settings** | Integrations, domains, security, task display preferences |
 
 ### Energy-Based Filtering
 
@@ -86,6 +86,20 @@ Filter tasks by clarity (how defined the work is):
 - **Plan** — auto-schedule tasks into a selected time range
 - **Complete** — mark tasks done with visual aging
 
+### Task List Organization
+
+Tasks are organized into three sections within each domain:
+
+| Section | Sorting | Purpose |
+|---------|---------|---------|
+| **Unscheduled** | By impact (P1 → P4) | Tasks without a scheduled date — highest priority first |
+| **Scheduled** | By date (soonest first) | Tasks with a scheduled date — what's coming up next |
+| **Completed** | By impact | Recently completed tasks (faded styling) |
+
+**Why date-based sorting for scheduled tasks?**
+
+When you schedule a task for a specific date, that date represents when you plan to do it. A task due tomorrow is more urgent than one due next week, regardless of impact level. This gives you a natural "what's coming up next" view in your task list.
+
 ### Analytics Dashboard
 
 Powered by ApexCharts:
@@ -94,6 +108,12 @@ Powered by ApexCharts:
 - Day-of-week and hour-of-day patterns
 - GitHub-style contribution heatmap
 - Velocity trends with rolling averages
+
+### Privacy & Security
+
+- **E2E Encryption** — Optional client-side encryption for task data (AES-256-GCM)
+- **Code Provenance** — Verify deployed code matches GitHub source with build hashes
+- **Backup & Restore** — Export/import all data as JSON
 
 ### Optional: Import from Todoist
 
@@ -169,6 +189,28 @@ just lint     # Run ruff
 just fmt      # Format code
 ```
 
+### Testing
+
+See [`tests/README.md`](tests/README.md) for full test architecture.
+
+```bash
+# Run all unit tests
+just test
+
+# Run specific test file
+uv run pytest tests/test_task_sorting.py -v
+
+# Run E2E tests (requires running server)
+uv run playwright install chromium
+uv run pytest tests/e2e/ -v
+```
+
+| Category | Files | Purpose |
+|----------|-------|---------|
+| Unit | `test_*.py` | Fast tests, no I/O |
+| Contract | `test_js_module_contract.py` | Verify JS module APIs |
+| E2E | `e2e/test_*.py` | Full browser flows |
+
 ### Tech Stack
 
 | Layer | Technology |
@@ -176,7 +218,7 @@ just fmt      # Format code
 | Backend | Python 3.13, FastAPI, SQLAlchemy 2.0 (async) |
 | Frontend | HTMX, Jinja2, Pico CSS, ApexCharts |
 | Database | PostgreSQL with asyncpg |
-| APIs | Google Calendar v3, Todoist REST v2 (optional) |
+| APIs | Google Calendar v3, Todoist API v1 (optional import) |
 | Tooling | uv, ruff, pytest |
 
 ### Project Structure

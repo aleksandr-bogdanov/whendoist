@@ -37,6 +37,7 @@ class TodoistTask:
     order: int
     parent_id: str | None  # None for top-level tasks, set for subtasks
     assignee_id: str | None  # None if unassigned, user ID if assigned
+    created_at: datetime | None = None  # When task was created in Todoist
 
 
 @dataclass
@@ -129,6 +130,12 @@ class TodoistClient:
             elif unit == "day":
                 duration_minutes = amount * 24 * 60
 
+        # Parse created_at (API v1 uses added_at or created_at)
+        created_at = None
+        created_at_str = data.get("created_at") or data.get("added_at")
+        if created_at_str:
+            created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
         return TodoistTask(
             id=data["id"],
             content=data["content"],
@@ -141,6 +148,7 @@ class TodoistClient:
             order=data.get("child_order", 0),  # v1 uses child_order
             parent_id=data.get("parent_id"),
             assignee_id=data.get("responsible_uid"),  # v1 uses responsible_uid
+            created_at=created_at,
         )
 
     async def get_tasks(self, project_id: str | None = None) -> list[TodoistTask]:

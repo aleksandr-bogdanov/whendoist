@@ -39,8 +39,12 @@ class PreferencesService:
         show_completed_in_planner: bool | None = None,
         completed_retention_days: int | None = None,
         completed_move_to_bottom: bool | None = None,
+        completed_sort_by_date: bool | None = None,
         show_completed_in_list: bool | None = None,
         hide_recurring_after_completion: bool | None = None,
+        show_scheduled_in_list: bool | None = None,
+        scheduled_move_to_bottom: bool | None = None,
+        scheduled_sort_by_date: bool | None = None,
     ) -> UserPreferences:
         """
         Update user preferences.
@@ -62,11 +66,55 @@ class PreferencesService:
         if completed_move_to_bottom is not None:
             prefs.completed_move_to_bottom = completed_move_to_bottom
 
+        if completed_sort_by_date is not None:
+            prefs.completed_sort_by_date = completed_sort_by_date
+
         if show_completed_in_list is not None:
             prefs.show_completed_in_list = show_completed_in_list
 
         if hide_recurring_after_completion is not None:
             prefs.hide_recurring_after_completion = hide_recurring_after_completion
+
+        if show_scheduled_in_list is not None:
+            prefs.show_scheduled_in_list = show_scheduled_in_list
+
+        if scheduled_move_to_bottom is not None:
+            prefs.scheduled_move_to_bottom = scheduled_move_to_bottom
+
+        if scheduled_sort_by_date is not None:
+            prefs.scheduled_sort_by_date = scheduled_sort_by_date
+
+        await self.db.flush()
+        return prefs
+
+    async def setup_encryption(self, salt: str, test_value: str) -> UserPreferences:
+        """
+        Enable E2E encryption with the provided salt and test value.
+
+        Args:
+            salt: Base64-encoded 32-byte salt for key derivation
+            test_value: Encrypted known value for passphrase verification
+        """
+        prefs = await self.get_preferences()
+
+        prefs.encryption_enabled = True
+        prefs.encryption_salt = salt
+        prefs.encryption_test_value = test_value
+
+        await self.db.flush()
+        return prefs
+
+    async def disable_encryption(self) -> UserPreferences:
+        """
+        Disable E2E encryption.
+
+        Note: This does NOT decrypt existing data.
+        """
+        prefs = await self.get_preferences()
+
+        prefs.encryption_enabled = False
+        prefs.encryption_salt = None
+        prefs.encryption_test_value = None
 
         await self.db.flush()
         return prefs

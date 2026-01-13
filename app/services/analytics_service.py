@@ -243,15 +243,19 @@ class AnalyticsService:
 
         by_domain = []
         for domain_id, count in sorted(domain_counts.items(), key=lambda x: -x[1]):
-            domain = domains_map.get(domain_id) if domain_id else None
-            by_domain.append(
-                {
-                    "domain_id": domain_id,
-                    "domain_name": domain.name if domain and domain.name else "Inbox",
-                    "domain_icon": domain.icon if domain and domain.icon else "📥",
-                    "count": count,
-                }
-            )
+            # Skip Inbox (domain_id is None)
+            if domain_id is None:
+                continue
+            domain = domains_map.get(domain_id)
+            if domain:
+                by_domain.append(
+                    {
+                        "domain_id": domain_id,
+                        "domain_name": domain.name,
+                        "domain_icon": domain.icon or "📁",
+                        "count": count,
+                    }
+                )
 
         return by_domain
 
@@ -574,7 +578,11 @@ class AnalyticsService:
         return velocity
 
     async def _get_recurring_stats(self, range_start: datetime, range_end: datetime) -> list[dict]:
-        """Get completion rates for recurring tasks."""
+        """Get completion rates for recurring tasks.
+
+        Shows ALL recurring tasks, even those without instances in the date range.
+        Tasks without instances show 0/0 with 0% rate.
+        """
         # Get recurring tasks
         recurring_query = select(Task).where(
             Task.user_id == self.user_id,
@@ -613,61 +621,81 @@ class AnalyticsService:
             total_result = await self.db.execute(total_query)
             total_count = total_result.scalar() or 0
 
-            if total_count > 0:
-                rate = round(completed_count / total_count * 100)
-                stats.append(
-                    {
-                        "task_id": task.id,
-                        "title": task.title[:40] + ("..." if len(task.title) > 40 else ""),
-                        "completed": completed_count,
-                        "total": total_count,
-                        "rate": rate,
-                    }
-                )
+            # Include ALL recurring tasks, even those without instances
+            rate = round(completed_count / total_count * 100) if total_count > 0 else 0
+            stats.append(
+                {
+                    "task_id": task.id,
+                    "title": task.title[:40] + ("..." if len(task.title) > 40 else ""),
+                    "completed": completed_count,
+                    "total": total_count,
+                    "rate": rate,
+                }
+            )
 
-        # Sort by completion rate
-        stats.sort(key=lambda x: -x["rate"])
+        # Sort by completion rate (descending), then by title
+        stats.sort(key=lambda x: (-x["rate"], x["title"]))
         return stats
 
     async def _get_aging_stats(self) -> dict:
-        """Get task aging statistics."""
-        today = date.today()
+        """Get task resolution time statistics.
 
-        # Pending tasks by age
-        pending_query = select(Task.created_at).where(
+        Calculates time from task creation to completion for completed tasks.
+        Uses external_created_at (Todoist creation date) if available,
+        otherwise falls back to created_at (database creation date).
+        """
+        # Get completed tasks with creation and completion dates
+        completed_query = select(
+            Task.created_at,
+            Task.external_created_at,
+            Task.completed_at,
+        ).where(
             Task.user_id == self.user_id,
-            Task.status == "pending",
+            Task.status == "completed",
+            Task.completed_at.isnot(None),
         )
-        result = await self.db.execute(pending_query)
+        result = await self.db.execute(completed_query)
 
-        age_buckets = {
-            "today": 0,
-            "this_week": 0,
-            "this_month": 0,
-            "older": 0,
+        # Resolution time buckets (days from open to close)
+        resolution_buckets = {
+            "same_day": 0,      # Completed same day as created
+            "within_week": 0,   # 1-7 days
+            "within_month": 0,  # 8-30 days
+            "over_month": 0,    # 30+ days
         }
 
-        oldest_days = 0
+        resolution_times = []
 
         for row in result:
-            if row.created_at:
-                created_date = row.created_at.date() if hasattr(row.created_at, "date") else row.created_at
-                age = (today - created_date).days
+            # Prefer external_created_at (Todoist original date) over created_at (import date)
+            created_at = row.external_created_at or row.created_at
+            completed_at = row.completed_at
 
-                if age == 0:
-                    age_buckets["today"] += 1
-                elif age < 7:
-                    age_buckets["this_week"] += 1
-                elif age < 30:
-                    age_buckets["this_month"] += 1
+            if created_at and completed_at:
+                created_date = created_at.date() if hasattr(created_at, "date") else created_at
+                completed_date = completed_at.date() if hasattr(completed_at, "date") else completed_at
+                resolution_days = (completed_date - created_date).days
+
+                resolution_times.append(resolution_days)
+
+                if resolution_days == 0:
+                    resolution_buckets["same_day"] += 1
+                elif resolution_days <= 7:
+                    resolution_buckets["within_week"] += 1
+                elif resolution_days <= 30:
+                    resolution_buckets["within_month"] += 1
                 else:
-                    age_buckets["older"] += 1
+                    resolution_buckets["over_month"] += 1
 
-                oldest_days = max(oldest_days, age)
+        # Calculate averages
+        avg_resolution = round(sum(resolution_times) / len(resolution_times), 1) if resolution_times else 0
+        median_resolution = sorted(resolution_times)[len(resolution_times) // 2] if resolution_times else 0
 
         return {
-            "buckets": age_buckets,
-            "oldest_days": oldest_days,
+            "buckets": resolution_buckets,
+            "avg_days": avg_resolution,
+            "median_days": median_resolution,
+            "total_completed": len(resolution_times),
         }
 
     async def get_recent_completions(self, limit: int = 20) -> list[dict]:

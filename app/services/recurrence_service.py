@@ -373,6 +373,58 @@ class RecurrenceService:
         )
         return list(result.scalars().all())
 
+    async def get_or_create_today_instance(self, task: Task) -> TaskInstance | None:
+        """
+        Get or create today's instance for a recurring task.
+
+        Used when completing a recurring task from the task dialog.
+        """
+        return await self.get_or_create_instance_for_date(task, date.today())
+
+    async def get_or_create_instance_for_date(self, task: Task, target_date: date) -> TaskInstance | None:
+        """
+        Get or create an instance for a recurring task on a specific date.
+
+        Used when completing a recurring task from the calendar.
+
+        Args:
+            task: The recurring task
+            target_date: The date to get/create instance for
+        """
+        if not task.is_recurring:
+            return None
+
+        # Check for existing instance
+        result = await self.db.execute(
+            select(TaskInstance).where(
+                TaskInstance.task_id == task.id,
+                TaskInstance.instance_date == target_date,
+            )
+        )
+        instance = result.scalar_one_or_none()
+
+        if instance:
+            return instance
+
+        # Create a new instance for the target date
+        default_time = task.scheduled_time
+        if task.recurrence_rule and "time" in task.recurrence_rule:
+            try:
+                h, m = map(int, task.recurrence_rule["time"].split(":"))
+                default_time = time(h, m)
+            except (ValueError, KeyError):
+                pass
+
+        instance = TaskInstance(
+            task_id=task.id,
+            user_id=self.user_id,
+            instance_date=target_date,
+            scheduled_datetime=(datetime.combine(target_date, default_time, tzinfo=UTC) if default_time else None),
+        )
+        self.db.add(instance)
+        await self.db.flush()
+        return instance
+
     async def ensure_instances_materialized(
         self,
         horizon_days: int = 60,

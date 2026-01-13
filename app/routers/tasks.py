@@ -290,6 +290,21 @@ async def delete_task(
     await db.commit()
 
 
+@router.post("/{task_id}/restore", status_code=200)
+async def restore_task(
+    task_id: int,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Restore an archived task back to pending status."""
+    service = TaskService(db, user.id)
+    task = await service.restore_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found or not archived")
+    await db.commit()
+    return {"status": "restored", "task_id": task_id}
+
+
 @router.post("/{task_id}/complete", status_code=200)
 async def complete_task(
     task_id: int,
@@ -332,13 +347,24 @@ async def uncomplete_task(
     return {"status": "pending", "task_id": task_id}
 
 
+class ToggleCompleteRequest(BaseModel):
+    """Request body for toggle-complete with optional date."""
+
+    target_date: date | None = None  # For recurring tasks, complete instance for this date
+
+
 @router.post("/{task_id}/toggle-complete", status_code=200)
 async def toggle_task_complete(
     task_id: int,
+    data: ToggleCompleteRequest | None = None,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Toggle a task's completion status."""
+    """Toggle a task's completion status.
+
+    For recurring tasks, this toggles the instance for the specified date
+    (or today if no date provided).
+    """
     service = TaskService(db, user.id)
     task = await service.get_task(task_id)
 
@@ -346,10 +372,22 @@ async def toggle_task_complete(
         raise HTTPException(status_code=404, detail="Task not found")
 
     if task.is_recurring:
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot toggle recurring task directly. Use instance endpoints.",
-        )
+        # For recurring tasks, toggle the instance for the target date
+        recurrence_service = RecurrenceService(db, user.id)
+        target_date = data.target_date if data and data.target_date else date.today()
+        instance = await recurrence_service.get_or_create_instance_for_date(task, target_date)
+        if not instance:
+            raise HTTPException(status_code=400, detail="Could not create instance for recurring task")
+
+        # Toggle the instance
+        toggled_instance = await recurrence_service.toggle_instance_completion(instance.id)
+        await db.commit()
+        return {
+            "status": toggled_instance.status if toggled_instance else "error",
+            "task_id": task_id,
+            "instance_id": instance.id,
+            "completed": toggled_instance.status == "completed" if toggled_instance else False,
+        }
 
     updated_task = await service.toggle_task_completion(task_id)
     await db.commit()

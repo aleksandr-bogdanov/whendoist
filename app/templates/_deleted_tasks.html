@@ -1,0 +1,72 @@
+{# Deleted Tasks Partial - shows archived tasks with restore option #}
+{# Note: Header elements (back button, count) are in the main header, toggled by JS #}
+{% if domains_with_tasks %}
+    {% for domain_item in domains_with_tasks %}
+    <details class="project-group deleted-group" open data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}">
+        <summary class="project-header">
+            <span class="project-name">
+                {% if domain_item.domain %}
+                    {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}{{ domain_item.domain.name }}
+                {% else %}
+                    Inbox
+                {% endif %}
+            </span>
+        </summary>
+        <div class="task-list deleted-list">
+            {% for task_item in domain_item.tasks %}
+            {% set task = task_item.task %}
+            <div class="task-item deleted-item impact-{{ task.impact }}" data-task-id="{{ task.id }}">
+                <div class="task-content">
+                    <button class="restore-gutter" type="button" title="Restore task">
+                        <span class="restore-icon">&#8635;</span>
+                    </button>
+                    <span class="task-text">{{ task.title }}</span>
+                    {% if task.description %}
+                    <span class="task-desc-preview">{{ task.description[:50] }}{% if task.description|length > 50 %}...{% endif %}</span>
+                    {% endif %}
+                </div>
+                <div class="task-meta">
+                    <span class="meta-duration">
+                        {% if task.duration_minutes %}
+                            {% if task.duration_minutes >= 60 %}
+                            {{ task.duration_minutes // 60 }}h{% if task.duration_minutes % 60 %}{{ task.duration_minutes % 60 }}m{% endif %}
+                            {% else %}
+                            {{ task.duration_minutes }}m
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </span>
+                    <span class="meta-impact impact-{{ task.impact }}">
+                        {% if task.impact == 1 %}P1
+                        {% elif task.impact == 2 %}P2
+                        {% elif task.impact == 3 %}P3
+                        {% else %}P4{% endif %}
+                    </span>
+                    <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
+                        {% if task.clarity %}
+                            {{ task_item.clarity_display }}
+                        {% else %}—{% endif %}
+                    </span>
+                </div>
+                <span class="task-actions"></span>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endfor %}
+{% else %}
+<div class="empty-state deleted-empty">
+    <p>No deleted tasks.</p>
+    <p>Tasks you delete will appear here for recovery.</p>
+</div>
+{% endif %}
+
+{# Hidden element to pass total_count to JS #}
+<script>
+    (function() {
+        // Update header with deleted count
+        const countEl = document.getElementById('header-view-count');
+        if (countEl) {
+            countEl.textContent = '{{ total_count }} deleted';
+        }
+    })();
+</script>
