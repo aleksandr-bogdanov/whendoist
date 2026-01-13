@@ -251,38 +251,36 @@ jobs:
 
       - name: Create build manifest
         run: |
-          VERSION="${{ needs.prepare.outputs.version_tag }}"
-
-          cat > build-artifacts/build-manifest.json << 'MANIFEST_EOF'
-          {
-            "version": "${{ needs.prepare.outputs.version_tag }}",
-            "commit": {
-              "sha": "${{ steps.commit.outputs.sha }}",
-              "short": "${{ steps.commit.outputs.short }}",
-              "date": "${{ steps.commit.outputs.date }}"
-            },
-            "build": {
-              "hash": "${{ steps.hashes.outputs.build_hash }}",
-              "timestamp": "TIMESTAMP_PLACEHOLDER",
-              "runner": "github-actions",
-              "run_id": "${{ github.run_id }}",
-              "run_number": "${{ github.run_number }}",
-              "workflow": "${{ github.workflow }}"
-            },
-            "repository": {
-              "url": "https://github.com/${{ github.repository }}",
-              "ref": "${{ needs.prepare.outputs.version_tag }}"
-            },
-            "files": FILES_PLACEHOLDER
-          }
-          MANIFEST_EOF
-
-          # Replace placeholders
           TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           FILES_JSON=$(cat build-artifacts/file-hashes.txt | jq -Rs 'split("\n") | map(select(length > 0)) | map(split(":") | {(.[0]): .[1]}) | add')
 
-          sed -i "s|TIMESTAMP_PLACEHOLDER|$TIMESTAMP|g" build-artifacts/build-manifest.json
-          sed -i "s|\"FILES_PLACEHOLDER\"|$FILES_JSON|g" build-artifacts/build-manifest.json
+          # Build manifest using jq to handle JSON properly
+          jq -n \
+            --arg version "${{ needs.prepare.outputs.version_tag }}" \
+            --arg sha "${{ steps.commit.outputs.sha }}" \
+            --arg short "${{ steps.commit.outputs.short }}" \
+            --arg date "${{ steps.commit.outputs.date }}" \
+            --arg build_hash "${{ steps.hashes.outputs.build_hash }}" \
+            --arg timestamp "$TIMESTAMP" \
+            --arg run_id "${{ github.run_id }}" \
+            --arg run_number "${{ github.run_number }}" \
+            --arg workflow "${{ github.workflow }}" \
+            --arg repo_url "https://github.com/${{ github.repository }}" \
+            --argjson files "$FILES_JSON" \
+            '{
+              version: $version,
+              commit: { sha: $sha, short: $short, date: $date },
+              build: {
+                hash: $build_hash,
+                timestamp: $timestamp,
+                runner: "github-actions",
+                run_id: $run_id,
+                run_number: $run_number,
+                workflow: $workflow
+              },
+              repository: { url: $repo_url, ref: $version },
+              files: $files
+            }' > build-artifacts/build-manifest.json
 
           echo "Build manifest created"
 
