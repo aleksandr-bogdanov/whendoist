@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.8 (E2E Encryption)
+**Current Version:** v0.8.1 (E2E Encryption)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -121,37 +121,71 @@ rail   content      duration  impact   clarity
 just dev            # Start dev server (localhost:8000)
 just db-up          # Start PostgreSQL
 just test           # Run pytest
-just lint           # Run ruff
+just lint           # Run ruff check
 just fmt            # Format code
 just build-manifest # Generate build manifest for code provenance
 ```
+
+## Before Committing (IMPORTANT)
+
+**ALWAYS run ALL of these commands before every commit:**
+
+```bash
+uv run ruff format .   # Format all Python files
+uv run ruff check .    # Check for linting errors
+uv run pyright app/    # Type check (REQUIRED - CI will fail without this!)
+just test              # Run tests
+```
+
+**Or run them all at once:**
+```bash
+uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
+```
+
+The CI runs: lint → test → typecheck. All three must pass. Don't skip pyright!
 
 ## Release Process
 
 Releases are managed via GitHub Actions with automatic tag signing and build provenance.
 
-### Creating a Release
+### Creating a Release (Step by Step)
 
-1. **Update CHANGELOG.md** — Add entry for new version:
-   ```markdown
-   ## [0.9.0] - 2026-01-15
+**1. Update CHANGELOG.md** — Add entry for new version:
+```markdown
+## [0.9.0] - 2026-01-15
 
-   ### Added
-   - New feature X
+### Added
+- New feature X
 
-   ### Fixed
-   - Bug Y
-   ```
+### Fixed
+- Bug Y
+```
 
-2. **Commit changes** — Push to master:
-   ```bash
-   git add -A && git commit -m "Prepare v0.9.0 release"
-   git push origin master
-   ```
+**2. Run ALL pre-commit checks:**
+```bash
+uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
+```
 
-3. **Trigger release** — Go to GitHub Actions → Release → Run workflow:
-   - Enter version: `0.9.0` (or `v0.9.0`)
-   - Optional: Check "dry_run" to validate without releasing
+**3. Generate build manifest** (REQUIRED for build provenance):
+```bash
+just build-manifest
+```
+
+**4. Commit and push:**
+```bash
+git add -A && git commit -m "Release v0.9.0"
+git push origin master
+```
+
+**5. Wait for CI to pass** — Check GitHub Actions CI workflow
+
+**6. Push tag to trigger release:**
+```bash
+git tag -a v0.9.0 -m "Release v0.9.0"
+git push origin v0.9.0
+```
+
+The release workflow auto-triggers on tag push and creates the GitHub release with artifacts.
 
 ### What the Pipeline Does
 

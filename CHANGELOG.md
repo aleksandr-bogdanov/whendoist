@@ -19,6 +19,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.1] - 2026-01-13
+
+### Summary
+**Hotfix** — Improved logging and fixed database connection pool issues.
+
+### Fixed
+
+- **Database Connection Stability** — Fixed "connection is closed" errors:
+  - Added `pool_pre_ping=True` to detect and recycle stale connections
+  - Added `pool_recycle=300` to refresh connections every 5 minutes
+  - Configured proper `pool_size` and `max_overflow` settings
+- **Clean Exception Logging** — Readable tracebacks instead of wall of text:
+  - Filters out library internals, shows only app code
+  - Clean box format with exception type, message, and traceback
+  - Global exception handler returns proper 500 JSON response
+- **Quieter Logs** — Reduced noise from asyncpg and uvicorn.access loggers
+
+---
+
 ## [0.8.0] - 2026-01-11
 
 ### Summary
