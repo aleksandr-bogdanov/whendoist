@@ -56,9 +56,7 @@ class TestTaskSortExportsAPI:
     def test_has_update_preference_function(self, task_sort_js: str):
         """The updatePreference function must exist and update userPrefs."""
         # Check function is defined
-        assert re.search(r"function updatePreference\s*\(", task_sort_js), (
-            "updatePreference function must be defined"
-        )
+        assert re.search(r"function updatePreference\s*\(", task_sort_js), "updatePreference function must be defined"
         # Check it modifies userPrefs
         assert re.search(r"userPrefs\[key\]\s*=\s*value", task_sort_js), (
             "updatePreference must update the userPrefs cache"
@@ -89,11 +87,7 @@ class TestTaskListOptionsCallsTaskSort:
 
     def test_update_preference_call_is_conditional(self, task_list_options_js: str):
         """The call should check that TaskSort exists before calling."""
-        assert re.search(
-            r"window\.TaskSort\s*&&.*TaskSort\.updatePreference",
-            task_list_options_js,
-            re.DOTALL
-        ), (
+        assert re.search(r"window\.TaskSort\s*&&.*TaskSort\.updatePreference", task_list_options_js, re.DOTALL), (
             "TaskSort.updatePreference() call should be guarded with existence check"
         )
 
@@ -124,9 +118,7 @@ class TestPreferenceSyncContract:
 
         # Check each is in the userPrefs initialization
         for pref in sort_preferences:
-            assert pref in task_sort_js, (
-                f"Preference '{pref}' must be in task-sort.js userPrefs cache"
-            )
+            assert pref in task_sort_js, f"Preference '{pref}' must be in task-sort.js userPrefs cache"
 
     def test_documented_architecture(self):
         """

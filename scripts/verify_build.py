@@ -19,9 +19,9 @@ from pathlib import Path
 
 def run_command(cmd: list[str], description: str) -> bool:
     """Run a command and return success status."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {description}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     try:
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
@@ -47,9 +47,9 @@ def check_js_syntax(project_root: Path) -> bool:
         return True
 
     js_files = list(js_dir.glob("*.js"))
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  Checking {len(js_files)} JavaScript files")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Check if node is available
     try:
@@ -62,11 +62,7 @@ def check_js_syntax(project_root: Path) -> bool:
     all_passed = True
     for js_file in sorted(js_files):
         # Use Node.js --check flag to verify syntax
-        result = subprocess.run(
-            ["node", "--check", str(js_file)],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["node", "--check", str(js_file)], capture_output=True, text=True)
         if result.returncode != 0:
             print(f"  ❌ {js_file.name}: syntax error")
             print(result.stderr)
@@ -85,9 +81,9 @@ def check_css_syntax(project_root: Path) -> bool:
         return True
 
     css_files = list(css_dir.glob("*.css"))
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  Checking {len(css_files)} CSS files")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     all_passed = True
     for css_file in sorted(css_files):
@@ -136,9 +132,9 @@ def check_templates(project_root: Path) -> bool:
         return True
 
     template_files = list(templates_dir.glob("*.html"))
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  Checking {len(template_files)} template files")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     all_passed = True
     for template in sorted(template_files):
@@ -181,15 +177,9 @@ def main():
     results = []
 
     # Python checks
-    results.append(run_command(
-        ["uv", "run", "ruff", "check", "."],
-        "Python linting (ruff)"
-    ))
+    results.append(run_command(["uv", "run", "ruff", "check", "."], "Python linting (ruff)"))
 
-    results.append(run_command(
-        ["uv", "run", "pyright", "app/"],
-        "Python type checking (pyright)"
-    ))
+    results.append(run_command(["uv", "run", "pyright", "app/"], "Python type checking (pyright)"))
 
     # JavaScript checks
     results.append(check_js_syntax(project_root))

@@ -28,7 +28,7 @@ from playwright.sync_api import Page
 # Skip all tests in this file if no live server is available
 pytestmark = pytest.mark.skipif(
     True,  # TODO: Set to False when test infrastructure is ready
-    reason="E2E tests require running server with test data"
+    reason="E2E tests require running server with test data",
 )
 
 

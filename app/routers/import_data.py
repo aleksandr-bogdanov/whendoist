@@ -141,11 +141,13 @@ async def preview_todoist_import(
             project_list = []
             for p in projects:
                 if p.name.lower() != "inbox":
-                    project_list.append({
-                        "name": p.name,
-                        "task_count": project_task_counts.get(p.id, 0),
-                        "color": p.color,
-                    })
+                    project_list.append(
+                        {
+                            "name": p.name,
+                            "task_count": project_task_counts.get(p.id, 0),
+                            "color": p.color,
+                        }
+                    )
 
             return ImportPreviewResponse(
                 projects_count=len([p for p in projects if p.name.lower() != "inbox"]),

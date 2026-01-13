@@ -281,9 +281,7 @@ class TestGroupTasksByDomainSections:
         titles = [t["task"].title for t in result[0]["tasks"]]
         assert titles == ["Unscheduled", "Scheduled", "Completed"]
 
-    async def test_only_completed_at_bottom(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
+    async def test_only_completed_at_bottom(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
         """
         With completed_move_to_bottom=True and scheduled_move_to_bottom=False:
         Order should be: (unscheduled + scheduled interleaved by impact) -> completed
@@ -335,9 +333,7 @@ class TestGroupTasksByDomainSections:
         # P1 should come before P2, completed last
         assert titles == ["Scheduled P1", "Unscheduled P2", "Completed"]
 
-    async def test_only_scheduled_at_bottom(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
+    async def test_only_scheduled_at_bottom(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
         """
         With completed_move_to_bottom=False and scheduled_move_to_bottom=True:
         Order should be: (unscheduled + completed_unscheduled) -> (scheduled + completed_scheduled)
@@ -752,9 +748,7 @@ class TestGroupTasksByDomainVisibility:
 class TestGroupTasksByDomainComplexScenarios:
     """Tests for complex sorting scenarios with multiple preferences."""
 
-    async def test_full_scenario_all_enabled(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
+    async def test_full_scenario_all_enabled(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
         """
         Full scenario with all bottom-grouping enabled:
         - Unscheduled: P1, P2, P3
@@ -847,9 +841,7 @@ class TestGroupTasksByDomainComplexScenarios:
         ]
         assert titles == expected
 
-    async def test_full_scenario_all_disabled(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
+    async def test_full_scenario_all_disabled(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
         """
         Full scenario with all bottom-grouping disabled:
         All tasks interleaved by impact.

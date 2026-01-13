@@ -45,6 +45,7 @@ async def get_encryption_context(db: AsyncSession, user_id: int) -> dict[str, An
         "encryption_test_value": None,
     }
 
+
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
 
@@ -367,10 +368,7 @@ async def dashboard(
     recurring_task_ids = [t.id for t in tasks if t.is_recurring]
     if recurring_task_ids:
         instances = await recurrence_service.get_next_instances_for_tasks(recurring_task_ids)
-        next_instances = {
-            inst.task_id: {"date": inst.instance_date, "id": inst.id}
-            for inst in instances
-        }
+        next_instances = {inst.task_id: {"date": inst.instance_date, "id": inst.id} for inst in instances}
 
     # Get today's instance completions for recurring tasks (for visual aging)
     today_instance_completions: dict[int, datetime] = {}
@@ -588,10 +586,7 @@ async def task_list_partial(
     recurring_task_ids = [t.id for t in tasks if t.is_recurring]
     if recurring_task_ids:
         instances = await recurrence_service.get_next_instances_for_tasks(recurring_task_ids)
-        next_instances = {
-            inst.task_id: {"date": inst.instance_date, "id": inst.id}
-            for inst in instances
-        }
+        next_instances = {inst.task_id: {"date": inst.instance_date, "id": inst.id} for inst in instances}
 
     # Get today's instance completions for recurring tasks
     today_instance_completions: dict[int, datetime] = {}
@@ -638,10 +633,12 @@ async def deleted_tasks_partial(
     deleted_domains_with_tasks = []
     for domain_id, task_items in tasks_by_domain.items():
         domain = domains_map.get(domain_id) if domain_id else None
-        deleted_domains_with_tasks.append({
-            "domain": domain,
-            "tasks": sorted(task_items, key=native_task_sort_key),
-        })
+        deleted_domains_with_tasks.append(
+            {
+                "domain": domain,
+                "tasks": sorted(task_items, key=native_task_sort_key),
+            }
+        )
 
     # Sort by domain name
     deleted_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))
@@ -685,10 +682,12 @@ async def scheduled_tasks_partial(
     scheduled_domains_with_tasks = []
     for domain_id, task_items in tasks_by_domain.items():
         domain = domains_map.get(domain_id) if domain_id else None
-        scheduled_domains_with_tasks.append({
-            "domain": domain,
-            "tasks": sorted(task_items, key=native_task_sort_key),
-        })
+        scheduled_domains_with_tasks.append(
+            {
+                "domain": domain,
+                "tasks": sorted(task_items, key=native_task_sort_key),
+            }
+        )
 
     # Sort by domain name
     scheduled_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))
@@ -729,10 +728,12 @@ async def completed_tasks_partial(
     completed_domains_with_tasks = []
     for domain_id, task_items in tasks_by_domain.items():
         domain = domains_map.get(domain_id) if domain_id else None
-        completed_domains_with_tasks.append({
-            "domain": domain,
-            "tasks": sorted(task_items, key=lambda x: x["task"].completed_at or datetime.min, reverse=True),
-        })
+        completed_domains_with_tasks.append(
+            {
+                "domain": domain,
+                "tasks": sorted(task_items, key=lambda x: x["task"].completed_at or datetime.min, reverse=True),
+            }
+        )
 
     # Sort by domain name
     completed_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))

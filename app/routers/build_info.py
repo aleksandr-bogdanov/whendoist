@@ -64,9 +64,7 @@ def calculate_file_hash(filepath: Path) -> str:
 
 def load_build_manifest() -> dict[str, Any] | None:
     """Load build manifest from static folder if it exists."""
-    manifest_path = (
-        Path(__file__).parent.parent.parent / "static" / "build-manifest.json"
-    )
+    manifest_path = Path(__file__).parent.parent.parent / "static" / "build-manifest.json"
     if manifest_path.exists():
         try:
             return json.loads(manifest_path.read_text())
@@ -96,8 +94,7 @@ async def get_build_info() -> JSONResponse:
                 "repository": manifest.get("repository", {}),
                 "source": "manifest",
                 "verification_url": (
-                    f"https://github.com/aleksandr-bogdanov/whendoist/releases/tag/"
-                    f"{manifest.get('version', '')}"
+                    f"https://github.com/aleksandr-bogdanov/whendoist/releases/tag/{manifest.get('version', '')}"
                 ),
             }
         )

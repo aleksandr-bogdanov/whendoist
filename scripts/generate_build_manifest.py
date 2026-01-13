@@ -38,21 +38,16 @@ def get_file_sri_hash(filepath: Path) -> str:
         for chunk in iter(lambda: f.read(4096), b""):
             sha384_hash.update(chunk)
     import base64
+
     return f"sha384-{base64.b64encode(sha384_hash.digest()).decode()}"
 
 
 def get_git_info() -> dict:
     """Get current git commit information."""
     try:
-        sha = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], text=True
-        ).strip()
-        short = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], text=True
-        ).strip()
-        date = subprocess.check_output(
-            ["git", "show", "-s", "--format=%cI", "HEAD"], text=True
-        ).strip()
+        sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        short = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
+        date = subprocess.check_output(["git", "show", "-s", "--format=%cI", "HEAD"], text=True).strip()
         return {"sha": sha, "short": short, "date": date}
     except subprocess.CalledProcessError:
         return {"sha": "unknown", "short": "unknown", "date": "unknown"}

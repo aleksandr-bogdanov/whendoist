@@ -658,10 +658,10 @@ class AnalyticsService:
 
         # Resolution time buckets (days from open to close)
         resolution_buckets = {
-            "same_day": 0,      # Completed same day as created
-            "within_week": 0,   # 1-7 days
+            "same_day": 0,  # Completed same day as created
+            "within_week": 0,  # 1-7 days
             "within_month": 0,  # 8-30 days
-            "over_month": 0,    # 30+ days
+            "over_month": 0,  # 30+ days
         }
 
         resolution_times = []
