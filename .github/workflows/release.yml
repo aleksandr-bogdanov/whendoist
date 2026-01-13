@@ -146,7 +146,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-groups
 
       - name: Run linter
         run: uv run ruff check . --select=E,F,W --ignore=F401,F841
