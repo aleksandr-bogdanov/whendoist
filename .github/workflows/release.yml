@@ -5,7 +5,7 @@
 # Production-ready release workflow with:
 #   - Manual trigger via workflow_dispatch (recommended)
 #   - Automatic trigger on version tags (backwards compatible)
-#   - Pre-release validation (tests, lint, changelog check)
+#   - Requires CI to pass before releasing
 #   - Signed tags (GitHub-verified)
 #   - Build provenance & artifact attestations
 #   - SHA256/SRI hashes for integrity verification
@@ -14,6 +14,10 @@
 #   1. Go to Actions → Release → Run workflow
 #   2. Enter version (e.g., "0.9.0" or "v0.9.0")
 #   3. Optionally check "dry_run" to validate without releasing
+#
+# Prerequisites:
+#   - CI workflow must have passed for the current commit
+#   - CHANGELOG.md must have an entry for the version
 #
 # =============================================================================
 
@@ -40,7 +44,8 @@ on:
 
 permissions:
   contents: write
-  id-token: write      # Required for artifact attestations
+  actions: read         # Required to check CI status
+  id-token: write       # Required for artifact attestations
   attestations: write
 
 env:
@@ -48,7 +53,7 @@ env:
 
 jobs:
   # ===========================================================================
-  # Job 1: Validate inputs and prepare version
+  # Job 1: Validate inputs, check CI status, prepare version
   # ===========================================================================
   prepare:
     name: Prepare Release
@@ -105,6 +110,47 @@ jobs:
           echo "- **Manual trigger:** $IS_MANUAL" >> $GITHUB_STEP_SUMMARY
           echo "- **Dry run:** $DRY_RUN" >> $GITHUB_STEP_SUMMARY
 
+      - name: Check CI status for current commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA=$(git rev-parse HEAD)
+          echo "Checking CI status for commit $SHA..."
+
+          # Get the latest CI workflow run for this commit
+          CI_RUN=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=$SHA&per_page=1" \
+            --jq '.workflow_runs[0]')
+
+          if [ -z "$CI_RUN" ] || [ "$CI_RUN" = "null" ]; then
+            echo "::error::No CI workflow run found for commit $SHA"
+            echo "Please push to master and wait for CI to complete before releasing."
+            exit 1
+          fi
+
+          STATUS=$(echo "$CI_RUN" | jq -r '.status')
+          CONCLUSION=$(echo "$CI_RUN" | jq -r '.conclusion')
+          RUN_URL=$(echo "$CI_RUN" | jq -r '.html_url')
+
+          echo "CI Status: $STATUS, Conclusion: $CONCLUSION"
+          echo "CI Run: $RUN_URL"
+
+          if [ "$STATUS" != "completed" ]; then
+            echo "::error::CI is still running for commit $SHA"
+            echo "Please wait for CI to complete: $RUN_URL"
+            exit 1
+          fi
+
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::CI failed for commit $SHA (conclusion: $CONCLUSION)"
+            echo "Please fix CI issues before releasing: $RUN_URL"
+            exit 1
+          fi
+
+          echo "✓ CI passed for commit $SHA"
+          echo "- **CI Status:** ✅ Passed ([View Run]($RUN_URL))" >> $GITHUB_STEP_SUMMARY
+
       - name: Check version doesn't already exist
         if: steps.version.outputs.is_manual == 'true'
         run: |
@@ -126,45 +172,12 @@ jobs:
           echo "✓ CHANGELOG entry found for $VERSION"
 
   # ===========================================================================
-  # Job 2: Run tests and linting
-  # ===========================================================================
-  validate:
-    name: Validate
-    runs-on: ubuntu-latest
-    needs: prepare
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-
-      - name: Install dependencies
-        run: uv sync --extra dev --all-groups
-
-      - name: Check formatting
-        run: uv run ruff format --check .
-
-      - name: Run linter
-        run: uv run ruff check . --select=E,F,W --ignore=F401,F841,E712
-
-      - name: Run tests
-        run: uv run pytest tests/ -v --ignore=tests/e2e/
-        continue-on-error: false
-
-  # ===========================================================================
-  # Job 3: Create tag (manual trigger only)
+  # Job 2: Create tag (manual trigger only)
   # ===========================================================================
   create-tag:
     name: Create Signed Tag
     runs-on: ubuntu-latest
-    needs: [prepare, validate]
+    needs: prepare
     if: needs.prepare.outputs.is_manual == 'true' && needs.prepare.outputs.dry_run == 'false'
 
     steps:
@@ -195,16 +208,16 @@ jobs:
           echo "✓ Created and pushed tag $VERSION_TAG"
 
   # ===========================================================================
-  # Job 4: Build and release
+  # Job 3: Build and release
   # ===========================================================================
   release:
     name: Build & Release
     runs-on: ubuntu-latest
-    needs: [prepare, validate, create-tag]
+    needs: [prepare, create-tag]
     # Run if: (manual + tag created) OR (tag push trigger)
     if: |
       always() &&
-      needs.validate.result == 'success' &&
+      needs.prepare.result == 'success' &&
       needs.prepare.outputs.dry_run == 'false' &&
       (needs.create-tag.result == 'success' || needs.prepare.outputs.is_manual == 'false')
 
@@ -404,12 +417,12 @@ jobs:
           echo "- Source archive (.tar.gz)" >> $GITHUB_STEP_SUMMARY
 
   # ===========================================================================
-  # Job 5: Dry run summary (validation only)
+  # Job 4: Dry run summary (validation only)
   # ===========================================================================
   dry-run-summary:
     name: Dry Run Summary
     runs-on: ubuntu-latest
-    needs: [prepare, validate]
+    needs: prepare
     if: needs.prepare.outputs.dry_run == 'true'
 
     steps:
@@ -422,7 +435,6 @@ jobs:
           echo "- ✅ Version format valid" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Tag doesn't exist yet" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ CHANGELOG entry found" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Tests passed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Linting passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ CI passed for commit" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Ready to release!** Run again without dry_run to create the release." >> $GITHUB_STEP_SUMMARY
