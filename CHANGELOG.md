@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.2] - 2026-01-13
+
+### Fixed
+
+- **OAuth Callback Error** — Fixed global exception handler catching HTTPException, which broke OAuth redirects (Todoist connect showed "Internal server error" even though it worked)
+
+---
+
 ## [0.8.1] - 2026-01-13
 
 ### Summary

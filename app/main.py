@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
-    version="0.8.1",
+    version="0.8.2",
     lifespan=lifespan,
 )
 
@@ -53,10 +53,13 @@ app.add_middleware(
 )
 
 
-# Global exception handler for clean error logging
+# Global exception handler for unexpected errors only
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Log exceptions cleanly and return 500."""
+    """Log unexpected exceptions cleanly and return 500."""
+    # Don't catch HTTPException - let FastAPI handle those
+    if isinstance(exc, HTTPException):
+        raise exc
     logger.exception(f"Request failed: {request.method} {request.url.path}")
     return JSONResponse(
         status_code=500,

@@ -1,13 +1,13 @@
 {
-  "version": "v0.8.1",
+  "version": "v0.8.2",
   "commit": {
-    "sha": "199a58cd2b5939cc378de094ca9252207e69fca1",
-    "short": "199a58c",
-    "date": "2026-01-13T14:18:36+01:00"
+    "sha": "ef23df14ec878d0096dd593586278ebfcb021921",
+    "short": "ef23df1",
+    "date": "2026-01-13T14:24:19+01:00"
   },
   "build": {
-    "hash": "73f3af4166208d49",
-    "timestamp": "2026-01-13T13:22:54.625364+00:00",
+    "hash": "b32749076586d746",
+    "timestamp": "2026-01-13T13:33:32.745683+00:00",
     "runner": "local",
     "environment": "development"
   },
@@ -34,7 +34,7 @@
     "app/models.py": "902257f3001a45e31839f6e955b197b5e45995ea1cd757ba7bdab62afe3e17ca",
     "app/database.py": "038910d548b4bf6862ca39a29f59bfec28acaa07dcd449de8dbc3d0c48bc6df9",
     "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "app/main.py": "e3eee59c63fb04cddc03eedf4f95d2cb1e8da15f60e8e34c77d6cd5746c8095c",
+    "app/main.py": "de6a615212eaa4cdd3f8eeed72e43825e5511ce7af49a24ababe2598debcd892",
     "app/routers/auth.py": "e73ffab876f8b324dac4a262c99d82d5fe78f65c9b03d851b72312d3fe2aa1dd",
     "app/routers/backup.py": "33e208b3bab722a0c11ba16ed495d943992099606ce022c4d387e294fe179d2a",
     "app/routers/tasks.py": "875ca2e5798b944829b269dfaf29a215764b11ec1e6000c79e109d118619f2fa",
