@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.8.5 (Encryption & Import Hotfix)
+**Current Version:** v0.8.11 (Analytics Decryption Fix)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -423,6 +423,41 @@ for item in data.tasks:
 2. **Verify multitenancy**: User A must never see/modify User B's data
 3. **No per-record flags**: Global toggle only via `UserPreferences.encryption_enabled`
 4. **Batch updates respect ownership**: `get_task(id)` returns None for other users' tasks
+
+#### E2E Testing for Encrypted Field Display (CRITICAL)
+
+**Before committing any feature that displays encrypted fields (title, description, domain name), you MUST manually test with encryption enabled.**
+
+Contract tests only verify code EXISTS, not that it WORKS at runtime. The v0.8.9-v0.8.11 bugs proved this:
+- Contract test checked for `domainChart.updateOptions` string → passed
+- But the actual code path was broken (ApexCharts API misuse)
+- DOM-based decryption (`el.textContent`) failed while JS data-based worked
+
+**Mandatory E2E Test Checklist:**
+
+| Feature Type | Manual Test Required |
+|-------------|---------------------|
+| New chart/visualization with domain names | Enable encryption → verify labels decrypt |
+| New list/table with task titles | Enable encryption → verify titles decrypt |
+| New feature displaying task descriptions | Enable encryption → verify descriptions decrypt |
+| Any new Analytics section | Test with encrypted data, verify decryption |
+
+**Reliable Pattern for Decryption:**
+
+Always read encrypted data from **JavaScript variables** (serialized JSON), not DOM content:
+
+```javascript
+// ✅ CORRECT: Read from JS data (reliable)
+const data = {{ server_data | tojson }};
+for (let i = 0; i < elements.length; i++) {
+    const encrypted = data[i].title;
+    const decrypted = await Crypto.decryptField(encrypted);
+    elements[i].textContent = decrypted;
+}
+
+// ❌ WRONG: Read from DOM (unreliable)
+const encrypted = element.textContent;  // May have encoding issues
+```
 
 ### Passkey Unlock Architecture (v0.8.4)
 

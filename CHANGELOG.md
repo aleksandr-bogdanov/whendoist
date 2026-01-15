@@ -17,6 +17,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.11] - 2026-01-15
+
+### Summary
+**Hotfix: Recurring Tasks Decryption** — Fixes v0.8.9/10 bug where recurring task titles still showed encrypted gibberish.
+
+### Fixed
+
+- **Recurring task titles not decrypting** — Changed from DOM-based to JS data-based decryption:
+  - v0.8.9/10 read encrypted text from `el.textContent` (DOM)
+  - Now reads from `stats.recurring_stats[]` JavaScript data (same pattern as working domain chart)
+  - Also updated recent completions to use `recentCompletions[]` JS data for consistency
+  - All three encrypted sections (completions, recurring, domains) now use the same reliable pattern
+
+### Root Cause Analysis
+
+The DOM-based approach (`el.textContent`) was unreliable while the JS data approach (reading from serialized JSON) worked consistently. This is why domain chart worked (used JS data) but recurring tasks didn't (used DOM content).
+
+---
+
 ## [0.8.10] - 2026-01-15
 
 ### Summary

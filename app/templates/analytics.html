@@ -588,6 +588,7 @@
 // Chart data from backend
 const stats = {{ stats | tojson }};
 const days = {{ days }};
+const recentCompletions = {{ recent_completions | tojson }};
 
 // Common chart options
 const commonOptions = {
@@ -952,14 +953,15 @@ async function decryptAnalyticsData() {
     if (!window.WHENDOIST?.encryptionEnabled) return;
     if (!window.Crypto?.canCrypto()) return;
 
-    // Decrypt recent completion titles
+    // Decrypt recent completion titles (use JS data for reliability)
     const completionTitles = document.querySelectorAll('.completion-title');
-    for (const el of completionTitles) {
-        const title = el.textContent?.trim();
-        if (!title || !looksEncrypted(title)) continue;
+    for (let i = 0; i < completionTitles.length && i < recentCompletions.length; i++) {
+        const el = completionTitles[i];
+        const item = recentCompletions[i];
+        if (!item?.title || !looksEncrypted(item.title)) continue;
 
         try {
-            const decrypted = await Crypto.decryptField(title);
+            const decrypted = await Crypto.decryptField(item.title);
             if (decrypted) {
                 el.textContent = decrypted;
                 el.title = decrypted;  // Update tooltip too
@@ -970,14 +972,16 @@ async function decryptAnalyticsData() {
         }
     }
 
-    // Decrypt recurring task titles
+    // Decrypt recurring task titles (use JS data like domain chart for reliability)
     const recurringTitles = document.querySelectorAll('.recurring-title');
-    for (const el of recurringTitles) {
-        const title = el.textContent?.trim();
-        if (!title || !looksEncrypted(title)) continue;
+    const recurringStats = stats.recurring_stats || [];
+    for (let i = 0; i < recurringTitles.length && i < recurringStats.length; i++) {
+        const el = recurringTitles[i];
+        const taskData = recurringStats[i];
+        if (!taskData?.title || !looksEncrypted(taskData.title)) continue;
 
         try {
-            const decrypted = await Crypto.decryptField(title);
+            const decrypted = await Crypto.decryptField(taskData.title);
             if (decrypted) {
                 el.textContent = decrypted;
             }
