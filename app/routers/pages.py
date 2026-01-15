@@ -664,12 +664,16 @@ async def deleted_tasks_partial(
     # Sort by domain name
     deleted_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))
 
+    # Get encryption context
+    encryption_ctx = await get_encryption_context(db, user.id)
+
     return templates.TemplateResponse(
         "_deleted_tasks.html",
         {
             "request": request,
             "domains_with_tasks": deleted_domains_with_tasks,
             "total_count": len(deleted_tasks),
+            "encryption_enabled": encryption_ctx["encryption_enabled"],
         },
     )
 
@@ -713,12 +717,16 @@ async def scheduled_tasks_partial(
     # Sort by domain name
     scheduled_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))
 
+    # Get encryption context
+    encryption_ctx = await get_encryption_context(db, user.id)
+
     return templates.TemplateResponse(
         "_scheduled_tasks.html",
         {
             "request": request,
             "domains_with_tasks": scheduled_domains_with_tasks,
             "total_count": len(scheduled_tasks),
+            "encryption_enabled": encryption_ctx["encryption_enabled"],
         },
     )
 
@@ -759,12 +767,16 @@ async def completed_tasks_partial(
     # Sort by domain name
     completed_domains_with_tasks.sort(key=lambda x: (x["domain"].name if x["domain"] else ""))
 
+    # Get encryption context
+    encryption_ctx = await get_encryption_context(db, user.id)
+
     return templates.TemplateResponse(
         "_completed_tasks.html",
         {
             "request": request,
             "domains_with_tasks": completed_domains_with_tasks,
             "total_count": len(completed_tasks),
+            "encryption_enabled": encryption_ctx["encryption_enabled"],
         },
     )
 
