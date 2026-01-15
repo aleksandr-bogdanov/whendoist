@@ -532,7 +532,7 @@
                         <div class="completion-row" data-task-id="{{ item.task_id }}">
                             <span class="completion-check">✓</span>
                             <span class="completion-title" title="{{ item.title }}">{{ item.title }}</span>
-                            <span class="completion-date">{{ item.completed_at.strftime('%b %d') if item.completed_at else '' }}</span>
+                            <span class="completion-date">{{ item.completed_at_display }}</span>
                         </div>
                         {% endfor %}
                     </div>

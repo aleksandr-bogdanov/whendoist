@@ -17,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.12] - 2026-01-15
+
+### Summary
+**Hotfix: DateTime Serialization** — Fixes v0.8.11 regression where analytics page crashed due to datetime JSON serialization error.
+
+### Fixed
+
+- **Analytics page 500 error** — `TypeError: Object of type datetime is not JSON serializable`:
+  - v0.8.11 added `{{ recent_completions | tojson }}` but `completed_at` was a datetime object
+  - Now pre-formats datetime to display string in the service (`completed_at_display`)
+  - Removes datetime object after sorting, before returning
+
+---
+
 ## [0.8.11] - 2026-01-15
 
 ### Summary

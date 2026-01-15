@@ -744,7 +744,8 @@ class AnalyticsService:
                     "id": task.id,
                     "task_id": task.id,
                     "title": task.title,
-                    "completed_at": task.completed_at,
+                    "completed_at": task.completed_at,  # Keep for sorting
+                    "completed_at_display": task.completed_at.strftime("%b %d") if task.completed_at else "",
                     "domain_name": domain.name if domain else "Inbox",
                     "domain_icon": domain.icon if domain else "📥",
                     "is_instance": False,
@@ -758,7 +759,8 @@ class AnalyticsService:
                     "id": instance.id,
                     "task_id": task.id,
                     "title": task.title,
-                    "completed_at": instance.completed_at,
+                    "completed_at": instance.completed_at,  # Keep for sorting
+                    "completed_at_display": instance.completed_at.strftime("%b %d") if instance.completed_at else "",
                     "domain_name": domain.name if domain else "Inbox",
                     "domain_icon": domain.icon if domain else "📥",
                     "is_instance": True,
@@ -767,4 +769,10 @@ class AnalyticsService:
 
         # Sort by completed_at descending and limit
         completions.sort(key=lambda x: x["completed_at"] or datetime.min.replace(tzinfo=UTC), reverse=True)
-        return completions[:limit]
+        result = completions[:limit]
+
+        # Remove datetime objects before returning (they can't be JSON serialized)
+        for item in result:
+            del item["completed_at"]
+
+        return result
