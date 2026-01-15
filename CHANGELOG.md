@@ -17,6 +17,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.6] - 2026-01-15
+
+### Summary
+**Hotfix: Plaintext Display with Encryption Enabled** — Fixes bug where task list and domain names showed lock icons (🔒) instead of actual content when encryption was enabled but data was still plaintext.
+
+### Fixed
+
+- **Task list showing locks for plaintext data** — Tasks now display correctly after import:
+  - When encryption_enabled=true but data is plaintext, decryption returned same value
+  - Old code skipped UI update when decrypted === original, leaving 🔒 visible
+  - Added `looksEncrypted()` helper to detect actually encrypted data (base64, min 38 chars)
+  - Plaintext data now displays directly without decryption attempt
+
+- **Domain names showing locks** — Same fix applied to Settings page:
+  - Domain name decryption had identical bug
+  - Added error fallback to display original value on decryption failure
+
+### Added
+
+- **12 Hotfix Tests** (`tests/test_hotfix_0_8_6.py`):
+  - `TestDashboardDecryptionContract` — Verifies dashboard handles plaintext data correctly
+  - `TestSettingsDecryptionContract` — Verifies settings handles plaintext domain names
+  - `TestLooksEncryptedContract` — Verifies the helper function logic (min length, base64 format)
+
+---
+
 ## [0.8.5] - 2026-01-15
 
 ### Summary
