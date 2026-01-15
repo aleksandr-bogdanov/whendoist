@@ -1,13 +1,13 @@
 {
-  "version": "v0.8.11",
+  "version": "v0.8.12",
   "commit": {
-    "sha": "beb8ed435cee167ef305e2a6070b1207b37f5286",
-    "short": "beb8ed4",
-    "date": "2026-01-15T15:02:38+01:00"
+    "sha": "26a0ec6abe0c87101ef5626660c9398e6f8798de",
+    "short": "26a0ec6",
+    "date": "2026-01-15T15:22:24+01:00"
   },
   "build": {
-    "hash": "d9194d5d3aebe0d3",
-    "timestamp": "2026-01-15T14:04:41.746045+00:00",
+    "hash": "100961bd91001042",
+    "timestamp": "2026-01-15T15:33:56.853082+00:00",
     "runner": "local",
     "environment": "development"
   },
@@ -31,7 +31,7 @@
     "js/passkey.js": "89417fe2a0f1b2bf7eb4b82b75ff5272b6960fa786d7fc9b4762bb4c813df809",
     "js/plan-tasks.js": "8ba707a3e5680149775cb3a65fe74f49eaf959e4c6c12768c70fd4820ff008a6",
     "app/database.py": "038910d548b4bf6862ca39a29f59bfec28acaa07dcd449de8dbc3d0c48bc6df9",
-    "app/main.py": "793221ad18f7b826a9c623da4813981cd33aeb266dd8c57556a32a778ff6e7f3",
+    "app/main.py": "3d49261aadbffb9d67e33edebbd6c942f723b118c5295ee206256a3826f2bd0b",
     "app/logging_config.py": "23604c8827cc747c003f49e2175fabb770df538d0cd66c512e840df651fa969f",
     "app/config.py": "a2bf198c389e051417f457fae2f6d849b862ac366c7580f03bccbdd50f535da1",
     "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -50,7 +50,7 @@
     "app/routers/build_info.py": "4af9e2e221ee6aed0a8bdcf22ccbf0a5c18f1589f4256a16fcebe347d7e3a63a",
     "app/routers/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "app/services/passkey_service.py": "ff09f018ff955880fd033dab1d0112bedc7f87f4a979310df10be7add584a9cd",
-    "app/services/analytics_service.py": "bcd155f4d96dbf4f0a1846c417a82f90408b991e36474ab89a09e641eb57fd5b",
+    "app/services/analytics_service.py": "7442e2ac9ee359600db2ca3e92c91d090d2c2ee6102264945430ced84e06dffe",
     "app/services/todoist_import.py": "5ed3955f7815f8f91234c3c4f87910be2991d4249db09534fa7cbe18c8201139",
     "app/services/todoist.py": "a5fbc6c6b0a311e82e8e27da6a1e59673255809c0fed28828392fe686a63ead1",
     "app/services/recurrence_service.py": "279c7b76ba994e44c438874684bb7d197154c48bf7457d6e7a0ed608bd8604ec",
