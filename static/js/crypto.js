@@ -17,12 +17,16 @@
 
 const Crypto = (() => {
     // Constants
-    const PBKDF2_ITERATIONS = 100000;
+    const PBKDF2_ITERATIONS = 100000;  // OWASP minimum, don't reduce
     const IV_LENGTH = 12;  // 96 bits for AES-GCM
     const TEST_VALUE = 'WHENDOIST_ENCRYPTION_TEST';
 
     // Storage key for the derived encryption key (base64)
     const KEY_STORAGE_KEY = 'whendoist_encryption_key';
+
+    // In-memory cache for CryptoKey object (avoids repeated importKey calls)
+    // This is the main performance optimization - importKey is slow on mobile
+    let cachedKey = null;
 
     // ==========================================================================
     // Low-level crypto utilities
@@ -164,28 +168,38 @@ const Crypto = (() => {
     // ==========================================================================
 
     /**
-     * Store derived key in sessionStorage.
+     * Store derived key in sessionStorage and memory cache.
      * Key is cleared when browser tab closes.
      */
     async function storeKey(key) {
+        cachedKey = key;  // Cache in memory for fast access
         const keyData = await exportKey(key);
         sessionStorage.setItem(KEY_STORAGE_KEY, keyData);
     }
 
     /**
-     * Retrieve stored key from sessionStorage.
+     * Retrieve stored key from memory cache or sessionStorage.
+     * Uses in-memory cache to avoid expensive importKey calls on every decrypt.
      * @returns {Promise<CryptoKey|null>} Stored key or null
      */
     async function getStoredKey() {
+        // Return cached key if available (fast path)
+        if (cachedKey) return cachedKey;
+
+        // Fall back to sessionStorage (e.g., after page refresh)
         const keyData = sessionStorage.getItem(KEY_STORAGE_KEY);
         if (!keyData) return null;
-        return await importKey(keyData);
+
+        // Import and cache for subsequent calls
+        cachedKey = await importKey(keyData);
+        return cachedKey;
     }
 
     /**
      * Clear stored encryption key (on logout).
      */
     function clearStoredKey() {
+        cachedKey = null;  // Clear memory cache
         sessionStorage.removeItem(KEY_STORAGE_KEY);
     }
 

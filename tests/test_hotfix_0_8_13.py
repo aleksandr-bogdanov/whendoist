@@ -1,14 +1,16 @@
 """
-Hotfix v0.8.13 Tests - Recurring Task Completion + Passkey RPID.
+Hotfix v0.8.13 Tests - Recurring Task Completion + Passkey RPID + Crypto Performance.
 
 These tests verify fixes for:
 1. Recurring task completion in Edit Task dialog showing wrong state
 2. Passkey RPID not matching production domain (derived from BASE_URL)
+3. Crypto key caching to avoid repeated importKey calls (mobile performance)
 
 Test Category: Contract + Unit
 Related Issues:
 - Complete button in dialog didn't reflect today's instance state for recurring tasks
 - Passkeys failed on iPhone Chrome with "RPID did not match origin" error
+- Decryption was slow on mobile due to importKey being called per-field
 
 See tests/README.md for full test architecture.
 """
@@ -310,3 +312,77 @@ class TestTaskResponseWithInstances:
         task = _create_mock_task(is_recurring=True, instances=[yesterday_instance])
         response = _task_to_response(task)
         assert response.today_instance_completed is None
+
+
+# =============================================================================
+# Crypto Key Caching Contract Tests
+# =============================================================================
+
+
+class TestCryptoKeyCachingContract:
+    """
+    Verify crypto.js caches the CryptoKey object to avoid repeated importKey calls.
+
+    Performance Fix: On mobile Safari/Chrome, each importKey call takes 20-50ms.
+    With 50 tasks to decrypt, that's 1-2.5 seconds of overhead. Caching the
+    CryptoKey in memory makes subsequent decrypt calls instant.
+    """
+
+    @pytest.fixture
+    def crypto_js(self) -> str:
+        return (Path(__file__).parent.parent / "static" / "js" / "crypto.js").read_text()
+
+    def test_has_cached_key_variable(self, crypto_js: str):
+        """
+        crypto.js MUST have a cachedKey variable for in-memory caching.
+        """
+        assert "cachedKey" in crypto_js, (
+            "crypto.js must have cachedKey variable. "
+            "Without this, importKey is called on every decrypt (slow on mobile)."
+        )
+
+    def test_get_stored_key_checks_cache_first(self, crypto_js: str):
+        """
+        getStoredKey MUST check cachedKey before falling back to sessionStorage.
+        """
+        # Find the getStoredKey function
+        assert "async function getStoredKey" in crypto_js
+
+        # Get the function body
+        func_start = crypto_js.index("async function getStoredKey")
+        func_section = crypto_js[func_start : func_start + 500]
+
+        # Should check cache first
+        assert "if (cachedKey)" in func_section, "getStoredKey must check cachedKey first for fast path"
+
+    def test_store_key_updates_cache(self, crypto_js: str):
+        """
+        storeKey MUST update cachedKey when storing a new key.
+        """
+        # Find the storeKey function
+        func_start = crypto_js.index("async function storeKey")
+        func_section = crypto_js[func_start : func_start + 300]
+
+        assert "cachedKey = key" in func_section or "cachedKey=key" in func_section, (
+            "storeKey must update cachedKey when storing"
+        )
+
+    def test_clear_stored_key_clears_cache(self, crypto_js: str):
+        """
+        clearStoredKey MUST clear cachedKey to prevent stale key usage.
+        """
+        # Find the clearStoredKey function
+        func_start = crypto_js.index("function clearStoredKey")
+        func_section = crypto_js[func_start : func_start + 200]
+
+        assert "cachedKey = null" in func_section or "cachedKey=null" in func_section, (
+            "clearStoredKey must clear cachedKey"
+        )
+
+    def test_cache_comment_explains_performance(self, crypto_js: str):
+        """
+        Code SHOULD have comments explaining why caching is needed.
+        """
+        assert "importKey" in crypto_js and ("slow" in crypto_js.lower() or "performance" in crypto_js.lower()), (
+            "Code should document that importKey is slow on mobile"
+        )
