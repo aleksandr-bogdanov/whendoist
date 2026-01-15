@@ -4,10 +4,10 @@ User preferences service.
 Provides CRUD operations for user preferences (task display settings).
 """
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import UserPreferences
+from app.models import UserPasskey, UserPreferences
 
 
 class PreferencesService:
@@ -109,12 +109,23 @@ class PreferencesService:
         Disable E2E encryption.
 
         Note: This does NOT decrypt existing data.
+
+        IMPORTANT: Also deletes all passkeys for this user because:
+        - Passkeys store wrapped_key values that wrap the current master key
+        - If user re-enables encryption with a new password, old passkeys cannot
+          unwrap the new master key (they still have the old one wrapped)
+        - To prevent "Invalid passkey - unable to decrypt data" errors, we must
+          delete all passkeys when encryption is disabled
         """
         prefs = await self.get_preferences()
 
         prefs.encryption_enabled = False
         prefs.encryption_salt = None
         prefs.encryption_test_value = None
+        prefs.encryption_unlock_method = None  # Reset unlock method
+
+        # Delete all passkeys for this user - they become invalid with new password
+        await self.db.execute(delete(UserPasskey).where(UserPasskey.user_id == self.user_id))
 
         await self.db.flush()
         return prefs

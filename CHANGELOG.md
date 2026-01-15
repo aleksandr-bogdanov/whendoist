@@ -17,6 +17,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.9] - 2026-01-15
+
+### Summary
+**Hotfix: Passkey Invalidation + Analytics Decryption** — Fixes two encryption-related bugs: passkeys becoming invalid after password change, and analytics page showing encrypted gibberish.
+
+### Fixed
+
+- **Passkeys invalid after password change** — When changing encryption password, old passkeys now deleted:
+  - User disables encryption → deletes all passkeys
+  - User re-enables with new password → no stale passkeys remain
+  - Prevents "Invalid passkey - unable to decrypt data" errors
+  - Old passkeys had `wrapped_key` values that wrapped the OLD master key
+
+- **Analytics showing encrypted gibberish** — Analytics page now decrypts encrypted data:
+  - Recent completions now show decrypted task titles
+  - Recurring task completion section now decrypts task titles
+  - Domain chart now shows decrypted domain names
+  - Added `looksEncrypted()` helper and `decryptAnalyticsData()` function
+
+### Added
+
+- **9 Hotfix Tests** (`tests/test_hotfix_0_8_9.py`):
+  - `TestPasskeyDeletionOnEncryptionDisable` — Verifies passkeys are deleted when encryption disabled
+  - `TestAnalyticsDecryptionContract` — Verifies analytics.html has decryption logic
+
+---
+
 ## [0.8.8] - 2026-01-15
 
 ### Summary
