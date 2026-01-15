@@ -20,9 +20,9 @@
                     <button class="restore-gutter" type="button" title="Restore task">
                         <span class="restore-icon">&#8635;</span>
                     </button>
-                    <span class="task-text">{{ task.title }}</span>
+                    <span class="task-text" {% if encryption_enabled %}data-encrypted-title="{{ task.title }}"{% endif %}>{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
                     {% if task.description %}
-                    <span class="task-desc-preview">{{ task.description[:50] }}{% if task.description|length > 50 %}...{% endif %}</span>
+                    <span class="task-desc-preview" {% if encryption_enabled %}data-encrypted-desc="{{ task.description }}"{% endif %}>{% if encryption_enabled %}🔒{% else %}{{ task.description[:50] }}{% if task.description|length > 50 %}...{% endif %}{% endif %}</span>
                     {% endif %}
                 </div>
                 <div class="task-meta">
@@ -70,3 +70,56 @@
         }
     })();
 </script>
+
+{% if encryption_enabled %}
+<script>
+(async function() {
+    if (!window.Crypto || !Crypto.canCrypto()) return;
+
+    // Decrypt task titles
+    const taskTexts = document.querySelectorAll('.deleted-group .task-text[data-encrypted-title]');
+    for (const el of taskTexts) {
+        const encrypted = el.dataset.encryptedTitle;
+        if (!encrypted) continue;
+        try {
+            const decrypted = await Crypto.decryptField(encrypted);
+            if (decrypted) el.textContent = decrypted;
+        } catch (e) {
+            console.error('Failed to decrypt task title:', e);
+        }
+    }
+
+    // Decrypt task descriptions
+    const descTexts = document.querySelectorAll('.deleted-group .task-desc-preview[data-encrypted-desc]');
+    for (const el of descTexts) {
+        const encrypted = el.dataset.encryptedDesc;
+        if (!encrypted) continue;
+        try {
+            const decrypted = await Crypto.decryptField(encrypted);
+            if (decrypted) {
+                // Show truncated preview like non-encrypted version
+                el.textContent = decrypted.length > 50 ? decrypted.slice(0, 50) + '...' : decrypted;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt task description:', e);
+        }
+    }
+
+    // Decrypt domain names
+    const domainElements = document.querySelectorAll('.deleted-group[data-domain-name]');
+    for (const el of domainElements) {
+        const name = el.dataset.domainName;
+        if (!name) continue;
+        try {
+            const decrypted = await Crypto.decryptField(name);
+            if (decrypted) {
+                const nameText = el.querySelector('.domain-name-text');
+                if (nameText) nameText.textContent = decrypted;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt domain name:', e);
+        }
+    }
+})();
+</script>
+{% endif %}

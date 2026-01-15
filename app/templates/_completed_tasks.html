@@ -28,7 +28,7 @@
                     <span class="complete-check" aria-hidden="true">✓</span>
                 </button>
                 <div class="task-content">
-                    <span class="task-text">{{ task.title }}</span>
+                    <span class="task-text" {% if encryption_enabled %}data-encrypted-title="{{ task.title }}"{% endif %}>{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
                     {% if task.completed_at %}
                     <span class="task-due">
                         {{ task.completed_at.strftime('%b %d') }}
@@ -84,3 +84,40 @@
         }
     })();
 </script>
+
+{% if encryption_enabled %}
+<script>
+(async function() {
+    if (!window.Crypto || !Crypto.canCrypto()) return;
+
+    // Decrypt task titles
+    const taskTexts = document.querySelectorAll('.completed-group .task-text[data-encrypted-title]');
+    for (const el of taskTexts) {
+        const encrypted = el.dataset.encryptedTitle;
+        if (!encrypted) continue;
+        try {
+            const decrypted = await Crypto.decryptField(encrypted);
+            if (decrypted) el.textContent = decrypted;
+        } catch (e) {
+            console.error('Failed to decrypt task title:', e);
+        }
+    }
+
+    // Decrypt domain names
+    const domainElements = document.querySelectorAll('.completed-group[data-domain-name]');
+    for (const el of domainElements) {
+        const name = el.dataset.domainName;
+        if (!name) continue;
+        try {
+            const decrypted = await Crypto.decryptField(name);
+            if (decrypted) {
+                const nameText = el.querySelector('.domain-name-text');
+                if (nameText) nameText.textContent = decrypted;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt domain name:', e);
+        }
+    }
+})();
+</script>
+{% endif %}
