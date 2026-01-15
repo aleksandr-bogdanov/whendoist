@@ -109,10 +109,70 @@ Powered by ApexCharts:
 - GitHub-style contribution heatmap
 - Velocity trends with rolling averages
 
-### Privacy & Security
+---
 
-- **E2E Encryption** — Optional client-side encryption for task data (AES-256-GCM)
-- **Code Provenance** — Verify deployed code matches GitHub source with build hashes
+## 🔐 End-to-End Encryption (Optional)
+
+Your task titles, descriptions, and project names can be encrypted so that only you can read them. When enabled, we store ciphertext — not your actual content.
+
+### How It Works
+
+1. You set a passphrase in Settings → Security
+2. A key is derived from your passphrase using PBKDF2 (100,000 iterations) and stored only in your browser session
+3. All sensitive fields are encrypted client-side (AES-256-GCM) before being sent to the server
+4. We store encrypted blobs — we cannot read your task content
+
+### What's Encrypted
+
+| Encrypted | Not Encrypted |
+|-----------|---------------|
+| Task titles | Dates and times |
+| Task descriptions | Priority (P1-P4) |
+| Project/domain names | Clarity labels |
+| | Task status |
+| | Recurrence patterns |
+| | Duration estimates |
+
+We keep dates and metadata unencrypted so the calendar and filters work server-side. Your actual content — *what* you're doing — is hidden from us.
+
+### What the Database Actually Sees
+
+**Before encryption:**
+```
+title: "Call mom about birthday party"
+description: "Discuss cake flavors and guest list"
+domain: "Personal"
+```
+
+**After encryption:**
+```
+title: "6PXEDPhiCWWl0spDbb6ysrSns0ofm9MyFfWjyoh1DNEsO0SwTYSWmj44rE8BNeekxTlFBoNR90F+y4/tqXo/"
+description: "R5xCjedmPpZeIfv13sL5JZJUl97TsZWhVX8W0uY5tYkYFToXkAnbW32VFLWHP2m+vjzTaQE="
+domain: "ZdZE+kIOQty8tzqwlay/MSBOlfPXcnj2zqiIqAX94k7FPiaFBtsZ9MUMGNvLu2ICyKqPpb+ITUPqxQUARFUlqg=="
+```
+
+The metadata is still visible (when, priority, status), but the content is gibberish without your passphrase.
+
+### What This Means
+
+- **With encryption off:** Standard security. Data encrypted at rest by our database provider. We could technically read your tasks.
+- **With encryption on:** Zero-knowledge of content. We see that you have 50 tasks scheduled this week, but not what they say.
+
+### Trade-offs
+
+- You must enter your passphrase each browser session (key is in sessionStorage, cleared on tab close)
+- If you lose your passphrase, your data is **unrecoverable** — we cannot reset it
+- No server-side search (we can't search what we can't read)
+
+### Self-Hosting
+
+The code is open source. Run your own instance if you prefer full control.
+
+---
+
+### Other Security Features
+
+- **Code Provenance** — Verify deployed code matches GitHub source with build hashes (Settings → Build Provenance)
 - **Backup & Restore** — Export/import all data as JSON
 
 ### Optional: Import from Todoist

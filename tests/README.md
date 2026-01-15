@@ -22,6 +22,7 @@ tests/
 ├── test_preferences.py      # PreferencesService CRUD
 ├── test_task_sorting.py     # Server-side sorting logic
 ├── test_js_module_contract.py  # JS module integration contracts
+├── test_encryption.py       # E2E encryption (multitenancy, crypto.js contracts)
 └── e2e/
     └── test_task_sorting_e2e.py  # Browser-based E2E tests
 ```
@@ -36,6 +37,7 @@ tests/
 | `test_preferences.py` | 16 | PreferencesService CRUD, validation, encryption |
 | `test_task_sorting.py` | 19 | Server-side `group_tasks_by_domain()` sorting |
 | `test_js_module_contract.py` | 8 | Verify JS modules have correct APIs |
+| `test_encryption.py` | 48 | E2E encryption architecture, multitenancy isolation |
 
 ### E2E Tests (Slow, Requires Server)
 
@@ -76,6 +78,79 @@ def test_calls_tasksort_update_preference_after_save():
     use stale cached values.
     """
     assert "TaskSort.updatePreference" in task_list_options_js
+```
+
+### E2E Encryption (`test_encryption.py`)
+
+Comprehensive tests for client-side encryption architecture:
+
+#### Test Categories
+
+| Category | Tests | Purpose |
+|----------|-------|---------|
+| `TestEncryptionPreferences` | 6 | Encryption enable/disable in UserPreferences |
+| `TestEncryptionMultitenancy` | 8 | **CRITICAL**: User isolation for encrypted data |
+| `TestEncryptionDataIsolation` | 3 | Query scoping for all-content endpoint |
+| `TestCryptoModuleExportsAPI` | 11 | crypto.js exports required functions |
+| `TestCryptoModuleArchitecture` | 7 | Verifies AES-GCM, PBKDF2, sessionStorage |
+| `TestCryptoModuleIntegration` | 4 | dashboard/settings/task-dialog use Crypto |
+| `TestEncryptionFlows` | 2 | Enable/disable encryption workflows |
+| `TestEncryptionEdgeCases` | 4 | Empty batch, nonexistent IDs, re-enable |
+| `TestEncryptionDataModel` | 3 | No per-record flags (global toggle only) |
+
+#### Encryption Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     E2E ENCRYPTION ARCHITECTURE                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  User Preferences                                                   │
+│  ┌─────────────────────────────────────────────────────────┐       │
+│  │ encryption_enabled: boolean    ← Global toggle           │       │
+│  │ encryption_salt: string        ← For key derivation      │       │
+│  │ encryption_test_value: string  ← Passphrase verification │       │
+│  └─────────────────────────────────────────────────────────┘       │
+│                                                                     │
+│  Encrypted Fields (when enabled):                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
+│  │ task.title   │  │ task.desc    │  │ domain.name  │              │
+│  └──────────────┘  └──────────────┘  └──────────────┘              │
+│                                                                     │
+│  Client-Side (crypto.js):                                           │
+│  ┌─────────────────────────────────────────────────────────┐       │
+│  │ • PBKDF2 key derivation (100,000 iterations)            │       │
+│  │ • AES-256-GCM encryption/decryption                     │       │
+│  │ • Key stored in sessionStorage (cleared on tab close)   │       │
+│  │ • window.WHENDOIST.encryptionEnabled for state check    │       │
+│  └─────────────────────────────────────────────────────────┘       │
+│                                                                     │
+│  Server-Side Protection (MULTITENANCY):                             │
+│  ┌─────────────────────────────────────────────────────────┐       │
+│  │ • All queries filter by user_id                         │       │
+│  │ • get_task(id) returns None for other users' tasks      │       │
+│  │ • Batch updates skip IDs not owned by authenticated user│       │
+│  └─────────────────────────────────────────────────────────┘       │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### Key Security Tests
+
+```python
+# Multitenancy: User A cannot access User B's data
+async def test_get_task_by_id_requires_ownership():
+    """get_task() returns None when accessing another user's task."""
+    task = await service1.create_task(title="User 1 Private Task")
+    result = await service2.get_task(task.id)  # User 2 tries to access
+    assert result is None  # BLOCKED
+
+# Batch update protection
+async def test_batch_update_only_affects_owned_tasks():
+    """Malicious user cannot modify other users' tasks via batch-update."""
+    # User 2 sends User 1's task ID in batch-update
+    task = await service2.get_task(user1_task_id)  # Returns None
+    # Task is skipped, User 1's data remains unchanged
 ```
 
 ## Regression Tests

@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.8.2 (E2E Encryption)
+**Current Version:** v0.8.3 (E2E Encryption Rewrite)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -227,6 +227,7 @@ tests/
 ├── test_preferences.py         # PreferencesService CRUD
 ├── test_task_sorting.py        # Server-side sorting (pages.py)
 ├── test_js_module_contract.py  # JS module API verification
+├── test_encryption.py          # E2E encryption (48 tests, multitenancy)
 └── e2e/
     └── test_task_sorting_e2e.py  # Browser-based tests (Playwright)
 ```
@@ -337,15 +338,77 @@ Pico CSS aggressively styles input focus states. To override with custom glow:
 - **Completed Tasks Settings** — 4 preferences in Settings
 - **Backup & Restore** — Export/import all data as JSON
 
-### E2E Encryption Architecture
-```javascript
-// Client-side encryption flow:
-1. User sets passphrase in Settings
-2. Salt generated (32 bytes random)
-3. Key derived: PBKDF2(passphrase, salt, 100000, SHA-256) -> AES-256
-4. Test value encrypted and sent to server with salt
-5. On subsequent visits, passphrase prompt -> key derived -> stored in sessionStorage
+### E2E Encryption Architecture (CRITICAL CONSTRAINTS)
+
+The encryption system was completely rewritten in v0.8.3. **Do not introduce per-record encryption flags.**
+
+#### Core Principle: Global Toggle Only
+
 ```
+✅ CORRECT: One global toggle (encryption_enabled) per user
+❌ WRONG: Per-record flags like title_encrypted, description_encrypted
+```
+
+**Why?** Per-record flags create orphaned encrypted data, mixed-state confusion, and make the system impossible to audit.
+
+#### Encrypted Fields (3 total)
+
+| Field | Model |
+|-------|-------|
+| `title` | Task |
+| `description` | Task |
+| `name` | Domain |
+
+**Everything else stays plaintext** (dates, priority, clarity, status, recurrence) so calendar and filters work server-side.
+
+#### Multitenancy Isolation (NEVER BREAK)
+
+All encryption operations MUST be user-scoped. Tests verify this:
+
+```python
+# tests/test_encryption.py - 48 tests
+# CRITICAL: TestEncryptionMultitenancy class
+
+# Every query MUST filter by user_id
+query = select(Task).where(
+    Task.id == task_id,
+    Task.user_id == self.user_id  # ← NEVER remove this
+)
+
+# Batch updates MUST skip unowned IDs
+for item in data.tasks:
+    task = await service.get_task(item.id)  # Returns None if not owned
+    if not task:
+        continue  # ← Skip, don't fail
+```
+
+#### Key Files
+
+| File | Role |
+|------|------|
+| `static/js/crypto.js` | Client-side AES-256-GCM encryption |
+| `app/services/preferences_service.py` | `setup_encryption()`, `disable_encryption()` |
+| `app/routers/tasks.py` | `/api/tasks/all-content`, `/api/tasks/batch-update` |
+| `app/routers/domains.py` | `/api/domains/batch-update` |
+| `app/templates/base.html` | `window.WHENDOIST` config |
+| `tests/test_encryption.py` | 48 comprehensive tests |
+
+#### API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/tasks/all-content` | Fetch all tasks/domains for batch encrypt/decrypt |
+| `POST /api/tasks/batch-update` | Update multiple tasks (encrypt enable/disable) |
+| `POST /api/domains/batch-update` | Update multiple domains (encrypt enable/disable) |
+| `POST /api/preferences/encryption/setup` | Enable encryption (stores salt, test value) |
+| `POST /api/preferences/encryption/disable` | Disable encryption |
+
+#### MUST-HAVES for Any Encryption Changes
+
+1. **Run encryption tests**: `uv run pytest tests/test_encryption.py -v`
+2. **Verify multitenancy**: User A must never see/modify User B's data
+3. **No per-record flags**: Global toggle only via `UserPreferences.encryption_enabled`
+4. **Batch updates respect ownership**: `get_task(id)` returns None for other users' tasks
 
 ## Files to Read First
 
@@ -366,4 +429,5 @@ None currently tracked.
 ## Next Up (v0.9)
 
 - Time blocking templates
-- Task encryption integration (encrypt on submit, decrypt on display)
+- Key rotation (change passphrase without re-encrypting all data)
+- Recovery key generation during encryption setup
