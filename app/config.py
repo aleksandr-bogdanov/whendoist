@@ -1,6 +1,7 @@
 from functools import lru_cache
+from urllib.parse import urlparse
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,8 +29,18 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
 
     # Passkey (WebAuthn) settings
-    passkey_rp_id: str = "localhost"  # Production: domain without port (e.g., "whendoist.com")
+    # If not explicitly set, derived from base_url
+    passkey_rp_id: str = ""
     passkey_rp_name: str = "Whendoist"
+
+    @model_validator(mode="after")
+    def derive_passkey_rp_id(self) -> "Settings":
+        """Derive passkey_rp_id from base_url if not explicitly set."""
+        if not self.passkey_rp_id:
+            parsed = urlparse(self.base_url)
+            # RP ID is the hostname without port
+            self.passkey_rp_id = parsed.hostname or "localhost"
+        return self
 
     @property
     def todoist_redirect_uri(self) -> str:
