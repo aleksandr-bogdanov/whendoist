@@ -229,7 +229,8 @@ class Domain(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    name: Mapped[str] = mapped_column(String(255))
+    # NOTE: Using Text instead of String(255) because encrypted values are ~1.4x larger
+    name: Mapped[str] = mapped_column(Text)
     color: Mapped[str | None] = mapped_column(String(7), nullable=True)  # hex color
     icon: Mapped[str | None] = mapped_column(String(50), nullable=True)  # emoji
     position: Mapped[int] = mapped_column(Integer, default=0)
@@ -266,7 +267,9 @@ class Task(Base):
     parent_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
 
     # Content (encrypted client-side when user has encryption enabled)
-    title: Mapped[str] = mapped_column(String(500))
+    # NOTE: Using Text instead of String(500) because encrypted values are ~1.4x larger
+    # (base64 encoding + IV + auth tag overhead)
+    title: Mapped[str] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Attributes

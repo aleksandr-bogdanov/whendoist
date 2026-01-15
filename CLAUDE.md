@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.8.3 (E2E Encryption Rewrite)
+**Current Version:** v0.8.5 (Encryption & Import Hotfix)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -23,6 +23,10 @@
 | Database | PostgreSQL with asyncpg |
 | APIs | Google Calendar v3, Todoist API v1 (optional import) |
 | Tooling | uv, ruff, pytest |
+
+**CRITICAL: No Database Migrations Before v1.0**
+
+The database is dropped and recreated frequently during pre-1.0 development. Do NOT create migration files. Schema changes go directly in `app/models.py` and the DB is recreated via `Base.metadata.create_all()`.
 
 ## Project Structure
 

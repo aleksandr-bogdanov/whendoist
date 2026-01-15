@@ -2066,30 +2066,55 @@ async function executeImport() {
             status.className = 'expand-status success';
 
             // E2E Encryption: Encrypt imported tasks if encryption is enabled
-            // The imported tasks are stored as plaintext - user needs to re-enable encryption
-            // to encrypt them, or we can encrypt on-the-fly using batch update
-            if (Crypto.canCrypto() && data.tasks_created > 0) {
-                status.innerHTML += '<br>🔐 Encrypting imported tasks...';
+            // The imported tasks are stored as plaintext - encrypt using batch update
+            if (Crypto.canCrypto() && (data.tasks_created > 0 || data.domains_created > 0)) {
+                status.innerHTML += '<br>🔐 Encrypting imported data...';
                 try {
                     // Fetch all content (including newly imported)
                     const contentResponse = await fetch('/api/tasks/all-content');
-                    if (contentResponse.ok) {
-                        const allContent = await contentResponse.json();
-                        const encrypted = await Crypto.encryptAllData(allContent.tasks, allContent.domains);
+                    if (!contentResponse.ok) {
+                        throw new Error('Failed to fetch content for encryption');
+                    }
+                    const allContent = await contentResponse.json();
+                    const encrypted = await Crypto.encryptAllData(allContent.tasks, allContent.domains);
 
-                        // Update tasks
-                        if (encrypted.tasks.length > 0) {
-                            await fetch('/api/tasks/batch-update', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ tasks: encrypted.tasks })
-                            });
+                    let encryptErrors = [];
+
+                    // Update tasks
+                    if (encrypted.tasks.length > 0) {
+                        const taskResp = await fetch('/api/tasks/batch-update', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tasks: encrypted.tasks })
+                        });
+                        if (!taskResp.ok) {
+                            const err = await taskResp.json().catch(() => ({}));
+                            encryptErrors.push(`Tasks: ${err.detail || 'update failed'}`);
                         }
-                        status.innerHTML += '<br>✓ Tasks encrypted';
+                    }
+
+                    // Update domains
+                    if (encrypted.domains.length > 0) {
+                        const domainResp = await fetch('/api/domains/batch-update', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ domains: encrypted.domains })
+                        });
+                        if (!domainResp.ok) {
+                            const err = await domainResp.json().catch(() => ({}));
+                            encryptErrors.push(`Domains: ${err.detail || 'update failed'}`);
+                        }
+                    }
+
+                    if (encryptErrors.length > 0) {
+                        console.error('Encryption errors:', encryptErrors);
+                        status.innerHTML += '<br>⚠ Encryption incomplete: ' + encryptErrors.join(', ');
+                    } else {
+                        status.innerHTML += '<br>✓ Data encrypted';
                     }
                 } catch (e) {
-                    console.error('Failed to encrypt imported tasks:', e);
-                    status.innerHTML += '<br>⚠ Failed to encrypt some tasks';
+                    console.error('Failed to encrypt imported data:', e);
+                    status.innerHTML += '<br>⚠ Encryption failed: ' + (e.message || 'unknown error');
                 }
             }
         } else {

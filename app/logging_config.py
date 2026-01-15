@@ -111,6 +111,10 @@ def setup_logging() -> None:
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
     logging.getLogger("asyncpg").setLevel(logging.WARNING)
 
+    # Suppress uvicorn's default exception logging (we handle exceptions ourselves)
+    # This prevents duplicate verbose tracebacks from appearing in stderr
+    logging.getLogger("uvicorn.error").setLevel(logging.CRITICAL)
+
     # Quieter uvicorn access logs in development
     if not is_production:
         logging.getLogger("uvicorn.access").setLevel(logging.WARNING)

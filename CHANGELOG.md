@@ -8,14 +8,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Time blocking templates
 - Recovery key generation during encryption setup (trigger 1password etc to save it)
-- Redesign domain management UX
 - Redesign CMPCT view
 - WhenWizard setup flow (first launch or Settings → configure integrations, domains)
 
 ### Known Issues
 - None currently tracked
+
+---
+
+## [0.8.5] - 2026-01-15
+
+### Summary
+**Hotfix: Encryption & Import Fixes** — Fixes critical bug where encrypted task data exceeded database column limits, plus related import and redirect issues.
+
+### Fixed
+
+- **Encrypted data truncation** — Task.title and Domain.name columns changed from VARCHAR to TEXT:
+  - Encrypted data is ~1.4x larger than plaintext (base64 encoding + IV + auth tag)
+  - VARCHAR(500) was too small for encrypted task titles
+  - VARCHAR(255) was too small for encrypted domain names
+
+- **Todoist OAuth redirect** — Now returns to /settings instead of /dashboard:
+  - Users connect Todoist from Settings page and expect to return there
+
+- **Import encryption for domains** — Import now encrypts both tasks AND domains:
+  - Previously only tasks were batch-updated, leaving domains as plaintext
+  - Added proper error handling and reporting for encryption failures
+
+- **Verbose error traces** — Suppressed uvicorn's duplicate stderr logging:
+  - Custom exception formatter already provides clean output
+  - Uvicorn's verbose tracebacks now suppressed via `uvicorn.error` log level
+
+### Added
+
+- **8 Hotfix Tests** (`tests/test_hotfix_0_8_5.py`):
+  - `TestEncryptedColumnTypes` — Verifies Task.title and Domain.name use TEXT
+  - `TestTodoistOAuthRedirect` — Verifies callback redirects to /settings
+  - `TestImportEncryptionContract` — Verifies import encrypts domains and handles errors
+  - `TestEncryptedContentStorage` — Integration tests for long encrypted strings
 
 ---
 
