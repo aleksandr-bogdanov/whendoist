@@ -11,7 +11,19 @@ from datetime import date, datetime, time
 from functools import lru_cache
 
 from cryptography.fernet import Fernet
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, Time, UniqueConstraint, func
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -66,6 +78,9 @@ class User(Base):
 
     # User preferences
     preferences: Mapped["UserPreferences | None"] = relationship(back_populates="user", uselist=False)
+
+    # Passkeys for E2E encryption unlock
+    passkeys: Mapped[list["UserPasskey"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class TodoistToken(Base):
@@ -183,6 +198,8 @@ class UserPreferences(Base):
     encryption_salt: Mapped[str | None] = mapped_column(String(64), nullable=True)  # Base64-encoded 32-byte salt
     # Encrypted known value for verification (e.g., encrypted "WHENDOIST_ENCRYPTION_TEST")
     encryption_test_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Unlock method: 'passphrase', 'passkey', or 'both' (default: passphrase when encryption is first enabled)
+    encryption_unlock_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -324,3 +341,45 @@ class TaskInstance(Base):
     task: Mapped["Task"] = relationship(back_populates="instances")
 
     __table_args__ = (UniqueConstraint("task_id", "instance_date", name="uq_task_instance_date"),)
+
+
+# =============================================================================
+# Passkey Models (v0.8.4)
+# =============================================================================
+
+
+class UserPasskey(Base):
+    """
+    WebAuthn passkey credential for E2E encryption unlock.
+
+    Each passkey stores a wrapped (encrypted) copy of the master encryption key.
+    The PRF output from authentication is used to unwrap the master key.
+
+    Architecture:
+    - Master key = PBKDF2(passphrase) or PRF output from first passkey
+    - Each passkey's PRF output → wrapping key → wraps master key
+    - All passkeys unwrap to the SAME master key
+    - Master key decrypts actual data
+    """
+
+    __tablename__ = "user_passkeys"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+
+    # WebAuthn credential data
+    credential_id: Mapped[bytes] = mapped_column(LargeBinary)  # Unique credential identifier
+    public_key: Mapped[bytes] = mapped_column(LargeBinary)  # COSE public key
+    sign_count: Mapped[int] = mapped_column(Integer, default=0)
+    transports: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)  # ["usb", "nfc", "ble", "internal"]
+
+    # User-friendly metadata
+    name: Mapped[str] = mapped_column(String(100))  # e.g., "1Password", "Touch ID", "YubiKey"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # For PRF-based key wrapping
+    prf_salt: Mapped[str] = mapped_column(String(64))  # Salt used in PRF input
+    wrapped_key: Mapped[str] = mapped_column(Text)  # Master key wrapped (encrypted) with PRF-derived key
+
+    user: Mapped["User"] = relationship(back_populates="passkeys")

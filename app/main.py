@@ -9,7 +9,19 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.config import get_settings
 from app.database import create_tables
 from app.logging_config import setup_logging
-from app.routers import api, auth, backup, build_info, domains, import_data, instances, pages, preferences, tasks
+from app.routers import (
+    api,
+    auth,
+    backup,
+    build_info,
+    domains,
+    import_data,
+    instances,
+    pages,
+    passkeys,
+    preferences,
+    tasks,
+)
 
 # Setup logging first
 setup_logging()
@@ -83,6 +95,7 @@ app.include_router(auth.router)
 app.include_router(tasks.router)
 app.include_router(domains.router)
 app.include_router(preferences.router)
+app.include_router(passkeys.router)
 app.include_router(backup.router)
 app.include_router(api.router)
 app.include_router(instances.router)

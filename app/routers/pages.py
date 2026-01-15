@@ -16,7 +16,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Domain, GoogleCalendarSelection, GoogleToken, Task, TodoistToken, User, UserPreferences
+from app.models import (
+    Domain,
+    GoogleCalendarSelection,
+    GoogleToken,
+    Task,
+    TodoistToken,
+    User,
+    UserPasskey,
+    UserPreferences,
+)
 from app.routers.auth import get_current_user
 from app.services.analytics_service import AnalyticsService
 from app.services.gcal import GoogleCalendarClient
@@ -30,19 +39,31 @@ logger = logging.getLogger(__name__)
 
 async def get_encryption_context(db: AsyncSession, user_id: int) -> dict[str, Any]:
     """Get encryption settings for template context."""
+    from sqlalchemy import func
+
     result = await db.execute(select(UserPreferences).where(UserPreferences.user_id == user_id))
     prefs = result.scalar_one_or_none()
+
+    # Count passkeys for this user
+    passkey_count_result = await db.execute(select(func.count(UserPasskey.id)).where(UserPasskey.user_id == user_id))
+    passkey_count = passkey_count_result.scalar() or 0
 
     if prefs and prefs.encryption_enabled:
         return {
             "encryption_enabled": True,
             "encryption_salt": prefs.encryption_salt,
             "encryption_test_value": prefs.encryption_test_value,
+            "has_passkeys": passkey_count > 0,
+            "passkey_count": passkey_count,
+            "unlock_method": prefs.encryption_unlock_method or "passphrase",
         }
     return {
         "encryption_enabled": False,
         "encryption_salt": None,
         "encryption_test_value": None,
+        "has_passkeys": False,
+        "passkey_count": 0,
+        "unlock_method": None,
     }
 
 
@@ -841,6 +862,12 @@ async def settings(
     # Get encryption context for base template
     encryption_ctx = await get_encryption_context(db, user.id)
 
+    # Get user's passkeys for the security panel
+    passkeys_result = await db.execute(
+        select(UserPasskey).where(UserPasskey.user_id == user.id).order_by(UserPasskey.created_at.desc())
+    )
+    user_passkeys = list(passkeys_result.scalars().all())
+
     return templates.TemplateResponse(
         "settings.html",
         {
@@ -851,6 +878,7 @@ async def settings(
             "todoist_connected": todoist_token is not None,
             "calendars": calendars,
             "user_prefs": user_prefs,
+            "user_passkeys": user_passkeys,
             **encryption_ctx,
         },
     )

@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
 
+    # Passkey (WebAuthn) settings
+    passkey_rp_id: str = "localhost"  # Production: domain without port (e.g., "whendoist.com")
+    passkey_rp_name: str = "Whendoist"
+
     @property
     def todoist_redirect_uri(self) -> str:
         return f"{self.base_url}/auth/todoist/callback"
@@ -34,6 +38,11 @@ class Settings(BaseSettings):
     @property
     def google_redirect_uri(self) -> str:
         return f"{self.base_url}/auth/google/callback"
+
+    @property
+    def passkey_origin(self) -> str:
+        """Origin for WebAuthn verification (derived from base_url)."""
+        return self.base_url
 
 
 @lru_cache
