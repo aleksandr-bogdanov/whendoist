@@ -701,14 +701,6 @@
             const response = await fetch('/api/domains');
             if (response.ok) {
                 domains = await response.json();
-
-                // Decrypt domain names if encryption is enabled
-                if (Crypto.canCrypto()) {
-                    for (const domain of domains) {
-                        domain.name = await Crypto.decryptField(domain.name);
-                    }
-                }
-
                 updateDomainSelect();
             }
         } catch (err) {
@@ -838,13 +830,7 @@
             if (!response.ok) {
                 throw new Error('Task not found');
             }
-            let task = await response.json();
-
-            // E2E Encryption: Decrypt task data if needed
-            if (Crypto.canCrypto()) {
-                task.title = await Crypto.decryptField(task.title);
-                task.description = await Crypto.decryptField(task.description);
-            }
+            const task = await response.json();
 
             const form = backdropEl.querySelector('form');
             form.elements.title.value = task.title;
@@ -1196,7 +1182,7 @@
         const scheduledTime = backdropEl.querySelector('[name="scheduled_time"]').dataset.value || null;
         const dueDate = backdropEl.querySelector('[name="due_date"]').dataset.value || null;
 
-        let data = {
+        const data = {
             title: formData.get('title'),
             description: formData.get('description') || null,
             domain_id: formData.get('domain_id') ? parseInt(formData.get('domain_id'), 10) : null,
@@ -1217,12 +1203,6 @@
             const submitBtn = backdropEl.querySelector('.btn-submit');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Saving...';
-
-            // E2E Encryption: Encrypt task data if encryption is enabled
-            if (Crypto.canCrypto()) {
-                data.title = await Crypto.encryptField(data.title);
-                data.description = await Crypto.encryptField(data.description);
-            }
 
             const response = await fetch(url, {
                 method,

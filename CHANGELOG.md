@@ -8,77 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
+- Task encryption integration (encrypt on submit, decrypt on display)
 - Time blocking templates
-- Key rotation (change passphrase without re-encrypting all data)
-- Recovery key generation during encryption setup
 - Redesign domain management UX
 - Redesign CMPCT view
 - WhenWizard setup flow (first launch or Settings → configure integrations, domains)
 
 ### Known Issues
 - None currently tracked
-
----
-
-## [0.8.3] - 2026-01-15
-
-### Summary
-**E2E Encryption Rewrite** — Complete rewrite of the encryption architecture from per-record flags to a global toggle model. Includes comprehensive tests for multitenancy isolation and domain name encryption.
-
-### Changed
-
-- **Global Toggle Model** — Replaced per-record encryption flags (`title_encrypted`, `description_encrypted`, `name_encrypted`) with a single global toggle (`encryption_enabled`). When enabled, ALL task titles, descriptions, and domain names are encrypted; when disabled, ALL data is plaintext. No mixed state possible.
-
-- **Domain Name Encryption** — Domain/project names are now encrypted alongside task content:
-  - Task list shows 🔒 placeholder when encrypted
-  - Decryption happens on page load via `crypto.js`
-  - Settings page domain CRUD functions encrypt/decrypt names
-
-- **Batch Update Endpoints** — New endpoints for enable/disable encryption operations:
-  - `GET /api/tasks/all-content` — Fetch all tasks and domains for batch encrypt/decrypt
-  - `POST /api/tasks/batch-update` — Update multiple tasks in one request
-  - `POST /api/domains/batch-update` — Update multiple domains in one request
-
-### Added
-
-- **48 Comprehensive Encryption Tests** (`tests/test_encryption.py`):
-  - `TestEncryptionPreferences` — Enable/disable encryption state
-  - `TestEncryptionMultitenancy` — **CRITICAL**: User isolation verification
-  - `TestEncryptionDataIsolation` — Query scoping for all-content endpoint
-  - `TestCryptoModuleExportsAPI` — crypto.js exports required functions
-  - `TestCryptoModuleArchitecture` — Verifies AES-GCM, PBKDF2, sessionStorage
-  - `TestCryptoModuleIntegration` — Templates use Crypto correctly
-  - `TestEncryptionFlows` — Enable/disable encryption workflows
-  - `TestEncryptionEdgeCases` — Empty batch, nonexistent IDs, re-enable
-  - `TestEncryptionDataModel` — No per-record flags (global toggle only)
-
-- **Encryption Documentation**:
-  - `README.md` — User-facing encryption explanation with database examples
-  - `DESIGN.md` — Full architecture documentation with flow diagrams
-  - `tests/README.md` — Encryption test documentation
-  - `CLAUDE.md` — Constraints and must-haves for future development
-
-### Removed
-
-- **Per-Record Encryption Flags** — Removed from models:
-  - `Task.title_encrypted`
-  - `Task.description_encrypted`
-  - `Domain.name_encrypted`
-
-### Technical
-
-- Added `window.WHENDOIST` global config in `base.html` for encryption state
-- Updated all task list partials (`_task_list.html`, `_scheduled_tasks.html`, `_completed_tasks.html`, `_deleted_tasks.html`) with `data-domain-name` attribute for JS decryption
-- Updated `dashboard.html` with domain name decryption on page load
-- Updated `settings.html` domain CRUD with encryption/decryption
-- Updated `task-dialog.js` `loadDomains()` to decrypt domain names
-- Fixed route ordering: `/api/tasks/all-content` must be defined before `/{task_id}`
-
-### Security
-
-- All batch update endpoints verify task/domain ownership via `user_id` filter
-- `get_task(id)` and `get_domain(id)` return `None` for IDs not owned by authenticated user
-- Batch updates silently skip unowned IDs (no error, no modification)
 
 ---
 
@@ -408,10 +345,7 @@ See [DESIGN.md](./DESIGN.md) for comprehensive documentation of the Tasks page d
 
 ---
 
-[unreleased]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.8.3...HEAD
-[0.8.3]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.8.2...v0.8.3
-[0.8.2]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.8.1...v0.8.2
-[0.8.1]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.8.0...v0.8.1
+[unreleased]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.8.0...HEAD
 [0.8.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/aleksandr-bogdanov/whendoist/compare/v0.5.0...v0.6.0

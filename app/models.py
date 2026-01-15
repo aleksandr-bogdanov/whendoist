@@ -203,9 +203,6 @@ class Domain(Base):
 
     Domains organize tasks by area of responsibility or context.
     Each user can have multiple domains.
-
-    Note: Domain names are encrypted client-side when encryption_enabled is true
-    on UserPreferences. No per-record flag is needed.
     """
 
     __tablename__ = "domains"
@@ -236,9 +233,6 @@ class Task(Base):
 
     Tasks can have subtasks via parent_id, creating a tree structure.
     Recurrence is defined via recurrence_rule JSON; instances are materialized separately.
-
-    Note: Task title and description are encrypted client-side when encryption_enabled
-    is true on UserPreferences. No per-record flags are needed.
     """
 
     __tablename__ = "tasks"
@@ -248,7 +242,7 @@ class Task(Base):
     domain_id: Mapped[int | None] = mapped_column(ForeignKey("domains.id", ondelete="SET NULL"), nullable=True)
     parent_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
 
-    # Content (encrypted client-side when user has encryption enabled)
+    # Content
     title: Mapped[str] = mapped_column(String(500))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 

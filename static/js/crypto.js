@@ -1,15 +1,9 @@
 /**
- * Client-side E2E encryption for Whendoist.
+ * Client-side encryption for Whendoist E2E encryption.
  *
  * Uses Web Crypto API for:
  * - PBKDF2 key derivation from passphrase
  * - AES-256-GCM encryption/decryption
- *
- * Architecture:
- * - One global toggle: window.WHENDOIST.encryptionEnabled
- * - If enabled, ALL task titles, descriptions, and domain names are encrypted
- * - If disabled, ALL are plaintext
- * - No per-record flags - encryption state is determined by user preference
  *
  * Encrypted data format: base64(IV || ciphertext || authTag)
  * IV is 12 bytes, authTag is implicit in AES-GCM
@@ -19,14 +13,10 @@ const Crypto = (() => {
     // Constants
     const PBKDF2_ITERATIONS = 100000;
     const IV_LENGTH = 12;  // 96 bits for AES-GCM
-    const TEST_VALUE = 'WHENDOIST_ENCRYPTION_TEST';
 
     // Storage key for the derived encryption key (base64)
     const KEY_STORAGE_KEY = 'whendoist_encryption_key';
-
-    // ==========================================================================
-    // Low-level crypto utilities
-    // ==========================================================================
+    const SALT_STORAGE_KEY = 'whendoist_encryption_salt';
 
     /**
      * Derive an AES-256-GCM key from a passphrase using PBKDF2.
@@ -159,17 +149,14 @@ const Crypto = (() => {
         );
     }
 
-    // ==========================================================================
-    // Key storage (sessionStorage - cleared on tab close)
-    // ==========================================================================
-
     /**
      * Store derived key in sessionStorage.
      * Key is cleared when browser tab closes.
      */
-    async function storeKey(key) {
+    async function storeKey(key, salt) {
         const keyData = await exportKey(key);
         sessionStorage.setItem(KEY_STORAGE_KEY, keyData);
+        sessionStorage.setItem(SALT_STORAGE_KEY, arrayToBase64(salt));
     }
 
     /**
@@ -183,10 +170,21 @@ const Crypto = (() => {
     }
 
     /**
+     * Get stored salt from sessionStorage.
+     * @returns {Uint8Array|null} Stored salt or null
+     */
+    function getStoredSalt() {
+        const saltData = sessionStorage.getItem(SALT_STORAGE_KEY);
+        if (!saltData) return null;
+        return base64ToArray(saltData);
+    }
+
+    /**
      * Clear stored encryption key (on logout).
      */
     function clearStoredKey() {
         sessionStorage.removeItem(KEY_STORAGE_KEY);
+        sessionStorage.removeItem(SALT_STORAGE_KEY);
     }
 
     /**
@@ -196,258 +194,181 @@ const Crypto = (() => {
         return sessionStorage.getItem(KEY_STORAGE_KEY) !== null;
     }
 
-    // ==========================================================================
-    // Global state helpers
-    // ==========================================================================
-
-    /**
-     * Check if encryption is enabled for the current user.
-     * @returns {boolean}
-     */
-    function isEncryptionEnabled() {
-        return window.WHENDOIST?.encryptionEnabled === true;
-    }
-
-    /**
-     * Check if we can perform encryption/decryption operations.
-     * Requires both: encryption enabled AND key available in sessionStorage.
-     * @returns {boolean}
-     */
-    function canCrypto() {
-        return isEncryptionEnabled() && hasStoredKey();
-    }
-
-    /**
-     * Get the encryption salt from window config.
-     * @returns {string|null}
-     */
-    function getSalt() {
-        return window.WHENDOIST?.encryptionSalt || null;
-    }
-
-    /**
-     * Get the test value from window config.
-     * @returns {string|null}
-     */
-    function getTestValue() {
-        return window.WHENDOIST?.encryptionTestValue || null;
-    }
-
-    // ==========================================================================
-    // Setup & unlock flows
-    // ==========================================================================
-
     /**
      * Setup encryption with a new passphrase.
-     * Generates salt, derives key, creates test value.
      * @param {string} passphrase - User's chosen passphrase
-     * @returns {Promise<{salt: string, testValue: string}>} Salt and encrypted test value for server
+     * @returns {Promise<{key: CryptoKey, salt: string}>} Key and base64-encoded salt
      */
     async function setupEncryption(passphrase) {
         const salt = generateSalt();
         const key = await deriveKey(passphrase, salt);
-
-        // Create encrypted test value for verification
-        const testValue = await encrypt(key, TEST_VALUE);
-
-        // Store key in sessionStorage
-        await storeKey(key);
-
+        await storeKey(key, salt);
         return {
-            salt: arrayToBase64(salt),
-            testValue: testValue
+            key,
+            salt: arrayToBase64(salt)
         };
     }
 
     /**
      * Unlock encryption with existing passphrase.
-     * Verifies against stored test value before storing key.
      * @param {string} passphrase - User's passphrase
-     * @returns {Promise<boolean>} True if unlock successful
+     * @param {string} saltBase64 - Base64-encoded salt from server
+     * @returns {Promise<CryptoKey>} Derived key
      */
-    async function unlockEncryption(passphrase) {
-        const saltBase64 = getSalt();
-        const testCiphertext = getTestValue();
-
-        if (!saltBase64 || !testCiphertext) {
-            throw new Error('Encryption salt or test value not available');
-        }
-
+    async function unlockEncryption(passphrase, saltBase64) {
         const salt = base64ToArray(saltBase64);
         const key = await deriveKey(passphrase, salt);
-
-        // Verify passphrase by decrypting test value
-        try {
-            const decrypted = await decrypt(key, testCiphertext);
-            if (decrypted !== TEST_VALUE) {
-                return false;  // Wrong passphrase
-            }
-        } catch (e) {
-            return false;  // Decryption failed = wrong passphrase
-        }
-
-        // Passphrase is correct - store key
-        await storeKey(key);
-        return true;
+        await storeKey(key, salt);
+        return key;
     }
 
     /**
-     * Test if a passphrase is correct without storing the key.
+     * Test if passphrase is correct by trying to decrypt a test value.
      * @param {string} passphrase - Passphrase to test
      * @param {string} saltBase64 - Base64-encoded salt
      * @param {string} testCiphertext - Encrypted test value
+     * @param {string} expectedPlaintext - Expected decrypted value
      * @returns {Promise<boolean>} True if passphrase is correct
      */
-    async function verifyPassphrase(passphrase, saltBase64, testCiphertext) {
+    async function verifyPassphrase(passphrase, saltBase64, testCiphertext, expectedPlaintext) {
         try {
             const salt = base64ToArray(saltBase64);
             const key = await deriveKey(passphrase, salt);
             const decrypted = await decrypt(key, testCiphertext);
-            return decrypted === TEST_VALUE;
+            return decrypted === expectedPlaintext;
         } catch {
             return false;
         }
     }
 
-    // ==========================================================================
-    // Field encryption/decryption
-    // ==========================================================================
-
     /**
-     * Encrypt a field value if encryption is enabled and key is available.
-     * @param {string|null} value - Value to encrypt
-     * @returns {Promise<string|null>} Encrypted value or original if can't encrypt
+     * Encrypt task data for API submission.
+     * @param {Object} task - Task object with title, description
+     * @returns {Promise<Object>} Task with encrypted fields
      */
-    async function encryptField(value) {
-        if (!value) return value;
-        if (!canCrypto()) return value;
-
+    async function encryptTask(task) {
         const key = await getStoredKey();
-        if (!key) return value;
+        if (!key) return task;  // Return unencrypted if no key
 
-        return await encrypt(key, value);
+        const encrypted = { ...task };
+
+        if (task.title) {
+            encrypted.title = await encrypt(key, task.title);
+            encrypted.title_encrypted = true;
+        }
+
+        if (task.description) {
+            encrypted.description = await encrypt(key, task.description);
+            encrypted.description_encrypted = true;
+        }
+
+        return encrypted;
     }
 
     /**
-     * Decrypt a field value if encryption is enabled and key is available.
-     * @param {string|null} value - Value to decrypt
-     * @returns {Promise<string|null>} Decrypted value or original if can't decrypt
+     * Decrypt task data received from API.
+     * @param {Object} task - Task object with potentially encrypted fields
+     * @returns {Promise<Object>} Task with decrypted fields
      */
-    async function decryptField(value) {
-        if (!value) return value;
-        if (!canCrypto()) return value;
-
+    async function decryptTask(task) {
         const key = await getStoredKey();
-        if (!key) return value;
+        if (!key) return task;  // Return as-is if no key
+
+        const decrypted = { ...task };
 
         try {
-            return await decrypt(key, value);
+            if (task.title_encrypted && task.title) {
+                decrypted.title = await decrypt(key, task.title);
+            }
+            if (task.description_encrypted && task.description) {
+                decrypted.description = await decrypt(key, task.description);
+            }
         } catch (e) {
-            console.error('Decryption failed:', e);
-            return value;  // Return original if decryption fails
+            console.error('Failed to decrypt task:', e);
+            // Return with encrypted values if decryption fails
         }
-    }
 
-    // ==========================================================================
-    // Batch operations (for enable/disable encryption)
-    // ==========================================================================
-
-    /**
-     * Encrypt all tasks and domains for enabling encryption.
-     * @param {Array<{id: number, title: string, description: string|null}>} tasks
-     * @param {Array<{id: number, name: string}>} domains
-     * @returns {Promise<{tasks: Array, domains: Array}>} Encrypted data
-     */
-    async function encryptAllData(tasks, domains) {
-        const key = await getStoredKey();
-        if (!key) throw new Error('No encryption key available');
-
-        const encryptedTasks = await Promise.all(tasks.map(async (task) => ({
-            id: task.id,
-            title: await encrypt(key, task.title),
-            description: task.description ? await encrypt(key, task.description) : null
-        })));
-
-        const encryptedDomains = await Promise.all(domains.map(async (domain) => ({
-            id: domain.id,
-            name: await encrypt(key, domain.name)
-        })));
-
-        return { tasks: encryptedTasks, domains: encryptedDomains };
+        return decrypted;
     }
 
     /**
-     * Decrypt all tasks and domains for disabling encryption.
-     * @param {Array<{id: number, title: string, description: string|null}>} tasks
-     * @param {Array<{id: number, name: string}>} domains
-     * @returns {Promise<{tasks: Array, domains: Array}>} Decrypted data
+     * Encrypt domain data for API submission.
+     * @param {Object} domain - Domain object with name
+     * @returns {Promise<Object>} Domain with encrypted fields
      */
-    async function decryptAllData(tasks, domains) {
+    async function encryptDomain(domain) {
         const key = await getStoredKey();
-        if (!key) throw new Error('No encryption key available');
+        if (!key) return domain;
 
-        const decryptedTasks = await Promise.all(tasks.map(async (task) => {
-            try {
-                return {
-                    id: task.id,
-                    title: await decrypt(key, task.title),
-                    description: task.description ? await decrypt(key, task.description) : null
-                };
-            } catch (e) {
-                console.error(`Failed to decrypt task ${task.id}:`, e);
-                // Return original if decryption fails (might already be plaintext)
-                return task;
-            }
-        }));
+        const encrypted = { ...domain };
 
-        const decryptedDomains = await Promise.all(domains.map(async (domain) => {
-            try {
-                return {
-                    id: domain.id,
-                    name: await decrypt(key, domain.name)
-                };
-            } catch (e) {
-                console.error(`Failed to decrypt domain ${domain.id}:`, e);
-                return domain;
-            }
-        }));
+        if (domain.name) {
+            encrypted.name = await encrypt(key, domain.name);
+            encrypted.name_encrypted = true;
+        }
 
-        return { tasks: decryptedTasks, domains: decryptedDomains };
+        return encrypted;
     }
 
-    // ==========================================================================
+    /**
+     * Decrypt domain data received from API.
+     * @param {Object} domain - Domain object with potentially encrypted fields
+     * @returns {Promise<Object>} Domain with decrypted fields
+     */
+    async function decryptDomain(domain) {
+        const key = await getStoredKey();
+        if (!key) return domain;
+
+        const decrypted = { ...domain };
+
+        try {
+            if (domain.name_encrypted && domain.name) {
+                decrypted.name = await decrypt(key, domain.name);
+            }
+        } catch (e) {
+            console.error('Failed to decrypt domain:', e);
+        }
+
+        return decrypted;
+    }
+
+    /**
+     * Decrypt a list of items (tasks or domains).
+     * @param {Array} items - List of items to decrypt
+     * @param {Function} decryptFn - Decryption function to use
+     * @returns {Promise<Array>} Decrypted items
+     */
+    async function decryptList(items, decryptFn) {
+        return Promise.all(items.map(item => decryptFn(item)));
+    }
+
     // Public API
-    // ==========================================================================
-
     return {
-        // State checks
-        isEncryptionEnabled,
-        canCrypto,
-        hasStoredKey,
-
-        // Key management
-        getStoredKey,
-        storeKey,
-        clearStoredKey,
-
         // Setup & unlock
         setupEncryption,
         unlockEncryption,
         verifyPassphrase,
 
-        // Field operations
-        encryptField,
-        decryptField,
+        // Key management
+        hasStoredKey,
+        getStoredKey,
+        clearStoredKey,
+        getStoredSalt,
 
-        // Low-level (for advanced use)
+        // Encryption/decryption
         encrypt,
         decrypt,
 
-        // Batch operations
-        encryptAllData,
-        decryptAllData,
+        // Task encryption
+        encryptTask,
+        decryptTask,
 
-        // Utilities
+        // Domain encryption
+        encryptDomain,
+        decryptDomain,
+
+        // Utility
+        decryptList,
         arrayToBase64,
         base64ToArray
     };

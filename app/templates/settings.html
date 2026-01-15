@@ -1386,14 +1386,14 @@ input.add-domain-input::placeholder {
                     <div class="settings-panel__bd" id="domain-list">
                         {% if domains %}
                             {% for domain in domains|sort(attribute='name') %}
-                            <div class="settings-row" data-domain-id="{{ domain.id }}" data-domain-name="{{ domain.name }}">
+                            <div class="settings-row" data-domain-id="{{ domain.id }}">
                                 <span class="domain-icon">{{ domain.icon or '📁' }}</span>
-                                <span class="domain-name" title="{% if encryption_enabled %}Encrypted{% else %}{{ domain.name }}{% endif %}">{% if encryption_enabled %}🔒{% else %}{{ domain.name }}{% endif %}</span>
+                                <span class="domain-name" title="{{ domain.name }}">{{ domain.name }}</span>
                                 {% if domain.external_id %}
                                 <span class="domain-imported">Imported</span>
                                 {% endif %}
                                 <div class="row-actions">
-                                    <button type="button" class="icon-btn edit" data-domain-id="{{ domain.id }}" data-domain-name="{{ domain.name }}" data-domain-icon="{{ domain.icon or '' }}" onclick="editDomain(this)" title="Edit">
+                                    <button type="button" class="icon-btn edit" onclick="editDomain({{ domain.id }}, '{{ domain.name|e }}', '{{ domain.icon or '' }}')" title="Edit">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -1698,13 +1698,10 @@ async function addDomain() {
     if (!name) return;
 
     try {
-        // Encrypt domain name if encryption is enabled
-        const encryptedName = await Crypto.encryptField(name);
-
         const response = await fetch('/api/domains', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: encryptedName, icon: icon || null })
+            body: JSON.stringify({ name, icon: icon || null })
         });
         if (response.ok) {
             window.location.reload();
@@ -1717,16 +1714,7 @@ async function addDomain() {
     }
 }
 
-async function editDomain(btn) {
-    const id = btn.dataset.domainId;
-    let name = btn.dataset.domainName;
-    const icon = btn.dataset.domainIcon;
-
-    // Decrypt name if encryption is enabled
-    if (Crypto.canCrypto()) {
-        name = await Crypto.decryptField(name);
-    }
-
+function editDomain(id, name, icon) {
     document.getElementById('edit-domain-id').value = id;
     document.getElementById('edit-domain-name').value = name;
     document.getElementById('edit-domain-icon').value = icon || '📁';
@@ -1752,13 +1740,10 @@ async function saveDomainEdit(e) {
     if (!name) return;
 
     try {
-        // Encrypt domain name if encryption is enabled
-        const encryptedName = await Crypto.encryptField(name);
-
         const response = await fetch(`/api/domains/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: encryptedName, icon: icon || null })
+            body: JSON.stringify({ name, icon: icon || null })
         });
         if (response.ok) {
             window.location.reload();
@@ -1947,34 +1932,6 @@ async function executeImport() {
 
             status.innerHTML = lines.join('<br>');
             status.className = 'expand-status success';
-
-            // E2E Encryption: Encrypt imported tasks if encryption is enabled
-            // The imported tasks are stored as plaintext - user needs to re-enable encryption
-            // to encrypt them, or we can encrypt on-the-fly using batch update
-            if (Crypto.canCrypto() && data.tasks_created > 0) {
-                status.innerHTML += '<br>🔐 Encrypting imported tasks...';
-                try {
-                    // Fetch all content (including newly imported)
-                    const contentResponse = await fetch('/api/tasks/all-content');
-                    if (contentResponse.ok) {
-                        const allContent = await contentResponse.json();
-                        const encrypted = await Crypto.encryptAllData(allContent.tasks, allContent.domains);
-
-                        // Update tasks
-                        if (encrypted.tasks.length > 0) {
-                            await fetch('/api/tasks/batch-update', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ tasks: encrypted.tasks })
-                            });
-                        }
-                        status.innerHTML += '<br>✓ Tasks encrypted';
-                    }
-                } catch (e) {
-                    console.error('Failed to encrypt imported tasks:', e);
-                    status.innerHTML += '<br>⚠ Failed to encrypt some tasks';
-                }
-            }
         } else {
             const errorMsg = data.errors?.join(', ') || data.detail || 'Import failed';
             status.textContent = '❌ ' + errorMsg;
@@ -2237,6 +2194,8 @@ async function updatePreference(key, value) {
 // E2E Encryption
 // ============================================================================
 
+const ENCRYPTION_TEST_VALUE = 'WHENDOIST_ENCRYPTION_TEST';
+
 function showEncryptionSetup() {
     const wrap = document.getElementById('encryption-setup-wrap');
     const content = document.getElementById('encryption-setup-content');
@@ -2294,57 +2253,29 @@ async function setupEncryption() {
     status.style.display = 'block';
 
     try {
-        // Generate salt, derive key, create test value
-        const { salt, testValue } = await Crypto.setupEncryption(passphrase);
-
-        // Fetch all content to encrypt
-        status.textContent = 'Fetching data to encrypt...';
-        const contentResponse = await fetch('/api/tasks/all-content');
-        if (!contentResponse.ok) {
-            throw new Error('Failed to fetch data');
-        }
-        const allContent = await contentResponse.json();
-
-        // Encrypt all content
-        status.textContent = `Encrypting ${allContent.tasks.length} tasks and ${allContent.domains.length} domains...`;
-        const encrypted = await Crypto.encryptAllData(allContent.tasks, allContent.domains);
-
-        // Save encrypted data to server
-        status.textContent = 'Saving encrypted data...';
-
-        // Batch update tasks
-        if (encrypted.tasks.length > 0) {
-            const taskResponse = await fetch('/api/tasks/batch-update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tasks: encrypted.tasks })
-            });
-            if (!taskResponse.ok) {
-                throw new Error('Failed to save encrypted tasks');
-            }
+        // Check if Crypto is available
+        if (typeof Crypto === 'undefined') {
+            throw new Error('Encryption library not loaded. Please refresh the page.');
         }
 
-        // Batch update domains
-        if (encrypted.domains.length > 0) {
-            const domainResponse = await fetch('/api/domains/batch-update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domains: encrypted.domains })
-            });
-            if (!domainResponse.ok) {
-                throw new Error('Failed to save encrypted domains');
-            }
-        }
+        // Generate salt and derive key
+        const { key, salt } = await Crypto.setupEncryption(passphrase);
 
-        // Enable encryption on server
+        // Encrypt test value
+        const testValue = await Crypto.encrypt(key, ENCRYPTION_TEST_VALUE);
+
+        // Send to server
         const response = await fetch('/api/preferences/encryption/setup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ salt, test_value: testValue })
+            body: JSON.stringify({
+                salt: salt,
+                test_value: testValue
+            })
         });
 
         if (response.ok) {
-            status.textContent = 'Encryption complete! Refreshing page...';
+            status.textContent = 'Encryption enabled! Refreshing page...';
             status.className = 'expand-status success';
             setTimeout(() => window.location.reload(), 1500);
         } else {
@@ -2358,16 +2289,13 @@ async function setupEncryption() {
 }
 
 async function disableEncryption() {
-    // Verify we have the key to decrypt
-    if (!Crypto.hasStoredKey()) {
-        alert('Please unlock your data first before disabling encryption.');
-        return;
-    }
-
     const confirmText = prompt(
-        'Disabling encryption will:\n' +
-        '1. Decrypt all your tasks and domains\n' +
-        '2. Store them as plaintext on the server\n\n' +
+        'Disabling encryption will NOT decrypt your existing data.\n' +
+        'Encrypted data will remain unreadable.\n\n' +
+        'To safely disable encryption:\n' +
+        '1. Export a backup (while encryption key is active)\n' +
+        '2. Disable encryption\n' +
+        '3. Import the backup\n\n' +
         'Type "DISABLE" to confirm:'
     );
 
@@ -2379,48 +2307,17 @@ async function disableEncryption() {
     }
 
     try {
-        // Fetch all encrypted content
-        const contentResponse = await fetch('/api/tasks/all-content');
-        if (!contentResponse.ok) {
-            throw new Error('Failed to fetch data');
-        }
-        const allContent = await contentResponse.json();
-
-        // Decrypt all content
-        const decrypted = await Crypto.decryptAllData(allContent.tasks, allContent.domains);
-
-        // Save decrypted data to server
-        if (decrypted.tasks.length > 0) {
-            const taskResponse = await fetch('/api/tasks/batch-update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tasks: decrypted.tasks })
-            });
-            if (!taskResponse.ok) {
-                throw new Error('Failed to save decrypted tasks');
-            }
-        }
-
-        if (decrypted.domains.length > 0) {
-            const domainResponse = await fetch('/api/domains/batch-update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domains: decrypted.domains })
-            });
-            if (!domainResponse.ok) {
-                throw new Error('Failed to save decrypted domains');
-            }
-        }
-
-        // Disable encryption on server
         const response = await fetch('/api/preferences/encryption/disable', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
 
         if (response.ok) {
-            Crypto.clearStoredKey();
-            alert('Encryption disabled. Your data is now stored as plaintext.');
+            // Clear stored key
+            if (typeof Crypto !== 'undefined') {
+                Crypto.clearStoredKey();
+            }
+            alert('Encryption disabled.');
             window.location.reload();
         } else {
             const data = await response.json();
@@ -2750,30 +2647,5 @@ document.addEventListener('keydown', (e) => {
         closeVerifyBuildModal();
     }
 });
-
-// Decrypt domain names on page load
-(async function decryptDomainNames() {
-    if (!Crypto.canCrypto()) return;
-
-    const domainRows = document.querySelectorAll('#domain-list [data-domain-name]');
-    for (const row of domainRows) {
-        const encryptedName = row.dataset.domainName;
-        if (!encryptedName) continue;
-
-        try {
-            const decryptedName = await Crypto.decryptField(encryptedName);
-            if (!decryptedName || decryptedName === encryptedName) continue;
-
-            // Update the displayed name
-            const nameEl = row.querySelector('.domain-name');
-            if (nameEl) {
-                nameEl.textContent = decryptedName;
-                nameEl.title = decryptedName;
-            }
-        } catch (e) {
-            console.error('Failed to decrypt domain name:', e);
-        }
-    }
-})();
 </script>
 {% endblock %}
