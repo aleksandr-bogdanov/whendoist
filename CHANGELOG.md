@@ -28,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Encrypted data is ~1.4x larger than plaintext (base64 encoding + IV + auth tag)
   - VARCHAR(500) was too small for encrypted task titles
   - VARCHAR(255) was too small for encrypted domain names
-  - **Migration required**: Run `migrations/0001_text_columns_for_encryption.sql`
 
 - **Todoist OAuth redirect** — Now returns to /settings instead of /dashboard:
   - Users connect Todoist from Settings page and expect to return there
@@ -48,17 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `TestTodoistOAuthRedirect` — Verifies callback redirects to /settings
   - `TestImportEncryptionContract` — Verifies import encrypts domains and handles errors
   - `TestEncryptedContentStorage` — Integration tests for long encrypted strings
-
-### Technical
-
-#### Database Migration
-
-Run this SQL on production before deploying:
-
-```sql
-ALTER TABLE tasks ALTER COLUMN title TYPE TEXT;
-ALTER TABLE domains ALTER COLUMN name TYPE TEXT;
-```
 
 ---
 
