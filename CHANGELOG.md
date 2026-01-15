@@ -17,6 +17,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.8] - 2026-01-15
+
+### Summary
+**Hotfix: Double Encryption Prevention** — Fixes bug where items created before enabling encryption appeared as gibberish (double-encrypted) after import.
+
+### Fixed
+
+- **Double encryption of pre-existing data** — Items created before enabling encryption were being encrypted again during import:
+  - User creates items (plaintext) → enables encryption → items encrypted → import triggers `encryptAllData()` → items encrypted AGAIN
+  - `encryptAllData()` now uses `looksEncrypted()` helper to skip already-encrypted data
+  - Prevents double encryption that made content unreadable
+
+### Added
+
+- **Hotfix Tests** (`tests/test_hotfix_0_8_8.py`):
+  - `TestDoubleEncryptionPrevention` — Verifies `encryptAllData()` skips already-encrypted values
+
+---
+
 ## [0.8.7] - 2026-01-15
 
 ### Summary

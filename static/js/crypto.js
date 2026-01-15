@@ -353,7 +353,19 @@ const Crypto = (() => {
     // ==========================================================================
 
     /**
+     * Check if a value looks like encrypted data (base64 with min length).
+     * AES-256-GCM: 12 bytes IV + ciphertext + 16 bytes tag = min 28 bytes = ~38 base64 chars
+     * @param {string|null} value - Value to check
+     * @returns {boolean} True if value appears to be encrypted
+     */
+    function looksEncrypted(value) {
+        if (!value || value.length < 38) return false;
+        return /^[A-Za-z0-9+/]+=*$/.test(value);
+    }
+
+    /**
      * Encrypt all tasks and domains for enabling encryption.
+     * Skips values that are already encrypted to prevent double-encryption.
      * @param {Array<{id: number, title: string, description: string|null}>} tasks
      * @param {Array<{id: number, name: string}>} domains
      * @returns {Promise<{tasks: Array, domains: Array}>} Encrypted data
@@ -364,13 +376,17 @@ const Crypto = (() => {
 
         const encryptedTasks = await Promise.all(tasks.map(async (task) => ({
             id: task.id,
-            title: await encrypt(key, task.title),
-            description: task.description ? await encrypt(key, task.description) : null
+            // Skip if already encrypted
+            title: looksEncrypted(task.title) ? task.title : await encrypt(key, task.title),
+            description: task.description
+                ? (looksEncrypted(task.description) ? task.description : await encrypt(key, task.description))
+                : null
         })));
 
         const encryptedDomains = await Promise.all(domains.map(async (domain) => ({
             id: domain.id,
-            name: await encrypt(key, domain.name)
+            // Skip if already encrypted
+            name: looksEncrypted(domain.name) ? domain.name : await encrypt(key, domain.name)
         })));
 
         return { tasks: encryptedTasks, domains: encryptedDomains };
