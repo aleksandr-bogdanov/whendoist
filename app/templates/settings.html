@@ -3033,23 +3033,42 @@ document.addEventListener('keydown', (e) => {
 (async function decryptDomainNames() {
     if (!Crypto.canCrypto()) return;
 
+    /**
+     * Check if a value looks like encrypted data (base64 with min length).
+     * AES-256-GCM: 12 bytes IV + ciphertext + 16 bytes tag = min 28 bytes = ~38 base64 chars
+     */
+    function looksEncrypted(value) {
+        if (!value || value.length < 38) return false;
+        return /^[A-Za-z0-9+/]+=*$/.test(value);
+    }
+
     const domainRows = document.querySelectorAll('#domain-list [data-domain-name]');
     for (const row of domainRows) {
-        const encryptedName = row.dataset.domainName;
-        if (!encryptedName) continue;
+        const name = row.dataset.domainName;
+        if (!name) continue;
 
         try {
-            const decryptedName = await Crypto.decryptField(encryptedName);
-            if (!decryptedName || decryptedName === encryptedName) continue;
+            // If it doesn't look encrypted, use as-is (plaintext)
+            const displayName = looksEncrypted(name)
+                ? await Crypto.decryptField(name)
+                : name;
+
+            if (!displayName) continue;
 
             // Update the displayed name
             const nameEl = row.querySelector('.domain-name');
             if (nameEl) {
-                nameEl.textContent = decryptedName;
-                nameEl.title = decryptedName;
+                nameEl.textContent = displayName;
+                nameEl.title = displayName;
             }
         } catch (e) {
+            // On error, display original value (it's likely plaintext)
             console.error('Failed to decrypt domain name:', e);
+            const nameEl = row.querySelector('.domain-name');
+            if (nameEl) {
+                nameEl.textContent = name;
+                nameEl.title = name;
+            }
         }
     }
 })();

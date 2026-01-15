@@ -347,63 +347,88 @@
 <!-- E2E Encryption: Decrypt task titles and domain names on page load -->
 <script>
 (async function decryptEncryptedContent() {
-    // Only decrypt if encryption is enabled and key is available
+    // Only run if encryption is enabled and key is available
     if (!Crypto.canCrypto()) {
         return;
+    }
+
+    /**
+     * Check if a value looks like encrypted data (base64 with min length).
+     * AES-256-GCM: 12 bytes IV + ciphertext + 16 bytes tag = min 28 bytes = ~38 base64 chars
+     */
+    function looksEncrypted(value) {
+        if (!value || value.length < 38) return false;
+        // Check if it's valid base64 (only contains base64 chars)
+        return /^[A-Za-z0-9+/]+=*$/.test(value);
     }
 
     // Decrypt task titles
     const taskElements = document.querySelectorAll('[data-title]');
     for (const el of taskElements) {
-        const encryptedTitle = el.dataset.title;
-        if (!encryptedTitle) continue;
+        const title = el.dataset.title;
+        if (!title) continue;
 
         try {
-            const decryptedTitle = await Crypto.decryptField(encryptedTitle);
-            if (!decryptedTitle || decryptedTitle === encryptedTitle) continue;
+            // If it doesn't look encrypted, use as-is (plaintext)
+            // Otherwise, try to decrypt
+            const displayTitle = looksEncrypted(title)
+                ? await Crypto.decryptField(title)
+                : title;
+
+            if (!displayTitle) continue;
 
             // Update the task text element
             const taskText = el.querySelector('.task-text');
             if (taskText) {
-                taskText.textContent = decryptedTitle;
+                taskText.textContent = displayTitle;
             }
 
             // Calendar anytime tasks
             const anytimeText = el.querySelector('.date-only-task-text');
             if (anytimeText) {
-                anytimeText.textContent = decryptedTitle;
+                anytimeText.textContent = displayTitle;
             }
 
             // Calendar scheduled tasks
             const scheduledText = el.querySelector('.scheduled-task-text');
             if (scheduledText) {
                 const badge = scheduledText.querySelector('.occurrence-day');
-                scheduledText.textContent = decryptedTitle;
+                scheduledText.textContent = displayTitle;
                 if (badge) {
                     scheduledText.appendChild(badge);
                 }
             }
         } catch (e) {
             console.error('Failed to decrypt task title:', e);
+            // On error, try to display the original value
+            const taskText = el.querySelector('.task-text');
+            if (taskText) taskText.textContent = title;
         }
     }
 
     // Decrypt domain names in project groups
     const domainElements = document.querySelectorAll('[data-domain-name]');
     for (const el of domainElements) {
-        const encryptedName = el.dataset.domainName;
-        if (!encryptedName) continue;
+        const name = el.dataset.domainName;
+        if (!name) continue;
 
         try {
-            const decryptedName = await Crypto.decryptField(encryptedName);
-            if (!decryptedName || decryptedName === encryptedName) continue;
+            // If it doesn't look encrypted, use as-is (plaintext)
+            const displayName = looksEncrypted(name)
+                ? await Crypto.decryptField(name)
+                : name;
+
+            if (!displayName) continue;
 
             const nameText = el.querySelector('.domain-name-text');
             if (nameText) {
-                nameText.textContent = decryptedName;
+                nameText.textContent = displayName;
             }
         } catch (e) {
             console.error('Failed to decrypt domain name:', e);
+            // On error, try to display the original value
+            const nameText = el.querySelector('.domain-name-text');
+            if (nameText) nameText.textContent = name;
         }
     }
 })();
