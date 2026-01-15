@@ -120,7 +120,8 @@ async def todoist_callback(
         db.add(token)
 
     await db.commit()
-    response = RedirectResponse(url="/dashboard", status_code=303)
+    # Return to settings page where user initiated the connection
+    response = RedirectResponse(url="/settings", status_code=303)
     response.delete_cookie("todoist_oauth_state")
     return response
 
