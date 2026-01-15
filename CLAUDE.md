@@ -24,6 +24,10 @@
 | APIs | Google Calendar v3, Todoist API v1 (optional import) |
 | Tooling | uv, ruff, pytest |
 
+**CRITICAL: No Database Migrations Before v1.0**
+
+The database is dropped and recreated frequently during pre-1.0 development. Do NOT create migration files. Schema changes go directly in `app/models.py` and the DB is recreated via `Base.metadata.create_all()`.
+
 ## Project Structure
 
 ```
