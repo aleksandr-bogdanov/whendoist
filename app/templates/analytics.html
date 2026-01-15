@@ -644,8 +644,9 @@ new ApexCharts(document.querySelector('#chart-daily'), {
 
 // 2. Domain Donut Chart
 const domainData = stats.by_domain || [];
+let domainChart = null;  // Store chart instance for later update
 if (domainData.length > 0) {
-    new ApexCharts(document.querySelector('#chart-domain'), {
+    domainChart = new ApexCharts(document.querySelector('#chart-domain'), {
         ...commonOptions,
         chart: { ...commonOptions.chart, type: 'donut', height: 220 },
         series: domainData.map(d => d.count),
@@ -682,7 +683,8 @@ if (domainData.length > 0) {
                 }
             }
         },
-    }).render();
+    });
+    domainChart.render();
 } else {
     document.querySelector('#chart-domain').innerHTML = '<div class="empty-state">No data</div>';
 }
@@ -984,28 +986,26 @@ async function decryptAnalyticsData() {
         }
     }
 
-    // Decrypt domain names in chart (re-render with decrypted labels)
-    if (domainData.length > 0) {
-        const decryptedDomainData = await Promise.all(domainData.map(async (d) => {
-            if (!looksEncrypted(d.domain_name)) return d;
+    // Decrypt domain names in chart (update labels with decrypted values)
+    if (domainChart && domainData.length > 0) {
+        const decryptedLabels = await Promise.all(domainData.map(async (d) => {
+            if (!looksEncrypted(d.domain_name)) {
+                return d.domain_icon + ' ' + d.domain_name;
+            }
 
             try {
                 const decrypted = await Crypto.decryptField(d.domain_name);
-                return { ...d, domain_name: decrypted || d.domain_name };
+                return d.domain_icon + ' ' + (decrypted || d.domain_name);
             } catch (e) {
                 console.error('Failed to decrypt domain name:', e);
-                return d;
+                return d.domain_icon + ' ' + d.domain_name;
             }
         }));
 
-        // Update chart with decrypted labels
-        const chartEl = document.querySelector('#chart-domain');
-        if (chartEl && chartEl._chart) {
-            // ApexCharts update method
-            chartEl._chart.updateOptions({
-                labels: decryptedDomainData.map(d => d.domain_icon + ' ' + d.domain_name)
-            });
-        }
+        // Update chart with decrypted labels using stored chart instance
+        domainChart.updateOptions({
+            labels: decryptedLabels
+        });
     }
 }
 

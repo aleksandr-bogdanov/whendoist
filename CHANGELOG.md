@@ -17,6 +17,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.10] - 2026-01-15
+
+### Summary
+**Hotfix: Analytics Chart Decryption** — Fixes v0.8.9 bug where domain chart wasn't updating with decrypted labels.
+
+### Fixed
+
+- **Domain chart not decrypting** — ApexCharts instances aren't stored on DOM elements:
+  - v0.8.9 tried to access `chartEl._chart` which doesn't exist
+  - Now properly stores chart instance in variable and calls `updateOptions()` on it
+  - Domain names now correctly decrypt in the "By Domain" donut chart
+
+### Why v0.8.9 Tests Didn't Catch This
+
+Contract tests verify code EXISTS in files (string matching), not that it WORKS at runtime:
+- Test checked for `domainChart.updateOptions` string → passed
+- But `chartEl._chart` code path was broken (ApexCharts doesn't work that way)
+- Need E2E tests with real browser to catch JavaScript runtime bugs
+
+---
+
 ## [0.8.9] - 2026-01-15
 
 ### Summary
