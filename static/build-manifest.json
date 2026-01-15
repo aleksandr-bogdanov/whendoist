@@ -1,13 +1,13 @@
 {
-  "version": "v0.8.10",
+  "version": "v0.8.11",
   "commit": {
-    "sha": "d73fcf0dd33682a7ff3653d5b083517ecae61b55",
-    "short": "d73fcf0",
-    "date": "2026-01-15T14:53:13+01:00"
+    "sha": "beb8ed435cee167ef305e2a6070b1207b37f5286",
+    "short": "beb8ed4",
+    "date": "2026-01-15T15:02:38+01:00"
   },
   "build": {
-    "hash": "29dde051a79390fa",
-    "timestamp": "2026-01-15T13:55:32.244011+00:00",
+    "hash": "d9194d5d3aebe0d3",
+    "timestamp": "2026-01-15T14:04:41.746045+00:00",
     "runner": "local",
     "environment": "development"
   },
@@ -31,7 +31,7 @@
     "js/passkey.js": "89417fe2a0f1b2bf7eb4b82b75ff5272b6960fa786d7fc9b4762bb4c813df809",
     "js/plan-tasks.js": "8ba707a3e5680149775cb3a65fe74f49eaf959e4c6c12768c70fd4820ff008a6",
     "app/database.py": "038910d548b4bf6862ca39a29f59bfec28acaa07dcd449de8dbc3d0c48bc6df9",
-    "app/main.py": "14a3a6dfbe46f975ac4f46357e512f069b4d64b241c7e61ba93285778d9f4762",
+    "app/main.py": "793221ad18f7b826a9c623da4813981cd33aeb266dd8c57556a32a778ff6e7f3",
     "app/logging_config.py": "23604c8827cc747c003f49e2175fabb770df538d0cd66c512e840df651fa969f",
     "app/config.py": "a2bf198c389e051417f457fae2f6d849b862ac366c7580f03bccbdd50f535da1",
     "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
