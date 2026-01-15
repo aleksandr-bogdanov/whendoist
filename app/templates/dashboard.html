@@ -220,6 +220,7 @@
                              data-duration="{{ item.duration_minutes }}"
                              data-clarity="{{ item.clarity }}"
                              data-impact="{{ item.task.impact or 4 }}"
+                             data-title="{{ item.task.title }}"
                              draggable="true">
                             <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if item_status == 'completed' else 'false' }}">
                                 <span class="complete-bar"></span>
@@ -230,7 +231,7 @@
                                 {% if item.duration_minutes >= 60 %}{{ item.duration_minutes // 60 }}h{% if item.duration_minutes % 60 %}{{ item.duration_minutes % 60 }}m{% endif %}{% else %}{{ item.duration_minutes }}m{% endif %}
                             </span>
                             {% endif %}
-                            <span class="date-only-task-text">{{ item.task.title }}</span>
+                            <span class="date-only-task-text">{% if encryption_enabled %}🔒{% else %}{{ item.task.title }}{% endif %}</span>
                         </div>
                         {% endfor %}
                     </div>
@@ -290,7 +291,8 @@
                                  data-end-mins="{{ end_mins }}"
                                  data-duration="{{ duration_mins }}"
                                  data-clarity="{{ scheduled.clarity }}"
-                                 data-impact="{{ scheduled.task.impact or 4 }}">
+                                 data-impact="{{ scheduled.task.impact or 4 }}"
+                                 data-title="{{ scheduled.task.title }}">
                                 <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task_status == 'completed' else 'false' }}">
                                     <span class="complete-bar"></span>
                                     <span class="complete-check" aria-hidden="true">✓</span>
@@ -301,7 +303,7 @@
                                     <span class="scheduled-task-duration">{% if duration_mins >= 60 %}{{ duration_mins // 60 }}h{% if duration_mins % 60 %}{{ duration_mins % 60 }}m{% endif %}{% else %}{{ duration_mins }}m{% endif %}</span>
                                     {% endif %}
                                 </div>
-                                <span class="scheduled-task-text">{{ scheduled.task.title }}{% if scheduled.is_instance %}<span class="occurrence-day" title="Occurrence: {{ scheduled.instance.instance_date.strftime('%A, %b %d') }}">{{ scheduled.instance.instance_date.strftime('%a') }}</span>{% endif %}</span>
+                                <span class="scheduled-task-text">{% if encryption_enabled %}🔒{% else %}{{ scheduled.task.title }}{% endif %}{% if scheduled.is_instance %}<span class="occurrence-day" title="Occurrence: {{ scheduled.instance.instance_date.strftime('%A, %b %d') }}">{{ scheduled.instance.instance_date.strftime('%a') }}</span>{% endif %}</span>
                             </div>
                             {% endfor %}
                         </div>
@@ -341,6 +343,72 @@
 <script src="/static/js/task-complete.js"></script>
 <script src="/static/js/drag-drop.js"></script>
 <script src="/static/js/plan-tasks.js"></script>
+
+<!-- E2E Encryption: Decrypt task titles and domain names on page load -->
+<script>
+(async function decryptEncryptedContent() {
+    // Only decrypt if encryption is enabled and key is available
+    if (!Crypto.canCrypto()) {
+        return;
+    }
+
+    // Decrypt task titles
+    const taskElements = document.querySelectorAll('[data-title]');
+    for (const el of taskElements) {
+        const encryptedTitle = el.dataset.title;
+        if (!encryptedTitle) continue;
+
+        try {
+            const decryptedTitle = await Crypto.decryptField(encryptedTitle);
+            if (!decryptedTitle || decryptedTitle === encryptedTitle) continue;
+
+            // Update the task text element
+            const taskText = el.querySelector('.task-text');
+            if (taskText) {
+                taskText.textContent = decryptedTitle;
+            }
+
+            // Calendar anytime tasks
+            const anytimeText = el.querySelector('.date-only-task-text');
+            if (anytimeText) {
+                anytimeText.textContent = decryptedTitle;
+            }
+
+            // Calendar scheduled tasks
+            const scheduledText = el.querySelector('.scheduled-task-text');
+            if (scheduledText) {
+                const badge = scheduledText.querySelector('.occurrence-day');
+                scheduledText.textContent = decryptedTitle;
+                if (badge) {
+                    scheduledText.appendChild(badge);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to decrypt task title:', e);
+        }
+    }
+
+    // Decrypt domain names in project groups
+    const domainElements = document.querySelectorAll('[data-domain-name]');
+    for (const el of domainElements) {
+        const encryptedName = el.dataset.domainName;
+        if (!encryptedName) continue;
+
+        try {
+            const decryptedName = await Crypto.decryptField(encryptedName);
+            if (!decryptedName || decryptedName === encryptedName) continue;
+
+            const nameText = el.querySelector('.domain-name-text');
+            if (nameText) {
+                nameText.textContent = decryptedName;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt domain name:', e);
+        }
+    }
+})();
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // Scroll carousel to today's calendar

@@ -28,6 +28,14 @@
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3/air-datepicker.js"></script>
     <script src="/static/js/toast.js"></script>
     <script src="/static/js/crypto.js"></script>
+    <!-- Global config for encryption state (must be before crypto.js usage) -->
+    <script>
+    window.WHENDOIST = {
+        encryptionEnabled: {{ encryption_enabled|default(false)|tojson }},
+        encryptionSalt: {{ encryption_salt|default(none)|tojson }},
+        encryptionTestValue: {{ encryption_test_value|default(none)|tojson }}
+    };
+    </script>
 </head>
 <body>
     <header class="site-header">
@@ -185,11 +193,7 @@
     <script>
     // Encryption unlock check
     (function() {
-        const encryptionEnabled = {{ encryption_enabled|tojson }};
-        const encryptionSalt = {{ encryption_salt|tojson if encryption_salt else 'null' }};
-        const encryptionTestValue = {{ encryption_test_value|tojson if encryption_test_value else 'null' }};
-
-        if (encryptionEnabled && typeof Crypto !== 'undefined') {
+        if (window.WHENDOIST?.encryptionEnabled && typeof Crypto !== 'undefined') {
             // Check if key is already stored
             if (!Crypto.hasStoredKey()) {
                 // Show unlock modal
@@ -199,10 +203,6 @@
                 }, 100);
             }
         }
-
-        // Make these available globally for the unlock function
-        window._encryptionSalt = encryptionSalt;
-        window._encryptionTestValue = encryptionTestValue;
     })();
 
     async function unlockEncryption() {
@@ -216,17 +216,10 @@
         }
 
         try {
-            // Verify passphrase against test value
-            const isValid = await Crypto.verifyPassphrase(
-                passphrase,
-                window._encryptionSalt,
-                window._encryptionTestValue,
-                'WHENDOIST_ENCRYPTION_TEST'
-            );
+            // Use the Crypto API to unlock - it uses window.WHENDOIST for salt/testValue
+            const success = await Crypto.unlockEncryption(passphrase);
 
-            if (isValid) {
-                // Passphrase is correct, store the key
-                await Crypto.unlockEncryption(passphrase, window._encryptionSalt);
+            if (success) {
                 document.getElementById('passphrase-modal').style.display = 'none';
                 // Reload to decrypt data
                 window.location.reload();
