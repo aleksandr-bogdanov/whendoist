@@ -936,9 +936,14 @@
             const completeBtn = backdropEl.querySelector('#btn-complete');
             completeBtn.style.display = 'inline-flex';
 
-            // Set button state based on task completion
-            const isCompleted = task.status === 'completed';
+            // Set button state based on task/instance completion
+            // For recurring tasks, use today_instance_completed; for regular tasks, use status
+            const isCompleted = task.is_recurring
+                ? task.today_instance_completed === true
+                : task.status === 'completed';
             backdropEl.querySelector('[name="task_status"]').value = task.status || 'pending';
+            // Store recurring flag for handleComplete
+            completeBtn.dataset.isRecurring = task.is_recurring ? 'true' : 'false';
 
             if (isCompleted) {
                 completeBtn.innerHTML = '<span class="btn-complete-icon">↺</span> Reopen';
@@ -1112,6 +1117,7 @@
     /**
      * Handle Complete/Reopen button click.
      * Toggles task completion status immediately (no save required).
+     * For recurring tasks, toggles today's instance.
      */
     async function handleComplete() {
         if (!currentTaskId || isNaN(currentTaskId)) {
@@ -1121,15 +1127,25 @@
 
         const taskId = currentTaskId;
         const completeBtn = backdropEl.querySelector('#btn-complete');
-        const isCurrentlyCompleted = backdropEl.querySelector('[name="task_status"]').value === 'completed';
+        const isRecurring = completeBtn.dataset.isRecurring === 'true';
+        const isCurrentlyCompleted = completeBtn.classList.contains('is-completed');
 
         // Disable button during request
         completeBtn.disabled = true;
 
         try {
+            // For recurring tasks, we need to send a body with target_date
+            const requestBody = {};
+            if (isRecurring) {
+                // Use today's date for the instance
+                const today = new Date();
+                requestBody.target_date = today.toISOString().split('T')[0];
+            }
+
             const response = await fetch(`/api/tasks/${taskId}/toggle-complete`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody),
             });
 
             if (!response.ok) {
@@ -1138,9 +1154,6 @@
 
             const data = await response.json();
             const newCompleted = data.completed;
-
-            // Update hidden status field
-            backdropEl.querySelector('[name="task_status"]').value = newCompleted ? 'completed' : 'pending';
 
             // Update button text and icon
             if (newCompleted) {
@@ -1151,13 +1164,16 @@
                 completeBtn.classList.remove('is-completed');
             }
 
-            // Update completed metadata immediately
-            const completedRow = backdropEl.querySelector('#meta-completed-row');
-            if (newCompleted) {
-                completedRow.style.display = 'block';
-                backdropEl.querySelector('#meta-completed-at').textContent = 'Task completed at ' + formatDateTime(new Date().toISOString());
-            } else {
-                completedRow.style.display = 'none';
+            // Update completed metadata (only for non-recurring tasks)
+            if (!isRecurring) {
+                backdropEl.querySelector('[name="task_status"]').value = newCompleted ? 'completed' : 'pending';
+                const completedRow = backdropEl.querySelector('#meta-completed-row');
+                if (newCompleted) {
+                    completedRow.style.display = 'block';
+                    backdropEl.querySelector('#meta-completed-at').textContent = 'Task completed at ' + formatDateTime(new Date().toISOString());
+                } else {
+                    completedRow.style.display = 'none';
+                }
             }
 
             // Update UI elements across the page
@@ -1167,7 +1183,10 @@
 
             // Show toast
             if (window.Toast) {
-                Toast.show(newCompleted ? 'Task completed' : 'Task reopened', { showUndo: false });
+                const message = isRecurring
+                    ? (newCompleted ? 'Instance completed' : 'Instance reopened')
+                    : (newCompleted ? 'Task completed' : 'Task reopened');
+                Toast.show(message, { showUndo: false });
             }
 
             completeBtn.disabled = false;

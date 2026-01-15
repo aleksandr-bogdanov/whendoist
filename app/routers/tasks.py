@@ -108,6 +108,8 @@ class TaskResponse(BaseModel):
     created_at: datetime | None = None
     completed_at: datetime | None = None
     subtasks: list[SubtaskResponse] = []
+    # For recurring tasks: whether today's instance is completed
+    today_instance_completed: bool | None = None
 
     class Config:
         from_attributes = True
@@ -115,6 +117,15 @@ class TaskResponse(BaseModel):
 
 def _task_to_response(task: Task) -> TaskResponse:
     """Convert a Task model to TaskResponse."""
+    # For recurring tasks, check if today's instance is completed
+    today_instance_completed: bool | None = None
+    if task.is_recurring and hasattr(task, "instances") and task.instances:
+        today = date.today()
+        for instance in task.instances:
+            if instance.instance_date == today:
+                today_instance_completed = instance.status == "completed"
+                break
+
     return TaskResponse(
         id=task.id,
         title=task.title,
@@ -150,6 +161,7 @@ def _task_to_response(task: Task) -> TaskResponse:
             )
             for s in (task.subtasks or [])
         ],
+        today_instance_completed=today_instance_completed,
     )
 
 
