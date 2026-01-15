@@ -186,26 +186,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_tag_gpgsign: true
 
-      - name: Create and push tag
+      - name: Create signed tag
         run: |
           VERSION_TAG="${{ needs.prepare.outputs.version_tag }}"
           VERSION="${{ needs.prepare.outputs.version }}"
 
-          # Create annotated tag (GitHub will sign it)
-          git tag -a "$VERSION_TAG" -m "Release $VERSION
+          git tag -s "$VERSION_TAG" -m "Release $VERSION
 
           Released via GitHub Actions
           Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          # Push tag
           git push origin "$VERSION_TAG"
 
-          echo "✓ Created and pushed tag $VERSION_TAG"
+          echo "✓ Created GPG-signed tag $VERSION_TAG"
 
   # ===========================================================================
   # Job 3: Build and release
