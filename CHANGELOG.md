@@ -9,14 +9,120 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Time blocking templates
-- Key rotation (change passphrase without re-encrypting all data)
-- Recovery key generation during encryption setup
+- Recovery key generation during encryption setup (trigger 1password etc to save it)
 - Redesign domain management UX
 - Redesign CMPCT view
 - WhenWizard setup flow (first launch or Settings → configure integrations, domains)
 
 ### Known Issues
 - None currently tracked
+
+---
+
+## [0.8.4] - 2026-01-15
+
+### Summary
+**Passkey Unlock for E2E Encryption** — Unlock encrypted data with 1Password, Touch ID, Windows Hello, or hardware security keys using WebAuthn PRF extension.
+
+### Added
+
+- **Passkey Registration** — Register passkeys in Settings → Security:
+  - Add unlimited passkeys (1Password, Touch ID, YubiKey, etc.)
+  - Each passkey shown with name and date added
+  - Remove individual passkeys without affecting others
+  - Must be unlocked (via passphrase or existing passkey) to add new passkeys
+
+- **Passkey Unlock** — Authenticate with passkey on page load:
+  - "Unlock with Passkey" button in unlock modal (when passkeys exist)
+  - Passphrase fallback always available
+  - Automatic retry with correct wrapped key if wrong credential selected
+
+- **Lock Status** — New UI in Settings → Security:
+  - Shows 🔓 Unlocked / 🔒 Locked status
+  - "Re-authenticate" button to re-enter passphrase or use passkey
+
+- **49 Passkey Tests** (`tests/test_passkey.py`):
+  - `TestPasskeyServiceBasics` — CRUD operations
+  - `TestPasskeyServiceList` — Listing and ordering
+  - `TestPasskeyServiceGet` — Retrieval with ownership check
+  - `TestPasskeyServiceDelete` — Deletion and unlock method updates
+  - `TestPasskeyMultitenancy` — **CRITICAL**: User isolation verification
+  - `TestPasskeyDataModel` — wrapped_key architecture verification
+  - `TestPasskeyJSModuleAPI` — passkey.js exports
+  - `TestPasskeyJSKeyWrapping` — Key wrapping architecture
+  - `TestPasskeyJSRegistrationFlow` — Registration contract
+  - `TestPasskeyJSAuthenticationFlow` — Authentication contract
+  - `TestPasskeyJSErrorHandling` — Error return format
+  - `TestPasskeyJSDocumentation` — Architecture docs
+  - `TestPasskeyAPIContract` — API endpoint paths
+
+### Technical
+
+#### Key Wrapping Architecture (CRITICAL)
+
+Each passkey wraps the **same master key**, not its own derived key:
+
+```
+Master Key (from PBKDF2 passphrase)
+├── Passkey A → PRF → Wrapping Key A → encrypt(Master Key) → stored
+├── Passkey B → PRF → Wrapping Key B → encrypt(Master Key) → stored
+└── Master Key → encrypts actual data (tasks, domains)
+```
+
+This ensures all passkeys unlock the same encrypted data.
+
+#### New Files
+
+| File | Purpose |
+|------|---------|
+| `app/services/passkey_service.py` | WebAuthn credential management |
+| `app/routers/passkeys.py` | REST API for passkey operations |
+| `static/js/passkey.js` | Client-side WebAuthn + PRF + key wrapping |
+| `tests/test_passkey.py` | 49 comprehensive tests |
+
+#### New API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/passkeys/register/options` | POST | Get WebAuthn registration options |
+| `/api/passkeys/register/verify` | POST | Verify and store passkey credential |
+| `/api/passkeys/authenticate/options` | POST | Get authentication options |
+| `/api/passkeys/authenticate/verify` | POST | Verify passkey authentication |
+| `/api/passkeys/by-credential/{id}` | GET | Look up passkey by credential ID |
+| `/api/passkeys` | GET | List user's passkeys |
+| `/api/passkeys/{id}` | DELETE | Delete a passkey |
+
+#### Model Changes
+
+- **New**: `UserPasskey` model with `wrapped_key` field (not `encryption_test_value`)
+- **Updated**: `UserPreferences.encryption_unlock_method` — 'passphrase', 'passkey', or 'both'
+- **Updated**: `User.passkeys` relationship
+
+### Security
+
+- **Multitenancy Isolation**: All passkey operations verify `user_id` ownership
+- **Credential Revocation**: Deleted passkeys cannot be used (server controls `allowCredentials`)
+- **Key Verification**: Unwrapped master key verified against global test value before use
+- **No Server-Side Key Storage**: Server only stores wrapped keys, never the master key
+
+### WebAuthn Flow
+
+**Registration:**
+1. User unlocks with passphrase (or existing passkey)
+2. User clicks "Add Passkey" in Settings
+3. Browser prompts for biometric/security key
+4. PRF extension derives wrapping key from passkey
+5. Client wraps master key with wrapping key
+6. Server stores credential + wrapped_key
+
+**Authentication:**
+1. User visits page with encryption enabled
+2. Unlock modal shows "Unlock with Passkey" (if passkeys exist)
+3. Browser prompts for biometric/security key
+4. PRF extension derives wrapping key
+5. Client unwraps master key
+6. Client verifies key against test value
+7. Master key stored in sessionStorage
 
 ---
 

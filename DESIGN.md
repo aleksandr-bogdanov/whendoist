@@ -658,14 +658,303 @@ Settings panel for controlling completed task visibility. Calendar always shows 
 **Example use case for "Hide recurring":**
 You have 5 daily tasks. By noon, 3 are done. With this OFF, you see all 5 (3 completed, 2 pending). With this ON, you see only 2 remaining tasks.
 
-### Security Panel (v0.8)
+### Security Panel (v0.8+)
 
-Settings panel for E2E encryption setup.
+Settings panel for E2E encryption and passkey management.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ SECURITY                                                        │
+├────────────────────────────────────────────────────────────────┤
+│ Encryption                    [Enabled ✓] or [Disabled]         │
+│ End-to-end encryption for...                                    │
+├────────────────────────────────────────────────────────────────┤
+│ Lock Status                   🔓 Unlocked  [Re-authenticate]    │
+│ Current encryption session... or 🔒 Locked                      │
+├────────────────────────────────────────────────────────────────┤
+│ Passkeys                      📋 List passkeys                  │
+│ Use biometrics or security... ├─ 1Password  Jan 15 [Remove]     │
+│                               ├─ Touch ID   Jan 15 [Remove]     │
+│                               └─ [Add Passkey]                  │
+├────────────────────────────────────────────────────────────────┤
+│ ┌────────────────────────────────────────────────────────────┐ │
+│ │ SET UP ENCRYPTION                                          │ │
+│ │ [Passphrase input  ] [Confirm     ]  [Enable Encryption]   │ │
+│ │ or                                                         │ │
+│ │ [Enter passphrase  ]               [Disable Encryption]    │ │
+│ └────────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────┘
+```
 
 | Setting | Type | Description |
 |---------|------|-------------|
-| Encryption Status | Badge | Shows "Enabled" or "Disabled" |
-| Setup/Disable | Button | Opens passphrase modal or disables encryption |
+| Encryption Status | Badge | Shows "Enabled ✓" (green) or "Disabled" |
+| Lock Status | Status + Button | Shows 🔓 Unlocked / 🔒 Locked, Re-authenticate button when locked |
+| Passkeys | List + Button | Registered passkeys with Remove action, Add Passkey button |
+| Setup/Disable | Input + Button | Passphrase input for enabling/disabling encryption |
+
+**Lock Status Row:**
+- Shows when encryption is enabled
+- 🔓 Unlocked (green) — key is in sessionStorage
+- 🔒 Locked — need to re-authenticate
+- "Re-authenticate" button shows when locked
+
+**Passkeys Section:**
+- Shows when encryption is enabled
+- Lists all registered passkeys with name and creation date
+- "Remove" button on hover for each passkey
+- "Add Passkey" button at bottom
+
+---
+
+## Passkey Unlock Architecture (v0.8.4)
+
+### Design Philosophy
+
+**Core Principle: Key Wrapping, Not Key Derivation**
+
+Each passkey wraps the same master key. This allows multiple passkeys (1Password, Touch ID, YubiKey) to unlock the same encrypted data.
+
+```
+❌ WRONG: Each passkey derives its own key
+   Passkey A → PRF → Key A → encrypts data
+   Passkey B → PRF → Key B → can't decrypt Key A's data
+
+✅ CORRECT: Each passkey wraps the same master key
+   Master Key (from passphrase) → encrypts all data
+   Passkey A → PRF → Wrapping Key A → wraps master key
+   Passkey B → PRF → Wrapping Key B → wraps master key
+   Both unwrap to the SAME master key
+```
+
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      PASSKEY KEY WRAPPING ARCHITECTURE                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                         USER PREFERENCES                            │   │
+│   │  encryption_salt: base64      ← Salt for PBKDF2                     │   │
+│   │  encryption_test_value: enc   ← "WHENDOIST..." encrypted with       │   │
+│   │                                  MASTER key (verifies correctness)  │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│                                    ▼                                        │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                         USER PASSKEYS                               │   │
+│   │                                                                     │   │
+│   │  passkey_1:                    passkey_2:                           │   │
+│   │    credential_id: bytes          credential_id: bytes               │   │
+│   │    prf_salt: "salt1"             prf_salt: "salt2"                  │   │
+│   │    wrapped_key: enc              wrapped_key: enc                   │   │
+│   │    ↑ Master key wrapped          ↑ Master key wrapped              │   │
+│   │      with PRF-derived key          with PRF-derived key            │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│   ┌─────────────────────┐          ┌─────────────────────┐                  │
+│   │  PASSPHRASE FLOW    │          │  PASSKEY FLOW       │                  │
+│   ├─────────────────────┤          ├─────────────────────┤                  │
+│   │ 1. User enters pass │          │ 1. WebAuthn prompt  │                  │
+│   │ 2. PBKDF2(pass,salt)│          │ 2. PRF extension    │                  │
+│   │ 3. → Master key     │          │ 3. → Wrapping key   │                  │
+│   │ 4. Decrypt test val │          │ 4. Unwrap master key│                  │
+│   │ 5. Store in session │          │ 5. Decrypt test val │                  │
+│   │                     │          │ 6. Store in session │                  │
+│   └─────────────────────┘          └─────────────────────┘                  │
+│            │                                  │                              │
+│            └──────────────┬───────────────────┘                              │
+│                           ▼                                                  │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │                    SAME MASTER KEY                                  │   │
+│   │              Used for all encrypt/decrypt operations                │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Unlock Modal (Updated v0.8.4)
+
+The unlock modal now supports both passkey and passphrase authentication:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                          🔐                                     │
+│                  Unlock Encrypted Data                          │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │                 [Unlock with Passkey]                    │  │
+│  │                     (if passkeys exist)                  │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│                         ─── or ───                              │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  [Enter passphrase                                     ] │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│              [Unlock with Passphrase]                           │
+│                                                                 │
+│           ─────────────────────────────                         │
+│               ⚠️ Error message here                             │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Flow:**
+1. If user has passkeys, show "Unlock with Passkey" button prominently
+2. Passphrase input always available as fallback
+3. Error shown inline if authentication fails
+
+### Passkey Registration Flow
+
+```
+User clicks "Add Passkey" (must be unlocked first!)
+         │
+         ▼
+┌────────────────────────────┐
+│ 1. Check Crypto.hasStored  │
+│    Key() - must be true    │
+│    (need master key!)      │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 2. Get registration options│
+│    POST /api/passkeys/     │
+│         register/options   │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 3. navigator.credentials   │
+│    .create() with PRF ext  │
+│    User authenticates      │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 4. PRF output → wrapping   │
+│    key (AES-256-GCM)       │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 5. Get master key from     │
+│    sessionStorage          │
+│    Crypto.getStoredKey()   │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 6. Wrap master key with    │
+│    wrapping key            │
+│    wrapped = AES(wrap, mk) │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 7. Send to server          │
+│    POST /api/passkeys/     │
+│         register/verify    │
+│    { credential, name,     │
+│      prf_salt, wrapped_key}│
+└────────────────────────────┘
+```
+
+### Passkey Authentication Flow
+
+```
+User clicks "Unlock with Passkey"
+         │
+         ▼
+┌────────────────────────────┐
+│ 1. Get authentication opts │
+│    POST /api/passkeys/     │
+│         authenticate/options│
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 2. navigator.credentials   │
+│    .get() with PRF ext     │
+│    (includes prf_salt)     │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 3. PRF output → wrapping   │
+│    key (AES-256-GCM)       │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 4. Server returns          │
+│    wrapped_key for the     │
+│    passkey that was used   │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 5. Unwrap master key       │
+│    mk = AES-decrypt(       │
+│         wrap, wrapped_key) │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 6. Verify master key       │
+│    Decrypt test value from │
+│    UserPreferences         │
+│    Must == "WHENDOIST_..." │
+└────────────────────────────┘
+         │ success
+         ▼
+┌────────────────────────────┐
+│ 7. Store master key        │
+│    Crypto.storeKey(mk)     │
+│    → sessionStorage        │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 8. Notify server           │
+│    POST /api/passkeys/     │
+│         authenticate/verify│
+│    (updates sign count)    │
+└────────────────────────────┘
+```
+
+### API Endpoints (Passkeys)
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/passkeys/` | GET | List user's passkeys |
+| `/api/passkeys/register/options` | POST | Get WebAuthn registration options |
+| `/api/passkeys/register/verify` | POST | Verify registration, store credential |
+| `/api/passkeys/authenticate/options` | POST | Get WebAuthn authentication options |
+| `/api/passkeys/authenticate/verify` | POST | Verify authentication, update sign count |
+| `/api/passkeys/{id}` | DELETE | Remove a passkey |
+
+### Files Involved (Passkeys)
+
+| File | Role |
+|------|------|
+| `static/js/passkey.js` | Client-side WebAuthn + key wrapping |
+| `app/services/passkey_service.py` | Credential management |
+| `app/routers/passkeys.py` | Passkey API endpoints |
+| `app/models.py` | UserPasskey model |
+| `app/templates/base.html` | Unlock modal with passkey support |
+| `app/templates/settings.html` | Passkey management UI |
+
+### Security Considerations
+
+1. **Registration requires unlock** — Must have master key in session to wrap it
+2. **Key verification** — Always decrypt test value to verify correct key
+3. **Sign count** — WebAuthn sign count prevents credential cloning
+4. **User isolation** — All passkey operations filter by user_id
+5. **Passphrase fallback** — Users can always unlock with passphrase
 
 ---
 
@@ -1292,6 +1581,8 @@ static/js/
 ├── task-sort.js       # Column sorting
 ├── energy-selector.js # Mode toggle
 ├── recurrence-picker.js
+├── crypto.js          # E2E encryption (AES-256-GCM)
+├── passkey.js         # WebAuthn + key wrapping (v0.8.4)
 └── toast.js
 
 app/templates/
@@ -1321,4 +1612,4 @@ When designing new UI:
 
 ---
 
-*Last updated: January 2026 (v0.8.2 - E2E Encryption Architecture)*
+*Last updated: January 2026 (v0.8.4 - Passkey Unlock Architecture)*

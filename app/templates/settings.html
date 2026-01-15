@@ -386,6 +386,49 @@
     margin-top: 12px;
 }
 
+/* Passkey List */
+.passkey-list {
+    padding: 0 16px 12px;
+}
+
+.passkey-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-hair);
+}
+
+.passkey-item:last-child {
+    border-bottom: none;
+}
+
+.passkey-item__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.passkey-item__name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.passkey-item__date {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+}
+
+.btn-sm--danger {
+    color: var(--danger) !important;
+}
+
+.btn-sm--danger:hover {
+    background: rgba(220, 38, 38, 0.08) !important;
+}
+
 /* Import Preview */
 .import-preview {
     background: rgba(15, 23, 42, 0.02);
@@ -1497,9 +1540,83 @@ input.add-domain-input::placeholder {
                                 {% endif %}
                             </div>
                         </div>
-                        <div id="encryption-setup-wrap" class="expand-content" style="display: none; padding-top: 0;">
+                        <div id="encryption-setup-wrap" class="expand-content" style="display: none; margin-top: 12px;">
                             <div id="encryption-setup-content"></div>
                         </div>
+
+                        <!-- Lock Status (shown only when encryption is enabled) -->
+                        {% if user_prefs.encryption_enabled %}
+                        <div class="settings-row" id="lock-status-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Lock Status</span>
+                                <span class="pref-desc" id="lock-status-text">
+                                    <span id="lock-status-unlocked" style="color: var(--success-color, #22c55e);">🔓 Unlocked</span>
+                                    <span id="lock-status-locked" style="display: none; color: var(--text-muted);">🔒 Locked</span>
+                                </span>
+                            </div>
+                            <div class="settings-row__right">
+                                <button type="button" class="btn-sm btn-sm--ghost" id="btn-reauth" onclick="showReauthenticate()" style="display: none;">
+                                    Re-authenticate
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Passkey Management (shown only when encryption is enabled) -->
+                        {% if user_prefs.encryption_enabled %}
+                        <div class="settings-row" id="passkey-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Passkey Unlock</span>
+                                <span class="pref-desc" id="passkey-status-text">
+                                    {% if passkey_count > 0 %}
+                                    {{ passkey_count }} passkey{% if passkey_count > 1 %}s{% endif %} registered
+                                    {% else %}
+                                    No passkeys - unlock with passphrase only
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="settings-row__right">
+                                <button type="button" class="btn-sm btn-sm--primary" id="btn-add-passkey" onclick="showAddPasskeyForm()">
+                                    Add Passkey
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Passkey list -->
+                        <div id="passkey-list" class="passkey-list">
+                            {% for passkey in user_passkeys %}
+                            <div class="passkey-item" data-id="{{ passkey.id }}">
+                                <div class="passkey-item__info">
+                                    <span class="passkey-item__name">{{ passkey.name }}</span>
+                                    <span class="passkey-item__date">Added {{ passkey.created_at.strftime('%b %d, %Y') }}</span>
+                                </div>
+                                <button type="button" class="btn-sm btn-sm--ghost btn-sm--danger" onclick="deletePasskey({{ passkey.id }}, '{{ passkey.name }}')">
+                                    Remove
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Add passkey form (hidden by default) -->
+                        <div id="add-passkey-wrap" class="expand-content" style="display: none; padding-top: 0;">
+                            <div id="add-passkey-content">
+                                <div class="expand-label">Add Passkey</div>
+                                <p class="expand-desc">
+                                    Use your device's biometrics, security key, or password manager to unlock encrypted data.
+                                </p>
+                                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                    <input type="text" id="passkey-name" class="add-domain-input" placeholder="Passkey name (e.g., 1Password, Touch ID)" style="flex: 1;">
+                                </div>
+                                <div class="expand-actions">
+                                    <div class="expand-actions__left">
+                                        <button type="button" class="btn-sm btn-sm--primary" id="btn-register-passkey" onclick="registerPasskey()">Register Passkey</button>
+                                        <button type="button" class="btn-sm btn-sm--ghost" onclick="hideAddPasskeyForm()">Cancel</button>
+                                    </div>
+                                </div>
+                                <div id="passkey-setup-status" class="expand-status" style="display: none;"></div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -2425,6 +2542,142 @@ async function disableEncryption() {
         } else {
             const data = await response.json();
             throw new Error(data.detail || 'Failed to disable encryption');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+// ============================================================================
+// Lock Status Management
+// ============================================================================
+
+function updateLockStatus() {
+    const unlockedEl = document.getElementById('lock-status-unlocked');
+    const lockedEl = document.getElementById('lock-status-locked');
+    const reauthBtn = document.getElementById('btn-reauth');
+
+    if (!unlockedEl || !lockedEl) return;  // Not on encryption-enabled page
+
+    const isUnlocked = Crypto.hasStoredKey();
+
+    if (isUnlocked) {
+        unlockedEl.style.display = 'inline';
+        lockedEl.style.display = 'none';
+        if (reauthBtn) reauthBtn.style.display = 'none';
+    } else {
+        unlockedEl.style.display = 'none';
+        lockedEl.style.display = 'inline';
+        if (reauthBtn) reauthBtn.style.display = 'inline-block';
+    }
+}
+
+function showReauthenticate() {
+    // Show the unlock modal from base.html
+    const modal = document.getElementById('passphrase-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+
+        // Show passkey section if passkeys are registered
+        const passkeySection = document.getElementById('passkey-unlock-section');
+        if (passkeySection && window.WHENDOIST?.hasPasskeys) {
+            passkeySection.style.display = 'block';
+        }
+    }
+}
+
+// Update lock status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.WHENDOIST?.encryptionEnabled) {
+        updateLockStatus();
+    }
+});
+
+// ============================================================================
+// Passkey Management
+// ============================================================================
+
+function showAddPasskeyForm() {
+    const wrap = document.getElementById('add-passkey-wrap');
+    wrap.style.display = 'block';
+    document.getElementById('passkey-name').focus();
+}
+
+function hideAddPasskeyForm() {
+    const wrap = document.getElementById('add-passkey-wrap');
+    wrap.style.display = 'none';
+    document.getElementById('passkey-name').value = '';
+    document.getElementById('passkey-setup-status').style.display = 'none';
+}
+
+async function registerPasskey() {
+    const nameInput = document.getElementById('passkey-name');
+    const statusEl = document.getElementById('passkey-setup-status');
+    const btn = document.getElementById('btn-register-passkey');
+
+    const name = nameInput.value.trim();
+    if (!name) {
+        statusEl.className = 'expand-status error';
+        statusEl.textContent = 'Please enter a name for this passkey';
+        statusEl.style.display = 'block';
+        return;
+    }
+
+    if (!Passkey.isSupported()) {
+        statusEl.className = 'expand-status error';
+        statusEl.textContent = 'Your browser does not support passkeys';
+        statusEl.style.display = 'block';
+        return;
+    }
+
+    // Show loading state
+    btn.disabled = true;
+    btn.textContent = 'Registering...';
+    statusEl.className = 'expand-status';
+    statusEl.textContent = 'Follow your browser\'s prompts to create a passkey...';
+    statusEl.style.display = 'block';
+
+    try {
+        const result = await Passkey.registerPasskey(name);
+
+        if (result.success) {
+            statusEl.className = 'expand-status success';
+            statusEl.textContent = 'Passkey registered successfully! Reloading...';
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            statusEl.className = 'expand-status error';
+            statusEl.textContent = result.error || 'Failed to register passkey';
+            btn.disabled = false;
+            btn.textContent = 'Register Passkey';
+        }
+    } catch (e) {
+        statusEl.className = 'expand-status error';
+        statusEl.textContent = 'Error: ' + e.message;
+        btn.disabled = false;
+        btn.textContent = 'Register Passkey';
+    }
+}
+
+async function deletePasskey(passkeyId, passkeyName) {
+    const confirmDelete = confirm(`Remove passkey "${passkeyName}"?\n\nYou can still unlock with your passphrase or other passkeys.`);
+
+    if (!confirmDelete) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/passkeys/${passkeyId}`, {
+            method: 'DELETE',
+            credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert('Failed to delete passkey: ' + (error.detail || 'Unknown error'));
         }
     } catch (e) {
         alert('Error: ' + e.message);

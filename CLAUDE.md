@@ -237,6 +237,7 @@ tests/
 ├── test_task_sorting.py        # Server-side sorting (pages.py)
 ├── test_js_module_contract.py  # JS module API verification
 ├── test_encryption.py          # E2E encryption (48 tests, multitenancy)
+├── test_passkey.py             # Passkey unlock (49 tests, key wrapping, multitenancy)
 └── e2e/
     └── test_task_sorting_e2e.py  # Browser-based tests (Playwright)
 ```
@@ -418,6 +419,87 @@ for item in data.tasks:
 2. **Verify multitenancy**: User A must never see/modify User B's data
 3. **No per-record flags**: Global toggle only via `UserPreferences.encryption_enabled`
 4. **Batch updates respect ownership**: `get_task(id)` returns None for other users' tasks
+
+### Passkey Unlock Architecture (v0.8.4)
+
+Passkeys provide an alternative to passphrase for unlocking encrypted data using WebAuthn PRF extension.
+
+#### Key Wrapping Model (CRITICAL)
+
+Each passkey wraps the **same master key**, not its own derived key:
+
+```
+Master Key (from PBKDF2 passphrase or first passkey)
+├── Passkey A → PRF → Wrapping Key A → encrypt(Master Key) → stored
+├── Passkey B → PRF → Wrapping Key B → encrypt(Master Key) → stored
+└── Master Key → encrypts actual data (tasks, domains)
+```
+
+**Why wrapping?** Different passkeys produce different PRF outputs. Without wrapping, each passkey would derive its own independent key, making multi-passkey support impossible.
+
+#### Data Model
+
+```python
+class UserPasskey(Base):
+    credential_id: bytes      # WebAuthn credential ID
+    public_key: bytes         # COSE public key for verification
+    sign_count: int           # Replay attack protection
+    prf_salt: str             # Salt for PRF input
+    wrapped_key: str          # Master key wrapped with PRF-derived key
+    name: str                 # User-friendly name ("1Password", "Touch ID")
+```
+
+**NEVER use `encryption_test_value` per passkey** — that was the broken architecture. Use `wrapped_key`.
+
+#### Registration Flow
+
+1. User must be unlocked (have master key in session)
+2. User creates passkey with PRF extension
+3. PRF output → wrapping key
+4. `wrapMasterKey(wrappingKey, masterKey)` → `wrapped_key`
+5. Server stores credential + wrapped_key
+
+#### Authentication Flow
+
+1. Server sends `allowCredentials` (only registered credential IDs)
+2. User authenticates with passkey
+3. PRF output → wrapping key
+4. `unwrapMasterKey(wrappingKey, wrapped_key)` → master key
+5. Verify master key against `UserPreferences.encryption_test_value`
+6. Store master key in sessionStorage
+
+#### Multitenancy (CRITICAL)
+
+Same rules as encryption — all passkey operations are user-scoped:
+
+```python
+# tests/test_passkey.py - TestPasskeyMultitenancy class
+# EVERY query MUST filter by user_id
+
+result = await db.execute(
+    select(UserPasskey).where(
+        UserPasskey.id == passkey_id,
+        UserPasskey.user_id == self.user_id  # ← NEVER remove this
+    )
+)
+```
+
+#### Key Files
+
+| File | Role |
+|------|------|
+| `static/js/passkey.js` | WebAuthn + PRF + key wrapping |
+| `app/services/passkey_service.py` | Credential CRUD |
+| `app/routers/passkeys.py` | REST API endpoints |
+| `tests/test_passkey.py` | 49 comprehensive tests |
+
+#### MUST-HAVES for Passkey Changes
+
+1. **Run passkey tests**: `uv run pytest tests/test_passkey.py -v`
+2. **Verify multitenancy**: User A cannot access User B's passkeys
+3. **Use wrapped_key**: Never derive separate keys per passkey
+4. **Registration requires unlock**: Can't add passkey without master key in session
+5. **Authentication verifies key**: Always decrypt test value before storing key
 
 ## Files to Read First
 

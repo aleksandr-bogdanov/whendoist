@@ -28,12 +28,16 @@
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3/air-datepicker.js"></script>
     <script src="/static/js/toast.js"></script>
     <script src="/static/js/crypto.js"></script>
+    <script src="/static/js/passkey.js"></script>
     <!-- Global config for encryption state (must be before crypto.js usage) -->
     <script>
     window.WHENDOIST = {
         encryptionEnabled: {{ encryption_enabled|default(false)|tojson }},
         encryptionSalt: {{ encryption_salt|default(none)|tojson }},
-        encryptionTestValue: {{ encryption_test_value|default(none)|tojson }}
+        encryptionTestValue: {{ encryption_test_value|default(none)|tojson }},
+        hasPasskeys: {{ has_passkeys|default(false)|tojson }},
+        passkeyCount: {{ passkey_count|default(0)|tojson }},
+        unlockMethod: {{ unlock_method|default('passphrase')|tojson }}
     };
     </script>
 </head>
@@ -92,7 +96,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Passphrase Unlock Modal (for E2E encryption) -->
+    <!-- Encryption Unlock Modal (passkey or passphrase) -->
     {% if encryption_enabled %}
     <div id="passphrase-modal" class="passphrase-modal" style="display: none;">
         <div class="passphrase-modal__backdrop"></div>
@@ -105,11 +109,30 @@
                 <h3>Unlock Your Data</h3>
             </div>
             <p class="passphrase-modal__desc">
-                Your data is encrypted. Enter your passphrase to unlock.
+                Your data is encrypted. Unlock to continue.
             </p>
-            <input type="password" id="unlock-passphrase" class="passphrase-modal__input" placeholder="Enter your passphrase" autocomplete="current-password">
+
+            <!-- Passkey unlock section (shown if passkeys registered) -->
+            <div id="passkey-unlock-section" style="display: none;">
+                <button type="button" class="passphrase-modal__btn passphrase-modal__btn--passkey" onclick="unlockWithPasskey()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a4 4 0 0 0-4 4v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-1V6a4 4 0 0 0-4-4z"/>
+                        <circle cx="12" cy="15" r="1"/>
+                    </svg>
+                    Unlock with Passkey
+                </button>
+                <div class="passphrase-modal__divider">
+                    <span>or use passphrase</span>
+                </div>
+            </div>
+
+            <!-- Passphrase input (always available as fallback) -->
+            <div id="passphrase-unlock-section">
+                <input type="password" id="unlock-passphrase" class="passphrase-modal__input" placeholder="Enter your passphrase" autocomplete="current-password">
+                <button type="button" class="passphrase-modal__btn" onclick="unlockEncryption()">Unlock</button>
+            </div>
+
             <div id="unlock-error" class="passphrase-modal__error" style="display: none;"></div>
-            <button type="button" class="passphrase-modal__btn" onclick="unlockEncryption()">Unlock</button>
         </div>
     </div>
     <style>
@@ -185,9 +208,38 @@
         font-weight: 600;
         cursor: pointer;
         transition: background 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
     .passphrase-modal__btn:hover {
         background: var(--primary-hover);
+    }
+    .passphrase-modal__btn--passkey {
+        background: #1a1a2e;
+        margin-bottom: 16px;
+    }
+    .passphrase-modal__btn--passkey:hover {
+        background: #2a2a4e;
+    }
+    .passphrase-modal__btn--passkey svg {
+        flex-shrink: 0;
+    }
+    .passphrase-modal__divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        color: var(--text-muted);
+        font-size: 0.8125rem;
+    }
+    .passphrase-modal__divider::before,
+    .passphrase-modal__divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border);
     }
     </style>
     <script>
@@ -198,6 +250,12 @@
             if (!Crypto.hasStoredKey()) {
                 // Show unlock modal
                 document.getElementById('passphrase-modal').style.display = 'flex';
+
+                // Show passkey section if user has passkeys registered
+                if (window.WHENDOIST.hasPasskeys && Passkey.isSupported()) {
+                    document.getElementById('passkey-unlock-section').style.display = 'block';
+                }
+
                 setTimeout(() => {
                     document.getElementById('unlock-passphrase').focus();
                 }, 100);
@@ -231,6 +289,37 @@
         } catch (e) {
             errorEl.textContent = 'Error: ' + e.message;
             errorEl.style.display = 'block';
+        }
+    }
+
+    async function unlockWithPasskey() {
+        const errorEl = document.getElementById('unlock-error');
+        const btn = document.querySelector('.passphrase-modal__btn--passkey');
+
+        // Disable button while authenticating
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="spinner" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg> Authenticating...';
+
+        try {
+            const result = await Passkey.unlockWithPasskey();
+
+            if (result.success) {
+                document.getElementById('passphrase-modal').style.display = 'none';
+                // Reload to decrypt data
+                window.location.reload();
+            } else {
+                errorEl.textContent = result.error || 'Passkey authentication failed. Try again or use passphrase.';
+                errorEl.style.display = 'block';
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-1V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="1"/></svg> Unlock with Passkey';
+            }
+        } catch (e) {
+            errorEl.textContent = 'Error: ' + e.message;
+            errorEl.style.display = 'block';
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-1V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="1"/></svg> Unlock with Passkey';
         }
     }
 

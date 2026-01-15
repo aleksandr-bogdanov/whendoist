@@ -105,7 +105,7 @@ async def get_build_info() -> JSONResponse:
 
     # Calculate build hash from key files
     static_dir = Path(__file__).parent.parent.parent / "static"
-    key_files = ["css/app.css", "css/dashboard.css", "js/crypto.js", "js/toast.js"]
+    key_files = ["css/app.css", "css/dashboard.css", "js/crypto.js", "js/passkey.js", "js/toast.js"]
 
     hashes = []
     for key_file in key_files:
