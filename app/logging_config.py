@@ -10,6 +10,9 @@ from app.config import get_settings
 class CleanExceptionFormatter(logging.Formatter):
     """Formatter that produces readable exception tracebacks."""
 
+    # Maximum number of frames to show in traceback
+    MAX_FRAMES = 5
+
     def __init__(self, fmt: str, datefmt: str | None = None):
         super().__init__(fmt, datefmt)
 
@@ -17,59 +20,57 @@ class CleanExceptionFormatter(logging.Formatter):
         """Format exception with clean, readable output."""
         exc_type, exc_value, exc_tb = ei
 
-        # Get the simplified traceback
-        lines = []
-        lines.append("")
-        lines.append(f"{'─' * 60}")
         exc_name = exc_type.__name__ if exc_type else "Unknown"
-        lines.append(f"  EXCEPTION: {exc_name}")
-        lines.append(f"  MESSAGE:   {exc_value}")
-        lines.append(f"{'─' * 60}")
+        exc_msg = str(exc_value)
 
-        # Extract frames, filtering out library internals
+        # For database connection errors, provide a cleaner summary
+        if "ConnectionDoesNotExistError" in exc_msg or "connection was closed" in exc_msg:
+            return self._format_connection_error(exc_name, exc_msg)
+
+        # Extract frames from traceback
         frames = traceback.extract_tb(exc_tb)
 
-        # Filter to show only relevant frames
-        relevant_frames = []
-        for frame in frames:
-            # Skip deep library internals, keep app code and key library entry points
-            if "/site-packages/" in frame.filename:
-                # Keep important library frames
-                if any(lib in frame.filename for lib in ["fastapi", "starlette", "sqlalchemy"]):
-                    # Only keep the router/route handler frames, not internal dispatch
-                    if frame.name in (
-                        "__call__",
-                        "run_asgi",
-                        "wrapped_app",
-                        "app",
-                        "handle",
-                    ):
-                        continue
-                else:
-                    continue
-            relevant_frames.append(frame)
+        # Filter to show only app code frames
+        app_frames = [f for f in frames if "/app/" in f.filename and "/site-packages/" not in f.filename]
 
-        # If we filtered everything, show the last few frames at least
-        if not relevant_frames:
-            relevant_frames = frames[-3:]
+        # If no app frames, show last few frames
+        if not app_frames:
+            app_frames = frames[-3:]
 
-        lines.append("  TRACEBACK:")
-        for frame in relevant_frames:
-            # Shorten path for readability
-            filename = frame.filename
-            if "/app/" in filename:
-                filename = filename.split("/app/")[-1]
-            elif "/site-packages/" in filename:
-                filename = "..." + filename.split("/site-packages/")[-1]
+        # Limit total frames
+        app_frames = app_frames[-self.MAX_FRAMES :]
 
-            lines.append(f"    → {filename}:{frame.lineno} in {frame.name}()")
-            if frame.line:
-                lines.append(f"      {frame.line.strip()}")
+        # Build output
+        lines = [""]
+        lines.append(f"{'─' * 60}")
+        lines.append(f"  {exc_name}: {self._truncate(exc_msg, 200)}")
+        lines.append(f"{'─' * 60}")
+
+        if app_frames:
+            for frame in app_frames:
+                filename = frame.filename.split("/app/")[-1] if "/app/" in frame.filename else frame.filename
+                lines.append(f"  → {filename}:{frame.lineno} in {frame.name}()")
+                if frame.line:
+                    lines.append(f"    {frame.line.strip()}")
 
         lines.append(f"{'─' * 60}")
-        lines.append("")
-
         return "\n".join(lines)
+
+    def _format_connection_error(self, exc_name: str, exc_msg: str) -> str:
+        """Format database connection errors concisely."""
+        lines = [""]
+        lines.append(f"{'─' * 60}")
+        lines.append("  DATABASE CONNECTION LOST")
+        lines.append("  The database connection was closed unexpectedly.")
+        lines.append("  This is typically transient - retry the operation.")
+        lines.append(f"{'─' * 60}")
+        return "\n".join(lines)
+
+    def _truncate(self, text: str, max_len: int) -> str:
+        """Truncate text with ellipsis if too long."""
+        if len(text) <= max_len:
+            return text
+        return text[: max_len - 3] + "..."
 
 
 def setup_logging() -> None:

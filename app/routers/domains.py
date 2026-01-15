@@ -4,6 +4,8 @@ Domain API endpoints.
 Provides REST endpoints for managing task domains (formerly projects).
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +14,8 @@ from app.database import get_db
 from app.models import User
 from app.routers.auth import require_user
 from app.services.task_service import TaskService
+
+logger = logging.getLogger("whendoist.domains")
 
 router = APIRouter(prefix="/api/domains", tags=["domains"])
 
@@ -166,18 +170,31 @@ async def batch_update_domains(
     Used when enabling encryption (to save encrypted names) or
     disabling encryption (to save decrypted names).
 
+    Commits after each item to prevent connection timeouts.
     Returns count of domains updated.
     """
     service = TaskService(db, user.id)
     updated_count = 0
+    errors = []
 
     for item in data.domains:
-        domain = await service.get_domain(item.id)
-        if not domain:
-            continue
+        try:
+            domain = await service.get_domain(item.id)
+            if not domain:
+                continue
 
-        await service.update_domain(domain_id=item.id, name=item.name)
-        updated_count += 1
+            await service.update_domain(domain_id=item.id, name=item.name)
+            updated_count += 1
+            await db.commit()
+        except Exception as e:
+            # Log but continue - don't fail entire batch for one item
+            errors.append({"id": item.id, "error": str(e)})
+            logger.warning(f"Failed to update domain {item.id}: {e}")
 
-    await db.commit()
-    return {"updated_count": updated_count, "total_requested": len(data.domains)}
+    result: dict[str, int | list[dict[str, str]]] = {
+        "updated_count": updated_count,
+        "total_requested": len(data.domains),
+    }
+    if errors:
+        result["errors"] = errors
+    return result
