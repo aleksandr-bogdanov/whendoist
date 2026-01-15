@@ -1,13 +1,13 @@
 {
-  "version": "v0.8.8",
+  "version": "v0.8.9",
   "commit": {
-    "sha": "1f6f3cf8f876731af954871cfdc76b3e069ac36d",
-    "short": "1f6f3cf",
-    "date": "2026-01-15T14:25:43+01:00"
+    "sha": "3fcb6acacb726398044fb139478fed1ecd140ca8",
+    "short": "3fcb6ac",
+    "date": "2026-01-15T14:42:31+01:00"
   },
   "build": {
-    "hash": "4c59e67ea5b1418a",
-    "timestamp": "2026-01-15T13:27:36.763926+00:00",
+    "hash": "7e55b6d489b83a1b",
+    "timestamp": "2026-01-15T13:44:42.108769+00:00",
     "runner": "local",
     "environment": "development"
   },
@@ -31,7 +31,7 @@
     "js/passkey.js": "89417fe2a0f1b2bf7eb4b82b75ff5272b6960fa786d7fc9b4762bb4c813df809",
     "js/plan-tasks.js": "8ba707a3e5680149775cb3a65fe74f49eaf959e4c6c12768c70fd4820ff008a6",
     "app/database.py": "038910d548b4bf6862ca39a29f59bfec28acaa07dcd449de8dbc3d0c48bc6df9",
-    "app/main.py": "5cda02665f71b088740f569c29680083b399e18b8589d3d113d30ad7f4d1442a",
+    "app/main.py": "29e86711fbb8872559278d42d33ccfc79fff79561b6538fe972a30bb0beb8ebe",
     "app/logging_config.py": "23604c8827cc747c003f49e2175fabb770df538d0cd66c512e840df651fa969f",
     "app/config.py": "a2bf198c389e051417f457fae2f6d849b862ac366c7580f03bccbdd50f535da1",
     "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -58,7 +58,7 @@
     "app/services/labels.py": "2956aca01d402a1be658f94d0ce3cee0e25eb661bc61f5e8390ecd57697575bb",
     "app/services/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "app/services/gcal.py": "c9462d28441d800ff50a72de95f33496d58d7ded97b9bf6346439cae017f26ee",
-    "app/services/preferences_service.py": "47cd52e6e485f44bdbc09a07643ef47ce1099b926824d4590d07b1b3d8abdb65",
+    "app/services/preferences_service.py": "da5d0b517d26a63fff8f2a8094a34cafe45f795462a76caf9bf020eb103f5a34",
     "app/services/task_service.py": "315d508a15ef8fc62ac713af2168081b81d17df26824265bbc70f7219687cf3b",
     "app/auth/google.py": "25ec32f76e76a8a3ae8a567067c08008c3ed1ea1a2492635e2001f8c4da21dd0",
     "app/auth/todoist.py": "ae11f75c4444fce5776cbbccce055d5d3a70529511b27d49c604293ba6eccf89",
