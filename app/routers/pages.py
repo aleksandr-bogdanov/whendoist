@@ -326,8 +326,13 @@ async def index(
     request: Request,
     user: User | None = Depends(get_current_user),
 ):
-    """Home page - redirect to thoughts or show login."""
+    """Home page - redirect based on auth and wizard status, or show login."""
     if user:
+        # Authenticated: check wizard status
+        if not user.wizard_completed:
+            # Wizard not done → go to dashboard with wizard overlay
+            return RedirectResponse(url="/dashboard", status_code=303)
+        # Wizard done → normal flow to thoughts
         return RedirectResponse(url="/thoughts", status_code=303)
     return templates.TemplateResponse("login.html", {"request": request})
 
@@ -342,8 +347,9 @@ async def dashboard(
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    # Check Google connection (Todoist no longer required for native tasks)
+    # Check Google and Todoist connections
     google_token = (await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))).scalar_one_or_none()
+    todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
 
     today = date.today()
 
@@ -556,6 +562,9 @@ async def dashboard(
     # Get encryption context for base template
     encryption_ctx = await get_encryption_context(db, user.id)
 
+    # Check if wizard should be shown
+    show_wizard = not user.wizard_completed
+
     return templates.TemplateResponse(
         "dashboard.html",
         {
@@ -568,6 +577,12 @@ async def dashboard(
             "today": today,
             "timedelta": timedelta,  # For adjacent day calculations in template
             "user_prefs": user_prefs,
+            "show_wizard": show_wizard,
+            # Wizard-related variables
+            "calendar_connected": google_token is not None,
+            "todoist_connected": todoist_token is not None,
+            "user_name": user.name or (user.email.split("@")[0] if user.email else ""),
+            "user_email": user.email or "",
             **encryption_ctx,
         },
     )
@@ -833,6 +848,14 @@ async def settings(
     task_service = TaskService(db, user.id)
     domains = await task_service.get_domains()
 
+    # Count tasks per domain (active tasks only)
+    all_tasks = await task_service.get_tasks(status=None, top_level_only=True)
+    active_tasks = [t for t in all_tasks if t.status not in ("deleted", "archived")]
+    domain_task_counts: dict[int, int] = {}
+    for task in active_tasks:
+        if task.domain_id:
+            domain_task_counts[task.domain_id] = domain_task_counts.get(task.domain_id, 0) + 1
+
     google_token = (await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))).scalar_one_or_none()
     todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
 
@@ -886,6 +909,7 @@ async def settings(
             "request": request,
             "user": user,
             "domains": domains,
+            "domain_task_counts": domain_task_counts,
             "google_connected": google_token is not None,
             "todoist_connected": todoist_token is not None,
             "calendars": calendars,
@@ -939,3 +963,20 @@ async def analytics(
             **encryption_ctx,
         },
     )
+
+
+# -----------------------------------------------------------------------------
+# Legal Pages
+# -----------------------------------------------------------------------------
+
+
+@router.get("/terms", response_class=HTMLResponse)
+async def terms(request: Request):
+    """Terms of Service page."""
+    return templates.TemplateResponse("terms.html", {"request": request})
+
+
+@router.get("/privacy", response_class=HTMLResponse)
+async def privacy(request: Request):
+    """Privacy Policy - redirects to terms page with anchor."""
+    return RedirectResponse(url="/terms#privacy", status_code=302)

@@ -97,11 +97,13 @@ class TestTodoistOAuthRedirect:
     from the Settings page and expect to return there.
     """
 
-    def test_callback_returns_to_settings(self):
+    def test_callback_returns_to_settings_or_wizard(self):
         """
-        Todoist OAuth callback MUST redirect to /settings.
+        Todoist OAuth callback MUST redirect conditionally:
+        - To /dashboard if oauth_return_to_wizard cookie is set (wizard flow)
+        - To /settings otherwise (settings page flow)
 
-        Contract test: Verify the redirect URL in auth.py source code.
+        Contract test: Verify the redirect logic in auth.py source code.
         """
         auth_file = Path(__file__).parent.parent / "app" / "routers" / "auth.py"
         source = auth_file.read_text()
@@ -109,18 +111,19 @@ class TestTodoistOAuthRedirect:
         # Find the todoist_callback function
         assert "async def todoist_callback" in source, "todoist_callback function must exist"
 
-        # The redirect after successful OAuth should be to /settings
-        # Find the section after token commit
+        # The redirect logic should check for wizard cookie
         callback_section = source.split("async def todoist_callback")[1]
 
-        # Check that after db.commit(), we redirect to /settings
-        assert (
-            'RedirectResponse(url="/settings"' in callback_section
-            or "RedirectResponse(url='/settings'" in callback_section
-        ), (
-            "Todoist OAuth callback must redirect to /settings after successful auth. "
-            "Found redirect to /dashboard or other page instead."
+        # Check that we have conditional redirect logic
+        assert "oauth_return_to_wizard" in callback_section, (
+            "Todoist OAuth callback must check for oauth_return_to_wizard cookie"
         )
+
+        # Check that default is /settings (when not from wizard)
+        assert '"/settings"' in callback_section, "Todoist OAuth callback must redirect to /settings by default"
+
+        # Check that wizard flow redirects to /dashboard
+        assert '"/dashboard"' in callback_section, "Todoist OAuth callback must redirect to /dashboard when from wizard"
 
 
 # =============================================================================

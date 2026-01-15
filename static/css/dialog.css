@@ -15,7 +15,7 @@
     padding: 24px 16px;
     background: rgba(15, 23, 42, 0.18);
     backdrop-filter: blur(2px);
-    z-index: 200;
+    z-index: 1050;  /* Above wizard (z-index: 1000) */
 }
 
 body.modal-open {

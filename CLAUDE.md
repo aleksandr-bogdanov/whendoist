@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.8.11 (Analytics Decryption Fix)
+**Current Version:** v0.9.0 (WhenWizard Onboarding)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -540,6 +540,98 @@ result = await db.execute(
 4. **Registration requires unlock**: Can't add passkey without master key in session
 5. **Authentication verifies key**: Always decrypt test value before storing key
 
+## WhenWizard (First-Run Onboarding) — v0.9
+
+The onboarding wizard guides new users through initial setup. It's implemented as a full-screen overlay on the dashboard.
+
+### Architecture
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| JavaScript | `static/js/wizard.js` | `WhenWizard` class with state management, navigation, rendering |
+| CSS | `static/css/wizard.css` | Mobile-first responsive styles |
+| Backend | `app/routers/wizard.py` | API endpoints for status/complete/reset |
+| Model | `app/models.py` | `User.wizard_completed`, `User.wizard_completed_at` fields |
+
+### 8-Step Flow
+
+| Step | Title | Required | Key Features |
+|------|-------|----------|--------------|
+| 1 | Welcome | Yes | Logo, value proposition, user greeting |
+| 2 | Energy Modes | Yes | Interactive clarity filter preview |
+| 3 | Connect Calendar | Optional | Google OAuth for calendar access |
+| 4 | Select Calendars | Conditional | Only if Step 3 connected; pre-fetched on connect |
+| 5 | Todoist Import | Optional | OAuth + import with detailed results |
+| 6 | Set Up Domains | Yes | Preset chips + custom domain with emoji picker |
+| 7 | Security | Optional | Encryption setup + passkey registration |
+| 8 | Ready | Yes | Recap and launch |
+
+### State Management
+
+```javascript
+// State persisted to localStorage
+{
+    currentStep: 1,
+    completedSteps: [],
+    data: {
+        calendarConnected: boolean,
+        selectedCalendars: string[],
+        cachedCalendars: Calendar[],      // Pre-fetched for instant Step 4 load
+        todoistConnected: boolean,
+        importResult: { tasksImported, projectsImported, ... },
+        domains: [{ name, icon }, ...],
+        encryptionEnabled: boolean,
+        passkeyRegistered: boolean,
+        acknowledgmentChecked: boolean
+    }
+}
+```
+
+### Key Patterns
+
+1. **OAuth Return Handling**: Add `?wizard=true` to OAuth redirects. Wizard resumes from localStorage state after return.
+
+2. **Calendar Pre-fetching**: Calendars are fetched when `calendarConnected` becomes true, cached in state for instant Step 4 rendering.
+
+3. **Domain Deduplication**: `create_domain()` is idempotent — returns existing domain if name matches.
+
+4. **Encryption in Wizard**: Full setup including fetching all content, encrypting, batch-updating, and enabling on server.
+
+5. **Swipe Navigation**: Touch devices can swipe to navigate. Higher thresholds (120px, 0.7 velocity) prevent accidental triggers on interactive elements.
+
+### API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/wizard/status` | Check if wizard completed |
+| `POST /api/wizard/complete` | Mark wizard as complete |
+| `POST /api/wizard/reset` | Reset for re-run from Settings |
+
+### CSS Class Naming
+
+All wizard classes prefixed with `wizard-`:
+- `.wizard-backdrop` — Full-screen overlay
+- `.wizard-panel` — Centered card (full-screen on mobile)
+- `.wizard-content` — Scrollable step content
+- `.wizard-nav` — Bottom navigation with buttons
+- `.wizard-progress` — Step indicator dots
+- `.wizard-btn-primary`, `.wizard-btn-secondary`, `.wizard-btn-ghost` — Button variants
+
+### Mobile Considerations
+
+- Base styles for mobile, `@media (min-width: 600px)` for tablet/desktop
+- Touch-friendly targets (52px height on mobile, 44px on desktop)
+- Virtual keyboard handling (`body.keyboard-open` hides nav)
+- PWA safe area padding
+
+### Testing
+
+Contract tests in `tests/test_hotfix_wizard_bugs.py` verify:
+- Wizard encryption setup calls all required APIs
+- Google OAuth always updates user name
+- Domain creation is idempotent
+- Task counts display in Settings
+
 ## Files to Read First
 
 1. `DESIGN.md` — Full design system documentation
@@ -556,8 +648,9 @@ result = await db.execute(
 
 None currently tracked.
 
-## Next Up (v0.9)
+## Next Up (v1.0)
 
 - Time blocking templates
 - Key rotation (change passphrase without re-encrypting all data)
 - Recovery key generation during encryption setup
+- Database migrations (post-v1.0)

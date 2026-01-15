@@ -688,13 +688,33 @@
     white-space: nowrap;
 }
 
+/* Domain meta container (task count + imported badge) */
+.domain-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 100px;  /* Ensures alignment across rows */
+    justify-content: flex-end;
+}
+
+/* Domain task count - same style as imported */
+.domain-task-count {
+    font-size: 0.55rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+
 /* Imported domain badge */
 .domain-imported {
     font-size: 0.55rem;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-faint);
+    color: var(--primary);  /* Slightly different color to distinguish */
     flex-shrink: 0;
 }
 
@@ -1432,9 +1452,12 @@ input.add-domain-input::placeholder {
                             <div class="settings-row" data-domain-id="{{ domain.id }}" data-domain-name="{{ domain.name }}">
                                 <span class="domain-icon">{{ domain.icon or '📁' }}</span>
                                 <span class="domain-name" title="{% if encryption_enabled %}Encrypted{% else %}{{ domain.name }}{% endif %}">{% if encryption_enabled %}🔒{% else %}{{ domain.name }}{% endif %}</span>
-                                {% if domain.external_id %}
-                                <span class="domain-imported">Imported</span>
-                                {% endif %}
+                                <div class="domain-meta">
+                                    <span class="domain-task-count" title="Active tasks">{{ domain_task_counts.get(domain.id, 0) }} tasks</span>
+                                    {% if domain.external_id %}
+                                    <span class="domain-imported">Imported</span>
+                                    {% endif %}
+                                </div>
                                 <div class="row-actions">
                                     <button type="button" class="icon-btn edit" data-domain-id="{{ domain.id }}" data-domain-name="{{ domain.name }}" data-domain-icon="{{ domain.icon or '' }}" onclick="editDomain(this)" title="Edit">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1617,6 +1640,35 @@ input.add-domain-input::placeholder {
                             </div>
                         </div>
                         {% endif %}
+                    </div>
+                </div>
+
+                <!-- SETUP Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Setup</p>
+                            <p class="panel-desc">Run the setup wizard again to reconfigure your account.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd">
+                        <div class="settings-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Setup Wizard</span>
+                                <span class="pref-desc">
+                                    {% if user.wizard_completed_at %}
+                                    Completed {{ user.wizard_completed_at.strftime('%b %d, %Y') }}
+                                    {% else %}
+                                    Not yet completed
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="settings-row__right">
+                                <button type="button" class="btn-sm btn-sm--primary" onclick="rerunWizard()">
+                                    Re-run Wizard
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -2703,6 +2755,33 @@ async function deletePasskey(passkeyId, passkeyName) {
         } else {
             const error = await response.json();
             alert('Failed to delete passkey: ' + (error.detail || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+// ============================================================================
+// Wizard
+// ============================================================================
+
+async function rerunWizard() {
+    if (!confirm('Re-run the setup wizard?\n\nThis will reset your wizard status and show the setup wizard again.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/wizard/reset', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+            // Redirect to dashboard to show wizard
+            window.location.href = '/dashboard';
+        } else {
+            const error = await response.json();
+            alert('Failed to reset wizard: ' + (error.detail || 'Unknown error'));
         }
     } catch (e) {
         alert('Error: ' + e.message);

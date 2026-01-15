@@ -379,7 +379,7 @@ img.brand-logo {
     position: fixed;
     bottom: 18px;
     left: 24px;
-    z-index: 90;
+    z-index: 1100;  /* Above wizard (z-index: 1000) */
     pointer-events: none;
 }
 

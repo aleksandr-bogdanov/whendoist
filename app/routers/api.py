@@ -339,6 +339,60 @@ async def toggle_calendar(
     return {"enabled": selection.enabled}
 
 
+class CalendarSelectionsRequest(BaseModel):
+    """Request body for bulk calendar selections."""
+
+    calendar_ids: list[str]
+
+
+@router.post("/calendars/selections")
+async def set_calendar_selections(
+    request: CalendarSelectionsRequest,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Set which calendars are enabled (from wizard)."""
+    # Get Google token to verify connection and get calendar info
+    result = await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))
+    google_token = result.scalar_one_or_none()
+    if not google_token:
+        raise HTTPException(status_code=400, detail="Google Calendar not connected")
+
+    # Get all available calendars
+    async with GoogleCalendarClient(google_token) as client:
+        calendars = await client.list_calendars()
+    calendar_map = {c.id: c for c in calendars}
+
+    # Get existing selections
+    result = await db.execute(select(GoogleCalendarSelection).where(GoogleCalendarSelection.user_id == user.id))
+    existing = {s.calendar_id: s for s in result.scalars().all()}
+
+    # Update/create selections
+    for cal_id in request.calendar_ids:
+        if cal_id not in calendar_map:
+            continue  # Skip invalid calendar IDs
+
+        cal = calendar_map[cal_id]
+        if cal_id in existing:
+            existing[cal_id].enabled = True
+        else:
+            selection = GoogleCalendarSelection(
+                user_id=user.id,
+                calendar_id=cal_id,
+                calendar_name=cal.summary,
+                enabled=True,
+            )
+            db.add(selection)
+
+    # Disable calendars not in the selection list
+    for cal_id, selection in existing.items():
+        if cal_id not in request.calendar_ids:
+            selection.enabled = False
+
+    await db.commit()
+    return {"success": True, "enabled_count": len(request.calendar_ids)}
+
+
 @router.post("/tasks/commit", response_model=CommitTasksResponse)
 async def commit_scheduled_tasks(
     request: CommitTasksRequest,

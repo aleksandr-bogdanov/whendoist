@@ -13,6 +13,7 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 SCOPES = [
     "openid",
     "email",
+    "profile",  # Required for name, given_name, picture
     "https://www.googleapis.com/auth/calendar.readonly",
 ]
 
@@ -80,6 +81,23 @@ async def get_user_email(access_token: str) -> str:
         response.raise_for_status()
         data = response.json()
         return data["email"]
+
+
+async def get_user_info(access_token: str) -> dict:
+    """Get user info (email, name, picture) from Google userinfo endpoint."""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            GOOGLE_USERINFO_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        response.raise_for_status()
+        data = response.json()
+        return {
+            "email": data.get("email"),
+            "name": data.get("name"),
+            "given_name": data.get("given_name"),
+            "picture": data.get("picture"),
+        }
 
 
 def calculate_expires_at(expires_in: int) -> datetime:

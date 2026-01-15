@@ -21,6 +21,7 @@ from app.routers import (
     passkeys,
     preferences,
     tasks,
+    wizard,
 )
 
 # Setup logging first
@@ -101,4 +102,5 @@ app.include_router(api.router)
 app.include_router(instances.router)
 app.include_router(import_data.router)
 app.include_router(build_info.router)
+app.include_router(wizard.router)
 app.include_router(pages.router)

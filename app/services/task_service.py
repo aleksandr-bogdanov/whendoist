@@ -45,7 +45,25 @@ class TaskService:
         color: str | None = None,
         icon: str | None = None,
     ) -> Domain:
-        """Create a new domain."""
+        """
+        Create a new domain or return existing one with same name.
+
+        Idempotent: if a domain with the same name already exists for this user,
+        return the existing domain (optionally updating icon/color if provided).
+        """
+        # Check if domain with same name already exists
+        result = await self.db.execute(select(Domain).where(Domain.user_id == self.user_id, Domain.name == name))
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            # Update icon/color if provided and different
+            if icon and existing.icon != icon:
+                existing.icon = icon
+            if color and existing.color != color:
+                existing.color = color
+            await self.db.flush()
+            return existing
+
         # Get max position for ordering
         result = await self.db.execute(
             select(Domain.position).where(Domain.user_id == self.user_id).order_by(Domain.position.desc()).limit(1)

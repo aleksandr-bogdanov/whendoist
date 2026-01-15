@@ -1,0 +1,1833 @@
+/* =============================================================================
+   WhenWizard - First-Run Onboarding
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Backdrop & Panel (Mobile-First)
+   ----------------------------------------------------------------------------- */
+
+.wizard-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    /* Mobile: solid background */
+    background: var(--grey-bg);
+}
+
+@media (min-width: 600px) {
+    .wizard-backdrop {
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+.wizard-panel {
+    /* Mobile: full screen */
+    position: fixed;
+    inset: 0;
+    background: var(--grey-bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    /* PWA safe areas */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+
+@media (min-width: 600px) {
+    .wizard-panel {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        max-width: 480px;
+        max-height: calc(100vh - 48px);
+        border: 1px solid var(--border-hair);
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+        padding-top: 0;
+    }
+}
+
+@media (min-width: 900px) {
+    .wizard-panel {
+        max-width: 540px;
+    }
+}
+
+/* Completion animation */
+.wizard-panel.completing {
+    animation: wizardComplete 400ms ease-out forwards;
+}
+
+@keyframes wizardComplete {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+}
+
+@media (min-width: 600px) {
+    @keyframes wizardComplete {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(0.95);
+            opacity: 0;
+        }
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Content Area (Scrollable)
+   ----------------------------------------------------------------------------- */
+
+.wizard-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+
+    /* Mobile padding */
+    padding: 24px 20px;
+}
+
+@media (min-width: 600px) {
+    .wizard-content {
+        padding: 28px 32px;
+        scrollbar-gutter: stable;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Step Transitions
+   ----------------------------------------------------------------------------- */
+
+.wizard-step-content {
+    opacity: 1;
+    transform: translateX(0);
+    transition: transform 350ms ease-out, opacity 250ms ease-out;
+}
+
+.wizard-step-content.exit-left {
+    transform: translateX(-30%);
+    opacity: 0;
+}
+
+.wizard-step-content.exit-right {
+    transform: translateX(30%);
+    opacity: 0;
+}
+
+.wizard-step-content.enter-right {
+    transform: translateX(30%);
+    opacity: 0;
+}
+
+.wizard-step-content.enter-left {
+    transform: translateX(-30%);
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wizard-step-content {
+        transition: opacity 200ms ease-out;
+    }
+
+    .wizard-step-content.exit-left,
+    .wizard-step-content.exit-right,
+    .wizard-step-content.enter-left,
+    .wizard-step-content.enter-right {
+        transform: none;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Navigation
+   ----------------------------------------------------------------------------- */
+
+.wizard-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+
+    /* Mobile: fixed at bottom with safe area */
+    padding: 16px 20px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    background: var(--grey-bg);
+    border-top: 1px solid var(--border-hair);
+
+    position: sticky;
+    bottom: 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-nav {
+        padding: 20px 32px 24px;
+        border-top: none;
+        position: relative;
+    }
+}
+
+/* Hide nav when keyboard is open */
+body.keyboard-open .wizard-nav {
+    display: none;
+}
+
+/* Nav spacer for single-button layouts */
+.wizard-nav-spacer {
+    flex: 1;
+}
+
+/* -----------------------------------------------------------------------------
+   Buttons
+   ----------------------------------------------------------------------------- */
+
+.wizard-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    /* Touch-friendly sizing */
+    height: 52px;
+    padding: 0 28px;
+    min-width: 120px;
+
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.wizard-btn-primary:active {
+    transform: scale(0.97);
+}
+
+.wizard-btn-primary:disabled {
+    background: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.wizard-btn-primary:disabled:active {
+    transform: none;
+}
+
+@media (min-width: 600px) {
+    .wizard-btn-primary {
+        height: 44px;
+        padding: 0 24px;
+        font-size: 0.8rem;
+    }
+
+    .wizard-btn-primary:active {
+        transform: none;
+    }
+}
+
+.wizard-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 52px;
+    padding: 0 24px;
+
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    font-size: 0.85rem;
+    font-weight: 500;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-btn-secondary:hover {
+    background: var(--row-hover);
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+.wizard-btn-secondary:active {
+    background: var(--row-hover);
+}
+
+@media (min-width: 600px) {
+    .wizard-btn-secondary {
+        height: 44px;
+        font-size: 0.8rem;
+    }
+}
+
+.wizard-btn-ghost {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+
+    /* Touch target */
+    padding: 12px 16px;
+    margin: -12px -16px;
+
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wizard-btn-ghost:hover {
+    color: var(--text);
+}
+
+.wizard-btn-ghost:active {
+    color: var(--text);
+}
+
+@media (min-width: 600px) {
+    .wizard-btn-ghost {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+        margin: -8px -12px;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Progress Indicator
+   ----------------------------------------------------------------------------- */
+
+.wizard-progress {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-progress {
+        gap: 8px;
+        padding: 20px 0;
+    }
+}
+
+.wizard-progress-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.2s ease;
+
+    /* Touch target wrapper */
+    position: relative;
+}
+
+.wizard-progress-dot::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+}
+
+.wizard-progress-dot.completed {
+    background: var(--primary);
+}
+
+.wizard-progress-dot.current {
+    background: var(--primary);
+    box-shadow: 0 0 0 4px rgba(109, 94, 246, 0.2);
+}
+
+.wizard-progress-dot.optional {
+    border: 2px solid var(--border);
+    background: transparent;
+}
+
+.wizard-progress-dot.optional.completed {
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+@media (min-width: 600px) {
+    .wizard-progress-dot {
+        width: 8px;
+        height: 8px;
+    }
+
+    .wizard-progress-dot::before {
+        inset: -6px;
+    }
+
+    .wizard-progress-dot.current {
+        box-shadow: 0 0 0 3px rgba(109, 94, 246, 0.2);
+    }
+}
+
+/* Dot completing animation */
+.wizard-progress-dot.completing {
+    animation: dotPulse 0.3s ease-out;
+}
+
+@keyframes dotPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* -----------------------------------------------------------------------------
+   Swipe Hint (Touch Devices Only)
+   ----------------------------------------------------------------------------- */
+
+.wizard-swipe-hint {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Only show on touch devices, hide on desktop */
+@media (hover: none) and (pointer: coarse) {
+    .wizard-swipe-hint {
+        display: flex;
+    }
+}
+
+@media (min-width: 900px) {
+    .wizard-swipe-hint {
+        display: none;
+    }
+}
+
+.wizard-swipe-icon {
+    width: 20px;
+    height: 20px;
+    animation: swipeHint 2s ease-in-out infinite;
+}
+
+@keyframes swipeHint {
+    0%, 100% { transform: translateX(0); opacity: 0.5; }
+    50% { transform: translateX(-8px); opacity: 1; }
+}
+
+/* -----------------------------------------------------------------------------
+   Typography
+   ----------------------------------------------------------------------------- */
+
+.wizard-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: var(--text);
+    text-align: center;
+    margin: 0 0 6px 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-title {
+        font-size: 1.75rem;
+    }
+}
+
+.wizard-subtitle {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 0 0 24px 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-subtitle {
+        font-size: 0.68rem;
+        margin-bottom: 28px;
+    }
+}
+
+.wizard-section-title {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Cards & Options
+   ----------------------------------------------------------------------------- */
+
+.wizard-card {
+    background: var(--light-bg);
+    border: 1px solid var(--border-hair);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+@media (min-width: 600px) {
+    .wizard-card {
+        padding: 20px;
+    }
+}
+
+.wizard-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    /* Touch-friendly sizing */
+    min-height: 56px;
+    padding: 12px 14px;
+
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-option:last-child {
+    margin-bottom: 0;
+}
+
+.wizard-option:active {
+    transform: scale(0.98);
+    background: var(--row-hover);
+}
+
+.wizard-option.selected {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.04);
+}
+
+@media (min-width: 600px) {
+    .wizard-option {
+        min-height: 48px;
+    }
+
+    .wizard-option:hover {
+        background: var(--row-hover);
+        border-color: var(--border-strong);
+    }
+
+    .wizard-option:active {
+        transform: none;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Checkboxes
+   ----------------------------------------------------------------------------- */
+
+.wizard-checkbox {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+
+    border: 2px solid var(--border);
+    border-radius: 6px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.15s ease;
+}
+
+@media (min-width: 600px) {
+    .wizard-checkbox {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        border-radius: 4px;
+    }
+}
+
+.wizard-checkbox.checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.wizard-checkbox.checked::after {
+    content: "\2713";
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+@media (min-width: 600px) {
+    .wizard-checkbox.checked::after {
+        font-size: 0.7rem;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Inputs
+   ----------------------------------------------------------------------------- */
+
+.wizard-input {
+    width: 100%;
+
+    /* Touch-friendly height */
+    height: 52px;
+    padding: 0 16px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--light-bg);
+
+    font-size: 16px;  /* Prevents iOS zoom on focus */
+    color: var(--text);
+
+    -webkit-appearance: none;
+
+    transition: all 0.15s ease;
+}
+
+@media (min-width: 600px) {
+    .wizard-input {
+        height: 44px;
+        padding: 0 14px;
+    }
+}
+
+.wizard-input:focus {
+    border-color: rgba(109, 94, 246, 0.5) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    filter: drop-shadow(0 0 4px rgba(109, 94, 246, 0.4)) !important;
+    position: relative;
+    z-index: 1;
+}
+
+.wizard-input::placeholder {
+    color: var(--text-faint);
+}
+
+/* -----------------------------------------------------------------------------
+   Step 1: Welcome
+   ----------------------------------------------------------------------------- */
+
+.wizard-welcome-logo {
+    width: auto;
+    height: auto;
+    max-width: 180px;
+    max-height: 180px;
+    margin: 0 auto 16px;
+    display: block;
+    object-fit: contain;
+}
+
+@media (min-width: 600px) {
+    .wizard-welcome-logo {
+        max-width: 220px;
+        max-height: 220px;
+        margin-bottom: 20px;
+    }
+}
+
+.wizard-welcome-greeting {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text);
+    margin-top: 24px;
+}
+
+@media (min-width: 600px) {
+    .wizard-welcome-greeting {
+        margin-top: 32px;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Step 2: Energy Modes
+   ----------------------------------------------------------------------------- */
+
+.wizard-mode-cards {
+    display: flex;
+    gap: 8px;
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-cards {
+        gap: 12px;
+    }
+}
+
+.wizard-mode-card {
+    flex: 1;
+    padding: 12px 8px;
+    min-width: 0;
+
+    background: var(--light-bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    text-align: center;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-mode-card:active {
+    transform: scale(0.97);
+}
+
+.wizard-mode-card.selected {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.06);
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-card {
+        padding: 16px 12px;
+    }
+
+    .wizard-mode-card:hover {
+        border-color: var(--border-strong);
+        background: var(--row-hover);
+    }
+
+    .wizard-mode-card:active {
+        transform: none;
+    }
+}
+
+.wizard-mode-emoji {
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-emoji {
+        font-size: 1.75rem;
+        margin-bottom: 8px;
+    }
+}
+
+.wizard-mode-name {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+    color: var(--text);
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-name {
+        font-size: 0.62rem;
+        letter-spacing: 0.14em;
+        margin-bottom: 6px;
+    }
+}
+
+.wizard-mode-description {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-description {
+        font-size: 0.75rem;
+        line-height: 1.4;
+        -webkit-line-clamp: 3;
+    }
+}
+
+/* Task Preview */
+.wizard-preview-divider {
+    height: 1px;
+    background: var(--border-hair);
+    margin: 16px 0;
+}
+
+.wizard-preview-task {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px 8px calc(10px + 2px);
+    background: var(--light-bg);
+    border-bottom: 1px solid var(--border-hair);
+    position: relative;
+    transition: opacity 0.25s ease, max-height 0.25s ease;
+}
+
+.wizard-preview-task::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary);
+}
+
+.wizard-preview-task.hidden {
+    opacity: 0;
+    max-height: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.wizard-preview-task-title {
+    flex: 1;
+    font-size: 0.8rem;
+}
+
+.wizard-preview-task-duration {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Clarity colors for preview */
+.wizard-preview-task.clarity-executable::before {
+    background: #22c55e; /* Green - ready to execute */
+}
+
+.wizard-preview-task.clarity-defined::before {
+    background: #3b82f6; /* Blue - defined, needs some thinking */
+}
+
+.wizard-preview-task.clarity-exploratory::before {
+    background: #f59e0b; /* Amber - needs exploration */
+}
+
+/* -----------------------------------------------------------------------------
+   Step 3: Connect Calendar
+   ----------------------------------------------------------------------------- */
+
+.wizard-connection-card {
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+}
+
+@media (min-width: 600px) {
+    .wizard-connection-card {
+        padding: 32px 24px;
+    }
+}
+
+.wizard-connection-logo {
+    width: 36px;
+    height: 36px;
+    margin: 0 auto 12px;
+}
+
+@media (min-width: 600px) {
+    .wizard-connection-logo {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 16px;
+    }
+}
+
+.wizard-connection-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+@media (min-width: 600px) {
+    .wizard-connection-name {
+        font-size: 1.1rem;
+    }
+}
+
+.wizard-connection-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+@media (min-width: 600px) {
+    .wizard-connection-status {
+        margin-bottom: 20px;
+    }
+}
+
+.wizard-connection-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+}
+
+.wizard-connection-dot.connected {
+    background: #16a34a;
+}
+
+.wizard-connection-dot.error {
+    background: #DC2626;
+}
+
+.wizard-connection-email {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: -12px;
+    margin-bottom: 16px;
+}
+
+.wizard-connection-privacy {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 20px;
+}
+
+/* -----------------------------------------------------------------------------
+   Step 4: Calendar Selection
+   ----------------------------------------------------------------------------- */
+
+.wizard-calendar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    min-height: 52px;
+    padding: 10px 14px;
+
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-calendar-row:active {
+    background: var(--row-hover);
+}
+
+.wizard-calendar-row.selected {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.04);
+}
+
+@media (min-width: 600px) {
+    .wizard-calendar-row {
+        min-height: 48px;
+    }
+
+    .wizard-calendar-row:hover {
+        background: var(--row-hover);
+    }
+}
+
+.wizard-calendar-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.wizard-calendar-name {
+    flex: 1;
+    font-size: 0.85rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Helper Links */
+.wizard-helper-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 12px;
+    font-size: 0.75rem;
+}
+
+.wizard-helper-link {
+    color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+}
+
+.wizard-helper-link:hover {
+    color: var(--primary);
+}
+
+/* -----------------------------------------------------------------------------
+   Step 5: Todoist Import
+   ----------------------------------------------------------------------------- */
+
+/* 5a: Source Selection */
+.wizard-import-source {
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+}
+
+@media (min-width: 600px) {
+    .wizard-import-source {
+        padding: 32px 24px;
+    }
+}
+
+.wizard-import-logo {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 12px;
+}
+
+@media (min-width: 600px) {
+    .wizard-import-logo {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+.wizard-import-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.wizard-import-description {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.wizard-import-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.wizard-import-divider::before,
+.wizard-import-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-hair);
+}
+
+/* Summary Bar */
+.wizard-import-summary {
+    background: var(--grey-bg);
+    border: 1px solid var(--border-hair);
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 16px;
+}
+
+.wizard-import-summary strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* 5c: Progress */
+.wizard-import-progress {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.wizard-import-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: wizardSpin 1s linear infinite;
+}
+
+@keyframes wizardSpin {
+    to { transform: rotate(360deg); }
+}
+
+.wizard-import-progress-count {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+}
+
+.wizard-import-progress-bar {
+    width: 200px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0 auto 16px;
+}
+
+.wizard-import-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.wizard-import-progress-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 5d: Complete */
+.wizard-import-complete {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.wizard-import-success-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    background: rgba(22, 163, 74, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #16a34a;
+}
+
+.wizard-stat-cards {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 24px 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-stat-cards {
+        gap: 16px;
+    }
+}
+
+.wizard-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 16px 20px;
+    min-width: 90px;
+
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+@media (min-width: 600px) {
+    .wizard-stat-card {
+        padding: 16px 24px;
+        min-width: 100px;
+    }
+}
+
+.wizard-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+
+@media (min-width: 600px) {
+    .wizard-stat-value {
+        font-size: 2rem;
+    }
+}
+
+.wizard-stat-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+@media (min-width: 600px) {
+    .wizard-stat-label {
+        font-size: 0.7rem;
+    }
+}
+
+.wizard-import-complete-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 16px;
+}
+
+/* -----------------------------------------------------------------------------
+   Step 6: Domains
+   ----------------------------------------------------------------------------- */
+
+/* Chip Grid (Fresh Start) */
+.wizard-domain-chips {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+@media (min-width: 600px) {
+    .wizard-domain-chips {
+        gap: 10px;
+    }
+}
+
+.wizard-domain-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+
+    padding: 14px 8px;
+
+    background: var(--light-bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-domain-chip:active {
+    transform: scale(0.96);
+}
+
+.wizard-domain-chip.selected {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.06);
+}
+
+@media (min-width: 600px) {
+    .wizard-domain-chip {
+        padding: 16px 12px;
+    }
+
+    .wizard-domain-chip:hover {
+        border-color: var(--border-strong);
+        background: var(--row-hover);
+    }
+
+    .wizard-domain-chip:active {
+        transform: none;
+    }
+}
+
+.wizard-domain-emoji {
+    font-size: 1.25rem;
+}
+
+@media (min-width: 600px) {
+    .wizard-domain-emoji {
+        font-size: 1.5rem;
+    }
+}
+
+.wizard-domain-name {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 600px) {
+    .wizard-domain-name {
+        font-size: 0.75rem;
+    }
+}
+
+.wizard-domain-check {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+}
+
+.wizard-domain-chip.selected .wizard-domain-check {
+    color: var(--primary);
+}
+
+/* Add Custom Trigger */
+.wizard-add-domain-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    margin-top: 12px;
+
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+
+    color: var(--text-muted);
+    font-size: 0.85rem;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-add-domain-trigger:hover {
+    border-color: var(--primary);
+    border-style: solid;
+    color: var(--primary);
+}
+
+/* Add Domain Form */
+.wizard-add-domain-section {
+    margin-top: 12px;
+}
+
+.wizard-add-domain-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--grey-bg);
+}
+
+.wizard-add-domain-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.wizard-domain-input {
+    flex: 1;
+    font-size: 0.9rem !important;
+}
+
+.wizard-add-domain-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+}
+
+/* Emoji Picker for Custom Domain */
+.wizard-emoji-picker-wrap {
+    position: relative;
+}
+
+.wizard-emoji-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--light-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    /* Match Pico input margin-bottom for alignment */
+    margin-bottom: 15px;
+}
+
+.wizard-emoji-btn:hover {
+    border-color: var(--primary);
+    background: var(--grey-bg);
+}
+
+.wizard-emoji-popover {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 6px;
+    padding: 8px;
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    z-index: 1100;
+    display: none;
+    flex-wrap: wrap;
+    width: 220px;
+    gap: 2px;
+}
+
+.wizard-emoji-popover.open {
+    display: flex;
+}
+
+.wizard-emoji-option {
+    all: unset;
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.wizard-emoji-option:hover {
+    background: var(--grey-bg);
+    transform: scale(1.15);
+}
+
+.wizard-btn-sm {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    height: auto;
+}
+
+/* Domain Summary */
+.wizard-domain-summary {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 16px;
+}
+
+.wizard-domain-summary-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wizard-domain-summary-separator {
+    margin: 0 8px;
+    color: var(--border);
+}
+
+/* -----------------------------------------------------------------------------
+   Step 7: Security
+   ----------------------------------------------------------------------------- */
+
+/* Collapsible Section */
+.wizard-security-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wizard-security-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text);
+}
+
+.wizard-security-toggle-icon {
+    font-size: 1rem;
+}
+
+.wizard-security-toggle-chevron {
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+}
+
+.wizard-security-toggle.expanded .wizard-security-toggle-chevron {
+    transform: rotate(180deg);
+}
+
+.wizard-security-description {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 12px;
+    padding: 0 16px;
+}
+
+/* Expanded Content */
+.wizard-security-content {
+    display: none;
+    margin-top: 16px;
+    padding: 20px 16px;
+
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.wizard-security-content.expanded {
+    display: block;
+}
+
+/* Warning Box */
+.wizard-security-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+}
+
+.wizard-security-warning-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #B45309;
+    margin-bottom: 10px;
+}
+
+.wizard-security-warning ul {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text);
+}
+
+@media (min-width: 600px) {
+    .wizard-security-warning ul {
+        padding-left: 18px;
+    }
+}
+
+.wizard-security-warning li {
+    margin-bottom: 2px;
+}
+
+/* Strength Meter */
+.wizard-strength-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+@media (min-width: 600px) {
+    .wizard-strength-container {
+        gap: 10px;
+    }
+}
+
+.wizard-strength-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.wizard-strength-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.wizard-strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.2s ease, background 0.2s ease;
+}
+
+.wizard-strength-fill.weak { width: 25%; background: #DC2626; }
+.wizard-strength-fill.fair { width: 50%; background: #F59E0B; }
+.wizard-strength-fill.good { width: 75%; background: #10B981; }
+.wizard-strength-fill.strong { width: 100%; background: #059669; }
+
+.wizard-strength-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 50px;
+}
+
+.wizard-strength-text.weak { color: #DC2626; }
+.wizard-strength-text.fair { color: #F59E0B; }
+.wizard-strength-text.good { color: #10B981; }
+.wizard-strength-text.strong { color: #059669; }
+
+/* Passkey Card */
+.wizard-passkey-card {
+    background: var(--grey-bg);
+    border: 1px solid var(--border-hair);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+@media (min-width: 600px) {
+    .wizard-passkey-card {
+        padding: 24px 20px;
+    }
+}
+
+.wizard-passkey-icon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.wizard-passkey-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.wizard-passkey-description {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.wizard-passkey-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 12px;
+}
+
+.wizard-passkey-status.saved {
+    color: #16a34a;
+}
+
+/* Acknowledgment Checkbox */
+.wizard-acknowledgment {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    padding: 16px;
+    margin-top: 20px;
+
+    background: var(--grey-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wizard-acknowledgment:active {
+    background: rgba(15, 23, 42, 0.04);
+}
+
+@media (min-width: 600px) {
+    .wizard-acknowledgment {
+        padding: 14px 16px;
+    }
+
+    .wizard-acknowledgment:hover {
+        background: rgba(15, 23, 42, 0.04);
+    }
+}
+
+.wizard-acknowledgment-check {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+
+    border: 2px solid var(--border-strong);
+    border-radius: 6px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.15s ease;
+}
+
+@media (min-width: 600px) {
+    .wizard-acknowledgment-check {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        border-radius: 4px;
+    }
+}
+
+.wizard-acknowledgment.checked .wizard-acknowledgment-check {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.wizard-acknowledgment.checked .wizard-acknowledgment-check::after {
+    content: "\2713";
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+@media (min-width: 600px) {
+    .wizard-acknowledgment.checked .wizard-acknowledgment-check::after {
+        font-size: 0.7rem;
+    }
+}
+
+.wizard-acknowledgment-text {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+.wizard-security-enable-btn {
+    margin-top: 16px;
+}
+
+/* Encryption Enabled State */
+.wizard-encryption-enabled {
+    text-align: center;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 12px;
+}
+
+.wizard-encryption-enabled-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+}
+
+.wizard-encryption-enabled-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.wizard-encryption-enabled-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* -----------------------------------------------------------------------------
+   Step 8: Ready
+   ----------------------------------------------------------------------------- */
+
+.wizard-ready-emoji {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.wizard-recap-list {
+    background: var(--light-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 24px 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-recap-list {
+        padding: 20px 24px;
+    }
+}
+
+.wizard-recap-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.85rem;
+}
+
+@media (min-width: 600px) {
+    .wizard-recap-item {
+        padding: 6px 0;
+    }
+}
+
+.wizard-recap-check {
+    font-size: 1rem;
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.wizard-recap-item.skipped {
+    color: var(--text-muted);
+}
+
+.wizard-recap-item.skipped .wizard-recap-check {
+    color: var(--border);
+}
+
+.wizard-ready-tagline {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+}

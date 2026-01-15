@@ -66,7 +66,12 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Display name from Google
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    # Wizard tracking
+    wizard_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    wizard_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     todoist_token: Mapped["TodoistToken | None"] = relationship(back_populates="user", uselist=False)
     google_token: Mapped["GoogleToken | None"] = relationship(back_populates="user", uselist=False)

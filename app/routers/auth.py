@@ -60,7 +60,7 @@ async def require_user(request: Request, db: AsyncSession = Depends(get_db)) -> 
 
 
 @router.get("/todoist")
-async def todoist_login() -> Response:
+async def todoist_login(wizard: bool = False) -> Response:
     """Redirect to Todoist OAuth."""
     state = todoist.generate_state()
     url = todoist.get_authorize_url(state)
@@ -74,6 +74,17 @@ async def todoist_login() -> Response:
         secure=_is_production,
         path="/",
     )
+    # Track if we came from the wizard
+    if wizard:
+        response.set_cookie(
+            key="oauth_return_to_wizard",
+            value="true",
+            max_age=600,
+            httponly=True,
+            samesite="lax",
+            secure=_is_production,
+            path="/",
+        )
     logger.debug(f"Set todoist_oauth_state cookie, secure={_is_production}")
     return response
 
@@ -86,6 +97,7 @@ async def todoist_callback(
     state: str | None = None,
     error: str | None = None,
     todoist_oauth_state: str | None = Cookie(default=None),
+    oauth_return_to_wizard: str | None = Cookie(default=None),
 ) -> Response:
     """Handle Todoist OAuth callback."""
     # Handle OAuth errors (user denied, etc.)
@@ -120,9 +132,11 @@ async def todoist_callback(
         db.add(token)
 
     await db.commit()
-    # Return to settings page where user initiated the connection
-    response = RedirectResponse(url="/settings", status_code=303)
+    # Return to wizard or settings depending on where we came from
+    redirect_url = "/dashboard" if oauth_return_to_wizard else "/settings"
+    response = RedirectResponse(url=redirect_url, status_code=303)
     response.delete_cookie("todoist_oauth_state")
+    response.delete_cookie("oauth_return_to_wizard")
     return response
 
 
@@ -130,7 +144,7 @@ async def todoist_callback(
 
 
 @router.get("/google")
-async def google_login() -> Response:
+async def google_login(wizard: bool = False) -> Response:
     """Redirect to Google OAuth."""
     state = google.generate_state()
     url = google.get_authorize_url(state)
@@ -144,6 +158,17 @@ async def google_login() -> Response:
         secure=_is_production,
         path="/",
     )
+    # Track if we came from the wizard
+    if wizard:
+        response.set_cookie(
+            key="oauth_return_to_wizard",
+            value="true",
+            max_age=600,
+            httponly=True,
+            samesite="lax",
+            secure=_is_production,
+            path="/",
+        )
     logger.debug(f"Set google_oauth_state cookie, secure={_is_production}")
     return response
 
@@ -155,6 +180,7 @@ async def google_callback(
     state: str,
     db: AsyncSession = Depends(get_db),
     google_oauth_state: str | None = Cookie(default=None),
+    oauth_return_to_wizard: str | None = Cookie(default=None),
 ) -> Response:
     """Handle Google OAuth callback."""
     if not google_oauth_state:
@@ -173,16 +199,22 @@ async def google_callback(
     refresh_token = tokens.get("refresh_token")
     expires_in = tokens.get("expires_in", 3600)
 
-    email = await google.get_user_email(access_token)
+    # Get user info including name
+    user_info = await google.get_user_info(access_token)
+    email = user_info["email"]
+    name = user_info.get("given_name") or user_info.get("name")  # Prefer first name
 
     # Find or create user
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
 
     if not user:
-        user = User(email=email)
+        user = User(email=email, name=name)
         db.add(user)
         await db.flush()
+    elif name:
+        # Always update name from Google (they may have updated it)
+        user.name = name
 
     # Update or create Google token
     result = await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))
@@ -204,6 +236,7 @@ async def google_callback(
     request.session["user_id"] = str(user.id)
     response = RedirectResponse(url="/dashboard", status_code=303)
     response.delete_cookie("google_oauth_state")
+    response.delete_cookie("oauth_return_to_wizard")
     return response
 
 
