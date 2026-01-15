@@ -442,23 +442,41 @@
         return;
     }
 
+    /**
+     * Check if a value looks like encrypted data (base64 with min length).
+     * AES-256-GCM: 12 bytes IV + ciphertext + 16 bytes tag = min 28 bytes = ~38 base64 chars
+     */
+    function looksEncrypted(value) {
+        if (!value || value.length < 38) return false;
+        return /^[A-Za-z0-9+/]+=*$/.test(value);
+    }
+
     const thoughtRows = document.querySelectorAll('[data-title]');
     if (thoughtRows.length === 0) return;
 
     for (const el of thoughtRows) {
-        const encryptedTitle = el.dataset.title;
-        if (!encryptedTitle) continue;
+        const title = el.dataset.title;
+        if (!title) continue;
 
         try {
-            const decryptedTitle = await Crypto.decryptField(encryptedTitle);
-            if (!decryptedTitle || decryptedTitle === encryptedTitle) continue;
+            // If it doesn't look encrypted, use as-is (plaintext)
+            const displayTitle = looksEncrypted(title)
+                ? await Crypto.decryptField(title)
+                : title;
+
+            if (!displayTitle) continue;
 
             const textEl = el.querySelector('.thought-text');
             if (textEl) {
-                textEl.textContent = decryptedTitle;
+                textEl.textContent = displayTitle;
             }
         } catch (e) {
+            // On error, display original value (it's likely plaintext)
             console.error('Failed to decrypt thought title:', e);
+            const textEl = el.querySelector('.thought-text');
+            if (textEl) {
+                textEl.textContent = title;
+            }
         }
     }
 })();

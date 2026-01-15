@@ -17,6 +17,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.7] - 2026-01-15
+
+### Summary
+**Hotfix: Thoughts + Connection Resilience + Logging** — Extends plaintext decryption fix to Thought Cabinet, adds connection resilience for batch operations, and cleans up error logging.
+
+### Fixed
+
+- **Thought Cabinet showing locks for plaintext data** — Same `looksEncrypted()` fix applied:
+  - Thoughts imported from Todoist showed 🔒 instead of text
+  - Added error fallback to display original value on decryption failure
+
+- **Database connection drops during batch update** — More resilient batch operations:
+  - Commits every 25 tasks (instead of at end) to keep transactions short
+  - Individual item failures no longer fail the entire batch
+  - Returns partial results with error details when some items fail
+
+- **Verbose error logging** — Cleaner exception output:
+  - Shows only app code frames (max 5), filters out library internals
+  - Database connection errors get special concise format
+  - Truncates long error messages to 200 chars
+
+### Added
+
+- **10 Hotfix Tests** (`tests/test_hotfix_0_8_7.py`):
+  - `TestThoughtsDecryptionContract` — Verifies thoughts.html handles plaintext data
+  - `TestBatchUpdateResilience` — Verifies batch endpoints commit incrementally
+  - `TestLoggingFormat` — Verifies clean exception formatting
+
+---
+
 ## [0.8.6] - 2026-01-15
 
 ### Summary

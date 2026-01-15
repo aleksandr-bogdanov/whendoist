@@ -4,6 +4,7 @@ Task API endpoints.
 Provides REST endpoints for managing native tasks.
 """
 
+import logging
 from datetime import date, datetime, time
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -15,6 +16,8 @@ from app.models import Task, User
 from app.routers.auth import require_user
 from app.services.recurrence_service import RecurrenceService
 from app.services.task_service import TaskService
+
+logger = logging.getLogger("whendoist.tasks")
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -474,22 +477,43 @@ async def batch_update_tasks(
     Used when enabling encryption (to save encrypted content) or
     disabling encryption (to save decrypted content).
 
-    Returns count of tasks updated.
+    Commits in batches of 25 to prevent connection timeouts on
+    cloud databases (Railway, etc). Returns count of tasks updated.
     """
     service = TaskService(db, user.id)
     updated_count = 0
+    errors = []
+    batch_size = 25
 
-    for item in data.tasks:
-        task = await service.get_task(item.id)
-        if not task:
-            continue
+    for i, item in enumerate(data.tasks):
+        try:
+            task = await service.get_task(item.id)
+            if not task:
+                continue
 
-        await service.update_task(
-            task_id=item.id,
-            title=item.title,
-            description=item.description,
-        )
-        updated_count += 1
+            await service.update_task(
+                task_id=item.id,
+                title=item.title,
+                description=item.description,
+            )
+            updated_count += 1
 
+            # Commit every batch_size items to keep transactions short
+            if (i + 1) % batch_size == 0:
+                await db.commit()
+                logger.debug(f"Batch update: committed {i + 1}/{len(data.tasks)} tasks")
+        except Exception as e:
+            # Log but continue - don't fail entire batch for one item
+            errors.append({"id": item.id, "error": str(e)})
+            logger.warning(f"Failed to update task {item.id}: {e}")
+
+    # Final commit for remaining items
     await db.commit()
-    return {"updated_count": updated_count, "total_requested": len(data.tasks)}
+
+    result: dict[str, int | list[dict[str, str]]] = {
+        "updated_count": updated_count,
+        "total_requested": len(data.tasks),
+    }
+    if errors:
+        result["errors"] = errors
+    return result
