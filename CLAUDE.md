@@ -144,48 +144,66 @@ uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
 
 The CI runs: lint → test → typecheck. All three must pass. Don't skip pyright!
 
+## Git Workflow (CRITICAL)
+
+**NEVER push directly to master.** Always use pull requests.
+
+### Standard Workflow
+
+```
+feature branch → PR → CI passes → merge → release (if needed)
+```
+
+1. **Create feature branch:**
+   ```bash
+   git checkout -b feature/my-feature
+   ```
+
+2. **Make changes, run pre-commit checks:**
+   ```bash
+   uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
+   ```
+
+3. **Commit and push branch:**
+   ```bash
+   git add -A && git commit -m "Description of changes"
+   git push -u origin feature/my-feature
+   ```
+
+4. **Create PR:**
+   ```bash
+   gh pr create --title "Feature title" --body "Description"
+   ```
+
+5. **Wait for CI to pass, then merge**
+
+### Exceptions
+
+Only push directly to master when **explicitly asked** by the user (e.g., "push this directly to master").
+
 ## Release Process
 
-Releases are managed via GitHub Actions with automatic tag signing and build provenance.
+Releases are managed via GitHub Actions with GPG-signed tags.
 
 ### Creating a Release (Step by Step)
 
-**1. Update CHANGELOG.md** — Add entry for new version:
-```markdown
-## [0.9.0] - 2026-01-15
+**1. Create release PR** with these changes:
+- Update `CHANGELOG.md` with new version entry
+- Update version in `CLAUDE.md` if needed
+- Run `just build-manifest` to update build manifest
 
-### Added
-- New feature X
+**2. Get PR merged** — CI must pass
 
-### Fixed
-- Bug Y
-```
+**3. Trigger release** via GitHub Actions:
+- Go to: Actions → Release → Run workflow
+- Enter version (e.g., `0.9.0`)
+- Click "Run workflow"
 
-**2. Run ALL pre-commit checks:**
-```bash
-uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
-```
-
-**3. Generate build manifest** (REQUIRED for build provenance):
-```bash
-just build-manifest
-```
-
-**4. Commit and push:**
-```bash
-git add -A && git commit -m "Release v0.9.0"
-git push origin master
-```
-
-**5. Wait for CI to pass** — Check GitHub Actions CI workflow
-
-**6. Push tag to trigger release:**
-```bash
-git tag -a v0.9.0 -m "Release v0.9.0"
-git push origin v0.9.0
-```
-
-The release workflow auto-triggers on tag push and creates the GitHub release with artifacts.
+The release workflow:
+- Validates CHANGELOG entry exists
+- Checks CI passed for current commit
+- Creates GPG-signed tag (shows ✓ Verified)
+- Builds and publishes GitHub Release with artifacts
 
 ### What the Pipeline Does
 
@@ -204,15 +222,6 @@ Each release includes:
 - `sri-hashes.json` — SRI hashes for script integrity
 - `whendoist-vX.Y.Z.tar.gz` — Source archive
 
-### Backwards Compatibility
-
-You can still create releases by pushing tags manually:
-```bash
-git tag -a v0.9.0 -m "Release v0.9.0"
-git push origin v0.9.0
-```
-
-However, manually-pushed tags won't show as "Verified" unless you've configured GPG signing locally.
 
 ## Testing
 
