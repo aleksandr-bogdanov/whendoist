@@ -17,6 +17,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.13] - 2026-01-15
+
+### Summary
+**Hotfix: Recurring Task Completion + Passkey RPID** — Fixes Complete button showing wrong state for recurring tasks, and passkey registration failing on mobile browsers.
+
+### Fixed
+
+- **Recurring task completion in dialog** — Complete button now correctly reflects today's instance state:
+  - Added `today_instance_completed` field to TaskResponse API
+  - Dialog checks this field for recurring tasks instead of task.status
+  - Sends `target_date` in toggle-complete request
+  - Shows "Instance completed/reopened" toast for recurring tasks
+
+- **Passkey RPID mismatch on iPhone Chrome** — Passkey registration failed with "RPID did not match origin":
+  - Now automatically derives `passkey_rp_id` from `BASE_URL` hostname
+  - No longer requires explicit `PASSKEY_RP_ID` environment variable in production
+  - Note: Existing passkeys registered with wrong RPID need to be re-registered
+
+### Added
+
+- 16 new tests in `test_hotfix_0_8_13.py` covering both fixes
+
+---
+
 ## [0.8.12] - 2026-01-15
 
 ### Summary
