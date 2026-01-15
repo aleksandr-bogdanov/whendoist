@@ -1,13 +1,13 @@
 {
-  "version": "v0.8.5",
+  "version": "v0.8.7",
   "commit": {
-    "sha": "f6fc148cf8c226521f80d3f519fd2906fb76c5ac",
-    "short": "f6fc148",
-    "date": "2026-01-15T04:05:13+01:00"
+    "sha": "6ac68788948d983adb927497727ce522ab80e521",
+    "short": "6ac6878",
+    "date": "2026-01-15T10:16:23+01:00"
   },
   "build": {
-    "hash": "761c64dc89e31670",
-    "timestamp": "2026-01-15T04:08:43.633054+00:00",
+    "hash": "03a3a392593fd722",
+    "timestamp": "2026-01-15T13:11:03.014590+00:00",
     "runner": "local",
     "environment": "development"
   },
@@ -31,18 +31,18 @@
     "js/toast.js": "043e926a2a088adbe1db8c817ce81fa0afd4e28b487710c995c3c3a95f4fe9a3",
     "js/task-list-options.js": "75ad861ba6b6cfc17c1dc5f3c54bc82d9d0103ddcc45044c4aff79871f7684dc",
     "app/config.py": "a2bf198c389e051417f457fae2f6d849b862ac366c7580f03bccbdd50f535da1",
-    "app/logging_config.py": "ffcd198f8db16b9ce7a6653befb62c2e85ba831724d1842fcff230a5452527cd",
+    "app/logging_config.py": "23604c8827cc747c003f49e2175fabb770df538d0cd66c512e840df651fa969f",
     "app/models.py": "16de270051a633cf44ece11ad7c42565757cbc86f594accc45e9943d7c22159e",
     "app/database.py": "038910d548b4bf6862ca39a29f59bfec28acaa07dcd449de8dbc3d0c48bc6df9",
     "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "app/main.py": "259b07081c46cfb7cd39ec9330245983b1ab77d555b9dd1f6c9bc43d621c209d",
+    "app/main.py": "d3e048fd9becf3c21dc3a769c1e86bdf6647d62518ea1e85b20c3048f6eab74a",
     "app/routers/auth.py": "269e58c9a0b67a652af84d6c1dc1e30ca828ef21acd8b7dc405cc52b2faa01d3",
     "app/routers/backup.py": "33e208b3bab722a0c11ba16ed495d943992099606ce022c4d387e294fe179d2a",
-    "app/routers/tasks.py": "85752a957e407edcb13267c15a5cba1f7691288b299cd5621f397e9297833119",
+    "app/routers/tasks.py": "6df417b3caf4e8e2e7a73808fe118516cfacc59f6e81cc3c7bd7dfaa0b72c5a1",
     "app/routers/import_data.py": "068fde24c396bb282082ee206f7fa60b642dd2d4aba30658ec8601206efebeb8",
     "app/routers/instances.py": "73651b7c2fe2e3a456607028d30fdb7c774197dbb4551ebe19bff72c531467b4",
     "app/routers/passkeys.py": "1ca9624c485dd4bb97c55d3334b30674209663ac1b36f4536422507a648216ce",
-    "app/routers/domains.py": "ea61e5a0605d0cca492d13a3d648b8bff8dcae1dc86f4261338c2949b4aa43d5",
+    "app/routers/domains.py": "f19f16ba6f83bd49e21f3a0ed43970b27fcd2b7ffea9b009fedc99fab5dbd581",
     "app/routers/preferences.py": "064a3ee76fbe4d5754caf3bb0eec1a0306c4603f96e0c4b25c4ae22dce8a83c6",
     "app/routers/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "app/routers/api.py": "629cf6c060fb68f8304a65b1ff9c90e2e0073bf43fa4d8338f4b065552b76edd",

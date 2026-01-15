@@ -209,6 +209,19 @@ The release workflow:
 - Creates GPG-signed tag (shows ✓ Verified)
 - Builds and publishes GitHub Release with artifacts
 
+**4. Update build manifest** (REQUIRED for production):
+```bash
+git pull
+just build-manifest
+git add static/build-manifest.json
+git commit -m "chore: update build manifest for vX.Y.Z"
+git push
+```
+
+> **Why this step?** The Settings footer reads version from `static/build-manifest.json`.
+> Railway deploys from the repo, so without this commit, production shows the old version.
+> TODO: Automate this in the release workflow.
+
 ### What the Pipeline Does
 
 | Job | Description |
