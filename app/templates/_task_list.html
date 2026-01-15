@@ -1,11 +1,11 @@
 {# Task List Partial - used by dashboard and HTMX refreshes #}
 {% if domains_with_tasks %}
     {% for domain_item in domains_with_tasks %}
-    <details class="project-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}">
+    <details class="project-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
         <summary class="project-header">
             <span class="project-name">
                 {% if domain_item.domain %}
-                    {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}{{ domain_item.domain.name }}
+                    {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}<span class="domain-name-text">{% if encryption_enabled %}🔒{% else %}{{ domain_item.domain.name }}{% endif %}</span>
                 {% else %}
                     Inbox
                 {% endif %}
@@ -26,13 +26,14 @@
                  data-scheduled-date="{{ (task_item.next_occurrence or task.scheduled_date).isoformat() if (task_item.next_occurrence or task.scheduled_date) else '' }}"
                  data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
                  {% if task_item.next_instance_id %}data-instance-id="{{ task_item.next_instance_id }}"{% endif %}
+                 data-title="{{ task.title }}"
                  {% if not task.scheduled_date %}draggable="true"{% endif %}>
                 <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task.status == 'completed' else 'false' }}">
                     <span class="complete-bar"></span>
                     <span class="complete-check" aria-hidden="true">✓</span>
                 </button>
                 <div class="task-content">
-                    <span class="task-text">{{ task.title }}</span>
+                    <span class="task-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
                     {% if task_item.next_occurrence or task.scheduled_date %}
                     <span class="task-due">
                         {% if task.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}

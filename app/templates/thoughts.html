@@ -38,9 +38,9 @@
                 {% if tasks %}
                     {% for task_item in tasks %}
                     {% set task = task_item.task %}
-                    <div class="thought-row" data-task-id="{{ task.id }}">
+                    <div class="thought-row" data-task-id="{{ task.id }}" data-title="{{ task.title }}">
                         <div class="thought-dot"></div>
-                        <span class="thought-text">{{ task.title }}</span>
+                        <span class="thought-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
                         <div class="thought-actions">
                             <button type="button" class="icon-btn promote" title="Promote to Task">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -433,6 +433,37 @@
 {% block scripts %}
 <script src="/static/js/recurrence-picker.js"></script>
 <script src="/static/js/task-dialog.js"></script>
+
+<!-- E2E Encryption: Decrypt thought titles on page load -->
+<script>
+(async function decryptThoughtTitles() {
+    // Only decrypt if encryption is enabled and key is available
+    if (!Crypto.canCrypto()) {
+        return;
+    }
+
+    const thoughtRows = document.querySelectorAll('[data-title]');
+    if (thoughtRows.length === 0) return;
+
+    for (const el of thoughtRows) {
+        const encryptedTitle = el.dataset.title;
+        if (!encryptedTitle) continue;
+
+        try {
+            const decryptedTitle = await Crypto.decryptField(encryptedTitle);
+            if (!decryptedTitle || decryptedTitle === encryptedTitle) continue;
+
+            const textEl = el.querySelector('.thought-text');
+            if (textEl) {
+                textEl.textContent = decryptedTitle;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt thought title:', e);
+        }
+    }
+})();
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('quick-add-input');
@@ -453,14 +484,19 @@ document.addEventListener('DOMContentLoaded', () => {
             input.value = '';
 
             try {
+                // E2E Encryption: Encrypt if enabled
+                const encryptedTitle = await Crypto.encryptField(title);
+
                 const response = await fetch('/api/tasks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: title })
+                    body: JSON.stringify({ title: encryptedTitle })
                 });
 
                 if (response.ok) {
                     const task = await response.json();
+                    // Use original plaintext title for display
+                    task.title = title;
                     addThoughtToList(task);
                 }
             } catch (err) {

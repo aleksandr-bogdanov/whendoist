@@ -180,6 +180,59 @@ async def list_tasks(
     return [_task_to_response(t) for t in tasks]
 
 
+# =============================================================================
+# All Content Endpoint (for encryption - must be before /{task_id})
+# =============================================================================
+
+
+class TaskContentData(BaseModel):
+    """Single task's content for batch update."""
+
+    id: int
+    title: str
+    description: str | None = None
+
+
+class DomainContentData(BaseModel):
+    """Single domain's content for batch update."""
+
+    id: int
+    name: str
+
+
+class AllDataResponse(BaseModel):
+    """Response containing all tasks and domains for encryption operations."""
+
+    tasks: list[TaskContentData]
+    domains: list[DomainContentData]
+
+
+@router.get("/all-content", response_model=AllDataResponse)
+async def get_all_content(
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get all task titles/descriptions and domain names for the user.
+
+    Used by the client when enabling/disabling encryption to encrypt/decrypt
+    all data in a single batch operation.
+    """
+    service = TaskService(db, user.id)
+
+    # Get all non-archived tasks (including subtasks)
+    tasks = await service.get_tasks(status=None, top_level_only=False)
+    task_data = [
+        TaskContentData(id=t.id, title=t.title, description=t.description) for t in tasks if t.status != "archived"
+    ]
+
+    # Get all domains
+    domains = await service.get_domains(include_archived=False)
+    domain_data = [DomainContentData(id=d.id, name=d.name) for d in domains]
+
+    return AllDataResponse(tasks=task_data, domains=domain_data)
+
+
 @router.get("/{task_id}", response_model=TaskResponse)
 async def get_task(
     task_id: int,
@@ -396,3 +449,47 @@ async def toggle_task_complete(
         "task_id": task_id,
         "completed": updated_task.status == "completed" if updated_task else False,
     }
+
+
+# =============================================================================
+# Batch Update Endpoint (for encryption enable/disable)
+# =============================================================================
+
+
+class BatchUpdateTasksRequest(BaseModel):
+    """Request body for batch updating task content."""
+
+    tasks: list[TaskContentData]
+
+
+@router.post("/batch-update", status_code=200)
+async def batch_update_tasks(
+    data: BatchUpdateTasksRequest,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Batch update task content (title and description).
+
+    Used when enabling encryption (to save encrypted content) or
+    disabling encryption (to save decrypted content).
+
+    Returns count of tasks updated.
+    """
+    service = TaskService(db, user.id)
+    updated_count = 0
+
+    for item in data.tasks:
+        task = await service.get_task(item.id)
+        if not task:
+            continue
+
+        await service.update_task(
+            task_id=item.id,
+            title=item.title,
+            description=item.description,
+        )
+        updated_count += 1
+
+    await db.commit()
+    return {"updated_count": updated_count, "total_requested": len(data.tasks)}

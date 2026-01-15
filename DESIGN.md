@@ -667,12 +667,245 @@ Settings panel for E2E encryption setup.
 | Encryption Status | Badge | Shows "Enabled" or "Disabled" |
 | Setup/Disable | Button | Opens passphrase modal or disables encryption |
 
-**Encryption flow:**
-1. User clicks "Enable Encryption"
-2. Modal prompts for passphrase (min 8 chars)
-3. Passphrase confirms, key derived client-side
-4. Salt and encrypted test value sent to server
-5. Key stored in sessionStorage
+---
+
+## E2E Encryption Architecture (v0.8+)
+
+### Design Philosophy
+
+**Core Principle: Global Toggle, Not Per-Record Flags**
+
+The encryption system uses a **single global toggle** (`encryption_enabled`) per user. When enabled, ALL task titles, descriptions, and domain names are encrypted. This is an all-or-nothing design.
+
+**Why not per-record flags?**
+- Simpler mental model: data is either all encrypted or all plaintext
+- No "mixed state" confusion where some tasks are encrypted and others aren't
+- Prevents orphaned encrypted data (encrypted with a key that no longer exists)
+- Easier to audit and reason about security
+
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        E2E ENCRYPTION DATA FLOW                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        USER PREFERENCES                              │   │
+│  │  encryption_enabled: boolean  ← Single global toggle                 │   │
+│  │  encryption_salt: base64      ← Random 32 bytes for PBKDF2           │   │
+│  │  encryption_test_value: enc   ← "WHENDOIST_ENCRYPTION_TEST" encrypted│   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│                                    ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                     ENCRYPTED FIELDS (3 total)                       │   │
+│  │                                                                      │   │
+│  │  task.title        task.description        domain.name               │   │
+│  │                                                                      │   │
+│  │  Format: base64(IV[12] || ciphertext || authTag)                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌─────────────────────┐          ┌─────────────────────┐                  │
+│  │    CLIENT SIDE      │          │    SERVER SIDE      │                  │
+│  │    (crypto.js)      │◄────────►│    (Python)         │                  │
+│  ├─────────────────────┤          ├─────────────────────┤                  │
+│  │ • Key derivation    │          │ • Store salt        │                  │
+│  │ • Encrypt/decrypt   │          │ • Store test value  │                  │
+│  │ • Key in session    │          │ • Toggle flag       │                  │
+│  │   Storage           │          │ • Batch update API  │                  │
+│  │ • NEVER sends key   │          │ • NEVER sees key    │                  │
+│  └─────────────────────┘          └─────────────────────┘                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Cryptographic Details
+
+| Component | Algorithm/Parameters |
+|-----------|---------------------|
+| **Key Derivation** | PBKDF2 with SHA-256, 100,000 iterations |
+| **Encryption** | AES-256-GCM (authenticated encryption) |
+| **IV Length** | 12 bytes (96 bits, standard for GCM) |
+| **Salt Length** | 32 bytes (256 bits) |
+| **Key Storage** | sessionStorage (cleared on tab close) |
+
+### Enable Encryption Flow
+
+```
+User clicks "Enable Encryption"
+         │
+         ▼
+┌────────────────────────────┐
+│ 1. Prompt for passphrase   │
+│    (min 8 characters)      │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 2. Generate random salt    │
+│    (32 bytes)              │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 3. Derive key via PBKDF2   │
+│    key = PBKDF2(pass,      │
+│          salt, 100000)     │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 4. Encrypt test value      │
+│    enc = AES-GCM(key,      │
+│    "WHENDOIST_...")        │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 5. Fetch all plaintext     │
+│    GET /api/tasks/         │
+│        all-content         │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 6. Encrypt all data        │
+│    client-side             │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 7. Batch update to server  │
+│    POST /api/tasks/        │
+│         batch-update       │
+│    POST /api/domains/      │
+│         batch-update       │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 8. Enable flag on server   │
+│    POST /api/preferences/  │
+│         encryption/setup   │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 9. Store key in            │
+│    sessionStorage          │
+└────────────────────────────┘
+```
+
+### Unlock Flow (On Page Load)
+
+```
+Page loads with encryption enabled
+         │
+         ▼
+┌────────────────────────────┐
+│ 1. Check window.WHENDOIST  │
+│    .encryptionEnabled      │
+└────────────────────────────┘
+         │ true
+         ▼
+┌────────────────────────────┐
+│ 2. Show unlock modal       │
+│    (passphrase prompt)     │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 3. Derive key from         │
+│    passphrase + salt       │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 4. Decrypt test value      │
+│    Verify == known string  │
+└────────────────────────────┘
+         │ success
+         ▼
+┌────────────────────────────┐
+│ 5. Store key in            │
+│    sessionStorage          │
+└────────────────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ 6. Decrypt displayed data  │
+│    (task titles, domains)  │
+└────────────────────────────┘
+```
+
+### API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/preferences/encryption` | GET | Get encryption status and salt |
+| `/api/preferences/encryption/setup` | POST | Enable encryption (store salt, test value) |
+| `/api/preferences/encryption/disable` | POST | Disable encryption (clear salt, test value) |
+| `/api/tasks/all-content` | GET | Fetch all tasks for batch encrypt/decrypt |
+| `/api/tasks/batch-update` | POST | Update multiple tasks (for encrypt/decrypt) |
+| `/api/domains/batch-update` | POST | Update multiple domains (for encrypt/decrypt) |
+
+### Multitenancy Security
+
+**Critical:** All encryption operations are user-scoped.
+
+```python
+# Every query filters by user_id
+query = select(Task).where(
+    Task.id == task_id,
+    Task.user_id == self.user_id  # ← Always present
+)
+
+# Batch updates validate ownership
+for item in data.tasks:
+    task = await service.get_task(item.id)  # Returns None if not owned
+    if not task:
+        continue  # Skip - not this user's task
+    await service.update_task(...)
+```
+
+**Security guarantees:**
+1. User A cannot read User B's encrypted data
+2. User A cannot modify User B's data via batch endpoints
+3. Each user has independent encryption state
+4. Salt and test value are per-user (not shared)
+
+### Files Involved
+
+| File | Role |
+|------|------|
+| `static/js/crypto.js` | Client-side encryption/decryption |
+| `app/services/preferences_service.py` | Encryption state management |
+| `app/routers/preferences.py` | Encryption API endpoints |
+| `app/routers/tasks.py` | all-content, batch-update endpoints |
+| `app/routers/domains.py` | batch-update endpoint |
+| `app/templates/base.html` | Sets `window.WHENDOIST` config |
+| `app/templates/dashboard.html` | Decrypt on page load |
+| `app/templates/settings.html` | Enable/disable UI |
+| `static/js/task-dialog.js` | Encrypt on save |
+
+### Testing
+
+Comprehensive tests in `tests/test_encryption.py`:
+
+| Test Class | Coverage |
+|------------|----------|
+| `TestEncryptionPreferences` | Enable/disable preferences |
+| `TestEncryptionMultitenancy` | **CRITICAL** user isolation |
+| `TestCryptoModuleExportsAPI` | crypto.js has required functions |
+| `TestCryptoModuleArchitecture` | Correct algorithms used |
+| `TestCryptoModuleIntegration` | Templates use Crypto correctly |
+
+### Future Considerations
+
+- **Key rotation**: Allow changing passphrase without re-encrypting all data
+- **Recovery key**: Generate backup key during setup for account recovery
+- **Hardware key support**: WebAuthn/FIDO2 for key storage
 
 ### Build Provenance Panel (v0.8)
 
@@ -1088,4 +1321,4 @@ When designing new UI:
 
 ---
 
-*Last updated: January 2026 (v0.8)*
+*Last updated: January 2026 (v0.8.2 - E2E Encryption Architecture)*
