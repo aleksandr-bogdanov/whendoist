@@ -2,19 +2,21 @@
 Hotfix Tests - Wizard Bug Fixes.
 
 These tests verify the fixes for the following issues:
-1. Wizard encryption setup was incomplete (didn't encrypt existing data)
-2. Google user name only updated when user.name was empty
-3. Domain creation allowed duplicates (not idempotent)
-4. Task count not displayed in Settings domains panel
+1. Google user name only updated when user.name was empty
+2. Domain creation allowed duplicates (not idempotent)
+3. Task count not displayed in Settings domains panel
 
 Test Category: Unit + Contract
 Related Issues:
-- Encryption via wizard leaves tasks unencrypted
 - User name shows email username instead of Google name
 - Domains duplicated when wizard re-run
 - No task count shown in Settings Life Domains
 
 See tests/README.md for full test architecture.
+
+Note: Wizard encryption tests were removed in v0.9 when the encryption step
+was removed from the wizard to reduce onboarding friction. Encryption setup
+is still available in Settings.
 """
 
 from pathlib import Path
@@ -23,88 +25,6 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
-
-# =============================================================================
-# Wizard Encryption Setup Tests (Contract)
-# =============================================================================
-
-
-class TestWizardEncryptionContract:
-    """
-    Verify wizard encryption setup properly encrypts all data and saves to server.
-
-    Bug Fix: Previously wizard.js only called Crypto.setupEncryption() without:
-    1. Fetching all content to encrypt
-    2. Encrypting existing data
-    3. Saving encrypted data via batch-update
-    4. Saving salt/testValue to server via /api/preferences/encryption/setup
-    """
-
-    def test_wizard_calls_setup_encryption(self):
-        """Wizard must call Crypto.setupEncryption to get salt and testValue."""
-        wizard_file = Path(__file__).parent.parent / "static" / "js" / "wizard.js"
-        source = wizard_file.read_text()
-
-        # Find enableEncryption function
-        assert "async enableEncryption()" in source
-
-        # Must call Crypto.setupEncryption and capture return values
-        assert "await Crypto.setupEncryption(passphrase)" in source
-        assert "{ salt, testValue }" in source
-
-    def test_wizard_fetches_all_content(self):
-        """Wizard must fetch all content before encrypting."""
-        wizard_file = Path(__file__).parent.parent / "static" / "js" / "wizard.js"
-        source = wizard_file.read_text()
-
-        # Extract enableEncryption function section
-        enable_section = source.split("async enableEncryption()")[1].split("renderStep8")[0]
-
-        # Must fetch all-content endpoint
-        assert "/api/tasks/all-content" in enable_section
-
-    def test_wizard_encrypts_all_data(self):
-        """Wizard must call encryptAllData on fetched content."""
-        wizard_file = Path(__file__).parent.parent / "static" / "js" / "wizard.js"
-        source = wizard_file.read_text()
-
-        enable_section = source.split("async enableEncryption()")[1].split("renderStep8")[0]
-
-        # Must encrypt all data
-        assert "Crypto.encryptAllData" in enable_section
-
-    def test_wizard_saves_encrypted_tasks(self):
-        """Wizard must save encrypted tasks via batch-update."""
-        wizard_file = Path(__file__).parent.parent / "static" / "js" / "wizard.js"
-        source = wizard_file.read_text()
-
-        enable_section = source.split("async enableEncryption()")[1].split("renderStep8")[0]
-
-        # Must call tasks batch-update
-        assert "/api/tasks/batch-update" in enable_section
-
-    def test_wizard_saves_encrypted_domains(self):
-        """Wizard must save encrypted domains via batch-update."""
-        wizard_file = Path(__file__).parent.parent / "static" / "js" / "wizard.js"
-        source = wizard_file.read_text()
-
-        enable_section = source.split("async enableEncryption()")[1].split("renderStep8")[0]
-
-        # Must call domains batch-update
-        assert "/api/domains/batch-update" in enable_section
-
-    def test_wizard_enables_encryption_on_server(self):
-        """Wizard must call server endpoint to enable encryption."""
-        wizard_file = Path(__file__).parent.parent / "static" / "js" / "wizard.js"
-        source = wizard_file.read_text()
-
-        enable_section = source.split("async enableEncryption()")[1].split("renderStep8")[0]
-
-        # Must call encryption setup endpoint with salt and test_value
-        assert "/api/preferences/encryption/setup" in enable_section
-        assert "salt" in enable_section
-        assert "test_value" in enable_section
-
 
 # =============================================================================
 # Google User Name Update Tests

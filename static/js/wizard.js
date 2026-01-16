@@ -1,7 +1,7 @@
 /**
  * WhenWizard - First-Run Onboarding
  *
- * Handles the 8-step onboarding wizard with:
+ * Handles the 7-step onboarding wizard with:
  * - State management with localStorage persistence
  * - Swipe navigation for touch devices
  * - Keyboard handling for virtual keyboards
@@ -174,10 +174,7 @@ class WhenWizard {
                 todoistConnected: window.WHENDOIST?.todoistConnected || false,
                 importConfig: null,
                 importResult: null,
-                domains: [],
-                encryptionEnabled: false,
-                passkeyRegistered: false,
-                acknowledgmentChecked: false
+                domains: []
             }
         };
     }
@@ -227,7 +224,7 @@ class WhenWizard {
             this.markStepCompleted(this.state.currentStep);
 
             const nextStep = this.getNextStep();
-            if (nextStep > 8) {
+            if (nextStep > 7) {
                 this.complete();
             } else {
                 this.transitionTo(nextStep, 'forward');
@@ -256,8 +253,6 @@ class WhenWizard {
         switch (this.state.currentStep) {
             case 6: // Domains - require at least one
                 return this.state.data.domains.length > 0;
-            case 7: // Security - always can proceed (encryption is optional)
-                return true;
             default:
                 return true;
         }
@@ -432,10 +427,6 @@ class WhenWizard {
                 break;
             case 7:
                 content.innerHTML = this.renderStep7();
-                this.bindStep7Events();
-                break;
-            case 8:
-                content.innerHTML = this.renderStep8();
                 break;
         }
 
@@ -451,8 +442,7 @@ class WhenWizard {
         switch (step) {
             case 1:
                 navHTML = `
-                    <div class="wizard-nav-spacer"></div>
-                    <button class="wizard-btn-primary" onclick="wizard.goForward()">Get Started</button>
+                    <button class="wizard-btn-primary wizard-btn-centered" onclick="wizard.goForward()">Get Started</button>
                 `;
                 break;
             case 2:
@@ -501,16 +491,8 @@ class WhenWizard {
                 `;
                 break;
             case 7:
-                navHTML = `
-                    <button class="wizard-btn-secondary" onclick="wizard.goBack()">Back</button>
-                    <button class="wizard-btn-primary" onclick="wizard.goForward()">Continue</button>
-                `;
-                break;
-            case 8:
-                navHTML = `
-                    <div class="wizard-nav-spacer"></div>
-                    <button class="wizard-btn-primary" onclick="wizard.complete()">Open Dashboard</button>
-                `;
+                // Button is now in the content area, nav is hidden
+                navHTML = '';
                 break;
         }
 
@@ -523,21 +505,16 @@ class WhenWizard {
 
     renderStep1() {
         const userName = window.WHENDOIST?.userName || 'there';
+        const firstName = userName.split(' ')[0]; // Get first name only
         return `
-            <div class="wizard-step-content">
-                <img src="/static/img/logo.png" alt="Whendoist" class="wizard-welcome-logo" style="margin-top: 40px;">
+            <div class="wizard-step-content wizard-step-welcome">
+                <h1 class="wizard-title wizard-welcome-title">${this.escapeHtml(firstName).toUpperCase()}, LET'S<br>PLAN YOUR TIME</h1>
 
-                <p class="wizard-subtitle" style="margin-top: 8px;">WHEN do I do my tasks?</p>
-
-                <div class="wizard-card" style="text-align: center;">
-                    <p style="margin: 0; color: var(--text-muted); line-height: 1.6;">
-                        Your calendar shows when you're busy.<br>
-                        Your task list shows what to do.<br>
-                        <strong style="color: var(--text);">Whendoist shows when to actually do it.</strong>
-                    </p>
+                <div class="wizard-welcome-card">
+                    <p class="wizard-welcome-line">Your calendar shows when you're busy.</p>
+                    <p class="wizard-welcome-line">Your task list shows what to do.</p>
+                    <p class="wizard-welcome-line wizard-welcome-punchline">Whendoist shows when to actually do it.</p>
                 </div>
-
-                <p class="wizard-welcome-greeting">Welcome, ${this.escapeHtml(userName)}</p>
 
                 ${this.renderProgress()}
             </div>
@@ -568,6 +545,7 @@ class WhenWizard {
                             <div class="wizard-mode-description">Needs deep thinking or research</div>
                         </div>
                     </div>
+                    <p class="wizard-tap-hint">Tap to select</p>
 
                     <div class="wizard-preview-divider"></div>
 
@@ -627,34 +605,61 @@ class WhenWizard {
     renderStep3() {
         const isConnected = this.state.data.calendarConnected;
         const userEmail = window.WHENDOIST?.userEmail || '';
+        const events = this.state.data.cachedEvents || [];
 
         return `
             <div class="wizard-step-content">
                 <h1 class="wizard-title">CONNECT YOUR CALENDAR</h1>
                 <p class="wizard-subtitle">PLAN TASKS AROUND YOUR COMMITMENTS</p>
 
-                <div class="wizard-connection-card">
-                    <div class="wizard-connection-logo" style="font-size:2rem;">&#128197;</div>
-
-                    <div class="wizard-connection-name">Google Calendar</div>
-
-                    <div class="wizard-connection-status">
-                        <span class="wizard-connection-dot ${isConnected ? 'connected' : ''}"></span>
-                        <span>${isConnected ? 'Connected' : 'Not connected'}</span>
+                <div class="wizard-connection-card ${isConnected ? 'connected' : ''}">
+                    <div class="wizard-connection-header">
+                        <svg class="wizard-gcal-logo" width="24" height="24" viewBox="0 0 24 24">
+                            <rect x="2" y="4" width="20" height="18" rx="2" fill="#4285F4"/>
+                            <rect x="2" y="4" width="20" height="5" fill="#1A73E8"/>
+                            <rect x="6" y="2" width="2" height="4" rx="1" fill="#EA4335"/>
+                            <rect x="16" y="2" width="2" height="4" rx="1" fill="#EA4335"/>
+                            <rect x="6" y="12" width="3" height="3" rx="0.5" fill="white"/>
+                            <rect x="10.5" y="12" width="3" height="3" rx="0.5" fill="white"/>
+                            <rect x="15" y="12" width="3" height="3" rx="0.5" fill="white"/>
+                            <rect x="6" y="16" width="3" height="3" rx="0.5" fill="white"/>
+                            <rect x="10.5" y="16" width="3" height="3" rx="0.5" fill="white"/>
+                        </svg>
+                        <div class="wizard-connection-info">
+                            <div class="wizard-connection-name">Google Calendar</div>
+                            <div class="wizard-connection-status">
+                                <span class="wizard-connection-dot ${isConnected ? 'connected' : ''}"></span>
+                                <span>${isConnected ? 'Connected' : 'Not connected'}</span>
+                                ${isConnected ? `<span class="wizard-connection-email">· ${this.escapeHtml(userEmail)}</span>` : ''}
+                            </div>
+                        </div>
                     </div>
 
-                    ${isConnected ? `
-                        <div class="wizard-connection-email">${this.escapeHtml(userEmail)}</div>
-                    ` : `
-                        <button class="wizard-btn-primary" onclick="wizard.connectCalendar()">
+                    ${isConnected && events.length > 0 ? `
+                        <div class="wizard-event-preview">
+                            ${events.slice(0, 2).map(event => `
+                                <div class="wizard-event-row">
+                                    <span class="wizard-event-dot" style="background: ${event.color || '#4285F4'}"></span>
+                                    <span class="wizard-event-title">${this.escapeHtml(event.summary)}</span>
+                                    <span class="wizard-event-time">${event.time}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${!isConnected ? `
+                        <button class="wizard-btn-primary wizard-connect-btn" onclick="wizard.connectCalendar()">
                             Connect Google Calendar
                         </button>
-                    `}
+                    ` : ''}
                 </div>
 
                 <p class="wizard-connection-privacy">
-                    We only read your calendar to display events.
-                    We never modify, delete, or share your data.
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    We only read your calendar. We never modify or share your data.
                 </p>
 
                 ${this.renderProgress()}
@@ -670,16 +675,34 @@ class WhenWizard {
         window.location.href = '/auth/google?wizard=true';
     }
 
-    // Pre-fetch calendars when connection status changes (called on init if already connected)
+    // Pre-fetch calendars and events when connection status changes
     async prefetchCalendars() {
-        if (this.state.data.calendarConnected && !this.state.data.cachedCalendars) {
+        if (this.state.data.calendarConnected) {
             try {
-                const response = await fetch('/api/calendars');
-                const calendars = await response.json();
-                this.state.data.cachedCalendars = calendars;
+                // Fetch calendars if not cached
+                if (!this.state.data.cachedCalendars) {
+                    const response = await fetch('/api/calendars');
+                    const calendars = await response.json();
+                    this.state.data.cachedCalendars = calendars;
+                }
+
+                // Fetch upcoming events for preview (if not cached)
+                if (!this.state.data.cachedEvents) {
+                    const eventsResponse = await fetch('/api/events/upcoming?days=2&limit=3');
+                    if (eventsResponse.ok) {
+                        const events = await eventsResponse.json();
+                        this.state.data.cachedEvents = events;
+                    }
+                }
+
                 this.saveState();
+
+                // Re-render step 3 if we're on it and just got events
+                if (this.state.currentStep === 3) {
+                    this.renderStep(3);
+                }
             } catch (e) {
-                console.error('Failed to prefetch calendars:', e);
+                console.error('Failed to prefetch calendar data:', e);
             }
         }
     }
@@ -691,16 +714,10 @@ class WhenWizard {
                 <p class="wizard-subtitle">WE'LL WORK AROUND YOUR EXISTING COMMITMENTS</p>
 
                 <div class="wizard-card">
-                    <div class="wizard-calendar-list" id="calendarList" style="min-height: 200px;">
+                    <div class="wizard-calendar-list" id="calendarList">
                         <div style="text-align: center; padding: 20px; color: var(--text-muted);">
                             Loading calendars...
                         </div>
-                    </div>
-
-                    <div class="wizard-helper-links">
-                        <button class="wizard-helper-link" onclick="wizard.selectAllCalendars()">Select all</button>
-                        <span style="color: var(--border);">&#183;</span>
-                        <button class="wizard-helper-link" onclick="wizard.selectNoCalendars()">Select none</button>
                     </div>
                 </div>
 
@@ -822,7 +839,10 @@ class WhenWizard {
                 <p class="wizard-subtitle">IMPORT TO START FASTER</p>
 
                 <div class="wizard-import-source">
-                    <div class="wizard-import-logo" style="font-size: 2rem;">&#128203;</div>
+                    <svg class="wizard-todoist-logo" width="32" height="32" viewBox="0 0 32 32">
+                        <circle cx="16" cy="16" r="16" fill="#E44332"/>
+                        <path d="M9 11h14l-7 4.5L9 11zm0 5h14l-7 4.5L9 16zm0 5h14l-7 4.5L9 21z" fill="white" opacity="0.9"/>
+                    </svg>
                     <div class="wizard-import-title">Import from Todoist</div>
                     <div class="wizard-import-description">
                         Bring your projects, tasks, and labels
@@ -830,17 +850,6 @@ class WhenWizard {
                     <button class="wizard-btn-primary" onclick="wizard.connectTodoist()">
                         Connect Todoist
                     </button>
-                </div>
-
-                <div class="wizard-import-divider">or</div>
-
-                <div style="text-align: center;">
-                    <button class="wizard-btn-ghost" onclick="wizard.skipStep()">
-                        Start fresh instead
-                    </button>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
-                        I'll create my own tasks
-                    </div>
                 </div>
 
                 ${this.renderProgress()}
@@ -856,21 +865,13 @@ class WhenWizard {
                 <p class="wizard-subtitle">READY TO IMPORT YOUR TASKS</p>
 
                 <div class="wizard-import-source">
-                    <div class="wizard-import-logo" style="font-size: 2rem;">&#9989;</div>
+                    <div class="wizard-import-success-badge">&#10003;</div>
                     <div class="wizard-import-title">Todoist Connected</div>
                     <div class="wizard-import-description">
                         Click below to import your projects and tasks
                     </div>
                     <button class="wizard-btn-primary" onclick="wizard.startTodoistImport()">
                         Import Tasks
-                    </button>
-                </div>
-
-                <div class="wizard-import-divider">or</div>
-
-                <div style="text-align: center;">
-                    <button class="wizard-btn-ghost" onclick="wizard.skipStep()">
-                        Skip - I'll import later
                     </button>
                 </div>
 
@@ -968,6 +969,7 @@ class WhenWizard {
 
         // domains is now array of objects: [{name, icon}, ...]
         const selectedNames = this.state.data.domains.map(d => typeof d === 'string' ? d : d.name);
+        const isAddingCustom = this.state.data.isAddingCustomDomain || false;
 
         return `
             <div class="wizard-step-content">
@@ -975,8 +977,6 @@ class WhenWizard {
                 <p class="wizard-subtitle">DOMAINS = BIG AREAS OF YOUR LIFE</p>
 
                 <div class="wizard-card">
-                    <div class="wizard-section-title">START WITH THESE</div>
-
                     <div class="wizard-domain-chips">
                         ${suggestions.map(d => {
                             const isSelected = selectedNames.includes(d.name);
@@ -987,43 +987,32 @@ class WhenWizard {
                                      onclick="wizard.toggleDomain('${d.name}', '${d.emojiChar}')">
                                     <span class="wizard-domain-emoji">${d.emoji}</span>
                                     <span class="wizard-domain-name">${d.name}</span>
-                                    <span class="wizard-domain-check">${isSelected ? '&#10003;' : ''}</span>
                                 </div>
                             `;
                         }).join('')}
-                    </div>
-                </div>
 
-                <div class="wizard-add-domain-section">
-                    <div class="wizard-add-domain-form" id="addDomainForm" style="display: none;">
-                        <div class="wizard-add-domain-row">
-                            <div class="wizard-emoji-picker-wrap">
-                                <button type="button" class="wizard-emoji-btn" id="customDomainIcon" onclick="wizard.toggleEmojiPicker()">📁</button>
-                                <div class="wizard-emoji-popover" id="emojiPopover"></div>
-                            </div>
+                        <div class="wizard-domain-chip wizard-domain-chip-add" onclick="wizard.showAddDomain()">
+                            <span class="wizard-domain-add-icon">+</span>
+                            <span class="wizard-domain-name">Add your own</span>
+                        </div>
+                    </div>
+
+                    ${isAddingCustom ? `
+                        <div class="wizard-custom-domain-row">
+                            <button type="button" class="wizard-emoji-btn" id="customDomainIcon" onclick="wizard.toggleEmojiPicker()">📁</button>
                             <input type="text"
                                    class="wizard-input wizard-domain-input"
                                    id="customDomainName"
-                                   placeholder="Domain name (e.g., Side Project)"
-                                   maxlength="50"
-                                   onkeydown="if(event.key === 'Enter') wizard.addCustomDomain()">
-                        </div>
-                        <div class="wizard-add-domain-actions">
-                            <button class="wizard-btn-ghost wizard-btn-sm" onclick="wizard.hideAddDomain()">Cancel</button>
+                                   placeholder="Domain name..."
+                                   maxlength="20"
+                                   autofocus
+                                   onkeydown="if(event.key === 'Enter') wizard.addCustomDomain(); if(event.key === 'Escape') wizard.hideAddDomain();">
                             <button class="wizard-btn-primary wizard-btn-sm" onclick="wizard.addCustomDomain()">Add</button>
+                            <button class="wizard-btn-ghost wizard-btn-sm" onclick="wizard.hideAddDomain()">Cancel</button>
+                            <div class="wizard-emoji-popover" id="emojiPopover"></div>
                         </div>
-                    </div>
-                    <div class="wizard-add-domain-trigger" id="addDomainTrigger" onclick="wizard.showAddDomain()">
-                        <span>+</span>
-                        <span>Add custom domain...</span>
-                    </div>
+                    ` : ''}
                 </div>
-
-                ${selectedNames.length > 0 ? `
-                    <div class="wizard-domain-summary">
-                        Selected: ${selectedNames.join(', ')}
-                    </div>
-                ` : ''}
 
                 ${this.renderProgress()}
                 ${this.renderSwipeHint()}
@@ -1087,18 +1076,23 @@ class WhenWizard {
     ];
 
     showAddDomain() {
-        document.getElementById('addDomainForm').style.display = 'block';
-        document.getElementById('addDomainTrigger').style.display = 'none';
-        document.getElementById('customDomainName').focus();
-        // Reset icon to default
-        document.getElementById('customDomainIcon').textContent = '📁';
+        this.state.data.isAddingCustomDomain = true;
+        this.saveState();
+        this.renderStep(6);
+        this.updateNavigation();
+        // Focus the input after re-render
+        setTimeout(() => {
+            const input = document.getElementById('customDomainName');
+            if (input) input.focus();
+        }, 50);
     }
 
     hideAddDomain() {
-        document.getElementById('addDomainForm').style.display = 'none';
-        document.getElementById('addDomainTrigger').style.display = 'flex';
-        document.getElementById('customDomainName').value = '';
+        this.state.data.isAddingCustomDomain = false;
         this.hideEmojiPicker();
+        this.saveState();
+        this.renderStep(6);
+        this.updateNavigation();
     }
 
     toggleEmojiPicker() {
@@ -1143,8 +1137,8 @@ class WhenWizard {
     addCustomDomain() {
         const input = document.getElementById('customDomainName');
         const iconBtn = document.getElementById('customDomainIcon');
-        const name = input.value.trim();
-        const icon = iconBtn.textContent || '📁';
+        const name = input?.value?.trim();
+        const icon = iconBtn?.textContent || '📁';
 
         if (!name) {
             return;
@@ -1160,357 +1154,45 @@ class WhenWizard {
             return;
         }
 
-        // Add with selected icon
+        // Add domain and reset state
+        this.state.data.isAddingCustomDomain = false;
         this.toggleDomain(name, icon);
-        this.hideAddDomain();
     }
 
     renderStep7() {
-        const isEnabled = this.state.data.encryptionEnabled;
-
-        return `
-            <div class="wizard-step-content">
-                <h1 class="wizard-title">OPTIONAL: ENCRYPTION</h1>
-                <p class="wizard-subtitle">FOR PRIVACY-CONSCIOUS USERS</p>
-
-                ${isEnabled ? `
-                    <div class="wizard-encryption-enabled">
-                        <div class="wizard-encryption-enabled-icon">&#128274;</div>
-                        <div class="wizard-encryption-enabled-title">Encryption Enabled</div>
-                        <div class="wizard-encryption-enabled-desc">
-                            Your task data is now end-to-end encrypted.
-                            Only you can read your tasks.
-                        </div>
-
-                        ${!this.state.data.passkeyRegistered ? `
-                            <div class="wizard-passkey-card" style="margin-top: 16px;">
-                                <div class="wizard-passkey-icon">&#128273;</div>
-                                <div class="wizard-passkey-title">Add a backup passkey</div>
-                                <div class="wizard-passkey-description">
-                                    Unlock with your password manager instead of typing your passphrase.
-                                </div>
-                                <button class="wizard-btn-secondary" onclick="wizard.savePasskey()">
-                                    Save Passkey
-                                </button>
-                            </div>
-                        ` : `
-                            <div class="wizard-passkey-status saved" style="margin-top: 12px;">
-                                &#9679; Passkey saved
-                            </div>
-                        `}
-                    </div>
-                ` : `
-                    <div class="wizard-card">
-                        <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 0.875rem; line-height: 1.5;">
-                            End-to-end encryption means we can never read your tasks.
-                            <strong>Most users don't need this.</strong> Skip if you're unsure.
-                        </p>
-
-                        <div class="wizard-security-toggle ${this.state.data.showSecuritySetup ? 'expanded' : ''}" onclick="wizard.toggleSecurity()">
-                            <div class="wizard-security-toggle-label">
-                                <span class="wizard-security-toggle-icon">&#128274;</span>
-                                <span>Set up encryption</span>
-                            </div>
-                            <span class="wizard-security-toggle-chevron">&#9660;</span>
-                        </div>
-                    </div>
-
-                    <div class="wizard-security-content ${this.state.data.showSecuritySetup ? 'expanded' : ''}" id="securityContent">
-                        <div class="wizard-security-warning">
-                            <div class="wizard-security-warning-title">
-                                <span>&#9888;</span>
-                                <span>IMPORTANT</span>
-                            </div>
-                            <ul>
-                                <li>Your passphrase encrypts all task data</li>
-                                <li>We cannot recover data if you forget it</li>
-                                <li>Save a passkey as backup after enabling</li>
-                            </ul>
-                        </div>
-
-                        <div class="wizard-section-title">CREATE PASSPHRASE</div>
-
-                        <input type="password"
-                               class="wizard-input"
-                               id="passphrase"
-                               placeholder="Passphrase (8+ characters)"
-                               oninput="wizard.updatePassphraseStrength()">
-
-                        <input type="password"
-                               class="wizard-input"
-                               id="passphraseConfirm"
-                               placeholder="Confirm passphrase"
-                               style="margin-top: 8px;">
-
-                        <div class="wizard-strength-container" id="strengthContainer" style="display: none;">
-                            <span class="wizard-strength-label">Strength:</span>
-                            <div class="wizard-strength-bar">
-                                <div class="wizard-strength-fill" id="strengthFill"></div>
-                            </div>
-                            <span class="wizard-strength-text" id="strengthText"></span>
-                        </div>
-
-                        <div class="wizard-acknowledgment ${this.state.data.acknowledgmentChecked ? 'checked' : ''}"
-                             onclick="wizard.toggleAcknowledgment()">
-                            <div class="wizard-acknowledgment-check"></div>
-                            <div class="wizard-acknowledgment-text">
-                                I understand that if I lose my passphrase, my data cannot be recovered.
-                            </div>
-                        </div>
-
-                        <button class="wizard-btn-primary wizard-security-enable-btn"
-                                id="enableEncryptionBtn"
-                                onclick="wizard.enableEncryption()"
-                                ${this.state.data.acknowledgmentChecked ? '' : 'disabled'}
-                                style="width: 100%;">
-                            Enable Encryption
-                        </button>
-                    </div>
-                `}
-
-                ${this.renderProgress()}
-                ${this.renderSwipeHint()}
-            </div>
-        `;
-    }
-
-    bindStep7Events() {
-        // Events bound inline
-    }
-
-    toggleSecurity() {
-        this.state.data.showSecuritySetup = !this.state.data.showSecuritySetup;
-        this.saveState();
-
-        const toggle = this.panel.querySelector('.wizard-security-toggle');
-        const content = this.panel.querySelector('.wizard-security-content');
-
-        if (toggle) toggle.classList.toggle('expanded', this.state.data.showSecuritySetup);
-        if (content) content.classList.toggle('expanded', this.state.data.showSecuritySetup);
-    }
-
-    updatePassphraseStrength() {
-        const passphrase = this.panel.querySelector('#passphrase').value;
-        const container = this.panel.querySelector('#strengthContainer');
-        const fill = this.panel.querySelector('#strengthFill');
-        const text = this.panel.querySelector('#strengthText');
-
-        if (!passphrase) {
-            container.style.display = 'none';
-            return;
-        }
-
-        container.style.display = 'flex';
-
-        let strength = 'weak';
-        let score = 0;
-
-        if (passphrase.length >= 8) score++;
-        if (passphrase.length >= 12) score++;
-        if (/[A-Z]/.test(passphrase)) score++;
-        if (/[0-9]/.test(passphrase)) score++;
-        if (/[^A-Za-z0-9]/.test(passphrase)) score++;
-
-        if (score <= 1) strength = 'weak';
-        else if (score === 2) strength = 'fair';
-        else if (score === 3) strength = 'good';
-        else strength = 'strong';
-
-        fill.className = `wizard-strength-fill ${strength}`;
-        text.className = `wizard-strength-text ${strength}`;
-        text.textContent = strength.charAt(0).toUpperCase() + strength.slice(1);
-    }
-
-    toggleAcknowledgment() {
-        this.state.data.acknowledgmentChecked = !this.state.data.acknowledgmentChecked;
-
-        const ack = this.panel.querySelector('.wizard-acknowledgment');
-        const btn = this.panel.querySelector('.wizard-security-enable-btn');
-
-        ack.classList.toggle('checked', this.state.data.acknowledgmentChecked);
-        btn.disabled = !this.state.data.acknowledgmentChecked;
-
-        this.saveState();
-    }
-
-    async savePasskey() {
-        if (!this.state.data.encryptionEnabled) {
-            Toast.show('Enable encryption first', { type: 'info' });
-            return;
-        }
-
-        if (typeof Passkey === 'undefined' || !Passkey.isSupported()) {
-            Toast.show('Passkeys not supported in this browser', { type: 'error' });
-            return;
-        }
-
-        try {
-            // Show loading state
-            const btn = this.panel.querySelector('.wizard-passkey-card button');
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = 'Registering...';
-            }
-
-            const result = await Passkey.registerCredential();
-
-            if (result && result.success !== false) {
-                this.state.data.passkeyRegistered = true;
-                this.saveState();
-                Toast.show('Passkey saved successfully');
-                // Re-render to show success state
-                this.renderStep(7);
-            } else {
-                throw new Error(result?.error || 'Registration failed');
-            }
-        } catch (e) {
-            console.error('Failed to register passkey:', e);
-            Toast.show('Failed to save passkey: ' + e.message, { type: 'error' });
-
-            // Reset button
-            const btn = this.panel.querySelector('.wizard-passkey-card button');
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Save Passkey';
-            }
-        }
-    }
-
-    async enableEncryption() {
-        const passphrase = this.panel.querySelector('#passphrase')?.value;
-        const confirm = this.panel.querySelector('#passphraseConfirm')?.value;
-
-        if (!passphrase || passphrase.length < 8) {
-            Toast.show('Passphrase must be at least 8 characters', { type: 'error' });
-            return;
-        }
-
-        if (passphrase !== confirm) {
-            Toast.show('Passphrases do not match', { type: 'error' });
-            return;
-        }
-
-        // Show loading state
-        const btn = this.panel.querySelector('#enableEncryptionBtn');
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = 'Setting up...';
-        }
-
-        try {
-            if (typeof Crypto === 'undefined' || !Crypto.setupEncryption) {
-                throw new Error('Encryption module not loaded');
-            }
-
-            // Generate salt, derive key, create test value
-            const { salt, testValue } = await Crypto.setupEncryption(passphrase);
-
-            // Update button text
-            if (btn) btn.textContent = 'Encrypting data...';
-
-            // Fetch all content to encrypt
-            const contentResponse = await fetch('/api/tasks/all-content');
-            if (!contentResponse.ok) {
-                throw new Error('Failed to fetch data');
-            }
-            const allContent = await contentResponse.json();
-
-            // Encrypt all content
-            const encrypted = await Crypto.encryptAllData(allContent.tasks, allContent.domains);
-
-            // Save encrypted data to server
-            if (encrypted.tasks.length > 0) {
-                const taskResponse = await fetch('/api/tasks/batch-update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tasks: encrypted.tasks })
-                });
-                if (!taskResponse.ok) {
-                    throw new Error('Failed to save encrypted tasks');
-                }
-            }
-
-            if (encrypted.domains.length > 0) {
-                const domainResponse = await fetch('/api/domains/batch-update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ domains: encrypted.domains })
-                });
-                if (!domainResponse.ok) {
-                    throw new Error('Failed to save encrypted domains');
-                }
-            }
-
-            // Enable encryption on server
-            const response = await fetch('/api/preferences/encryption/setup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ salt, test_value: testValue })
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.detail || 'Failed to enable encryption');
-            }
-
-            this.state.data.encryptionEnabled = true;
-            this.saveState();
-            Toast.show('Encryption enabled successfully');
-
-            // Re-render step to show success state
-            this.renderStep(7);
-            this.updateNavigation();
-        } catch (e) {
-            console.error('Failed to enable encryption:', e);
-            Toast.show('Failed to enable encryption: ' + e.message, { type: 'error' });
-
-            // Reset button
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Enable Encryption';
-            }
-        }
-    }
-
-    renderStep8() {
+        // Step 7 is now the completion/ready step
         const recap = [];
 
         if (this.state.data.calendarConnected) {
-            recap.push({ text: 'Calendar connected', done: true });
-        } else {
-            recap.push({ text: 'Calendar not connected', done: false });
+            recap.push({ icon: '&#10003;', text: 'Calendar connected' });
         }
 
         if (this.state.data.importResult) {
-            recap.push({ text: `${this.state.data.importResult.tasksImported} tasks imported`, done: true });
-        } else {
-            recap.push({ text: 'Ready for your first task', done: true });
+            recap.push({ icon: '&#10003;', text: `${this.state.data.importResult.tasksImported} tasks imported` });
         }
 
-        recap.push({ text: `${this.state.data.domains.length} domains created`, done: true });
-
-        if (this.state.data.encryptionEnabled) {
-            recap.push({ text: 'Encryption enabled', done: true });
+        if (this.state.data.domains.length > 0) {
+            recap.push({ icon: '&#10003;', text: `${this.state.data.domains.length} domains created` });
         }
 
         return `
-            <div class="wizard-step-content" style="text-align: center;">
-                <div class="wizard-ready-emoji">&#127881;</div>
+            <div class="wizard-step-content wizard-step-ready">
+                <h1 class="wizard-title">YOUR DAY AWAITS</h1>
 
-                <h1 class="wizard-title">YOU'RE ALL SET</h1>
+                ${recap.length > 0 ? `
+                    <div class="wizard-recap-list">
+                        ${recap.map(item => `
+                            <div class="wizard-recap-item">
+                                <span class="wizard-recap-check">${item.icon}</span>
+                                <span>${item.text}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
 
-                <div class="wizard-recap-list">
-                    ${recap.map(item => `
-                        <div class="wizard-recap-item ${item.done ? '' : 'skipped'}">
-                            <span class="wizard-recap-check">${item.done ? '&#10003;' : '&#9675;'}</span>
-                            <span>${item.text}</span>
-                        </div>
-                    `).join('')}
+                <div class="wizard-final-cta">
+                    <button class="wizard-btn-primary wizard-btn-final" onclick="wizard.complete()">Open Dashboard</button>
                 </div>
-
-                <p class="wizard-ready-tagline">Time to plan your day.</p>
-
-                ${this.renderProgress()}
             </div>
         `;
     }
@@ -1520,8 +1202,9 @@ class WhenWizard {
     // =========================================================================
 
     renderProgress() {
-        const steps = [1, 2, 3, 4, 5, 6, 7, 8];
-        const optional = [3, 5, 7]; // Optional steps
+        // 7 steps now, optional are calendar (3) and todoist (5)
+        const steps = [1, 2, 3, 4, 5, 6, 7];
+        const optional = [3, 5];
 
         return `
             <div class="wizard-progress">
@@ -1569,8 +1252,16 @@ class WhenWizard {
 
 let wizard;
 
-document.addEventListener('DOMContentLoaded', () => {
+function initWizard() {
     if (window.WHENDOIST?.showWizard) {
         wizard = new WhenWizard();
     }
-});
+}
+
+// Handle both cases: DOM already ready, or wait for it
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWizard);
+} else {
+    // DOM is already ready
+    initWizard();
+}

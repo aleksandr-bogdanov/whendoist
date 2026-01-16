@@ -323,26 +323,26 @@ body.keyboard-open .wizard-nav {
 }
 
 /* -----------------------------------------------------------------------------
-   Progress Indicator
+   Progress Indicator (Minimal - 5px dots)
    ----------------------------------------------------------------------------- */
 
 .wizard-progress {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    padding: 16px 0;
+    gap: 6px;
+    padding: 20px 0;
 }
 
 @media (min-width: 600px) {
     .wizard-progress {
-        gap: 8px;
-        padding: 20px 0;
+        gap: 5px;
+        padding: 24px 0;
     }
 }
 
 .wizard-progress-dot {
-    width: 10px;
-    height: 10px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: var(--border);
     transition: all 0.2s ease;
@@ -362,12 +362,13 @@ body.keyboard-open .wizard-nav {
 }
 
 .wizard-progress-dot.current {
+    width: 6px;
+    height: 6px;
     background: var(--primary);
-    box-shadow: 0 0 0 4px rgba(109, 94, 246, 0.2);
 }
 
 .wizard-progress-dot.optional {
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     background: transparent;
 }
 
@@ -378,16 +379,13 @@ body.keyboard-open .wizard-nav {
 
 @media (min-width: 600px) {
     .wizard-progress-dot {
-        width: 8px;
-        height: 8px;
-    }
-
-    .wizard-progress-dot::before {
-        inset: -6px;
+        width: 4px;
+        height: 4px;
     }
 
     .wizard-progress-dot.current {
-        box-shadow: 0 0 0 3px rgba(109, 94, 246, 0.2);
+        width: 5px;
+        height: 5px;
     }
 }
 
@@ -642,38 +640,65 @@ body.keyboard-open .wizard-nav {
 }
 
 /* -----------------------------------------------------------------------------
-   Step 1: Welcome
+   Step 1: Welcome (Redesigned)
    ----------------------------------------------------------------------------- */
 
-.wizard-welcome-logo {
-    width: auto;
-    height: auto;
-    max-width: 180px;
-    max-height: 180px;
-    margin: 0 auto 16px;
-    display: block;
-    object-fit: contain;
-}
-
-@media (min-width: 600px) {
-    .wizard-welcome-logo {
-        max-width: 220px;
-        max-height: 220px;
-        margin-bottom: 20px;
-    }
-}
-
-.wizard-welcome-greeting {
+.wizard-step-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    font-size: 1rem;
-    color: var(--text);
-    margin-top: 24px;
+    padding-top: 32px;
+}
+
+.wizard-welcome-title {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    margin-bottom: 28px;
 }
 
 @media (min-width: 600px) {
-    .wizard-welcome-greeting {
-        margin-top: 32px;
+    .wizard-welcome-title {
+        font-size: 1.75rem;
+        margin-bottom: 32px;
     }
+}
+
+.wizard-welcome-card {
+    background: var(--light-bg);
+    border: 1px solid var(--border-hair);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 8px;
+    max-width: 340px;
+}
+
+@media (min-width: 600px) {
+    .wizard-welcome-card {
+        padding: 24px 32px;
+        max-width: 380px;
+    }
+}
+
+.wizard-welcome-line {
+    margin: 0 0 8px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.wizard-welcome-line:last-child {
+    margin-bottom: 0;
+}
+
+.wizard-welcome-punchline {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Centered button for welcome slide */
+.wizard-btn-centered {
+    margin: 0 auto;
 }
 
 /* -----------------------------------------------------------------------------
@@ -713,6 +738,16 @@ body.keyboard-open .wizard-nav {
 .wizard-mode-card.selected {
     border-color: var(--primary);
     background: rgba(109, 94, 246, 0.06);
+    animation: selectedPulse 2s ease-in-out infinite;
+}
+
+@keyframes selectedPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(109, 94, 246, 0);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(109, 94, 246, 0.12);
+    }
 }
 
 @media (min-width: 600px) {
@@ -778,6 +813,20 @@ body.keyboard-open .wizard-nav {
     }
 }
 
+/* Tap hint for mobile */
+.wizard-tap-hint {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    text-align: center;
+    margin: 12px 0 0 0;
+}
+
+@media (hover: hover) {
+    .wizard-tap-hint {
+        display: none;
+    }
+}
+
 /* Task Preview */
 .wizard-preview-divider {
     height: 1px;
@@ -836,68 +885,57 @@ body.keyboard-open .wizard-nav {
 }
 
 /* -----------------------------------------------------------------------------
-   Step 3: Connect Calendar
+   Step 3: Connect Calendar (Redesigned with event preview)
    ----------------------------------------------------------------------------- */
 
 .wizard-connection-card {
     background: var(--light-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 24px 20px;
-    text-align: center;
+    padding: 20px;
+}
+
+.wizard-connection-card.connected {
+    padding-bottom: 16px;
 }
 
 @media (min-width: 600px) {
     .wizard-connection-card {
-        padding: 32px 24px;
+        padding: 24px;
     }
 }
 
-.wizard-connection-logo {
-    width: 36px;
-    height: 36px;
-    margin: 0 auto 12px;
+.wizard-connection-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-@media (min-width: 600px) {
-    .wizard-connection-logo {
-        width: 40px;
-        height: 40px;
-        margin-bottom: 16px;
-    }
+.wizard-gcal-logo {
+    flex-shrink: 0;
+}
+
+.wizard-connection-info {
+    flex: 1;
 }
 
 .wizard-connection-name {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    margin-bottom: 8px;
-}
-
-@media (min-width: 600px) {
-    .wizard-connection-name {
-        font-size: 1.1rem;
-    }
+    margin-bottom: 2px;
 }
 
 .wizard-connection-status {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
-    margin-bottom: 16px;
-}
-
-@media (min-width: 600px) {
-    .wizard-connection-status {
-        margin-bottom: 20px;
-    }
 }
 
 .wizard-connection-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--border);
 }
@@ -906,22 +944,66 @@ body.keyboard-open .wizard-nav {
     background: #16a34a;
 }
 
-.wizard-connection-dot.error {
-    background: #DC2626;
+.wizard-connection-email {
+    color: var(--text-faint);
 }
 
-.wizard-connection-email {
+/* Event preview when connected */
+.wizard-event-preview {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-hair);
+}
+
+.wizard-event-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
     font-size: 0.8rem;
+}
+
+.wizard-event-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.wizard-event-title {
+    flex: 1;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wizard-event-time {
     color: var(--text-muted);
-    margin-top: -12px;
-    margin-bottom: 16px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Connect button when not connected */
+.wizard-connect-btn {
+    width: 100%;
+    margin-top: 16px;
 }
 
 .wizard-connection-privacy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     font-size: 0.75rem;
     color: var(--text-muted);
     line-height: 1.5;
     margin-top: 20px;
+}
+
+.wizard-connection-privacy svg {
+    flex-shrink: 0;
+    opacity: 0.6;
 }
 
 /* -----------------------------------------------------------------------------
@@ -950,9 +1032,9 @@ body.keyboard-open .wizard-nav {
     background: var(--row-hover);
 }
 
+/* Selected state: checkbox only, no border/background change */
 .wizard-calendar-row.selected {
-    border-color: var(--primary);
-    background: rgba(109, 94, 246, 0.04);
+    /* Let checkbox do the work - no visual changes here */
 }
 
 @media (min-width: 600px) {
@@ -1034,6 +1116,33 @@ body.keyboard-open .wizard-nav {
         width: 36px;
         height: 36px;
     }
+}
+
+/* Todoist logo SVG */
+.wizard-todoist-logo {
+    margin: 0 auto 12px;
+    display: block;
+}
+
+@media (min-width: 600px) {
+    .wizard-todoist-logo {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* Success badge for connected state */
+.wizard-import-success-badge {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+    background: rgba(22, 163, 74, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #16a34a;
 }
 
 .wizard-import-title {
@@ -1183,15 +1292,15 @@ body.keyboard-open .wizard-nav {
 }
 
 .wizard-stat-value {
-    font-size: 1.75rem;
-    font-weight: 700;
+    font-size: 2.25rem;
+    font-weight: 800;
     color: var(--primary);
     line-height: 1;
 }
 
 @media (min-width: 600px) {
     .wizard-stat-value {
-        font-size: 2rem;
+        font-size: 2.5rem;
     }
 }
 
@@ -1302,18 +1411,85 @@ body.keyboard-open .wizard-nav {
     }
 }
 
+/* Checkmark text removed - border only signals selection */
 .wizard-domain-check {
-    font-size: 0.6rem;
+    display: none;
+}
+
+/* Add your own chip - dashed border */
+.wizard-domain-chip-add {
+    border-style: dashed;
+    border-color: var(--border);
+    background: transparent;
+}
+
+.wizard-domain-add-icon {
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.wizard-domain-chip-add .wizard-domain-name {
     color: var(--text-muted);
 }
 
-.wizard-domain-chip.selected .wizard-domain-check {
+.wizard-domain-chip-add:hover {
+    border-color: var(--primary);
+    border-style: solid;
+    background: rgba(109, 94, 246, 0.04);
+}
+
+.wizard-domain-chip-add:hover .wizard-domain-add-icon,
+.wizard-domain-chip-add:hover .wizard-domain-name {
     color: var(--primary);
 }
 
-/* Add Custom Trigger */
-.wizard-add-domain-trigger {
+/* Custom domain input row (below grid) */
+.wizard-custom-domain-row {
     display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: var(--grey-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    position: relative;
+}
+
+.wizard-custom-domain-row .wizard-emoji-btn {
+    margin-bottom: 0;
+}
+
+.wizard-custom-domain-row .wizard-domain-input {
+    flex: 1;
+    height: 38px;
+    margin-bottom: 0;
+}
+
+.wizard-custom-domain-row .wizard-btn-sm {
+    height: 38px;
+    padding: 0 16px;
+    min-width: auto;
+}
+
+.wizard-custom-domain-row .wizard-btn-ghost {
+    padding: 8px 12px;
+    margin: 0;
+    text-decoration: none;
+}
+
+.wizard-custom-domain-row .wizard-emoji-popover {
+    left: 0;
+    bottom: 100%;
+    margin-bottom: 6px;
+}
+
+
+/* Legacy - Add Custom Trigger (can be removed if not used) */
+.wizard-add-domain-trigger {
+    display: none; /* Hidden - using grid chip now */
     align-items: center;
     gap: 8px;
     padding: 12px 14px;
@@ -1442,24 +1618,7 @@ body.keyboard-open .wizard-nav {
     height: auto;
 }
 
-/* Domain Summary */
-.wizard-domain-summary {
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-top: 16px;
-}
-
-.wizard-domain-summary-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.wizard-domain-summary-separator {
-    margin: 0 8px;
-    color: var(--border);
-}
+/* Domain Summary - removed, selection shown via border only */
 
 /* -----------------------------------------------------------------------------
    Step 7: Security
@@ -1774,60 +1933,84 @@ body.keyboard-open .wizard-nav {
 }
 
 /* -----------------------------------------------------------------------------
-   Step 8: Ready
+   Step 7: Ready (Completion - Redesigned)
    ----------------------------------------------------------------------------- */
 
-.wizard-ready-emoji {
-    font-size: 3rem;
+.wizard-step-ready {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    margin-bottom: 16px;
+    padding-top: 48px;
+}
+
+.wizard-step-ready .wizard-title {
+    margin-bottom: 24px;
 }
 
 .wizard-recap-list {
-    background: var(--light-bg);
-    border: 1px solid var(--border);
+    background: var(--grey-bg);
+    border: 1px solid var(--border-hair);
     border-radius: 10px;
-    padding: 16px 20px;
-    margin: 24px 0;
+    padding: 12px 20px;
+    margin-bottom: 32px;
+    max-width: 280px;
 }
 
 @media (min-width: 600px) {
     .wizard-recap-list {
-        padding: 20px 24px;
+        padding: 14px 24px;
+        max-width: 320px;
+        margin-bottom: 40px;
     }
 }
 
 .wizard-recap-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    font-size: 0.85rem;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
 }
 
 @media (min-width: 600px) {
     .wizard-recap-item {
-        padding: 6px 0;
+        padding: 3px 0;
+        font-size: 0.75rem;
     }
 }
 
 .wizard-recap-check {
-    font-size: 1rem;
+    font-size: 0.85rem;
     color: #16a34a;
+    font-weight: 500;
+}
+
+/* Final CTA container */
+.wizard-final-cta {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Final step button - prominent with pulse */
+.wizard-btn-final {
+    width: 280px;
+    height: 56px !important;
+    font-size: 1rem !important;
     font-weight: 600;
+    animation: subtlePulse 2s ease-in-out infinite;
 }
 
-.wizard-recap-item.skipped {
-    color: var(--text-muted);
+@media (min-width: 600px) {
+    .wizard-btn-final {
+        width: 300px;
+        height: 52px !important;
+    }
 }
 
-.wizard-recap-item.skipped .wizard-recap-check {
-    color: var(--border);
-}
-
-.wizard-ready-tagline {
-    text-align: center;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-bottom: 24px;
+@keyframes subtlePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(109, 94, 246, 0); }
+    50% { box-shadow: 0 0 0 8px rgba(109, 94, 246, 0.15); }
 }
