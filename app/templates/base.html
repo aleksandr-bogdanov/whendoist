@@ -345,26 +345,11 @@
     {% if show_wizard %}
     <div id="wizard-backdrop" class="wizard-backdrop">
         <div class="wizard-panel">
-            <div class="wizard-progress">
-                <div class="wizard-progress__bar"></div>
-            </div>
             <div class="wizard-content" id="wizard-content">
                 <!-- Steps rendered by wizard.js -->
             </div>
             <nav class="wizard-nav" id="wizard-nav">
-                <button type="button" class="wizard-nav__btn wizard-nav__btn--back" id="wizard-back">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Back
-                </button>
-                <button type="button" class="wizard-nav__btn wizard-nav__btn--skip" id="wizard-skip">Skip</button>
-                <button type="button" class="wizard-nav__btn wizard-nav__btn--next" id="wizard-next">
-                    Next
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
+                <!-- Nav buttons rendered by wizard.js -->
             </nav>
         </div>
     </div>

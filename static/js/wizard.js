@@ -460,7 +460,7 @@ class WhenWizard {
                 } else {
                     navHTML = `
                         <button class="wizard-btn-secondary" onclick="wizard.goBack()">Back</button>
-                        <button class="wizard-btn-ghost" onclick="wizard.skipStep()">Skip for now</button>
+                        <button class="wizard-btn-secondary" onclick="wizard.skipStep()">Skip</button>
                     `;
                 }
                 break;
@@ -479,7 +479,7 @@ class WhenWizard {
                 } else {
                     navHTML = `
                         <button class="wizard-btn-secondary" onclick="wizard.goBack()">Back</button>
-                        <button class="wizard-btn-ghost" onclick="wizard.skipStep()">Start fresh</button>
+                        <button class="wizard-btn-secondary" onclick="wizard.skipStep()">Skip</button>
                     `;
                 }
                 break;
@@ -504,16 +504,24 @@ class WhenWizard {
     // =========================================================================
 
     renderStep1() {
-        const userName = window.WHENDOIST?.userName || 'there';
-        const firstName = userName.split(' ')[0]; // Get first name only
+        const userName = window.WHENDOIST?.userName || '';
+        const firstName = userName.split(' ')[0];
+        const greeting = firstName ? `Welcome, ${this.escapeHtml(firstName)}` : '';
+
         return `
             <div class="wizard-step-content wizard-step-welcome">
-                <h1 class="wizard-title wizard-welcome-title">${this.escapeHtml(firstName).toUpperCase()}, LET'S<br>PLAN YOUR TIME</h1>
+                <div class="wizard-welcome-hero">
+                    <div class="wizard-welcome-logo">
+                        <img src="/static/img/logo.png" alt="Whendoist">
+                    </div>
+                </div>
+
+                ${greeting ? `<p class="wizard-welcome-greeting">${greeting}</p>` : ''}
 
                 <div class="wizard-welcome-card">
-                    <p class="wizard-welcome-line">Your calendar shows when you're busy.</p>
-                    <p class="wizard-welcome-line">Your task list shows what to do.</p>
-                    <p class="wizard-welcome-line wizard-welcome-punchline">Whendoist shows when to actually do it.</p>
+                    <p class="wizard-welcome-line">Calendar shows when you're busy.</p>
+                    <p class="wizard-welcome-line">Tasks show what to do.</p>
+                    <p class="wizard-welcome-line wizard-welcome-punchline">Whendoist shows <em>when</em> to do it.</p>
                 </div>
 
                 ${this.renderProgress()}
@@ -524,32 +532,31 @@ class WhenWizard {
     renderStep2() {
         return `
             <div class="wizard-step-content">
-                <h1 class="wizard-title">WORK WITH YOUR ENERGY</h1>
-                <p class="wizard-subtitle">FILTER TASKS BY HOW MUCH FOCUS THEY NEED</p>
+                <h1 class="wizard-title">Work with your energy</h1>
+                <p class="wizard-subtitle">Filter tasks by how much focus they need</p>
 
                 <div class="wizard-card">
                     <div class="wizard-mode-cards">
                         <div class="wizard-mode-card" data-mode="zombie">
                             <div class="wizard-mode-emoji">&#129503;</div>
-                            <div class="wizard-mode-name">ZOMBIE</div>
-                            <div class="wizard-mode-description">Clear next action, can do when tired</div>
+                            <div class="wizard-mode-name">Zombie</div>
+                            <div class="wizard-mode-description">Simple next actions</div>
                         </div>
                         <div class="wizard-mode-card selected" data-mode="normal">
                             <div class="wizard-mode-emoji">&#9749;</div>
-                            <div class="wizard-mode-name">NORMAL</div>
-                            <div class="wizard-mode-description">Know what to do, needs some focus</div>
+                            <div class="wizard-mode-name">Normal</div>
+                            <div class="wizard-mode-description">Routine work</div>
                         </div>
                         <div class="wizard-mode-card" data-mode="focus">
                             <div class="wizard-mode-emoji">&#129504;</div>
-                            <div class="wizard-mode-name">FOCUS</div>
-                            <div class="wizard-mode-description">Needs deep thinking or research</div>
+                            <div class="wizard-mode-name">Focus</div>
+                            <div class="wizard-mode-description">Deep work / research</div>
                         </div>
                     </div>
-                    <p class="wizard-tap-hint">Tap to select</p>
 
                     <div class="wizard-preview-divider"></div>
 
-                    <div class="wizard-section-title">PREVIEW</div>
+                    <div class="wizard-section-title">Preview</div>
                     <div class="wizard-preview-tasks">
                         <div class="wizard-preview-task clarity-executable" data-clarity="executable">
                             <span class="wizard-preview-task-title">Review pull requests</span>
@@ -563,7 +570,7 @@ class WhenWizard {
                             <span class="wizard-preview-task-title">Update project documentation</span>
                             <span class="wizard-preview-task-duration">1h</span>
                         </div>
-                        <div class="wizard-preview-task clarity-exploratory" data-clarity="exploratory">
+                        <div class="wizard-preview-task clarity-exploratory hidden" data-clarity="exploratory">
                             <span class="wizard-preview-task-title">Research competitor features</span>
                             <span class="wizard-preview-task-duration">2h</span>
                         </div>
@@ -571,7 +578,6 @@ class WhenWizard {
                 </div>
 
                 ${this.renderProgress()}
-                ${this.renderSwipeHint()}
             </div>
         `;
     }
@@ -585,6 +591,9 @@ class WhenWizard {
                 this.updateTaskPreview(card.dataset.mode);
             });
         });
+
+        // Apply initial filter for default "normal" mode
+        this.updateTaskPreview('normal');
     }
 
     updateTaskPreview(mode) {
@@ -605,45 +614,56 @@ class WhenWizard {
     renderStep3() {
         const isConnected = this.state.data.calendarConnected;
         const userEmail = window.WHENDOIST?.userEmail || '';
+        // Mask email for privacy: show first char + *** + @domain
+        const maskedEmail = userEmail ? userEmail.replace(/^(.).*@/, '$1***@') : '';
         const events = this.state.data.cachedEvents || [];
 
         return `
             <div class="wizard-step-content">
-                <h1 class="wizard-title">CONNECT YOUR CALENDAR</h1>
-                <p class="wizard-subtitle">PLAN TASKS AROUND YOUR COMMITMENTS</p>
+                <h1 class="wizard-title">Connect your calendar</h1>
+                <p class="wizard-subtitle">Plan tasks around your commitments</p>
 
                 <div class="wizard-connection-card ${isConnected ? 'connected' : ''}">
                     <div class="wizard-connection-header">
-                        <svg class="wizard-gcal-logo" width="24" height="24" viewBox="0 0 24 24">
-                            <rect x="2" y="4" width="20" height="18" rx="2" fill="#4285F4"/>
-                            <rect x="2" y="4" width="20" height="5" fill="#1A73E8"/>
-                            <rect x="6" y="2" width="2" height="4" rx="1" fill="#EA4335"/>
-                            <rect x="16" y="2" width="2" height="4" rx="1" fill="#EA4335"/>
-                            <rect x="6" y="12" width="3" height="3" rx="0.5" fill="white"/>
-                            <rect x="10.5" y="12" width="3" height="3" rx="0.5" fill="white"/>
-                            <rect x="15" y="12" width="3" height="3" rx="0.5" fill="white"/>
-                            <rect x="6" y="16" width="3" height="3" rx="0.5" fill="white"/>
-                            <rect x="10.5" y="16" width="3" height="3" rx="0.5" fill="white"/>
-                        </svg>
+                        <div class="wizard-gcal-icon-wrap ${isConnected ? 'connected' : ''}">
+                            <svg class="wizard-gcal-logo" width="28" height="28" viewBox="0 0 24 24">
+                                <rect x="2" y="4" width="20" height="18" rx="2" fill="#4285F4"/>
+                                <rect x="2" y="4" width="20" height="5" fill="#1A73E8"/>
+                                <rect x="6" y="2" width="2" height="4" rx="1" fill="#EA4335"/>
+                                <rect x="16" y="2" width="2" height="4" rx="1" fill="#EA4335"/>
+                                <rect x="6" y="12" width="3" height="3" rx="0.5" fill="white"/>
+                                <rect x="10.5" y="12" width="3" height="3" rx="0.5" fill="white"/>
+                                <rect x="15" y="12" width="3" height="3" rx="0.5" fill="white"/>
+                                <rect x="6" y="16" width="3" height="3" rx="0.5" fill="white"/>
+                                <rect x="10.5" y="16" width="3" height="3" rx="0.5" fill="white"/>
+                            </svg>
+                            ${isConnected ? '<span class="wizard-gcal-check">&#10003;</span>' : ''}
+                        </div>
                         <div class="wizard-connection-info">
-                            <div class="wizard-connection-name">Google Calendar</div>
+                            <div class="wizard-connection-name ${isConnected ? 'connected' : ''}">Google Calendar</div>
                             <div class="wizard-connection-status">
                                 <span class="wizard-connection-dot ${isConnected ? 'connected' : ''}"></span>
                                 <span>${isConnected ? 'Connected' : 'Not connected'}</span>
-                                ${isConnected ? `<span class="wizard-connection-email">· ${this.escapeHtml(userEmail)}</span>` : ''}
+                                ${isConnected && maskedEmail ? `<span class="wizard-connection-email">· ${this.escapeHtml(maskedEmail)}</span>` : ''}
                             </div>
                         </div>
                     </div>
 
                     ${isConnected && events.length > 0 ? `
                         <div class="wizard-event-preview">
-                            ${events.slice(0, 2).map(event => `
+                            ${events.slice(0, 3).map(event => `
                                 <div class="wizard-event-row">
                                     <span class="wizard-event-dot" style="background: ${event.color || '#4285F4'}"></span>
                                     <span class="wizard-event-title">${this.escapeHtml(event.summary)}</span>
                                     <span class="wizard-event-time">${event.time}</span>
                                 </div>
                             `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${isConnected && events.length === 0 ? `
+                        <div class="wizard-connection-success">
+                            <span class="wizard-connection-success-text">Ready to read events and find free time</span>
                         </div>
                     ` : ''}
 
@@ -659,11 +679,10 @@ class WhenWizard {
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
-                    We only read your calendar. We never modify or share your data.
+                    Reads your calendar to find free time. Never edits events.
                 </p>
 
                 ${this.renderProgress()}
-                ${this.renderSwipeHint()}
             </div>
         `;
     }
@@ -710,8 +729,8 @@ class WhenWizard {
     renderStep4() {
         return `
             <div class="wizard-step-content">
-                <h1 class="wizard-title">WHICH CALENDARS MATTER?</h1>
-                <p class="wizard-subtitle">WE'LL WORK AROUND YOUR EXISTING COMMITMENTS</p>
+                <h1 class="wizard-title">Which calendars matter?</h1>
+                <p class="wizard-subtitle">Selected calendars block time. Unselected calendars are ignored.</p>
 
                 <div class="wizard-card">
                     <div class="wizard-calendar-list" id="calendarList">
@@ -719,10 +738,13 @@ class WhenWizard {
                             Loading calendars...
                         </div>
                     </div>
+                    <div class="wizard-helper-links" id="calendarHelpers" style="display: none;">
+                        <button class="wizard-helper-link" onclick="wizard.selectAllCalendars()">Select all</button>
+                        <button class="wizard-helper-link" onclick="wizard.selectNoCalendars()">Select none</button>
+                    </div>
                 </div>
 
                 ${this.renderProgress()}
-                ${this.renderSwipeHint()}
             </div>
         `;
     }
@@ -743,6 +765,7 @@ class WhenWizard {
             }
 
             const list = this.panel.querySelector('#calendarList');
+            const helpers = this.panel.querySelector('#calendarHelpers');
 
             if (calendars.length === 0) {
                 list.innerHTML = `
@@ -766,6 +789,11 @@ class WhenWizard {
                     </div>
                 `;
             }).join('');
+
+            // Show helper links if there are multiple calendars
+            if (helpers && calendars.length > 1) {
+                helpers.style.display = 'flex';
+            }
 
             // Initialize selection state
             if (this.state.data.selectedCalendars.length === 0) {
@@ -835,8 +863,8 @@ class WhenWizard {
     renderStep5Source() {
         return `
             <div class="wizard-step-content">
-                <h1 class="wizard-title">ALREADY HAVE TASKS?</h1>
-                <p class="wizard-subtitle">IMPORT TO START FASTER</p>
+                <h1 class="wizard-title">Already have tasks?</h1>
+                <p class="wizard-subtitle">Import from Todoist to start faster</p>
 
                 <div class="wizard-import-source">
                     <svg class="wizard-todoist-logo" width="32" height="32" viewBox="0 0 32 32">
@@ -853,7 +881,6 @@ class WhenWizard {
                 </div>
 
                 ${this.renderProgress()}
-                ${this.renderSwipeHint()}
             </div>
         `;
     }
@@ -861,12 +888,15 @@ class WhenWizard {
     renderStep5Connected() {
         return `
             <div class="wizard-step-content">
-                <h1 class="wizard-title">TODOIST CONNECTED</h1>
-                <p class="wizard-subtitle">READY TO IMPORT YOUR TASKS</p>
+                <h1 class="wizard-title">Todoist connected</h1>
+                <p class="wizard-subtitle">Ready to import your tasks</p>
 
                 <div class="wizard-import-source">
-                    <div class="wizard-import-success-badge">&#10003;</div>
-                    <div class="wizard-import-title">Todoist Connected</div>
+                    <div class="wizard-import-success-badge">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
                     <div class="wizard-import-description">
                         Click below to import your projects and tasks
                     </div>
@@ -876,7 +906,6 @@ class WhenWizard {
                 </div>
 
                 ${this.renderProgress()}
-                ${this.renderSwipeHint()}
             </div>
         `;
     }
@@ -919,9 +948,34 @@ class WhenWizard {
 
     renderStep5Complete() {
         const result = this.state.data.importResult;
+        const totalImported = (result.tasksImported || 0) + (result.projectsImported || 0);
+        const isEmpty = totalImported === 0;
+
+        if (isEmpty) {
+            return `
+                <div class="wizard-step-content">
+                    <h1 class="wizard-title">Fresh start</h1>
+                    <p class="wizard-subtitle">No tasks found in Todoist</p>
+
+                    <div class="wizard-import-complete">
+                        <p class="wizard-import-fresh-message">
+                            That's okay — you're starting with a clean slate!
+                        </p>
+
+                        <p class="wizard-import-complete-note">
+                            Create your first task after setup,<br>
+                            or import from Todoist later in Settings.
+                        </p>
+                    </div>
+
+                    ${this.renderProgress()}
+                </div>
+            `;
+        }
+
         return `
             <div class="wizard-step-content">
-                <h1 class="wizard-title">IMPORT COMPLETE</h1>
+                <h1 class="wizard-title">Import complete</h1>
 
                 <div class="wizard-import-complete">
                     <div class="wizard-import-success-icon">&#10003;</div>
@@ -966,15 +1020,21 @@ class WhenWizard {
             { emoji: '&#127912;', emojiChar: '🎨', name: 'Creative' }
         ];
         this._domainSuggestions = suggestions;
+        const suggestionNames = suggestions.map(s => s.name);
 
         // domains is now array of objects: [{name, icon}, ...]
         const selectedNames = this.state.data.domains.map(d => typeof d === 'string' ? d : d.name);
         const isAddingCustom = this.state.data.isAddingCustomDomain || false;
 
+        // Get custom domains (those not in suggestions)
+        const customDomains = this.state.data.domains
+            .map(d => typeof d === 'string' ? { name: d, icon: '📁' } : d)
+            .filter(d => !suggestionNames.includes(d.name));
+
         return `
             <div class="wizard-step-content">
-                <h1 class="wizard-title">ORGANIZE YOUR LIFE</h1>
-                <p class="wizard-subtitle">DOMAINS = BIG AREAS OF YOUR LIFE</p>
+                <h1 class="wizard-title">Organize your life</h1>
+                <p class="wizard-subtitle">Domains are big areas of your life</p>
 
                 <div class="wizard-card">
                     <div class="wizard-domain-chips">
@@ -991,6 +1051,16 @@ class WhenWizard {
                             `;
                         }).join('')}
 
+                        ${customDomains.map(d => `
+                            <div class="wizard-domain-chip selected"
+                                 data-domain="${this.escapeHtml(d.name)}"
+                                 data-icon="${d.icon}"
+                                 onclick="wizard.toggleDomain('${this.escapeHtml(d.name)}', '${d.icon}')">
+                                <span class="wizard-domain-emoji">${d.icon}</span>
+                                <span class="wizard-domain-name">${this.escapeHtml(d.name)}</span>
+                            </div>
+                        `).join('')}
+
                         <div class="wizard-domain-chip wizard-domain-chip-add" onclick="wizard.showAddDomain()">
                             <span class="wizard-domain-add-icon">+</span>
                             <span class="wizard-domain-name">Add your own</span>
@@ -999,7 +1069,10 @@ class WhenWizard {
 
                     ${isAddingCustom ? `
                         <div class="wizard-custom-domain-row">
-                            <button type="button" class="wizard-emoji-btn" id="customDomainIcon" onclick="wizard.toggleEmojiPicker()">📁</button>
+                            <div class="wizard-emoji-picker-wrap">
+                                <button type="button" class="wizard-emoji-btn" id="customDomainIcon" onclick="wizard.toggleEmojiPicker()">📁</button>
+                                <div class="wizard-emoji-popover" id="emojiPopover"></div>
+                            </div>
                             <input type="text"
                                    class="wizard-input wizard-domain-input"
                                    id="customDomainName"
@@ -1009,7 +1082,6 @@ class WhenWizard {
                                    onkeydown="if(event.key === 'Enter') wizard.addCustomDomain(); if(event.key === 'Escape') wizard.hideAddDomain();">
                             <button class="wizard-btn-primary wizard-btn-sm" onclick="wizard.addCustomDomain()">Add</button>
                             <button class="wizard-btn-ghost wizard-btn-sm" onclick="wizard.hideAddDomain()">Cancel</button>
-                            <div class="wizard-emoji-popover" id="emojiPopover"></div>
                         </div>
                     ` : ''}
                 </div>
@@ -1106,19 +1178,12 @@ class WhenWizard {
 
     showEmojiPicker() {
         const popover = document.getElementById('emojiPopover');
-        const btn = document.getElementById('customDomainIcon');
 
         popover.innerHTML = WhenWizard.DOMAIN_EMOJIS.map(emoji =>
             `<button type="button" class="wizard-emoji-option" onclick="wizard.selectEmoji('${emoji}')">${emoji}</button>`
         ).join('');
 
-        // Position popover above button using fixed positioning
-        const rect = btn.getBoundingClientRect();
-        popover.style.position = 'fixed';
-        popover.style.left = `${rect.left}px`;
-        popover.style.bottom = `${window.innerHeight - rect.top + 6}px`;
-        popover.style.top = 'auto';
-
+        // Position is handled by CSS - popover is positioned relative to its container
         popover.classList.add('open');
     }
 
@@ -1177,7 +1242,8 @@ class WhenWizard {
 
         return `
             <div class="wizard-step-content wizard-step-ready">
-                <h1 class="wizard-title">YOUR DAY AWAITS</h1>
+                <h1 class="wizard-title">You're all set</h1>
+                <p class="wizard-subtitle">Your day awaits</p>
 
                 ${recap.length > 0 ? `
                     <div class="wizard-recap-list">
@@ -1191,7 +1257,12 @@ class WhenWizard {
                 ` : ''}
 
                 <div class="wizard-final-cta">
-                    <button class="wizard-btn-primary wizard-btn-final" onclick="wizard.complete()">Open Dashboard</button>
+                    <button class="wizard-btn-primary wizard-btn-final" onclick="wizard.complete()">
+                        Open Dashboard
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         `;
@@ -1207,22 +1278,24 @@ class WhenWizard {
         const optional = [3, 5];
 
         return `
-            <div class="wizard-progress">
-                ${steps.map(step => {
-                    const classes = ['wizard-progress-dot'];
+            <div class="wizard-progress-container">
+                <div class="wizard-progress">
+                    ${steps.map(step => {
+                        const classes = ['wizard-progress-dot'];
 
-                    if (step === this.state.currentStep) {
-                        classes.push('current');
-                    } else if (this.state.completedSteps.includes(step)) {
-                        classes.push('completed');
-                    }
+                        if (step === this.state.currentStep) {
+                            classes.push('current');
+                        } else if (this.state.completedSteps.includes(step)) {
+                            classes.push('completed');
+                        }
 
-                    if (optional.includes(step)) {
-                        classes.push('optional');
-                    }
+                        if (optional.includes(step)) {
+                            classes.push('optional');
+                        }
 
-                    return `<div class="${classes.join(' ')}" data-step="${step}"></div>`;
-                }).join('')}
+                        return `<div class="${classes.join(' ')}" data-step="${step}"></div>`;
+                    }).join('')}
+                </div>
             </div>
         `;
     }
