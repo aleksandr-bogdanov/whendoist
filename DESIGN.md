@@ -36,6 +36,7 @@
 3. **Single color signal per row** — Impact owns the row (rail + wash); chips stay neutral
 4. **Calm enterprise aesthetic** — Muted colors, minimal noise, clear hierarchy
 5. **Dense information display** — Rows with border-bottom dividers, not cards with gaps
+6. **Purple for success states** — Any "check/connected/success" UI state uses neutral + purple, never green (except third-party brand icons like Google's checkmark)
 
 ### Visual Hierarchy
 

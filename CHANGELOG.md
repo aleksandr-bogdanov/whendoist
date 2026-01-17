@@ -10,10 +10,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Recovery key generation during encryption setup (trigger 1password etc to save it)
 - Redesign CMPCT view
-- WhenWizard setup flow (first launch or Settings → configure integrations, domains)
 
 ### Known Issues
 - None currently tracked
+
+---
+
+## [0.9.0] - 2026-01-17
+
+### Summary
+**WhenWizard Onboarding + Landing Animation** — New first-run onboarding wizard and polished landing page with task→calendar transfer animation.
+
+### Added
+
+- **WhenWizard onboarding flow** — 8-step guided setup for new users:
+  - Welcome, Energy Modes, Calendar Connection, Calendar Selection
+  - Todoist Import, Domain Setup, Security (encryption + passkeys), Ready
+  - State persistence via localStorage, OAuth return handling
+  - Mobile-first responsive design with swipe navigation
+
+- **Landing page task→calendar animation** — Single 6-second looping animation:
+  - Ghost chip travels from task list to calendar slot
+  - Arrow intent pulse only during chip travel
+  - Calendar focus ring expand+fade on arrival
+  - Single checkbox tick with bounce effect
+  - Respects `prefers-reduced-motion` accessibility
+
+### Changed
+
+- **Diffused shadows** — Wizard cards and buttons use layered box-shadows for soft, feathered edges (no hard borders)
+- **Energy mode preview** — Default "Normal" mode correctly hides exploratory tasks on initial render
+
+### Fixed
+
+- **Energy mode default state** — Preview tasks now filter correctly on first load (exploratory task hidden by default in Normal mode)
 
 ---
 
