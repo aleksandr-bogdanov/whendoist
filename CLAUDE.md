@@ -75,6 +75,14 @@ static/
 
 **Note:** Google Calendar integration only shows calendars from the Google account used to sign in. Todoist integration is optional (for importing existing tasks).
 
+## Assets
+
+### Logo
+- **File**: `static/img/logo.png`
+- **Dimensions**: 1584 × 276 pixels (5.74:1 aspect ratio)
+- **Type**: Wide wordmark with "WHENdoist" text integrated
+- **Usage**: CSS should constrain height only (`height: Xpx; width: auto;`) to preserve aspect ratio
+
 ## Design System (Tasks Page)
 
 ### CSS Custom Properties (in app.css)
@@ -108,6 +116,7 @@ static/
 2. **Shadows for overlays only** — Modals, popovers, toasts
 3. **Impact owns the row** — Rail + wash, chips are neutral
 4. **Inset dividers** — Row separators start after the rail
+5. **Purple for success states** — Check/connected/success UI uses neutral + purple, never green (except third-party brand icons)
 
 ### Task Row Visual Grammar
 
@@ -194,6 +203,7 @@ Releases are managed via GitHub Actions with GPG-signed tags.
 **1. Create release PR** with these changes:
 - Update `CHANGELOG.md` with new version entry
 - Update version in `CLAUDE.md` if needed
+- Update version badge in `app/templates/base.html` (e.g., `v0.9`)
 - Run `just build-manifest` to update build manifest
 
 **2. Get PR merged** — CI must pass
