@@ -203,6 +203,7 @@ Releases are managed via GitHub Actions with GPG-signed tags.
 **1. Create release PR** with these changes:
 - Update `CHANGELOG.md` with new version entry
 - Update version in `CLAUDE.md` if needed
+- Update version badge in `app/templates/base.html` (e.g., `v0.9`)
 - Run `just build-manifest` to update build manifest
 
 **2. Get PR merged** — CI must pass
