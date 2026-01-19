@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Whendoist App Icon</title>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#FFFFFF"/>
+  <!-- W Icon centered and scaled -->
+  <g transform="translate(116, 136) scale(1.5)">
+    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+  </g>
+</svg>

@@ -16,6 +16,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.1] - 2026-01-19
+
+### Summary
+**App Icon Suite (Phase 2A)** — Complete icon set for all platforms with PNG export tool.
+
+### Added
+
+- **Maskable icon SVG** — `app-icon-maskable.svg` with 80% safe zone for Android adaptive icons
+- **PNG export tool** — Enhanced `docs/brand/png-export.html` generates 30+ icon variants:
+  - PWA icons (512, 384, 256, 192)
+  - Maskable icons (512, 384, 192)
+  - Apple touch icons (180, 167, 152, 120, 76)
+  - Favicons (48, 32, 16)
+  - W icon transparent variants (512, 256, 128, 64)
+  - Wordmarks (light/dark at 800/400)
+  - Social media (OG 1200×630, Twitter 1200×600, App Store 1024)
+  - ZIP download with organized folders
+
+- **Complete icon files** — All PNG icons in `static/img/`
+- **PWA manifest update** — Separate maskable and standard icon declarations
+- **HTML meta tags** — Apple touch icons, Open Graph, Twitter Card
+
+### Changed
+
+- **BRAND.md** — Added complete App Icon Suite documentation (Phase 2A complete)
+
+---
+
 ## [0.9.0] - 2026-01-17
 
 ### Summary
