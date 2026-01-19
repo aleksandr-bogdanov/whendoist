@@ -1,0 +1,128 @@
+/* ===== Whendoist Brand Tokens ===== */
+/* 
+ * Brand color system and typography tokens.
+ * These can be imported into app.css or used standalone.
+ * See BRAND.md for full specification.
+ */
+
+:root {
+  /* ===== Clarity Colors ===== */
+  /* The three colors represent task readiness states and form the W icon */
+  --brand-executable: #167BFF;      /* Blue - ready to execute */
+  --brand-defined: #6D5EF6;         /* Purple - defined, needs focus */
+  --brand-exploratory: #A020C0;     /* Magenta - needs research */
+  
+  /* ===== Clarity Tints ===== */
+  /* Light backgrounds for clarity states */
+  --brand-executable-tint: #EAF2FF;
+  --brand-defined-tint: #EFEEFF;
+  --brand-exploratory-tint: #F3ECFA;
+  
+  /* ===== Brand Text ===== */
+  --brand-text: #1E293B;            /* Dark Slate - wordmark, headlines */
+  --brand-text-inverse: #FFFFFF;    /* White - on dark backgrounds */
+  
+  /* ===== Brand Typography ===== */
+  --font-brand: 'Quicksand', sans-serif;
+  --font-weight-brand: 500;
+  
+  /* ===== Wordmark Sizing (Hero @ 6.5rem) ===== */
+  --wm-hero-text: 6.5rem;
+  --wm-hero-icon-w: 90px;
+  --wm-hero-icon-h: 80px;
+  --wm-hero-gap: 4px;
+  --wm-hero-offset: 12px;
+  
+  /* Large @ 3rem */
+  --wm-lg-text: 3rem;
+  --wm-lg-icon-w: 42px;
+  --wm-lg-icon-h: 37px;
+  --wm-lg-gap: 2px;
+  --wm-lg-offset: 5.5px;
+  
+  /* Medium @ 1.75rem */
+  --wm-md-text: 1.75rem;
+  --wm-md-icon-w: 24px;
+  --wm-md-icon-h: 21px;
+  --wm-md-gap: 1px;
+  --wm-md-offset: 3px;
+  
+  /* Small @ 1.25rem */
+  --wm-sm-text: 1.25rem;
+  --wm-sm-icon-w: 17px;
+  --wm-sm-icon-h: 15px;
+  --wm-sm-gap: 1px;
+  --wm-sm-offset: 2px;
+}
+
+/* ===== Wordmark Component ===== */
+.wordmark {
+  display: inline-flex;
+  align-items: flex-end;
+}
+
+.wordmark svg {
+  flex-shrink: 0;
+}
+
+.wordmark-text {
+  font-family: var(--font-brand);
+  font-weight: var(--font-weight-brand);
+  color: var(--brand-text);
+  line-height: 1;
+}
+
+/* Hero size (default) */
+.wordmark.hero svg,
+.wordmark svg {
+  width: var(--wm-hero-icon-w);
+  height: var(--wm-hero-icon-h);
+  margin-bottom: var(--wm-hero-offset);
+  margin-right: var(--wm-hero-gap);
+}
+
+.wordmark.hero .wordmark-text,
+.wordmark .wordmark-text {
+  font-size: var(--wm-hero-text);
+}
+
+/* Large */
+.wordmark.lg svg {
+  width: var(--wm-lg-icon-w);
+  height: var(--wm-lg-icon-h);
+  margin-bottom: var(--wm-lg-offset);
+  margin-right: var(--wm-lg-gap);
+}
+
+.wordmark.lg .wordmark-text {
+  font-size: var(--wm-lg-text);
+}
+
+/* Medium */
+.wordmark.md svg {
+  width: var(--wm-md-icon-w);
+  height: var(--wm-md-icon-h);
+  margin-bottom: var(--wm-md-offset);
+  margin-right: var(--wm-md-gap);
+}
+
+.wordmark.md .wordmark-text {
+  font-size: var(--wm-md-text);
+}
+
+/* Small */
+.wordmark.sm svg {
+  width: var(--wm-sm-icon-w);
+  height: var(--wm-sm-icon-h);
+  margin-bottom: var(--wm-sm-offset);
+  margin-right: var(--wm-sm-gap);
+}
+
+.wordmark.sm .wordmark-text {
+  font-size: var(--wm-sm-text);
+}
+
+/* Inverse (dark background) */
+.wordmark.inverse .wordmark-text {
+  color: var(--brand-text-inverse);
+}

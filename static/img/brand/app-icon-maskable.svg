@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Whendoist Maskable Icon</title>
+  <!-- Maskable icons require content within the safe zone (center 80%) -->
+  <!-- Safe zone: 51.2px padding on each side = content in 409.6×409.6 area -->
+
+  <!-- Background fills entire icon (will be masked by platform) -->
+  <rect width="512" height="512" fill="#FFFFFF"/>
+
+  <!-- W Icon centered with extra padding for safe zone -->
+  <!-- Scaled down to 1.2x and centered to fit within 80% safe area -->
+  <g transform="translate(141, 156) scale(1.2)">
+    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+  </g>
+</svg>

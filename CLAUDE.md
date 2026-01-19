@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.9.0 (WhenWizard Onboarding)
+**Current Version:** v0.9.1 (App Icon Suite)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -82,6 +82,12 @@ static/
 - **Dimensions**: 1584 × 276 pixels (5.74:1 aspect ratio)
 - **Type**: Wide wordmark with "WHENdoist" text integrated
 - **Usage**: CSS should constrain height only (`height: Xpx; width: auto;`) to preserve aspect ratio
+
+### Brand Assets
+- **Location**: `static/img/brand/`
+- **Files**: w-icon-color.svg, w-icon-dark.svg, w-icon-white.svg, app-icon-512.svg, favicon.svg
+- **Wordmark**: W icon + "hendoist" in Quicksand 500
+- **See**: `BRAND.md` for full specifications
 
 ## Design System (Tasks Page)
 
@@ -645,14 +651,15 @@ Contract tests in `tests/test_hotfix_wizard_bugs.py` verify:
 ## Files to Read First
 
 1. `DESIGN.md` — Full design system documentation
-2. `CHANGELOG.md` — Version history and changes
-3. `tests/README.md` — Test architecture and how to write tests
-4. `static/css/app.css` — Design tokens (first 120 lines)
-5. `static/js/crypto.js` — Client-side encryption library
-6. `app/templates/dashboard.html` — Tasks page template
-7. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
-8. `app/routers/build_info.py` — Build provenance API endpoints
-9. `.github/workflows/release.yml` — Release pipeline (signed tags, attestations, provenance)
+2. `BRAND.md` — Brand identity, wordmark, colors, typography
+3. `CHANGELOG.md` — Version history and changes
+4. `tests/README.md` — Test architecture and how to write tests
+5. `static/css/app.css` — Design tokens (first 120 lines)
+6. `static/js/crypto.js` — Client-side encryption library
+7. `app/templates/dashboard.html` — Tasks page template
+8. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
+9. `app/routers/build_info.py` — Build provenance API endpoints
+10. `.github/workflows/release.yml` — Release pipeline (signed tags, attestations, provenance)
 
 ## Known Issues
 

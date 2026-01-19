@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist PNG Export - Complete Icon Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui;
+            background: #F8FAFC;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(15,23,42,0.4);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #64748B;
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #6D5EF6;
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(109, 94, 246, 0.2);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border: 1px solid rgba(15,23,42,0.08);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        .card-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748B;
+            margin-bottom: 0.75rem;
+        }
+        .preview {
+            background: #F8FAFC;
+            border-radius: 8px;
+            padding: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+            margin-bottom: 0.75rem;
+        }
+        .preview.dark {
+            background: #1E293B;
+        }
+        .preview.checkered {
+            background-image:
+                linear-gradient(45deg, #e0e0e0 25%, transparent 25%),
+                linear-gradient(-45deg, #e0e0e0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e0e0e0 75%),
+                linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background: #6D5EF6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+        .btn:hover {
+            background: #5B4CF0;
+        }
+        .meta {
+            font-size: 0.65rem;
+            color: #94A3B8;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        .download-all {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .download-all button {
+            padding: 0.75rem 2rem;
+            font-size: 0.875rem;
+        }
+        .note {
+            background: #FEF3C7;
+            border: 1px solid #F59E0B;
+            border-radius: 8px;
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: #92400E;
+            margin-bottom: 2rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #font-test {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            position: absolute;
+            left: -9999px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Hidden element to force font load -->
+<span id="font-test">hendoist</span>
+
+<h1>Whendoist PNG Export</h1>
+<p class="subtitle">Complete Icon Suite for all platforms</p>
+
+<div class="note">
+    <strong>Instructions:</strong> Click individual buttons to download specific icons, or use "Download All" to get a ZIP file.
+    For best results, open this page in Chrome or Firefox. Wait for "Ready!" status before downloading.
+</div>
+
+<div class="download-all">
+    <button class="btn" id="download-all-btn" onclick="downloadAll()" disabled>Loading fonts...</button>
+</div>
+
+<!-- PWA Icons -->
+<h2 class="section-title">PWA & Android Icons</h2>
+<div class="grid" id="grid-pwa"></div>
+
+<!-- Apple Icons -->
+<h2 class="section-title">Apple Touch Icons</h2>
+<div class="grid" id="grid-apple"></div>
+
+<!-- Favicons -->
+<h2 class="section-title">Favicons</h2>
+<div class="grid" id="grid-favicon"></div>
+
+<!-- W Icon Variants -->
+<h2 class="section-title">W Icon (Transparent)</h2>
+<div class="grid" id="grid-icon"></div>
+
+<!-- Wordmarks -->
+<h2 class="section-title">Wordmarks</h2>
+<div class="grid" id="grid-wordmark"></div>
+
+<!-- Social Media -->
+<h2 class="section-title">Social Media & App Stores</h2>
+<div class="grid" id="grid-social"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// W Icon canonical dimensions (from viewBox 38 40 180 160)
+const W_VIEWBOX = { x: 38, y: 40, w: 180, h: 160 };
+
+// Icon specifications
+const iconSpecs = {
+    pwa: [
+        { name: 'app-icon-512', size: 512, type: 'app-icon' },
+        { name: 'app-icon-384', size: 384, type: 'app-icon' },
+        { name: 'app-icon-256', size: 256, type: 'app-icon' },
+        { name: 'app-icon-192', size: 192, type: 'app-icon' },
+        { name: 'maskable-512', size: 512, type: 'maskable' },
+        { name: 'maskable-384', size: 384, type: 'maskable' },
+        { name: 'maskable-192', size: 192, type: 'maskable' },
+    ],
+    apple: [
+        { name: 'apple-touch-icon-180', size: 180, type: 'apple-touch' },
+        { name: 'apple-touch-icon-167', size: 167, type: 'apple-touch' },
+        { name: 'apple-touch-icon-152', size: 152, type: 'apple-touch' },
+        { name: 'apple-touch-icon-120', size: 120, type: 'apple-touch' },
+        { name: 'apple-touch-icon-76', size: 76, type: 'apple-touch' },
+    ],
+    favicon: [
+        { name: 'favicon-48', size: 48, type: 'favicon', desc: 'Windows taskbar' },
+        { name: 'favicon-32', size: 32, type: 'favicon', desc: 'Standard favicon' },
+        { name: 'favicon-16', size: 16, type: 'favicon', desc: 'Small favicon' },
+    ],
+    icon: [
+        { name: 'w-icon-512', size: 512, type: 'w-icon' },
+        { name: 'w-icon-256', size: 256, type: 'w-icon' },
+        { name: 'w-icon-128', size: 128, type: 'w-icon' },
+        { name: 'w-icon-64', size: 64, type: 'w-icon' },
+    ],
+    wordmark: [
+        { name: 'wordmark-light-800', width: 800, height: 200, type: 'wordmark', textColor: '#1E293B', bg: null },
+        { name: 'wordmark-light-400', width: 400, height: 100, type: 'wordmark', textColor: '#1E293B', bg: null },
+        { name: 'wordmark-dark-800', width: 800, height: 200, type: 'wordmark', textColor: '#FFFFFF', bg: '#1E293B' },
+        { name: 'wordmark-dark-400', width: 400, height: 100, type: 'wordmark', textColor: '#FFFFFF', bg: '#1E293B' },
+    ],
+    social: [
+        { name: 'og-image-1200x630', width: 1200, height: 630, type: 'og-image' },
+        { name: 'twitter-card-1200x600', width: 1200, height: 600, type: 'og-image' },
+        { name: 'app-store-1024', size: 1024, type: 'app-icon' },
+    ],
+};
+
+const allCanvases = new Map();
+
+// Wait for font to load properly
+document.fonts.load('500 48px Quicksand').then(() => {
+    console.log('Quicksand font loaded');
+    document.getElementById('download-all-btn').textContent = 'Download All Icons (ZIP)';
+    document.getElementById('download-all-btn').disabled = false;
+
+    renderSection('grid-pwa', iconSpecs.pwa);
+    renderSection('grid-apple', iconSpecs.apple);
+    renderSection('grid-favicon', iconSpecs.favicon);
+    renderSection('grid-icon', iconSpecs.icon);
+    renderSection('grid-wordmark', iconSpecs.wordmark);
+    renderSection('grid-social', iconSpecs.social);
+});
+
+function renderSection(gridId, specs) {
+    const grid = document.getElementById(gridId);
+
+    specs.forEach(spec => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const w = spec.width || spec.size;
+        const h = spec.height || spec.size;
+        canvas.width = w;
+        canvas.height = h;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, w, h);
+
+        switch (spec.type) {
+            case 'app-icon':
+                drawAppIcon(ctx, w, h, false);
+                break;
+            case 'maskable':
+                drawAppIcon(ctx, w, h, true);
+                break;
+            case 'apple-touch':
+                drawAppleTouchIcon(ctx, w, h);
+                break;
+            case 'favicon':
+                drawFavicon(ctx, w, h);
+                break;
+            case 'w-icon':
+                drawWIcon(ctx, w, h);
+                break;
+            case 'wordmark':
+                drawWordmark(ctx, w, h, spec.textColor, spec.bg);
+                break;
+            case 'og-image':
+                drawOGImage(ctx, w, h);
+                break;
+        }
+
+        allCanvases.set(spec.name, { canvas, filename: spec.name + '.png' });
+
+        const isTransparent = spec.type === 'w-icon' || (spec.type === 'wordmark' && !spec.bg);
+        const isDark = spec.bg === '#1E293B';
+        const previewClass = isDark ? 'preview dark' : (isTransparent ? 'preview checkered' : 'preview');
+
+        card.innerHTML = `
+            <div class="card-title">${spec.name}</div>
+            <div class="${previewClass}"></div>
+            <button class="btn" onclick="download('${spec.name}')">Download PNG</button>
+            <div class="meta">${w} x ${h}px${spec.desc ? ' - ' + spec.desc : ''}</div>
+        `;
+
+        card.querySelector('.' + previewClass.split(' ')[0]).appendChild(canvas);
+        grid.appendChild(card);
+    });
+}
+
+/**
+ * Draw the 3-bar W icon using absolute coordinates
+ * The icon is drawn in a coordinate system where the viewBox is 38,40,180,160
+ */
+function drawWBars(ctx) {
+    // Blue bar (left, rotated -8°)
+    ctx.save();
+    ctx.translate(62, 120);
+    ctx.rotate(-8 * Math.PI / 180);
+    ctx.translate(-62, -120);
+    ctx.beginPath();
+    roundRect(ctx, 48, 40, 28, 160, 14);
+    ctx.fillStyle = '#167BFF';
+    ctx.fill();
+    ctx.restore();
+
+    // Purple bar (center, no rotation)
+    ctx.beginPath();
+    roundRect(ctx, 114, 72, 28, 127.3, 14);
+    ctx.fillStyle = '#6D5EF6';
+    ctx.fill();
+
+    // Magenta bar (right, rotated +8°)
+    ctx.save();
+    ctx.translate(194, 120);
+    ctx.rotate(8 * Math.PI / 180);
+    ctx.translate(-194, -120);
+    ctx.beginPath();
+    roundRect(ctx, 180, 40, 28, 160, 14);
+    ctx.fillStyle = '#A020C0';
+    ctx.fill();
+    ctx.restore();
+}
+
+/**
+ * Draw W icon centered in a square canvas (transparent background)
+ */
+function drawWIcon(ctx, size) {
+    // Calculate scale to fit icon with 10% padding
+    const padding = size * 0.1;
+    const availableSize = size - (padding * 2);
+    const scale = Math.min(availableSize / W_VIEWBOX.w, availableSize / W_VIEWBOX.h);
+
+    // Center the icon
+    const iconW = W_VIEWBOX.w * scale;
+    const iconH = W_VIEWBOX.h * scale;
+    const offsetX = (size - iconW) / 2;
+    const offsetY = (size - iconH) / 2;
+
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+}
+
+/**
+ * Draw favicon - W icon centered with slight padding
+ */
+function drawFavicon(ctx, size) {
+    // For small sizes, use less padding
+    const padding = size * 0.08;
+    const availableSize = size - (padding * 2);
+    const scale = Math.min(availableSize / W_VIEWBOX.w, availableSize / W_VIEWBOX.h);
+
+    const iconW = W_VIEWBOX.w * scale;
+    const iconH = W_VIEWBOX.h * scale;
+    const offsetX = (size - iconW) / 2;
+    const offsetY = (size - iconH) / 2;
+
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+}
+
+/**
+ * Draw app icon with white background and rounded corners
+ */
+function drawAppIcon(ctx, size, sizeOrHeight, maskable) {
+    const h = typeof sizeOrHeight === 'number' ? sizeOrHeight : size;
+    const radius = size * 0.1875; // 18.75% corner radius for app icons
+
+    // White background with rounded corners
+    ctx.beginPath();
+    roundRect(ctx, 0, 0, size, h, radius);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+
+    // For maskable icons, content must fit in center 80% (safe zone)
+    // For regular icons, use 60% of the space
+    const contentRatio = maskable ? 0.5 : 0.6;
+    const availableSize = size * contentRatio;
+    const scale = Math.min(availableSize / W_VIEWBOX.w, availableSize / W_VIEWBOX.h);
+
+    const iconW = W_VIEWBOX.w * scale;
+    const iconH = W_VIEWBOX.h * scale;
+    const offsetX = (size - iconW) / 2;
+    const offsetY = (h - iconH) / 2;
+
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+}
+
+/**
+ * Draw Apple touch icon (solid white background, no rounded corners - iOS adds them)
+ */
+function drawAppleTouchIcon(ctx, size) {
+    // White background (iOS will add rounded corners)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+
+    // Icon at 60% size, centered
+    const availableSize = size * 0.6;
+    const scale = Math.min(availableSize / W_VIEWBOX.w, availableSize / W_VIEWBOX.h);
+
+    const iconW = W_VIEWBOX.w * scale;
+    const iconH = W_VIEWBOX.h * scale;
+    const offsetX = (size - iconW) / 2;
+    const offsetY = (size - iconH) / 2;
+
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+}
+
+/**
+ * Draw wordmark with W icon + "hendoist" text
+ * Exact values from wordmark-component.html at Hero size (104px text):
+ * - Icon: 90×80px (width×height)
+ * - Gap (margin-right): 4px
+ * - Offset (margin-bottom): 12px
+ */
+function drawWordmark(ctx, w, h, textColor, bg) {
+    // Draw background if specified
+    if (bg) {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+    }
+
+    // Text height is 50% of canvas height
+    const textHeight = h * 0.5;
+
+    // Exact ratios from Hero size (104px text) in wordmark-component.html
+    const HERO_TEXT = 104;
+    const HERO_ICON_W = 90;
+    const HERO_ICON_H = 80;
+    const HERO_GAP = 4;
+    const HERO_OFFSET = 12;
+
+    const iconWidth = textHeight * (HERO_ICON_W / HERO_TEXT);
+    const iconHeight = textHeight * (HERO_ICON_H / HERO_TEXT);
+    const gap = textHeight * (HERO_GAP / HERO_TEXT);
+    const offset = textHeight * (HERO_OFFSET / HERO_TEXT);
+
+    // Set font and measure text
+    ctx.font = `500 ${textHeight}px 'Quicksand', sans-serif`;
+    ctx.textBaseline = 'alphabetic';
+    const textWidth = ctx.measureText('hendoist').width;
+
+    // Total width and horizontal centering
+    const totalWidth = iconWidth + gap + textWidth;
+    const startX = (w - totalWidth) / 2;
+
+    // Vertical: baseline at 62% down
+    const baseline = h * 0.62;
+
+    // DEBUG: Try with offset = 0 first to see baseline alignment
+    // In flex-end, icon bottom aligns with text bottom, then margin-bottom pushes icon UP
+    // For canvas: icon bottom should be at baseline, then offset pushes it UP (subtract offset)
+
+    const iconBottom = baseline;  // DEBUG: no offset to check alignment
+    const iconTop = iconBottom - iconHeight;
+
+    // Draw icon - but we need to account for the viewBox properly
+    // The W icon content in viewBox coords goes from y=40 to y=200
+    // We want the BOTTOM of the icon (y=200 in viewBox) to be at iconBottom
+    const iconScale = iconHeight / W_VIEWBOX.h;
+
+    ctx.save();
+    ctx.translate(startX, iconTop);
+    ctx.scale(iconScale, iconScale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+
+    // Draw text
+    ctx.fillStyle = textColor;
+    ctx.fillText('hendoist', startX + iconWidth + gap, baseline);
+}
+
+/**
+ * Draw Open Graph / social media image
+ * Uses same exact proportions as wordmark function
+ */
+function drawOGImage(ctx, w, h) {
+    // White background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle gradient overlay
+    const gradient = ctx.createLinearGradient(0, 0, w, h);
+    gradient.addColorStop(0, 'rgba(109, 94, 246, 0.03)');
+    gradient.addColorStop(1, 'rgba(22, 123, 255, 0.03)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
+
+    // Wordmark at 12% of height
+    const textHeight = h * 0.12;
+
+    // Exact ratios from Hero size (104px) in wordmark-component.html
+    const HERO_TEXT = 104;
+    const HERO_ICON_W = 90;
+    const HERO_ICON_H = 80;
+    const HERO_GAP = 4;
+
+    const iconWidth = textHeight * (HERO_ICON_W / HERO_TEXT);
+    const iconHeight = textHeight * (HERO_ICON_H / HERO_TEXT);
+    const gap = textHeight * (HERO_GAP / HERO_TEXT);
+
+    ctx.font = `500 ${textHeight}px 'Quicksand', sans-serif`;
+    ctx.textBaseline = 'alphabetic';
+    const textWidth = ctx.measureText('hendoist').width;
+
+    const totalWidth = iconWidth + gap + textWidth;
+    const startX = (w - totalWidth) / 2;
+    const baseline = h * 0.48;
+
+    // Icon bottom aligns with text baseline (no offset needed for canvas)
+    const iconBottom = baseline;
+    const iconTop = iconBottom - iconHeight;
+    const iconScale = iconHeight / W_VIEWBOX.h;
+
+    ctx.save();
+    ctx.translate(startX, iconTop);
+    ctx.scale(iconScale, iconScale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+
+    ctx.fillStyle = '#1E293B';
+    ctx.fillText('hendoist', startX + iconWidth + gap, baseline);
+
+    // Tagline
+    ctx.font = '400 24px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#64748B';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('When do I do my tasks?', w / 2, baseline + 20);
+}
+
+/**
+ * Draw a rounded rectangle path
+ */
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+function download(name) {
+    const item = allCanvases.get(name);
+    if (!item) return;
+
+    const link = document.createElement('a');
+    link.download = item.filename;
+    link.href = item.canvas.toDataURL('image/png');
+    link.click();
+}
+
+async function downloadAll() {
+    const zip = new JSZip();
+    const folders = {
+        'pwa': zip.folder('pwa'),
+        'apple': zip.folder('apple-touch-icons'),
+        'favicon': zip.folder('favicons'),
+        'icon': zip.folder('w-icon'),
+        'wordmark': zip.folder('wordmarks'),
+        'social': zip.folder('social-media'),
+    };
+
+    // Categorize and add files
+    for (const [name, item] of allCanvases) {
+        const blob = await new Promise(resolve => item.canvas.toBlob(resolve, 'image/png'));
+
+        let folder = zip;
+        if (name.startsWith('app-icon') || name.startsWith('maskable')) folder = folders.pwa;
+        else if (name.startsWith('apple')) folder = folders.apple;
+        else if (name.startsWith('favicon')) folder = folders.favicon;
+        else if (name.startsWith('w-icon')) folder = folders.icon;
+        else if (name.startsWith('wordmark')) folder = folders.wordmark;
+        else if (name.startsWith('og-') || name.startsWith('twitter') || name.includes('1024')) folder = folders.social;
+
+        folder.file(item.filename, blob);
+    }
+
+    // Generate and download ZIP
+    const content = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    link.download = 'whendoist-icons.zip';
+    link.href = URL.createObjectURL(content);
+    link.click();
+}
+</script>
+
+</body>
+</html>
