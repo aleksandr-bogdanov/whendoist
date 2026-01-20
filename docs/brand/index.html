@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist Design System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #167BFF;
+            --purple: #6D5EF6;
+            --magenta: #A020C0;
+            --slate-50: #F8FAFC;
+            --slate-100: #F1F5F9;
+            --slate-200: #E2E8F0;
+            --slate-400: #94A3B8;
+            --slate-500: #64748B;
+            --slate-600: #475569;
+            --slate-800: #1E293B;
+            --slate-900: #0F172A;
+            --border: rgba(15, 23, 42, 0.085);
+            --border-hair: rgba(15, 23, 42, 0.055);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--slate-50);
+            color: var(--slate-800);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: flex-end;
+            text-decoration: none;
+        }
+
+        .logo svg {
+            width: 24px;
+            height: 21px;
+            margin-bottom: 3px;
+            margin-right: 1px;
+            flex-shrink: 0;
+        }
+
+        .logo span {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 1.75rem;
+            color: var(--slate-800);
+            line-height: 1;
+        }
+
+        .header-badge {
+            background: linear-gradient(135deg, var(--blue), var(--purple), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* ===== Hero ===== */
+        .hero {
+            background: linear-gradient(180deg, white 0%, var(--slate-50) 100%);
+            padding: 64px 32px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-hair);
+        }
+
+        .hero-wordmark {
+            display: inline-flex;
+            align-items: flex-end;
+            margin-bottom: 24px;
+        }
+
+        .hero-wordmark svg {
+            width: 90px;
+            height: 80px;
+            margin-bottom: 12px;
+            margin-right: 4px;
+        }
+
+        .hero-wordmark span {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 6.5rem;
+            color: var(--slate-800);
+            line-height: 1;
+        }
+
+        .hero-title {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--slate-600);
+            margin-bottom: 8px;
+        }
+
+        .hero-subtitle {
+            color: var(--slate-500);
+            font-size: 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* ===== Main Content ===== */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 48px 32px;
+        }
+
+        /* ===== Section ===== */
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .section-icon.brand { background: linear-gradient(135deg, rgba(22, 123, 255, 0.1), rgba(160, 32, 192, 0.1)); }
+        .section-icon.colors { background: rgba(109, 94, 246, 0.1); }
+        .section-icon.components { background: rgba(22, 123, 255, 0.1); }
+        .section-icon.assets { background: rgba(160, 32, 192, 0.1); }
+        .section-icon.docs { background: rgba(100, 116, 139, 0.1); }
+
+        .section h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--slate-800);
+        }
+
+        .section-desc {
+            color: var(--slate-500);
+            font-size: 0.875rem;
+            margin-left: 52px;
+            margin-top: -12px;
+            margin-bottom: 20px;
+        }
+
+        /* ===== Card Grid ===== */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card:hover {
+            border-color: var(--purple);
+            box-shadow: 0 4px 12px rgba(109, 94, 246, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--slate-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--slate-800);
+        }
+
+        .card-desc {
+            font-size: 0.8rem;
+            color: var(--slate-500);
+            line-height: 1.5;
+        }
+
+        .card-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-badge.html { background: #DBEAFE; color: #1D4ED8; }
+        .card-badge.md { background: #DCFCE7; color: #15803D; }
+        .card-badge.json { background: #FEF3C7; color: #B45309; }
+        .card-badge.tool { background: #F3E8FF; color: #7C3AED; }
+
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-hair);
+        }
+
+        /* ===== Color Preview ===== */
+        .color-preview {
+            display: flex;
+            gap: 4px;
+            margin: 20px 0;
+        }
+
+        .color-bar {
+            height: 8px;
+            border-radius: 4px;
+            flex: 1;
+        }
+
+        /* ===== Quick Reference ===== */
+        .quick-ref {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 48px;
+        }
+
+        .quick-ref h3 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--slate-600);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 16px;
+        }
+
+        .quick-ref-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+        }
+
+        .quick-ref-item h4 {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--slate-400);
+            margin-bottom: 8px;
+        }
+
+        .quick-ref-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .quick-ref-value code {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.8rem;
+            color: var(--slate-600);
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            text-align: center;
+            padding: 32px;
+            border-top: 1px solid var(--border);
+            color: var(--slate-500);
+            font-size: 0.8rem;
+        }
+
+        .footer a {
+            color: var(--purple);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .hero {
+                padding: 40px 20px;
+            }
+
+            .hero-wordmark svg {
+                width: 42px;
+                height: 37px;
+                margin-bottom: 5.5px;
+                margin-right: 2px;
+            }
+
+            .hero-wordmark span {
+                font-size: 3rem;
+            }
+
+            .main {
+                padding: 32px 20px;
+            }
+
+            .section-desc {
+                margin-left: 0;
+            }
+
+            .quick-ref-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="#" class="logo">
+                <svg viewBox="38 40 180 160">
+                    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                </svg>
+                <span>hendoist</span>
+            </a>
+            <span class="header-badge">Design System</span>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-wordmark">
+            <svg viewBox="38 40 180 160">
+                <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+            </svg>
+            <span>hendoist</span>
+        </div>
+        <h1 class="hero-title">Design System</h1>
+        <p class="hero-subtitle">Brand identity, components, colors, and assets for building consistent Whendoist experiences.</p>
+        <div class="color-preview">
+            <div class="color-bar" style="background: #167BFF;"></div>
+            <div class="color-bar" style="background: #6D5EF6;"></div>
+            <div class="color-bar" style="background: #A020C0;"></div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main">
+
+        <!-- Quick Reference -->
+        <div class="quick-ref">
+            <h3>Quick Reference</h3>
+            <div class="quick-ref-grid">
+                <div class="quick-ref-item">
+                    <h4>Brand Font</h4>
+                    <div class="quick-ref-value">
+                        <code>Quicksand 500</code>
+                    </div>
+                </div>
+                <div class="quick-ref-item">
+                    <h4>Executable Blue</h4>
+                    <div class="quick-ref-value">
+                        <div class="color-dot" style="background: #167BFF;"></div>
+                        <code>#167BFF</code>
+                    </div>
+                </div>
+                <div class="quick-ref-item">
+                    <h4>Defined Purple</h4>
+                    <div class="quick-ref-value">
+                        <div class="color-dot" style="background: #6D5EF6;"></div>
+                        <code>#6D5EF6</code>
+                    </div>
+                </div>
+                <div class="quick-ref-item">
+                    <h4>Exploratory Magenta</h4>
+                    <div class="quick-ref-value">
+                        <div class="color-dot" style="background: #A020C0;"></div>
+                        <code>#A020C0</code>
+                    </div>
+                </div>
+                <div class="quick-ref-item">
+                    <h4>Primary Text</h4>
+                    <div class="quick-ref-value">
+                        <div class="color-dot" style="background: #1E293B;"></div>
+                        <code>#1E293B</code>
+                    </div>
+                </div>
+                <div class="quick-ref-item">
+                    <h4>Icon ViewBox</h4>
+                    <div class="quick-ref-value">
+                        <code>38 40 180 160</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brand Identity -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon brand">
+                    <svg viewBox="38 40 180 160" width="24" height="21">
+                        <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                        <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                        <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                    </svg>
+                </div>
+                <h2>Brand Identity</h2>
+            </div>
+            <p class="section-desc">Logo, wordmark, typography, and core brand elements.</p>
+            <div class="card-grid">
+                <a href="brand-guide.html" class="card">
+                    <div class="card-header">
+                        <div class="card-icon">📘</div>
+                        <span class="card-title">Brand Guide</span>
+                    </div>
+                    <p class="card-desc">Primary wordmark, W icon variations, color palette, typography specs, and size scale.</p>
+                    <div class="card-meta">
+                        <span class="card-badge html">HTML</span>
+                        <span style="font-size: 0.7rem; color: var(--slate-400);">Visual Reference</span>
+                    </div>
+                </a>
+                <a href="wordmark-component.html" class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🔤</div>
+                        <span class="card-title">Wordmark Component</span>
+                    </div>
+                    <p class="card-desc">Copy-paste HTML/CSS code for the W icon + "hendoist" wordmark at all sizes.</p>
+                    <div class="card-meta">
+                        <span class="card-badge html">HTML</span>
+                        <span style="font-size: 0.7rem; color: var(--slate-400);">Code Snippet</span>
+                    </div>
+                </a>
+                <a href="brand-spec.json" class="card" target="_blank">
+                    <div class="card-header">
+                        <div class="card-icon">{ }</div>
+                        <span class="card-title">Brand Spec (JSON)</span>
+                    </div>
+                    <p class="card-desc">Machine-readable brand specifications including colors, typography, and wordmark sizing.</p>
+                    <div class="card-meta">
+                        <span class="card-badge json">JSON</span>
+                        <span style="font-size: 0.7rem; color: var(--slate-400);">Data</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Colors -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon colors">🎨</div>
+                <h2>Color System</h2>
+            </div>
+            <p class="section-desc">Complete color palette with light/dark modes and WCAG accessibility.</p>
+            <div class="card-grid">
+                <a href="color-reference.html" class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🌈</div>
+                        <span class="card-title">Color Reference</span>
+                    </div>
+                    <p class="card-desc">Interactive color picker with dark mode toggle, contrast ratios, and CSS token reference.</p>
+                    <div class="card-meta">
+                        <span class="card-badge html">HTML</span>
+                        <span class="card-badge tool">Interactive</span>
+                    </div>
+                </a>
+                <a href="COLOR-SYSTEM.md" class="card" target="_blank">
+                    <div class="card-header">
+                        <div class="card-icon">📄</div>
+                        <span class="card-title">Color System Spec</span>
+                    </div>
+                    <p class="card-desc">Detailed documentation of slate scale, semantic colors, and WCAG AA compliance.</p>
+                    <div class="card-meta">
+                        <span class="card-badge md">Markdown</span>
+                        <span style="font-size: 0.7rem; color: var(--slate-400);">Documentation</span>
+                    </div>
+                </a>
+                <a href="brand-verification.html" class="card">
+                    <div class="card-header">
+                        <div class="card-icon">✓</div>
+                        <span class="card-title">Brand Verification</span>
+                    </div>
+                    <p class="card-desc">Automated consistency checker for color values, WCAG compliance, and asset filenames.</p>
+                    <div class="card-meta">
+                        <span class="card-badge html">HTML</span>
+                        <span class="card-badge tool">Tool</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Components -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon components">🧩</div>
+                <h2>UI Components</h2>
+            </div>
+            <p class="section-desc">Reusable interface components and patterns.</p>
+            <div class="card-grid">
+                <a href="ui-kit-reference.html" class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🎛️</div>
+                        <span class="card-title">UI Kit Reference</span>
+                    </div>
+                    <p class="card-desc">Live preview of buttons, form elements, cards, panels, status indicators, and more.</p>
+                    <div class="card-meta">
+                        <span class="card-badge html">HTML</span>
+                        <span class="card-badge tool">Interactive</span>
+                    </div>
+                </a>
+                <a href="UI-KIT.md" class="card" target="_blank">
+                    <div class="card-header">
+                        <div class="card-icon">📋</div>
+                        <span class="card-title">UI Kit Spec</span>
+                    </div>
+                    <p class="card-desc">Complete CSS specifications for all components including code examples and best practices.</p>
+                    <div class="card-meta">
+                        <span class="card-badge md">Markdown</span>
+                        <span style="font-size: 0.7rem; color: var(--slate-400);">Documentation</span>
+                    </div>
+                </a>
+                <a href="illustration-reference.html" class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🖼️</div>
+                        <span class="card-title">Illustration System</span>
+                    </div>
+                    <p class="card-desc">Empty states, error states, success graphics, and onboarding illustrations.</p>
+                    <div class="card-meta">
+                        <span class="card-badge html">HTML</span>
+                        <span style="font-size: 0.7rem; color: var(--slate-400);">Visual Reference</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Assets & Export -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon assets">📦</div>
+                <h2>Assets & Export</h2>
+            </div>
+            <p class="section-desc">Generate and download brand assets for various platforms.</p>
+            <div class="card-grid">
+                <a href="png-export.html" class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🖼️</div>
+                        <span class="card-title">PNG Export</span>
+                    </div>
+                    <p class="card-desc">Generate PWA icons, Apple touch icons, favicons, wordmarks, and social media images.</p>
+                    <div class="card-meta">
+                        <span class="card-badge html">HTML</span>
+                        <span class="card-badge tool">Generator</span>
+                    </div>
+                </a>
+                <a href="marketing-export.html" class="card">
+                    <div class="card-header">
+                        <div class="card-icon">📣</div>
+                        <span class="card-title">Marketing Assets</span>
+                    </div>
+                    <p class="card-desc">Profile images, social post templates, email headers, and press kit materials.</p>
+                    <div class="card-meta">
+                        <span class="card-badge html">HTML</span>
+                        <span class="card-badge tool">Generator</span>
+                    </div>
+                </a>
+                <a href="PRESS-KIT.md" class="card" target="_blank">
+                    <div class="card-header">
+                        <div class="card-icon">📰</div>
+                        <span class="card-title">Press Kit</span>
+                    </div>
+                    <p class="card-desc">Media resources, brand guidelines, and asset specifications for press and partners.</p>
+                    <div class="card-meta">
+                        <span class="card-badge md">Markdown</span>
+                        <span style="font-size: 0.7rem; color: var(--slate-400);">Documentation</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Documentation -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon docs">📚</div>
+                <h2>Documentation Index</h2>
+            </div>
+            <p class="section-desc">All documentation files at a glance.</p>
+            <div class="card-grid">
+                <div class="card" style="cursor: default;">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #DBEAFE;">📄</div>
+                        <span class="card-title">HTML References</span>
+                    </div>
+                    <ul style="font-size: 0.8rem; color: var(--slate-600); padding-left: 16px; margin: 0;">
+                        <li><a href="brand-guide.html" style="color: var(--purple);">brand-guide.html</a></li>
+                        <li><a href="ui-kit-reference.html" style="color: var(--purple);">ui-kit-reference.html</a></li>
+                        <li><a href="color-reference.html" style="color: var(--purple);">color-reference.html</a></li>
+                        <li><a href="illustration-reference.html" style="color: var(--purple);">illustration-reference.html</a></li>
+                        <li><a href="brand-verification.html" style="color: var(--purple);">brand-verification.html</a></li>
+                        <li><a href="wordmark-component.html" style="color: var(--purple);">wordmark-component.html</a></li>
+                    </ul>
+                </div>
+                <div class="card" style="cursor: default;">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #F3E8FF;">🔧</div>
+                        <span class="card-title">Export Tools</span>
+                    </div>
+                    <ul style="font-size: 0.8rem; color: var(--slate-600); padding-left: 16px; margin: 0;">
+                        <li><a href="png-export.html" style="color: var(--purple);">png-export.html</a></li>
+                        <li><a href="marketing-export.html" style="color: var(--purple);">marketing-export.html</a></li>
+                    </ul>
+                </div>
+                <div class="card" style="cursor: default;">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #DCFCE7;">📝</div>
+                        <span class="card-title">Markdown Specs</span>
+                    </div>
+                    <ul style="font-size: 0.8rem; color: var(--slate-600); padding-left: 16px; margin: 0;">
+                        <li><a href="COLOR-SYSTEM.md" target="_blank" style="color: var(--purple);">COLOR-SYSTEM.md</a></li>
+                        <li><a href="UI-KIT.md" target="_blank" style="color: var(--purple);">UI-KIT.md</a></li>
+                        <li><a href="PRESS-KIT.md" target="_blank" style="color: var(--purple);">PRESS-KIT.md</a></li>
+                    </ul>
+                </div>
+                <div class="card" style="cursor: default;">
+                    <div class="card-header">
+                        <div class="card-icon" style="background: #FEF3C7;">{ }</div>
+                        <span class="card-title">Data Files</span>
+                    </div>
+                    <ul style="font-size: 0.8rem; color: var(--slate-600); padding-left: 16px; margin: 0;">
+                        <li><a href="brand-spec.json" target="_blank" style="color: var(--purple);">brand-spec.json</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Whendoist Design System v1.0 &mdash; January 2026</p>
+        <p>See <a href="../../BRAND.md" target="_blank">BRAND.md</a> in the project root for integration guidelines.</p>
+    </footer>
+
+</body>
+</html>
