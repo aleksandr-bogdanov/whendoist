@@ -52,8 +52,32 @@
     <!-- Styles -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/air-datepicker@3/air-datepicker.css">
+    <!-- Design tokens (single source of truth) -->
+    <link rel="stylesheet" href="/static/css/tokens.css"
+          onerror="document.documentElement.classList.add('css-error')">
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/css/brand.css">
+    <!-- CSS Error Boundary - fallback styles if tokens.css fails -->
+    <style>
+        .css-error {
+            --bg-canvas: #F8FAFC;
+            --bg-panel: #F1F5F9;
+            --bg-surface: #FFFFFF;
+            --text-primary: #0B1220;
+            --text-secondary: rgba(15, 23, 42, 0.64);
+            --border-default: rgba(15, 23, 42, 0.085);
+            --primary: #6D5EF6;
+        }
+        .css-error::before {
+            content: "Some styles failed to load. Please refresh.";
+            display: block;
+            background: #FEF2F2;
+            color: #B91C1C;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
     {% if show_wizard %}
     <link rel="stylesheet" href="/static/css/wizard.css">
     {% endif %}
