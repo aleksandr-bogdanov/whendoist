@@ -124,6 +124,22 @@
     flex-direction: column;
 }
 
+/* Staggered fade-in on page load */
+.thought-list.animate-in .thought-row {
+    animation: stagger-fade-in var(--duration-normal) var(--ease-out) backwards;
+}
+
+.thought-list.animate-in .thought-row:nth-child(1) { animation-delay: 0ms; }
+.thought-list.animate-in .thought-row:nth-child(2) { animation-delay: 50ms; }
+.thought-list.animate-in .thought-row:nth-child(3) { animation-delay: 100ms; }
+.thought-list.animate-in .thought-row:nth-child(4) { animation-delay: 150ms; }
+.thought-list.animate-in .thought-row:nth-child(5) { animation-delay: 200ms; }
+.thought-list.animate-in .thought-row:nth-child(6) { animation-delay: 250ms; }
+.thought-list.animate-in .thought-row:nth-child(7) { animation-delay: 300ms; }
+.thought-list.animate-in .thought-row:nth-child(8) { animation-delay: 350ms; }
+.thought-list.animate-in .thought-row:nth-child(9) { animation-delay: 400ms; }
+.thought-list.animate-in .thought-row:nth-child(10) { animation-delay: 450ms; }
+
 .thought-row {
     display: flex;
     align-items: center;
@@ -131,7 +147,12 @@
     padding: 7px 14px;
     border-bottom: 1px solid var(--border-subtle);
     background: var(--bg-surface);
-    transition: background var(--duration-instant) var(--ease-default);
+    transition: background var(--duration-instant) var(--ease-default),
+                max-height var(--duration-normal) var(--ease-default),
+                opacity var(--duration-normal) var(--ease-default),
+                padding var(--duration-normal) var(--ease-default);
+    max-height: 100px;
+    overflow: hidden;
 }
 
 .thought-row:last-child {
@@ -154,18 +175,20 @@
     color: var(--text-primary);
 }
 
-/* 8) Dot indicator */
+/* 8) Dot indicator - larger, with scale bounce on hover */
 .thought-dot {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--slate-300);
     flex-shrink: 0;
-    transition: background var(--duration-fast) var(--ease-default);
+    transition: background var(--duration-fast) var(--ease-default),
+                transform var(--duration-fast) var(--ease-bounce);
 }
 
 .thought-row:hover .thought-dot {
     background: var(--primary);
+    transform: scale(1.2);
 }
 
 /* 9) Text - greyer by default, darken on hover */
@@ -229,6 +252,11 @@
 
 .thought-row.is-processed .thought-dot {
     background: rgba(15, 23, 42, 0.10);
+}
+
+/* Delete animation - collapse with fade */
+.thought-row.is-deleting {
+    animation: collapse var(--duration-normal) var(--ease-default) forwards;
 }
 
 .thought-empty {
@@ -348,6 +376,23 @@
         animation: none;
         /* Show final state: normal background */
     }
+
+    .thought-list.animate-in .thought-row {
+        animation: none;
+    }
+
+    .thought-row.is-deleting {
+        animation: none;
+        display: none;
+    }
+
+    .thought-empty-state .empty-state-illustration {
+        animation: none;
+    }
+
+    .thought-row:hover .thought-dot {
+        transform: none;
+    }
 }
 
 /* =============================================================================
@@ -356,7 +401,7 @@
 
 .thought-empty-state {
     text-align: center;
-    padding: var(--space-8) var(--space-4);
+    padding: 48px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -365,10 +410,19 @@
 
 .thought-empty-state .empty-state-illustration {
     opacity: 0.85;
+    animation: float 3s ease-in-out infinite;
+}
+
+.thought-empty-state .empty-state-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2);
 }
 
 .thought-empty-state .empty-state-text {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0;
+    max-width: 280px;
 }

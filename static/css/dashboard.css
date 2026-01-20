@@ -15,6 +15,24 @@
     overflow: hidden;
     align-items: stretch;
     margin-bottom: 1.5rem;
+    position: relative;
+}
+
+/* Subtle gradient separator between panels */
+.tasks-layout::before {
+    content: "";
+    position: absolute;
+    left: calc(66.66% - var(--layout-gap) / 2);
+    top: 0;
+    bottom: 0;
+    width: var(--layout-gap);
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(109, 94, 246, 0.03) 50%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 0;
 }
 
 .connection-banner {
@@ -729,13 +747,14 @@
    Task Item
    ============================================================================= */
 
-/* Patch 29+46: Task rows - grid layout with tighter density */
+/* Patch 29+46: Task rows - grid layout with increased height for scannability */
 .task-item {
     display: grid;
     grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
     column-gap: var(--col-gap);
     align-items: center;
-    padding: 7px 0 7px var(--rail-w);  /* Reduced from 9px for ~33px row height */
+    padding: 10px 0 10px var(--rail-w);  /* Increased for ~44px row height */
+    min-height: 44px;
     background: transparent;
     border: 0;
     border-radius: 0;
@@ -793,9 +812,33 @@
 .task-item.impact-3::before { background: var(--impact-low); }
 .task-item.impact-4::before { background: var(--impact-min); }
 
-/* Patch 45: Precision hover (neutral, not purple wash) */
+/* Patch 45: Precision hover with inner glow */
 .task-item:hover {
     background: rgba(15, 23, 42, 0.02) !important;
+    box-shadow: var(--shadow-inner-glow);
+}
+
+/* Meta columns fade - visible only on hover */
+.task-item .meta-duration,
+.task-item .meta-impact,
+.task-item .meta-clarity {
+    opacity: 0.5;
+    transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.task-item:hover .meta-duration,
+.task-item:hover .meta-impact,
+.task-item:hover .meta-clarity {
+    opacity: 1;
+}
+
+/* Rail expands on hover */
+.task-item::before {
+    transition: width var(--duration-fast) var(--ease-default);
+}
+
+.task-item:hover::before {
+    width: 3px;
 }
 
 /* Selection stays purple */
@@ -1204,7 +1247,12 @@
    ----------------------------------------------------------------------------- */
 
 .calendar-item .complete-check.pop {
-    animation: checkboxPop 0.2s ease-out;
+    animation: completion-pulse 0.25s ease-out;
+}
+
+/* Task list checkbox pop animation */
+.task-item .complete-check.pop {
+    animation: completion-pulse 0.25s ease-out;
 }
 
 @keyframes checkboxPop {
@@ -1214,7 +1262,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .calendar-item .complete-check.pop {
+    .calendar-item .complete-check.pop,
+    .task-item .complete-check.pop {
         animation: none;
     }
 }
@@ -1297,6 +1346,7 @@
 
 .task-text {
     font-size: 0.85rem;
+    font-weight: 500;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -1574,9 +1624,10 @@ body[data-energy-level] .scheduled-group.project-group {
     opacity: 0.7;
 }
 
-/* Today: full prominence */
+/* Today: full prominence with subtle purple tint */
 .day-calendar.today {
     opacity: 1;
+    background: rgba(109, 94, 246, 0.02);
 }
 
 /* Future days: slightly dimmed */
@@ -1973,7 +2024,7 @@ body[data-energy-level] .scheduled-group.project-group {
     border-bottom: none;
 }
 
-/* Patch 56: Hour labels - instrument-like gutter */
+/* Patch 56: Hour labels - instrument-like gutter, reduced opacity for less noise */
 .hour-label {
     width: 54px;
     flex-shrink: 0;
@@ -1981,7 +2032,7 @@ body[data-energy-level] .scheduled-group.project-group {
     font-size: 0.65rem;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
-    color: rgba(15, 23, 42, 0.42);
+    color: rgba(15, 23, 42, 0.4);
     text-align: right;
 }
 
@@ -2080,37 +2131,38 @@ body[data-energy-level] .scheduled-group.project-group {
     background: var(--bg-panel);
 }
 
-/* Patch 22: Now indicator - less alarm, more precise */
+/* Patch 22: Now indicator - thicker with subtle glow */
 .now-line {
     position: absolute;
     left: 50px; /* Width of hour label */
     right: 0;
-    height: 1px;
+    height: 2px;
     background: var(--now);
     z-index: 50;
     pointer-events: none;
+    box-shadow: 0 0 8px rgba(var(--now), 0.4);
 }
 
 .now-line::before {
     content: '';
     position: absolute;
     left: -5px;
-    top: -3.5px;
-    width: 8px;
-    height: 8px;
+    top: -4px;
+    width: 10px;
+    height: 10px;
     background: var(--now-dot);
     border-radius: 999px;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18), 0 0 12px rgba(109, 94, 246, 0.3);
 }
 
-/* Patch 23: Calendar events - tighten typography, remove washed-out look */
+/* Patch 23: Calendar events - subtle gradient, rounded corners */
 .calendar-event {
     display: flex;
     align-items: flex-start;
     gap: 4px;
-    background: var(--bg-surface);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 5%), var(--bg-surface);
     border: 1px solid var(--border-default);
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 3px 0.5rem;
     padding-left: calc(0.5rem + var(--rail-w));
     font-size: 0.65rem;
@@ -2133,7 +2185,7 @@ body[data-energy-level] .scheduled-group.project-group {
     bottom: 0;
     width: var(--rail-w);
     background: var(--text-muted);
-    border-radius: 10px 0 0 10px;
+    border-radius: 6px 0 0 6px;
 }
 
 .event-left {
@@ -2332,14 +2384,14 @@ body.is-dragging .calendar-event {
 }
 
 /* Scheduled task on calendar */
-/* Calendar events reuse same grammar as task rows: rail + subtle wash */
+/* Calendar events reuse same grammar as task rows: rail + subtle wash + gradient */
 .scheduled-task {
     display: flex;
     align-items: flex-start;
     gap: 2px;
-    background: var(--bg-surface);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 5%), var(--bg-surface);
     border: 1px solid var(--border-default);
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 2px 0.5rem;
     padding-left: calc(0.5rem + var(--rail-w));
     font-size: 0.65rem;
@@ -2351,6 +2403,8 @@ body.is-dragging .calendar-event {
     top: 0;
     overflow: hidden;
     box-sizing: border-box;
+    transition: transform var(--duration-fast) var(--ease-default),
+                box-shadow var(--duration-fast) var(--ease-default);
     /* z-index set in drag section */
 }
 
@@ -2363,7 +2417,7 @@ body.is-dragging .calendar-event {
     bottom: 0;
     width: var(--rail-w);
     background: transparent;
-    border-radius: 10px 0 0 10px;
+    border-radius: 6px 0 0 6px;
 }
 
 .scheduled-task:hover {
@@ -2375,7 +2429,9 @@ body.is-dragging .calendar-event {
 }
 
 .scheduled-task.dragging {
-    opacity: 0.4;
+    opacity: 0.9;
+    transform: scale(1.02);
+    box-shadow: var(--shadow-drag);
 }
 
 /* Scheduled tasks from DB are clickable to edit */

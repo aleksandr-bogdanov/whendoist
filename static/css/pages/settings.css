@@ -33,11 +33,13 @@
     color: var(--text-primary);
 }
 
-/* 4) Two-column grid */
+/* 4) Single-column centered layout */
 .settings-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 640px;
+    margin: 0 auto;
 }
 
 .settings-column {
@@ -46,6 +48,25 @@
     gap: 20px;
     min-width: 0;
     overflow: hidden;
+}
+
+/* Section groupings with labels */
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings-section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    padding-left: 4px;
+    border-left: 3px solid var(--primary);
+    padding-left: calc(4px + 8px);
+    margin-left: -3px;
 }
 
 /* =============================================================================
@@ -228,19 +249,32 @@
    Provider/Integration rows
    ============================================================================= */
 
+/* Integration cards - larger visual style */
+.settings-row--integration {
+    padding: 16px;
+    min-height: 72px;
+}
+
 .provider-icon {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--bg-panel);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    font-size: 0.8125rem;
+    border-radius: var(--radius-md);
+    font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-secondary);
     flex-shrink: 0;
+}
+
+/* Provider logo images */
+.provider-icon img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
 }
 
 .provider-info {
@@ -274,6 +308,34 @@
 
 .status-dot.connected {
     background: var(--primary); /* Purple for success per brand */
+}
+
+/* Connected badge checkmark */
+.provider-icon.connected::after {
+    content: "✓";
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-surface);
+}
+
+.provider-icon {
+    position: relative;
+}
+
+/* Subtle glow on disconnected Connect CTA */
+.settings-row--integration:not(.connected) .btn-sm--primary {
+    box-shadow: 0 0 12px rgba(109, 94, 246, 0.2);
 }
 
 /* Muted label for locked state */
@@ -868,15 +930,49 @@ input.add-domain-input::placeholder {
 }
 
 /* =============================================================================
+   Danger Zone - Red tinted section at bottom
+   ============================================================================= */
+
+.settings-section--danger {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.settings-section--danger .settings-section-label {
+    color: var(--red-500);
+    border-left-color: var(--red-500);
+}
+
+.settings-panel--danger {
+    background: rgba(220, 38, 38, 0.04);
+    border-color: rgba(220, 38, 38, 0.15);
+}
+
+.settings-panel--danger .settings-panel__hd {
+    background: rgba(220, 38, 38, 0.06);
+    border-bottom-color: rgba(220, 38, 38, 0.12);
+}
+
+[data-theme="dark"] .settings-panel--danger {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.25);
+}
+
+[data-theme="dark"] .settings-panel--danger .settings-panel__hd {
+    background: rgba(220, 38, 38, 0.12);
+}
+
+/* =============================================================================
    Maintenance panel (danger only)
    ============================================================================= */
 
 .maintenance-content {
-    padding: 16px;
+    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 20px;
 }
 
 .maintenance-info {
@@ -1197,7 +1293,7 @@ input.add-domain-input::placeholder {
     }
 
     .settings-grid {
-        grid-template-columns: 1fr;
+        max-width: 100%;
     }
 
     /* Show actions always on mobile */

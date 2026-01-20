@@ -194,7 +194,8 @@
 .wizard-step-content {
     opacity: 1;
     transform: translateX(0);
-    transition: transform 350ms ease-out, opacity 250ms ease-out;
+    /* Crossfade transition - smoother than slide */
+    transition: opacity 300ms ease-out;
 
     /* Fill available space and use flex to position progress at bottom */
     flex: 1;
@@ -202,23 +203,15 @@
     flex-direction: column;
 }
 
-.wizard-step-content.exit-left {
-    transform: translateX(-30%);
-    opacity: 0;
-}
-
+/* Crossfade exit states */
+.wizard-step-content.exit-left,
 .wizard-step-content.exit-right {
-    transform: translateX(30%);
     opacity: 0;
 }
 
-.wizard-step-content.enter-right {
-    transform: translateX(30%);
-    opacity: 0;
-}
-
+/* Crossfade enter states */
+.wizard-step-content.enter-right,
 .wizard-step-content.enter-left {
-    transform: translateX(-30%);
     opacity: 0;
 }
 
@@ -456,7 +449,45 @@ body.keyboard-open .wizard-nav {
     display: flex;
     justify-content: center;
     gap: 10px;
+    position: relative;
 }
+
+/* Connecting line between dots */
+.wizard-progress::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background: var(--border-default);
+    transform: translateY(-50%);
+    z-index: 0;
+}
+
+/* Progress fill line */
+.wizard-progress::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    height: 2px;
+    background: var(--primary);
+    transform: translateY(-50%);
+    z-index: 1;
+    width: 0;
+    transition: width 300ms ease-out;
+}
+
+/* Progress fill widths based on step count (8 steps) */
+.wizard-progress[data-progress="1"]::after { width: calc((100% - 24px) * 0 / 7); }
+.wizard-progress[data-progress="2"]::after { width: calc((100% - 24px) * 1 / 7); }
+.wizard-progress[data-progress="3"]::after { width: calc((100% - 24px) * 2 / 7); }
+.wizard-progress[data-progress="4"]::after { width: calc((100% - 24px) * 3 / 7); }
+.wizard-progress[data-progress="5"]::after { width: calc((100% - 24px) * 4 / 7); }
+.wizard-progress[data-progress="6"]::after { width: calc((100% - 24px) * 5 / 7); }
+.wizard-progress[data-progress="7"]::after { width: calc((100% - 24px) * 6 / 7); }
+.wizard-progress[data-progress="8"]::after { width: calc(100% - 24px); }
 
 @media (min-width: 600px) {
     .wizard-progress {
@@ -473,6 +504,7 @@ body.keyboard-open .wizard-nav {
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    z-index: 2; /* Above the connecting line */
     background: var(--border);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -2497,6 +2529,11 @@ body.keyboard-open .wizard-nav {
     /* Progress dot pulse */
     .wizard-progress-dot.completing {
         animation: none;
+    }
+
+    /* Progress line transition */
+    .wizard-progress::after {
+        transition: none;
     }
 
     /* Swipe hint movement */

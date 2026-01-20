@@ -89,6 +89,11 @@
     --shadow-glow: 0 0 40px rgba(109, 94, 246, 0.12);
     --shadow-glow-sm: 0 0 24px rgba(109, 94, 246, 0.10);
 
+    /* Drag and hover lift shadows */
+    --shadow-drag: 0 8px 24px rgba(15, 23, 42, 0.15), 0 4px 8px rgba(15, 23, 42, 0.08);
+    --shadow-hover-lift: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+    --shadow-inner-glow: inset 0 0 0 1px rgba(109, 94, 246, 0.15);
+
     /* ===== Border Radius Scale ===== */
     --radius-xs: 4px;
     --radius-sm: 6px;
@@ -253,6 +258,11 @@
     --shadow-cta: 0 4px 20px rgba(109, 94, 246, 0.35), 0 8px 40px rgba(109, 94, 246, 0.20);
     --shadow-cta-hover: 0 6px 28px rgba(109, 94, 246, 0.40), 0 12px 48px rgba(109, 94, 246, 0.25);
 
+    /* Dark mode drag shadows (higher opacity for dark backgrounds) */
+    --shadow-drag: 0 8px 24px rgba(0, 0, 0, 0.25), 0 4px 8px rgba(0, 0, 0, 0.15);
+    --shadow-hover-lift: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.08);
+    --shadow-inner-glow: inset 0 0 0 1px rgba(109, 94, 246, 0.25);
+
     /* Legacy aliases auto-update via CSS custom properties */
 }
 
@@ -274,6 +284,116 @@
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
+}
+
+/* =============================================================================
+   Animation Keyframes
+   ============================================================================= */
+
+/* Checkbox completion pulse - scale bounce with fade */
+@keyframes completion-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* Floating animation for empty states */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+/* Count-up number animation */
+@keyframes count-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ripple effect from drop point */
+@keyframes ripple {
+    0% { transform: scale(0); opacity: 0.5; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+/* Crossfade for content transitions */
+@keyframes crossfade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes crossfade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Lift effect for drag states */
+@keyframes lift {
+    0% { transform: scale(1); box-shadow: var(--shadow-sm); }
+    100% { transform: scale(1.02); box-shadow: var(--shadow-drag); }
+}
+
+/* Collapse animation for deleting items */
+@keyframes collapse {
+    0% {
+        opacity: 1;
+        max-height: 100px;
+        padding-top: var(--space-2);
+        padding-bottom: var(--space-2);
+    }
+    100% {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+}
+
+/* Staggered fade-in for lists */
+@keyframes stagger-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Shine effect for CTA buttons */
+@keyframes shine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Slide in from top for new items */
+@keyframes slide-in-top {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Slide right for hover effects */
+@keyframes slide-right {
+    from { transform: translateX(0); }
+    to { transform: translateX(4px); }
+}
+
+/* Strikethrough draw animation */
+@keyframes strikethrough-draw {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+/* Progress line fill */
+@keyframes progress-fill {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
 }
 
 /* =============================================================================

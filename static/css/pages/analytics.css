@@ -123,11 +123,24 @@
     min-height: 110px;
 }
 
+/* Hero stat - larger, centered (for Completed) */
+.stat-card.hero {
+    grid-column: span 2;
+    padding: 32px;
+    min-height: 140px;
+    background: linear-gradient(180deg, rgba(109, 94, 246, 0.02) 0%, transparent 100%), var(--bg-surface);
+}
+
+.stat-card.hero .stat-value {
+    font-size: 4rem;
+}
+
 .analytics-page .stat-value {
     font-size: 2.5rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1;
+    animation: count-up var(--duration-emphasis) var(--ease-out);
 }
 
 .stat-value.success { color: var(--primary); } /* Purple for success */
@@ -157,7 +170,34 @@
 .stat-change.positive { color: var(--primary); } /* Purple for positive */
 .stat-change.negative { color: var(--red-500); }
 
-/* Panel component */
+/* Section groupings with labels */
+.analytics-section {
+    margin-bottom: 24px;
+}
+
+.analytics-section-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    padding-left: 2px;
+}
+
+/* Section group background for visual hierarchy */
+.analytics-section-group {
+    background: rgba(15, 23, 42, 0.015);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+[data-theme="dark"] .analytics-section-group {
+    background: rgba(248, 250, 252, 0.02);
+}
+
+/* Panel component with hover lift */
 .analytics-page .panel {
     background: var(--bg-surface);
     border: 1px solid var(--border-default);
@@ -165,6 +205,13 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    transition: transform var(--duration-fast) var(--ease-default),
+                box-shadow var(--duration-fast) var(--ease-default);
+}
+
+.analytics-page .panel:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover-lift);
 }
 
 .panel__hd {
@@ -223,10 +270,16 @@
     min-height: 280px;
 }
 
-/* Heatmap specific */
+/* Heatmap specific - 1.5x larger for signature visualization */
 .heatmap-container {
     overflow-x: auto;
     padding: 8px 0;
+    min-height: 200px;
+}
+
+/* Scale up heatmap cells */
+.heatmap-container .apexcharts-heatmap-rect {
+    transform-origin: center;
 }
 
 /* Completion log */
@@ -243,11 +296,16 @@
     border-bottom: 1px solid var(--border-subtle);
     font-size: 0.8125rem;
     cursor: pointer;
-    transition: background var(--duration-instant) var(--ease-default);
+    transition: background var(--duration-instant) var(--ease-default),
+                transform var(--duration-fast) var(--ease-default),
+                border-left-color var(--duration-fast) var(--ease-default);
+    border-left: 2px solid transparent;
 }
 
 .completion-row:hover {
     background: var(--row-hover);
+    transform: translateX(4px);
+    border-left-color: var(--primary);
 }
 
 .completion-row:last-child {
@@ -343,6 +401,12 @@
 
 .streak-fire {
     font-size: 1.5rem;
+    transition: filter var(--duration-fast) var(--ease-default);
+}
+
+/* Subtle glow when streak > 0 */
+.streak-fire.active {
+    filter: drop-shadow(0 0 8px rgba(255, 165, 0, 0.5));
 }
 
 /* Empty state */
@@ -408,4 +472,22 @@
 
 [data-theme="dark"] .recurring-bar {
     background: var(--bg-panel);
+}
+
+/* =============================================================================
+   Reduced Motion
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .analytics-page .stat-value {
+        animation: none;
+    }
+
+    .analytics-page .panel:hover {
+        transform: none;
+    }
+
+    .completion-row:hover {
+        transform: none;
+    }
 }

@@ -19,6 +19,15 @@
     align-items: flex-start;
 }
 
+/* Panel header with left accent bar */
+.panel--accent .panel-header {
+    border-left: 3px solid var(--primary);
+    padding-left: calc(16px - 3px);
+}
+
+.panel--accent-primary .panel-header { border-left-color: var(--primary); }
+.panel--accent-danger .panel-header { border-left-color: var(--red-500); }
+
 .panel-title {
     text-transform: uppercase;
     letter-spacing: 0.14em;
@@ -160,10 +169,36 @@
     gap: 10px;
 }
 
+/* Danger Panel Variant */
+.panel--danger {
+    background: rgba(220, 38, 38, 0.04);
+    border-color: rgba(220, 38, 38, 0.15);
+}
+
+.panel--danger .panel-header {
+    background: rgba(220, 38, 38, 0.06);
+    border-bottom-color: rgba(220, 38, 38, 0.12);
+}
+
+.panel--danger .panel-title {
+    color: var(--red-500);
+}
+
+/* Panel hover lift effect */
+.panel--hoverable {
+    transition: transform var(--duration-fast) var(--ease-default),
+                box-shadow var(--duration-fast) var(--ease-default);
+}
+
+.panel--hoverable:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover-lift);
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;
-    padding: var(--space-8);
+    padding: 48px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -174,6 +209,7 @@
 .empty-state-illustration {
     opacity: 0.9;
     margin-bottom: var(--space-2);
+    animation: float 3s ease-in-out infinite;
 }
 
 .empty-state .empty-title {
@@ -183,10 +219,12 @@
     margin: 0 0 var(--space-2);
 }
 
-.empty-state .empty-desc {
+.empty-state .empty-desc,
+.empty-state-text {
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0;
+    max-width: 280px;
 }
 
 /* =============================================================================
@@ -205,4 +243,29 @@
 [data-theme="dark"] .empty-state .illustration,
 [data-theme="dark"] .empty-state-illustration {
     opacity: 0.95;
+}
+
+/* Dark mode danger panel */
+[data-theme="dark"] .panel--danger {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.25);
+}
+
+[data-theme="dark"] .panel--danger .panel-header {
+    background: rgba(220, 38, 38, 0.12);
+}
+
+/* =============================================================================
+   Reduced Motion
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .empty-state .illustration,
+    .empty-state-illustration {
+        animation: none;
+    }
+
+    .panel--hoverable:hover {
+        transform: none;
+    }
 }

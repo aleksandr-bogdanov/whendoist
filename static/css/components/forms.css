@@ -20,15 +20,21 @@
 }
 
 .input:focus {
-    border-color: rgba(109, 94, 246, 0.5);
+    border-color: var(--primary);
     outline: none;
-    filter: drop-shadow(0 0 4px rgba(109, 94, 246, 0.4));
+    box-shadow: 0 0 0 3px rgba(109, 94, 246, 0.12);
     position: relative;
     z-index: 1;
 }
 
 .input::placeholder {
     color: var(--text-muted);
+    opacity: 0.4;
+}
+
+/* Typing indicator - stronger border when content entered */
+.input:not(:placeholder-shown) {
+    border-color: var(--border-strong);
 }
 
 /* Input error state */
