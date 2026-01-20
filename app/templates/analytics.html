@@ -192,25 +192,47 @@ const stats = {{ stats | tojson }};
 const days = {{ days }};
 const recentCompletions = {{ recent_completions | tojson }};
 
-// Common chart options
-const commonOptions = {
-    chart: {
-        fontFamily: 'inherit',
-        toolbar: { show: false },
-        animations: { enabled: true, speed: 300 },
-    },
-    colors: ['#8b5cf6'],
-    grid: {
-        borderColor: 'rgba(15, 23, 42, 0.08)',
-        strokeDashArray: 4,
-    },
-    tooltip: {
-        theme: 'light',
-        style: {
-            fontSize: '12px',
+// Theme-aware colors
+function getThemeColors() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        primary: '#8b5cf6',
+        text: isDark ? 'rgba(248, 250, 252, 0.72)' : 'rgba(15, 23, 42, 0.5)',
+        textStrong: isDark ? 'rgba(248, 250, 252, 0.9)' : 'rgba(15, 23, 42, 0.6)',
+        grid: isDark ? 'rgba(248, 250, 252, 0.08)' : 'rgba(15, 23, 42, 0.08)',
+        background: isDark ? '#1E293B' : '#ffffff',
+        heatmapEmpty: isDark ? '#334155' : '#e2e8f0',
+        stroke: isDark ? '#0F172A' : '#fff',
+    };
+}
+
+// Get common chart options with current theme
+function getCommonOptions() {
+    const colors = getThemeColors();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        chart: {
+            fontFamily: 'inherit',
+            toolbar: { show: false },
+            animations: { enabled: true, speed: 300 },
+            background: 'transparent',
         },
-    },
-};
+        colors: [colors.primary],
+        grid: {
+            borderColor: colors.grid,
+            strokeDashArray: 4,
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            style: {
+                fontSize: '12px',
+            },
+        },
+    };
+}
+
+// Initialize with current theme
+const commonOptions = getCommonOptions();
 
 // 1. Daily Completions Bar Chart
 const dailyData = stats.daily_completions || [];
@@ -390,6 +412,7 @@ const heatmapSeries = dayNames.map((name, dayIdx) => ({
     })
 })).reverse();
 
+const heatmapColors = getThemeColors();
 new ApexCharts(document.querySelector('#chart-heatmap'), {
     ...commonOptions,
     chart: { ...commonOptions.chart, type: 'heatmap', height: 180 },
@@ -401,7 +424,7 @@ new ApexCharts(document.querySelector('#chart-heatmap'), {
             radius: 2,
             colorScale: {
                 ranges: [
-                    { from: 0, to: 0, color: '#e2e8f0', name: 'none' },
+                    { from: 0, to: 0, color: heatmapColors.heatmapEmpty, name: 'none' },
                     { from: 1, to: 3, color: '#c4b5fd', name: 'low' },
                     { from: 4, to: 7, color: '#a78bfa', name: 'medium' },
                     { from: 8, to: 100, color: '#7c3aed', name: 'high' },
@@ -414,10 +437,10 @@ new ApexCharts(document.querySelector('#chart-heatmap'), {
         labels: { show: false },
     },
     yaxis: {
-        labels: { style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' } },
+        labels: { style: { fontSize: '10px', colors: heatmapColors.text } },
     },
     legend: { show: false },
-    stroke: { width: 2, colors: ['#fff'] },
+    stroke: { width: 2, colors: [heatmapColors.stroke] },
 }).render();
 
 // 6. Impact Distribution
@@ -617,5 +640,66 @@ async function decryptAnalyticsData() {
 
 // Run decryption after page load
 decryptAnalyticsData();
+
+// =============================================================================
+// Theme change handler for ApexCharts
+// =============================================================================
+
+// Store all chart instances for theme updates
+const chartInstances = [];
+
+// Collect chart instances after they're created
+document.addEventListener('DOMContentLoaded', () => {
+    // ApexCharts stores instances globally
+    if (window.Apex && window.Apex._chartInstances) {
+        // Delay to ensure all charts are initialized
+        setTimeout(() => {
+            chartInstances.push(...(window.Apex._chartInstances || []));
+        }, 500);
+    }
+});
+
+// Listen for theme changes
+window.addEventListener('themechange', (e) => {
+    const colors = getThemeColors();
+    const isDark = e.detail.theme === 'dark';
+
+    // Update all ApexCharts instances
+    if (window.ApexCharts) {
+        // Get all chart instances from ApexCharts global registry
+        const charts = document.querySelectorAll('.apexcharts-canvas');
+        charts.forEach(canvas => {
+            const chartId = canvas.getAttribute('id');
+            if (chartId) {
+                // Find the chart instance by looking at parent container
+                const container = canvas.closest('[id^="chart-"]');
+                if (container && container._chart) {
+                    container._chart.updateOptions({
+                        tooltip: { theme: isDark ? 'dark' : 'light' },
+                        grid: { borderColor: colors.grid },
+                    }, false, false);
+                }
+            }
+        });
+    }
+
+    // Update specific charts that need color updates
+    if (domainChart) {
+        domainChart.updateOptions({
+            tooltip: { theme: isDark ? 'dark' : 'light' },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        labels: {
+                            total: {
+                                color: colors.text,
+                            }
+                        }
+                    }
+                }
+            }
+        }, false, false);
+    }
+});
 </script>
 {% endblock %}

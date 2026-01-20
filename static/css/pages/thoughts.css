@@ -279,3 +279,62 @@
         pointer-events: auto;
     }
 }
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .capture-card {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .capture-input {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .capture-input::placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .thoughts-panel {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .thoughts-panel-header {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .thought-row {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .thought-row:hover {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .thought-row.is-active {
+    background: rgba(109, 94, 246, 0.08);
+}
+
+[data-theme="dark"] .thought-dot {
+    background: var(--slate-500);
+}
+
+[data-theme="dark"] .thought-text {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .thought-row:hover .thought-text {
+    color: var(--text-primary);
+}
+
+@keyframes thought-pop-dark {
+    from { background: rgba(109, 94, 246, 0.12); }
+    to   { background: var(--bg-surface); }
+}
+
+[data-theme="dark"] .thought-row.is-new {
+    animation: thought-pop-dark 600ms ease-out;
+}

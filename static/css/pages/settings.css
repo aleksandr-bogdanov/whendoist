@@ -1241,4 +1241,146 @@ input.add-domain-input::placeholder {
     .btn-sm--danger {
         width: 100%;
     }
+
+    /* Theme toggle responsive */
+    .theme-toggle {
+        gap: 4px;
+    }
+
+    .theme-btn {
+        width: 36px;
+        height: 32px;
+    }
+}
+
+/* =============================================================================
+   Theme Toggle
+   ============================================================================= */
+
+.theme-toggle {
+    display: flex;
+    gap: 6px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 3px;
+}
+
+.theme-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 38px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-default);
+}
+
+.theme-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-surface);
+}
+
+.theme-btn.active {
+    background: var(--primary);
+    color: var(--text-inverse);
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-btn.active:hover {
+    background: var(--primary-hover);
+}
+
+.theme-btn svg {
+    flex-shrink: 0;
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .settings-panel {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .settings-panel__hd {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .settings-row:hover {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .expand-section.open {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .modal {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .emoji-picker-btn {
+    background: var(--bg-panel);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .emoji-picker-btn:hover {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .emoji-picker-popover {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .emoji-option:hover {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] input.add-domain-input,
+[data-theme="dark"] input.add-domain-input[type="text"] {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .modal__row input {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .clarity-btn {
+    background: var(--bg-panel);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .theme-toggle {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .theme-btn:hover {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .settings-footer {
+    color: rgba(248, 250, 252, 0.45);
+}
+
+[data-theme="dark"] .footer-sep {
+    color: rgba(248, 250, 252, 0.2);
+}
+
+[data-theme="dark"] .footer-muted {
+    color: rgba(248, 250, 252, 0.35);
+}
+
+[data-theme="dark"] .footer-link {
+    color: rgba(248, 250, 252, 0.5);
 }

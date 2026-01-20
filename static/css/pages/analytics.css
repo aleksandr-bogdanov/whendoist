@@ -385,3 +385,27 @@
         font-size: 1.75rem;
     }
 }
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .stat-card {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .analytics-page .panel {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .panel__hd {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .completion-row:hover {
+    background: rgba(248, 250, 252, 0.03);
+}
+
+[data-theme="dark"] .recurring-bar {
+    background: var(--bg-panel);
+}

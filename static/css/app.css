@@ -606,3 +606,83 @@ img.brand-logo {
         display: flex;
     }
 }
+
+/* =============================================================================
+   Dark Mode Global Overrides
+   ============================================================================= */
+
+[data-theme="dark"] body {
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .site-header {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+[data-theme="dark"] .header-nav .nav-item {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .header-nav .nav-item:hover {
+    color: var(--text-primary);
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .header-nav .nav-item.active {
+    color: var(--primary);
+    background: var(--primary-tint);
+}
+
+[data-theme="dark"] .btn-logout {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-logout:hover {
+    color: var(--text-primary);
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .mobile-nav {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .mobile-nav a {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .mobile-nav a:hover {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .mobile-nav a.active {
+    background: var(--primary-tint);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .hamburger-toggle span {
+    background: var(--text-primary);
+}
+
+/* Toast dark mode */
+[data-theme="dark"] .toast {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+/* Pico CSS dark mode overrides */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+    border-color: var(--primary);
+}
