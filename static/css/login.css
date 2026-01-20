@@ -496,15 +496,38 @@ body:has(.login-page) .site-header {
     align-items: center;
 }
 
+/* Legacy logo (deprecated) */
 .login-logo {
     height: 56px;
     width: auto;
     object-fit: contain;
 }
 
+/* New wordmark in login hero */
+.login-hero-brand .wm.lg svg {
+    width: 36px;
+    height: 32px;
+    margin-bottom: 4px;
+    margin-right: 2px;
+}
+
+.login-hero-brand .wm.lg > span:first-of-type {
+    font-size: 2.5rem;
+}
+
 @media (min-width: 600px) {
     .login-logo {
         height: 64px;
+    }
+
+    .login-hero-brand .wm.lg svg {
+        width: 42px;
+        height: 37px;
+        margin-bottom: 5.5px;
+    }
+
+    .login-hero-brand .wm.lg > span:first-of-type {
+        font-size: 3rem;
     }
 }
 
