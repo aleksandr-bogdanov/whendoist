@@ -111,6 +111,9 @@
     </script>
 </head>
 <body>
+    <!-- Skip to main content link for keyboard navigation -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <header class="site-header">
         <div class="header-inner">
             <a href="/" class="brand">
@@ -161,7 +164,7 @@
     }
     </script>
     {% endif %}
-    <main class="container-fluid">
+    <main id="main-content" class="container-fluid" role="main">
         {% block content %}{% endblock %}
     </main>
 

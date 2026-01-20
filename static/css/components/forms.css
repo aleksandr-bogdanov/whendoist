@@ -203,3 +203,67 @@
     border-color: var(--text-primary);
     color: white;
 }
+
+/* =============================================================================
+   Accessibility - Focus Indicators (WCAG AA)
+   ============================================================================= */
+
+/* Segmented control focus */
+.seg-btn:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+    border-radius: var(--radius-sm);
+}
+
+/* Toggle focus */
+.toggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+/* Checkbox focus */
+.checkbox:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+/* Day button focus */
+.day-btn:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+}
+
+/* Dark mode form adjustments */
+[data-theme="dark"] .input {
+    background: var(--bg-panel);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .segmented {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .seg-btn:hover {
+    background: rgba(248, 250, 252, 0.06);
+}
+
+[data-theme="dark"] .seg-btn.is-active {
+    background: rgba(248, 250, 252, 0.10);
+}
+
+[data-theme="dark"] .toggle {
+    background: rgba(248, 250, 252, 0.20);
+}
+
+[data-theme="dark"] .checkbox {
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .day-btn {
+    background: var(--bg-panel);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .day-btn:hover {
+    background: rgba(248, 250, 252, 0.06);
+}

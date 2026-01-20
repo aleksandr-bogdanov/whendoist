@@ -25,6 +25,21 @@
     pointer-events: none;
 }
 
+/* Focus indicators for accessibility (WCAG AA) */
+.btn:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.btn-primary:focus-visible {
+    outline-color: var(--primary);
+}
+
+.btn-danger:focus-visible,
+.btn-danger-outline:focus-visible {
+    outline-color: var(--red-500);
+}
+
 /* Primary - dark filled */
 .btn-primary {
     background: var(--text-primary);
@@ -166,4 +181,36 @@
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .btn-secondary {
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background: rgba(248, 250, 252, 0.06);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .btn-ghost:hover {
+    background: rgba(248, 250, 252, 0.08);
+}
+
+[data-theme="dark"] .btn-icon {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .btn-icon.edit:hover {
+    background: rgba(109, 94, 246, 0.12);
+}
+
+[data-theme="dark"] .btn-icon.delete:hover {
+    background: rgba(220, 38, 38, 0.12);
 }
