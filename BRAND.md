@@ -2,9 +2,9 @@
 
 > Complete brand specification for Whendoist. This document serves as the single source of truth for all brand elements, design decisions, and implementation guidelines.
 
-**Version:** 1.5
+**Version:** 1.6
 **Last Updated:** January 2026
-**Status:** Wordmark finalized, App Icon Suite (2A), Marketing Assets (2B), Color System (2C), UI Kit (2D), and Illustration System (2E) complete
+**Status:** Wordmark finalized, App Icon Suite (2A), Marketing Assets (2B), Color System (2C), UI Kit (2D), Illustration System (2E), and UI Icon System (2F) complete
 
 ---
 
@@ -808,8 +808,81 @@ docs/brand/
 - [x] Success illustrations (complete, allclear, connected, setup, encrypted)
 - [x] Onboarding graphics (welcome, time, energy, organize)
 - [x] Interactive reference tool (`docs/brand/illustration-reference.html`)
-- [ ] UI icon style guide (small icons for buttons/nav)
-- [ ] Feature icons (calendar, task, domain, etc.)
+
+#### Phase 2F: UI Icon System (Complete)
+- [x] 70+ stroke-based SVG icons in unified style
+- [x] Icon categories: Actions, Navigation, Objects, Status, Features, Misc, Brand
+- [x] SVG sprite file (`static/img/icons/ui-icons.svg`)
+- [x] Interactive icon reference (`docs/brand/icon-reference.html`)
+- [x] Copy-to-clipboard with multiple formats (inline, sprite, CSS)
+- [x] Style guide: 24×24 viewBox, 2px stroke, round caps/joins
+
+---
+
+## UI Icon System
+
+### Style Specifications
+
+All UI icons follow a consistent style for visual harmony:
+
+| Property | Value |
+|----------|-------|
+| ViewBox | `0 0 24 24` |
+| Stroke Width | `2px` |
+| Stroke Caps | `round` |
+| Stroke Joins | `round` |
+| Fill | `none` (stroke-only) |
+| Color | `currentColor` (inherits) |
+
+### Icon Sizes
+
+| Size | Use Case |
+|------|----------|
+| 12px | Inline with small text, chips |
+| 16px | Buttons, table cells |
+| 20px | Standard UI elements (default) |
+| 24px | Headers, emphasis |
+| 32px | Hero sections, large buttons |
+
+### Icon Categories
+
+| Category | Count | Examples |
+|----------|-------|----------|
+| Actions | 14 | edit, delete, copy, download, refresh, undo |
+| Navigation | 14 | menu, chevrons, arrows, logout, home |
+| Objects | 13 | calendar, clock, task, folder, lock, shield |
+| Status | 7 | spinner, check-circle, alert, info |
+| Features | 14 | energy, thought, analytics, settings, search, filter |
+| Misc | 14 | eye, bell, sun, moon, cloud, database, grid |
+| Brand | 2 | w-icon, google |
+
+### Usage
+
+#### Inline SVG (Recommended)
+
+```html
+<svg viewBox="0 0 24 24" width="20" height="20"
+     fill="none" stroke="currentColor"
+     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="20 6 9 17 4 12"/>
+</svg>
+```
+
+#### SVG Sprite Reference
+
+```html
+<svg class="icon" width="20" height="20">
+  <use href="/static/img/icons/ui-icons.svg#check"/>
+</svg>
+```
+
+### Files
+
+| File | Description |
+|------|-------------|
+| `static/img/icons/ui-icons.svg` | SVG sprite with all icons as symbols |
+| `static/img/icons/README.md` | Usage documentation |
+| `docs/brand/icon-reference.html` | Interactive reference with copy-to-clipboard |
 
 ---
 

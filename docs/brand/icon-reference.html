@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist Icon Reference - Phase 2F</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6D5EF6;
+            --primary-light: #EFEEFF;
+            --blue: #167BFF;
+            --magenta: #A020C0;
+            --text: #0B1220;
+            --text-muted: rgba(15, 23, 42, 0.64);
+            --border: rgba(15, 23, 42, 0.085);
+            --border-strong: rgba(15, 23, 42, 0.12);
+            --bg-canvas: #F8FAFC;
+            --bg-panel: #F1F5F9;
+            --bg-card: #FFFFFF;
+            --success: #10B981;
+            --danger: #EF4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 40px 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: flex-end;
+            margin-bottom: 16px;
+        }
+
+        .logo svg {
+            width: 42px;
+            height: 37px;
+            margin-bottom: 5.5px;
+            margin-right: 2px;
+        }
+
+        .logo span {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 3rem;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Style Guide */
+        .style-guide {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .style-guide h2 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+        }
+
+        .specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .spec {
+            background: var(--bg-panel);
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .spec-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .spec-value {
+            font-weight: 600;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        /* Size Demo */
+        .size-demo {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-panel);
+            border-radius: 8px;
+        }
+
+        .size-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .size-item svg {
+            color: var(--text);
+        }
+
+        .size-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Category Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Icon Grid */
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 16px;
+        }
+
+        .icon-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .icon-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(109, 94, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .icon-card.copied {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .icon-card svg {
+            width: 24px;
+            height: 24px;
+            color: var(--text);
+        }
+
+        .icon-card.copied svg {
+            color: var(--primary);
+        }
+
+        .icon-name {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .icon-card.copied .icon-name {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Code Panel */
+        .code-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 32px;
+        }
+
+        .code-panel h2 {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+        }
+
+        .code-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .code-tab {
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: var(--bg-panel);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .code-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        pre {
+            background: #1E293B;
+            color: #E2E8F0;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'SF Mono', Monaco, Consolas, monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        code .tag { color: #7DD3FC; }
+        code .attr { color: #FDA4AF; }
+        code .value { color: #86EFAC; }
+        code .comment { color: #64748B; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Category Section */
+        .category-section {
+            display: none;
+        }
+
+        .category-section.active {
+            display: block;
+        }
+
+        .category-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Hidden icons container for SVG sprites */
+        .svg-sprites {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg viewBox="38 40 180 160">
+                    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                </svg>
+                <span>hendoist</span>
+            </div>
+            <h1>Icon Reference</h1>
+            <p class="subtitle">Phase 2F: UI Icon System</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="total-count">0</div>
+                    <div class="stat-label">Total Icons</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="category-count">0</div>
+                    <div class="stat-label">Categories</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Style Guide -->
+        <div class="style-guide">
+            <h2>Style Guide</h2>
+            <div class="specs">
+                <div class="spec">
+                    <div class="spec-label">ViewBox</div>
+                    <div class="spec-value">0 0 24 24</div>
+                </div>
+                <div class="spec">
+                    <div class="spec-label">Stroke Width</div>
+                    <div class="spec-value">2px</div>
+                </div>
+                <div class="spec">
+                    <div class="spec-label">Stroke Caps</div>
+                    <div class="spec-value">round</div>
+                </div>
+                <div class="spec">
+                    <div class="spec-label">Stroke Joins</div>
+                    <div class="spec-value">round</div>
+                </div>
+                <div class="spec">
+                    <div class="spec-label">Fill</div>
+                    <div class="spec-value">none (stroke only)</div>
+                </div>
+                <div class="spec">
+                    <div class="spec-label">Color</div>
+                    <div class="spec-value">currentColor</div>
+                </div>
+            </div>
+            <div class="size-demo">
+                <div class="size-item">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span class="size-label">12px</span>
+                </div>
+                <div class="size-item">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span class="size-label">16px</span>
+                </div>
+                <div class="size-item">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span class="size-label">20px</span>
+                </div>
+                <div class="size-item">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span class="size-label">24px</span>
+                </div>
+                <div class="size-item">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span class="size-label">32px</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="tabs" id="tabs"></div>
+
+        <!-- Icon Sections -->
+        <div id="icon-sections"></div>
+
+        <!-- Code Panel -->
+        <div class="code-panel">
+            <h2>Usage</h2>
+            <div class="code-tabs">
+                <div class="code-tab active" data-format="inline">Inline SVG</div>
+                <div class="code-tab" data-format="sprite">SVG Sprite</div>
+                <div class="code-tab" data-format="css">CSS Class</div>
+            </div>
+            <pre id="code-block"><code><span class="comment">&lt;!-- Click an icon to copy its code --&gt;</span></code></pre>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copied!</div>
+
+    <!-- Icon Data -->
+    <script>
+        const icons = {
+            actions: {
+                title: 'Actions',
+                icons: [
+                    { id: 'edit', paths: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>' },
+                    { id: 'delete', paths: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>' },
+                    { id: 'trash', paths: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' },
+                    { id: 'close', paths: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>' },
+                    { id: 'plus', paths: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>' },
+                    { id: 'minus', paths: '<line x1="5" y1="12" x2="19" y2="12"/>' },
+                    { id: 'check', paths: '<polyline points="20 6 9 17 4 12"/>' },
+                    { id: 'copy', paths: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' },
+                    { id: 'download', paths: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>' },
+                    { id: 'upload', paths: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>' },
+                    { id: 'refresh', paths: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>' },
+                    { id: 'undo', paths: '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>' },
+                    { id: 'redo', paths: '<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>' },
+                    { id: 'save', paths: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>' },
+                ]
+            },
+            navigation: {
+                title: 'Navigation',
+                icons: [
+                    { id: 'menu', paths: '<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>' },
+                    { id: 'menu-dots', paths: '<circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>', fill: true },
+                    { id: 'menu-dots-h', paths: '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>', fill: true },
+                    { id: 'chevron-down', paths: '<polyline points="6 9 12 15 18 9"/>' },
+                    { id: 'chevron-up', paths: '<polyline points="18 15 12 9 6 15"/>' },
+                    { id: 'chevron-left', paths: '<polyline points="15 18 9 12 15 6"/>' },
+                    { id: 'chevron-right', paths: '<polyline points="9 18 15 12 9 6"/>' },
+                    { id: 'arrow-left', paths: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>' },
+                    { id: 'arrow-right', paths: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>' },
+                    { id: 'arrow-up', paths: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>' },
+                    { id: 'arrow-down', paths: '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>' },
+                    { id: 'external-link', paths: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>' },
+                    { id: 'logout', paths: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>' },
+                    { id: 'home', paths: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
+                ]
+            },
+            objects: {
+                title: 'Objects',
+                icons: [
+                    { id: 'calendar', paths: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>' },
+                    { id: 'clock', paths: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
+                    { id: 'task', paths: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/>' },
+                    { id: 'task-list', paths: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><rect x="3" y="4" width="4" height="4" rx="1"/><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="3" y="16" width="4" height="4" rx="1"/>' },
+                    { id: 'folder', paths: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>' },
+                    { id: 'lock', paths: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>' },
+                    { id: 'unlock', paths: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>' },
+                    { id: 'key', paths: '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>' },
+                    { id: 'shield', paths: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' },
+                    { id: 'shield-check', paths: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>' },
+                    { id: 'user', paths: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>' },
+                    { id: 'file', paths: '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>' },
+                    { id: 'image', paths: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>' },
+                ]
+            },
+            status: {
+                title: 'Status',
+                icons: [
+                    { id: 'spinner', paths: '<circle cx="12" cy="12" r="10" stroke-dasharray="31.4 31.4"/>', animated: true },
+                    { id: 'check-circle', paths: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>' },
+                    { id: 'x-circle', paths: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>' },
+                    { id: 'alert-circle', paths: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' },
+                    { id: 'alert-triangle', paths: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>' },
+                    { id: 'info', paths: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>' },
+                    { id: 'help-circle', paths: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>' },
+                ]
+            },
+            features: {
+                title: 'Features',
+                icons: [
+                    { id: 'energy', paths: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>' },
+                    { id: 'thought', paths: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>' },
+                    { id: 'lightbulb', paths: '<line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>' },
+                    { id: 'analytics', paths: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>' },
+                    { id: 'chart-pie', paths: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>' },
+                    { id: 'settings', paths: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
+                    { id: 'search', paths: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>' },
+                    { id: 'filter', paths: '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>' },
+                    { id: 'sort', paths: '<line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="12" x2="12" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/><polyline points="16 14 20 18 16 22"/><line x1="20" y1="18" x2="20" y2="8"/>' },
+                    { id: 'sort-asc', paths: '<line x1="4" y1="6" x2="11" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="11" y2="18"/><polyline points="15 18 18 21 21 18"/><line x1="18" y1="21" x2="18" y2="9"/>' },
+                    { id: 'sort-desc', paths: '<line x1="4" y1="6" x2="11" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="11" y2="18"/><polyline points="15 6 18 3 21 6"/><line x1="18" y1="3" x2="18" y2="15"/>' },
+                    { id: 'tag', paths: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>' },
+                    { id: 'star', paths: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>' },
+                    { id: 'repeat', paths: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>' },
+                ]
+            },
+            misc: {
+                title: 'Miscellaneous',
+                icons: [
+                    { id: 'link', paths: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>' },
+                    { id: 'eye', paths: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>' },
+                    { id: 'eye-off', paths: '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>' },
+                    { id: 'archive', paths: '<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>' },
+                    { id: 'inbox', paths: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>' },
+                    { id: 'bell', paths: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' },
+                    { id: 'sun', paths: '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>' },
+                    { id: 'moon', paths: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>' },
+                    { id: 'cloud', paths: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>' },
+                    { id: 'database', paths: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>' },
+                    { id: 'grid', paths: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>' },
+                    { id: 'list', paths: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>' },
+                    { id: 'maximize', paths: '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>' },
+                    { id: 'minimize', paths: '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>' },
+                ]
+            },
+            brand: {
+                title: 'Brand',
+                icons: [
+                    { id: 'w-icon', paths: '<rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/><rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/><rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>', viewBox: '38 40 180 160', brand: true },
+                    { id: 'google', paths: '<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>', brand: true },
+                ]
+            }
+        };
+
+        let selectedIcon = null;
+        let selectedFormat = 'inline';
+
+        function init() {
+            renderTabs();
+            renderIcons();
+            updateStats();
+            setupEventListeners();
+        }
+
+        function renderTabs() {
+            const tabsContainer = document.getElementById('tabs');
+            const categories = Object.keys(icons);
+
+            tabsContainer.innerHTML = categories.map((cat, i) =>
+                `<div class="tab ${i === 0 ? 'active' : ''}" data-category="${cat}">${icons[cat].title}</div>`
+            ).join('');
+        }
+
+        function renderIcons() {
+            const sectionsContainer = document.getElementById('icon-sections');
+            const categories = Object.keys(icons);
+
+            sectionsContainer.innerHTML = categories.map((cat, i) => `
+                <div class="category-section ${i === 0 ? 'active' : ''}" data-category="${cat}">
+                    <h3 class="category-title">${icons[cat].title} (${icons[cat].icons.length})</h3>
+                    <div class="icon-grid">
+                        ${icons[cat].icons.map(icon => renderIconCard(icon)).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderIconCard(icon) {
+            const viewBox = icon.viewBox || '0 0 24 24';
+            const fill = icon.fill ? 'currentColor' : 'none';
+            const stroke = icon.brand ? 'none' : 'currentColor';
+
+            return `
+                <div class="icon-card" data-icon="${icon.id}" data-paths="${encodeURIComponent(icon.paths)}" data-viewbox="${viewBox}" data-fill="${icon.fill || false}" data-brand="${icon.brand || false}">
+                    <svg viewBox="${viewBox}" fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        ${icon.paths}
+                    </svg>
+                    <span class="icon-name">${icon.id}</span>
+                </div>
+            `;
+        }
+
+        function updateStats() {
+            let total = 0;
+            Object.values(icons).forEach(cat => total += cat.icons.length);
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('category-count').textContent = Object.keys(icons).length;
+        }
+
+        function setupEventListeners() {
+            // Tab clicks
+            document.getElementById('tabs').addEventListener('click', (e) => {
+                if (e.target.classList.contains('tab')) {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    const category = e.target.dataset.category;
+                    document.querySelectorAll('.category-section').forEach(s => s.classList.remove('active'));
+                    document.querySelector(`.category-section[data-category="${category}"]`).classList.add('active');
+                }
+            });
+
+            // Icon clicks
+            document.getElementById('icon-sections').addEventListener('click', (e) => {
+                const card = e.target.closest('.icon-card');
+                if (card) {
+                    selectIcon(card);
+                }
+            });
+
+            // Code format tabs
+            document.querySelectorAll('.code-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    selectedFormat = tab.dataset.format;
+                    if (selectedIcon) updateCodeBlock();
+                });
+            });
+        }
+
+        function selectIcon(card) {
+            document.querySelectorAll('.icon-card').forEach(c => c.classList.remove('copied'));
+            card.classList.add('copied');
+
+            selectedIcon = {
+                id: card.dataset.icon,
+                paths: decodeURIComponent(card.dataset.paths),
+                viewBox: card.dataset.viewbox,
+                fill: card.dataset.fill === 'true',
+                brand: card.dataset.brand === 'true'
+            };
+
+            updateCodeBlock();
+            copyToClipboard();
+        }
+
+        function updateCodeBlock() {
+            const codeBlock = document.getElementById('code-block');
+            let code = '';
+
+            const fill = selectedIcon.fill ? 'currentColor' : 'none';
+            const stroke = selectedIcon.brand ? 'none' : 'currentColor';
+            const strokeAttrs = selectedIcon.brand ? '' : ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+
+            if (selectedFormat === 'inline') {
+                code = `<span class="tag">&lt;svg</span> <span class="attr">viewBox</span>=<span class="value">"${selectedIcon.viewBox}"</span> <span class="attr">width</span>=<span class="value">"20"</span> <span class="attr">height</span>=<span class="value">"20"</span>
+     <span class="attr">fill</span>=<span class="value">"${fill}"</span> <span class="attr">stroke</span>=<span class="value">"${stroke}"</span>${strokeAttrs ? `
+     <span class="attr">stroke-width</span>=<span class="value">"2"</span> <span class="attr">stroke-linecap</span>=<span class="value">"round"</span> <span class="attr">stroke-linejoin</span>=<span class="value">"round"</span>` : ''}<span class="tag">&gt;</span>
+  ${selectedIcon.paths}
+<span class="tag">&lt;/svg&gt;</span>`;
+            } else if (selectedFormat === 'sprite') {
+                code = `<span class="tag">&lt;svg</span> <span class="attr">class</span>=<span class="value">"icon"</span> <span class="attr">width</span>=<span class="value">"20"</span> <span class="attr">height</span>=<span class="value">"20"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;use</span> <span class="attr">href</span>=<span class="value">"/static/img/icons/ui-icons.svg#${selectedIcon.id}"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/svg&gt;</span>`;
+            } else if (selectedFormat === 'css') {
+                code = `<span class="comment">/* Add to your CSS */</span>
+<span class="tag">.icon-${selectedIcon.id}</span> {
+  <span class="attr">width</span>: <span class="value">20px</span>;
+  <span class="attr">height</span>: <span class="value">20px</span>;
+  <span class="attr">background-image</span>: <span class="value">url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='${selectedIcon.viewBox}' fill='${fill}' stroke='${stroke}'${strokeAttrs}>${selectedIcon.paths}</svg>`)}")</span>;
+}`;
+            }
+
+            codeBlock.innerHTML = `<code>${code}</code>`;
+        }
+
+        function copyToClipboard() {
+            const fill = selectedIcon.fill ? 'currentColor' : 'none';
+            const stroke = selectedIcon.brand ? 'none' : 'currentColor';
+            const strokeAttrs = selectedIcon.brand ? '' : ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+
+            let text = '';
+            if (selectedFormat === 'inline') {
+                text = `<svg viewBox="${selectedIcon.viewBox}" width="20" height="20" fill="${fill}" stroke="${stroke}"${strokeAttrs}>${selectedIcon.paths}</svg>`;
+            } else if (selectedFormat === 'sprite') {
+                text = `<svg class="icon" width="20" height="20"><use href="/static/img/icons/ui-icons.svg#${selectedIcon.id}"/></svg>`;
+            } else {
+                text = `.icon-${selectedIcon.id} { width: 20px; height: 20px; }`;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`Copied ${selectedIcon.id}!`);
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

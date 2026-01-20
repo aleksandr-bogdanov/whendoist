@@ -16,6 +16,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.3] - 2026-01-20
+
+### Summary
+**UI Icon System (Phase 2F)** — 70+ unified SVG icons for UI actions, navigation, objects, status, and features.
+
+### Added
+
+- **70+ stroke-based SVG icons** in `static/img/icons/ui-icons.svg`:
+  - Actions (14): edit, delete, trash, close, plus, minus, check, copy, download, upload, refresh, undo, redo, save
+  - Navigation (14): menu, menu-dots, chevrons, arrows, external-link, logout, home
+  - Objects (13): calendar, clock, task, task-list, folder, lock, unlock, key, shield, user, file, image
+  - Status (7): spinner, check-circle, x-circle, alert-circle, alert-triangle, info, help-circle
+  - Features (14): energy, thought, lightbulb, analytics, chart-pie, settings, search, filter, sort, tag, star, repeat
+  - Misc (14): link, eye, eye-off, archive, inbox, bell, sun, moon, cloud, database, grid, list, maximize, minimize
+  - Brand (2): w-icon, google
+
+- **Interactive icon reference** — `docs/brand/icon-reference.html`:
+  - Category tabs with icon counts
+  - Click-to-copy with toast feedback
+  - Multiple output formats (inline SVG, sprite, CSS)
+  - Live style guide with size demos
+
+- **SVG sprite system** — Use `<use href="/static/img/icons/ui-icons.svg#icon-name"/>` for efficient icon loading
+
+### Changed
+
+- **BRAND.md** — Updated to v1.6 with Phase 2F documentation, icon style guide, and usage examples
+
+---
+
 ## [0.9.2] - 2026-01-20
 
 ### Summary
