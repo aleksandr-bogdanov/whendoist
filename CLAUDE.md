@@ -124,9 +124,77 @@ When implementing the W icon + "hendoist" wordmark, use EXACT specs from the tab
 
 **SVG viewBox:** Always use `viewBox="38 40 180 160"` for the W icon.
 
-## Design System (Tasks Page)
+## Design System Overview
 
-### CSS Custom Properties (in app.css)
+### Design System Transition (v0.9.3 → v1.0)
+
+**IMPORTANT:** The codebase is transitioning from legacy tokens to a new unified token system.
+
+### Which Document to Use
+
+| Task | Document |
+|------|----------|
+| Understanding current behavior | **DESIGN.md** (legacy) |
+| Implementing new features (v1.0+) | **docs/DESIGN-IMPLEMENTATION-PLAN.md** |
+| Looking up color values | **docs/brand/COLOR-SYSTEM.md** |
+| Button/form/panel specs | **docs/brand/UI-KIT.md** |
+| Brand identity (wordmark, logos) | **BRAND.md** |
+
+### Document Status
+
+| Document | Purpose | Status |
+|----------|---------|--------|
+| **docs/DESIGN-IMPLEMENTATION-PLAN.md** | Complete v1.0 migration roadmap | **PRIMARY REFERENCE** |
+| **DESIGN.md** | Documents CURRENT (legacy) implementation | **DEPRECATED** after v1.0 |
+| **docs/brand/UI-KIT.md** | Component specifications | Complete |
+| **docs/brand/COLOR-SYSTEM.md** | Complete color palette (107 tokens) | Complete |
+| **BRAND.md** | Brand identity, wordmark, colors, typography | Complete |
+
+### Implementation Phases (v1.0 Target)
+
+| Phase | Description | Key Deliverables |
+|-------|-------------|------------------|
+| **Phase 1** | Foundation | `tokens.css` — single source of truth for all design tokens |
+| **Phase 2** | Components | `components/*.css` — buttons, forms, panels, typography |
+| **Phase 3** | Page Redesigns | Extract inline CSS from Tasks, Thoughts, Analytics, Settings |
+| **Phase 4** | Dark Mode | Theme toggle, `[data-theme="dark"]`, ApexCharts theming |
+| **Phase 5** | Polish | Icons, illustrations, accessibility audit, testing |
+
+### Key Sections in Implementation Plan
+
+The implementation plan (`docs/DESIGN-IMPLEMENTATION-PLAN.md`) contains:
+
+- **CSS Import Order** — Critical: Pico → tokens → base → components → app → page
+- **Component Migration Priority** — tokens → buttons → forms → panels → typography
+- **Visual Regression Testing** — Baseline capture and comparison scripts
+- **CSS Error Boundaries** — Graceful fallback if tokens.css fails
+- **Animation Keyframes** — Complete set (spin, shimmer, toast, modal, dropdown)
+- **Print Styles** — Analytics and task list printing
+- **Template Update Sequence** — Order for migrating templates without breaking
+- **CSS Bundling Strategy** — Keep separate for v1.0, bundle post-v1.0
+- **Mobile-First Patterns** — Breakpoints, touch targets, safe areas, keyboard handling
+- **Accessibility Requirements** — WCAG AA, focus indicators, keyboard navigation, ARIA
+- **Migration Rollback Plan** — Per-phase rollback procedures if issues arise
+- **Icon/Illustration Integration** — SVG sprite usage, per-page asset mapping
+- **ApexCharts Theme** — Complete chart theming config for Analytics
+
+### Token Migration Map
+
+| Legacy Token | New Token | Meaning |
+|--------------|-----------|---------|
+| `--dark-bg` | `--bg-canvas` | Page canvas |
+| `--grey-bg` | `--bg-panel` | Panel backgrounds |
+| `--light-bg` | `--bg-surface` | Card surfaces |
+| `--elevated-bg` | `--bg-elevated` | Modals, popovers |
+| `--text` | `--text-primary` | Primary text |
+| `--text-muted` | `--text-secondary` | Secondary text |
+| `--text-faint` | `--text-muted` | Tertiary text |
+| `--border-hair` | `--border-subtle` | Inner dividers |
+| `--border` | `--border-default` | Standard borders |
+
+**During migration:** Legacy aliases will continue to work (defined as aliases to new tokens).
+
+### Current CSS Custom Properties (Legacy - in app.css)
 
 ```css
 /* Backgrounds */
@@ -150,6 +218,13 @@ When implementing the W icon + "hendoist" wordmark, use EXACT specs from the tab
 --col-gap: 12px;
 --rail-w: 2px;
 ```
+
+### Reference Implementation
+
+`static/css/wizard.css` (v0.9) uses many of the new design patterns:
+- Glassmorphism effects (`backdrop-filter`)
+- Modern button variants
+- Mobile-first responsive design
 
 ### Design Principles
 
@@ -685,16 +760,21 @@ Contract tests in `tests/test_hotfix_wizard_bugs.py` verify:
 
 ## Files to Read First
 
-1. `DESIGN.md` — Full design system documentation
+### Design System (v1.0 Migration)
+1. `docs/DESIGN-IMPLEMENTATION-PLAN.md` — **PRIMARY**: Complete v1.0 migration roadmap
 2. `BRAND.md` — Brand identity, wordmark, colors, typography
-3. `CHANGELOG.md` — Version history and changes
-4. `tests/README.md` — Test architecture and how to write tests
-5. `static/css/app.css` — Design tokens (first 120 lines)
-6. `static/js/crypto.js` — Client-side encryption library
-7. `app/templates/dashboard.html` — Tasks page template
-8. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
-9. `app/routers/build_info.py` — Build provenance API endpoints
-10. `.github/workflows/release.yml` — Release pipeline (signed tags, attestations, provenance)
+3. `docs/brand/COLOR-SYSTEM.md` — Complete color palette (107 tokens)
+4. `docs/brand/UI-KIT.md` — Component specifications (buttons, forms, panels)
+5. `DESIGN.md` — LEGACY: Current implementation (deprecated after v1.0)
+
+### Code Understanding
+6. `CHANGELOG.md` — Version history and changes
+7. `tests/README.md` — Test architecture and how to write tests
+8. `static/css/app.css` — Design tokens (first 120 lines)
+9. `static/css/wizard.css` — Reference implementation of new design patterns
+10. `static/js/crypto.js` — Client-side encryption library
+11. `app/templates/dashboard.html` — Tasks page template
+12. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
 
 ## Known Issues
 
@@ -702,6 +782,32 @@ None currently tracked.
 
 ## Next Up (v1.0)
 
+### Design System Overhaul
+
+The v1.0 release centers on implementing the new design system documented in `docs/DESIGN-IMPLEMENTATION-PLAN.md`.
+
+| Phase | Goal | Key Deliverables |
+|-------|------|------------------|
+| **Phase 1** | Foundation | `tokens.css` with all design tokens, legacy aliases |
+| **Phase 2** | Components | `components/*.css` — buttons, forms, panels, typography |
+| **Phase 3** | Page Redesigns | Extract inline CSS; Tasks, Thoughts, Analytics, Settings |
+| **Phase 4** | Dark Mode | Theme toggle, `[data-theme="dark"]`, ApexCharts theming |
+| **Phase 5** | Polish | Icon sprite integration, empty state illustrations, accessibility audit |
+
+**Implementation Plan Highlights:**
+- CSS Import Order (critical for specificity)
+- Visual regression testing with Playwright
+- Pico CSS override strategy
+- Component migration priority
+- Template update sequence to avoid broken states
+- CSS error boundaries for graceful degradation
+- Print styles for analytics/task lists
+
+**Phase Completion Criteria** are documented in the implementation plan. Each phase must pass all criteria before proceeding.
+
+**Rollback procedures** are available per-phase if issues arise during migration.
+
+### Other Features
 - Time blocking templates
 - Key rotation (change passphrase without re-encrypting all data)
 - Recovery key generation during encryption setup

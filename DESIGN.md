@@ -1,6 +1,62 @@
-# Whendoist Design System
+# Whendoist Design System (Legacy)
 
-> Complete design specification for Whendoist. Use this document to understand existing patterns and redesign any UI element consistently.
+> **DEPRECATION NOTICE:** This document describes the CURRENT (legacy) implementation. For new development and v1.0 planning, use `docs/DESIGN-IMPLEMENTATION-PLAN.md`.
+
+---
+
+## Design System Transition
+
+**This document is LEGACY.** A comprehensive new design system is being implemented for v1.0.
+
+### When to Use Which Document
+
+| Task | Document |
+|------|----------|
+| Understanding current behavior | **This document (DESIGN.md)** |
+| Implementing new features (v1.0+) | **docs/DESIGN-IMPLEMENTATION-PLAN.md** |
+| Looking up color values | **docs/brand/COLOR-SYSTEM.md** |
+| Button/form/panel specs | **docs/brand/UI-KIT.md** |
+| Brand identity (wordmark, logos) | **BRAND.md** |
+
+### Document Status
+
+| Document | Purpose | Status |
+|----------|---------|--------|
+| **This document (DESIGN.md)** | Documents current implementation | **DEPRECATED** after v1.0 |
+| **docs/DESIGN-IMPLEMENTATION-PLAN.md** | Complete v1.0 migration roadmap | **PRIMARY REFERENCE** |
+| **docs/brand/UI-KIT.md** | Target component specifications | Reference |
+| **docs/brand/COLOR-SYSTEM.md** | Complete color palette (107 tokens) | Reference |
+
+### Token Migration Map (Legacy → New)
+
+| This Document Uses | New System Uses | Purpose |
+|--------------------|-----------------|---------|
+| `--dark-bg` | `--bg-canvas` | Page background |
+| `--grey-bg` | `--bg-panel` | Panel backgrounds |
+| `--light-bg` | `--bg-surface` | Card surfaces |
+| `--elevated-bg` | `--bg-elevated` | Modals, popovers |
+| `--text` | `--text-primary` | Primary text |
+| `--text-muted` | `--text-secondary` | Secondary text |
+| `--text-faint` | `--text-muted` | Tertiary text |
+| `--border-hair` | `--border-subtle` | Inner dividers |
+| `--border` | `--border-default` | Standard borders |
+| `--border-strong` | `--border-strong` | (unchanged) |
+
+**Migration compatibility:** Legacy token names become aliases to new tokens in `tokens.css`, ensuring no breaking changes during transition.
+
+### Implementation Progress
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| **Phase 1** | Create tokens.css, single source of truth | Planned |
+| **Phase 2** | Component system (buttons, forms, panels) | Planned |
+| **Phase 3** | Page-by-page CSS extraction | Planned |
+| **Phase 4** | Dark mode support | Planned |
+| **Phase 5** | Icons, illustrations, accessibility audit | Planned |
+
+**Start here:** `docs/DESIGN-IMPLEMENTATION-PLAN.md` — contains complete CSS token definitions, component specs, migration scripts, visual regression testing setup, and rollback procedures.
+
+---
 
 ## App Overview
 
@@ -1613,4 +1669,6 @@ When designing new UI:
 
 ---
 
-*Last updated: January 2026 (v0.8.4 - Passkey Unlock Architecture)*
+*Last updated: January 2026 (v0.9.3 - UI Icon System)*
+
+**Note:** This is LEGACY documentation. For the new design system being implemented for v1.0, see `docs/DESIGN-IMPLEMENTATION-PLAN.md`.

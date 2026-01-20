@@ -8,6 +8,33 @@
 
 ---
 
+## Related Documentation
+
+| Document | Purpose | Status |
+|----------|---------|--------|
+| **docs/DESIGN-IMPLEMENTATION-PLAN.md** | Implementation roadmap for integrating this brand system into the app | **PRIMARY** |
+| **docs/brand/UI-KIT.md** | Interactive component specifications | Complete |
+| **docs/brand/COLOR-SYSTEM.md** | Detailed color palette with tints and shades | Complete |
+| **DESIGN.md** | Current (legacy) app design patterns | DEPRECATED after v1.0 |
+
+**Note:** This brand system (BRAND.md) defines the TARGET design. DESIGN.md describes the CURRENT implementation. During the v1.0 migration, refer to both documents.
+
+### Implementing This Brand System
+
+This document defines **what** the brand looks like. For **how** to implement it in the app, see:
+
+| Implementation Task | Resource |
+|---------------------|----------|
+| **CSS token migration** | `docs/DESIGN-IMPLEMENTATION-PLAN.md` → Phase 1 |
+| **Component styling (buttons, forms, panels)** | `docs/DESIGN-IMPLEMENTATION-PLAN.md` → Phase 2 |
+| **Page-by-page CSS extraction** | `docs/DESIGN-IMPLEMENTATION-PLAN.md` → Phase 3 |
+| **Dark mode implementation** | `docs/DESIGN-IMPLEMENTATION-PLAN.md` → Phase 4 |
+| **Icon and illustration integration** | `docs/DESIGN-IMPLEMENTATION-PLAN.md` → Phase 5 |
+
+**Start here:** `docs/DESIGN-IMPLEMENTATION-PLAN.md` contains complete CSS token definitions, component code, visual regression testing setup, and rollback procedures.
+
+---
+
 ## Table of Contents
 
 1. [Brand Foundation](#brand-foundation)
