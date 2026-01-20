@@ -50,7 +50,7 @@ Please verify:
 ### 3. Design Principle Adherence
 - [ ] No box-shadow used for hover states (should use tints)
 - [ ] Purple (#6D5EF6) used for success states, not green
-- [ ] Green only mentioned for third-party brand icons and completion buttons (which show green before toggle)
+- [ ] Green only used for: (1) password strength meters (industry standard), (2) third-party brand icons
 - [ ] Rounded corners (6-14px radius) used consistently
 
 ### 4. Cross-File Consistency

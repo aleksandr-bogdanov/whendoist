@@ -232,6 +232,90 @@ WCAG AA requires:
 
 ---
 
+## Gradients & Effects
+
+These tokens are used for modern UI elements like buttons, cards, and glass effects.
+
+### Gradients
+
+```css
+/* Primary gradient (CTA buttons, hero elements) */
+--gradient-primary: linear-gradient(135deg, #6D5EF6 0%, #8B7CF7 50%, #A78BFA 100%);
+--gradient-primary-hover: linear-gradient(135deg, #5B4CF0 0%, #7B6CF5 50%, #9B7BF8 100%);
+
+/* Background gradients */
+--gradient-bg-login: linear-gradient(135deg, #F0EDFF 0%, #E8E5FF 25%, #F5F3FF 50%, #EBE8FF 75%, #F8F7FF 100%);
+--gradient-bg-subtle: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+```
+
+### Glass Effects (Glassmorphism)
+
+```css
+/* Glass backgrounds */
+--glass-bg: rgba(255, 255, 255, 0.85);
+--glass-bg-strong: rgba(255, 255, 255, 0.92);
+--glass-border: rgba(255, 255, 255, 0.5);
+--glass-blur: 20px;
+
+/* Dark mode glass */
+[data-theme="dark"] {
+    --glass-bg: rgba(15, 23, 42, 0.75);
+    --glass-bg-strong: rgba(15, 23, 42, 0.88);
+    --glass-border: rgba(248, 250, 252, 0.08);
+}
+```
+
+**Usage:**
+```css
+.wizard-card {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+}
+```
+
+### Shadow System
+
+Three-tier shadow system with consistent blur edges:
+
+```css
+/* Tier 1: Cards and raised elements */
+--shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+--shadow-card: 0 2px 8px rgba(15, 23, 42, 0.04), 0 4px 24px rgba(15, 23, 42, 0.06);
+
+/* Tier 2: Elevated surfaces (modals, popovers) */
+--shadow-raised: 0 4px 16px rgba(15, 23, 42, 0.06), 0 8px 40px rgba(15, 23, 42, 0.08);
+--shadow-elevated: 0 12px 48px rgba(15, 23, 42, 0.10), 0 4px 16px rgba(15, 23, 42, 0.06);
+--shadow-overlay: 0 10px 30px rgba(15, 23, 42, 0.10);
+
+/* Tier 3: CTA buttons (purple glow) */
+--shadow-cta: 0 4px 20px rgba(109, 94, 246, 0.25), 0 8px 40px rgba(109, 94, 246, 0.15);
+--shadow-cta-hover: 0 6px 28px rgba(109, 94, 246, 0.30), 0 12px 48px rgba(109, 94, 246, 0.18);
+
+/* Glow effects */
+--shadow-glow: 0 0 40px rgba(109, 94, 246, 0.12);
+--shadow-glow-sm: 0 0 24px rgba(109, 94, 246, 0.10);
+```
+
+### Interactive Tokens
+
+```css
+/* Hover states */
+--row-hover: rgba(15, 23, 42, 0.02);          /* Subtle row highlight */
+--interactive-hover: rgba(109, 94, 246, 0.06); /* Purple tint hover */
+--interactive-active: rgba(109, 94, 246, 0.10); /* Purple tint active */
+
+/* Focus states */
+--focus-ring: rgba(109, 94, 246, 0.22);
+
+/* Drop targets (drag and drop) */
+--drop-bg: rgba(109, 94, 246, 0.06);
+--drop-border: rgba(109, 94, 246, 0.22);
+```
+
+---
+
 ## CSS Implementation
 
 ### Complete Token Set

@@ -197,26 +197,26 @@ Danger button without background.
 
 #### Complete Button
 
-Green-tinted button for completion actions.
+Purple-tinted button for completion actions (per brand guidelines: purple for success states).
 
 ```css
 .btn-complete {
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.25);
-    color: #059669;
+    background: rgba(109, 94, 246, 0.08);
+    border: 1px solid rgba(109, 94, 246, 0.25);
+    color: var(--primary);
     gap: 4px;
 }
 
 .btn-complete:hover {
-    background: rgba(16, 185, 129, 0.14);
-    border-color: rgba(16, 185, 129, 0.35);
+    background: rgba(109, 94, 246, 0.14);
+    border-color: rgba(109, 94, 246, 0.35);
 }
 
-/* Completed state - purple per brand guidelines */
+/* Completed state - darker purple for emphasis */
 .btn-complete.is-completed {
-    background: rgba(99, 102, 241, 0.08);
-    border-color: rgba(99, 102, 241, 0.25);
-    color: #6366F1;
+    background: rgba(109, 94, 246, 0.12);
+    border-color: rgba(109, 94, 246, 0.35);
+    color: #5B4CF0;
 }
 ```
 
@@ -1095,8 +1095,9 @@ Connection status indicator.
     background: var(--text-faint);
 }
 
+/* Purple for connected state (per brand: purple for success, not green) */
 .status-dot.connected {
-    background: #16a34a;
+    background: var(--primary);  /* #6D5EF6 */
 }
 ```
 
@@ -1131,6 +1132,8 @@ Connection status indicator.
 
 ### Password Strength Meter
 
+**Note:** This is a documented exception to the "purple for success" rule. Password strength meters use the industry-standard red→yellow→green color progression that users universally expect. Using purple here would confuse users.
+
 ```css
 .wizard-strength-bar {
     flex: 1;
@@ -1146,6 +1149,7 @@ Connection status indicator.
     transition: width 0.2s ease, background 0.2s ease;
 }
 
+/* Exception: Password strength uses industry-standard colors */
 .wizard-strength-fill.weak { width: 25%; background: #DC2626; }
 .wizard-strength-fill.fair { width: 50%; background: #F59E0B; }
 .wizard-strength-fill.good { width: 75%; background: #10B981; }
@@ -1196,8 +1200,77 @@ Connection status indicator.
 ### Color Usage
 
 - **Purple for success states** — Use `var(--primary)` for completed/connected/success, not green
-- **Green only for third-party** — Reserve `#16a34a` for third-party brand icons (Google, etc.)
+- **Green exceptions:**
+  - Password strength meters (industry standard that users universally expect)
+  - Third-party brand icons (Google, Todoist, etc.)
 - **Impact colors for priority** — P1-P4 have specific colors; don't repurpose
+
+> **Brand Rule:** Green (`#10B981`, `#16a34a`) is NEVER used for Whendoist success states.
+> All completion, connection, and success UI uses purple (`#6D5EF6`). See BRAND.md for rationale.
+
+---
+
+## Dark Mode Considerations
+
+When implementing dark mode for UI components, follow these guidelines:
+
+### Token Mapping
+
+Components should use semantic tokens that automatically adapt:
+
+| Light Mode Token | Dark Mode Value |
+|-----------------|-----------------|
+| `--light-bg` | `--slate-800` (#1E293B) |
+| `--grey-bg` | `--slate-900` (#0F172A) |
+| `--dark-bg` | `--slate-950` (#020617) |
+| `--text` | `--slate-50` (#F8FAFC) |
+| `--text-muted` | `rgba(248, 250, 252, 0.72)` |
+| `--border` | `rgba(248, 250, 252, 0.10)` |
+| `--glass-bg` | `rgba(15, 23, 42, 0.85)` |
+| `--glass-border` | `rgba(248, 250, 252, 0.08)` |
+
+### Tint Backgrounds (Clarity Colors)
+
+Tint backgrounds need different opacities in dark mode:
+
+```css
+/* Light mode */
+--executable-tint: #EAF2FF;
+--defined-tint: #EFEEFF;
+--exploratory-tint: #F3ECFA;
+
+/* Dark mode */
+[data-theme="dark"] {
+    --executable-tint: rgba(22, 123, 255, 0.15);
+    --defined-tint: rgba(109, 94, 246, 0.15);
+    --exploratory-tint: rgba(160, 32, 192, 0.15);
+}
+```
+
+### Button Adjustments
+
+Primary buttons may need lighter variants in dark mode for sufficient contrast:
+
+```css
+[data-theme="dark"] {
+    --primary: #8B7CF7;        /* Lighter purple */
+    --primary-hover: #9D8FF8;
+}
+```
+
+### Glass Effects
+
+Glass effects should invert for dark backgrounds:
+
+```css
+[data-theme="dark"] {
+    --glass-bg: rgba(15, 23, 42, 0.75);
+    --glass-bg-strong: rgba(15, 23, 42, 0.88);
+    --glass-border: rgba(248, 250, 252, 0.08);
+}
+```
+
+See `docs/brand/COLOR-SYSTEM.md` for complete dark mode token definitions.
 
 ---
 

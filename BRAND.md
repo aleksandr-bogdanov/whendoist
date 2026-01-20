@@ -2,9 +2,9 @@
 
 > Complete brand specification for Whendoist. This document serves as the single source of truth for all brand elements, design decisions, and implementation guidelines.
 
-**Version:** 1.5
+**Version:** 1.7
 **Last Updated:** January 2026
-**Status:** Wordmark finalized, App Icon Suite (2A), Marketing Assets (2B), Color System (2C), UI Kit (2D), and Illustration System (2E) complete
+**Status:** Phase 2 complete, Phase 3 cohesiveness fixes applied (green→purple, gradients documented, border radius scale, motion spec)
 
 ---
 
@@ -365,6 +365,32 @@ Lighter versions for backgrounds and subtle highlights.
 | **Dark Slate** | `#1E293B` | 30, 41, 59 | Primary text, wordmark on light BG |
 | **White** | `#FFFFFF` | 255, 255, 255 | Wordmark on dark BG |
 
+### Semantic Status Colors
+
+Colors for UI states and feedback. **Note:** Success states use purple, not green.
+
+| Name | Hex | Usage |
+|------|-----|-------|
+| **Danger/Error** | `#DC2626` | Errors, delete actions, destructive operations |
+| **Warning** | `#F97316` | Caution states, sync issues |
+| **Info** | `#167BFF` | Informational messages (uses Executable Blue) |
+| **Success** | `#6D5EF6` | Completion, connection, success (uses Defined Purple) |
+
+> **Critical Brand Rule:** Green (`#10B981`, `#16a34a`) is reserved for:
+> 1. Password strength meters (industry standard exception)
+> 2. Third-party brand icons (Google, Apple, Todoist)
+>
+> All Whendoist success states use purple.
+
+### Impact Colors (Priority)
+
+| Level | Name | Color | Border | Row Wash |
+|-------|------|-------|--------|----------|
+| **P1** | High | `#C9505A` | `#E8A0A6` | `rgba(201, 80, 90, 0.030)` |
+| **P2** | Medium | `#B8860B` | `#D4A84B` | `rgba(184, 134, 11, 0.022)` |
+| **P3** | Low | `#1A9160` | `#5AB88A` | `rgba(26, 145, 96, 0.030)` |
+| **P4** | Minimal | `#6B7385` | `#9CA3B0` | `rgba(107, 115, 133, 0.018)` |
+
 ### Extended Palette
 
 Full color system documentation available in `docs/brand/COLOR-SYSTEM.md`.
@@ -373,6 +399,8 @@ Full color system documentation available in `docs/brand/COLOR-SYSTEM.md`.
 |----------|--------|--------|
 | Neutrals | Slate scale (50-950) | Complete |
 | Semantic | Danger, Warning, Impact levels | Complete |
+| Gradients & Glass | Primary gradient, glassmorphism | Complete |
+| Shadows | 3-tier system (card, elevated, CTA) | Complete |
 | Dark Mode | Full token set | Complete |
 | Accessibility | WCAG AA verified | Complete |
 
@@ -423,6 +451,58 @@ Full color system documentation available in `docs/brand/COLOR-SYSTEM.md`.
 
 ---
 
+## Border Radius Scale
+
+A systematic scale for rounded corners, derived from the W icon's pill cap ratio.
+
+### CSS Variables
+
+```css
+:root {
+    --radius-xs: 4px;   /* Icon buttons, small chips */
+    --radius-sm: 6px;   /* Inputs, standard buttons, panels */
+    --radius-md: 8px;   /* Dropdowns, popovers */
+    --radius-lg: 12px;  /* Settings panels, modals */
+    --radius-xl: 14px;  /* Wizard cards, hero elements */
+    --radius-full: 9999px; /* Pills, badges, dots */
+}
+```
+
+### Scale Rationale
+
+| Size | Value | Use Case | Notes |
+|------|-------|----------|-------|
+| **xs** | 4px | Icon buttons, small chips | Minimal rounding |
+| **sm** | 6px | Inputs, standard buttons | Default UI elements |
+| **md** | 8px | Dropdowns, popovers | Moderate emphasis |
+| **lg** | 12px | Panels, modals | Container elements |
+| **xl** | 14px | Wizard cards, hero elements | Matches W icon pill cap (28px width × 50%) |
+| **full** | 9999px | Pills, badges, status dots | Perfect circles |
+
+### Usage Examples
+
+```css
+/* Buttons */
+.btn { border-radius: var(--radius-sm); }
+.icon-btn { border-radius: var(--radius-xs); }
+
+/* Form elements */
+.input { border-radius: var(--radius-sm); }
+.dropdown-menu { border-radius: var(--radius-md); }
+
+/* Containers */
+.settings-panel { border-radius: var(--radius-lg); }
+.wizard-card { border-radius: var(--radius-xl); }
+
+/* Pills and badges */
+.badge { border-radius: var(--radius-full); }
+.status-dot { border-radius: var(--radius-full); }
+```
+
+> **Design Connection:** The `--radius-xl` value (14px) directly echoes the W icon's pill-cap corners (28px bar width × 50% = 14px radius), creating visual harmony between the brand mark and UI elements.
+
+---
+
 ## Iconography & Illustrations
 
 ### Icon Principles
@@ -431,7 +511,32 @@ Full color system documentation available in `docs/brand/COLOR-SYSTEM.md`.
 2. **2px stroke weight** for consistency (2.5px for emphasis)
 3. **Clarity colors** for semantic meaning
 4. **Simple geometric forms** over detailed illustrations
-5. **120×120 viewBox** standard for all illustrations
+5. **120×120 viewBox** standard for all illustrations (5× the 24×24 icon viewBox)
+
+### Asset Type by Size (Decision Boundary)
+
+When choosing between icons and illustrations, use this size guide:
+
+| Size Range | Asset Type | Examples |
+|------------|------------|----------|
+| **12-24px** | Base icons | Buttons, inline text, navigation |
+| **24-31px** | Colored icons | Status indicators, emphasized states |
+| **32-48px** | Tinted icons | Toast feedback, small empty states, inline modals |
+| **64-120px** | Illustrations | Full empty states, onboarding, modal success/error |
+
+**Why this boundary?**
+- **32px** is the crossover point where tinted icons (with background circles) become visually appropriate
+- Below 32px, the tinted background adds visual noise without benefit
+- Above 48px, illustrations provide better emotional resonance and detail
+
+**ViewBox Relationship:**
+- UI icons: `0 0 24 24` (standard)
+- Illustrations: `0 0 120 120` (5× scale, maintains proportional stroke relationships)
+
+**Stroke Scaling:**
+- UI icons: 2px stroke at 24×24
+- Illustrations: 2-3px primary strokes, 1.5px details at 120×120
+- The ~1.25× stroke increase compensates for larger viewing size
 
 ### Illustration System (Phase 2E)
 
@@ -457,6 +562,38 @@ The illustration system provides consistent, friendly graphics for empty states,
 | **Warning Orange** | `#F97316` | Sync issues, warnings |
 | **Error Red** | `#DC2626` | Errors, failures, locked states |
 | **Neutral Gray** | `#C7CFDA` / `#E2E8F0` | Empty placeholders, disabled states |
+
+#### Dark Mode Considerations for Illustrations
+
+Illustration background tints need different values in dark mode to maintain visual harmony:
+
+| Tint | Light Mode | Dark Mode |
+|------|-----------|-----------|
+| **Blue (Executable)** | `#EAF2FF` | `rgba(22, 123, 255, 0.15)` |
+| **Purple (Defined)** | `#EFEEFF` | `rgba(109, 94, 246, 0.15)` |
+| **Magenta (Exploratory)** | `#F3ECFA` | `rgba(160, 32, 192, 0.15)` |
+| **Neutral** | `#F1F5F9` | `rgba(148, 163, 184, 0.12)` |
+
+**Implementation Options:**
+
+1. **CSS Variables (Recommended):** Update SVGs to use `fill="var(--blue-tint)"` with dark mode definitions
+2. **Separate SVG Variants:** Maintain `-dark.svg` versions for each illustration
+3. **CSS Filter:** Apply `filter: invert(1) hue-rotate(180deg)` with adjustments (not recommended)
+
+```css
+/* CSS variable approach */
+:root {
+    --illustration-blue-tint: #EAF2FF;
+    --illustration-purple-tint: #EFEEFF;
+    --illustration-magenta-tint: #F3ECFA;
+}
+
+[data-theme="dark"] {
+    --illustration-blue-tint: rgba(22, 123, 255, 0.15);
+    --illustration-purple-tint: rgba(109, 94, 246, 0.15);
+    --illustration-magenta-tint: rgba(160, 32, 192, 0.15);
+}
+```
 
 ### Empty State Illustrations
 
@@ -574,21 +711,105 @@ The illustration system provides consistent, friendly graphics for empty states,
 
 ## Motion & Animation
 
-*(To be developed in brand kit iteration)*
+Motion design creates a responsive, polished experience while respecting user preferences.
 
-### Existing Animations
+### Duration Scale
 
-From DESIGN.md:
-- Transitions: `0.15s ease` (standard), `0.2s ease` (larger movements)
-- Toast slide-up animation
-- Drag-drop feedback
+```css
+:root {
+    /* Transition durations */
+    --duration-instant: 0.1s;   /* Micro-feedback: button states, toggles */
+    --duration-fast: 0.15s;     /* Standard UI: hover states, focus rings */
+    --duration-normal: 0.2s;    /* Larger movements: dropdowns, panels */
+    --duration-slow: 0.3s;      /* Page transitions, modals */
+    --duration-emphasis: 0.4s;  /* Celebration moments, wizard transitions */
+}
+```
 
-### Planned Guidelines
+### Easing Functions
 
-- [ ] Loading animations
-- [ ] Micro-interactions
-- [ ] Page transitions
-- [ ] Celebration moments
+```css
+:root {
+    /* Easing curves */
+    --ease-default: ease;                           /* General purpose */
+    --ease-out: ease-out;                           /* Elements entering */
+    --ease-in-out: ease-in-out;                     /* Symmetric motion */
+    --ease-spring: cubic-bezier(0.4, 0, 0.2, 1);    /* Snappy, natural feel */
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1); /* Playful emphasis */
+}
+```
+
+### Animation Patterns
+
+| Pattern | Duration | Easing | Use Case |
+|---------|----------|--------|----------|
+| **Button hover** | 0.15s | ease | State change feedback |
+| **Focus ring** | 0.15s | ease | Accessibility indicator |
+| **Dropdown open** | 0.2s | ease-out | Menu appearance |
+| **Modal entry** | 0.3s | ease-out | Overlay appearance |
+| **Toast slide-up** | 0.3s | ease-out | Notification entry |
+| **Wizard step** | 0.35s | ease-out | Step transitions |
+| **Progress dot** | 0.25s | spring | Completion feedback |
+| **Drag feedback** | 0.1s | ease | Real-time response |
+
+### Spinner Animation
+
+```css
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+```
+
+### Reduced Motion
+
+Always respect user preferences:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+```
+
+### Implementation Examples
+
+```css
+/* Standard button */
+.btn {
+    transition: all var(--duration-fast) var(--ease-default);
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+    transition: opacity var(--duration-normal) var(--ease-out),
+                transform var(--duration-normal) var(--ease-out);
+}
+
+/* Modal with scale */
+.modal {
+    animation: modalIn var(--duration-slow) var(--ease-out);
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+```
 
 ---
 
@@ -808,8 +1029,508 @@ docs/brand/
 - [x] Success illustrations (complete, allclear, connected, setup, encrypted)
 - [x] Onboarding graphics (welcome, time, energy, organize)
 - [x] Interactive reference tool (`docs/brand/illustration-reference.html`)
-- [ ] UI icon style guide (small icons for buttons/nav)
-- [ ] Feature icons (calendar, task, domain, etc.)
+
+#### Phase 2F: UI Icon System (Complete)
+- [x] 107 SVG icons across 10 categories
+- [x] Three-tier architecture: Base, Colored, Tinted
+- [x] Unique Whendoist signature icons (clarity-mode, when, domain)
+- [x] Semantic colored variants using brand colors
+- [x] Tinted decorative variants matching illustration style
+- [x] SVG sprite file (`static/img/icons/ui-icons.svg`)
+- [x] Interactive icon reference (`docs/brand/icon-reference.html`)
+
+---
+
+## UI Icon System
+
+> **107 icons** across 10 categories, organized in a three-tier architecture.
+
+### Design Philosophy
+
+The icon system bridges functional UI needs with Whendoist brand identity through a **three-tier architecture**:
+
+| Tier | Purpose | Style | Use Case |
+|------|---------|-------|----------|
+| **Base** | Functional UI | Stroke-only, `currentColor` | Buttons, navigation, standard UI |
+| **Colored** | Semantic meaning | Stroke with brand colors | Success, warning, error states |
+| **Tinted** | Decorative/emotional | Filled with tinted backgrounds | Empty states, modals, larger contexts |
+
+This architecture ensures:
+1. **Functional flexibility** — Base icons adapt to any context via `currentColor`
+2. **Brand reinforcement** — Colored variants use the clarity color system
+3. **Visual cohesion** — Tinted variants match the illustration style
+
+### Style Specifications
+
+All UI icons follow a consistent style for visual harmony:
+
+| Property | Value |
+|----------|-------|
+| ViewBox | `0 0 24 24` |
+| Stroke Width | `2px` |
+| Stroke Caps | `round` (echoes W icon pill caps) |
+| Stroke Joins | `round` |
+| Fill | `none` (stroke-only for base icons) |
+| Color | `currentColor` (inherits) |
+
+### Icon Categories
+
+| Category | Count | Description |
+|----------|-------|-------------|
+| **Whendoist Signature** | 4 | Unique brand icons: `clarity-mode`, `when`, `domain`, `w-icon` |
+| **Semantic Colored** | 15 | Pre-colored using brand colors for semantic meaning |
+| **Tinted Decorative** | 8 | Icons with backgrounds, matching illustration style |
+| Actions | 14 | edit, delete, copy, download, refresh, undo |
+| Navigation | 16 | menu, chevrons, arrows, logout, home (includes stroke variants) |
+| Objects | 13 | calendar, clock, task, folder, lock, shield |
+| Status | 7 | spinner, check-circle, alert, info |
+| Features | 14 | energy, thought, analytics, settings, search, filter |
+| Misc | 14 | eye, bell, sun, moon, cloud, database, grid |
+| Third-Party Brand | 1 | google |
+
+### Whendoist Signature Icons
+
+Unique icons that embody the Whendoist brand identity:
+
+| Icon | Description | Colors |
+|------|-------------|--------|
+| `clarity-mode` | Three horizontal bars representing clarity levels | Blue, Purple, Magenta |
+| `when` | Calendar + clock representing core app concept | Stroke with embedded clock |
+| `domain` | Folder with W-inspired accent bars | Blue, Purple, Magenta accents |
+| `w-icon` | The W brand mark | Full clarity spectrum |
+
+### Semantic Color Mapping
+
+| Color | Hex | Semantic Meaning | Icons |
+|-------|-----|------------------|-------|
+| **Purple** | `#6D5EF6` | Success, completion, defined | `check-purple`, `check-circle-purple`, `shield-check-purple`, `task-purple`, `star-filled-purple`, `thought-purple` |
+| **Blue** | `#167BFF` | Action, time, executable | `clock-blue`, `energy-blue`, `info-blue` |
+| **Magenta** | `#A020C0` | Exploration, scheduling | `lightbulb-magenta`, `search-magenta`, `calendar-magenta` |
+| **Orange** | `#F97316` | Warning | `alert-circle-orange`, `alert-triangle-orange` |
+| **Red** | `#DC2626` | Error, danger | `x-circle-red` |
+
+### Tinted Decorative Icons
+
+For larger contexts (32px+), these icons include background tints matching the illustration style:
+
+| Icon | Background Tint | Fill Color |
+|------|-----------------|------------|
+| `check-circle-tinted` | Purple tint (#EFEEFF) | Purple (#6D5EF6) |
+| `x-circle-tinted` | Red tint (#FEE2E2) | Red (#DC2626) |
+| `alert-tinted` | Orange tint (#FEF3C7) | Orange (#F97316) |
+| `info-tinted` | Blue tint (#EAF2FF) | Blue (#167BFF) |
+| `shield-tinted` | Purple tint (#EFEEFF) | Purple (#6D5EF6) |
+| `calendar-tinted` | Magenta tint (#F3ECFA) | Magenta (#A020C0) |
+| `energy-tinted` | Blue tint (#EAF2FF) | Blue (#167BFF) |
+| `thought-tinted` | Purple tint (#EFEEFF) | Purple (#6D5EF6) |
+
+### Icon Sizes
+
+| Size | Use Case |
+|------|----------|
+| 12px | Inline with small text, chips |
+| 16px | Buttons, table cells |
+| 20px | Standard UI elements (default) |
+| 24px | Headers, emphasis |
+| 32px+ | Tinted decorative icons, hero sections |
+
+### Usage Guidelines
+
+#### When to Use Each Tier
+
+| Scenario | Recommended Tier | Example |
+|----------|-----------------|---------|
+| Button icon | Base | `<use href="#edit"/>` |
+| Navigation | Base | `<use href="#chevron-right"/>` |
+| Success toast | Colored | `<use href="#check-purple"/>` |
+| Error message | Colored | `<use href="#x-circle-red"/>` |
+| Empty state | Tinted | `<use href="#check-circle-tinted"/>` at 32px+ |
+| Modal success | Tinted | `<use href="#shield-tinted"/>` at 64px |
+| Feature header | Whendoist Signature | `<use href="#clarity-mode"/>` |
+
+#### Inline SVG (Base icons)
+
+```html
+<svg viewBox="0 0 24 24" width="20" height="20"
+     fill="none" stroke="currentColor"
+     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="20 6 9 17 4 12"/>
+</svg>
+```
+
+#### SVG Sprite Reference
+
+```html
+<!-- Base icon -->
+<svg class="icon" width="20" height="20">
+  <use href="/static/img/icons/ui-icons.svg#check"/>
+</svg>
+
+<!-- Colored variant (no additional attributes needed) -->
+<svg class="icon" width="20" height="20">
+  <use href="/static/img/icons/ui-icons.svg#check-purple"/>
+</svg>
+
+<!-- Tinted decorative (use at 32px+) -->
+<svg class="icon" width="48" height="48">
+  <use href="/static/img/icons/ui-icons.svg#check-circle-tinted"/>
+</svg>
+```
+
+### Files
+
+| File | Description |
+|------|-------------|
+| `static/img/icons/ui-icons.svg` | SVG sprite with all icons as symbols |
+| `static/img/icons/README.md` | Usage documentation |
+| `docs/brand/icon-reference.html` | Interactive reference with copy-to-clipboard |
+
+---
+
+## Phase 2 Cohesiveness Audit & Improvement Plan
+
+> **Status:** Review completed January 2026
+> **Purpose:** Identify inconsistencies and gaps across Phase 2A-2F to improve brand cohesion
+
+---
+
+### Executive Summary
+
+Phase 2 delivers substantial brand assets (icons, illustrations, colors, UI components), but documentation fragmentation and principle violations undermine cohesion. The most critical issues are:
+
+1. **Green color usage contradicts brand principle** — UI-KIT uses green despite "purple for success" rule
+2. **Gradients and glass effects are undocumented** — Wizard components use variables that don't exist in any spec
+3. **Color system is fragmented** — Different files define different parts of the palette
+4. **Tinted icons vs. illustrations boundary is unclear** — No guidance on when to use which
+
+---
+
+### Critical Issues (Must Fix)
+
+#### Issue 1: Green Color Contradiction
+
+**Severity:** Critical — Directly violates stated brand principle
+
+**Brand Principle (BRAND.md line 58-60):**
+> "Purple for success states — Success/connected/check states use purple, not green. Green reserved for third-party brand icons only."
+
+**Violations Found in UI-KIT.md:**
+```css
+/* .btn-complete uses green */
+.btn-complete {
+    background: rgba(16, 185, 129, 0.08);  /* Green */
+    color: #059669;                         /* Green */
+}
+
+/* Password strength meter uses green */
+.wizard-strength-fill.good { background: #10B981; }
+.wizard-strength-fill.strong { background: #059669; }
+
+/* Status dot uses green */
+.status-dot.connected { background: #16a34a; }
+```
+
+**Recommended Fix:**
+1. Change `.btn-complete` to use purple tints
+2. Keep password strength as-is (industry convention exception)
+3. Document green exception: "Green permitted for password strength indicators (user expectation) and third-party brand icons"
+4. Change `.status-dot.connected` to purple
+
+---
+
+#### Issue 2: Undocumented Gradients and Glass Effects
+
+**Severity:** Critical — Components reference non-existent variables
+
+**UI-KIT.md references these undefined variables:**
+```css
+--gradient-primary          /* Not defined anywhere */
+--gradient-primary-hover    /* Not defined anywhere */
+--glass-bg                  /* Not defined anywhere */
+--glass-bg-strong           /* Not defined anywhere */
+--glass-border              /* Not defined anywhere */
+--shadow-sm                 /* Not defined anywhere */
+--shadow-card               /* Not defined anywhere */
+--row-hover                 /* Not defined anywhere */
+```
+
+**Recommended Fix:**
+Add "Gradients & Effects" section to COLOR-SYSTEM.md:
+```css
+/* Gradients */
+--gradient-primary: linear-gradient(135deg, #6D5EF6 0%, #5B4CF0 100%);
+--gradient-primary-hover: linear-gradient(135deg, #5B4CF0 0%, #4A3DE8 100%);
+
+/* Glass Effects */
+--glass-bg: rgba(255, 255, 255, 0.65);
+--glass-bg-strong: rgba(255, 255, 255, 0.85);
+--glass-border: rgba(15, 23, 42, 0.06);
+
+/* Shadows */
+--shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+--shadow-card: 0 4px 12px rgba(15, 23, 42, 0.08);
+
+/* Interaction */
+--row-hover: rgba(15, 23, 42, 0.02);
+```
+
+---
+
+#### Issue 3: Color System Fragmentation
+
+**Severity:** High — Information scattered across 3 files
+
+**Current State:**
+- **BRAND.md:** Clarity colors + tints (6 colors)
+- **COLOR-SYSTEM.md:** Full palette including slate scale, semantic colors, dark mode
+- **UI-KIT.md:** Uses legacy token names (`--dark-bg`, `--grey-bg`, etc.)
+
+**Problems:**
+1. Semantic colors (Orange #F97316, Red #DC2626) only appear in Phase 2E/2F docs, not in core color section
+2. Impact colors (P1-P4) documented only in COLOR-SYSTEM.md
+3. UI-KIT uses different token names than COLOR-SYSTEM recommends
+4. No single source of truth for all colors
+
+**Recommended Fix:**
+1. Update BRAND.md Color System section to include ALL colors:
+   - Clarity colors (existing)
+   - Semantic status colors (danger, warning, info)
+   - Impact colors (P1-P4)
+   - Neutral slate scale reference
+2. Add cross-reference: "See COLOR-SYSTEM.md for implementation details"
+3. Migrate UI-KIT to use new token names (or document mapping clearly)
+
+---
+
+### High Priority Issues
+
+#### Issue 4: Tinted Icons vs Illustrations Boundary
+
+**Severity:** High — Confusing guidance for implementers
+
+**Current Documentation:**
+- Tinted icons: "Use at 32px+"
+- Illustrations: "64-120px recommended"
+
+**Problem:** What about 32-63px? Both are options with no guidance.
+
+**Recommended Fix:**
+Add clear sizing guidance:
+```
+| Size Range | Asset Type | Example Use |
+|------------|------------|-------------|
+| 12-24px    | Base icons | Buttons, inline UI |
+| 24-31px    | Colored icons | Status indicators |
+| 32-48px    | Tinted icons | Toast feedback, small empty states |
+| 64-120px   | Illustrations | Full empty states, modals, onboarding |
+```
+
+---
+
+#### Issue 5: Rounded Corner Inconsistency
+
+**Severity:** High — No systematic scale
+
+**Current State (observed radii):**
+- 2px (checkbox details)
+- 4px (icon buttons)
+- 5px (segment buttons, day buttons)
+- 6px (inputs, standard buttons, panels)
+- 8px (dropdowns)
+- 10px (wizard inputs, options)
+- 12px (settings panels, modals)
+- 14px (capture stack, wizard cards) — matches W icon pill cap ratio
+
+**Problem:** No documented scale or rationale
+
+**Recommended Fix:**
+Define Border Radius Scale in BRAND.md:
+```css
+/* Border Radius Scale */
+--radius-xs: 4px;   /* Icon buttons, small chips */
+--radius-sm: 6px;   /* Inputs, standard buttons */
+--radius-md: 8px;   /* Dropdowns, popovers */
+--radius-lg: 12px;  /* Panels, modals */
+--radius-xl: 14px;  /* Wizard cards, hero elements */
+
+/* Rationale: xl (14px) matches W icon pill cap (28px width × 50%) */
+```
+
+---
+
+#### Issue 6: Dark Mode Gaps
+
+**Severity:** High — Incomplete implementation guidance
+
+**Current State:**
+- COLOR-SYSTEM.md has dark mode tokens for colors
+- UI-KIT has no dark mode considerations
+- Illustrations use hardcoded light-mode tint colors
+- Tinted icons use hardcoded light-mode backgrounds
+
+**Problems:**
+1. Illustration tint backgrounds (#EFEEFF, #EAF2FF, etc.) will clash with dark canvas
+2. UI-KIT patterns don't adapt to dark mode
+
+**Recommended Fix:**
+1. Add dark mode variants for illustration tints:
+   ```css
+   [data-theme="dark"] {
+       --blue-tint: rgba(22, 123, 255, 0.15);
+       --purple-tint: rgba(109, 94, 246, 0.15);
+       --magenta-tint: rgba(160, 32, 192, 0.15);
+   }
+   ```
+2. Update illustration SVGs to use CSS variables or provide dark variants
+3. Add dark mode section to UI-KIT.md
+
+---
+
+### Medium Priority Issues
+
+#### Issue 7: Icon Count Discrepancy
+
+**Documented:** "90+ icons"
+**Actual count from icon-reference.html:** 106 icons
+
+**Recommended Fix:** Update to "100+ icons" or give exact count
+
+---
+
+#### Issue 8: ViewBox Rationale Missing
+
+**Current ViewBoxes:**
+- W icon: 38 40 180 160 (custom crop)
+- UI icons: 0 0 24 24 (standard)
+- Illustrations: 0 0 120 120 (5× UI icons)
+
+**Problem:** No documented rationale for the 120×120 choice or relationship to 24×24
+
+**Recommended Fix:**
+Add to Icon Principles section:
+> "Illustrations use 120×120 viewBox (5× the standard icon viewBox) to provide detail while maintaining proportional stroke relationships. At this scale, 2px strokes on icons become 2-3px on illustrations."
+
+---
+
+#### Issue 9: Third-Party Brand Icon Gaps
+
+**Current:** Only Google documented
+
+**Missing:** Apple (passkeys), Todoist (import feature)
+
+**Recommended Fix:**
+Add to Third-Party Brand category:
+```javascript
+{ id: 'apple', paths: '...', brand: true },
+{ id: 'todoist', paths: '...', brand: true }
+```
+
+---
+
+#### Issue 10: Stroke Width Relationship Unclear
+
+**Current:**
+- UI icons: 2px stroke
+- Illustrations: 2-3px outlines, 1.5px details
+
+**Problem:** No mathematical relationship or scaling guidance
+
+**Recommended Fix:**
+Document in Illustration System section:
+> "Stroke widths scale at approximately 1.25× from icons to illustrations. For consistency, use 2.5px for primary strokes and 1.5px for secondary details."
+
+---
+
+### Low Priority Issues
+
+#### Issue 11: Naming Convention Inconsistencies
+
+**Examples:**
+- `success-allclear` (no hyphen between words)
+- `success-complete` (consistent)
+- `empty-tasks` vs `import-data` (verb vs noun)
+
+**Recommended Fix:**
+Establish naming convention:
+> "Use `[state]-[noun]` pattern: `empty-tasks`, `error-connection`, `success-setup`"
+
+---
+
+#### Issue 12: Marketing Assets Lack Visual Spec
+
+**Problem:** Email headers mention "gradient" but no visual spec exists
+
+**Recommended Fix:**
+Add to Marketing Assets section:
+```
+Email Header Gradient:
+- Direction: 135deg
+- Start: #6D5EF6 (Purple)
+- End: #167BFF (Blue)
+- Wordmark: White, centered
+```
+
+---
+
+#### Issue 13: Animation/Motion Still "To Be Developed"
+
+**Problem:** Phase 2F has animated spinners but no motion spec
+
+**Recommended Fix:**
+Add basic motion guidelines:
+```css
+/* Transition durations */
+--duration-instant: 0.1s;   /* Micro-feedback */
+--duration-fast: 0.15s;     /* Standard UI */
+--duration-normal: 0.2s;    /* Larger movements */
+--duration-slow: 0.3s;      /* Page transitions */
+
+/* Easing */
+--ease-default: ease;
+--ease-spring: cubic-bezier(0.4, 0, 0.2, 1);
+```
+
+---
+
+### Implementation Priority Order
+
+| Phase | Items | Effort | Impact |
+|-------|-------|--------|--------|
+| **3A** | Fix green contradiction, document gradients/glass | Low | Critical |
+| **3B** | Consolidate color system, add dark mode guidance | Medium | High |
+| **3C** | Define border radius scale, icon/illustration boundary | Low | Medium |
+| **3D** | Update icon count, add missing brand icons | Low | Low |
+| **3E** | Naming conventions, motion spec | Low | Low |
+
+---
+
+### Verification Checklist
+
+After implementing fixes, verify:
+
+- [x] All CSS variables referenced in UI-KIT.md are defined in COLOR-SYSTEM.md
+- [x] No green used for success states (except password strength)
+- [x] Border radius values use defined scale variables
+- [x] Dark mode tokens cover all tint backgrounds
+- [x] Icon count in docs matches actual count (107 icons)
+- [x] Illustrations have dark mode consideration documented
+
+**Last verified:** Phase 3 implementation complete (January 2026)
+
+---
+
+### Files Requiring Updates
+
+| File | Changes Needed |
+|------|----------------|
+| `BRAND.md` | Add semantic colors, border radius scale, update icon count |
+| `COLOR-SYSTEM.md` | Add gradients, glass effects, shadows, row hover |
+| `UI-KIT.md` | Fix green → purple, add dark mode section, migrate tokens |
+| `static/img/icons/README.md` | Update icon count |
+
+---
+
+*This improvement plan is part of the Whendoist Brand System v1.6 audit.*
 
 ---
 
