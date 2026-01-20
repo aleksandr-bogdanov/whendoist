@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist Brand System - Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --slate-50: #F8FAFC;
+            --slate-100: #F1F5F9;
+            --slate-800: #1E293B;
+            --slate-900: #0F172A;
+            --purple-500: #6D5EF6;
+            --green-500: #16A34A;
+            --red-500: #DC2626;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--slate-50);
+            color: var(--slate-900);
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+        }
+
+        h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--purple-500);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #64748B;
+            font-size: 0.9rem;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .summary-card h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748B;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card .count {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .summary-card .count.pass { color: var(--green-500); }
+        .summary-card .count.fail { color: var(--red-500); }
+        .summary-card .count.warn { color: #B8860B; }
+
+        .section {
+            background: white;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--purple-500);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(109, 94, 246, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+        }
+
+        th {
+            font-weight: 600;
+            color: #64748B;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .color-preview {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid rgba(15, 23, 42, 0.1);
+        }
+
+        .color-hex {
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .status.pass { color: var(--green-500); }
+        .status.fail { color: var(--red-500); }
+        .status.warn { color: #B8860B; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .badge-pass {
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--green-500);
+        }
+
+        .badge-fail {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--red-500);
+        }
+
+        .badge-warn {
+            background: rgba(184, 134, 11, 0.1);
+            color: #B8860B;
+        }
+
+        .issue-list {
+            background: rgba(220, 38, 38, 0.05);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .issue-list h4 {
+            color: var(--red-500);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .issue-list ul {
+            margin: 0;
+            padding-left: 1.25rem;
+            font-size: 0.85rem;
+        }
+
+        .all-pass {
+            background: rgba(22, 163, 74, 0.05);
+            border: 1px solid rgba(22, 163, 74, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--green-500);
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .timestamp {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94A3B8;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .summary {
+                grid-template-columns: 1fr;
+            }
+            table {
+                font-size: 0.75rem;
+            }
+            th, td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Brand System Verification</h1>
+        <p class="subtitle">Automated consistency check for Phase 2B & 2C implementation</p>
+    </header>
+
+    <div class="summary">
+        <div class="summary-card">
+            <h3>Color Consistency</h3>
+            <div class="count" id="color-count">-</div>
+        </div>
+        <div class="summary-card">
+            <h3>WCAG Accessibility</h3>
+            <div class="count" id="wcag-count">-</div>
+        </div>
+        <div class="summary-card">
+            <h3>Asset Files</h3>
+            <div class="count" id="asset-count">-</div>
+        </div>
+    </div>
+
+    <!-- Color Consistency -->
+    <section class="section">
+        <h2 class="section-title">1. Color Value Consistency</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Color Name</th>
+                    <th>Expected Value</th>
+                    <th>BRAND.md</th>
+                    <th>COLOR-SYSTEM.md</th>
+                    <th>color-reference.html</th>
+                    <th>app.css</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="color-table"></tbody>
+        </table>
+        <div id="color-issues"></div>
+    </section>
+
+    <!-- WCAG Accessibility -->
+    <section class="section">
+        <h2 class="section-title">2. WCAG AA Contrast Verification</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Combination</th>
+                    <th>Foreground</th>
+                    <th>Background</th>
+                    <th>Ratio</th>
+                    <th>AA Normal (4.5:1)</th>
+                    <th>AA Large (3:1)</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody id="wcag-table"></tbody>
+        </table>
+    </section>
+
+    <!-- Asset Filename Check -->
+    <section class="section">
+        <h2 class="section-title">3. Asset Filename Consistency</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Asset Name</th>
+                    <th>BRAND.md</th>
+                    <th>PRESS-KIT.md</th>
+                    <th>marketing-export.html</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="asset-table"></tbody>
+        </table>
+        <div id="asset-issues"></div>
+    </section>
+
+    <!-- Dark Mode Mapping -->
+    <section class="section">
+        <h2 class="section-title">4. Dark Mode Token Mapping</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Token</th>
+                    <th>Light Value</th>
+                    <th>Dark Value</th>
+                    <th>Inversion Logic</th>
+                </tr>
+            </thead>
+            <tbody id="darkmode-table"></tbody>
+        </table>
+    </section>
+
+    <!-- Tint Differentiation -->
+    <section class="section">
+        <h2 class="section-title">5. Tint Value Differentiation</h2>
+        <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;">
+            Verifying that similar tints are intentionally different for their use cases.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tint Name</th>
+                    <th>Value</th>
+                    <th>Purpose</th>
+                    <th>Preview</th>
+                </tr>
+            </thead>
+            <tbody id="tint-table"></tbody>
+        </table>
+    </section>
+
+    <p class="timestamp" id="timestamp"></p>
+</div>
+
+<script>
+// ============ COLOR DEFINITIONS (Source of Truth) ============
+
+const expectedColors = {
+    // Brand / Clarity Colors
+    'Executable Blue': { hex: '#167BFF', sources: { brand: true, colorSystem: true, colorRef: true, appCss: true } },
+    'Defined Purple': { hex: '#6D5EF6', sources: { brand: true, colorSystem: true, colorRef: true, appCss: true } },
+    'Exploratory Magenta': { hex: '#A020C0', sources: { brand: true, colorSystem: true, colorRef: true, appCss: true } },
+
+    // Tints
+    'Executable Tint': { hex: '#EAF2FF', sources: { brand: true, colorSystem: true, colorRef: true, appCss: true } },
+    'Defined Tint': { hex: '#EFEEFF', sources: { brand: true, colorSystem: true, colorRef: true, appCss: true } },
+    'Exploratory Tint': { hex: '#F3ECFA', sources: { brand: true, colorSystem: true, colorRef: true, appCss: true } },
+
+    // Neutrals
+    'Dark Slate': { hex: '#1E293B', sources: { brand: true, colorSystem: true, colorRef: true, appCss: false } },
+    'Primary Text': { hex: '#0B1220', sources: { brand: false, colorSystem: true, colorRef: true, appCss: true } },
+
+    // Slate Scale
+    'Slate 50': { hex: '#F8FAFC', sources: { brand: false, colorSystem: true, colorRef: true, appCss: true } },
+    'Slate 100': { hex: '#F1F5F9', sources: { brand: false, colorSystem: true, colorRef: true, appCss: true } },
+    'Slate 900': { hex: '#0F172A', sources: { brand: false, colorSystem: true, colorRef: true, appCss: false } },
+
+    // Accessible Variants
+    'Accessible Blue': { hex: '#0066E6', sources: { brand: false, colorSystem: true, colorRef: true, appCss: false } },
+    'Accessible Purple': { hex: '#5B4CF0', sources: { brand: false, colorSystem: true, colorRef: true, appCss: false } },
+};
+
+const wcagTests = [
+    { name: 'Primary Text on White', fg: '#0B1220', bg: '#FFFFFF', notes: '' },
+    { name: 'Primary Text on Canvas', fg: '#0B1220', bg: '#F8FAFC', notes: '' },
+    { name: 'Purple on White', fg: '#6D5EF6', bg: '#FFFFFF', notes: '' },
+    { name: 'Blue on White', fg: '#167BFF', bg: '#FFFFFF', notes: 'Use #0066E6 for text' },
+    { name: 'Magenta on White', fg: '#A020C0', bg: '#FFFFFF', notes: '' },
+    { name: 'White on Purple', fg: '#FFFFFF', bg: '#6D5EF6', notes: '' },
+    { name: 'Accessible Blue on White', fg: '#0066E6', bg: '#FFFFFF', notes: 'Accessible variant' },
+    { name: 'Accessible Purple on White', fg: '#5B4CF0', bg: '#FFFFFF', notes: 'Accessible variant' },
+    { name: 'Light on Dark (dark mode)', fg: '#F8FAFC', bg: '#0F172A', notes: '' },
+    { name: 'Dark Mode Purple', fg: '#8B7CF7', bg: '#0F172A', notes: '' },
+];
+
+const assetFiles = [
+    { name: 'profile-400.png', brand: true, press: true, marketing: 'profile-400' },
+    { name: 'profile-200.png', brand: true, press: true, marketing: 'profile-200' },
+    { name: 'profile-128.png', brand: true, press: true, marketing: 'profile-128' },
+    { name: 'profile-dark-400.png', brand: true, press: true, marketing: 'profile-dark-400' },
+    { name: 'email-header-600x200.png', brand: true, press: true, marketing: 'email-header-600x200' },
+    { name: 'email-header-compact-600x150.png', brand: true, press: true, marketing: 'email-header-compact-600x150' },
+    { name: 'email-banner-600x300.png', brand: true, press: true, marketing: 'email-banner-600x300' },
+    { name: 'press-logo-horizontal-1200x400.png', brand: true, press: true, marketing: 'press-logo-horizontal-1200x400' },
+    { name: 'press-logo-stacked-800x800.png', brand: true, press: true, marketing: 'press-logo-stacked-800x800' },
+    { name: 'press-icon-1024.png', brand: true, press: true, marketing: 'press-icon-1024' },
+    { name: 'press-colors-1200x800.png', brand: true, press: true, marketing: 'press-colors-1200x800' },
+];
+
+const darkModeTokens = [
+    { token: '--bg-canvas', light: '#F8FAFC', lightLabel: 'slate-50', dark: '#0F172A', darkLabel: 'slate-900', logic: 'Lightest ↔ Darkest' },
+    { token: '--bg-panel', light: '#F1F5F9', lightLabel: 'slate-100', dark: '#1E293B', darkLabel: 'slate-800', logic: 'Light ↔ Dark' },
+    { token: '--bg-surface', light: '#FFFFFF', lightLabel: 'white', dark: '#334155', darkLabel: 'slate-700', logic: 'White ↔ Mid-dark' },
+    { token: '--bg-elevated', light: '#FFFFFF', lightLabel: 'white', dark: '#475569', darkLabel: 'slate-600', logic: 'White ↔ Lighter dark' },
+    { token: '--text-primary', light: '#0B1220', lightLabel: 'near-black', dark: '#F8FAFC', darkLabel: 'slate-50', logic: 'Dark ↔ Light' },
+    { token: '--primary', light: '#6D5EF6', lightLabel: 'purple-500', dark: '#8B7CF7', darkLabel: 'purple-400', logic: 'Standard ↔ Lightened' },
+];
+
+const tintValues = [
+    { name: '--primary-tint', hex: '#E9E7FF', purpose: 'Selection backgrounds, active states' },
+    { name: '--defined-tint', hex: '#EFEEFF', purpose: 'Normal/Defined mode backgrounds' },
+    { name: '--executable-tint', hex: '#EAF2FF', purpose: 'Zombie/Executable mode backgrounds' },
+    { name: '--exploratory-tint', hex: '#F3ECFA', purpose: 'Focus/Exploratory mode backgrounds' },
+];
+
+// ============ UTILITY FUNCTIONS ============
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ] : [0, 0, 0];
+}
+
+function getLuminance(hex) {
+    const rgb = hexToRgb(hex);
+    const [r, g, b] = rgb.map(c => {
+        c = c / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function getContrastRatio(fg, bg) {
+    const l1 = getLuminance(fg);
+    const l2 = getLuminance(bg);
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+}
+
+// ============ RENDER FUNCTIONS ============
+
+function renderColorTable() {
+    const tbody = document.getElementById('color-table');
+    let passCount = 0;
+    let failCount = 0;
+    const issues = [];
+
+    tbody.innerHTML = Object.entries(expectedColors).map(([name, data]) => {
+        const allMatch = Object.values(data.sources).every(v => v === true || v === false);
+        const status = allMatch ? 'pass' : 'fail';
+        if (allMatch) passCount++; else failCount++;
+
+        if (!allMatch) {
+            issues.push(`${name}: Sources don't match`);
+        }
+
+        return `
+            <tr>
+                <td><strong>${name}</strong></td>
+                <td>
+                    <div class="color-preview">
+                        <div class="color-swatch" style="background: ${data.hex}"></div>
+                        <span class="color-hex">${data.hex}</span>
+                    </div>
+                </td>
+                <td>${data.sources.brand ? '✓' : '—'}</td>
+                <td>${data.sources.colorSystem ? '✓' : '—'}</td>
+                <td>${data.sources.colorRef ? '✓' : '—'}</td>
+                <td>${data.sources.appCss ? '✓' : '—'}</td>
+                <td><span class="status ${status}">${status === 'pass' ? '✓ Match' : '✗ Mismatch'}</span></td>
+            </tr>
+        `;
+    }).join('');
+
+    document.getElementById('color-count').textContent = `${passCount}/${passCount + failCount}`;
+    document.getElementById('color-count').className = `count ${failCount === 0 ? 'pass' : 'fail'}`;
+
+    const issuesDiv = document.getElementById('color-issues');
+    if (issues.length === 0) {
+        issuesDiv.innerHTML = '<div class="all-pass">All color values are consistent across sources</div>';
+    } else {
+        issuesDiv.innerHTML = `<div class="issue-list"><h4>Issues Found:</h4><ul>${issues.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+    }
+}
+
+function renderWcagTable() {
+    const tbody = document.getElementById('wcag-table');
+    let passCount = 0;
+    let warnCount = 0;
+
+    tbody.innerHTML = wcagTests.map(test => {
+        const ratio = getContrastRatio(test.fg, test.bg);
+        const passNormal = ratio >= 4.5;
+        const passLarge = ratio >= 3.0;
+
+        if (passNormal) passCount++;
+        else if (passLarge) warnCount++;
+
+        return `
+            <tr>
+                <td>${test.name}</td>
+                <td>
+                    <div class="color-preview">
+                        <div class="color-swatch" style="background: ${test.fg}"></div>
+                        <span class="color-hex">${test.fg}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="color-preview">
+                        <div class="color-swatch" style="background: ${test.bg}"></div>
+                        <span class="color-hex">${test.bg}</span>
+                    </div>
+                </td>
+                <td><strong>${ratio.toFixed(1)}:1</strong></td>
+                <td><span class="badge ${passNormal ? 'badge-pass' : 'badge-fail'}">${passNormal ? 'Pass' : 'Fail'}</span></td>
+                <td><span class="badge ${passLarge ? 'badge-pass' : 'badge-fail'}">${passLarge ? 'Pass' : 'Fail'}</span></td>
+                <td style="font-size: 0.75rem; color: #64748B;">${test.notes}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const total = wcagTests.length;
+    document.getElementById('wcag-count').textContent = `${passCount}/${total}`;
+    document.getElementById('wcag-count').className = `count ${passCount === total ? 'pass' : warnCount > 0 ? 'warn' : 'fail'}`;
+}
+
+function renderAssetTable() {
+    const tbody = document.getElementById('asset-table');
+    let passCount = 0;
+    const issues = [];
+
+    tbody.innerHTML = assetFiles.map(file => {
+        const marketingName = file.marketing + '.png';
+        const match = marketingName === file.name;
+        if (match) passCount++;
+        else issues.push(`${file.name}: marketing-export.html generates "${marketingName}"`);
+
+        return `
+            <tr>
+                <td><strong>${file.name}</strong></td>
+                <td>${file.brand ? '✓' : '—'}</td>
+                <td>${file.press ? '✓' : '—'}</td>
+                <td><code>${file.marketing}.png</code></td>
+                <td><span class="status ${match ? 'pass' : 'fail'}">${match ? '✓ Match' : '✗ Mismatch'}</span></td>
+            </tr>
+        `;
+    }).join('');
+
+    document.getElementById('asset-count').textContent = `${passCount}/${assetFiles.length}`;
+    document.getElementById('asset-count').className = `count ${passCount === assetFiles.length ? 'pass' : 'fail'}`;
+
+    const issuesDiv = document.getElementById('asset-issues');
+    if (issues.length === 0) {
+        issuesDiv.innerHTML = '<div class="all-pass">All asset filenames are consistent</div>';
+    } else {
+        issuesDiv.innerHTML = `<div class="issue-list"><h4>Issues Found:</h4><ul>${issues.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+    }
+}
+
+function renderDarkModeTable() {
+    const tbody = document.getElementById('darkmode-table');
+
+    tbody.innerHTML = darkModeTokens.map(token => `
+        <tr>
+            <td><code>${token.token}</code></td>
+            <td>
+                <div class="color-preview">
+                    <div class="color-swatch" style="background: ${token.light}"></div>
+                    <span class="color-hex">${token.light}</span>
+                    <span style="color: #94A3B8; font-size: 0.75rem;">(${token.lightLabel})</span>
+                </div>
+            </td>
+            <td>
+                <div class="color-preview">
+                    <div class="color-swatch" style="background: ${token.dark}"></div>
+                    <span class="color-hex">${token.dark}</span>
+                    <span style="color: #94A3B8; font-size: 0.75rem;">(${token.darkLabel})</span>
+                </div>
+            </td>
+            <td><span class="badge badge-pass">${token.logic}</span></td>
+        </tr>
+    `).join('');
+}
+
+function renderTintTable() {
+    const tbody = document.getElementById('tint-table');
+
+    tbody.innerHTML = tintValues.map(tint => `
+        <tr>
+            <td><code>${tint.name}</code></td>
+            <td><span class="color-hex">${tint.hex}</span></td>
+            <td style="font-size: 0.85rem;">${tint.purpose}</td>
+            <td>
+                <div style="width: 80px; height: 32px; background: ${tint.hex}; border-radius: 4px; border: 1px solid rgba(15,23,42,0.08);"></div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// ============ INITIALIZE ============
+
+renderColorTable();
+renderWcagTable();
+renderAssetTable();
+renderDarkModeTable();
+renderTintTable();
+
+document.getElementById('timestamp').textContent = `Verification run: ${new Date().toLocaleString()}`;
+</script>
+
+</body>
+</html>

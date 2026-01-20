@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist Color System - Interactive Reference</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Slate Scale */
+            --slate-50: #F8FAFC;
+            --slate-100: #F1F5F9;
+            --slate-200: #E2E8F0;
+            --slate-300: #CBD5E1;
+            --slate-400: #94A3B8;
+            --slate-500: #64748B;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1E293B;
+            --slate-900: #0F172A;
+            --slate-950: #020617;
+
+            /* Brand */
+            --blue-500: #167BFF;
+            --purple-500: #6D5EF6;
+            --magenta-500: #A020C0;
+
+            /* Light Theme */
+            --bg: var(--slate-50);
+            --bg-panel: var(--slate-100);
+            --bg-surface: #FFFFFF;
+            --text: #0B1220;
+            --text-muted: rgba(15, 23, 42, 0.64);
+            --border: rgba(15, 23, 42, 0.085);
+        }
+
+        [data-theme="dark"] {
+            --bg: var(--slate-900);
+            --bg-panel: var(--slate-800);
+            --bg-surface: var(--slate-700);
+            --text: var(--slate-50);
+            --text-muted: rgba(248, 250, 252, 0.72);
+            --border: rgba(248, 250, 252, 0.10);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 2rem;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--purple-500);
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--purple-500);
+        }
+
+        .section {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--purple-500);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Color Grid */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .color-card {
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .color-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .color-swatch {
+            height: 60px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: flex-end;
+            padding: 0.5rem;
+            font-size: 0.65rem;
+            font-family: monospace;
+        }
+
+        .color-info {
+            background: var(--bg-panel);
+            border-radius: 0 0 8px 8px;
+            padding: 0.5rem;
+        }
+
+        .color-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .color-hex {
+            font-size: 0.65rem;
+            font-family: monospace;
+            color: var(--text-muted);
+        }
+
+        /* Brand Colors */
+        .brand-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .brand-card {
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .brand-swatch {
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 1rem;
+        }
+
+        .brand-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.25rem;
+        }
+
+        .brand-hex {
+            font-size: 0.75rem;
+            font-family: monospace;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .brand-tint {
+            padding: 0.75rem 1rem;
+            background: var(--bg-panel);
+        }
+
+        .brand-tint-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* Contrast Table */
+        .contrast-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .contrast-table th,
+        .contrast-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .contrast-table th {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .contrast-sample {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .contrast-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+
+        .ratio {
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .pass { color: #16A34A; }
+        .fail { color: #DC2626; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .badge-pass {
+            background: rgba(22, 163, 74, 0.1);
+            color: #16A34A;
+        }
+
+        .badge-fail {
+            background: rgba(220, 38, 38, 0.1);
+            color: #DC2626;
+        }
+
+        /* Token List */
+        .token-list {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .token-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 1rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        .token-row:hover {
+            background: var(--bg-panel);
+        }
+
+        .token-name {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--purple-500);
+        }
+
+        .token-value {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .token-preview {
+            width: 32px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--slate-800);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .brand-grid {
+                grid-template-columns: 1fr;
+            }
+            .color-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Whendoist Color System</h1>
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon">🌙</span>
+            <span id="theme-label">Dark Mode</span>
+        </button>
+    </header>
+
+    <!-- Brand Colors -->
+    <section class="section">
+        <h2 class="section-title">Brand / Clarity Colors</h2>
+        <div class="brand-grid">
+            <div class="brand-card" onclick="copyColor('#167BFF')">
+                <div class="brand-swatch" style="background: #167BFF;">
+                    <div class="brand-name">Executable Blue</div>
+                    <div class="brand-hex">#167BFF</div>
+                </div>
+                <div class="brand-tint" style="background: #EAF2FF;">
+                    <div class="brand-tint-label">Tint: #EAF2FF</div>
+                </div>
+            </div>
+            <div class="brand-card" onclick="copyColor('#6D5EF6')">
+                <div class="brand-swatch" style="background: #6D5EF6;">
+                    <div class="brand-name">Defined Purple</div>
+                    <div class="brand-hex">#6D5EF6</div>
+                </div>
+                <div class="brand-tint" style="background: #EFEEFF;">
+                    <div class="brand-tint-label">Tint: #EFEEFF</div>
+                </div>
+            </div>
+            <div class="brand-card" onclick="copyColor('#A020C0')">
+                <div class="brand-swatch" style="background: #A020C0;">
+                    <div class="brand-name">Exploratory Magenta</div>
+                    <div class="brand-hex">#A020C0</div>
+                </div>
+                <div class="brand-tint" style="background: #F3ECFA;">
+                    <div class="brand-tint-label">Tint: #F3ECFA</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Neutral Palette -->
+    <section class="section">
+        <h2 class="section-title">Neutral Palette (Slate Scale)</h2>
+        <div class="color-grid" id="slate-grid"></div>
+    </section>
+
+    <!-- Semantic Colors -->
+    <section class="section">
+        <h2 class="section-title">Semantic Colors</h2>
+        <div class="color-grid" id="semantic-grid"></div>
+    </section>
+
+    <!-- Accessible Variants -->
+    <section class="section">
+        <h2 class="section-title">Accessible Variants (WCAG AA Text)</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Use these darker variants when brand colors need to meet WCAG AA for normal text (4.5:1 contrast).
+        </p>
+        <div class="color-grid" id="accessible-grid"></div>
+    </section>
+
+    <!-- WCAG Contrast -->
+    <section class="section">
+        <h2 class="section-title">WCAG AA Contrast Verification</h2>
+        <table class="contrast-table">
+            <thead>
+                <tr>
+                    <th>Combination</th>
+                    <th>Sample</th>
+                    <th>Ratio</th>
+                    <th>Normal Text</th>
+                    <th>Large Text</th>
+                </tr>
+            </thead>
+            <tbody id="contrast-table"></tbody>
+        </table>
+    </section>
+
+    <!-- CSS Tokens -->
+    <section class="section">
+        <h2 class="section-title">CSS Token Reference</h2>
+        <div class="token-list" id="token-list"></div>
+    </section>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+// Color data
+const slateColors = [
+    { name: '50', hex: '#F8FAFC' },
+    { name: '100', hex: '#F1F5F9' },
+    { name: '200', hex: '#E2E8F0' },
+    { name: '300', hex: '#CBD5E1' },
+    { name: '400', hex: '#94A3B8' },
+    { name: '500', hex: '#64748B' },
+    { name: '600', hex: '#475569' },
+    { name: '700', hex: '#334155' },
+    { name: '800', hex: '#1E293B' },
+    { name: '900', hex: '#0F172A' },
+    { name: '950', hex: '#020617' },
+];
+
+const semanticColors = [
+    { name: 'Danger', hex: '#DC2626' },
+    { name: 'Impact P1', hex: '#C9505A' },
+    { name: 'Impact P2', hex: '#B8860B' },
+    { name: 'Impact P3', hex: '#1A9160' },
+    { name: 'Impact P4', hex: '#6B7385' },
+    { name: 'Success*', hex: '#16A34A' },
+];
+
+const accessibleColors = [
+    { name: 'Accessible Blue', hex: '#0066E6', original: '#167BFF', ratio: '5.0:1' },
+    { name: 'Accessible Purple', hex: '#5B4CF0', original: '#6D5EF6', ratio: '5.5:1' },
+    { name: 'Accessible Muted', hex: '#475569', original: '#64748B', ratio: '7.0:1' },
+];
+
+const contrastTests = [
+    { fg: '#0B1220', bg: '#FFFFFF', name: 'Primary on White' },
+    { fg: '#0B1220', bg: '#F8FAFC', name: 'Primary on Canvas' },
+    { fg: '#6D5EF6', bg: '#FFFFFF', name: 'Purple on White' },
+    { fg: '#167BFF', bg: '#FFFFFF', name: 'Blue on White ⚠️' },
+    { fg: '#A020C0', bg: '#FFFFFF', name: 'Magenta on White' },
+    { fg: '#FFFFFF', bg: '#6D5EF6', name: 'White on Purple' },
+    { fg: '#F8FAFC', bg: '#0F172A', name: 'Light on Dark (dark mode)' },
+    { fg: '#8B7CF7', bg: '#0F172A', name: 'Purple on Dark (dark mode)' },
+    // Accessible variants
+    { fg: '#0066E6', bg: '#FFFFFF', name: 'Accessible Blue on White ✓' },
+    { fg: '#5B4CF0', bg: '#FFFFFF', name: 'Accessible Purple on White ✓' },
+    { fg: '#475569', bg: '#FFFFFF', name: 'Accessible Muted on White ✓' },
+];
+
+const cssTokens = [
+    { name: '--bg-canvas', light: '#F8FAFC', dark: '#0F172A' },
+    { name: '--bg-panel', light: '#F1F5F9', dark: '#1E293B' },
+    { name: '--bg-surface', light: '#FFFFFF', dark: '#334155' },
+    { name: '--text-primary', light: '#0B1220', dark: '#F8FAFC' },
+    { name: '--text-secondary', light: 'rgba(15,23,42,0.64)', dark: 'rgba(248,250,252,0.72)' },
+    { name: '--border-default', light: 'rgba(15,23,42,0.085)', dark: 'rgba(248,250,252,0.10)' },
+    { name: '--primary', light: '#6D5EF6', dark: '#8B7CF7' },
+];
+
+// Calculate luminance
+function getLuminance(hex) {
+    const rgb = hexToRgb(hex);
+    const [r, g, b] = rgb.map(c => {
+        c = c / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ] : [0, 0, 0];
+}
+
+function getContrastRatio(fg, bg) {
+    const l1 = getLuminance(fg);
+    const l2 = getLuminance(bg);
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return ((lighter + 0.05) / (darker + 0.05)).toFixed(1);
+}
+
+function isLight(hex) {
+    return getLuminance(hex) > 0.5;
+}
+
+// Render color grids
+function renderSlateGrid() {
+    const grid = document.getElementById('slate-grid');
+    grid.innerHTML = slateColors.map(c => `
+        <div class="color-card" onclick="copyColor('${c.hex}')">
+            <div class="color-swatch" style="background: ${c.hex}; color: ${isLight(c.hex) ? '#0F172A' : '#F8FAFC'}">
+                ${c.hex}
+            </div>
+            <div class="color-info">
+                <div class="color-name">Slate ${c.name}</div>
+                <div class="color-hex">${c.hex}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderSemanticGrid() {
+    const grid = document.getElementById('semantic-grid');
+    grid.innerHTML = semanticColors.map(c => `
+        <div class="color-card" onclick="copyColor('${c.hex}')">
+            <div class="color-swatch" style="background: ${c.hex}; color: ${isLight(c.hex) ? '#0F172A' : '#F8FAFC'}">
+                ${c.hex}
+            </div>
+            <div class="color-info">
+                <div class="color-name">${c.name}</div>
+                <div class="color-hex">${c.hex}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderAccessibleGrid() {
+    const grid = document.getElementById('accessible-grid');
+    grid.innerHTML = accessibleColors.map(c => `
+        <div class="color-card" onclick="copyColor('${c.hex}')" style="min-width: 160px;">
+            <div class="color-swatch" style="background: ${c.hex}; color: #FFFFFF; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+                <span>${c.hex}</span>
+                <span style="font-size: 0.55rem; opacity: 0.8;">from ${c.original}</span>
+            </div>
+            <div class="color-info">
+                <div class="color-name">${c.name}</div>
+                <div class="color-hex">${c.ratio} on white</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderContrastTable() {
+    const tbody = document.getElementById('contrast-table');
+    tbody.innerHTML = contrastTests.map(t => {
+        const ratio = getContrastRatio(t.fg, t.bg);
+        const passNormal = ratio >= 4.5;
+        const passLarge = ratio >= 3.0;
+        return `
+            <tr>
+                <td>${t.name}</td>
+                <td>
+                    <div class="contrast-sample">
+                        <div class="contrast-dot" style="background: ${t.bg}; color: ${t.fg}; border: 1px solid var(--border);">Aa</div>
+                        <span style="color: var(--text-muted)">${t.fg} on ${t.bg}</span>
+                    </div>
+                </td>
+                <td><span class="ratio ${passNormal ? 'pass' : 'fail'}">${ratio}:1</span></td>
+                <td><span class="badge ${passNormal ? 'badge-pass' : 'badge-fail'}">${passNormal ? 'Pass' : 'Fail'}</span></td>
+                <td><span class="badge ${passLarge ? 'badge-pass' : 'badge-fail'}">${passLarge ? 'Pass' : 'Fail'}</span></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderTokenList() {
+    const list = document.getElementById('token-list');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    list.innerHTML = cssTokens.map(t => {
+        const value = isDark ? t.dark : t.light;
+        return `
+            <div class="token-row" onclick="copyColor('${value}')">
+                <span class="token-name">${t.name}</span>
+                <span class="token-value">${value}</span>
+                <div class="token-preview" style="background: ${value};"></div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Theme toggle
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+
+    document.getElementById('theme-icon').textContent = next === 'dark' ? '☀️' : '🌙';
+    document.getElementById('theme-label').textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+
+    renderTokenList();
+}
+
+// Copy to clipboard
+function copyColor(value) {
+    navigator.clipboard.writeText(value).then(() => {
+        const toast = document.getElementById('toast');
+        toast.textContent = `Copied: ${value}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+}
+
+// Initialize
+renderSlateGrid();
+renderSemanticGrid();
+renderAccessibleGrid();
+renderContrastTable();
+renderTokenList();
+</script>
+
+</body>
+</html>

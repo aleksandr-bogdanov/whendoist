@@ -1,0 +1,11 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Empty Thoughts: Lightbulb -->
+  <circle cx="60" cy="60" r="44" fill="#EAF2FF"/>
+  <!-- Bulb glass -->
+  <path d="M60 26 C46 26 34 38 34 52 C34 62 40 70 48 76 L48 84 C48 86 50 88 52 88 L68 88 C70 88 72 86 72 84 L72 76 C80 70 86 62 86 52 C86 38 74 26 60 26 Z" fill="white" stroke="#167BFF" stroke-width="2.5"/>
+  <!-- Filament -->
+  <path d="M52 56 Q60 48 68 56" fill="none" stroke="#C7CFDA" stroke-width="2" stroke-linecap="round"/>
+  <!-- Base -->
+  <line x1="50" y1="82" x2="70" y2="82" stroke="#167BFF" stroke-width="2" stroke-linecap="round"/>
+  <line x1="52" y1="78" x2="68" y2="78" stroke="#167BFF" stroke-width="2" stroke-linecap="round"/>
+</svg>

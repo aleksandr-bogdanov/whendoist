@@ -1,0 +1,11 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Organize: Folder -->
+  <circle cx="60" cy="60" r="44" fill="#EFEEFF"/>
+  <!-- Folder back -->
+  <path d="M24 44 L24 88 C24 91 27 94 30 94 L90 94 C93 94 96 91 96 88 L96 50 C96 47 93 44 90 44 L58 44 L52 36 L30 36 C27 36 24 39 24 42 Z" fill="white" stroke="#6D5EF6" stroke-width="2"/>
+  <!-- Folder tab -->
+  <path d="M24 44 L52 44 L58 36 L52 36 L46 44" fill="#6D5EF6" stroke="#6D5EF6" stroke-width="2"/>
+  <!-- Items inside -->
+  <rect x="34" y="56" width="36" height="10" rx="3" fill="#167BFF" opacity="0.25"/>
+  <rect x="34" y="70" width="48" height="10" rx="3" fill="#A020C0" opacity="0.25"/>
+</svg>

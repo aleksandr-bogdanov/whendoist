@@ -2,9 +2,9 @@
 
 > Complete brand specification for Whendoist. This document serves as the single source of truth for all brand elements, design decisions, and implementation guidelines.
 
-**Version:** 1.1
+**Version:** 1.5
 **Last Updated:** January 2026
-**Status:** Wordmark finalized, App Icon Suite complete (Phase 2A)
+**Status:** Wordmark finalized, App Icon Suite (2A), Marketing Assets (2B), Color System (2C), UI Kit (2D), and Illustration System (2E) complete
 
 ---
 
@@ -275,6 +275,67 @@ Use the PNG Export Tool at `docs/brand/png-export.html`:
 
 ---
 
+## Marketing Assets (Phase 2B)
+
+Complete marketing asset suite for social media, email, and press.
+
+### Social Media Profile Images
+
+Square avatars for platform profiles (Twitter/X, LinkedIn, GitHub, etc.).
+
+| Size | File | Use Case |
+|------|------|----------|
+| 400×400 | `profile-400.png` | High-res (Twitter, LinkedIn) |
+| 200×200 | `profile-200.png` | Standard |
+| 128×128 | `profile-128.png` | Small (GitHub, Discord) |
+| 400×400 | `profile-dark-400.png` | Dark backgrounds |
+
+### Social Media Post Templates
+
+Ready-to-customize templates for announcements and features.
+
+| Dimensions | File | Platform |
+|------------|------|----------|
+| 1200×1200 | `post-square-1200.png` | Instagram, Twitter |
+| 1200×628 | `post-landscape-1200x628.png` | Facebook, LinkedIn |
+| 1200×675 | `post-feature-1200x675.png` | Feature announcements |
+| 1080×1920 | `post-story-1080x1920.png` | Stories (IG, FB) |
+
+### Email Headers
+
+Branded headers for transactional and marketing emails.
+
+| Dimensions | File | Use Case |
+|------------|------|----------|
+| 600×200 | `email-header-600x200.png` | Standard header with gradient |
+| 600×150 | `email-header-compact-600x150.png` | Compact with gradient bar |
+| 600×300 | `email-banner-600x300.png` | Hero banner with tagline |
+
+### Press Kit Assets
+
+High-resolution assets for press and media.
+
+| Dimensions | File | Use Case |
+|------------|------|----------|
+| 1200×400 | `press-logo-horizontal-1200x400.png` | Press releases, articles |
+| 800×800 | `press-logo-stacked-800x800.png` | Square format |
+| 1024×1024 | `press-icon-1024.png` | App store, high-res icon |
+| 1200×800 | `press-colors-1200x800.png` | Brand colors reference |
+
+### Generating Marketing Assets
+
+Use the Marketing Export Tool at `docs/brand/marketing-export.html`:
+
+1. Open in Chrome or Firefox
+2. Wait for "Ready!" status (fonts must load)
+3. Click "Download All Marketing Assets (ZIP)" for complete set
+4. Or click individual assets to download specific files
+5. Extract to `static/img/` directory
+
+See `docs/brand/PRESS-KIT.md` for usage guidelines and brand rules.
+
+---
+
 ## Color System
 
 ### Clarity Colors
@@ -306,13 +367,16 @@ Lighter versions for backgrounds and subtle highlights.
 
 ### Extended Palette
 
-*(To be expanded in brand kit iteration)*
+Full color system documentation available in `docs/brand/COLOR-SYSTEM.md`.
 
 | Category | Colors | Status |
 |----------|--------|--------|
-| Neutrals | Slate scale | Use Tailwind Slate |
-| Semantic | Success, Warning, Danger | Defined in DESIGN.md |
-| Accent | Secondary brand colors | Pending |
+| Neutrals | Slate scale (50-950) | Complete |
+| Semantic | Danger, Warning, Impact levels | Complete |
+| Dark Mode | Full token set | Complete |
+| Accessibility | WCAG AA verified | Complete |
+
+**Interactive Tool:** Open `docs/brand/color-reference.html` for live color previews, contrast testing, and theme toggling.
 
 ---
 
@@ -359,23 +423,126 @@ Lighter versions for backgrounds and subtle highlights.
 
 ---
 
-## Iconography
-
-*(To be developed in brand kit iteration)*
-
-### Planned Elements
-
-- [ ] UI icon style guide
-- [ ] Feature icons
-- [ ] Empty state illustrations
-- [ ] Onboarding graphics
+## Iconography & Illustrations
 
 ### Icon Principles
 
-1. **Rounded corners** matching brand aesthetic
-2. **2px stroke weight** for consistency
+1. **Rounded corners** matching brand aesthetic (14px radius for large, scales down)
+2. **2px stroke weight** for consistency (2.5px for emphasis)
 3. **Clarity colors** for semantic meaning
-4. **Simple forms** over detailed illustrations
+4. **Simple geometric forms** over detailed illustrations
+5. **120×120 viewBox** standard for all illustrations
+
+### Illustration System (Phase 2E)
+
+The illustration system provides consistent, friendly graphics for empty states, errors, success moments, and onboarding.
+
+#### Design Language
+
+| Aspect | Specification |
+|--------|--------------|
+| **ViewBox** | 120×120 pixels (standard) |
+| **Background** | Soft circle with clarity tint (opacity 0.5-0.6) |
+| **Stroke Weight** | 2-3px for outlines, 1.5px for details |
+| **Corner Radius** | Rounded (matching W icon pill caps) |
+| **Colors** | Clarity palette + neutrals |
+
+#### Color Usage in Illustrations
+
+| Color | Hex | Usage |
+|-------|-----|-------|
+| **Executable Blue** | `#167BFF` | Time, search, connection success |
+| **Defined Purple** | `#6D5EF6` | Primary actions, checkmarks, shields |
+| **Exploratory Magenta** | `#A020C0` | Calendar, setup, creative tasks |
+| **Warning Orange** | `#F97316` | Sync issues, warnings |
+| **Error Red** | `#DC2626` | Errors, failures, locked states |
+| **Neutral Gray** | `#C7CFDA` / `#E2E8F0` | Empty placeholders, disabled states |
+
+### Empty State Illustrations
+
+| File | Description | Background Tint |
+|------|-------------|-----------------|
+| `empty-tasks.svg` | Clipboard with empty checkboxes | Purple (#EFEEFF) |
+| `empty-thoughts.svg` | Lightbulb outline (no ideas yet) | Blue (#EAF2FF) |
+| `empty-calendar.svg` | Calendar grid with no events | Magenta (#F3ECFA) |
+| `empty-analytics.svg` | Bar chart with flat/no data | Purple (#EFEEFF) |
+| `empty-search.svg` | Magnifying glass with question mark | Blue (#EAF2FF) |
+| `empty-inbox.svg` | Open box (clean inbox) | Purple (#EFEEFF) |
+
+### Error Illustrations
+
+| File | Description | Primary Color |
+|------|-------------|---------------|
+| `error-connection.svg` | Broken chain links with X mark | Red (#DC2626) |
+| `error-sync.svg` | Circular arrows with warning indicator | Orange (#F97316) |
+| `error-generic.svg` | Warning triangle with exclamation | Orange/Red |
+| `error-auth.svg` | Lock with X badge (access denied) | Red (#DC2626) |
+| `error-calendar.svg` | Calendar with warning badge | Orange (#F97316) |
+
+### Success Illustrations
+
+| File | Description | Primary Color |
+|------|-------------|---------------|
+| `success-complete.svg` | Checkmark circle | Purple (#6D5EF6) |
+| `success-allclear.svg` | Sun with rays (zero inbox feeling) | Purple (#6D5EF6) |
+| `success-connected.svg` | Linked chain | Purple/Blue |
+| `success-setup.svg` | Rocket launch with flames | Magenta (#A020C0) |
+| `success-encrypted.svg` | Shield with lock (security enabled) | Purple (#6D5EF6) |
+
+### Onboarding Illustrations
+
+| File | Description | Primary Color |
+|------|-------------|---------------|
+| `onboarding-welcome.svg` | W icon with Hi! speech bubble | Purple (#6D5EF6) |
+| `onboarding-time.svg` | Clock with clarity color hands | Blue (#167BFF) |
+| `onboarding-energy.svg` | Three-bar energy visualization | All clarity colors |
+| `onboarding-organize.svg` | Folder with task cards | Purple (#6D5EF6) |
+
+### Action Illustrations
+
+| File | Description | Primary Color |
+|------|-------------|---------------|
+| `import-data.svg` | Task cards flowing into container | Blue (#167BFF) |
+
+### Usage Guidelines
+
+#### In Empty States
+
+```html
+<div class="empty-state">
+    <img src="/static/img/illustrations/empty-tasks.svg"
+         alt="" width="80" height="80" aria-hidden="true">
+    <p>No tasks yet</p>
+    <p class="empty-hint">Create a task to get started</p>
+</div>
+```
+
+#### In Error Messages
+
+```html
+<div class="error-state">
+    <img src="/static/img/illustrations/error-connection.svg"
+         alt="" width="64" height="64" aria-hidden="true">
+    <p>Unable to connect</p>
+    <button>Try again</button>
+</div>
+```
+
+#### Sizing Recommendations
+
+| Context | Size | Notes |
+|---------|------|-------|
+| Full-page empty state | 120×120 or 100×100 | Centered, above message |
+| Panel empty state | 80×80 | Compact spaces |
+| Modal/dialog | 64×64 | Error or success feedback |
+| Toast notification | 32×32 | Inline with text |
+
+### Planned Elements
+
+- [ ] UI icon style guide (small icons for buttons/nav)
+- [ ] Feature icons (calendar, task, domain, etc.)
+- [ ] Loading/progress illustrations
+- [ ] Achievement/milestone graphics
 
 ---
 
@@ -502,13 +669,56 @@ static/img/                 # Generated PNG files
 ├── favicon-16.png
 ├── og-image-1200x630.png   # Social media
 ├── twitter-card-1200x600.png
-└── logo.png                # Legacy wordmark
+├── logo.png                # Legacy wordmark
+│
+│   # Marketing Assets (Phase 2B)
+├── profile-400.png         # Social media profile
+├── profile-200.png
+├── profile-128.png
+├── profile-dark-400.png    # Dark background variant
+├── email-header-600x200.png
+├── email-header-compact-600x150.png
+├── email-banner-600x300.png
+├── press-logo-horizontal-1200x400.png
+├── press-logo-stacked-800x800.png
+└── press-icon-1024.png
+
+static/img/illustrations/    # Illustration SVG files (Phase 2E)
+├── empty-tasks.svg          # Empty task list
+├── empty-thoughts.svg       # Empty thought cabinet
+├── empty-calendar.svg       # Empty calendar
+├── empty-analytics.svg      # No analytics data
+├── empty-search.svg         # No search results
+├── empty-inbox.svg          # Clean inbox
+├── error-connection.svg     # Connection failed
+├── error-sync.svg           # Sync failed
+├── error-generic.svg        # Generic error
+├── error-auth.svg           # Auth failed
+├── error-calendar.svg       # Calendar sync error
+├── success-complete.svg     # Task completed
+├── success-allclear.svg     # All done
+├── success-connected.svg    # Service connected
+├── success-setup.svg        # Setup complete
+├── success-encrypted.svg    # Encryption enabled
+├── onboarding-welcome.svg   # Welcome screen
+├── onboarding-time.svg      # Time management
+├── onboarding-energy.svg    # Energy modes
+├── onboarding-organize.svg  # Organization
+└── import-data.svg          # Data import
 
 docs/brand/
-├── brand-guide.html        # Visual reference (interactive)
-├── png-export.html         # Complete PNG generator tool
+├── brand-guide.html           # Visual reference (interactive)
+├── png-export.html            # Complete PNG generator tool (Phase 2A)
+├── marketing-export.html      # Marketing assets generator (Phase 2B)
+├── color-reference.html       # Interactive color system tool (Phase 2C)
+├── ui-kit-reference.html      # Interactive component library (Phase 2D)
+├── illustration-reference.html # Interactive illustration gallery (Phase 2E)
+├── brand-verification.html    # Automated consistency checker
 ├── wordmark-component.html
-└── brand-spec.json         # Machine-readable specs
+├── brand-spec.json            # Machine-readable specs
+├── PRESS-KIT.md               # Press kit documentation
+├── COLOR-SYSTEM.md            # Color system specification
+└── UI-KIT.md                  # Component library documentation (Phase 2D)
 ```
 
 ### Quick Reference
@@ -571,28 +781,35 @@ docs/brand/
 - [x] HTML meta tags (OG, Twitter Card)
 - [x] Comprehensive icon documentation
 
-#### Phase 2B: Marketing Assets (Planned)
-- [ ] Social media profile images
-- [ ] Social media post templates
-- [ ] Email header banner
-- [ ] Press kit / media assets
+#### Phase 2B: Marketing Assets (Complete)
+- [x] Social media profile images (400, 200, 128px + dark variant)
+- [x] Social media post templates (square, landscape, feature, story)
+- [x] Email headers and banners (3 sizes)
+- [x] Press kit with documentation and high-res assets
+- [x] Marketing export tool (`docs/brand/marketing-export.html`)
 
-#### Phase 2C: Color System Expansion (Planned)
-- [ ] Neutral palette formalization
-- [ ] Dark mode color tokens
-- [ ] Accessibility verification (WCAG AA)
+#### Phase 2C: Color System Expansion (Complete)
+- [x] Neutral palette formalization (Tailwind Slate scale)
+- [x] Dark mode color tokens with theme switching
+- [x] WCAG AA accessibility verification for all combinations
+- [x] Interactive color reference tool (`docs/brand/color-reference.html`)
+- [x] Comprehensive documentation (`docs/brand/COLOR-SYSTEM.md`)
 
-#### Phase 2D: UI Kit (Planned)
-- [ ] Button styles documentation
-- [ ] Form elements
-- [ ] Card patterns
-- [ ] Component library
+#### Phase 2D: UI Kit (Complete)
+- [x] Button styles documentation (primary, secondary, ghost, danger, complete, wizard variants)
+- [x] Form elements (inputs, segmented controls, toggles, checkboxes, day buttons)
+- [x] Card and panel patterns (settings panels, modal sections, wizard cards)
+- [x] Component library documentation (`docs/brand/UI-KIT.md`)
+- [x] Interactive reference tool (`docs/brand/ui-kit-reference.html`)
 
-#### Phase 2E: Illustration System (Planned)
-- [ ] Empty states
-- [ ] Onboarding graphics
-- [ ] Feature icons
-- [ ] Error illustrations
+#### Phase 2E: Illustration System (Complete)
+- [x] Empty state illustrations (tasks, thoughts, calendar, analytics, search, inbox)
+- [x] Error illustrations (connection, sync, generic, auth, calendar)
+- [x] Success illustrations (complete, allclear, connected, setup, encrypted)
+- [x] Onboarding graphics (welcome, time, energy, organize)
+- [x] Interactive reference tool (`docs/brand/illustration-reference.html`)
+- [ ] UI icon style guide (small icons for buttons/nav)
+- [ ] Feature icons (calendar, task, domain, etc.)
 
 ---
 

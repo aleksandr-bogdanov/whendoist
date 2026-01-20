@@ -16,6 +16,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.2] - 2026-01-20
+
+### Summary
+**Brand System Complete (Phases 2B-2E)** — Marketing assets, color system, UI kit, and illustration library.
+
+### Added
+
+#### Phase 2B: Marketing Assets
+- **Social media profiles** — 400, 200, 128px + dark variant in `static/img/`
+- **Social media posts** — Square, landscape, feature, story templates
+- **Email headers** — 600×200, 600×150, 600×300 banners
+- **Press kit** — High-res logos, icon, color reference
+- **Marketing export tool** — `docs/brand/marketing-export.html`
+- **Press kit documentation** — `docs/brand/PRESS-KIT.md`
+
+#### Phase 2C: Color System
+- **Color reference tool** — `docs/brand/color-reference.html` with interactive palette
+- **Color system docs** — `docs/brand/COLOR-SYSTEM.md` with full token documentation
+- **WCAG AA verification** — Accessibility-checked color combinations
+
+#### Phase 2D: UI Kit
+- **UI kit reference** — `docs/brand/ui-kit-reference.html` with live components
+- **UI kit documentation** — `docs/brand/UI-KIT.md` with button, form, card patterns
+- **Verification tool** — `docs/brand/UI-KIT-VERIFICATION.md`
+- **Brand consistency checker** — `docs/brand/brand-verification.html`
+
+#### Phase 2E: Illustration System
+- **21 brand-consistent illustrations** in `static/img/illustrations/`:
+  - Empty states (6): tasks, thoughts, calendar, analytics, search, inbox
+  - Error states (5): connection, sync, generic, auth, calendar
+  - Success states (5): complete, allclear, connected, setup, encrypted
+  - Onboarding (4): welcome, time, energy, organize
+  - Actions (1): import-data (for Todoist import wizard step)
+- **Illustration reference** — `docs/brand/illustration-reference.html`
+
+### Changed
+
+- **onboarding-welcome.svg** — Redesigned: W icon with "Hi!" speech bubble (replaced problematic hand gesture)
+- **BRAND.md** — Updated to v1.5 with all phases documented
+
+### Fixed
+
+- **6 illustration descriptions** in BRAND.md — Removed references to non-existent sparkles/elements
+
+---
+
 ## [0.9.1] - 2026-01-19
 
 ### Summary

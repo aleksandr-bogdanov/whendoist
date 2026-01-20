@@ -1,0 +1,10 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Energy Modes: Three bars -->
+  <circle cx="60" cy="60" r="44" fill="#F3ECFA"/>
+  <!-- Blue bar -->
+  <rect x="28" y="48" width="18" height="36" rx="9" fill="#167BFF"/>
+  <!-- Purple bar -->
+  <rect x="51" y="38" width="18" height="46" rx="9" fill="#6D5EF6"/>
+  <!-- Magenta bar -->
+  <rect x="74" y="28" width="18" height="56" rx="9" fill="#A020C0"/>
+</svg>

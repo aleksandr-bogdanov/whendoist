@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.9.1 (App Icon Suite)
+**Current Version:** v0.9.2 (Brand System Complete)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -88,6 +88,41 @@ static/
 - **Files**: w-icon-color.svg, w-icon-dark.svg, w-icon-white.svg, app-icon-512.svg, favicon.svg
 - **Wordmark**: W icon + "hendoist" in Quicksand 500
 - **See**: `BRAND.md` for full specifications
+
+### CRITICAL: Wordmark Sizing (DO NOT DEVIATE)
+
+When implementing the W icon + "hendoist" wordmark, use EXACT specs from the table below. The W icon acts as the letter "W" and must align precisely with the text baseline.
+
+| Size | Text | Icon W×H | Gap | Offset | Use Case |
+|------|------|----------|-----|--------|----------|
+| **Hero** | 6.5rem (104px) | 90×80px | 4px | 12px | Landing page |
+| **Large** | 3rem (48px) | 42×37px | 2px | 5.5px | Page headers |
+| **Medium** | 1.75rem (28px) | 24×21px | 1px | 3px | Section headers |
+| **Small** | 1.25rem (20px) | 17×15px | 1px | 2px | Navigation, headers |
+
+**Implementation pattern:**
+```css
+.logo {
+    display: inline-flex;
+    align-items: flex-end;
+}
+.logo svg {
+    width: 17px;           /* From table */
+    height: 15px;          /* From table */
+    margin-bottom: 2px;    /* Offset from table */
+    margin-right: 1px;     /* Gap from table */
+    flex-shrink: 0;
+}
+.logo span {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 500;
+    font-size: 1.25rem;    /* From table */
+    color: #1E293B;
+    line-height: 1;
+}
+```
+
+**SVG viewBox:** Always use `viewBox="38 40 180 160"` for the W icon.
 
 ## Design System (Tasks Page)
 

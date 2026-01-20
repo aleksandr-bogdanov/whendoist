@@ -1,0 +1,10 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Connection Error: Broken chain -->
+  <circle cx="60" cy="60" r="44" fill="#FEE2E2"/>
+  <!-- Left link -->
+  <rect x="18" y="46" width="34" height="28" rx="14" fill="none" stroke="#DC2626" stroke-width="3"/>
+  <!-- Right link (separated) -->
+  <rect x="68" y="46" width="34" height="28" rx="14" fill="none" stroke="#DC2626" stroke-width="3"/>
+  <!-- Break indicator -->
+  <path d="M54 52 L66 68 M54 68 L66 52" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>
+</svg>
