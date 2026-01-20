@@ -1,0 +1,185 @@
+/* =============================================================================
+   Panels & Cards - Based on docs/brand/UI-KIT.md
+   ============================================================================= */
+
+/* Settings Panel */
+.panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.panel-header {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.panel-title {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    font-size: 0.62rem;
+    color: var(--text-secondary);
+    margin: 0 0 4px 0;
+}
+
+.panel-desc {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.panel-body {
+    /* Content container */
+}
+
+/* Panel Row */
+.panel-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+    min-height: 44px;
+    transition: background var(--duration-fast) var(--ease-default);
+}
+
+.panel-row:last-child {
+    border-bottom: none;
+}
+
+.panel-row:hover {
+    background: var(--row-hover);
+}
+
+/* Row actions (hidden until hover) */
+.panel-row .row-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-instant) var(--ease-default);
+}
+
+.panel-row:hover .row-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Disabled Panel State */
+.panel--disabled .panel-body {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.panel-disabled-notice {
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: rgba(15, 23, 42, 0.02);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Modal Section */
+.modal-section {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: visible;
+    background: var(--bg-surface);
+    margin-bottom: 10px;
+}
+
+.section-title {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+/* Glass Card (wizard style) */
+.card-glass {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: 18px;
+    box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 600px) {
+    .card-glass {
+        padding: 18px;
+    }
+}
+
+/* Page Surface */
+.page-surface {
+    width: 100%;
+    max-width: var(--content-max-width);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 32px 36px 44px;
+}
+
+/* Detail Row (Modal) */
+.detail-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.detail-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+}
+
+.detail-control {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--space-8);
+}
+
+.empty-state .illustration {
+    opacity: 0.9;
+    margin-bottom: var(--space-4);
+}
+
+.empty-state .empty-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2);
+}
+
+.empty-state .empty-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
