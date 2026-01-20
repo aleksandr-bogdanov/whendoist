@@ -1,0 +1,14 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Auth Error: Lock with X -->
+  <circle cx="60" cy="60" r="44" fill="#FEE2E2"/>
+  <!-- Lock body -->
+  <rect x="40" y="54" width="40" height="32" rx="5" fill="white" stroke="#DC2626" stroke-width="2.5"/>
+  <!-- Shackle -->
+  <path d="M48 54 L48 44 C48 36 54 30 60 30 C66 30 72 36 72 44 L72 54" fill="none" stroke="#DC2626" stroke-width="3"/>
+  <!-- Keyhole -->
+  <circle cx="60" cy="66" r="4" fill="#DC2626"/>
+  <rect x="58" y="69" width="4" height="8" rx="1" fill="#DC2626"/>
+  <!-- X badge -->
+  <circle cx="80" cy="40" r="12" fill="#DC2626"/>
+  <path d="M75 35 L85 45 M85 35 L75 45" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

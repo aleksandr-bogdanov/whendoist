@@ -1,0 +1,9 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Generic Error: Warning triangle -->
+  <circle cx="60" cy="60" r="44" fill="#FEE2E2"/>
+  <!-- Triangle -->
+  <path d="M60 28 L92 84 C94 88 91 92 87 92 L33 92 C29 92 26 88 28 84 Z" fill="#FEF3C7" stroke="#F97316" stroke-width="2.5"/>
+  <!-- Exclamation -->
+  <line x1="60" y1="50" x2="60" y2="68" stroke="#DC2626" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="60" cy="78" r="3" fill="#DC2626"/>
+</svg>

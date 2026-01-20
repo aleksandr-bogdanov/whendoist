@@ -1,0 +1,20 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Import Data: Tasks flowing into container -->
+  <circle cx="60" cy="60" r="44" fill="#EAF2FF"/>
+  <!-- Container/box -->
+  <path d="M32 68 L32 92 C32 95 35 98 38 98 L82 98 C85 98 88 95 88 92 L88 68" fill="white" stroke="#167BFF" stroke-width="2.5"/>
+  <path d="M28 68 L60 56 L92 68 L60 74 Z" fill="#EAF2FF" stroke="#167BFF" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Incoming task cards -->
+  <rect x="50" y="22" width="20" height="14" rx="3" fill="#6D5EF6" opacity="0.9"/>
+  <line x1="54" y1="27" x2="66" y2="27" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="54" y1="31" x2="62" y2="31" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+  <!-- Second card (offset, slightly transparent) -->
+  <rect x="42" y="38" width="16" height="12" rx="2" fill="#A020C0" opacity="0.7"/>
+  <line x1="45" y1="43" x2="55" y2="43" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Third card -->
+  <rect x="62" y="40" width="16" height="12" rx="2" fill="#167BFF" opacity="0.7"/>
+  <line x1="65" y1="45" x2="75" y2="45" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Down arrow -->
+  <path d="M60 54 L60 78" stroke="#6D5EF6" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+  <polygon points="60,84 54,76 66,76" fill="#6D5EF6"/>
+</svg>

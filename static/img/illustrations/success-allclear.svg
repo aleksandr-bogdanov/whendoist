@@ -1,0 +1,14 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- All Clear: Simple sun -->
+  <circle cx="60" cy="60" r="44" fill="#EAF2FF"/>
+  <circle cx="60" cy="60" r="20" fill="#6D5EF6"/>
+  <!-- Rays -->
+  <line x1="60" y1="32" x2="60" y2="22" stroke="#6D5EF6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="60" y1="98" x2="60" y2="88" stroke="#6D5EF6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="32" y1="60" x2="22" y2="60" stroke="#6D5EF6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="98" y1="60" x2="88" y2="60" stroke="#6D5EF6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="40" y1="40" x2="33" y2="33" stroke="#6D5EF6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="80" y1="40" x2="87" y2="33" stroke="#6D5EF6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="40" y1="80" x2="33" y2="87" stroke="#6D5EF6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="80" y1="80" x2="87" y2="87" stroke="#6D5EF6" stroke-width="3" stroke-linecap="round"/>
+</svg>

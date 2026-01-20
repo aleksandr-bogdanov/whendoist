@@ -1,0 +1,10 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Empty Inbox: Open box -->
+  <circle cx="60" cy="60" r="44" fill="#EFEEFF"/>
+  <!-- Box back -->
+  <path d="M28 52 L28 88 C28 91 30 94 34 94 L86 94 C90 94 92 91 92 88 L92 52" fill="white" stroke="#6D5EF6" stroke-width="2"/>
+  <!-- Box front flap -->
+  <path d="M28 52 L60 32 L92 52 L60 62 Z" fill="#EFEEFF" stroke="#6D5EF6" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Center crease -->
+  <line x1="60" y1="62" x2="60" y2="94" stroke="#E2E8F0" stroke-width="1"/>
+</svg>

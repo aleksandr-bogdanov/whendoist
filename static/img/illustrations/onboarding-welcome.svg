@@ -1,0 +1,14 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Welcome: W icon with Hi bubble -->
+  <circle cx="60" cy="60" r="44" fill="#EFEEFF"/>
+  <!-- W icon (scaled down) -->
+  <g transform="translate(32, 42) scale(0.32)">
+    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+  </g>
+  <!-- Speech bubble -->
+  <path d="M72 28 C72 24 76 20 80 20 L96 20 C100 20 104 24 104 28 L104 42 C104 46 100 50 96 50 L82 50 L76 56 L76 50 L80 50 C76 50 72 46 72 42 Z" fill="white" stroke="#6D5EF6" stroke-width="2"/>
+  <!-- Hi! text -->
+  <text x="88" y="40" font-family="Quicksand, system-ui, sans-serif" font-size="14" font-weight="600" fill="#6D5EF6" text-anchor="middle">Hi!</text>
+</svg>

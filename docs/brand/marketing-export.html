@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist Marketing Assets - Phase 2B</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui;
+            background: #F8FAFC;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(15,23,42,0.4);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #64748B;
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #6D5EF6;
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(109, 94, 246, 0.2);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border: 1px solid rgba(15,23,42,0.08);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        .card-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748B;
+            margin-bottom: 0.75rem;
+        }
+        .preview {
+            background: #F8FAFC;
+            border-radius: 8px;
+            padding: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+        }
+        .preview.dark {
+            background: #1E293B;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 4px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background: #6D5EF6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+        .btn:hover {
+            background: #5B4CF0;
+        }
+        .meta {
+            font-size: 0.65rem;
+            color: #94A3B8;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        .download-all {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .download-all button {
+            padding: 0.75rem 2rem;
+            font-size: 0.875rem;
+        }
+        .note {
+            background: #EDE9FE;
+            border: 1px solid #6D5EF6;
+            border-radius: 8px;
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: #5B21B6;
+            margin-bottom: 2rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #font-test {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            position: absolute;
+            left: -9999px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Hidden element to force font load -->
+<span id="font-test">hendoist</span>
+
+<h1>Whendoist Marketing Assets</h1>
+<p class="subtitle">Phase 2B: Profile Images, Post Templates, Email Banners, Press Kit</p>
+
+<div class="note">
+    <strong>Phase 2B Assets:</strong> Social media profiles, post templates, email headers, and press kit materials.
+    Click individual buttons or use "Download All" for the complete marketing package.
+</div>
+
+<div class="download-all">
+    <button class="btn" id="download-all-btn" onclick="downloadAll()" disabled>Loading fonts...</button>
+</div>
+
+<!-- Social Media Profile Images -->
+<h2 class="section-title">Social Media Profile Images</h2>
+<div class="grid" id="grid-profile"></div>
+
+<!-- Post Templates -->
+<h2 class="section-title">Social Media Post Templates</h2>
+<div class="grid" id="grid-post"></div>
+
+<!-- Email Headers -->
+<h2 class="section-title">Email Headers & Banners</h2>
+<div class="grid" id="grid-email"></div>
+
+<!-- Press Kit -->
+<h2 class="section-title">Press Kit Assets</h2>
+<div class="grid" id="grid-press"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// W Icon canonical dimensions (from viewBox 38 40 180 160)
+const W_VIEWBOX = { x: 38, y: 40, w: 180, h: 160 };
+
+// Brand colors
+const COLORS = {
+    blue: '#167BFF',
+    purple: '#6D5EF6',
+    magenta: '#A020C0',
+    darkSlate: '#1E293B',
+    white: '#FFFFFF',
+    slate500: '#64748B',
+    slate100: '#F1F5F9',
+    purpleTint: '#EFEEFF',
+    gradient: {
+        start: 'rgba(109, 94, 246, 0.06)',
+        end: 'rgba(22, 123, 255, 0.04)'
+    }
+};
+
+// Asset specifications
+const assetSpecs = {
+    profile: [
+        { name: 'profile-400', size: 400, type: 'profile', desc: 'High-res (Twitter, LinkedIn)' },
+        { name: 'profile-200', size: 200, type: 'profile', desc: 'Standard (most platforms)' },
+        { name: 'profile-128', size: 128, type: 'profile', desc: 'Small (GitHub, Discord)' },
+        { name: 'profile-dark-400', size: 400, type: 'profile-dark', desc: 'Dark variant' },
+    ],
+    post: [
+        { name: 'post-square-1200', width: 1200, height: 1200, type: 'post-square', desc: 'Instagram, Twitter' },
+        { name: 'post-landscape-1200x628', width: 1200, height: 628, type: 'post-landscape', desc: 'Facebook, LinkedIn' },
+        { name: 'post-feature-1200x675', width: 1200, height: 675, type: 'post-feature', desc: 'Feature announcement' },
+        { name: 'post-story-1080x1920', width: 1080, height: 1920, type: 'post-story', desc: 'Stories (IG, FB)' },
+    ],
+    email: [
+        { name: 'email-header-600x200', width: 600, height: 200, type: 'email-header', desc: 'Standard email header' },
+        { name: 'email-header-compact-600x150', width: 600, height: 150, type: 'email-header-compact', desc: 'Compact header' },
+        { name: 'email-banner-600x300', width: 600, height: 300, type: 'email-banner', desc: 'Hero banner' },
+    ],
+    press: [
+        { name: 'press-logo-horizontal-1200x400', width: 1200, height: 400, type: 'press-horizontal', desc: 'Horizontal logo' },
+        { name: 'press-logo-stacked-800x800', width: 800, height: 800, type: 'press-stacked', desc: 'Stacked logo' },
+        { name: 'press-icon-1024', size: 1024, type: 'press-icon', desc: 'High-res icon only' },
+        { name: 'press-colors-1200x800', width: 1200, height: 800, type: 'press-colors', desc: 'Brand colors' },
+    ],
+};
+
+const allCanvases = new Map();
+
+// Wait for fonts
+document.fonts.load('500 48px Quicksand').then(() => {
+    console.log('Quicksand font loaded');
+    document.getElementById('download-all-btn').textContent = 'Download All Marketing Assets (ZIP)';
+    document.getElementById('download-all-btn').disabled = false;
+
+    renderSection('grid-profile', assetSpecs.profile);
+    renderSection('grid-post', assetSpecs.post);
+    renderSection('grid-email', assetSpecs.email);
+    renderSection('grid-press', assetSpecs.press);
+});
+
+function renderSection(gridId, specs) {
+    const grid = document.getElementById(gridId);
+
+    specs.forEach(spec => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const w = spec.width || spec.size;
+        const h = spec.height || spec.size;
+        canvas.width = w;
+        canvas.height = h;
+
+        ctx.clearRect(0, 0, w, h);
+
+        switch (spec.type) {
+            case 'profile':
+                drawProfile(ctx, w, h, false);
+                break;
+            case 'profile-dark':
+                drawProfile(ctx, w, h, true);
+                break;
+            case 'post-square':
+                drawPostSquare(ctx, w, h);
+                break;
+            case 'post-landscape':
+                drawPostLandscape(ctx, w, h);
+                break;
+            case 'post-feature':
+                drawPostFeature(ctx, w, h);
+                break;
+            case 'post-story':
+                drawPostStory(ctx, w, h);
+                break;
+            case 'email-header':
+                drawEmailHeader(ctx, w, h);
+                break;
+            case 'email-header-compact':
+                drawEmailHeaderCompact(ctx, w, h);
+                break;
+            case 'email-banner':
+                drawEmailBanner(ctx, w, h);
+                break;
+            case 'press-horizontal':
+                drawPressHorizontal(ctx, w, h);
+                break;
+            case 'press-stacked':
+                drawPressStacked(ctx, w, h);
+                break;
+            case 'press-icon':
+                drawPressIcon(ctx, w, h);
+                break;
+            case 'press-colors':
+                drawPressColors(ctx, w, h);
+                break;
+        }
+
+        allCanvases.set(spec.name, { canvas, filename: spec.name + '.png' });
+
+        const isDark = spec.type.includes('dark');
+        const previewClass = isDark ? 'preview dark' : 'preview';
+
+        card.innerHTML = `
+            <div class="card-title">${spec.name}</div>
+            <div class="${previewClass}"></div>
+            <button class="btn" onclick="download('${spec.name}')">Download PNG</button>
+            <div class="meta">${w} x ${h}px${spec.desc ? ' &mdash; ' + spec.desc : ''}</div>
+        `;
+
+        card.querySelector('.preview').appendChild(canvas);
+        grid.appendChild(card);
+    });
+}
+
+/**
+ * Draw the 3-bar W icon using absolute coordinates
+ */
+function drawWBars(ctx) {
+    // Blue bar (left, rotated -8deg)
+    ctx.save();
+    ctx.translate(62, 120);
+    ctx.rotate(-8 * Math.PI / 180);
+    ctx.translate(-62, -120);
+    ctx.beginPath();
+    roundRect(ctx, 48, 40, 28, 160, 14);
+    ctx.fillStyle = COLORS.blue;
+    ctx.fill();
+    ctx.restore();
+
+    // Purple bar (center)
+    ctx.beginPath();
+    roundRect(ctx, 114, 72, 28, 127.3, 14);
+    ctx.fillStyle = COLORS.purple;
+    ctx.fill();
+
+    // Magenta bar (right, rotated +8deg)
+    ctx.save();
+    ctx.translate(194, 120);
+    ctx.rotate(8 * Math.PI / 180);
+    ctx.translate(-194, -120);
+    ctx.beginPath();
+    roundRect(ctx, 180, 40, 28, 160, 14);
+    ctx.fillStyle = COLORS.magenta;
+    ctx.fill();
+    ctx.restore();
+}
+
+/**
+ * Draw W icon centered in canvas
+ */
+function drawWIconCentered(ctx, w, h, padding = 0.15) {
+    const availableW = w * (1 - padding * 2);
+    const availableH = h * (1 - padding * 2);
+    const scale = Math.min(availableW / W_VIEWBOX.w, availableH / W_VIEWBOX.h);
+
+    const iconW = W_VIEWBOX.w * scale;
+    const iconH = W_VIEWBOX.h * scale;
+    const offsetX = (w - iconW) / 2;
+    const offsetY = (h - iconH) / 2;
+
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+}
+
+/**
+ * Draw subtle brand gradient background
+ */
+function drawGradientBg(ctx, w, h, direction = 'diagonal') {
+    ctx.fillStyle = COLORS.white;
+    ctx.fillRect(0, 0, w, h);
+
+    let gradient;
+    if (direction === 'diagonal') {
+        gradient = ctx.createLinearGradient(0, 0, w, h);
+    } else if (direction === 'horizontal') {
+        gradient = ctx.createLinearGradient(0, 0, w, 0);
+    } else {
+        gradient = ctx.createLinearGradient(0, 0, 0, h);
+    }
+    gradient.addColorStop(0, COLORS.gradient.start);
+    gradient.addColorStop(1, COLORS.gradient.end);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
+}
+
+/**
+ * Draw wordmark (W icon + "hendoist")
+ */
+function drawWordmark(ctx, centerX, baseline, textHeight, textColor = COLORS.darkSlate) {
+    const HERO_TEXT = 104;
+    const HERO_ICON_W = 90;
+    const HERO_ICON_H = 80;
+    const HERO_GAP = 4;
+
+    const iconWidth = textHeight * (HERO_ICON_W / HERO_TEXT);
+    const iconHeight = textHeight * (HERO_ICON_H / HERO_TEXT);
+    const gap = textHeight * (HERO_GAP / HERO_TEXT);
+
+    ctx.font = `500 ${textHeight}px 'Quicksand', sans-serif`;
+    ctx.textBaseline = 'alphabetic';
+    const textWidth = ctx.measureText('hendoist').width;
+
+    const totalWidth = iconWidth + gap + textWidth;
+    const startX = centerX - totalWidth / 2;
+
+    const iconBottom = baseline;
+    const iconTop = iconBottom - iconHeight;
+    const iconScale = iconHeight / W_VIEWBOX.h;
+
+    ctx.save();
+    ctx.translate(startX, iconTop);
+    ctx.scale(iconScale, iconScale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+
+    ctx.fillStyle = textColor;
+    ctx.fillText('hendoist', startX + iconWidth + gap, baseline);
+}
+
+// ============ PROFILE IMAGES ============
+
+function drawProfile(ctx, size, _, dark = false) {
+    // Background
+    if (dark) {
+        ctx.fillStyle = COLORS.darkSlate;
+    } else {
+        ctx.fillStyle = COLORS.white;
+    }
+    ctx.fillRect(0, 0, size, size);
+
+    // Subtle gradient for light version
+    if (!dark) {
+        const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size * 0.7);
+        gradient.addColorStop(0, 'rgba(109, 94, 246, 0.04)');
+        gradient.addColorStop(1, 'rgba(109, 94, 246, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+    }
+
+    // W icon centered with 20% padding
+    drawWIconCentered(ctx, size, size, 0.2);
+}
+
+// ============ POST TEMPLATES ============
+
+function drawPostSquare(ctx, w, h) {
+    drawGradientBg(ctx, w, h);
+
+    // Wordmark centered, 8% of height
+    const textHeight = h * 0.08;
+    drawWordmark(ctx, w / 2, h * 0.42, textHeight);
+
+    // Tagline
+    ctx.font = '400 32px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = COLORS.slate500;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('When do I do my tasks?', w / 2, h * 0.48);
+
+    // Decorative bottom bar
+    const barH = 8;
+    const barW = w * 0.6;
+    const barX = (w - barW) / 2;
+    const barY = h - 60;
+
+    const gradient = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+    gradient.addColorStop(0, COLORS.blue);
+    gradient.addColorStop(0.5, COLORS.purple);
+    gradient.addColorStop(1, COLORS.magenta);
+
+    ctx.beginPath();
+    roundRect(ctx, barX, barY, barW, barH, barH / 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+}
+
+function drawPostLandscape(ctx, w, h) {
+    drawGradientBg(ctx, w, h, 'horizontal');
+
+    // Wordmark left-aligned
+    const textHeight = h * 0.12;
+    const leftPadding = w * 0.08;
+
+    const HERO_TEXT = 104;
+    const HERO_ICON_W = 90;
+    const HERO_ICON_H = 80;
+    const HERO_GAP = 4;
+
+    const iconWidth = textHeight * (HERO_ICON_W / HERO_TEXT);
+    const iconHeight = textHeight * (HERO_ICON_H / HERO_TEXT);
+    const gap = textHeight * (HERO_GAP / HERO_TEXT);
+
+    ctx.font = `500 ${textHeight}px 'Quicksand', sans-serif`;
+    const textWidth = ctx.measureText('hendoist').width;
+
+    const startX = leftPadding;
+    const baseline = h * 0.52;
+    const iconTop = baseline - iconHeight;
+    const iconScale = iconHeight / W_VIEWBOX.h;
+
+    ctx.save();
+    ctx.translate(startX, iconTop);
+    ctx.scale(iconScale, iconScale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('hendoist', startX + iconWidth + gap, baseline);
+
+    // Tagline below
+    ctx.font = '400 24px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = COLORS.slate500;
+    ctx.fillText('When do I do my tasks?', startX, baseline + 40);
+
+    // W icon watermark on right
+    ctx.globalAlpha = 0.06;
+    const watermarkSize = h * 1.2;
+    drawWIconCentered(ctx, watermarkSize, watermarkSize, 0.1);
+    ctx.translate(w - watermarkSize * 0.6, (h - watermarkSize) / 2);
+    ctx.globalAlpha = 1;
+}
+
+function drawPostFeature(ctx, w, h) {
+    drawGradientBg(ctx, w, h);
+
+    // "NEW FEATURE" badge
+    ctx.font = '700 14px system-ui';
+    ctx.fillStyle = COLORS.purple;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const badgeText = 'NEW FEATURE';
+    const badgeW = ctx.measureText(badgeText).width + 24;
+    const badgeH = 28;
+    const badgeX = (w - badgeW) / 2;
+    const badgeY = h * 0.25;
+
+    ctx.beginPath();
+    roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+    ctx.fillStyle = COLORS.purpleTint;
+    ctx.fill();
+
+    ctx.fillStyle = COLORS.purple;
+    ctx.fillText(badgeText, w / 2, badgeY + badgeH / 2);
+
+    // Headline placeholder
+    ctx.font = '700 48px Quicksand, sans-serif';
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.fillText('[Feature Name]', w / 2, h * 0.45);
+
+    // Description placeholder
+    ctx.font = '400 24px system-ui';
+    ctx.fillStyle = COLORS.slate500;
+    ctx.fillText('Brief description of the feature goes here', w / 2, h * 0.55);
+
+    // Wordmark at bottom
+    drawWordmark(ctx, w / 2, h * 0.85, 36);
+}
+
+function drawPostStory(ctx, w, h) {
+    drawGradientBg(ctx, w, h, 'vertical');
+
+    // Large W icon at top
+    const iconSize = w * 0.5;
+    const iconY = h * 0.15;
+
+    ctx.save();
+    ctx.translate((w - iconSize) / 2, iconY);
+    drawWIconCentered(ctx, iconSize, iconSize, 0.1);
+    ctx.restore();
+
+    // Wordmark text only
+    const textHeight = w * 0.12;
+    ctx.font = `500 ${textHeight}px 'Quicksand', sans-serif`;
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('hendoist', w / 2, h * 0.48);
+
+    // Tagline
+    ctx.font = '400 28px system-ui';
+    ctx.fillStyle = COLORS.slate500;
+    ctx.fillText('When do I do', w / 2, h * 0.56);
+    ctx.fillText('my tasks?', w / 2, h * 0.60);
+
+    // CTA area
+    ctx.font = '600 20px system-ui';
+    ctx.fillStyle = COLORS.purple;
+    ctx.fillText('Swipe up to learn more', w / 2, h * 0.88);
+
+    // Up arrow
+    ctx.beginPath();
+    ctx.moveTo(w / 2, h * 0.83);
+    ctx.lineTo(w / 2 - 10, h * 0.85);
+    ctx.lineTo(w / 2 + 10, h * 0.85);
+    ctx.closePath();
+    ctx.fill();
+}
+
+// ============ EMAIL HEADERS ============
+
+function drawEmailHeader(ctx, w, h) {
+    drawGradientBg(ctx, w, h, 'horizontal');
+
+    // Wordmark centered
+    drawWordmark(ctx, w / 2, h * 0.58, h * 0.25);
+
+    // Subtle bottom border
+    ctx.fillStyle = 'rgba(109, 94, 246, 0.1)';
+    ctx.fillRect(0, h - 2, w, 2);
+}
+
+function drawEmailHeaderCompact(ctx, w, h) {
+    ctx.fillStyle = COLORS.white;
+    ctx.fillRect(0, 0, w, h);
+
+    // Wordmark left-aligned
+    const textHeight = h * 0.35;
+    const leftPadding = 24;
+
+    const HERO_TEXT = 104;
+    const HERO_ICON_W = 90;
+    const HERO_ICON_H = 80;
+    const HERO_GAP = 4;
+
+    const iconWidth = textHeight * (HERO_ICON_W / HERO_TEXT);
+    const iconHeight = textHeight * (HERO_ICON_H / HERO_TEXT);
+    const gap = textHeight * (HERO_GAP / HERO_TEXT);
+
+    ctx.font = `500 ${textHeight}px 'Quicksand', sans-serif`;
+
+    const startX = leftPadding;
+    const baseline = h * 0.62;
+    const iconTop = baseline - iconHeight;
+    const iconScale = iconHeight / W_VIEWBOX.h;
+
+    ctx.save();
+    ctx.translate(startX, iconTop);
+    ctx.scale(iconScale, iconScale);
+    ctx.translate(-W_VIEWBOX.x, -W_VIEWBOX.y);
+    drawWBars(ctx);
+    ctx.restore();
+
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('hendoist', startX + iconWidth + gap, baseline);
+
+    // Bottom gradient bar
+    const gradient = ctx.createLinearGradient(0, 0, w, 0);
+    gradient.addColorStop(0, COLORS.blue);
+    gradient.addColorStop(0.5, COLORS.purple);
+    gradient.addColorStop(1, COLORS.magenta);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, h - 3, w, 3);
+}
+
+function drawEmailBanner(ctx, w, h) {
+    drawGradientBg(ctx, w, h);
+
+    // Large wordmark
+    drawWordmark(ctx, w / 2, h * 0.45, h * 0.15);
+
+    // Tagline
+    ctx.font = '400 20px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = COLORS.slate500;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('When do I do my tasks?', w / 2, h * 0.55);
+
+    // Decorative gradient bar at bottom
+    const barH = 6;
+    const gradient = ctx.createLinearGradient(0, 0, w, 0);
+    gradient.addColorStop(0, COLORS.blue);
+    gradient.addColorStop(0.5, COLORS.purple);
+    gradient.addColorStop(1, COLORS.magenta);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, h - barH, w, barH);
+}
+
+// ============ PRESS KIT ============
+
+function drawPressHorizontal(ctx, w, h) {
+    ctx.fillStyle = COLORS.white;
+    ctx.fillRect(0, 0, w, h);
+
+    // Large wordmark centered
+    drawWordmark(ctx, w / 2, h * 0.58, h * 0.25);
+}
+
+function drawPressStacked(ctx, w, h) {
+    ctx.fillStyle = COLORS.white;
+    ctx.fillRect(0, 0, w, h);
+
+    // W icon at top
+    const iconSize = w * 0.4;
+    ctx.save();
+    ctx.translate((w - iconSize) / 2, h * 0.2);
+    drawWIconCentered(ctx, iconSize, iconSize, 0.05);
+    ctx.restore();
+
+    // "Whendoist" text below
+    const textHeight = w * 0.1;
+    ctx.font = `500 ${textHeight}px 'Quicksand', sans-serif`;
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Whendoist', w / 2, h * 0.72);
+
+    // Tagline
+    ctx.font = `400 ${textHeight * 0.4}px system-ui`;
+    ctx.fillStyle = COLORS.slate500;
+    ctx.fillText('When do I do my tasks?', w / 2, h * 0.82);
+}
+
+function drawPressIcon(ctx, size) {
+    ctx.fillStyle = COLORS.white;
+    ctx.fillRect(0, 0, size, size);
+
+    // W icon with generous padding
+    drawWIconCentered(ctx, size, size, 0.15);
+}
+
+function drawPressColors(ctx, w, h) {
+    ctx.fillStyle = COLORS.white;
+    ctx.fillRect(0, 0, w, h);
+
+    // Title
+    ctx.font = '700 32px Quicksand, sans-serif';
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Brand Colors', w / 2, 60);
+
+    // Color swatches
+    const colors = [
+        { name: 'Executable Blue', hex: '#167BFF', rgb: '22, 123, 255' },
+        { name: 'Defined Purple', hex: '#6D5EF6', rgb: '109, 94, 246' },
+        { name: 'Exploratory Magenta', hex: '#A020C0', rgb: '160, 32, 192' },
+        { name: 'Dark Slate', hex: '#1E293B', rgb: '30, 41, 59' },
+    ];
+
+    const swatchW = 220;
+    const swatchH = 140;
+    const gap = 40;
+    const totalW = colors.length * swatchW + (colors.length - 1) * gap;
+    let x = (w - totalW) / 2;
+    const y = 150;
+
+    colors.forEach(color => {
+        // Swatch
+        ctx.beginPath();
+        roundRect(ctx, x, y, swatchW, swatchH, 12);
+        ctx.fillStyle = color.hex;
+        ctx.fill();
+
+        // Color name
+        ctx.font = '600 16px system-ui';
+        ctx.fillStyle = COLORS.darkSlate;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(color.name, x, y + swatchH + 16);
+
+        // Hex
+        ctx.font = '500 14px monospace';
+        ctx.fillStyle = COLORS.slate500;
+        ctx.fillText(color.hex, x, y + swatchH + 40);
+
+        // RGB
+        ctx.fillText(`RGB: ${color.rgb}`, x, y + swatchH + 60);
+
+        x += swatchW + gap;
+    });
+
+    // Tints section
+    ctx.font = '600 20px Quicksand, sans-serif';
+    ctx.fillStyle = COLORS.darkSlate;
+    ctx.textAlign = 'center';
+    ctx.fillText('Tints (Backgrounds)', w / 2, 460);
+
+    const tints = [
+        { name: 'Executable Tint', hex: '#EAF2FF' },
+        { name: 'Defined Tint', hex: '#EFEEFF' },
+        { name: 'Exploratory Tint', hex: '#F3ECFA' },
+    ];
+
+    const tintW = 180;
+    const tintH = 80;
+    const tintGap = 30;
+    const tintTotalW = tints.length * tintW + (tints.length - 1) * tintGap;
+    let tintX = (w - tintTotalW) / 2;
+    const tintY = 500;
+
+    tints.forEach(tint => {
+        ctx.beginPath();
+        roundRect(ctx, tintX, tintY, tintW, tintH, 8);
+        ctx.fillStyle = tint.hex;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.font = '500 12px system-ui';
+        ctx.fillStyle = COLORS.darkSlate;
+        ctx.textAlign = 'center';
+        ctx.fillText(tint.name, tintX + tintW / 2, tintY + tintH + 20);
+        ctx.font = '500 12px monospace';
+        ctx.fillStyle = COLORS.slate500;
+        ctx.fillText(tint.hex, tintX + tintW / 2, tintY + tintH + 38);
+
+        tintX += tintW + tintGap;
+    });
+
+    // Footer
+    ctx.font = '400 14px system-ui';
+    ctx.fillStyle = COLORS.slate500;
+    ctx.textAlign = 'center';
+    ctx.fillText('Whendoist Brand Colors - whendoist.com', w / 2, h - 40);
+}
+
+// ============ UTILITIES ============
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+function download(name) {
+    const item = allCanvases.get(name);
+    if (!item) return;
+
+    const link = document.createElement('a');
+    link.download = item.filename;
+    link.href = item.canvas.toDataURL('image/png');
+    link.click();
+}
+
+async function downloadAll() {
+    const zip = new JSZip();
+    const folders = {
+        'profile': zip.folder('profile-images'),
+        'post': zip.folder('post-templates'),
+        'email': zip.folder('email-headers'),
+        'press': zip.folder('press-kit'),
+    };
+
+    for (const [name, item] of allCanvases) {
+        const blob = await new Promise(resolve => item.canvas.toBlob(resolve, 'image/png'));
+
+        let folder = zip;
+        if (name.startsWith('profile')) folder = folders.profile;
+        else if (name.startsWith('post')) folder = folders.post;
+        else if (name.startsWith('email')) folder = folders.email;
+        else if (name.startsWith('press')) folder = folders.press;
+
+        folder.file(item.filename, blob);
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    link.download = 'whendoist-marketing-assets.zip';
+    link.href = URL.createObjectURL(content);
+    link.click();
+}
+</script>
+
+</body>
+</html>

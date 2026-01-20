@@ -1,0 +1,8 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Connected: Linked chain -->
+  <circle cx="60" cy="60" r="44" fill="#EFEEFF"/>
+  <rect x="20" y="46" width="36" height="28" rx="14" fill="none" stroke="#6D5EF6" stroke-width="3"/>
+  <rect x="64" y="46" width="36" height="28" rx="14" fill="none" stroke="#167BFF" stroke-width="3"/>
+  <!-- Overlap connection indicator -->
+  <rect x="56" y="52" width="8" height="16" rx="4" fill="#EFEEFF"/>
+</svg>

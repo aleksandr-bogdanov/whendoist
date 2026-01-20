@@ -1,0 +1,14 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Setup Complete: Rocket -->
+  <circle cx="60" cy="60" r="44" fill="#F3ECFA"/>
+  <!-- Rocket body -->
+  <path d="M60 24 C50 34 46 48 46 64 L60 72 L74 64 C74 48 70 34 60 24 Z" fill="white" stroke="#A020C0" stroke-width="2.5"/>
+  <!-- Window -->
+  <circle cx="60" cy="46" r="7" fill="#167BFF"/>
+  <!-- Fins -->
+  <path d="M46 64 L38 74 L46 70 Z" fill="#6D5EF6"/>
+  <path d="M74 64 L82 74 L74 70 Z" fill="#6D5EF6"/>
+  <!-- Flame -->
+  <path d="M54 72 L60 92 L66 72" fill="#F97316"/>
+  <path d="M57 72 L60 84 L63 72" fill="#FBBF24"/>
+</svg>
