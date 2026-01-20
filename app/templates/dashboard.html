@@ -33,7 +33,9 @@
                 <span class="header-task">
                     <span class="header-task-label" id="header-task-label">Task</span>
                     <button type="button" class="header-back-btn" id="header-back-btn" hidden>
-                        <span class="back-arrow">&larr;</span>
+                        <svg class="icon icon-sm back-arrow" aria-hidden="true">
+                            <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-left"></use>
+                        </svg>
                         <span class="back-text">Back to tasks</span>
                     </button>
                     <span class="header-view-count" id="header-view-count" hidden></span>
@@ -54,10 +56,8 @@
                 </span>
                 <span class="header-actions">
                     <button type="button" class="header-actions-btn" id="header-actions-btn" title="Task list options" aria-haspopup="true" aria-expanded="false">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="5" r="2"/>
-                            <circle cx="12" cy="12" r="2"/>
-                            <circle cx="12" cy="19" r="2"/>
+                        <svg class="icon icon-fill" aria-hidden="true">
+                            <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#menu-dots"></use>
                         </svg>
                     </button>
                     <!-- Task List Options Menu -->

@@ -99,7 +99,7 @@ class TodoistClient:
 
         # Parse date
         if due_datetime_str:
-            # Full datetime
+            # Full datetime in the datetime field
             dt = datetime.fromisoformat(due_datetime_str.replace("Z", "+00:00"))
             return TodoistDue(
                 date=dt.date(),
@@ -108,6 +108,17 @@ class TodoistClient:
                 string=due_data.get("string", ""),
             )
         elif due_date_str:
+            # Check if the date field actually contains a datetime (API v1 quirk:
+            # when a task has a time but no timezone, Todoist puts the datetime
+            # in the "date" field instead of the "datetime" field)
+            if "T" in due_date_str:
+                dt = datetime.fromisoformat(due_date_str.replace("Z", "+00:00"))
+                return TodoistDue(
+                    date=dt.date(),
+                    datetime_=dt,
+                    is_recurring=due_data.get("is_recurring", False),
+                    string=due_data.get("string", ""),
+                )
             # Date only
             d = date.fromisoformat(due_date_str)
             return TodoistDue(

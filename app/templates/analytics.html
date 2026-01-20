@@ -139,7 +139,10 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="empty-state">No recent completions</div>
+                    <div class="empty-state">
+                        <img src="{{ url_for('static', path='img/illustrations/empty-analytics.svg') }}" alt="" class="empty-state-illustration" width="80" height="80" aria-hidden="true">
+                        <p>No recent completions</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -164,7 +167,10 @@
                     </div>
                     {% endfor %}
                     {% else %}
-                    <div class="empty-state">No recurring tasks</div>
+                    <div class="empty-state">
+                        <img src="{{ url_for('static', path='img/illustrations/empty-tasks.svg') }}" alt="" class="empty-state-illustration" width="80" height="80" aria-hidden="true">
+                        <p>No recurring tasks</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>

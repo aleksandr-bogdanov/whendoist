@@ -74,6 +74,7 @@
     {% endfor %}
 {% else %}
 <div class="empty-state">
+    <img src="{{ url_for('static', path='img/illustrations/empty-tasks.svg') }}" alt="" class="empty-state-illustration" width="120" height="120" aria-hidden="true">
     <p>No tasks with domains yet.</p>
     <p>Create a domain in Settings, then promote thoughts to tasks.</p>
 </div>

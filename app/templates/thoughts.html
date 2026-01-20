@@ -23,7 +23,8 @@
                    id="quick-add-input"
                    class="capture-input"
                    placeholder="What's on your mind?"
-                   autocomplete="off">
+                   autocomplete="off"
+                   aria-label="Capture a thought">
             <div class="capture-hint-row">
                 <span class="keycap">Enter</span>
                 <span>Capture</span>
@@ -43,23 +44,23 @@
                         <div class="thought-dot"></div>
                         <span class="thought-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
                         <div class="thought-actions">
-                            <button type="button" class="icon-btn promote" title="Promote to Task">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                            <button type="button" class="icon-btn promote" title="Promote to Task" aria-label="Promote to Task">
+                                <svg class="icon icon-xs" aria-hidden="true">
+                                    <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-up"></use>
                                 </svg>
                             </button>
-                            <button type="button" class="icon-btn delete" title="Delete">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <path d="M18 6L6 18M6 6l12 12"/>
+                            <button type="button" class="icon-btn delete" title="Delete" aria-label="Delete">
+                                <svg class="icon icon-xs" aria-hidden="true">
+                                    <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#close"></use>
                                 </svg>
                             </button>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <div class="thought-row thought-empty" id="thought-empty">
-                        <div class="thought-dot"></div>
-                        <span class="thought-text">No thoughts yet. Start typing above.</span>
+                    <div class="thought-empty-state" id="thought-empty">
+                        <img src="{{ url_for('static', path='img/illustrations/empty-thoughts.svg') }}" alt="" class="empty-state-illustration" width="100" height="100" aria-hidden="true">
+                        <p class="empty-state-text">No thoughts yet. Start typing above.</p>
                     </div>
                 {% endif %}
             </div>
@@ -170,18 +171,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = document.createElement('div');
         row.className = 'thought-row is-new';
         row.dataset.taskId = task.id;
+        const iconSprite = '{{ url_for("static", path="img/icons/ui-icons.svg") }}';
         row.innerHTML = `
             <div class="thought-dot"></div>
             <span class="thought-text">${escapeHtml(task.title)}</span>
             <div class="thought-actions">
-                <button type="button" class="icon-btn promote" title="Promote to Task">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M12 19V5M5 12l7-7 7 7"/>
+                <button type="button" class="icon-btn promote" title="Promote to Task" aria-label="Promote to Task">
+                    <svg class="icon icon-xs" aria-hidden="true">
+                        <use href="${iconSprite}#arrow-up"></use>
                     </svg>
                 </button>
-                <button type="button" class="icon-btn delete" title="Delete">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M18 6L6 18M6 6l12 12"/>
+                <button type="button" class="icon-btn delete" title="Delete" aria-label="Delete">
+                    <svg class="icon icon-xs" aria-hidden="true">
+                        <use href="${iconSprite}#close"></use>
                     </svg>
                 </button>
             </div>

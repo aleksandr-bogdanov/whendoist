@@ -185,3 +185,31 @@
         box-shadow: 0 0 0 4px rgba(109, 94, 246, 0);
     }
 }
+
+/* =============================================================================
+   Reduced Motion - Disable or simplify animations
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner {
+        animation: none;
+        /* Show static ring instead of spinning */
+        border-color: var(--primary);
+        border-top-color: transparent;
+    }
+
+    .skeleton {
+        animation: none;
+        /* Show static placeholder */
+        background: var(--bg-panel);
+    }
+
+    .toast {
+        animation: none;
+    }
+
+    .toast.is-exiting {
+        animation: none;
+        opacity: 0;
+    }
+}

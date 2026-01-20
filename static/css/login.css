@@ -158,7 +158,7 @@ body:has(.login-page) .site-header {
     position: absolute;
     width: 56px;
     height: 20px;
-    background: #fff;
+    background: var(--bg-surface);
     border: 1px solid rgba(109, 94, 246, 0.3);
     border-radius: 5px;
     box-shadow: 0 2px 8px rgba(109, 94, 246, 0.15);
@@ -246,8 +246,8 @@ body:has(.login-page) .site-header {
 .login-hero-task {
     width: 60px;
     height: 22px;
-    background: #fff;
-    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 5px;
     display: flex;
     align-items: center;
@@ -389,7 +389,7 @@ body:has(.login-page) .site-header {
 
 .login-hero-calendar {
     width: 72px;
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 2px solid var(--primary);
     border-radius: 8px;
     overflow: visible; /* Allow focus ring to overflow */
@@ -413,7 +413,7 @@ body:has(.login-page) .site-header {
     width: 14px;
     height: 14px;
     border-radius: 3px;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
 }
 
 /* Pre-filled cells (static, show existing calendar items) */
@@ -428,7 +428,7 @@ body:has(.login-page) .site-header {
 
 @keyframes destinationFill {
     0%, 43.33% {
-        background: var(--grey-bg);
+        background: var(--bg-panel);
         transform: scale(1);
     }
     46% {
@@ -444,11 +444,11 @@ body:has(.login-page) .site-header {
         transform: scale(1);
     }
     95% {
-        background: var(--grey-bg);
+        background: var(--bg-panel);
         transform: scale(1);
     }
     100% {
-        background: var(--grey-bg);
+        background: var(--bg-panel);
         transform: scale(1);
     }
 }
@@ -558,7 +558,7 @@ body:has(.login-page) .site-header {
 }
 
 .login-value-punchline {
-    color: var(--text);
+    color: var(--text-primary);
     font-weight: 500;
     margin-top: 8px;
     white-space: nowrap;
@@ -654,14 +654,14 @@ body:has(.login-page) .site-header {
 
 .login-meta-trust {
     font-size: 0.75rem;
-    color: var(--text-faint);
+    color: var(--text-muted);
     margin: 0 0 6px 0;
     line-height: 1.4;
 }
 
 .login-meta-features {
     font-size: 0.72rem;
-    color: var(--text-faint);
+    color: var(--text-muted);
     margin: 0;
     line-height: 1.4;
     letter-spacing: 0.02em;
@@ -678,7 +678,7 @@ body:has(.login-page) .site-header {
 
 .login-footer a {
     font-size: 0.68rem;
-    color: var(--text-faint);
+    color: var(--text-muted);
     text-decoration: none;
     transition: color 0.15s ease;
 }

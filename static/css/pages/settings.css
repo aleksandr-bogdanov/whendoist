@@ -604,7 +604,7 @@
     left: 2px;
     width: 14px;
     height: 14px;
-    background: #fff;
+    background: var(--bg-surface);
     border-radius: 50%;
     transition: transform var(--duration-fast) var(--ease-default);
     box-shadow: 0 1px 2px rgba(0,0,0,0.12);
@@ -677,7 +677,7 @@
     height: 32px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-subtle);
-    background: #fff;
+    background: var(--bg-surface);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -764,7 +764,7 @@ input.add-domain-input[type="text"] {
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
     font-size: 0.8125rem;
-    background: #fff;
+    background: var(--bg-surface);
     color: var(--text-primary);
     line-height: 32px;
 }
@@ -851,6 +851,20 @@ input.add-domain-input::placeholder {
 .btn-sm:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Focus indicators for accessibility */
+.btn-sm:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.btn-sm--primary:focus-visible {
+    outline-color: var(--primary);
+}
+
+.btn-sm--danger:focus-visible {
+    outline-color: var(--red-500);
 }
 
 /* =============================================================================
@@ -1026,7 +1040,7 @@ input.add-domain-input::placeholder {
     letter-spacing: 0.04em;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-xs);
-    background: #fff;
+    background: var(--bg-surface);
     color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--duration-fast);
@@ -1383,4 +1397,39 @@ input.add-domain-input::placeholder {
 
 [data-theme="dark"] .footer-link {
     color: rgba(248, 250, 252, 0.5);
+}
+
+/* Dark mode button styles */
+[data-theme="dark"] .btn-sm--secondary {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .btn-sm--secondary:hover {
+    background: rgba(248, 250, 252, 0.08);
+}
+
+[data-theme="dark"] .btn-sm--ghost {
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .btn-sm--ghost:hover {
+    background: rgba(248, 250, 252, 0.06);
+}
+
+[data-theme="dark"] .provider-icon {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .expand-section.open {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .toggle-switch {
+    background: rgba(248, 250, 252, 0.15);
+}
+
+[data-theme="dark"] .toggle-switch.enabled {
+    background: var(--primary);
 }

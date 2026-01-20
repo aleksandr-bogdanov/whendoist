@@ -55,8 +55,8 @@
                             </div>
                             <div class="settings-row__right">
                                 <div class="row-chevron" id="todoist-chevron">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M6 9l6 6 6-6"/>
+                                    <svg class="icon icon-sm" aria-hidden="true">
+                                        <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#chevron-down"></use>
                                     </svg>
                                 </div>
                             </div>
@@ -178,15 +178,14 @@
                                     {% endif %}
                                 </div>
                                 <div class="row-actions">
-                                    <button type="button" class="icon-btn edit" data-domain-id="{{ domain.id }}" data-domain-name="{{ domain.name }}" data-domain-icon="{{ domain.icon or '' }}" onclick="editDomain(this)" title="Edit">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    <button type="button" class="icon-btn edit" data-domain-id="{{ domain.id }}" data-domain-name="{{ domain.name }}" data-domain-icon="{{ domain.icon or '' }}" onclick="editDomain(this)" title="Edit" aria-label="Edit domain">
+                                        <svg class="icon icon-xs" aria-hidden="true">
+                                            <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#edit"></use>
                                         </svg>
                                     </button>
-                                    <button type="button" class="icon-btn delete" onclick="deleteDomain({{ domain.id }})" title="Delete">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                            <path d="M18 6L6 18M6 6l12 12"/>
+                                    <button type="button" class="icon-btn delete" onclick="deleteDomain({{ domain.id }})" title="Delete" aria-label="Delete domain">
+                                        <svg class="icon icon-xs" aria-hidden="true">
+                                            <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#delete"></use>
                                         </svg>
                                     </button>
                                 </div>
@@ -198,10 +197,10 @@
                         <!-- Add domain row -->
                         <div class="settings-row settings-row--add">
                             <div class="emoji-picker-wrap">
-                                <button type="button" class="emoji-picker-btn" id="new-domain-icon-btn" onclick="toggleEmojiPicker('new')">📁</button>
+                                <button type="button" class="emoji-picker-btn" id="new-domain-icon-btn" onclick="toggleEmojiPicker('new')" aria-label="Choose domain icon">📁</button>
                                 <div class="emoji-picker-popover" id="emoji-picker-new"></div>
                             </div>
-                            <input type="text" id="new-domain-name" class="add-domain-input" placeholder="Add new domain..." maxlength="100">
+                            <input type="text" id="new-domain-name" class="add-domain-input" placeholder="Add new domain..." maxlength="100" aria-label="New domain name">
                             <div class="settings-row__right">
                                 <button type="button" class="btn-sm btn-sm--primary" onclick="addDomain()">Add</button>
                             </div>
@@ -347,7 +346,7 @@
                                     Use your device's biometrics, security key, or password manager to unlock encrypted data.
                                 </p>
                                 <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                                    <input type="text" id="passkey-name" class="add-domain-input" placeholder="Passkey name (e.g., 1Password, Touch ID)" style="flex: 1;">
+                                    <input type="text" id="passkey-name" class="add-domain-input" placeholder="Passkey name (e.g., 1Password, Touch ID)" style="flex: 1;" aria-label="Passkey name">
                                 </div>
                                 <div class="expand-actions">
                                     <div class="expand-actions__left">
@@ -502,10 +501,10 @@
             <input type="hidden" id="edit-domain-icon">
             <div class="modal__row">
                 <div class="emoji-picker-wrap">
-                    <button type="button" class="emoji-picker-btn" id="edit-domain-icon-btn" onclick="toggleEmojiPicker('edit')">📁</button>
+                    <button type="button" class="emoji-picker-btn" id="edit-domain-icon-btn" onclick="toggleEmojiPicker('edit')" aria-label="Choose domain icon">📁</button>
                     <div class="emoji-picker-popover" id="emoji-picker-edit"></div>
                 </div>
-                <input type="text" id="edit-domain-name" placeholder="Domain name" required maxlength="100">
+                <input type="text" id="edit-domain-name" placeholder="Domain name" required maxlength="100" aria-label="Domain name">
             </div>
             <div class="modal__actions">
                 <button type="button" class="btn-sm btn-sm--secondary" onclick="closeDomainEdit()">Cancel</button>
@@ -1208,8 +1207,8 @@ function showEncryptionSetup() {
             <strong>Warning:</strong> If you forget your passphrase, your data cannot be recovered.
         </p>
         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-            <input type="password" id="encryption-passphrase" class="add-domain-input" placeholder="Enter passphrase (8+ characters)" style="width: 100%;">
-            <input type="password" id="encryption-passphrase-confirm" class="add-domain-input" placeholder="Confirm passphrase" style="width: 100%;">
+            <input type="password" id="encryption-passphrase" class="add-domain-input" placeholder="Enter passphrase (8+ characters)" style="width: 100%;" aria-label="Encryption passphrase">
+            <input type="password" id="encryption-passphrase-confirm" class="add-domain-input" placeholder="Confirm passphrase" style="width: 100%;" aria-label="Confirm encryption passphrase">
         </div>
         <div class="expand-actions">
             <div class="expand-actions__left">

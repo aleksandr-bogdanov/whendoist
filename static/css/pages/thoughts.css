@@ -38,9 +38,9 @@
 .thoughts-title {
     margin: 0 0 8px 0;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.10em;
     font-weight: 700;
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     line-height: 1;
     color: var(--text-primary);
 }
@@ -69,7 +69,7 @@
     padding: 0 16px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
-    background: #fff;
+    background: var(--bg-surface);
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--text-primary);
@@ -130,7 +130,7 @@
     gap: 10px;
     padding: 7px 14px;
     border-bottom: 1px solid var(--border-subtle);
-    background: #fff;
+    background: var(--bg-surface);
     transition: background var(--duration-instant) var(--ease-default);
 }
 
@@ -159,7 +159,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #C7CFDA;
+    background: var(--slate-300);
     flex-shrink: 0;
     transition: background var(--duration-fast) var(--ease-default);
 }
@@ -175,7 +175,7 @@
     font-size: 0.875rem;
     line-height: 22px;
     font-weight: 400;
-    color: rgba(51, 65, 85, 0.85);
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -215,7 +215,7 @@
 /* 11) States */
 @keyframes thought-pop {
     from { background: rgba(109, 94, 246, 0.08); }
-    to   { background: #fff; }
+    to   { background: var(--bg-surface); }
 }
 
 .thought-row.is-new {
@@ -337,4 +337,38 @@
 
 [data-theme="dark"] .thought-row.is-new {
     animation: thought-pop-dark 600ms ease-out;
+}
+
+/* =============================================================================
+   Reduced Motion
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .thought-row.is-new {
+        animation: none;
+        /* Show final state: normal background */
+    }
+}
+
+/* =============================================================================
+   Empty State
+   ============================================================================= */
+
+.thought-empty-state {
+    text-align: center;
+    padding: var(--space-8) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.thought-empty-state .empty-state-illustration {
+    opacity: 0.85;
+}
+
+.thought-empty-state .empty-state-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0;
 }

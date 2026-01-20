@@ -4,7 +4,7 @@
 
 .legal-page {
     min-height: 100vh;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
     padding: 24px 20px;
 
     /* PWA safe areas */
@@ -39,7 +39,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.10em;
-    color: var(--text);
+    color: var(--text-primary);
     margin: 0 0 8px 0;
 }
 
@@ -51,8 +51,8 @@
 
 /* Content */
 .legal-content {
-    background: var(--light-bg);
-    border: 1px solid var(--border-hair);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
     border-radius: 12px;
     padding: 24px;
 }
@@ -68,13 +68,13 @@
 .legal-content h2 {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--text);
+    color: var(--text-primary);
     margin: 0 0 12px 0;
 }
 
 .legal-content p {
     font-size: 0.9rem;
-    color: var(--text);
+    color: var(--text-primary);
     line-height: 1.6;
     margin: 0 0 12px 0;
 }
@@ -90,7 +90,7 @@
 
 .legal-content li {
     font-size: 0.9rem;
-    color: var(--text);
+    color: var(--text-primary);
     line-height: 1.6;
     margin-bottom: 4px;
 }
@@ -119,13 +119,13 @@
     height: 44px;
     padding: 0 24px;
 
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 10px;
 
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--text);
+    color: var(--text-primary);
     text-decoration: none;
 
     transition: all 0.15s ease;

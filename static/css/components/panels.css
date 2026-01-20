@@ -164,11 +164,16 @@
 .empty-state {
     text-align: center;
     padding: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
 }
 
-.empty-state .illustration {
+.empty-state .illustration,
+.empty-state-illustration {
     opacity: 0.9;
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-2);
 }
 
 .empty-state .empty-title {
@@ -182,4 +187,22 @@
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0;
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .panel-header {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .panel-row:hover {
+    background: var(--interactive-hover);
+}
+
+/* Illustrations are slightly brighter in dark mode */
+[data-theme="dark"] .empty-state .illustration,
+[data-theme="dark"] .empty-state-illustration {
+    opacity: 0.95;
 }

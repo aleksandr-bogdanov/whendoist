@@ -60,13 +60,16 @@
     /* ===== Interactive States ===== */
     --interactive-hover: rgba(109, 94, 246, 0.06);
     --interactive-active: rgba(109, 94, 246, 0.10);
+    --interactive-pressed: rgba(109, 94, 246, 0.14);
     --focus-ring: rgba(109, 94, 246, 0.22);
     --row-hover: rgba(15, 23, 42, 0.02);
+    --bg-inset: rgba(15, 23, 42, 0.02);
 
     /* ===== Gradients ===== */
     --gradient-primary: linear-gradient(135deg, #6D5EF6 0%, #8B7CF7 50%, #A78BFA 100%);
     --gradient-primary-hover: linear-gradient(135deg, #5B4CF0 0%, #7B6CF5 50%, #9B7BF8 100%);
     --gradient-bg-subtle: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+    --gradient-bg-login: linear-gradient(135deg, #F0EDFF 0%, #E8E5FF 25%, #F5F3FF 50%, #EBE8FF 75%, #F8F7FF 100%);
 
     /* ===== Glass Effects ===== */
     --glass-bg: rgba(255, 255, 255, 0.85);
@@ -76,6 +79,7 @@
 
     /* ===== Shadows (3-Tier) ===== */
     --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
     --shadow-card: 0 2px 8px rgba(15, 23, 42, 0.04), 0 4px 24px rgba(15, 23, 42, 0.06);
     --shadow-raised: 0 4px 16px rgba(15, 23, 42, 0.06), 0 8px 40px rgba(15, 23, 42, 0.08);
     --shadow-elevated: 0 12px 48px rgba(15, 23, 42, 0.10), 0 4px 16px rgba(15, 23, 42, 0.06);
@@ -109,9 +113,11 @@
     --duration-fast: 0.15s;
     --duration-normal: 0.2s;
     --duration-slow: 0.3s;
+    --duration-emphasis: 0.4s;
     --ease-default: ease;
     --ease-out: ease-out;
     --ease-spring: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
     /* ===== Impact Colors ===== */
     --impact-p1: #C9505A;
@@ -218,6 +224,8 @@
 
     --interactive-hover: rgba(109, 94, 246, 0.12);
     --interactive-active: rgba(109, 94, 246, 0.18);
+    --interactive-pressed: rgba(109, 94, 246, 0.24);
+    --bg-inset: rgba(0, 0, 0, 0.15);
     --focus-ring: rgba(109, 94, 246, 0.32);
 
     --glass-bg: rgba(15, 23, 42, 0.75);
@@ -227,6 +235,23 @@
     --clarity-executable-tint: rgba(22, 123, 255, 0.15);
     --clarity-defined-tint: rgba(109, 94, 246, 0.15);
     --clarity-exploratory-tint: rgba(160, 32, 192, 0.15);
+
+    /* Dark mode gradients */
+    --gradient-bg-login: linear-gradient(135deg, #1E293B 0%, #0F172A 50%, #1E293B 100%);
+    --gradient-bg-subtle: linear-gradient(180deg, var(--slate-900) 0%, var(--slate-800) 100%);
+
+    /* Dark mode row states */
+    --row-hover: rgba(248, 250, 252, 0.03);
+
+    /* Dark mode shadows (reduced for dark backgrounds) */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.20);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.15), 0 4px 24px rgba(0, 0, 0, 0.20);
+    --shadow-raised: 0 4px 16px rgba(0, 0, 0, 0.20), 0 8px 40px rgba(0, 0, 0, 0.25);
+    --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.30), 0 4px 16px rgba(0, 0, 0, 0.20);
+    --shadow-overlay: 0 10px 30px rgba(0, 0, 0, 0.30);
+    --shadow-cta: 0 4px 20px rgba(109, 94, 246, 0.35), 0 8px 40px rgba(109, 94, 246, 0.20);
+    --shadow-cta-hover: 0 6px 28px rgba(109, 94, 246, 0.40), 0 12px 48px rgba(109, 94, 246, 0.25);
 
     /* Legacy aliases auto-update via CSS custom properties */
 }

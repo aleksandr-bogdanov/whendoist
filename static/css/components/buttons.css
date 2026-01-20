@@ -214,3 +214,16 @@
 [data-theme="dark"] .btn-icon.delete:hover {
     background: rgba(220, 38, 38, 0.12);
 }
+
+/* =============================================================================
+   Reduced Motion
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .btn.is-loading::after {
+        animation: none;
+        /* Show static indicator */
+        border-color: currentColor;
+        border-top-color: transparent;
+    }
+}
