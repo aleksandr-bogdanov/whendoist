@@ -1,0 +1,281 @@
+/* =============================================================================
+   Thoughts Page - Thought Cabinet
+   Extracted from thoughts.html inline styles
+   ============================================================================= */
+
+/* 1) Page wrapper - centers the panel */
+.thoughts-page {
+    min-height: calc(100vh - var(--header-height));
+    padding: 0 24px 24px;
+    display: flex;
+    justify-content: center;
+}
+
+/* 2) Page surface - shared container style */
+.thoughts-page .page-surface {
+    width: 100%;
+    max-width: calc((100vw - 3rem) * 2 / 3);
+    min-width: 500px;
+    background: var(--bg-panel);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    padding: 28px 32px 40px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 1400px) {
+    .thoughts-page .page-surface {
+        max-width: 900px;
+    }
+}
+
+/* 3) Container - content inside panel */
+.thoughts-container {
+    max-width: 100%;
+}
+
+/* 4) Title + Subtitle - ALL CAPS system typography */
+.thoughts-title {
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    font-size: 1.75rem;
+    line-height: 1;
+    color: var(--text-primary);
+}
+
+.thoughts-subtitle {
+    margin: 0 0 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}
+
+/* 5) Capture Card - left-aligned with container */
+.capture-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-bottom: 18px;
+}
+
+.capture-input {
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    box-sizing: border-box;
+}
+
+.capture-input::placeholder {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.capture-input:focus {
+    outline: none;
+    border-color: var(--border-default);
+    box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.15);
+}
+
+.capture-hint-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.62rem;
+    font-weight: 600;
+}
+
+/* 6) Thoughts Panel - same as TASKS panels */
+.thoughts-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.thoughts-panel-header {
+    padding: 12px 16px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    font-size: 0.62rem;
+    color: var(--text-secondary);
+}
+
+/* 7) Thought Rows - dense like TASKS, not cards */
+.thought-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.thought-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: #fff;
+    transition: background var(--duration-instant) var(--ease-default);
+}
+
+.thought-row:last-child {
+    border-bottom: none;
+}
+
+.thought-row:hover {
+    background: var(--interactive-hover);
+}
+
+.thought-row:hover .thought-text {
+    color: var(--text-primary);
+}
+
+.thought-row.is-active {
+    background: rgba(109, 94, 246, 0.04);
+}
+
+.thought-row.is-active .thought-text {
+    color: var(--text-primary);
+}
+
+/* 8) Dot indicator */
+.thought-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #C7CFDA;
+    flex-shrink: 0;
+    transition: background var(--duration-fast) var(--ease-default);
+}
+
+.thought-row:hover .thought-dot {
+    background: var(--primary);
+}
+
+/* 9) Text - greyer by default, darken on hover */
+.thought-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 22px;
+    font-weight: 400;
+    color: rgba(51, 65, 85, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--duration-instant) var(--ease-default);
+}
+
+/* 10) Actions - hidden until hover */
+.thought-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-instant) var(--ease-default);
+    flex-shrink: 0;
+    height: 22px;
+}
+
+.thought-row:hover .thought-actions,
+.thought-row:focus-within .thought-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Thoughts page icon button (smaller variant) */
+.thoughts-page .icon-btn {
+    width: 22px;
+    height: 22px;
+}
+
+.icon-btn.promote:hover {
+    border-color: rgba(109, 94, 246, 0.35);
+    background: rgba(109, 94, 246, 0.08);
+    color: var(--primary);
+}
+
+/* 11) States */
+@keyframes thought-pop {
+    from { background: rgba(109, 94, 246, 0.08); }
+    to   { background: #fff; }
+}
+
+.thought-row.is-new {
+    animation: thought-pop 600ms ease-out;
+}
+
+.thought-row.is-processed .thought-text {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+}
+
+.thought-row.is-processed .thought-dot {
+    background: rgba(15, 23, 42, 0.10);
+}
+
+.thought-empty {
+    pointer-events: none;
+}
+
+.thought-empty .thought-text {
+    color: var(--text-secondary);
+}
+
+.thought-empty .thought-dot {
+    opacity: 0.4;
+}
+
+/* 12) Mobile */
+@media (max-width: 900px) {
+    .thoughts-page {
+        padding: 16px;
+    }
+
+    .thoughts-page .page-surface {
+        min-width: 0;
+        max-width: 100%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    .thoughts-page {
+        padding: 12px;
+    }
+
+    .thoughts-page .page-surface {
+        padding: 16px;
+        border-radius: var(--radius-md);
+    }
+
+    .thoughts-title {
+        font-size: 1.25rem;
+    }
+
+    .capture-card {
+        padding: 14px;
+    }
+
+    .thought-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}

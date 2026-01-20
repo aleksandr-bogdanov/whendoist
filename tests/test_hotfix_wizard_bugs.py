@@ -314,9 +314,15 @@ class TestTaskCountInSettingsContract:
         assert "domain_task_counts" in source
 
     def test_template_has_task_count_css(self):
-        """Settings template must have CSS for task count styling."""
-        template_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
-        source = template_file.read_text()
+        """Settings page must have CSS for task count styling (inline or external)."""
+        # Check external CSS file (Design System v1.0 migration)
+        css_file = Path(__file__).parent.parent / "static" / "css" / "pages" / "settings.css"
+        if css_file.exists():
+            source = css_file.read_text()
+        else:
+            # Fallback to inline styles in template
+            template_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
+            source = template_file.read_text()
 
         # Must have CSS for task count
         assert ".domain-task-count" in source
