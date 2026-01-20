@@ -336,9 +336,15 @@
         .category-title {
             font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             padding-bottom: 8px;
             border-bottom: 1px solid var(--border);
+        }
+
+        .category-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
         }
 
         /* Hidden icons container for SVG sprites */
@@ -359,7 +365,7 @@
                 <span>hendoist</span>
             </div>
             <h1>Icon Reference</h1>
-            <p class="subtitle">Phase 2F: UI Icon System</p>
+            <p class="subtitle">Phase 2F: UI Icon System — Enhanced with Brand-Cohesive Variants</p>
             <div class="stats">
                 <div class="stat">
                     <div class="stat-value" id="total-count">0</div>
@@ -458,6 +464,51 @@
     <!-- Icon Data -->
     <script>
         const icons = {
+            whendoist: {
+                title: 'Whendoist Signature',
+                desc: 'Unique icons that embody the Whendoist brand identity',
+                icons: [
+                    { id: 'clarity-mode', paths: '<rect x="3" y="4" width="18" height="4" rx="2" fill="#167BFF"/><rect x="3" y="10" width="14" height="4" rx="2" fill="#6D5EF6"/><rect x="3" y="16" width="10" height="4" rx="2" fill="#A020C0"/>', brand: true },
+                    { id: 'when', paths: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="14" y2="10"/><circle cx="17" cy="17" r="4" fill="white" stroke="currentColor"/><polyline points="17 15 17 17 18.5 18"/>' },
+                    { id: 'domain', paths: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><rect x="8" y="12" width="2" height="5" rx="1" fill="#167BFF"/><rect x="11" y="13" width="2" height="4" rx="1" fill="#6D5EF6"/><rect x="14" y="12" width="2" height="5" rx="1" fill="#A020C0"/>', brand: true },
+                    { id: 'w-icon', paths: '<rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/><rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/><rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>', viewBox: '38 40 180 160', brand: true },
+                ]
+            },
+            colored: {
+                title: 'Semantic Colored',
+                desc: 'Pre-colored icons using brand colors for semantic meaning',
+                icons: [
+                    { id: 'check-purple', paths: '<polyline points="20 6 9 17 4 12"/>', color: '#6D5EF6' },
+                    { id: 'check-circle-purple', paths: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>', color: '#6D5EF6' },
+                    { id: 'shield-check-purple', paths: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>', color: '#6D5EF6' },
+                    { id: 'task-purple', paths: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/>', color: '#6D5EF6' },
+                    { id: 'star-filled-purple', paths: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>', color: '#6D5EF6', fill: true },
+                    { id: 'thought-purple', paths: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>', color: '#6D5EF6' },
+                    { id: 'clock-blue', paths: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', color: '#167BFF' },
+                    { id: 'energy-blue', paths: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>', color: '#167BFF' },
+                    { id: 'info-blue', paths: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>', color: '#167BFF' },
+                    { id: 'lightbulb-magenta', paths: '<line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>', color: '#A020C0' },
+                    { id: 'search-magenta', paths: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>', color: '#A020C0' },
+                    { id: 'calendar-magenta', paths: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>', color: '#A020C0' },
+                    { id: 'alert-circle-orange', paths: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>', color: '#F97316' },
+                    { id: 'alert-triangle-orange', paths: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>', color: '#F97316' },
+                    { id: 'x-circle-red', paths: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>', color: '#DC2626' },
+                ]
+            },
+            tinted: {
+                title: 'Tinted Decorative',
+                desc: 'Icons with tinted backgrounds for larger contexts (32px+), matching illustration style',
+                icons: [
+                    { id: 'check-circle-tinted', paths: '<circle cx="12" cy="12" r="11" fill="#EFEEFF"/><circle cx="12" cy="12" r="8" fill="#6D5EF6"/><polyline points="8 12 10.5 14.5 16 9" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>', tinted: true },
+                    { id: 'x-circle-tinted', paths: '<circle cx="12" cy="12" r="11" fill="#FEE2E2"/><circle cx="12" cy="12" r="8" fill="#DC2626"/><line x1="14.5" y1="9.5" x2="9.5" y2="14.5" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="9.5" y1="9.5" x2="14.5" y2="14.5" stroke="white" stroke-width="2" stroke-linecap="round"/>', tinted: true },
+                    { id: 'alert-tinted', paths: '<circle cx="12" cy="12" r="11" fill="#FEF3C7"/><circle cx="12" cy="12" r="8" fill="#F97316"/><line x1="12" y1="8" x2="12" y2="12" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="15" r="1" fill="white"/>', tinted: true },
+                    { id: 'info-tinted', paths: '<circle cx="12" cy="12" r="11" fill="#EAF2FF"/><circle cx="12" cy="12" r="8" fill="#167BFF"/><line x1="12" y1="11" x2="12" y2="16" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8" r="1" fill="white"/>', tinted: true },
+                    { id: 'shield-tinted', paths: '<circle cx="12" cy="12" r="11" fill="#EFEEFF"/><path d="M12 3l7 3v5c0 5-7 8-7 8s-7-3-7-8V6l7-3z" fill="#6D5EF6"/><polyline points="9 12 11 14 15 10" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>', tinted: true },
+                    { id: 'calendar-tinted', paths: '<circle cx="12" cy="12" r="11" fill="#F3ECFA"/><rect x="5" y="6" width="14" height="13" rx="2" fill="#A020C0"/><rect x="5" y="6" width="14" height="4" rx="2" fill="#8B14A8"/><line x1="8" y1="4" x2="8" y2="8" stroke="#A020C0" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="4" x2="16" y2="8" stroke="#A020C0" stroke-width="1.5" stroke-linecap="round"/><rect x="7" y="12" width="2" height="2" rx="0.5" fill="white"/><rect x="11" y="12" width="2" height="2" rx="0.5" fill="white"/><rect x="15" y="12" width="2" height="2" rx="0.5" fill="white"/><rect x="7" y="15" width="2" height="2" rx="0.5" fill="white" opacity="0.6"/><rect x="11" y="15" width="2" height="2" rx="0.5" fill="white" opacity="0.6"/>', tinted: true },
+                    { id: 'energy-tinted', paths: '<circle cx="12" cy="12" r="11" fill="#EAF2FF"/><polygon points="13 3 5 13 11 13 10 21 18 11 12 11 13 3" fill="#167BFF"/>', tinted: true },
+                    { id: 'thought-tinted', paths: '<circle cx="12" cy="12" r="11" fill="#EFEEFF"/><path d="M19 10.5a6.5 6.5 0 0 1-.7 2.9 6.5 6.5 0 0 1-5.8 3.6 6.5 6.5 0 0 1-2.9-.7L5 18l1.5-4.4a6.5 6.5 0 0 1-.7-2.9 6.5 6.5 0 0 1 3.6-5.8 6.5 6.5 0 0 1 2.9-.7h.4a6.5 6.5 0 0 1 6.1 6.1v.4z" fill="#6D5EF6"/>', tinted: true },
+                ]
+            },
             actions: {
                 title: 'Actions',
                 icons: [
@@ -483,6 +534,8 @@
                     { id: 'menu', paths: '<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>' },
                     { id: 'menu-dots', paths: '<circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>', fill: true },
                     { id: 'menu-dots-h', paths: '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>', fill: true },
+                    { id: 'menu-dots-stroke', paths: '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>' },
+                    { id: 'menu-dots-h-stroke', paths: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>' },
                     { id: 'chevron-down', paths: '<polyline points="6 9 12 15 18 9"/>' },
                     { id: 'chevron-up', paths: '<polyline points="18 15 12 9 6 15"/>' },
                     { id: 'chevron-left', paths: '<polyline points="15 18 9 12 15 6"/>' },
@@ -565,9 +618,8 @@
                 ]
             },
             brand: {
-                title: 'Brand',
+                title: 'Third-Party Brand',
                 icons: [
-                    { id: 'w-icon', paths: '<rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/><rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/><rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>', viewBox: '38 40 180 160', brand: true },
                     { id: 'google', paths: '<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>', brand: true },
                 ]
             }
@@ -599,6 +651,7 @@
             sectionsContainer.innerHTML = categories.map((cat, i) => `
                 <div class="category-section ${i === 0 ? 'active' : ''}" data-category="${cat}">
                     <h3 class="category-title">${icons[cat].title} (${icons[cat].icons.length})</h3>
+                    ${icons[cat].desc ? `<p class="category-desc">${icons[cat].desc}</p>` : ''}
                     <div class="icon-grid">
                         ${icons[cat].icons.map(icon => renderIconCard(icon)).join('')}
                     </div>
@@ -608,11 +661,21 @@
 
         function renderIconCard(icon) {
             const viewBox = icon.viewBox || '0 0 24 24';
-            const fill = icon.fill ? 'currentColor' : 'none';
-            const stroke = icon.brand ? 'none' : 'currentColor';
+            const isTinted = icon.tinted || false;
+            const isBrand = icon.brand || false;
+            const hasColor = icon.color || false;
+
+            let fill = icon.fill ? 'currentColor' : 'none';
+            let stroke = isBrand || isTinted ? 'none' : 'currentColor';
+
+            // For colored variants, use the specified color
+            if (hasColor) {
+                stroke = icon.color;
+                if (icon.fill) fill = icon.color;
+            }
 
             return `
-                <div class="icon-card" data-icon="${icon.id}" data-paths="${encodeURIComponent(icon.paths)}" data-viewbox="${viewBox}" data-fill="${icon.fill || false}" data-brand="${icon.brand || false}">
+                <div class="icon-card" data-icon="${icon.id}" data-paths="${encodeURIComponent(icon.paths)}" data-viewbox="${viewBox}" data-fill="${icon.fill || false}" data-brand="${isBrand}" data-tinted="${isTinted}" data-color="${icon.color || ''}">
                     <svg viewBox="${viewBox}" fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         ${icon.paths}
                     </svg>
@@ -669,7 +732,9 @@
                 paths: decodeURIComponent(card.dataset.paths),
                 viewBox: card.dataset.viewbox,
                 fill: card.dataset.fill === 'true',
-                brand: card.dataset.brand === 'true'
+                brand: card.dataset.brand === 'true',
+                tinted: card.dataset.tinted === 'true',
+                color: card.dataset.color || ''
             };
 
             updateCodeBlock();
@@ -680,25 +745,44 @@
             const codeBlock = document.getElementById('code-block');
             let code = '';
 
-            const fill = selectedIcon.fill ? 'currentColor' : 'none';
-            const stroke = selectedIcon.brand ? 'none' : 'currentColor';
-            const strokeAttrs = selectedIcon.brand ? '' : ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+            // Determine fill and stroke based on icon type
+            let fill = selectedIcon.fill ? 'currentColor' : 'none';
+            let stroke = (selectedIcon.brand || selectedIcon.tinted) ? 'none' : 'currentColor';
+
+            // For colored variants, use the specified color
+            if (selectedIcon.color) {
+                stroke = selectedIcon.color;
+                if (selectedIcon.fill) fill = selectedIcon.color;
+            }
+
+            const needsStrokeAttrs = !selectedIcon.brand && !selectedIcon.tinted;
+            const strokeAttrs = needsStrokeAttrs ? ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' : '';
+
+            // Tinted icons are typically used at larger sizes
+            const defaultSize = selectedIcon.tinted ? '32' : '20';
 
             if (selectedFormat === 'inline') {
-                code = `<span class="tag">&lt;svg</span> <span class="attr">viewBox</span>=<span class="value">"${selectedIcon.viewBox}"</span> <span class="attr">width</span>=<span class="value">"20"</span> <span class="attr">height</span>=<span class="value">"20"</span>
-     <span class="attr">fill</span>=<span class="value">"${fill}"</span> <span class="attr">stroke</span>=<span class="value">"${stroke}"</span>${strokeAttrs ? `
+                if (selectedIcon.tinted) {
+                    code = `<span class="comment">&lt;!-- Tinted icons work best at 32px+ --&gt;</span>
+<span class="tag">&lt;svg</span> <span class="attr">viewBox</span>=<span class="value">"${selectedIcon.viewBox}"</span> <span class="attr">width</span>=<span class="value">"${defaultSize}"</span> <span class="attr">height</span>=<span class="value">"${defaultSize}"</span><span class="tag">&gt;</span>
+  ${selectedIcon.paths}
+<span class="tag">&lt;/svg&gt;</span>`;
+                } else {
+                    code = `<span class="tag">&lt;svg</span> <span class="attr">viewBox</span>=<span class="value">"${selectedIcon.viewBox}"</span> <span class="attr">width</span>=<span class="value">"${defaultSize}"</span> <span class="attr">height</span>=<span class="value">"${defaultSize}"</span>
+     <span class="attr">fill</span>=<span class="value">"${fill}"</span> <span class="attr">stroke</span>=<span class="value">"${stroke}"</span>${needsStrokeAttrs ? `
      <span class="attr">stroke-width</span>=<span class="value">"2"</span> <span class="attr">stroke-linecap</span>=<span class="value">"round"</span> <span class="attr">stroke-linejoin</span>=<span class="value">"round"</span>` : ''}<span class="tag">&gt;</span>
   ${selectedIcon.paths}
 <span class="tag">&lt;/svg&gt;</span>`;
+                }
             } else if (selectedFormat === 'sprite') {
-                code = `<span class="tag">&lt;svg</span> <span class="attr">class</span>=<span class="value">"icon"</span> <span class="attr">width</span>=<span class="value">"20"</span> <span class="attr">height</span>=<span class="value">"20"</span><span class="tag">&gt;</span>
+                code = `<span class="tag">&lt;svg</span> <span class="attr">class</span>=<span class="value">"icon"</span> <span class="attr">width</span>=<span class="value">"${defaultSize}"</span> <span class="attr">height</span>=<span class="value">"${defaultSize}"</span><span class="tag">&gt;</span>
   <span class="tag">&lt;use</span> <span class="attr">href</span>=<span class="value">"/static/img/icons/ui-icons.svg#${selectedIcon.id}"</span><span class="tag">/&gt;</span>
 <span class="tag">&lt;/svg&gt;</span>`;
             } else if (selectedFormat === 'css') {
                 code = `<span class="comment">/* Add to your CSS */</span>
 <span class="tag">.icon-${selectedIcon.id}</span> {
-  <span class="attr">width</span>: <span class="value">20px</span>;
-  <span class="attr">height</span>: <span class="value">20px</span>;
+  <span class="attr">width</span>: <span class="value">${defaultSize}px</span>;
+  <span class="attr">height</span>: <span class="value">${defaultSize}px</span>;
   <span class="attr">background-image</span>: <span class="value">url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='${selectedIcon.viewBox}' fill='${fill}' stroke='${stroke}'${strokeAttrs}>${selectedIcon.paths}</svg>`)}")</span>;
 }`;
             }
@@ -707,17 +791,29 @@
         }
 
         function copyToClipboard() {
-            const fill = selectedIcon.fill ? 'currentColor' : 'none';
-            const stroke = selectedIcon.brand ? 'none' : 'currentColor';
-            const strokeAttrs = selectedIcon.brand ? '' : ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+            let fill = selectedIcon.fill ? 'currentColor' : 'none';
+            let stroke = (selectedIcon.brand || selectedIcon.tinted) ? 'none' : 'currentColor';
+
+            if (selectedIcon.color) {
+                stroke = selectedIcon.color;
+                if (selectedIcon.fill) fill = selectedIcon.color;
+            }
+
+            const needsStrokeAttrs = !selectedIcon.brand && !selectedIcon.tinted;
+            const strokeAttrs = needsStrokeAttrs ? ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' : '';
+            const defaultSize = selectedIcon.tinted ? '32' : '20';
 
             let text = '';
             if (selectedFormat === 'inline') {
-                text = `<svg viewBox="${selectedIcon.viewBox}" width="20" height="20" fill="${fill}" stroke="${stroke}"${strokeAttrs}>${selectedIcon.paths}</svg>`;
+                if (selectedIcon.tinted) {
+                    text = `<svg viewBox="${selectedIcon.viewBox}" width="${defaultSize}" height="${defaultSize}">${selectedIcon.paths}</svg>`;
+                } else {
+                    text = `<svg viewBox="${selectedIcon.viewBox}" width="${defaultSize}" height="${defaultSize}" fill="${fill}" stroke="${stroke}"${strokeAttrs}>${selectedIcon.paths}</svg>`;
+                }
             } else if (selectedFormat === 'sprite') {
-                text = `<svg class="icon" width="20" height="20"><use href="/static/img/icons/ui-icons.svg#${selectedIcon.id}"/></svg>`;
+                text = `<svg class="icon" width="${defaultSize}" height="${defaultSize}"><use href="/static/img/icons/ui-icons.svg#${selectedIcon.id}"/></svg>`;
             } else {
-                text = `.icon-${selectedIcon.id} { width: 20px; height: 20px; }`;
+                text = `.icon-${selectedIcon.id} { width: ${defaultSize}px; height: ${defaultSize}px; }`;
             }
 
             navigator.clipboard.writeText(text).then(() => {

@@ -421,6 +421,64 @@
         <h2 class="section-title">CSS Token Reference</h2>
         <div class="token-list" id="token-list"></div>
     </section>
+
+    <!-- Gradients & Effects -->
+    <section class="section">
+        <h2 class="section-title">Gradients, Glass & Shadows</h2>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Modern UI effects for buttons, cards, and glassmorphism. Click to copy CSS value.
+        </p>
+
+        <h3 style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 1.5rem 0 0.75rem;">Gradients</h3>
+        <div style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <div class="color-card" onclick="copyColor('linear-gradient(135deg, #6D5EF6 0%, #8B7CF7 50%, #A78BFA 100%)')">
+                <div class="color-swatch" style="background: linear-gradient(135deg, #6D5EF6 0%, #8B7CF7 50%, #A78BFA 100%); height: 60px; border-radius: 8px 8px 0 0;"></div>
+                <div class="color-info">
+                    <div class="color-name">--gradient-primary</div>
+                    <div class="color-hex" style="font-size: 0.55rem;">CTA buttons, hero elements</div>
+                </div>
+            </div>
+            <div class="color-card" onclick="copyColor('linear-gradient(135deg, #5B4CF0 0%, #7B6CF5 50%, #9B7BF8 100%)')">
+                <div class="color-swatch" style="background: linear-gradient(135deg, #5B4CF0 0%, #7B6CF5 50%, #9B7BF8 100%); height: 60px; border-radius: 8px 8px 0 0;"></div>
+                <div class="color-info">
+                    <div class="color-name">--gradient-primary-hover</div>
+                    <div class="color-hex" style="font-size: 0.55rem;">Button hover state</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 1.5rem 0 0.75rem;">Glass Effects</h3>
+        <div style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 8px; padding: 1rem; cursor: pointer;" onclick="copyColor('rgba(255, 255, 255, 0.85)')">
+                <div style="font-size: 0.75rem; font-weight: 600;">--glass-bg</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted);">rgba(255, 255, 255, 0.85)</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 8px; padding: 1rem; cursor: pointer;" onclick="copyColor('rgba(255, 255, 255, 0.92)')">
+                <div style="font-size: 0.75rem; font-weight: 600;">--glass-bg-strong</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted);">rgba(255, 255, 255, 0.92)</div>
+            </div>
+        </div>
+
+        <h3 style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 1.5rem 0 0.75rem;">Shadow System</h3>
+        <div style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div style="background: var(--bg-surface); border-radius: 8px; padding: 1rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); cursor: pointer;" onclick="copyColor('0 1px 2px rgba(15, 23, 42, 0.05)')">
+                <div style="font-size: 0.75rem; font-weight: 600;">--shadow-sm</div>
+                <div style="font-size: 0.6rem; color: var(--text-muted);">Subtle elevation</div>
+            </div>
+            <div style="background: var(--bg-surface); border-radius: 8px; padding: 1rem; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 4px 24px rgba(15, 23, 42, 0.06); cursor: pointer;" onclick="copyColor('0 2px 8px rgba(15, 23, 42, 0.04), 0 4px 24px rgba(15, 23, 42, 0.06)')">
+                <div style="font-size: 0.75rem; font-weight: 600;">--shadow-card</div>
+                <div style="font-size: 0.6rem; color: var(--text-muted);">Cards, panels</div>
+            </div>
+            <div style="background: var(--bg-surface); border-radius: 8px; padding: 1rem; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06), 0 8px 40px rgba(15, 23, 42, 0.08); cursor: pointer;" onclick="copyColor('0 4px 16px rgba(15, 23, 42, 0.06), 0 8px 40px rgba(15, 23, 42, 0.08)')">
+                <div style="font-size: 0.75rem; font-weight: 600;">--shadow-raised</div>
+                <div style="font-size: 0.6rem; color: var(--text-muted);">Elevated surfaces</div>
+            </div>
+            <div style="background: linear-gradient(135deg, #6D5EF6 0%, #8B7CF7 100%); color: white; border-radius: 8px; padding: 1rem; box-shadow: 0 4px 20px rgba(109, 94, 246, 0.25), 0 8px 40px rgba(109, 94, 246, 0.15); cursor: pointer;" onclick="copyColor('0 4px 20px rgba(109, 94, 246, 0.25), 0 8px 40px rgba(109, 94, 246, 0.15)')">
+                <div style="font-size: 0.75rem; font-weight: 600;">--shadow-cta</div>
+                <div style="font-size: 0.6rem; opacity: 0.8;">Purple glow</div>
+            </div>
+        </div>
+    </section>
 </div>
 
 <div class="toast" id="toast">Copied!</div>
@@ -442,12 +500,14 @@ const slateColors = [
 ];
 
 const semanticColors = [
+    { name: 'Success', hex: '#6D5EF6' },  // Purple for success (brand rule)
     { name: 'Danger', hex: '#DC2626' },
+    { name: 'Warning', hex: '#F97316' },
     { name: 'Impact P1', hex: '#C9505A' },
     { name: 'Impact P2', hex: '#B8860B' },
     { name: 'Impact P3', hex: '#1A9160' },
     { name: 'Impact P4', hex: '#6B7385' },
-    { name: 'Success*', hex: '#16A34A' },
+    { name: 'Green*', hex: '#16A34A' },  // *Exception: password strength only
 ];
 
 const accessibleColors = [

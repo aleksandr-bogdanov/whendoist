@@ -235,26 +235,27 @@
             border-color: rgba(220, 38, 38, 0.3);
         }
 
+        /* Complete button uses purple (brand rule: purple for success, not green) */
         .btn-complete {
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.25);
-            color: #059669;
+            background: rgba(109, 94, 246, 0.08);
+            border: 1px solid rgba(109, 94, 246, 0.25);
+            color: var(--primary);
         }
 
         .btn-complete:hover {
-            background: rgba(16, 185, 129, 0.14);
-            border-color: rgba(16, 185, 129, 0.35);
+            background: rgba(109, 94, 246, 0.14);
+            border-color: rgba(109, 94, 246, 0.35);
         }
 
         .btn-complete.is-completed {
-            background: rgba(99, 102, 241, 0.08);
-            border-color: rgba(99, 102, 241, 0.25);
-            color: #6366F1;
+            background: rgba(109, 94, 246, 0.12);
+            border-color: rgba(109, 94, 246, 0.35);
+            color: #5B4CF0;
         }
 
         .btn-complete.is-completed:hover {
-            background: rgba(99, 102, 241, 0.14);
-            border-color: rgba(99, 102, 241, 0.35);
+            background: rgba(109, 94, 246, 0.18);
+            border-color: rgba(109, 94, 246, 0.45);
         }
 
         /* Wizard Buttons */
@@ -590,8 +591,9 @@
             background: var(--text-faint);
         }
 
+        /* Purple for connected state (brand rule: purple for success, not green) */
         .status-dot.connected {
-            background: #16a34a;
+            background: var(--primary);
         }
 
         .status-text {
