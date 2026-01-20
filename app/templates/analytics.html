@@ -4,405 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="/static/css/dialog.css">
-<style>
-/* Analytics page styles */
-.analytics-page {
-    min-height: calc(100vh - 80px);
-    padding: 0 24px 24px;
-    display: flex;
-    justify-content: center;
-}
-
-.page-surface {
-    width: 100%;
-    max-width: 1200px;
-    background: var(--grey-bg);
-    border: 1px solid var(--border-hair);
-    border-radius: 12px;
-    padding: 32px 36px 44px;
-    box-sizing: border-box;
-}
-
-/* Header */
-.analytics-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.analytics-title {
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.10em;
-    font-weight: 700;
-    font-size: 1.5rem;
-    line-height: 1;
-    color: var(--text);
-}
-
-.date-range-selector {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.range-btn {
-    all: unset;
-    box-sizing: border-box;
-    padding: 6px 14px;
-    font-size: 0.625rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--light-bg);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.range-btn:hover {
-    background: var(--grey-bg);
-    border-color: var(--border-strong);
-}
-
-.range-btn.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
-}
-
-.date-label {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-left: 8px;
-}
-
-/* Grid layouts */
-.stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 20px;
-}
-
-.charts-row {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.charts-row-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.charts-row-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-/* Stat cards */
-.stat-card {
-    background: var(--light-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 110px;
-}
-
-.stat-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1;
-}
-
-.stat-value.success { color: #16a34a; }
-.stat-value.warning { color: #f97316; }
-.stat-value.primary { color: var(--primary); }
-
-.stat-label {
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
-    margin-top: 8px;
-}
-
-.stat-sub {
-    font-size: 0.7rem;
-    color: var(--text-faint);
-    margin-top: 4px;
-}
-
-.stat-change {
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-top: 4px;
-}
-.stat-change.positive { color: #16a34a; }
-.stat-change.negative { color: #dc2626; }
-
-/* Panel component */
-.panel {
-    background: var(--light-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.panel__hd {
-    background: var(--grey-bg);
-    border-bottom: 1px solid var(--border-hair);
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.panel-title {
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-weight: 700;
-    font-size: 0.62rem;
-    color: var(--text-muted);
-    margin: 0;
-}
-
-.panel-desc {
-    font-size: 0.7rem;
-    color: var(--text-faint);
-    margin: 0 0 8px 0;
-}
-
-.panel__bd {
-    padding: 16px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.panel__bd--flush {
-    padding: 0;
-    display: block;
-}
-
-/* Chart containers */
-.chart-container {
-    min-height: 200px;
-}
-
-/* Fix ApexCharts legend alignment - emoji + color markers */
-.apexcharts-legend-series {
-    display: inline-flex !important;
-    align-items: center !important;
-}
-
-.apexcharts-legend-marker {
-    margin-right: 6px !important;
-    margin-top: 0 !important;
-    position: relative !important;
-    top: 0 !important;
-}
-
-.apexcharts-legend-text {
-    line-height: 1 !important;
-    vertical-align: middle !important;
-    display: inline-flex !important;
-    align-items: center !important;
-}
-
-.chart-container--sm {
-    min-height: 150px;
-}
-
-.chart-container--lg {
-    min-height: 280px;
-}
-
-/* Heatmap specific */
-.heatmap-container {
-    overflow-x: auto;
-    padding: 8px 0;
-}
-
-/* Completion log */
-.completion-log {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.completion-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--border-hair);
-    font-size: 0.8125rem;
-    cursor: pointer;
-    transition: background 0.1s ease;
-}
-
-.completion-row:hover {
-    background: rgba(15, 23, 42, 0.03);
-}
-
-.completion-row:last-child {
-    border-bottom: none;
-}
-
-.completion-check {
-    color: #16a34a;
-    font-size: 0.875rem;
-    flex-shrink: 0;
-}
-
-.completion-title {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--text);
-}
-
-.completion-date {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    flex-shrink: 0;
-}
-
-/* Recurring task list */
-.recurring-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border-hair);
-}
-
-.recurring-row:last-child {
-    border-bottom: none;
-}
-
-.recurring-title {
-    flex: 1;
-    font-size: 0.8125rem;
-    color: var(--text);
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.recurring-rate {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    flex-shrink: 0;
-}
-
-/* Fixed width for count column (e.g., "1/1", "10/12") */
-.recurring-count {
-    width: 44px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
-/* Fixed width for percentage column */
-.recurring-pct {
-    width: 36px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
-.recurring-bar {
-    width: 60px;
-    height: 6px;
-    background: var(--grey-bg);
-    border-radius: 3px;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.recurring-bar-fill {
-    height: 100%;
-    background: var(--primary);
-    border-radius: 3px;
-}
-
-/* Streak display */
-.streak-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.streak-fire {
-    font-size: 1.5rem;
-}
-
-/* Empty state */
-.empty-state {
-    padding: 32px 16px;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 0.8125rem;
-}
-
-/* Mobile responsive */
-@media (max-width: 1000px) {
-    .stats-row {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .charts-row {
-        grid-template-columns: 1fr;
-    }
-    .charts-row-3 {
-        grid-template-columns: 1fr;
-    }
-    .charts-row-2 {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 600px) {
-    .analytics-page {
-        padding: 12px;
-    }
-    .page-surface {
-        padding: 16px;
-        border-radius: 10px;
-    }
-    .stats-row {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
-    .stat-value {
-        font-size: 1.75rem;
-    }
-}
-</style>
+<link rel="stylesheet" href="/static/css/pages/analytics.css">
 {% endblock %}
 
 {% block content %}
@@ -537,7 +139,10 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="empty-state">No recent completions</div>
+                    <div class="empty-state">
+                        <img src="{{ url_for('static', path='img/illustrations/empty-analytics.svg') }}" alt="" class="empty-state-illustration" width="80" height="80" aria-hidden="true">
+                        <p>No recent completions</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -562,7 +167,10 @@
                     </div>
                     {% endfor %}
                     {% else %}
-                    <div class="empty-state">No recurring tasks</div>
+                    <div class="empty-state">
+                        <img src="{{ url_for('static', path='img/illustrations/empty-tasks.svg') }}" alt="" class="empty-state-illustration" width="80" height="80" aria-hidden="true">
+                        <p>No recurring tasks</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -590,25 +198,47 @@ const stats = {{ stats | tojson }};
 const days = {{ days }};
 const recentCompletions = {{ recent_completions | tojson }};
 
-// Common chart options
-const commonOptions = {
-    chart: {
-        fontFamily: 'inherit',
-        toolbar: { show: false },
-        animations: { enabled: true, speed: 300 },
-    },
-    colors: ['#8b5cf6'],
-    grid: {
-        borderColor: 'rgba(15, 23, 42, 0.08)',
-        strokeDashArray: 4,
-    },
-    tooltip: {
-        theme: 'light',
-        style: {
-            fontSize: '12px',
+// Theme-aware colors
+function getThemeColors() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        primary: '#8b5cf6',
+        text: isDark ? 'rgba(248, 250, 252, 0.72)' : 'rgba(15, 23, 42, 0.5)',
+        textStrong: isDark ? 'rgba(248, 250, 252, 0.9)' : 'rgba(15, 23, 42, 0.6)',
+        grid: isDark ? 'rgba(248, 250, 252, 0.08)' : 'rgba(15, 23, 42, 0.08)',
+        background: isDark ? '#1E293B' : '#ffffff',
+        heatmapEmpty: isDark ? '#334155' : '#e2e8f0',
+        stroke: isDark ? '#0F172A' : '#fff',
+    };
+}
+
+// Get common chart options with current theme
+function getCommonOptions() {
+    const colors = getThemeColors();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        chart: {
+            fontFamily: 'inherit',
+            toolbar: { show: false },
+            animations: { enabled: true, speed: 300 },
+            background: 'transparent',
         },
-    },
-};
+        colors: [colors.primary],
+        grid: {
+            borderColor: colors.grid,
+            strokeDashArray: 4,
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            style: {
+                fontSize: '12px',
+            },
+        },
+    };
+}
+
+// Initialize with current theme
+const commonOptions = getCommonOptions();
 
 // 1. Daily Completions Bar Chart
 const dailyData = stats.daily_completions || [];
@@ -788,6 +418,7 @@ const heatmapSeries = dayNames.map((name, dayIdx) => ({
     })
 })).reverse();
 
+const heatmapColors = getThemeColors();
 new ApexCharts(document.querySelector('#chart-heatmap'), {
     ...commonOptions,
     chart: { ...commonOptions.chart, type: 'heatmap', height: 180 },
@@ -799,7 +430,7 @@ new ApexCharts(document.querySelector('#chart-heatmap'), {
             radius: 2,
             colorScale: {
                 ranges: [
-                    { from: 0, to: 0, color: '#e2e8f0', name: 'none' },
+                    { from: 0, to: 0, color: heatmapColors.heatmapEmpty, name: 'none' },
                     { from: 1, to: 3, color: '#c4b5fd', name: 'low' },
                     { from: 4, to: 7, color: '#a78bfa', name: 'medium' },
                     { from: 8, to: 100, color: '#7c3aed', name: 'high' },
@@ -812,10 +443,10 @@ new ApexCharts(document.querySelector('#chart-heatmap'), {
         labels: { show: false },
     },
     yaxis: {
-        labels: { style: { fontSize: '10px', colors: 'rgba(15, 23, 42, 0.5)' } },
+        labels: { style: { fontSize: '10px', colors: heatmapColors.text } },
     },
     legend: { show: false },
-    stroke: { width: 2, colors: ['#fff'] },
+    stroke: { width: 2, colors: [heatmapColors.stroke] },
 }).render();
 
 // 6. Impact Distribution
@@ -1015,5 +646,66 @@ async function decryptAnalyticsData() {
 
 // Run decryption after page load
 decryptAnalyticsData();
+
+// =============================================================================
+// Theme change handler for ApexCharts
+// =============================================================================
+
+// Store all chart instances for theme updates
+const chartInstances = [];
+
+// Collect chart instances after they're created
+document.addEventListener('DOMContentLoaded', () => {
+    // ApexCharts stores instances globally
+    if (window.Apex && window.Apex._chartInstances) {
+        // Delay to ensure all charts are initialized
+        setTimeout(() => {
+            chartInstances.push(...(window.Apex._chartInstances || []));
+        }, 500);
+    }
+});
+
+// Listen for theme changes
+window.addEventListener('themechange', (e) => {
+    const colors = getThemeColors();
+    const isDark = e.detail.theme === 'dark';
+
+    // Update all ApexCharts instances
+    if (window.ApexCharts) {
+        // Get all chart instances from ApexCharts global registry
+        const charts = document.querySelectorAll('.apexcharts-canvas');
+        charts.forEach(canvas => {
+            const chartId = canvas.getAttribute('id');
+            if (chartId) {
+                // Find the chart instance by looking at parent container
+                const container = canvas.closest('[id^="chart-"]');
+                if (container && container._chart) {
+                    container._chart.updateOptions({
+                        tooltip: { theme: isDark ? 'dark' : 'light' },
+                        grid: { borderColor: colors.grid },
+                    }, false, false);
+                }
+            }
+        });
+    }
+
+    // Update specific charts that need color updates
+    if (domainChart) {
+        domainChart.updateOptions({
+            tooltip: { theme: isDark ? 'dark' : 'light' },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        labels: {
+                            total: {
+                                color: colors.text,
+                            }
+                        }
+                    }
+                }
+            }
+        }, false, false);
+    }
+});
 </script>
 {% endblock %}

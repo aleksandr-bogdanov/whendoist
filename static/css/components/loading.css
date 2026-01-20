@@ -1,0 +1,215 @@
+/* =============================================================================
+   Loading States - Spinners and Skeletons
+   ============================================================================= */
+
+/* Spinner animation */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-default);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.spinner-sm { width: 14px; height: 14px; border-width: 1.5px; }
+.spinner-lg { width: 32px; height: 32px; border-width: 3px; }
+
+/* Skeleton loading */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--bg-panel) 25%,
+        var(--bg-surface) 50%,
+        var(--bg-panel) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-text { height: 1em; margin-bottom: 0.5em; }
+.skeleton-title { height: 1.5em; width: 60%; }
+.skeleton-avatar { width: 40px; height: 40px; border-radius: 50%; }
+.skeleton-btn { height: 32px; width: 80px; }
+.skeleton-row { height: 44px; width: 100%; }
+
+/* ===== Toast Notifications ===== */
+
+/* Toast container (positioned fixed) */
+.toast-container {
+    position: fixed;
+    bottom: var(--space-6);
+    left: var(--space-6);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* Toast base */
+.toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-elevated);
+    min-width: 280px;
+    max-width: 400px;
+    animation: toastIn var(--duration-slow) var(--ease-out);
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.toast.is-exiting {
+    animation: toastOut var(--duration-normal) var(--ease-default);
+}
+
+@keyframes toastOut {
+    to {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+/* Toast variants */
+.toast-success .toast-icon { color: var(--primary); }
+.toast-error .toast-icon { color: var(--red-500); }
+.toast-warning .toast-icon { color: var(--amber-600); }
+.toast-info .toast-icon { color: var(--blue-500); }
+
+/* Toast content */
+.toast-message {
+    flex: 1;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Toast actions */
+.toast-action {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.toast-dismiss {
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== Additional Animation Keyframes ===== */
+
+/* Modal enter */
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Modal backdrop */
+@keyframes backdropIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Dropdown open */
+@keyframes dropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Checkbox tick bounce */
+@keyframes tickBounce {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Pulse (attention) */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Focus ring expand */
+@keyframes focusRingExpand {
+    from {
+        box-shadow: 0 0 0 0 rgba(109, 94, 246, 0.4);
+    }
+    to {
+        box-shadow: 0 0 0 4px rgba(109, 94, 246, 0);
+    }
+}
+
+/* =============================================================================
+   Reduced Motion - Disable or simplify animations
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner {
+        animation: none;
+        /* Show static ring instead of spinning */
+        border-color: var(--primary);
+        border-top-color: transparent;
+    }
+
+    .skeleton {
+        animation: none;
+        /* Show static placeholder */
+        background: var(--bg-panel);
+    }
+
+    .toast {
+        animation: none;
+    }
+
+    .toast.is-exiting {
+        animation: none;
+        opacity: 0;
+    }
+}

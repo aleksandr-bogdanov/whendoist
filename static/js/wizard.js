@@ -851,6 +851,9 @@ class WhenWizard {
     }
 
     renderStep5() {
+        if (this.state.data.importError) {
+            return this.renderStep5Error();
+        }
         if (this.state.data.importResult) {
             return this.renderStep5Complete();
         }
@@ -938,12 +941,51 @@ class WhenWizard {
             this.updateNavigation();
         } catch (e) {
             console.error('Todoist import failed:', e);
-            Toast.show('Import failed: ' + e.message, { type: 'error' });
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Import Tasks';
-            }
+            this.state.data.importError = e.message || 'Import failed';
+            this.saveState();
+            this.renderStep(5);
+            this.updateNavigation();
         }
+    }
+
+    renderStep5Error() {
+        return `
+            <div class="wizard-step-content">
+                <div class="wizard-error-illustration">
+                    <img src="/static/img/illustrations/error-sync.svg" alt="" width="80" height="80" aria-hidden="true">
+                </div>
+                <h1 class="wizard-title">Import failed</h1>
+                <p class="wizard-subtitle">Something went wrong connecting to Todoist</p>
+
+                <div class="wizard-error-message">
+                    ${this.escapeHtml(this.state.data.importError)}
+                </div>
+
+                <div class="wizard-error-actions">
+                    <button class="wizard-btn-primary" onclick="wizard.retryTodoistImport()">
+                        Try Again
+                    </button>
+                    <button class="wizard-btn-ghost" onclick="wizard.skipTodoistImport()">
+                        Skip
+                    </button>
+                </div>
+
+                ${this.renderProgress()}
+            </div>
+        `;
+    }
+
+    retryTodoistImport() {
+        this.state.data.importError = null;
+        this.saveState();
+        this.renderStep(5);
+        this.updateNavigation();
+    }
+
+    skipTodoistImport() {
+        this.state.data.importError = null;
+        this.saveState();
+        this.next();
     }
 
     renderStep5Complete() {
@@ -1242,6 +1284,9 @@ class WhenWizard {
 
         return `
             <div class="wizard-step-content wizard-step-ready">
+                <div class="wizard-ready-illustration">
+                    <img src="/static/img/illustrations/success-setup.svg" alt="" width="120" height="120" aria-hidden="true">
+                </div>
                 <h1 class="wizard-title">You're all set</h1>
                 <p class="wizard-subtitle">Your day awaits</p>
 

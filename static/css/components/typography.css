@@ -1,0 +1,169 @@
+/* =============================================================================
+   Typography - Based on docs/brand/BRAND.md
+   ============================================================================= */
+
+/* Page Title */
+.page-title {
+    margin: 0 0 28px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-primary);
+}
+
+/* Section Title */
+.section-title {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    font-size: 0.62rem;
+    color: var(--text-secondary);
+}
+
+/* Field Label */
+.field-label {
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+/* Keycap Hint */
+.keycap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    padding: 0 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+}
+
+/* Text utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-inverse { color: var(--text-inverse); }
+
+.text-danger { color: var(--red-500); }
+.text-success { color: var(--primary); } /* Purple for success */
+.text-warning { color: var(--amber-600); }
+.text-info { color: var(--blue-500); }
+
+/* Font weight utilities */
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+/* Font size utilities */
+.text-xs { font-size: 0.625rem; }
+.text-sm { font-size: 0.75rem; }
+.text-base { font-size: 0.875rem; }
+.text-lg { font-size: 1rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+
+/* Text alignment */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* Truncation */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Uppercase with tracking */
+.uppercase-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+}
+
+/* =============================================================================
+   Wordmark (W icon + "hendoist")
+   Based on BRAND.md specifications
+   ============================================================================= */
+
+.wm {
+    display: inline-flex;
+    align-items: flex-end;
+    text-decoration: none;
+}
+
+.wm svg {
+    flex-shrink: 0;
+}
+
+.wm > span:first-of-type {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+/* Hero size - landing pages */
+.wm.hero svg {
+    width: 90px;
+    height: 80px;
+    margin-bottom: 12px;
+    margin-right: 4px;
+}
+.wm.hero > span:first-of-type {
+    font-size: 6.5rem;
+}
+
+/* Large size - page headers */
+.wm.lg svg {
+    width: 42px;
+    height: 37px;
+    margin-bottom: 5.5px;
+    margin-right: 2px;
+}
+.wm.lg > span:first-of-type {
+    font-size: 3rem;
+}
+
+/* Medium size - section headers */
+.wm.md svg {
+    width: 24px;
+    height: 21px;
+    margin-bottom: 3px;
+    margin-right: 1px;
+}
+.wm.md > span:first-of-type {
+    font-size: 1.75rem;
+}
+
+/* Small size - navigation, headers */
+.wm.sm svg {
+    width: 17px;
+    height: 15px;
+    margin-bottom: 2px;
+    margin-right: 1px;
+}
+.wm.sm > span:first-of-type {
+    font-size: 1.25rem;
+}
+
+/* Dark background / inverse variant */
+.wm.inverse > span:first-of-type {
+    color: #FFFFFF;
+}
+
+/* Dark mode */
+[data-theme="dark"] .wm > span:first-of-type {
+    color: var(--text-primary);
+}

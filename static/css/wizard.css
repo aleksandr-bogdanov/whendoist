@@ -295,7 +295,7 @@ body.keyboard-open .wizard-nav {
 
     /* Gradient background */
     background: var(--gradient-primary);
-    color: #fff;
+    color: var(--text-inverse);
     border: none;
     border-radius: 12px;
 
@@ -648,7 +648,7 @@ body.keyboard-open .wizard-nav {
     min-height: 56px;
     padding: 12px 14px;
 
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 10px;
     margin-bottom: 8px;
@@ -746,7 +746,7 @@ body.keyboard-open .wizard-nav {
 
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: var(--light-bg);
+    background: var(--bg-surface);
 
     font-size: 16px;  /* Prevents iOS zoom on focus */
     color: var(--text);
@@ -773,7 +773,7 @@ body.keyboard-open .wizard-nav {
 }
 
 .wizard-input::placeholder {
-    color: var(--text-faint);
+    color: var(--text-muted);
 }
 
 /* -----------------------------------------------------------------------------
@@ -1081,7 +1081,7 @@ body.keyboard-open .wizard-nav {
 /* Tap hint for mobile */
 .wizard-tap-hint {
     font-size: 0.7rem;
-    color: var(--text-faint);
+    color: var(--text-muted);
     text-align: center;
     margin: 12px 0 0 0;
 }
@@ -1095,7 +1095,7 @@ body.keyboard-open .wizard-nav {
 /* Task Preview */
 .wizard-preview-divider {
     height: 1px;
-    background: var(--border-hair);
+    background: var(--border-subtle);
     margin: 16px 0;
 }
 
@@ -1103,8 +1103,8 @@ body.keyboard-open .wizard-nav {
     display: flex;
     align-items: center;
     padding: 8px 10px 8px calc(10px + 2px);
-    background: var(--light-bg);
-    border-bottom: 1px solid var(--border-hair);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
     position: relative;
     transition: opacity 0.25s ease, max-height 0.25s ease;
 }
@@ -1189,7 +1189,7 @@ body.keyboard-open .wizard-nav {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
     border-radius: 10px;
     transition: all 0.2s ease;
 }
@@ -1217,7 +1217,7 @@ body.keyboard-open .wizard-nav {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--light-bg);
+    border: 2px solid var(--bg-surface);
 }
 
 .wizard-connection-name.connected {
@@ -1228,7 +1228,7 @@ body.keyboard-open .wizard-nav {
 .wizard-connection-success {
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid var(--border-hair);
+    border-top: 1px solid var(--border-subtle);
     text-align: center;
 }
 
@@ -1268,14 +1268,14 @@ body.keyboard-open .wizard-nav {
 }
 
 .wizard-connection-email {
-    color: var(--text-faint);
+    color: var(--text-muted);
 }
 
 /* Event preview when connected */
 .wizard-event-preview {
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid var(--border-hair);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .wizard-event-row {
@@ -1505,13 +1505,13 @@ body.keyboard-open .wizard-nav {
     content: "";
     flex: 1;
     height: 1px;
-    background: var(--border-hair);
+    background: var(--border-subtle);
 }
 
 /* Summary Bar */
 .wizard-import-summary {
-    background: var(--grey-bg);
-    border: 1px solid var(--border-hair);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
     border-radius: 8px;
     padding: 12px 16px;
     text-align: center;
@@ -1613,7 +1613,7 @@ body.keyboard-open .wizard-nav {
     padding: 16px 20px;
     min-width: 90px;
 
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 10px;
 }
@@ -1658,6 +1658,49 @@ body.keyboard-open .wizard-nav {
     color: var(--text-muted);
     line-height: 1.5;
     margin-top: 16px;
+}
+
+/* 5e: Error State */
+.wizard-error-illustration {
+    margin-bottom: 16px;
+}
+
+.wizard-error-illustration img {
+    width: 72px;
+    height: 72px;
+    opacity: 0.85;
+}
+
+@media (min-width: 600px) {
+    .wizard-error-illustration img {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+.wizard-error-message {
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--red-600, #DC2626);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.wizard-error-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+@media (min-width: 600px) {
+    .wizard-error-actions {
+        flex-direction: row;
+        justify-content: center;
+    }
 }
 
 /* Fresh Start (Empty Import) State */
@@ -1825,7 +1868,7 @@ body.keyboard-open .wizard-nav {
     gap: 10px;
     margin-top: 16px;
     padding: 14px 16px;
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     position: relative;
@@ -1894,7 +1937,7 @@ body.keyboard-open .wizard-nav {
     padding: 14px;
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
 }
 
 .wizard-add-domain-row {
@@ -1927,7 +1970,7 @@ body.keyboard-open .wizard-nav {
     height: 38px;
     border-radius: 8px;
     border: 1px solid var(--border);
-    background: var(--light-bg);
+    background: var(--bg-surface);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1938,7 +1981,7 @@ body.keyboard-open .wizard-nav {
 
 .wizard-emoji-btn:hover {
     border-color: var(--primary);
-    background: var(--grey-bg);
+    background: var(--bg-panel);
 }
 
 .wizard-emoji-popover {
@@ -1946,7 +1989,7 @@ body.keyboard-open .wizard-nav {
     bottom: calc(100% + 6px);
     left: 0;
     padding: 8px;
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
@@ -1976,7 +2019,7 @@ body.keyboard-open .wizard-nav {
 }
 
 .wizard-emoji-option:hover {
-    background: var(--grey-bg);
+    background: var(--bg-panel);
     transform: scale(1.15);
 }
 
@@ -1999,7 +2042,7 @@ body.keyboard-open .wizard-nav {
     justify-content: space-between;
     padding: 14px 16px;
 
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 12px;
 
@@ -2045,7 +2088,7 @@ body.keyboard-open .wizard-nav {
     margin-top: 16px;
     padding: 20px 16px;
 
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 12px;
 }
@@ -2144,8 +2187,8 @@ body.keyboard-open .wizard-nav {
 
 /* Passkey Card */
 .wizard-passkey-card {
-    background: var(--grey-bg);
-    border: 1px solid var(--border-hair);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
     border-radius: 10px;
     padding: 20px 16px;
     text-align: center;
@@ -2199,7 +2242,7 @@ body.keyboard-open .wizard-nav {
     padding: 16px;
     margin-top: 20px;
 
-    background: var(--grey-bg);
+    background: var(--bg-panel);
     border: 1px solid var(--border);
     border-radius: 10px;
 
@@ -2323,6 +2366,24 @@ body.keyboard-open .wizard-nav {
     margin-bottom: 16px;
 }
 
+/* Success illustration */
+.wizard-ready-illustration {
+    margin-bottom: 16px;
+}
+
+.wizard-ready-illustration img {
+    width: 100px;
+    height: 100px;
+    opacity: 0.9;
+}
+
+@media (min-width: 600px) {
+    .wizard-ready-illustration img {
+        width: 120px;
+        height: 120px;
+    }
+}
+
 /* Celebration emoji */
 .wizard-ready-celebration {
     margin-bottom: 12px;
@@ -2425,5 +2486,50 @@ body.keyboard-open .wizard-nav {
             0 3px 12px rgba(109, 94, 246, 0.32),
             0 6px 22px rgba(109, 94, 246, 0.26),
             0 12px 32px rgba(109, 94, 246, 0.16);
+    }
+}
+
+/* =============================================================================
+   Reduced Motion - Additional Animations
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    /* Progress dot pulse */
+    .wizard-progress-dot.completing {
+        animation: none;
+    }
+
+    /* Swipe hint movement */
+    .wizard-swipe-icon {
+        animation: none;
+        opacity: 0.7;
+    }
+
+    /* Selected card pulse */
+    .wizard-mode-card.selected {
+        animation: none;
+        /* Keep static glow */
+        box-shadow:
+            0 2px 6px rgba(109, 94, 246, 0.18),
+            0 4px 12px rgba(109, 94, 246, 0.14),
+            0 6px 18px rgba(109, 94, 246, 0.08);
+    }
+
+    /* Import spinner */
+    .wizard-import-spinner {
+        animation: none;
+        /* Show static ring */
+        border-color: var(--primary);
+        border-top-color: transparent;
+    }
+
+    /* Final button pulse */
+    .wizard-btn-final {
+        animation: none;
+        /* Keep static shadow */
+        box-shadow:
+            0 2px 8px rgba(109, 94, 246, 0.25),
+            0 4px 16px rgba(109, 94, 246, 0.20),
+            0 8px 24px rgba(109, 94, 246, 0.12);
     }
 }

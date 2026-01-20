@@ -24,7 +24,7 @@
     margin-bottom: 1rem;
     font-size: 0.875rem;
     border: 1px solid var(--impact-medium);
-    color: var(--text);
+    color: var(--text-primary);
 }
 
 .connection-banner a {
@@ -44,9 +44,9 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
     border-radius: 12px;
-    border: 1px solid var(--border-hair);
+    border: 1px solid var(--border-subtle);
     overflow: hidden;
 }
 
@@ -58,8 +58,8 @@
     display: grid;
     grid-template-rows: auto 1fr;
     padding: 0.5rem 1rem;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-default);
     box-sizing: border-box;
     height: 56px;
 }
@@ -92,7 +92,7 @@
     overflow-y: auto;
     padding: 1rem;
     padding-top: 0;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
 }
 
 .task-list-scroll {
@@ -109,8 +109,8 @@
     column-gap: var(--col-gap);
     align-items: center;
     padding: 8px 0 8px var(--rail-w);
-    background: var(--grey-bg);
-    border-bottom: 1px solid var(--border);
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
     border-radius: 8px 8px 0 0;
 }
 
@@ -172,7 +172,7 @@
     height: 22px;
     padding: 0;
     margin: 0;
-    border: 1px solid var(--border-hair);
+    border: 1px solid var(--border-subtle);
     border-radius: 4px;
     background: transparent;
     font-size: 13px;
@@ -182,7 +182,7 @@
 
 .energy-pill-inline:hover {
     background: rgba(15, 23, 42, 0.04);
-    border-color: var(--border);
+    border-color: var(--border-default);
 }
 
 .energy-pill-inline.active {
@@ -207,7 +207,7 @@
     height: 22px;  /* Match energy chips height */
     padding: 0;
     margin: 0 -10px 0 0;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-default);
     background: rgba(109, 94, 246, 0.04);  /* Slight purple tint */
     border-radius: 4px;
     color: rgba(15, 23, 42, 0.45);
@@ -247,8 +247,8 @@
     right: -4px;
     z-index: 100;
     width: 240px;
-    background: var(--light-bg);
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
     padding: 12px;
@@ -273,7 +273,7 @@
 
 .option-section + .option-section {
     padding-top: 14px;
-    border-top: 1px solid var(--border-hair);
+    border-top: 1px solid var(--border-subtle);
 }
 
 /* Suboptions container - matches section gap */
@@ -317,7 +317,7 @@
 .option-label {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--text);
+    color: var(--text-primary);
     white-space: nowrap;
 }
 
@@ -367,7 +367,7 @@
 .option-segmented {
     display: flex;
     gap: 0;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-default);
     border-radius: 4px;
     overflow: hidden;
     flex-shrink: 0;
@@ -376,8 +376,8 @@
 .seg-btn {
     padding: 4px 8px;
     border: none;
-    border-right: 1px solid var(--border-hair);
-    background: var(--light-bg);
+    border-right: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
     font-size: 0.625rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -393,20 +393,20 @@
 }
 
 .seg-btn:hover {
-    background: var(--grey-bg);
-    color: var(--text);
+    background: var(--bg-panel);
+    color: var(--text-primary);
 }
 
 .seg-btn.active {
-    background: var(--grey-bg);
-    color: var(--text);
+    background: var(--bg-panel);
+    color: var(--text-primary);
     font-weight: 600;
 }
 
 /* Option Menu Divider & Action Button */
 .option-divider {
     height: 1px;
-    background: var(--border);
+    background: var(--border-default);
     margin: 6px 0;
 }
 
@@ -426,7 +426,7 @@
 }
 
 .option-action-btn:hover {
-    color: var(--text);
+    color: var(--text-primary);
 }
 
 .option-action-icon {
@@ -488,13 +488,13 @@
 }
 
 .deleted-item.task-item {
-    background: var(--light-bg);
-    border-left: 2px solid var(--border);
+    background: var(--bg-surface);
+    border-left: 2px solid var(--border-default);
 }
 
 .deleted-item .task-text {
     text-decoration: none;
-    color: var(--text);
+    color: var(--text-primary);
 }
 
 .deleted-item .task-desc-preview {
@@ -554,14 +554,14 @@
 .completed-group .task-item.completed-today .task-text,
 .completed-group .task-item.completed-older .task-text {
     text-decoration: none !important;
-    color: var(--text) !important;
+    color: var(--text-primary) !important;
 }
 
 .completed-group .task-item .task-due,
 .completed-group .task-item .meta-duration,
 .completed-group .task-item .meta-impact,
 .completed-group .task-item .meta-clarity {
-    color: var(--text) !important;
+    color: var(--text-primary) !important;
 }
 
 .completed-empty {
@@ -606,12 +606,12 @@
 }
 
 .header-sort:hover {
-    color: var(--text);
+    color: var(--text-primary);
 }
 
 /* Bugfix: Active sort - text color only, no border/background */
 .header-sort.active {
-    color: var(--text);
+    color: var(--text-primary);
 }
 
 .header-sort .sort-icon {
@@ -644,8 +644,8 @@
 /* Patch 33: Tighter vertical rhythm */
 .project-group {
     margin-bottom: 0.5rem;
-    background: var(--light-bg);
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 10px;
     overflow: hidden;
 }
@@ -669,7 +669,7 @@
     gap: 0.5rem;
     padding: 9px 12px 9px 24px;  /* Extra left padding to align with task text */
     margin: 0 !important;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
     cursor: pointer;
     user-select: none;
     transition: background 0.15s ease;
@@ -695,17 +695,17 @@
     flex: 1;
     font-weight: 600;
     font-size: 0.8rem;
-    color: var(--text);
+    color: var(--text-primary);
 }
 
 .task-count {
     font-size: 0.65rem;
     font-weight: 500;
-    background: var(--light-bg);
+    background: var(--bg-surface);
     color: var(--text-muted);
     padding: 0.125rem 0.4rem;
     border-radius: 8px;
-    border: 1px solid var(--border-hair);
+    border: 1px solid var(--border-subtle);
     transition: all 0.15s ease;
 }
 
@@ -757,7 +757,7 @@
     right: 0;
     bottom: 0;
     height: 1px;
-    background: var(--border-hair);
+    background: var(--border-subtle);
     pointer-events: none;
 }
 
@@ -865,7 +865,7 @@
     transform: scale(0.9);
     transition: opacity 120ms ease, transform 120ms ease;
     background: rgba(15, 23, 42, 0.06);
-    color: var(--text);
+    color: var(--text-primary);
     position: relative;
     z-index: 1;
 }
@@ -910,12 +910,12 @@
     color: var(--primary);
 }
 
-/* Completed state - base */
+/* Completed state - base (purple per brand guidelines) */
 .task-item[data-completed="1"] .complete-check {
     opacity: 1;
     transform: scale(1);
-    background: rgba(16, 185, 129, 0.15);
-    color: #059669;
+    background: rgba(109, 94, 246, 0.15);
+    color: var(--primary);
 }
 
 .task-item[data-completed="1"] .complete-bar {
@@ -1184,19 +1184,19 @@
 }
 
 /* -----------------------------------------------------------------------------
-   Completed State - subtle green tint, not bold fill
+   Completed State - purple tint per brand guidelines (not green)
    ----------------------------------------------------------------------------- */
 
 .calendar-item[data-completed="1"] .complete-check {
-    background: rgba(16, 185, 129, 0.12);
-    border-color: rgba(16, 185, 129, 0.4);
-    color: #10b981;
+    background: rgba(109, 94, 246, 0.12);
+    border-color: rgba(109, 94, 246, 0.4);
+    color: var(--primary);
 }
 
 .calendar-item[data-completed="1"]:hover .complete-check,
 .calendar-item[data-completed="1"] .complete-gutter:hover .complete-check {
-    background: rgba(16, 185, 129, 0.18);
-    border-color: rgba(16, 185, 129, 0.5);
+    background: rgba(109, 94, 246, 0.18);
+    border-color: rgba(109, 94, 246, 0.5);
 }
 
 /* -----------------------------------------------------------------------------
@@ -1211,6 +1211,12 @@
     0% { transform: scale(0.95); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .calendar-item .complete-check.pop {
+        animation: none;
+    }
 }
 
 /* -----------------------------------------------------------------------------
@@ -1248,7 +1254,7 @@
     padding: 0 12px;
     padding-left: 38px;  /* Aligns with task text */
     cursor: pointer;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
     height: 16px;
     overflow: hidden;
     transition: height 0.15s ease, padding 0.15s ease;
@@ -1291,7 +1297,7 @@
 
 .task-text {
     font-size: 0.85rem;
-    color: var(--text);
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1371,7 +1377,7 @@
 
 .task-meta > span:hover {
     background: var(--chip-bg);
-    border-color: var(--border-hair);
+    border-color: var(--border-subtle);
 }
 
 .task-meta > span:focus-visible {
@@ -1390,7 +1396,7 @@
 /* Impact tags - dot indicator */
 /* Patch 29: Width now handled by grid */
 .meta-impact {
-    color: var(--text);
+    color: var(--text-primary);
     justify-content: center;
 }
 .meta-impact::before {
@@ -1410,7 +1416,7 @@
 /* Clarity tags - dot indicator */
 /* Patch 29: Width now handled by grid */
 .meta-clarity {
-    color: var(--text);
+    color: var(--text-primary);
     justify-content: center;
 }
 .meta-clarity::before {
@@ -1495,9 +1501,9 @@ body[data-energy-level] .scheduled-group.project-group {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--grey-bg);
+    background: var(--bg-panel);
     border-radius: 12px;
-    border: 1px solid var(--border-hair);
+    border: 1px solid var(--border-subtle);
     overflow: hidden;
     position: relative;
 }
@@ -1512,10 +1518,10 @@ body[data-energy-level] .scheduled-group.project-group {
     padding: 0.5rem 1.25rem;
     font-size: 0.75rem;
     font-weight: 600;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 20px;
-    color: var(--text);
+    color: var(--text-primary);
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: all 0.2s ease;
@@ -1557,7 +1563,7 @@ body[data-energy-level] .scheduled-group.project-group {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--surface);
+    background: var(--bg-surface);
     overflow: hidden;
     scroll-snap-align: start;
     scroll-snap-stop: always;
@@ -1590,7 +1596,7 @@ body[data-energy-level] .scheduled-group.project-group {
     gap: 0.25rem;
     margin: 0;
     padding: 0.25rem 0.5rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-default);
     border-radius: 6px;
     background: transparent;
     cursor: pointer;
@@ -1628,8 +1634,8 @@ body[data-energy-level] .scheduled-group.project-group {
 /* All Day Events */
 .all-day-section {
     padding: 0.5rem;
-    background: var(--grey-bg);
-    border-bottom: 1px solid var(--border-hair);
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .all-day-section:empty,
@@ -1644,7 +1650,7 @@ body[data-energy-level] .scheduled-group.project-group {
     border-radius: 4px;
     padding: 0.375rem 0.5rem;
     font-size: 0.75rem;
-    color: var(--text);
+    color: var(--text-primary);
     font-weight: 500;
     margin-bottom: 0.25rem;
 }
@@ -1664,8 +1670,8 @@ body[data-energy-level] .scheduled-group.project-group {
     width: 100%;
     padding: 0 2rem;
     height: 35.5px;
-    background: var(--grey-bg);
-    border-bottom: 1px solid var(--border-hair);
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
     line-height: 1;
     box-sizing: border-box;
 }
@@ -1740,7 +1746,7 @@ body[data-energy-level] .scheduled-group.project-group {
     align-items: flex-start;
     height: 72px;
     background: rgba(15, 23, 42, 0.02);
-    border: 1px solid var(--border-hair);
+    border: 1px solid var(--border-subtle);
     border-radius: 12px;
     margin: 4px;
 }
@@ -1787,7 +1793,7 @@ body[data-energy-level] .scheduled-group.project-group {
 }
 
 .date-only-tasks::-webkit-scrollbar-thumb {
-    background: var(--border);
+    background: var(--border-default);
     border-radius: 2px;
 }
 
@@ -1806,10 +1812,10 @@ body[data-energy-level] .scheduled-group.project-group {
     padding: 0.25rem 0.625rem;
     padding-left: calc(0.625rem + var(--rail-w));
     background: rgba(255, 255, 255, 0.92);
-    border: 1px solid var(--border-hair);
+    border: 1px solid var(--border-subtle);
     border-radius: 10px;
     font-size: 0.7rem;
-    color: var(--text);
+    color: var(--text-primary);
     cursor: grab;
     transition: all 0.15s ease;
     width: calc(100% - 0.5rem);
@@ -1926,7 +1932,7 @@ body[data-energy-level] .scheduled-group.project-group {
     min-height: 0;
     overflow-y: auto;
     position: relative;  /* For time selection overlay positioning */
-    background: var(--light-bg);
+    background: var(--bg-surface);
     isolation: isolate;  /* Create stacking context so task z-index works across rows */
     /* Hide scrollbar while keeping scroll functionality */
     scrollbar-width: none;  /* Firefox */
@@ -2004,8 +2010,8 @@ body[data-energy-level] .scheduled-group.project-group {
 
 /* Adjacent day hours (previous evening / next morning) */
 .hour-row.adjacent-day {
-    background: var(--grey-bg);
-    box-shadow: inset 0 0 0 1px var(--border-hair);
+    background: var(--bg-panel);
+    box-shadow: inset 0 0 0 1px var(--border-subtle);
 }
 
 .hour-row.adjacent-day .hour-label {
@@ -2014,7 +2020,7 @@ body[data-energy-level] .scheduled-group.project-group {
 }
 
 .hour-row.adjacent-day .hour-slot {
-    background: var(--grey-bg);
+    background: var(--bg-panel);
 }
 
 .hour-row.adjacent-day:hover {
@@ -2053,7 +2059,7 @@ body[data-energy-level] .scheduled-group.project-group {
     z-index: 1;
     padding: 4px 10px;
     border-radius: 999px;
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid rgba(15, 23, 42, 0.06);
     font-size: 11px;
     font-weight: 600;
@@ -2071,7 +2077,7 @@ body[data-energy-level] .scheduled-group.project-group {
 
 .day-separator.day-start .day-separator-label,
 .day-separator.day-end .day-separator-label {
-    background: var(--grey-bg);
+    background: var(--bg-panel);
 }
 
 /* Patch 22: Now indicator - less alarm, more precise */
@@ -2102,8 +2108,8 @@ body[data-energy-level] .scheduled-group.project-group {
     display: flex;
     align-items: flex-start;
     gap: 4px;
-    background: var(--light-bg);
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 10px;
     padding: 3px 0.5rem;
     padding-left: calc(0.5rem + var(--rail-w));
@@ -2153,7 +2159,7 @@ body[data-energy-level] .scheduled-group.project-group {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    color: var(--text);
+    color: var(--text-primary);
     line-height: 1.2;
     word-break: break-word;
 }
@@ -2176,8 +2182,8 @@ body[data-energy-level] .scheduled-group.project-group {
    ============================================================================= */
 
 .all-day-event {
-    background: var(--grey-bg);
-    border: 1px solid var(--border-hair);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
     border-left: 3px solid var(--text-muted);
 }
 
@@ -2331,8 +2337,8 @@ body.is-dragging .calendar-event {
     display: flex;
     align-items: flex-start;
     gap: 2px;
-    background: var(--light-bg);
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 10px;
     padding: 2px 0.5rem;
     padding-left: calc(0.5rem + var(--rail-w));
@@ -2411,7 +2417,7 @@ body.is-dragging .calendar-event {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    color: var(--text);
+    color: var(--text-primary);
     line-height: 1.2;
     word-break: break-word;
 }
@@ -2497,7 +2503,7 @@ body.is-dragging .calendar-event {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: var(--light-bg);
+    background: var(--bg-surface);
     border: 1px solid var(--border-strong);
     border-radius: 10px;
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
@@ -2527,7 +2533,7 @@ body.over-calendar .drag-ghost .task-item {
 body.over-calendar .drag-overlay .task-text,
 body.over-calendar .drag-ghost .task-text {
     font-weight: 700;
-    color: var(--text);
+    color: var(--text-primary);
 }
 
 /* =============================================================================
@@ -2815,8 +2821,8 @@ body.over-calendar .drag-ghost .task-text {
     font-size: 0.7rem;
     font-weight: 500;
     color: var(--text-muted);
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     white-space: nowrap;
@@ -3051,8 +3057,8 @@ body.over-calendar .drag-ghost .task-text {
     align-items: center;
     gap: 8px;
     padding: 10px 12px;
-    background: var(--light-bg);
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
     border-radius: 999px;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
     transition: all 0.2s ease;
@@ -3106,4 +3112,286 @@ body.is-dragging .trash-bin {
 
 .trash-bin.drag-over .trash-label {
     color: var(--danger);
+}
+
+/* =============================================================================
+   Dark Mode Support
+   ============================================================================= */
+
+[data-theme="dark"] .tasks-panel {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .task-list-container {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .task-list-header {
+    background: var(--bg-panel);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .header-task-label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .header-energy-inline {
+    background: rgba(109, 94, 246, 0.08);
+    border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .energy-label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .energy-pill-inline {
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .energy-pill-inline:hover {
+    background: var(--interactive-hover);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .energy-pill-inline.active {
+    background: var(--primary-tint);
+    border-color: rgba(109, 94, 246, 0.4);
+}
+
+[data-theme="dark"] .header-actions-btn {
+    border-color: var(--border-default);
+    background: rgba(109, 94, 246, 0.08);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .header-actions-btn:hover {
+    background: rgba(109, 94, 246, 0.12);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .task-list-options-menu {
+    background: var(--bg-elevated);
+    border-color: var(--border-default);
+    box-shadow: var(--shadow-overlay);
+}
+
+[data-theme="dark"] .option-section + .option-section {
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .option-section-title {
+    color: var(--text-muted);
+}
+
+/* Task rows */
+[data-theme="dark"] .task-row {
+    background: var(--bg-surface);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .task-row:hover {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .task-row.scheduled {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .task-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .task-title-text {
+    color: inherit;
+}
+
+[data-theme="dark"] .task-domain-badge {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+/* Column headers */
+[data-theme="dark"] .col-head,
+[data-theme="dark"] .col-hd {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .col-head:hover,
+[data-theme="dark"] .col-hd:hover {
+    color: var(--text-secondary);
+}
+
+/* Task chips */
+[data-theme="dark"] .task-duration,
+[data-theme="dark"] .task-impact,
+[data-theme="dark"] .task-clarity {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+/* Calendar panel */
+[data-theme="dark"] .calendar-panel {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .calendar-header {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .calendar-title {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .calendar-nav-btn {
+    border-color: var(--border-default);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .calendar-nav-btn:hover {
+    background: var(--interactive-hover);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .today-btn {
+    border-color: var(--border-default);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .today-btn:hover {
+    background: var(--interactive-hover);
+    color: var(--text-primary);
+}
+
+/* Calendar grid */
+[data-theme="dark"] .calendar-body {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .hour-slot {
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .hour-label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .day-separator {
+    border-color: var(--border-default);
+}
+
+/* Events */
+[data-theme="dark"] .calendar-event {
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .calendar-event.gcal-event {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .event-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .event-time {
+    color: var(--text-secondary);
+}
+
+/* Plan mode */
+[data-theme="dark"] .plan-btn {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .plan-btn:hover {
+    background: var(--interactive-hover);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .plan-btn.active {
+    background: var(--primary-tint);
+    border-color: rgba(109, 94, 246, 0.4);
+    color: var(--primary);
+}
+
+/* Selection overlay */
+[data-theme="dark"] .selection-overlay {
+    background: rgba(109, 94, 246, 0.15);
+    border-color: rgba(109, 94, 246, 0.4);
+}
+
+/* Anytime tasks */
+[data-theme="dark"] .anytime-section {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .anytime-header {
+    background: var(--bg-surface);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .anytime-task {
+    background: var(--bg-surface);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .anytime-task:hover {
+    background: var(--interactive-hover);
+}
+
+/* Drop zones */
+[data-theme="dark"] .drop-zone.drag-over {
+    background: rgba(109, 94, 246, 0.12);
+    border-color: rgba(109, 94, 246, 0.35);
+}
+
+/* Icon buttons */
+[data-theme="dark"] .icon-btn {
+    border-color: var(--border-subtle);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .icon-btn:hover {
+    background: var(--interactive-hover);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+/* Trash bin */
+[data-theme="dark"] .trash-bin {
+    background: var(--bg-elevated);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .trash-icon {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .trash-label {
+    color: var(--text-muted);
+}
+
+/* Completed tasks */
+[data-theme="dark"] .task-row.completed-today {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .task-row.completed-today .task-title-text {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .task-row.completed-older {
+    background: var(--bg-panel);
+    opacity: 0.6;
 }

@@ -16,6 +16,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.4] - 2026-01-21
+
+### Summary
+**Design System Infrastructure** — Token migration, dark mode support, icon sprite integration, accessibility improvements, and brand alignment. This release establishes the foundation for future visual redesigns.
+
+### Added
+
+- **Icon sprite system** — Templates now use `<use href="/static/img/icons/ui-icons.svg#icon-name"/>` for efficient icon loading
+- **21 empty-state illustrations** wired into templates (Tasks, Thoughts, Analytics, Wizard)
+- **Skip-to-content link** for keyboard navigation accessibility
+- **ARIA labels** on all icon buttons and form inputs
+- **`prefers-reduced-motion`** support across all CSS animations
+
+### Changed
+
+- **Token migration** — All CSS files now use semantic tokens (`--bg-canvas`, `--text-primary`, etc.) instead of legacy names
+- **Dark mode** — Full `[data-theme="dark"]` support across all pages and components
+- **Success states** — Replaced green with purple for completion indicators (brand alignment)
+- **Wordmark** — Updated to W icon + "hendoist" with correct sizing per BRAND.md
+- **Hardcoded colors** — Replaced all `#fff`, `#000`, and `rgba(15,23,42,...)` with token references
+- **ApexCharts** — Theme updates automatically on dark mode toggle
+
+### Fixed
+
+- **Contrast ratios** — All text meets WCAG AA (Primary 17.5:1, Secondary 4.5:1)
+- **Focus indicators** — Every interactive element has visible focus state
+
+### Documentation
+
+- **docs/DESIGN-REVAMP-PLAN.md** — Complete implementation checklist for design system
+- **static/css/components/icons.css** — Icon utility classes
+
+---
+
 ## [0.9.3] - 2026-01-20
 
 ### Summary
