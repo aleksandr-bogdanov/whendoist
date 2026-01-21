@@ -452,13 +452,13 @@ body.keyboard-open .wizard-nav {
     position: relative;
 }
 
-/* Connecting line between dots */
+/* Connecting line between dots - spans full width between first and last dot */
 .wizard-progress::before {
     content: "";
     position: absolute;
     top: 50%;
-    left: 12px;
-    right: 12px;
+    left: 4px;
+    right: 4px;
     height: 2px;
     background: var(--border-default);
     transform: translateY(-50%);
@@ -470,7 +470,7 @@ body.keyboard-open .wizard-nav {
     content: "";
     position: absolute;
     top: 50%;
-    left: 12px;
+    left: 4px;
     height: 2px;
     background: var(--primary);
     transform: translateY(-50%);
@@ -480,14 +480,14 @@ body.keyboard-open .wizard-nav {
 }
 
 /* Progress fill widths based on step count (8 steps) */
-.wizard-progress[data-progress="1"]::after { width: calc((100% - 24px) * 0 / 7); }
-.wizard-progress[data-progress="2"]::after { width: calc((100% - 24px) * 1 / 7); }
-.wizard-progress[data-progress="3"]::after { width: calc((100% - 24px) * 2 / 7); }
-.wizard-progress[data-progress="4"]::after { width: calc((100% - 24px) * 3 / 7); }
-.wizard-progress[data-progress="5"]::after { width: calc((100% - 24px) * 4 / 7); }
-.wizard-progress[data-progress="6"]::after { width: calc((100% - 24px) * 5 / 7); }
-.wizard-progress[data-progress="7"]::after { width: calc((100% - 24px) * 6 / 7); }
-.wizard-progress[data-progress="8"]::after { width: calc(100% - 24px); }
+.wizard-progress[data-progress="1"]::after { width: calc((100% - 8px) * 0 / 7); }
+.wizard-progress[data-progress="2"]::after { width: calc((100% - 8px) * 1 / 7); }
+.wizard-progress[data-progress="3"]::after { width: calc((100% - 8px) * 2 / 7); }
+.wizard-progress[data-progress="4"]::after { width: calc((100% - 8px) * 3 / 7); }
+.wizard-progress[data-progress="5"]::after { width: calc((100% - 8px) * 4 / 7); }
+.wizard-progress[data-progress="6"]::after { width: calc((100% - 8px) * 5 / 7); }
+.wizard-progress[data-progress="7"]::after { width: calc((100% - 8px) * 6 / 7); }
+.wizard-progress[data-progress="8"]::after { width: calc(100% - 8px); }
 
 @media (min-width: 600px) {
     .wizard-progress {

@@ -242,12 +242,12 @@ img.brand-logo {
 
 @media (max-width: 900px) {
     .site-header {
-        height: 40px;
+        height: 44px;
     }
 
     .header-inner {
-        padding: 0 0.5rem;
-        gap: 0.5rem;
+        padding: 0 12px;
+        gap: 8px;
     }
 
     img.brand-logo {
@@ -255,10 +255,10 @@ img.brand-logo {
         width: auto;
     }
 
-    /* Smaller icon on mobile */
+    /* Smaller icon on mobile - positioned with symmetric padding */
     .brand-icon svg {
-        width: 26px;
-        height: 23px;
+        width: 24px;
+        height: 21px;
     }
 
     /* Smaller wordmark on mobile */
@@ -275,17 +275,19 @@ img.brand-logo {
         display: none;
     }
 
+    /* Keep header-nav visible on mobile - no hamburger needed */
     .header-nav {
         padding: 2px;
         height: 28px;
     }
 
     .nav-item {
-        padding: 0 0.5rem;
+        padding: 0 6px;
         height: 24px;
         font-size: 0.55rem;
     }
 
+    /* Logout button visible on mobile */
     .btn-logout {
         width: 28px;
         height: 28px;
@@ -296,14 +298,19 @@ img.brand-logo {
         height: 14px;
     }
 
+    /* Hide hamburger menu - keep uniform topbar nav */
+    .hamburger-toggle {
+        display: none !important;
+    }
+
     main {
-        padding: 0.25rem;
+        padding: 0;
     }
 
     .container-fluid {
         max-width: 100%;
-        padding-left: 0;
-        padding-right: 0;
+        padding-left: 8px;
+        padding-right: 8px;
     }
 }
 
@@ -541,12 +548,12 @@ img.brand-logo {
     color: var(--primary, #6366f1);
 }
 
-/* Show hamburger on mobile */
-@media (max-width: 900px) {
+/* Hamburger menu - disabled, using uniform topbar nav on all screen sizes */
+/* @media (max-width: 900px) {
     .hamburger-toggle {
         display: flex;
     }
-}
+} */
 
 /* =============================================================================
    Dark Mode Global Overrides

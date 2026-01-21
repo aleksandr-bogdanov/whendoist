@@ -273,6 +273,9 @@ img, a {
     transition: all 0.15s ease;
     -webkit-appearance: none;
     appearance: none;
+    /* Override Pico margin */
+    margin: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 .mobile-tab:active {
@@ -356,12 +359,12 @@ img, a {
         display: none !important;
     }
 
-    /* Show active panel - full screen (40px header from app.css, 57px mobile tabs) */
+    /* Show active panel - full screen (44px header, 57px mobile tabs) */
     .tasks-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 40px - 57px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 40px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 44px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 44px - 57px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
         border-radius: 0;
         border: none;
@@ -370,8 +373,8 @@ img, a {
     .calendar-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 40px - 57px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 40px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 44px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 44px - 57px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
         border-radius: 0;
         border: none;
@@ -381,8 +384,8 @@ img, a {
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 40px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-            height: calc(var(--app-height, 100vh) - 40px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(100vh - 44px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(var(--app-height, 100vh) - 44px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
         }
     }
 
@@ -394,44 +397,59 @@ img, a {
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Task list header - sticky and simplified */
+    /* Task list header - sticky with compact columns */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
-        /* Simplified grid: just title area, hide columns */
-        grid-template-columns: 1fr !important;
-        padding: 8px 12px !important;
+        padding: 6px 8px !important;
         background: var(--bg-panel);
+        /* Keep full grid on mobile, just smaller */
     }
 
-    /* Hide metadata column headers on mobile */
-    .header-meta,
+    /* Compact header columns on mobile */
+    .header-meta {
+        gap: 4px !important;
+    }
+
+    .header-meta .col-hd {
+        font-size: 0.5rem !important;
+        padding: 0 4px !important;
+    }
+
+    /* Hide actions column header on mobile */
     .header-actions {
         display: none !important;
     }
 
     /* Simplify header-task area */
     .header-task {
-        margin-left: 0 !important;
+        margin-left: 4px !important;
     }
 
-    /* Hide energy selector border on mobile */
+    /* Compact energy selector on mobile */
     .header-energy {
-        margin-left: 8px;
-        padding-left: 8px;
+        margin-left: 6px;
+        padding-left: 6px;
         border-left: none;
     }
 
-    /* Task item - simplified row without columns */
+    .header-energy .energy-btn {
+        font-size: 0.55rem !important;
+        padding: 2px 6px !important;
+        height: 20px !important;
+    }
+
+    /* Task item - compact row with flex layout */
     .task-item {
         display: flex !important;
         grid-template-columns: unset !important;
-        align-items: center;
-        padding: 10px 12px !important;
+        align-items: stretch; /* Rail takes full height */
+        padding: 8px !important;
         gap: 8px;
-        min-height: 44px; /* Touch target */
+        min-height: 40px; /* Touch target */
         overflow: hidden;
+        position: relative;
     }
 
     /* Hide complete gutter on mobile (swipe replaces it) */
@@ -443,6 +461,9 @@ img, a {
     .task-item .task-content {
         flex: 1;
         min-width: 0; /* Allow text truncation */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .task-item .task-text {
@@ -450,27 +471,28 @@ img, a {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-size: 0.8rem;
     }
 
-    /* Task metadata - compact inline on mobile */
+    /* Task metadata - compact inline on mobile - show all columns */
     .task-item .task-meta {
         display: flex !important;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         flex-shrink: 0;
     }
 
-    /* Compact metadata chips */
+    /* Compact metadata chips - smaller on mobile */
     .task-item .task-meta > span {
-        font-size: 0.6rem;
-        padding: 2px 6px;
+        font-size: 0.55rem;
+        padding: 2px 5px;
         height: auto;
-        min-height: 18px;
+        min-height: 16px;
     }
 
-    /* Hide clarity text on mobile (shown via data-attribute color only) */
+    /* Show clarity on mobile too */
     .task-item .task-meta .meta-clarity {
-        display: none !important;
+        display: inline-flex !important;
     }
 
     /* Hide actions column on mobile (swipe replaces it) */
@@ -478,19 +500,26 @@ img, a {
         display: none !important;
     }
 
-    /* Show impact as colored rail on left */
+    /* Show impact as colored rail on left - FULL HEIGHT */
     .task-item::before {
         content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
         width: 4px;
-        height: 24px;
-        border-radius: 2px;
-        flex-shrink: 0;
+        border-radius: 2px 0 0 2px;
     }
 
     .task-item.impact-1::before { background: var(--impact-critical); }
     .task-item.impact-2::before { background: var(--impact-high); }
     .task-item.impact-3::before { background: var(--impact-medium); }
     .task-item.impact-4::before { background: var(--impact-low, #94a3b8); }
+
+    /* Adjust padding for rail */
+    .task-item {
+        padding-left: 12px !important;
+    }
 
     /* Task due date - compact */
     .task-due {
@@ -727,9 +756,9 @@ img, a {
 
 .pull-to-refresh {
     position: fixed;
-    top: 80px; /* Below header */
+    top: 60px; /* Below header */
     left: 50%;
-    transform: translateX(-50%) translateY(-100%);
+    transform: translateX(-50%) translateY(-60px);
     z-index: 50;
     background: var(--bg-surface, #fff);
     border-radius: 20px;
@@ -738,15 +767,21 @@ img, a {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    /* Hidden by default - only show when pulling */
+    opacity: 0;
+    pointer-events: none;
 }
 
 .pull-to-refresh.visible {
     transform: translateX(-50%) translateY(12px);
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .pull-to-refresh.refreshing {
     transform: translateX(-50%) translateY(12px);
+    opacity: 1;
 }
 
 .ptr-spinner {
@@ -792,17 +827,17 @@ img, a {
         height: 36px;
     }
 
-    /* Adjust panel height for smaller header (40px from app.css) */
+    /* Adjust panel height for smaller header (44px) */
     .tasks-panel.mobile-active,
     .calendar-panel.mobile-active {
-        height: calc(100vh - 40px - 49px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 40px - 49px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 44px - 49px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 44px - 49px - env(safe-area-inset-bottom, 0px));
     }
 
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 40px - 49px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(100vh - 44px - 49px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
         }
     }
 }
@@ -861,5 +896,61 @@ img, a {
     .task-item {
         transition: none !important;
         animation: none !important;
+    }
+}
+
+/* =============================================================================
+   12. Pico CSS Overrides for Mobile
+   ============================================================================= */
+
+@media (max-width: 900px) {
+    /* Thoughts page - compact padding to match Tasks view */
+    .thoughts-page {
+        padding: 8px !important;
+    }
+
+    .thoughts-page .page-surface {
+        padding: 12px !important;
+    }
+
+    /* Thought action buttons - remove Pico margin */
+    .thoughts-page .icon-btn,
+    .thought-actions .icon-btn {
+        margin: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* Settings page icon buttons - fix white/blank on iOS */
+    .settings-page .icon-btn,
+    .panel-row .icon-btn {
+        -webkit-appearance: none;
+        appearance: none;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.055)) !important;
+        color: var(--text-secondary, rgba(15, 23, 42, 0.64)) !important;
+        margin: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    .settings-page .icon-btn svg,
+    .panel-row .icon-btn svg {
+        width: 12px;
+        height: 12px;
+        stroke: currentColor;
+    }
+
+    .settings-page .icon-btn:active,
+    .panel-row .icon-btn:active {
+        background: var(--bg-panel, #f1f5f9) !important;
+        transform: scale(0.95);
+    }
+
+    /* All buttons - override Pico margin */
+    button.mobile-tab,
+    button.icon-btn,
+    .mobile-tabs button,
+    .thought-actions button {
+        margin: 0 !important;
+        margin-bottom: 0 !important;
     }
 }
