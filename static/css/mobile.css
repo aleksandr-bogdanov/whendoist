@@ -308,11 +308,11 @@ img, a {
    4a. PWA Safe Area - Header Fix
    ============================================================================= */
 
-/* PWA standalone mode - add safe area to header */
+/* PWA standalone mode - add safe area to header (40px base height from app.css) */
 @media (display-mode: standalone) {
     .site-header {
         padding-top: env(safe-area-inset-top, 0) !important;
-        height: calc(60px + env(safe-area-inset-top, 0)) !important;
+        /* Don't override height - let content push naturally with padding */
     }
 
     /* Adjust content below header */
@@ -356,12 +356,12 @@ img, a {
         display: none !important;
     }
 
-    /* Show active panel - full screen */
+    /* Show active panel - full screen (40px header from app.css, 57px mobile tabs) */
     .tasks-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 60px - 57px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 40px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 40px - 57px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
         border-radius: 0;
         border: none;
@@ -370,8 +370,8 @@ img, a {
     .calendar-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 60px - 57px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 40px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 40px - 57px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
         border-radius: 0;
         border: none;
@@ -381,8 +381,8 @@ img, a {
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 60px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-            height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(100vh - 40px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(var(--app-height, 100vh) - 40px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
         }
     }
 
@@ -439,7 +439,7 @@ img, a {
         display: none !important;
     }
 
-    /* Task content - take full width */
+    /* Task content - take available width */
     .task-item .task-content {
         flex: 1;
         min-width: 0; /* Allow text truncation */
@@ -452,17 +452,33 @@ img, a {
         white-space: nowrap;
     }
 
-    /* Hide metadata columns on mobile */
+    /* Task metadata - compact inline on mobile */
     .task-item .task-meta {
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    /* Compact metadata chips */
+    .task-item .task-meta > span {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        height: auto;
+        min-height: 18px;
+    }
+
+    /* Hide clarity text on mobile (shown via data-attribute color only) */
+    .task-item .task-meta .meta-clarity {
         display: none !important;
     }
 
-    /* Hide actions column on mobile */
+    /* Hide actions column on mobile (swipe replaces it) */
     .task-item .task-actions {
         display: none !important;
     }
 
-    /* Show impact as colored dot instead */
+    /* Show impact as colored rail on left */
     .task-item::before {
         content: "";
         width: 4px;
@@ -601,6 +617,32 @@ img, a {
     .task-item:active {
         background: var(--interactive-pressed, rgba(0, 0, 0, 0.03));
     }
+
+    /* Fix icon button styling on mobile - prevent blue highlight/background */
+    .icon-btn {
+        -webkit-appearance: none;
+        appearance: none;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.055)) !important;
+        color: var(--text-secondary, rgba(15, 23, 42, 0.64));
+        outline: none;
+    }
+
+    .icon-btn:focus,
+    .icon-btn:active {
+        background: var(--bg-panel, #f1f5f9) !important;
+        outline: none;
+    }
+
+    /* Thoughts page icon buttons - ensure no blue */
+    .thoughts-page .icon-btn {
+        background: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .thoughts-page .icon-btn:active {
+        background: var(--bg-panel, #f1f5f9) !important;
+        transform: scale(0.95);
+    }
 }
 
 /* =============================================================================
@@ -733,15 +775,7 @@ img, a {
    ============================================================================= */
 
 @media (max-width: 900px) {
-    /* Reduce header height on mobile */
-    .site-header {
-        height: 60px;
-    }
-
-    /* Full-width container on mobile */
-    .container-fluid {
-        padding: 0;
-    }
+    /* Don't override header height - app.css handles it (40px at 900px) */
 
     /* Hide desktop-only elements */
     .desktop-only {
@@ -750,11 +784,6 @@ img, a {
 }
 
 @media (max-width: 580px) {
-    /* Even more compact on phones */
-    .site-header {
-        height: 52px;
-    }
-
     .mobile-tabs {
         padding: 6px 8px;
     }
@@ -763,17 +792,17 @@ img, a {
         height: 36px;
     }
 
-    /* Adjust panel height for smaller header */
+    /* Adjust panel height for smaller header (40px from app.css) */
     .tasks-panel.mobile-active,
     .calendar-panel.mobile-active {
-        height: calc(100vh - 52px - 49px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 52px - 49px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 40px - 49px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 40px - 49px - env(safe-area-inset-bottom, 0px));
     }
 
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 52px - 49px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(100vh - 40px - 49px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
         }
     }
 }
