@@ -1,8 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
-    version="0.8.12",
+    version="0.10.0",
     lifespan=lifespan,
 )
 
@@ -84,6 +85,19 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/health", include_in_schema=False)
 async def health_check():
     return JSONResponse({"status": "healthy"})
+
+
+# Service worker route - served from root for proper scope
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    sw_path = Path("static/sw.js")
+    if sw_path.exists():
+        return FileResponse(
+            sw_path,
+            media_type="application/javascript",
+            headers={"Service-Worker-Allowed": "/"},
+        )
+    return JSONResponse({"error": "Service worker not found"}, status_code=404)
 
 
 # Mount static files

@@ -62,6 +62,7 @@
     <link rel="stylesheet" href="/static/css/components/index.css">
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/css/brand.css">
+    <link rel="stylesheet" href="/static/css/mobile.css">
     <!-- CSS Error Boundary - fallback styles if tokens.css fails -->
     <style>
         .css-error {
@@ -92,6 +93,11 @@
     <script src="/static/js/toast.js"></script>
     <script src="/static/js/crypto.js"></script>
     <script src="/static/js/passkey.js"></script>
+    <!-- Mobile utilities -->
+    <script src="/static/js/device-detection.js"></script>
+    <script src="/static/js/haptics.js"></script>
+    <script src="/static/js/mobile-sheet.js"></script>
+    <script src="/static/js/mobile-core.js"></script>
     <!-- Global config for encryption state (must be before crypto.js usage) -->
     <script>
     window.WHENDOIST = {
@@ -419,5 +425,39 @@
     {% endif %}
 
     {% block scripts %}{% endblock %}
+
+    <!-- Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                .then(registration => {
+                    console.log('[SW] Registered:', registration.scope);
+
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New version available
+                                if (window.Toast) {
+                                    window.Toast.show('Update available. Refresh to update.', 'info', {
+                                        duration: 10000,
+                                        action: {
+                                            label: 'Refresh',
+                                            callback: () => window.location.reload()
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(err => {
+                    console.error('[SW] Registration failed:', err);
+                });
+        });
+    }
+    </script>
 </body>
 </html>

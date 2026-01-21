@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.9.6 (Documentation Cleanup)
+**Current Version:** v0.10.0 (Mobile Adaptation)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)

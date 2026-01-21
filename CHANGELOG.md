@@ -16,6 +16,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.0] - 2026-01-21
+
+### Summary
+**Mobile Adaptation** — Comprehensive mobile experience with touch gestures, bottom sheets, service worker for offline support, and native-quality interactions.
+
+### Added
+
+- **Service Worker** (`sw.js`) — Offline caching with cache-first strategy for static assets, network-first for API
+- **Mobile Tab Layout** — Tasks/Schedule tabs on mobile (< 900px) for full-screen views
+- **Bottom Sheet Component** — iOS/Android-style slide-up modals with swipe-to-dismiss
+- **Task Swipe Gestures** — Swipe right to complete, swipe left to delete with undo support
+- **Long-Press Action Sheet** — Edit, Complete, Schedule, Delete actions via long-press
+- **Haptic Feedback Engine** — Vibration patterns for touch interactions (success, warning, etc.)
+- **Pull-to-Refresh** — Native mobile refresh pattern for task list
+- **Gesture Onboarding** — First-time coachmarks explaining swipe gestures
+- **Device Detection Utility** — Proper touch vs mouse preference detection (not just capability)
+- **Dynamic Viewport Height** — CSS custom property `--vh` for true mobile viewport height
+- **App Lifecycle Management** — Resume/pause handling with automatic data refresh
+- **Network Status Indicators** — Online/offline state with toast notifications
+
+### Changed
+
+- **iOS Input Zoom Prevention** — All inputs use 16px minimum font size on touch devices
+- **Reduced Motion Support** — All mobile animations respect `prefers-reduced-motion`
+
+### Technical
+
+- New files: `device-detection.js`, `haptics.js`, `mobile-sheet.js`, `mobile-tabs.js`, `mobile-core.js`, `task-swipe.js`, `mobile.css`, `sw.js`
+- Service worker served from `/sw.js` with `Service-Worker-Allowed: /` header for full scope
+
+---
+
 ## [0.9.6] - 2026-01-21
 
 ### Summary

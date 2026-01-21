@@ -1,0 +1,662 @@
+/**
+ * Whendoist Mobile Styles
+ * Mobile-first responsive styles for touch devices.
+ *
+ * Contents:
+ * 1. iOS/Android Fixes
+ * 2. Dynamic Viewport Height
+ * 3. Bottom Sheet Component
+ * 4. Mobile Tab Navigation
+ * 5. Task Swipe Actions
+ * 6. Touch Feedback
+ * 7. Gesture Onboarding
+ * 8. Pull to Refresh
+ * 9. Mobile-specific Overrides
+ */
+
+/* =============================================================================
+   1. iOS/Android Fixes
+   ============================================================================= */
+
+/* Prevent iOS zoom on input focus (inputs < 16px trigger zoom) */
+@media (hover: none) and (pointer: coarse) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="date"],
+    input[type="datetime-local"],
+    input[type="time"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
+/* Disable iOS tap highlight */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Disable iOS callout on long press for images/links */
+img, a {
+    -webkit-touch-callout: none;
+}
+
+/* Prevent text selection during gestures */
+.is-swiping,
+.is-dragging {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* =============================================================================
+   2. Dynamic Viewport Height
+   ============================================================================= */
+
+/* CSS custom property for true viewport height (set by JS) */
+:root {
+    --vh: 1vh;
+    --app-height: 100vh;
+}
+
+/* Use dynamic height for full-screen elements */
+.full-height {
+    height: calc(var(--vh, 1vh) * 100);
+    height: var(--app-height, 100vh);
+}
+
+/* =============================================================================
+   3. Bottom Sheet Component
+   ============================================================================= */
+
+.sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0);
+    visibility: hidden;
+    transition: background 0.3s ease, backdrop-filter 0.3s ease, visibility 0s 0.3s;
+}
+
+.sheet-backdrop.visible {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    visibility: visible;
+    transition: background 0.3s ease, backdrop-filter 0.3s ease, visibility 0s;
+}
+
+.bottom-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1101;
+    background: var(--bg-surface, #fff);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+    max-height: 90vh;
+    overflow: hidden;
+    transform: translateY(100%);
+    visibility: hidden;
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), visibility 0s 0.3s;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-sheet.visible {
+    transform: translateY(0);
+    visibility: visible;
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), visibility 0s;
+}
+
+.sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding: 12px 0 8px;
+    cursor: grab;
+}
+
+.sheet-handle-bar {
+    width: 36px;
+    height: 4px;
+    background: var(--border-default, #ddd);
+    border-radius: 2px;
+}
+
+.sheet-header {
+    text-align: center;
+    padding: 8px 16px 16px;
+    border-bottom: 1px solid var(--border-subtle, #eee);
+}
+
+.sheet-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary, #111);
+    margin: 0;
+}
+
+.sheet-task-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary, #111);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+    margin: 0 auto;
+}
+
+.sheet-content {
+    padding: 16px;
+    overflow-y: auto;
+    max-height: calc(90vh - 80px);
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Action sheet grid */
+.action-sheet-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.sheet-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 8px;
+    background: var(--bg-panel, #f5f5f5);
+    border: 1px solid var(--border-subtle, #eee);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.sheet-action:active {
+    background: var(--interactive-pressed, #e5e5e5);
+    transform: scale(0.95);
+}
+
+.sheet-action .action-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sheet-action .action-icon .icon {
+    width: 24px;
+    height: 24px;
+    stroke: var(--text-primary, #111);
+}
+
+.sheet-action .action-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary, #666);
+}
+
+.sheet-action--danger .action-icon .icon {
+    stroke: var(--danger, #dc2626);
+}
+
+.sheet-action--danger .action-label {
+    color: var(--danger, #dc2626);
+}
+
+.sheet-cancel {
+    width: 100%;
+    height: 48px;
+    margin-top: 8px;
+    background: var(--bg-panel, #f5f5f5);
+    border: 1px solid var(--border-default, #ddd);
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary, #666);
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: all 0.15s ease;
+}
+
+.sheet-cancel:active {
+    background: var(--interactive-pressed, #e5e5e5);
+}
+
+/* =============================================================================
+   4. Mobile Tab Navigation
+   ============================================================================= */
+
+.mobile-tabs {
+    display: none;
+    position: sticky;
+    top: 80px; /* Below header */
+    z-index: 20;
+    background: var(--bg-panel, #f5f5f5);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-subtle, #eee);
+    gap: 8px;
+}
+
+@media (max-width: 900px) {
+    .mobile-tabs {
+        display: flex;
+    }
+}
+
+.mobile-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 40px;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted, #999);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.mobile-tab:active {
+    transform: scale(0.97);
+}
+
+.mobile-tab.active {
+    background: var(--bg-surface, #fff);
+    border-color: var(--border-default, #ddd);
+    color: var(--text-primary, #111);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.tab-icon {
+    font-size: 1rem;
+}
+
+.tab-label {
+    font-size: 0.75rem;
+}
+
+.tab-badge {
+    background: var(--primary, #6D5EF6);
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Panel visibility on mobile */
+@media (max-width: 900px) {
+    /* Hide both panels by default */
+    .tasks-panel,
+    .calendar-panel {
+        display: none !important;
+    }
+
+    /* Show active panel */
+    .tasks-panel.mobile-active,
+    .calendar-panel.mobile-active {
+        display: flex !important;
+        flex-direction: column;
+        height: calc(100vh - 80px - 57px - env(safe-area-inset-bottom));
+        height: calc(var(--app-height, 100vh) - 80px - 57px - env(safe-area-inset-bottom));
+    }
+}
+
+/* =============================================================================
+   5. Task Swipe Actions
+   ============================================================================= */
+
+/* Swipe action indicators */
+.task-item {
+    position: relative;
+    overflow: visible;
+}
+
+.task-item .swipe-indicator {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+/* Complete indicator (swipe right reveals on left) */
+.task-item .swipe-indicator--complete {
+    left: -80px;
+    background: linear-gradient(90deg, rgba(109, 94, 246, 0.15), transparent);
+}
+
+.task-item .swipe-indicator--complete::after {
+    content: "✓";
+    font-size: 1.5rem;
+    color: var(--primary, #6D5EF6);
+}
+
+/* Delete indicator (swipe left reveals on right) */
+.task-item .swipe-indicator--delete {
+    right: -80px;
+    background: linear-gradient(-90deg, rgba(220, 38, 38, 0.15), transparent);
+}
+
+.task-item .swipe-indicator--delete::after {
+    content: "";
+    width: 24px;
+    height: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dc2626' stroke-width='2'%3E%3Cpolyline points='3 6 5 6 21 6'/%3E%3Cpath d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'/%3E%3C/svg%3E");
+    background-size: contain;
+}
+
+/* Show indicators during swipe */
+.task-item.swiping-right .swipe-indicator--complete,
+.task-item.swiping-left .swipe-indicator--delete {
+    opacity: 1;
+}
+
+/* Task visual feedback during swipe */
+.task-item.swipe-complete {
+    background: rgba(109, 94, 246, 0.08) !important;
+}
+
+.task-item.swipe-delete {
+    background: rgba(220, 38, 38, 0.08) !important;
+}
+
+/* Completing/deleting animation */
+.task-item.completing,
+.task-item.deleting {
+    transition: height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+    overflow: hidden;
+}
+
+/* Scheduling highlight */
+.task-item.scheduling {
+    outline: 2px solid var(--primary, #6D5EF6);
+    outline-offset: -2px;
+    background: rgba(109, 94, 246, 0.05);
+}
+
+/* =============================================================================
+   6. Touch Feedback
+   ============================================================================= */
+
+/* Base touch feedback */
+[data-touch-feedback] {
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s ease, background 0.15s ease;
+}
+
+[data-touch-feedback]:active {
+    transform: scale(0.97);
+    background: var(--interactive-pressed, rgba(0, 0, 0, 0.05));
+}
+
+/* Touch-only hover alternative */
+@media (hover: none) and (pointer: coarse) {
+    /* Remove hover states on touch devices */
+    .task-item:hover {
+        background: var(--bg-surface, #fff);
+    }
+
+    /* Add active states instead */
+    .task-item:active {
+        background: var(--interactive-pressed, rgba(0, 0, 0, 0.03));
+    }
+}
+
+/* =============================================================================
+   7. Gesture Onboarding (Coachmarks)
+   ============================================================================= */
+
+.gesture-coachmark {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    z-index: 1200;
+    background: var(--bg-elevated, #fff);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    animation: coachmark-appear 0.3s ease;
+}
+
+@keyframes coachmark-appear {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+.coachmark-content {
+    text-align: center;
+}
+
+.coachmark-gesture {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.gesture-arrow {
+    font-size: 1.5rem;
+    color: var(--primary, #6D5EF6);
+    animation: gesture-pulse 1s ease infinite;
+}
+
+.gesture-arrow.left {
+    animation-direction: reverse;
+}
+
+@keyframes gesture-pulse {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(8px); }
+}
+
+.gesture-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #666);
+}
+
+.gesture-icon {
+    font-size: 1.25rem;
+}
+
+.coachmark-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted, #999);
+    margin: 16px 0 12px;
+}
+
+.coachmark-dismiss {
+    padding: 10px 24px;
+    background: var(--primary, #6D5EF6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* =============================================================================
+   8. Pull to Refresh
+   ============================================================================= */
+
+.pull-to-refresh {
+    position: fixed;
+    top: 80px; /* Below header */
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    z-index: 50;
+    background: var(--bg-surface, #fff);
+    border-radius: 20px;
+    padding: 8px 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.3s ease;
+}
+
+.pull-to-refresh.visible {
+    transform: translateX(-50%) translateY(12px);
+}
+
+.pull-to-refresh.refreshing {
+    transform: translateX(-50%) translateY(12px);
+}
+
+.ptr-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-default, #ddd);
+    border-top-color: var(--primary, #6D5EF6);
+    border-radius: 50%;
+}
+
+.refreshing .ptr-spinner {
+    animation: ptr-spin 0.8s linear infinite;
+}
+
+@keyframes ptr-spin {
+    to { transform: rotate(360deg); }
+}
+
+.ptr-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #666);
+}
+
+/* =============================================================================
+   9. Mobile-specific Overrides
+   ============================================================================= */
+
+@media (max-width: 900px) {
+    /* Reduce header height on mobile */
+    .site-header {
+        height: 60px;
+    }
+
+    /* Adjust sticky positioning for mobile tabs */
+    .mobile-tabs {
+        top: 60px;
+    }
+
+    /* Full-width container on mobile */
+    .container-fluid {
+        padding: 0 12px;
+    }
+
+    /* Larger touch targets */
+    .task-item {
+        min-height: 52px;
+    }
+
+    /* Hide desktop-only elements */
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+@media (max-width: 580px) {
+    /* Even more compact on phones */
+    .site-header {
+        height: 52px;
+    }
+
+    .mobile-tabs {
+        top: 52px;
+        padding: 6px 8px;
+    }
+
+    .mobile-tab {
+        height: 36px;
+    }
+
+    .container-fluid {
+        padding: 0 8px;
+    }
+}
+
+/* Foldable device support */
+@media (horizontal-viewport-segments: 2) {
+    .tasks-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: env(fold-width);
+    }
+}
+
+/* Landscape tablet optimization */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    .tasks-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .tasks-panel,
+    .calendar-panel {
+        display: flex !important;
+    }
+
+    .mobile-tabs {
+        display: none;
+    }
+}
+
+/* =============================================================================
+   10. Safe Area Support
+   ============================================================================= */
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .bottom-sheet {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mobile-tabs {
+        /* Safe area handled by parent */
+    }
+}
+
+/* =============================================================================
+   11. Reduced Motion Support
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .bottom-sheet,
+    .sheet-backdrop,
+    .gesture-coachmark,
+    .gesture-arrow,
+    .pull-to-refresh,
+    .task-item {
+        transition: none !important;
+        animation: none !important;
+    }
+}
