@@ -1385,14 +1385,14 @@ input.add-domain-input::placeholder {
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-sm);
-    color: var(--text-secondary);
+    color: #64748B;  /* Slate-500 - visible on white */
     cursor: pointer;
     transition: all var(--duration-fast) var(--ease-default);
 }
 
 .theme-btn:hover {
     color: var(--text-primary);
-    background: var(--bg-surface);
+    background: var(--interactive-hover);
 }
 
 .theme-btn.active {
@@ -1406,7 +1406,26 @@ input.add-domain-input::placeholder {
 }
 
 .theme-btn svg {
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
+    stroke: currentColor;
+    stroke-width: 1.75;
+}
+
+/* Force white stroke on active button for visibility */
+.theme-btn.active svg {
+    stroke: #FFFFFF !important;
+}
+
+/* Dark mode - ensure inactive buttons are visible */
+[data-theme="dark"] .theme-btn {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .theme-btn:hover {
+    color: var(--text-primary);
+    background: var(--interactive-hover);
 }
 
 /* =============================================================================

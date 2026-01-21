@@ -762,7 +762,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 9px 12px 9px 24px;  /* Extra left padding to align with task text */
+    padding: 6px 12px 6px 24px;  /* Reduced vertical padding for compact look */
     margin: 0 !important;
     background: var(--bg-panel);
     cursor: pointer;
@@ -1373,43 +1373,32 @@
     text-decoration: line-through;
 }
 
-/* Add task row - small footer by default, expands on hover */
+/* Add task row - always visible with subtle styling */
 .add-task-row {
     display: flex;
     align-items: center;
-    padding: 0 12px;
-    padding-left: 38px;  /* Aligns with task text */
+    padding: 4px 12px 4px 38px;  /* Aligns with task text */
     cursor: pointer;
     background: var(--bg-panel);
-    height: 16px;
-    overflow: hidden;
-    transition: height 0.15s ease, padding 0.15s ease;
+    height: 28px;
+    transition: background 0.15s ease;
 }
 
 .add-task-text {
-    opacity: 0;
-    font-size: 0.75rem;
+    opacity: 0.5;  /* Always visible but subtle */
+    font-size: 0.7rem;
     font-weight: 500;
     color: var(--text-muted);
     transition: opacity 0.15s ease, color 0.15s ease;
 }
 
-.project-group:hover .add-task-row {
-    height: 28px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-}
-
-.project-group:hover .add-task-text {
+.add-task-row:hover .add-task-text {
     opacity: 1;
+    color: var(--primary);
 }
 
 .add-task-row:hover {
     background: rgba(109, 94, 246, 0.08);
-}
-
-.add-task-row:hover .add-task-text {
-    color: var(--primary);
 }
 
 .task-content {
@@ -2918,26 +2907,24 @@ body.over-calendar .drag-ghost .task-text {
     .task-meta > span.meta-impact.impact-3::after { content: 'Low'; color: #157A4E; }
     .task-meta > span.meta-impact.impact-4::after { content: 'Min'; color: var(--impact-min); }
 
-    /* Clarity: hide text, show abbreviations */
+    /* Clarity: show ONLY the colored dot, hide text */
     .task-meta > span.meta-clarity {
-        font-size: 0;
-        position: relative;
-    }
-    .task-meta > span.meta-clarity::after {
-        font-size: 0.6rem;
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
+        font-size: 0;  /* Hide original text */
         display: flex;
         align-items: center;
         justify-content: center;
     }
-    .task-meta > span.meta-clarity.clarity-executable::after { content: 'Exec'; color: var(--executable-color); }
-    .task-meta > span.meta-clarity.clarity-defined::after { content: 'Def'; color: var(--defined-color); }
-    .task-meta > span.meta-clarity.clarity-exploratory::after { content: 'Xplr'; color: #8A18A0; }
-    .task-meta > span.meta-clarity.clarity-none::after { content: '—'; color: var(--text-muted); }
+    .task-meta > span.meta-clarity::before {
+        /* Keep the colored dot visible */
+        display: inline-block;
+        font-size: initial;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+    .task-meta > span.meta-clarity::after {
+        display: none;  /* Hide text abbreviations - show only dot */
+    }
 }
 
 /* =============================================================================

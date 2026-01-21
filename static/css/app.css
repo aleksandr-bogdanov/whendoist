@@ -99,10 +99,9 @@ html, body {
     top: 0;
     z-index: 100;
     background: var(--bg-surface);
-    height: 80px;
+    min-height: 80px;  /* Use min-height so safe-area padding can expand it */
     display: flex;
     align-items: center;
-    padding: 0 !important;
 }
 
 .header-inner {
@@ -231,9 +230,15 @@ img.brand-logo {
     transition: all 0.15s ease;
 }
 
+/* Explicit SVG styling for iOS Chrome compatibility */
+.btn-logout svg {
+    stroke: currentColor;
+    stroke-width: 1.75;
+}
+
 .btn-logout:hover {
     color: var(--text);
-    background: var(--surface2);
+    background: var(--bg-panel);
 }
 
 /* =============================================================================
@@ -242,7 +247,7 @@ img.brand-logo {
 
 @media (max-width: 900px) {
     .site-header {
-        height: 44px;
+        min-height: 44px;  /* Use min-height so safe-area padding can expand it */
     }
 
     .header-inner {

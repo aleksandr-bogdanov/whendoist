@@ -308,28 +308,24 @@ img, a {
 }
 
 /* =============================================================================
-   4a. PWA Safe Area - Header Fix
+   4a. PWA Safe Area - iOS PWA Handling
    ============================================================================= */
 
-/* PWA standalone mode - add safe area to header (40px base height from app.css) */
+/* PWA standalone mode - header absorbs safe area with min-height
+   Key insight: Use min-height (not height) so header expands naturally
+   when safe-area padding is added, rather than squishing content */
 @media (display-mode: standalone) {
     .site-header {
-        padding-top: env(safe-area-inset-top, 0) !important;
-        /* Don't override height - let content push naturally with padding */
+        /* Header absorbs the notch area as padding */
+        padding-top: env(safe-area-inset-top, 0);
+        padding-left: env(safe-area-inset-left, 0);
+        padding-right: env(safe-area-inset-right, 0);
+        /* min-height allows expansion - set in app.css mobile section */
     }
 
-    /* Adjust content below header */
-    main.container-fluid {
-        padding-top: 0;
-    }
-}
-
-/* Also handle iOS Safari with viewport-fit=cover */
-@supports (padding-top: env(safe-area-inset-top)) {
-    @media (display-mode: standalone) {
-        .site-header {
-            padding-top: env(safe-area-inset-top) !important;
-        }
+    /* Bottom safe area for mobile tabs */
+    .mobile-tabs {
+        padding-bottom: env(safe-area-inset-bottom, 0);
     }
 }
 
@@ -397,35 +393,51 @@ img, a {
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Task list header - sticky with compact columns */
+    /* Task list header - sticky with flex layout to match task rows */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
         padding: 6px 8px !important;
         background: var(--bg-panel);
-        /* Keep full grid on mobile, just smaller */
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
     }
 
-    /* Compact header columns on mobile */
-    .header-meta {
-        gap: 4px !important;
-    }
-
-    .header-meta .col-hd {
-        font-size: 0.5rem !important;
-        padding: 0 4px !important;
-    }
-
-    /* Hide actions column header on mobile */
+    /* Hide kebab menu on mobile - not needed */
     .header-actions {
         display: none !important;
     }
 
-    /* Simplify header-task area */
+    /* Header task label takes available space */
     .header-task {
-        margin-left: 4px !important;
+        flex: 1;
+        min-width: 0;
+        margin-left: 0 !important;
     }
+
+    /* Header meta columns - match task-meta sizing exactly */
+    .header-meta {
+        display: flex !important;
+        gap: 4px !important;
+        flex-shrink: 0;
+    }
+
+    .header-meta .header-sort {
+        font-size: 0.5rem !important;
+        padding: 2px 4px !important;
+        min-height: 16px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Match column widths exactly with task-meta spans */
+    .header-sort[data-sort="duration"] { width: 32px; min-width: 32px; }
+    .header-sort[data-sort="impact"] { width: 24px; min-width: 24px; }
+    .header-sort[data-sort="clarity"] { width: 32px; min-width: 32px; }
 
     /* Compact energy selector on mobile */
     .header-energy {
@@ -434,7 +446,7 @@ img, a {
         border-left: none;
     }
 
-    .header-energy .energy-btn {
+    .header-energy .energy-pill {
         font-size: 0.55rem !important;
         padding: 2px 6px !important;
         height: 20px !important;
@@ -444,10 +456,11 @@ img, a {
     .task-item {
         display: flex !important;
         grid-template-columns: unset !important;
-        align-items: stretch; /* Rail takes full height */
+        align-items: center;  /* Center content vertically */
         padding: 8px !important;
         gap: 8px;
-        min-height: 40px; /* Touch target */
+        height: 44px;  /* Fixed height for uniformity */
+        min-height: 44px;
         overflow: hidden;
         position: relative;
     }
@@ -457,13 +470,14 @@ img, a {
         display: none !important;
     }
 
-    /* Task content - take available width */
+    /* Task content - single line with due date inline */
     .task-item .task-content {
         flex: 1;
         min-width: 0; /* Allow text truncation */
         display: flex;
-        flex-direction: column;
-        justify-content: center;
+        flex-direction: row;  /* Inline layout */
+        align-items: center;
+        gap: 6px;
     }
 
     .task-item .task-text {
@@ -472,6 +486,16 @@ img, a {
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: 0.8rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Due date inline and smaller */
+    .task-item .task-due {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     /* Task metadata - compact inline on mobile - show all columns */
@@ -482,18 +506,22 @@ img, a {
         flex-shrink: 0;
     }
 
-    /* Compact metadata chips - smaller on mobile */
+    /* Compact metadata chips - smaller on mobile with fixed widths */
     .task-item .task-meta > span {
         font-size: 0.55rem;
-        padding: 2px 5px;
+        padding: 2px 4px;
         height: auto;
         min-height: 16px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Show clarity on mobile too */
-    .task-item .task-meta .meta-clarity {
-        display: inline-flex !important;
-    }
+    /* Fixed widths to match header columns */
+    .task-item .task-meta .meta-duration { width: 32px; min-width: 32px; }
+    .task-item .task-meta .meta-impact { width: 24px; min-width: 24px; }
+    .task-item .task-meta .meta-clarity { width: 32px; min-width: 32px; display: inline-flex !important; }
 
     /* Hide actions column on mobile (swipe replaces it) */
     .task-item .task-actions {
@@ -647,29 +675,42 @@ img, a {
         background: var(--interactive-pressed, rgba(0, 0, 0, 0.03));
     }
 
-    /* Fix icon button styling on mobile - prevent blue highlight/background */
+    /* Fix icon button styling on mobile - theme-aware colors */
     .icon-btn {
         -webkit-appearance: none;
         appearance: none;
-        background: rgba(255, 255, 255, 0.85) !important;
-        border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.055)) !important;
-        color: var(--text-secondary, rgba(15, 23, 42, 0.64));
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border-default) !important;
+        color: var(--text-secondary) !important;
         outline: none;
+    }
+
+    .icon-btn svg {
+        stroke: var(--text-secondary) !important;
     }
 
     .icon-btn:focus,
     .icon-btn:active {
-        background: var(--bg-panel, #f1f5f9) !important;
+        background: var(--bg-panel) !important;
         outline: none;
     }
 
-    /* Thoughts page icon buttons - ensure no blue */
-    .thoughts-page .icon-btn {
-        background: rgba(255, 255, 255, 0.9) !important;
+    /* Thoughts page icon buttons */
+    .thoughts-page .icon-btn,
+    .thought-actions .icon-btn {
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border-default) !important;
+        color: var(--text-secondary) !important;
     }
 
-    .thoughts-page .icon-btn:active {
-        background: var(--bg-panel, #f1f5f9) !important;
+    .thoughts-page .icon-btn svg,
+    .thought-actions .icon-btn svg {
+        stroke: var(--text-secondary) !important;
+    }
+
+    .thoughts-page .icon-btn:active,
+    .thought-actions .icon-btn:active {
+        background: var(--bg-panel) !important;
         transform: scale(0.95);
     }
 }
@@ -920,28 +961,28 @@ img, a {
         margin-bottom: 0 !important;
     }
 
-    /* Settings page icon buttons - fix white/blank on iOS */
+    /* Settings page icon buttons - theme-aware colors */
     .settings-page .icon-btn,
     .panel-row .icon-btn {
         -webkit-appearance: none;
         appearance: none;
-        background: rgba(255, 255, 255, 0.9) !important;
-        border: 1px solid var(--border-subtle, rgba(15, 23, 42, 0.055)) !important;
-        color: var(--text-secondary, rgba(15, 23, 42, 0.64)) !important;
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border-default) !important;
+        color: var(--text-secondary) !important;
         margin: 0 !important;
         margin-bottom: 0 !important;
     }
 
     .settings-page .icon-btn svg,
     .panel-row .icon-btn svg {
-        width: 12px;
-        height: 12px;
-        stroke: currentColor;
+        width: 14px;
+        height: 14px;
+        stroke: var(--text-secondary) !important;
     }
 
     .settings-page .icon-btn:active,
     .panel-row .icon-btn:active {
-        background: var(--bg-panel, #f1f5f9) !important;
+        background: var(--bg-panel) !important;
         transform: scale(0.95);
     }
 

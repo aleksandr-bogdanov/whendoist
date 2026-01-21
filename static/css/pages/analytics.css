@@ -506,6 +506,25 @@
     background: var(--bg-panel);
 }
 
+/* Dark mode heatmap - adjust colors for visibility */
+[data-theme="dark"] .heatmap-container {
+    /* ApexCharts heatmap in dark mode needs adjusted colors */
+}
+
+[data-theme="dark"] .apexcharts-heatmap-rect {
+    /* Empty cells - darker in dark mode */
+    stroke: var(--bg-panel) !important;
+}
+
+[data-theme="dark"] .apexcharts-xaxis text,
+[data-theme="dark"] .apexcharts-yaxis text {
+    fill: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .apexcharts-legend-text {
+    color: var(--text-secondary) !important;
+}
+
 /* =============================================================================
    Reduced Motion
    ============================================================================= */
