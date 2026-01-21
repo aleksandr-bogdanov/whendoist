@@ -220,7 +220,7 @@ function getThemeColors() {
         textStrong: isDark ? 'rgba(248, 250, 252, 0.9)' : 'rgba(15, 23, 42, 0.6)',
         grid: isDark ? 'rgba(248, 250, 252, 0.08)' : 'rgba(15, 23, 42, 0.08)',
         background: isDark ? '#1E293B' : '#ffffff',
-        heatmapEmpty: isDark ? '#334155' : '#e2e8f0',
+        heatmapEmpty: isDark ? '#1E293B' : '#e2e8f0',  /* Match bg-panel in dark mode */
         stroke: isDark ? '#0F172A' : '#fff',
     };
 }
@@ -436,36 +436,52 @@ const heatmapSeries = dayNames.map((name, dayIdx) => ({
     })
 })).reverse();
 
-const heatmapColors = getThemeColors();
-charts.heatmap = new ApexCharts(document.querySelector('#chart-heatmap'), {
-    ...commonOptions,
-    chart: { ...commonOptions.chart, type: 'heatmap', height: 200 },
-    series: heatmapSeries,
-    colors: ['#8b5cf6'],
-    plotOptions: {
-        heatmap: {
-            shadeIntensity: 0.5,
-            radius: 2,
-            colorScale: {
-                ranges: [
-                    { from: 0, to: 0, color: heatmapColors.heatmapEmpty, name: 'none' },
-                    { from: 1, to: 3, color: '#c4b5fd', name: 'low' },
-                    { from: 4, to: 7, color: '#a78bfa', name: 'medium' },
-                    { from: 8, to: 100, color: '#7c3aed', name: 'high' },
-                ]
+// Heatmap creation function - used for initial render and theme changes
+function createHeatmap() {
+    const colors = getThemeColors();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    // Brand-compliant colors for heatmap
+    // Dark: --bg-surface is #334155 (slate-700), stroke slightly darker
+    const emptyColor = isDark ? '#334155' : '#e2e8f0';
+    const strokeColor = isDark ? '#283548' : '#ffffff';
+
+    return new ApexCharts(document.querySelector('#chart-heatmap'), {
+        ...getCommonOptions(),
+        chart: {
+            ...getCommonOptions().chart,
+            type: 'heatmap',
+            height: 200,
+        },
+        series: heatmapSeries,
+        plotOptions: {
+            heatmap: {
+                shadeIntensity: 0,  // Disable shading - use exact colorScale colors
+                radius: 2,
+                enableShades: false,  // Ensure no auto-shading
+                colorScale: {
+                    ranges: [
+                        { from: 0, to: 0, color: emptyColor, name: 'none' },
+                        { from: 1, to: 3, color: '#c4b5fd', name: 'low' },
+                        { from: 4, to: 7, color: '#a78bfa', name: 'medium' },
+                        { from: 8, to: 100, color: '#7c3aed', name: 'high' },
+                    ]
+                }
             }
-        }
-    },
-    dataLabels: { enabled: false },
-    xaxis: {
-        labels: { show: false },
-    },
-    yaxis: {
-        labels: { style: { fontSize: '10px', colors: heatmapColors.text } },
-    },
-    legend: { show: false },
-    stroke: { width: 2, colors: [heatmapColors.stroke] },
-});
+        },
+        dataLabels: { enabled: false },
+        xaxis: {
+            labels: { show: false },
+        },
+        yaxis: {
+            labels: { style: { fontSize: '10px', colors: colors.text } },
+        },
+        legend: { show: false },
+        stroke: { width: 2, colors: [strokeColor] },
+    });
+}
+
+charts.heatmap = createHeatmap();
 charts.heatmap.render();
 
 // 6. Impact Distribution
@@ -708,23 +724,9 @@ function updateChartsForTheme(isDark) {
             };
         }
 
+        // Skip heatmap - it gets recreated separately
         if (name === 'heatmap') {
-            updateOptions.plotOptions = {
-                heatmap: {
-                    colorScale: {
-                        ranges: [
-                            { from: 0, to: 0, color: colors.heatmapEmpty, name: 'none' },
-                            { from: 1, to: 3, color: '#c4b5fd', name: 'low' },
-                            { from: 4, to: 7, color: '#a78bfa', name: 'medium' },
-                            { from: 8, to: 100, color: '#7c3aed', name: 'high' },
-                        ]
-                    }
-                }
-            };
-            updateOptions.yaxis = {
-                labels: { style: { colors: colors.text } }
-            };
-            updateOptions.stroke = { width: 2, colors: [colors.stroke] };
+            return;
         }
 
         if (name === 'dow') {
@@ -744,10 +746,27 @@ function updateChartsForTheme(isDark) {
     });
 }
 
+// Recreate heatmap with current theme colors
+function recreateHeatmap() {
+    if (charts.heatmap) {
+        charts.heatmap.destroy();
+    }
+    charts.heatmap = createHeatmap();
+    charts.heatmap.render();
+}
+
 // Listen for theme changes
 window.addEventListener('themechange', (e) => {
     const isDark = e.detail.theme === 'dark';
     updateChartsForTheme(isDark);
+    recreateHeatmap();  // Heatmap needs full recreation for colorScale
 });
+
+// Initial theme sync - ensure charts match current theme on page load
+const currentTheme = document.documentElement.getAttribute('data-theme');
+if (currentTheme === 'dark') {
+    updateChartsForTheme(true);
+    recreateHeatmap();
+}
 </script>
 {% endblock %}

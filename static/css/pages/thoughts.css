@@ -3,40 +3,32 @@
    Extracted from thoughts.html inline styles
    ============================================================================= */
 
-/* 1) Page wrapper - centers the panel */
+/* 1) Page wrapper - fills container-fluid like other pages */
 .thoughts-page {
     min-height: calc(100vh - var(--header-height));
-    padding: 0 24px 24px;
-    display: flex;
-    justify-content: center;
+    padding-bottom: 24px;
 }
 
-/* 2) Page surface - shared container style */
+/* 2) Page surface - shared container style, matches Settings/Analytics */
 .thoughts-page .page-surface {
     width: 100%;
-    max-width: calc((100vw - 3rem) * 2 / 3);
-    min-width: 500px;
     background: var(--bg-panel);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-subtle);
-    padding: 28px 32px 40px;
+    padding: 48px 36px 56px;  /* More breathing room */
     box-sizing: border-box;
 }
 
-@media (min-width: 1400px) {
-    .thoughts-page .page-surface {
-        max-width: 900px;
-    }
-}
-
-/* 3) Container - content inside panel */
+/* 3) Container - content inside panel, matches Settings width */
 .thoughts-container {
-    max-width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
 }
 
-/* 4) Title + Subtitle - ALL CAPS system typography */
+/* 4) Title + Subtitle - ALL CAPS system typography, centered like Settings */
 .thoughts-title {
-    margin: 0 0 8px 0;
+    max-width: 720px;
+    margin: 0 auto 8px;
     text-transform: uppercase;
     letter-spacing: 0.10em;
     font-weight: 700;
@@ -46,7 +38,8 @@
 }
 
 .thoughts-subtitle {
-    margin: 0 0 24px;
+    max-width: 720px;
+    margin: 0 auto 24px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-weight: 600;
@@ -290,10 +283,29 @@
     flex-shrink: 0;
 }
 
-.icon-btn.promote:hover {
-    border-color: rgba(109, 94, 246, 0.35);
-    background: rgba(109, 94, 246, 0.08);
-    color: var(--primary);
+/* Light mode only - override Pico CSS blue button styles */
+html:not([data-theme="dark"]) .thought-actions .icon-btn.promote,
+html:not([data-theme="dark"]) .thought-actions .icon-btn.delete {
+    background: var(--bg-surface) !important;
+    border-color: var(--border-default) !important;
+    color: var(--text-secondary) !important;
+}
+
+html:not([data-theme="dark"]) .thought-actions .icon-btn.promote:hover {
+    background: var(--bg-panel) !important;
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    color: var(--primary) !important;
+}
+
+html:not([data-theme="dark"]) .thought-actions .icon-btn.delete:hover {
+    background: var(--bg-panel) !important;
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    color: #C9505A !important;  /* P1 impact red - not alarming */
+}
+
+/* Override Pico CSS button margin */
+.thought-actions button {
+    margin-bottom: 0 !important;
 }
 
 /* 11) States */
@@ -479,8 +491,22 @@
     stroke: var(--text-primary);
 }
 
-[data-theme="dark"] .icon-btn.promote:hover svg {
+/* Dark mode promote button - icon color only on hover */
+[data-theme="dark"] .thought-actions .icon-btn.promote:hover {
+    color: var(--primary);
+}
+
+[data-theme="dark"] .thought-actions .icon-btn.promote:hover svg {
     stroke: var(--primary);
+}
+
+/* Dark mode delete button - icon color only on hover (P1 impact red) */
+[data-theme="dark"] .thought-actions .icon-btn.delete:hover {
+    color: #C9505A;  /* P1 impact color - visible but not alarming */
+}
+
+[data-theme="dark"] .thought-actions .icon-btn.delete:hover svg {
+    stroke: #C9505A;
 }
 
 [data-theme="dark"] .icon-btn.delete:hover svg {

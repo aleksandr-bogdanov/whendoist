@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.10.0 (Mobile Adaptation)
+**Current Version:** v0.10.1 (UI Polish)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -683,6 +683,8 @@ The onboarding wizard guides new users through initial setup. It's implemented a
 4. **Encryption in Wizard**: Full setup including fetching all content, encrypting, batch-updating, and enabling on server.
 
 5. **Swipe Navigation**: Touch devices can swipe to navigate. Higher thresholds (120px, 0.7 velocity) prevent accidental triggers on interactive elements.
+
+6. **Wordmark FOUC Prevention**: The wordmark starts with `opacity: 0` and is revealed via `.font-ready` class after `document.fonts.load('500 3rem Quicksand')` resolves. This prevents a visible jump when the font swaps from fallback to Quicksand. The wordmark styles are duplicated in `wizard.css` to avoid `@import` timing issues from `typography.css`.
 
 ### API Endpoints
 

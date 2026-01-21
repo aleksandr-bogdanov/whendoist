@@ -365,12 +365,12 @@ img, a {
         display: none !important;
     }
 
-    /* Show active panel - full screen (44px header, 57px mobile tabs) */
+    /* Show active panel - full screen (60px header, 57px mobile tabs) */
     .tasks-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 44px - 57px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 44px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
         border-radius: 0;
         border: none;
@@ -379,8 +379,8 @@ img, a {
     .calendar-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 44px - 57px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 44px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
         border-radius: 0;
         border: none;
@@ -390,8 +390,8 @@ img, a {
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 44px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-            height: calc(var(--app-height, 100vh) - 44px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(100vh - 60px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
         }
     }
 
@@ -462,15 +462,15 @@ img, a {
         height: 20px !important;
     }
 
-    /* Task item - compact row with flex layout */
+    /* Task item - compact row with flex layout, matching Thoughts view */
     .task-item {
         display: flex !important;
         grid-template-columns: unset !important;
         align-items: center;  /* Center content vertically */
-        padding: 8px !important;
+        padding: 7px 8px !important;
         gap: 8px;
-        height: 44px;  /* Fixed height for uniformity */
-        min-height: 44px;
+        height: 36px;  /* Compact height like Thoughts view */
+        min-height: 36px;
         overflow: hidden;
         position: relative;
     }
@@ -1019,10 +1019,10 @@ img, a {
     color: var(--text-muted);
 }
 
-/* Active mobile tab - softer white for dark mode */
+/* Active mobile tab - softer white for dark mode (avoid pure white) */
 [data-theme="dark"] .mobile-tab.active {
     background: var(--bg-surface);
     border-color: var(--border-default);
-    color: var(--text-secondary);
+    color: rgba(248, 250, 252, 0.85);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }

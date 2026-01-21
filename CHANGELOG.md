@@ -12,7 +12,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redesign CMPCT view
 
 ### Known Issues
-- None currently tracked
+- Minor horizontal wordmark shift on external displays during font load (cosmetic only)
+
+---
+
+## [0.10.1] - 2026-01-21
+
+### Summary
+**UI Polish** — Wizard layout improvements, wordmark alignment fixes, and light/dark mode background consistency.
+
+### Fixed
+
+- **Wizard wordmark FOUC** — Prevented "flash of unstyled content" jump when Quicksand font loads by hiding wordmark until font is ready, then fading in
+- **Wizard wordmark alignment** — Removed incorrect override that broke baseline alignment; wordmark now uses brand-specified 5px offset
+- **Light/dark mode background mismatch** — Body and header backgrounds now consistently use `--bg-canvas` in both modes
+
+### Changed
+
+- **Wizard layout improvements:**
+  - Reduced top padding (80px → 48px) for better vertical balance
+  - Added styled welcome greeting (1.15rem, medium weight, muted color)
+  - Tightened spacing between card and progress dots
+  - Added panel bottom padding to push content higher
 
 ---
 

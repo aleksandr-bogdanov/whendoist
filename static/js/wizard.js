@@ -195,7 +195,25 @@ class WhenWizard {
         // Pre-fetch calendars if already connected
         this.prefetchCalendars();
 
+        // Reveal wordmark after font is confirmed loaded and layout is stable
+        this.revealWordmark();
+
         this.saveState();
+    }
+
+    revealWordmark() {
+        const wordmark = this.panel.querySelector('.wizard-welcome-hero .wm.lg');
+        if (!wordmark) return;
+
+        // Wait for font, force layout, then reveal after display sync
+        document.fonts.load('500 3rem Quicksand').then(() => {
+            // Force layout calculation
+            wordmark.offsetHeight;
+            // Wait for compositor to sync across displays
+            setTimeout(() => {
+                wordmark.classList.add('font-ready');
+            }, 50);
+        });
     }
 
     bindGlobalEvents() {

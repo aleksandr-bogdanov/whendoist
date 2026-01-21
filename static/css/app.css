@@ -62,6 +62,7 @@
 html, body {
     min-height: 100vh;
     min-height: -webkit-fill-available;
+    background: var(--bg-canvas);  /* Match header background in both modes */
 }
 
 /* Safe area padding for notched devices */
@@ -98,11 +99,13 @@ html, body {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: var(--bg-surface);
+    background: var(--bg-canvas);  /* Blend with page background */
     min-height: 80px;  /* Use min-height so safe-area padding can expand it */
+    padding: 15px var(--content-padding);  /* Match container-fluid padding */
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--border-subtle);
+    max-width: 1100px;  /* Match container-fluid width */
+    margin: 0 auto;
 }
 
 .header-inner {
@@ -112,10 +115,7 @@ html, body {
     align-items: center !important;
     justify-content: flex-start;
     width: 100%;
-    max-width: 1200px;
     height: 100%;
-    padding: 0 var(--content-padding);
-    margin: 0 auto;
     gap: 0.75rem;
     box-sizing: border-box;
 }
@@ -257,14 +257,12 @@ img.brand-logo {
 
 @media (max-width: 900px) {
     .site-header {
-        min-height: 56px;  /* Use min-height so safe-area padding can expand it */
-        padding-top: 8px;  /* Extra headroom for visual breathing room */
-        padding-bottom: 4px;
+        min-height: 60px;  /* Use min-height so safe-area padding can expand it */
+        padding: 12px 20px 8px;  /* More horizontal breathing room on mobile */
     }
 
     .header-inner {
-        padding: 0 16px;
-        gap: 10px;
+        gap: 12px;
     }
 
     img.brand-logo {
@@ -582,10 +580,7 @@ img.brand-logo {
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .site-header {
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-subtle);
-}
+/* .site-header uses var(--bg-surface) which adapts to dark mode automatically */
 
 [data-theme="dark"] .header-nav .nav-item {
     color: var(--text-secondary);

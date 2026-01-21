@@ -88,7 +88,8 @@
         position: relative;
         inset: auto;
         width: 100%;
-        max-width: 500px;
+        max-width: 560px;
+        min-height: 460px;
         max-height: calc(100vh - 48px);
 
         /* Glassmorphism */
@@ -99,6 +100,7 @@
         border-radius: 20px;
         box-shadow: var(--shadow-elevated);
         padding-top: 0;
+        padding-bottom: 40px; /* Push content higher within panel */
 
         /* Entrance animation */
         animation: wizardPanelIn 0.4s ease-out;
@@ -118,7 +120,7 @@
 
 @media (min-width: 900px) {
     .wizard-panel {
-        max-width: 560px;
+        max-width: 620px;
     }
 }
 
@@ -182,7 +184,7 @@
 
 @media (min-width: 600px) {
     .wizard-content {
-        padding: 40px 32px 56px;
+        padding: 48px 40px 16px;  /* Reduced top space for better balance */
         scrollbar-gutter: stable;
     }
 }
@@ -252,7 +254,7 @@
 
 @media (min-width: 600px) {
     .wizard-nav {
-        padding: 22px 36px 28px;
+        padding: 4px 40px 0;
         border-top: none;
         position: relative;
         background: transparent;
@@ -435,13 +437,14 @@ body.keyboard-open .wizard-nav {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 16px 0;
-    margin-top: auto; /* Push to bottom of flex container */
+    padding: 12px 0;
+    margin-top: 20px;  /* Balanced spacing from content above */
 }
 
 @media (min-width: 600px) {
     .wizard-progress-container {
-        padding: 18px 0;
+        padding: 8px 0;
+        margin-top: 16px;  /* Tighter spacing to card above */
     }
 }
 
@@ -452,42 +455,7 @@ body.keyboard-open .wizard-nav {
     position: relative;
 }
 
-/* Connecting line between dots - spans full width between first and last dot */
-.wizard-progress::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 4px;
-    right: 4px;
-    height: 2px;
-    background: var(--border-default);
-    transform: translateY(-50%);
-    z-index: 0;
-}
-
-/* Progress fill line */
-.wizard-progress::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 4px;
-    height: 2px;
-    background: var(--primary);
-    transform: translateY(-50%);
-    z-index: 1;
-    width: 0;
-    transition: width 300ms ease-out;
-}
-
-/* Progress fill widths based on step count (8 steps) */
-.wizard-progress[data-progress="1"]::after { width: calc((100% - 8px) * 0 / 7); }
-.wizard-progress[data-progress="2"]::after { width: calc((100% - 8px) * 1 / 7); }
-.wizard-progress[data-progress="3"]::after { width: calc((100% - 8px) * 2 / 7); }
-.wizard-progress[data-progress="4"]::after { width: calc((100% - 8px) * 3 / 7); }
-.wizard-progress[data-progress="5"]::after { width: calc((100% - 8px) * 4 / 7); }
-.wizard-progress[data-progress="6"]::after { width: calc((100% - 8px) * 5 / 7); }
-.wizard-progress[data-progress="7"]::after { width: calc((100% - 8px) * 6 / 7); }
-.wizard-progress[data-progress="8"]::after { width: calc(100% - 8px); }
+/* No connecting line - just standalone dots */
 
 @media (min-width: 600px) {
     .wizard-progress {
@@ -823,7 +791,48 @@ body.keyboard-open .wizard-nav {
 /* Welcome Hero with Logo and Sparkles */
 .wizard-welcome-hero {
     position: relative;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+}
+
+/* Welcome Greeting */
+.wizard-welcome-greeting {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin: 0 0 16px 0;
+    letter-spacing: 0.01em;
+}
+
+@media (min-width: 600px) {
+    .wizard-welcome-greeting {
+        font-size: 1.15rem;
+        margin-bottom: 20px;
+    }
+}
+
+/* Wordmark styles - duplicated from typography.css to prevent FOUC
+   (Flash of Unstyled Content) due to @import loading delay */
+.wizard-welcome-hero .wm.lg {
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
+}
+
+.wizard-welcome-hero .wm.lg.font-ready {
+    opacity: 1;
+}
+
+.wizard-welcome-hero .wm.lg svg {
+    width: 42px;
+    height: 37px;
+    margin-bottom: 5px;
+    margin-right: 2px;
+}
+
+.wizard-welcome-hero .wm.lg > span:first-of-type {
+    font-size: 3rem;
+    font-family: 'Quicksand', sans-serif;  /* Explicit to prevent fallback font flash */
+    display: inline-block;
+    min-width: 170px;  /* Fixed width to prevent horizontal shift on font load */
 }
 
 .wizard-welcome-logo {
@@ -939,7 +948,7 @@ body.keyboard-open .wizard-nav {
     border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 20px 24px;
-    margin-bottom: 8px;
+    margin-bottom: 0;  /* Progress dots handle their own spacing */
     max-width: 360px;
     box-shadow: var(--shadow-card);
 }
@@ -2529,11 +2538,6 @@ body.keyboard-open .wizard-nav {
     /* Progress dot pulse */
     .wizard-progress-dot.completing {
         animation: none;
-    }
-
-    /* Progress line transition */
-    .wizard-progress::after {
-        transition: none;
     }
 
     /* Swipe hint movement */

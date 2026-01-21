@@ -25,10 +25,10 @@
     white-space: nowrap;
 }
 
-/* Selection mode active */
+/* Selection mode active - brand purple highlight */
 .day-calendar.selection-mode .hour-grid {
     cursor: crosshair;
-    box-shadow: inset 0 0 30px rgba(138, 24, 160, 0.15);
+    box-shadow: inset 0 0 30px rgba(109, 94, 246, 0.12);
 }
 
 /* =============================================================================
@@ -39,8 +39,8 @@
     position: absolute;
     left: 50px;  /* After hour label */
     right: 0;
-    background: var(--exploratory-tint);
-    border: 2px dashed var(--exploratory-color);
+    background: rgba(109, 94, 246, 0.08);
+    border: 2px dashed #6D5EF6;
     border-radius: 4px;
     display: flex;
     flex-direction: column;
@@ -49,7 +49,7 @@
     padding: 0.5rem;
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--exploratory-color);
+    color: #6D5EF6;
     z-index: 15;
     pointer-events: auto;
     box-sizing: border-box;
@@ -64,8 +64,8 @@
     position: absolute;
     left: 50px;
     right: 0;
-    background: var(--exploratory-tint);
-    border: 2px dashed var(--exploratory-color);
+    background: rgba(109, 94, 246, 0.08);
+    border: 2px dashed #6D5EF6;
     border-radius: 4px;
     z-index: 15;
     pointer-events: none;
@@ -74,19 +74,43 @@
 
 .plan-tasks-btn {
     padding: 0.5rem 1rem;
-    background: var(--exploratory-color);
+    background: #6D5EF6;
     color: white;
     border: none;
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.3);
     transition: all 0.15s ease;
     margin-top: auto;
 }
 
 .plan-tasks-btn:hover {
-    filter: brightness(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: #5B4CF0;
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.4);
+}
+
+/* =============================================================================
+   Dark Mode - uses purple-400 (#8B7CF7) per brand spec
+   ============================================================================= */
+
+[data-theme="dark"] .day-calendar.selection-mode .hour-grid {
+    box-shadow: inset 0 0 20px rgba(139, 124, 247, 0.08);
+}
+
+[data-theme="dark"] .time-selection-overlay,
+[data-theme="dark"] .time-selection-overlay-2 {
+    background: rgba(139, 124, 247, 0.06);
+    border-color: rgba(139, 124, 247, 0.35);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .plan-tasks-btn {
+    background: var(--primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .plan-tasks-btn:hover {
+    background: var(--primary-hover);
 }

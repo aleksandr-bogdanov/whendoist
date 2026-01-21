@@ -205,7 +205,19 @@
                  {% if day.is_today %}id="today-calendar"{% endif %}>
 
                 <div class="day-header">
-                    <span class="day-header-date">{{ day.date.strftime('%A, %b %d') }}</span>
+                    <div class="day-header-nav">
+                        <button type="button" class="day-nav-btn day-nav-prev" aria-label="Previous day">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <span class="day-header-date">{{ day.date.strftime('%A, %b %d') }}</span>
+                        <button type="button" class="day-nav-btn day-nav-next" aria-label="Next day">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
                     <button type="button" class="plan-day-btn" title="Plan My Day">
                         <span class="action-emoji">✨</span>
                         <span class="action-name">Plan My Day</span>
@@ -565,6 +577,32 @@ document.addEventListener('DOMContentLoaded', () => {
             { root: carousel, threshold: 0.5 }
         );
         dayCalendars.forEach(day => dayObserver.observe(day));
+
+        // Calendar navigation buttons (in day headers)
+        const getVisibleDayIndex = () => {
+            const scrollLeft = carousel.scrollLeft;
+            const dayWidth = carousel.offsetWidth;
+            return Math.round(scrollLeft / dayWidth);
+        };
+
+        // Attach nav handlers to all day-nav-btn elements
+        document.querySelectorAll('.day-nav-prev').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const currentIndex = getVisibleDayIndex();
+                if (currentIndex > 0) {
+                    dayCalendars[currentIndex - 1].scrollIntoView({ behavior: 'smooth', inline: 'start' });
+                }
+            });
+        });
+
+        document.querySelectorAll('.day-nav-next').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const currentIndex = getVisibleDayIndex();
+                if (currentIndex < dayCalendars.length - 1) {
+                    dayCalendars[currentIndex + 1].scrollIntoView({ behavior: 'smooth', inline: 'start' });
+                }
+            });
+        });
     }
 });
 </script>

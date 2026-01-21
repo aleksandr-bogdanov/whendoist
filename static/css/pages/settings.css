@@ -3,28 +3,26 @@
    Extracted from settings.html inline styles
    ============================================================================= */
 
-/* 1) Page wrapper */
+/* 1) Page wrapper - fills container-fluid like Tasks page */
 .settings-page {
     min-height: calc(100vh - var(--header-height));
-    padding: 0 24px 24px;
-    display: flex;
-    justify-content: center;
+    padding-bottom: 24px;
 }
 
 /* 2) Page surface - shared container style */
 .page-surface {
     width: 100%;
-    max-width: var(--content-max-width);
     background: var(--bg-panel);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
-    padding: 32px 36px 44px;
+    padding: 48px 36px 56px;  /* More breathing room */
     box-sizing: border-box;
 }
 
-/* 3) Page title - ALL CAPS */
+/* 3) Page title - ALL CAPS, aligned with settings-grid */
 .settings-title {
-    margin: 0 0 28px 0;
+    max-width: 720px;
+    margin: 0 auto 28px;
     text-transform: uppercase;
     letter-spacing: 0.10em;
     font-weight: 700;
@@ -38,7 +36,7 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
-    max-width: 640px;
+    max-width: 720px;
     margin: 0 auto;
 }
 
@@ -193,10 +191,11 @@
     width: 24px;
     height: 24px;
     margin: 0 !important; /* Override Pico CSS button margin */
+    margin-bottom: 0 !important; /* Fix Pico CSS button bottom margin */
     border-radius: var(--radius-xs);
     border: 1px solid var(--border-default);
     background: var(--bg-surface);
-    color: var(--text-muted);
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -218,15 +217,16 @@
     color: var(--text-primary);
 }
 
-.icon-btn.edit:hover {
-    border-color: rgba(109, 94, 246, 0.35);
-    background: rgba(109, 94, 246, 0.08);
+.icon-btn.edit:hover,
+.icon-btn.promote:hover {
+    border-color: rgba(109, 94, 246, 0.45);
+    background: rgba(109, 94, 246, 0.12);
     color: var(--primary);
 }
 
 .icon-btn.delete:hover {
-    border-color: rgba(220, 38, 38, 0.25);
-    background: rgba(220, 38, 38, 0.06);
+    border-color: rgba(220, 38, 38, 0.35);
+    background: rgba(220, 38, 38, 0.10);
     color: var(--red-500);
 }
 

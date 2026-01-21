@@ -3,25 +3,22 @@
    Extracted from analytics.html inline styles
    ============================================================================= */
 
-/* Page wrapper */
+/* Page wrapper - fills container-fluid like Tasks page */
 .analytics-page {
     min-height: calc(100vh - var(--header-height));
-    padding: 0 24px 24px;
-    display: flex;
-    justify-content: center;
+    padding-bottom: 24px;
 }
 
 .analytics-page .page-surface {
     width: 100%;
-    max-width: 1200px;
     background: var(--bg-panel);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
-    padding: 32px 36px 44px;
+    padding: 48px 36px 56px;  /* More breathing room */
     box-sizing: border-box;
 }
 
-/* Header */
+/* Header - title left-aligned with sections, date selector right-aligned */
 .analytics-header {
     display: flex;
     justify-content: space-between;
@@ -511,10 +508,8 @@
     /* ApexCharts heatmap in dark mode needs adjusted colors */
 }
 
-[data-theme="dark"] .apexcharts-heatmap-rect {
-    /* Empty cells - darker in dark mode */
-    stroke: var(--bg-panel) !important;
-}
+/* Dark mode heatmap - colors handled by ApexCharts colorScale */
+/* See createHeatmap() in analytics.html for brand-compliant colors */
 
 [data-theme="dark"] .apexcharts-xaxis text,
 [data-theme="dark"] .apexcharts-yaxis text {
