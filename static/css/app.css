@@ -102,6 +102,7 @@ html, body {
     min-height: 80px;  /* Use min-height so safe-area padding can expand it */
     display: flex;
     align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .header-inner {
@@ -256,13 +257,14 @@ img.brand-logo {
 
 @media (max-width: 900px) {
     .site-header {
-        min-height: 48px;  /* Use min-height so safe-area padding can expand it */
-        padding-top: 4px;  /* Extra headroom for visual breathing room */
+        min-height: 56px;  /* Use min-height so safe-area padding can expand it */
+        padding-top: 8px;  /* Extra headroom for visual breathing room */
+        padding-bottom: 4px;
     }
 
     .header-inner {
-        padding: 0 12px;
-        gap: 8px;
+        padding: 0 16px;
+        gap: 10px;
     }
 
     img.brand-logo {

@@ -192,10 +192,11 @@
     box-sizing: border-box;
     width: 24px;
     height: 24px;
+    margin: 0 !important; /* Override Pico CSS button margin */
     border-radius: var(--radius-xs);
-    border: 1px solid var(--border-subtle);
-    background: rgba(255, 255, 255, 0.85);
-    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    color: var(--text-muted);
     cursor: pointer;
     display: flex;
     align-items: center;

@@ -1005,3 +1005,24 @@ img, a {
         margin-bottom: 0 !important;
     }
 }
+
+/* =============================================================================
+   13. Dark Mode Support
+   ============================================================================= */
+
+[data-theme="dark"] .mobile-tabs {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .mobile-tab {
+    color: var(--text-muted);
+}
+
+/* Active mobile tab - softer white for dark mode */
+[data-theme="dark"] .mobile-tab.active {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
