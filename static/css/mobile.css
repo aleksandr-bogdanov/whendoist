@@ -241,18 +241,18 @@ img, a {
 
 .mobile-tabs {
     display: none;
-    position: sticky;
-    top: 80px; /* Below header */
-    z-index: 20;
-    background: var(--bg-panel, #f5f5f5);
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border-subtle, #eee);
-    gap: 8px;
 }
 
 @media (max-width: 900px) {
     .mobile-tabs {
         display: flex;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: var(--bg-panel, #f5f5f5);
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border-subtle, #eee);
+        gap: 8px;
     }
 }
 
@@ -304,21 +304,196 @@ img, a {
     text-align: center;
 }
 
-/* Panel visibility on mobile */
+/* =============================================================================
+   4a. PWA Safe Area - Header Fix
+   ============================================================================= */
+
+/* PWA standalone mode - add safe area to header */
+@media (display-mode: standalone) {
+    .site-header {
+        padding-top: env(safe-area-inset-top, 0) !important;
+        height: calc(60px + env(safe-area-inset-top, 0)) !important;
+    }
+
+    /* Adjust content below header */
+    main.container-fluid {
+        padding-top: 0;
+    }
+}
+
+/* Also handle iOS Safari with viewport-fit=cover */
+@supports (padding-top: env(safe-area-inset-top)) {
+    @media (display-mode: standalone) {
+        .site-header {
+            padding-top: env(safe-area-inset-top) !important;
+        }
+    }
+}
+
+/* =============================================================================
+   4b. Mobile Layout - Tasks Page
+   ============================================================================= */
+
 @media (max-width: 900px) {
+    /* Override dashboard grid - single column, full height */
+    .tasks-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: unset !important;
+        grid-template-rows: unset !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Hide gradient separator */
+    .tasks-layout::before {
+        display: none;
+    }
+
     /* Hide both panels by default */
     .tasks-panel,
     .calendar-panel {
         display: none !important;
     }
 
-    /* Show active panel */
-    .tasks-panel.mobile-active,
+    /* Show active panel - full screen */
+    .tasks-panel.mobile-active {
+        display: flex !important;
+        flex-direction: column;
+        height: calc(100vh - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        overflow: hidden;
+        border-radius: 0;
+        border: none;
+    }
+
     .calendar-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 80px - 57px - env(safe-area-inset-bottom));
-        height: calc(var(--app-height, 100vh) - 80px - 57px - env(safe-area-inset-bottom));
+        height: calc(100vh - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        overflow: hidden;
+        border-radius: 0;
+        border: none;
+    }
+
+    /* PWA mode - account for safe area in header */
+    @media (display-mode: standalone) {
+        .tasks-panel.mobile-active,
+        .calendar-panel.mobile-active {
+            height: calc(100vh - 60px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        }
+    }
+
+    /* Task list container - scrollable with sticky header */
+    .task-list-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Task list header - sticky and simplified */
+    .task-list-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        /* Simplified grid: just title area, hide columns */
+        grid-template-columns: 1fr !important;
+        padding: 8px 12px !important;
+        background: var(--bg-panel);
+    }
+
+    /* Hide metadata column headers on mobile */
+    .header-meta,
+    .header-actions {
+        display: none !important;
+    }
+
+    /* Simplify header-task area */
+    .header-task {
+        margin-left: 0 !important;
+    }
+
+    /* Hide energy selector border on mobile */
+    .header-energy {
+        margin-left: 8px;
+        padding-left: 8px;
+        border-left: none;
+    }
+
+    /* Task item - simplified row without columns */
+    .task-item {
+        display: flex !important;
+        grid-template-columns: unset !important;
+        align-items: center;
+        padding: 10px 12px !important;
+        gap: 8px;
+        min-height: 44px; /* Touch target */
+        overflow: hidden;
+    }
+
+    /* Hide complete gutter on mobile (swipe replaces it) */
+    .task-item .complete-gutter {
+        display: none !important;
+    }
+
+    /* Task content - take full width */
+    .task-item .task-content {
+        flex: 1;
+        min-width: 0; /* Allow text truncation */
+    }
+
+    .task-item .task-text {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Hide metadata columns on mobile */
+    .task-item .task-meta {
+        display: none !important;
+    }
+
+    /* Hide actions column on mobile */
+    .task-item .task-actions {
+        display: none !important;
+    }
+
+    /* Show impact as colored dot instead */
+    .task-item::before {
+        content: "";
+        width: 4px;
+        height: 24px;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+
+    .task-item.impact-1::before { background: var(--impact-critical); }
+    .task-item.impact-2::before { background: var(--impact-high); }
+    .task-item.impact-3::before { background: var(--impact-medium); }
+    .task-item.impact-4::before { background: var(--impact-low, #94a3b8); }
+
+    /* Task due date - compact */
+    .task-due {
+        font-size: 0.65rem;
+        opacity: 0.7;
+    }
+
+    /* Add task row - full width */
+    .add-task-row {
+        padding: 12px !important;
+    }
+
+    /* Project groups - cleaner on mobile */
+    .project-group {
+        margin-bottom: 0;
+    }
+
+    .project-header {
+        padding: 10px 12px;
     }
 }
 
@@ -563,19 +738,9 @@ img, a {
         height: 60px;
     }
 
-    /* Adjust sticky positioning for mobile tabs */
-    .mobile-tabs {
-        top: 60px;
-    }
-
     /* Full-width container on mobile */
     .container-fluid {
-        padding: 0 12px;
-    }
-
-    /* Larger touch targets */
-    .task-item {
-        min-height: 52px;
+        padding: 0;
     }
 
     /* Hide desktop-only elements */
@@ -591,7 +756,6 @@ img, a {
     }
 
     .mobile-tabs {
-        top: 52px;
         padding: 6px 8px;
     }
 
@@ -599,8 +763,18 @@ img, a {
         height: 36px;
     }
 
-    .container-fluid {
-        padding: 0 8px;
+    /* Adjust panel height for smaller header */
+    .tasks-panel.mobile-active,
+    .calendar-panel.mobile-active {
+        height: calc(100vh - 52px - 49px - env(safe-area-inset-bottom, 0px));
+        height: calc(var(--app-height, 100vh) - 52px - 49px - env(safe-area-inset-bottom, 0px));
+    }
+
+    @media (display-mode: standalone) {
+        .tasks-panel.mobile-active,
+        .calendar-panel.mobile-active {
+            height: calc(100vh - 52px - 49px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        }
     }
 }
 
