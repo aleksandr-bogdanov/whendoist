@@ -234,6 +234,15 @@ img.brand-logo {
 .btn-logout svg {
     stroke: currentColor;
     stroke-width: 1.75;
+    display: block;
+    width: 18px;
+    height: 18px;
+}
+
+/* Force SVG visibility on mobile - iOS Safari fix */
+.btn-logout svg,
+.btn-logout svg use {
+    fill: none;
 }
 
 .btn-logout:hover {
@@ -247,7 +256,8 @@ img.brand-logo {
 
 @media (max-width: 900px) {
     .site-header {
-        min-height: 44px;  /* Use min-height so safe-area padding can expand it */
+        min-height: 48px;  /* Use min-height so safe-area padding can expand it */
+        padding-top: 4px;  /* Extra headroom for visual breathing room */
     }
 
     .header-inner {
@@ -301,6 +311,7 @@ img.brand-logo {
     .btn-logout svg {
         width: 14px;
         height: 14px;
+        stroke: var(--text-muted);
     }
 
     /* Hide hamburger menu - keep uniform topbar nav */
@@ -592,9 +603,17 @@ img.brand-logo {
     color: var(--text-secondary);
 }
 
+[data-theme="dark"] .btn-logout svg {
+    stroke: var(--text-secondary);
+}
+
 [data-theme="dark"] .btn-logout:hover {
     color: var(--text-primary);
     background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .btn-logout:hover svg {
+    stroke: var(--text-primary);
 }
 
 [data-theme="dark"] .mobile-nav {

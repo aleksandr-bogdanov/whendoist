@@ -1548,3 +1548,32 @@ input.add-domain-input::placeholder {
 [data-theme="dark"] .toggle-switch.enabled {
     background: var(--primary);
 }
+
+/* Dark mode icon buttons - explicit SVG stroke colors */
+[data-theme="dark"] .icon-btn {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .icon-btn svg {
+    stroke: var(--text-secondary);
+}
+
+[data-theme="dark"] .icon-btn:hover {
+    background: var(--bg-panel);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .icon-btn:hover svg {
+    stroke: var(--text-primary);
+}
+
+[data-theme="dark"] .icon-btn.edit:hover svg {
+    stroke: var(--primary);
+}
+
+[data-theme="dark"] .icon-btn.delete:hover svg {
+    stroke: var(--red-500);
+}

@@ -454,6 +454,39 @@
     animation: thought-pop-dark 600ms ease-out;
 }
 
+/* Dark mode icon buttons - explicit SVG stroke colors */
+[data-theme="dark"] .thoughts-page .icon-btn,
+[data-theme="dark"] .thought-actions .icon-btn {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .thoughts-page .icon-btn svg,
+[data-theme="dark"] .thought-actions .icon-btn svg {
+    stroke: var(--text-secondary);
+}
+
+[data-theme="dark"] .thoughts-page .icon-btn:hover,
+[data-theme="dark"] .thought-actions .icon-btn:hover {
+    background: var(--bg-panel);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .thoughts-page .icon-btn:hover svg,
+[data-theme="dark"] .thought-actions .icon-btn:hover svg {
+    stroke: var(--text-primary);
+}
+
+[data-theme="dark"] .icon-btn.promote:hover svg {
+    stroke: var(--primary);
+}
+
+[data-theme="dark"] .icon-btn.delete:hover svg {
+    stroke: var(--red-500);
+}
+
 /* =============================================================================
    Reduced Motion
    ============================================================================= */

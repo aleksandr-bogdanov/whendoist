@@ -36,6 +36,16 @@
     }
 }
 
+/* Prevent pinch-to-zoom on task list - critical for swipe gestures */
+.task-list-container,
+.task-list-scroll {
+    touch-action: pan-y;  /* Allow vertical scroll only, no pinch zoom */
+}
+
+.task-item {
+    touch-action: pan-x pan-y;  /* Allow single-finger pan, not pinch */
+}
+
 /* Disable iOS tap highlight */
 * {
     -webkit-tap-highlight-color: transparent;

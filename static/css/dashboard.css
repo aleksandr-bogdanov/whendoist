@@ -2880,7 +2880,7 @@ body.over-calendar .drag-ghost .task-text {
         left: 0;
         right: 0;
         top: 0;
-        color: var(--text-muted);
+        color: var(--text-secondary);  /* Use secondary for better dark mode visibility */
     }
     .header-duration::after { content: 'DUR'; }
     .header-impact::after { content: 'IMPCT'; }

@@ -26,6 +26,12 @@ class SwipeGestureHandler {
     }
 
     onTouchStart(e, element) {
+        // CRITICAL: Ignore multi-touch (pinch-to-zoom)
+        if (e.touches.length > 1) {
+            this.swipeDisabled = true;
+            return false;
+        }
+
         // Check for swipe-blocking containers
         const noSwipeParent = e.target.closest('[data-no-swipe], .overflow-x-auto, .heatmap-container, .stats-row');
         if (noSwipeParent) {
@@ -50,6 +56,12 @@ class SwipeGestureHandler {
 
     onTouchMove(e) {
         if (this.swipeDisabled) return { action: 'none' };
+
+        // Cancel if multi-touch detected (pinch-to-zoom)
+        if (e.touches.length > 1) {
+            this.swipeDisabled = true;
+            return { action: 'none' };
+        }
 
         const currentX = e.touches[0].clientX;
         const currentY = e.touches[0].clientY;
