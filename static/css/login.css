@@ -159,14 +159,15 @@ body:has(.login-page) .site-header {
     width: 56px;
     height: 20px;
     background: var(--bg-surface);
-    border: 1px solid rgba(109, 94, 246, 0.3);
+    border: 1px solid rgba(22, 123, 255, 0.4);
+    border-left: 3px solid rgba(22, 123, 255, 0.8); /* Match executable rail */
     border-radius: 5px;
-    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.15);
+    box-shadow: 0 2px 8px rgba(22, 123, 255, 0.2);
     opacity: 0;
     z-index: 10;
     pointer-events: none;
 
-    /* Position at task-3 (bottom task) */
+    /* Position at task-3 (bottom task, executable) */
     left: calc(50% - 118px);
     top: calc(50% + 14px);
 
@@ -251,7 +252,34 @@ body:has(.login-page) .site-header {
     border-radius: 5px;
     display: flex;
     align-items: center;
-    padding-left: 7px;
+    padding-left: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Clarity rail indicator (left edge) */
+.login-hero-task-rail {
+    width: 3px;
+    height: 100%;
+    flex-shrink: 0;
+    background: var(--border-default);
+}
+
+/* Clarity colors - matching app design system */
+.login-hero-task.clarity-exploratory .login-hero-task-rail {
+    background: rgba(160, 32, 192, 0.7); /* Purple - deep work */
+}
+
+.login-hero-task.clarity-defined .login-hero-task-rail {
+    background: rgba(109, 94, 246, 0.7); /* Primary - routine */
+}
+
+.login-hero-task.clarity-executable .login-hero-task-rail {
+    background: rgba(22, 123, 255, 0.8); /* Blue - actionable */
+}
+
+.login-hero-task .login-hero-checkbox {
+    margin-left: 5px;
 }
 
 .login-hero-task-2 { width: 52px; }

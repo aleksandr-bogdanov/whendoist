@@ -17,24 +17,19 @@
         <h1 class="thoughts-title">Thought Cabinet</h1>
         <p class="thoughts-subtitle">Quick capture for ideas, tasks, and notes</p>
 
-        <!-- Capture Card -->
-        <div class="capture-card">
-            <input type="text"
-                   id="quick-add-input"
-                   class="capture-input"
-                   placeholder="What's on your mind?"
-                   autocomplete="off"
-                   aria-label="Capture a thought">
-            <div class="capture-hint-row">
-                <span class="keycap">Enter</span>
-                <span>Capture</span>
-            </div>
-        </div>
-
-        <!-- Thoughts Panel -->
+        <!-- Thoughts Panel with slim bar capture -->
         <div class="thoughts-panel">
             <div class="thoughts-panel-header">
                 <span id="thought-count">{{ tasks|length if tasks else 0 }} Thoughts</span>
+            </div>
+            <div class="thoughts-capture-bar">
+                <input type="text"
+                       id="quick-add-input"
+                       class="thoughts-capture-input"
+                       placeholder="Capture a thought..."
+                       autocomplete="off"
+                       aria-label="Capture a thought">
+                <span class="thoughts-capture-hint">Enter</span>
             </div>
             <div class="thought-list" id="thought-list">
                 {% if tasks %}

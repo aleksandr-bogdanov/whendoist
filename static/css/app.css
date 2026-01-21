@@ -127,6 +127,17 @@ html, body {
     gap: 0;
 }
 
+/* Icon-only brand for header */
+.brand-icon {
+    align-items: center !important;
+}
+
+.brand-icon svg {
+    width: 32px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
 /* Legacy logo support (deprecated) */
 img.brand-logo {
     display: block;
@@ -242,6 +253,12 @@ img.brand-logo {
     img.brand-logo {
         height: 18px;
         width: auto;
+    }
+
+    /* Smaller icon on mobile */
+    .brand-icon svg {
+        width: 26px;
+        height: 23px;
     }
 
     /* Smaller wordmark on mobile */

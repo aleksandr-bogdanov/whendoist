@@ -11,8 +11,9 @@
         <h1 class="settings-title">Settings</h1>
 
         <div class="settings-grid">
-            <!-- LEFT COLUMN: Integrations + Calendars -->
-            <div class="settings-column">
+            <!-- CONNECTIONS Section -->
+            <section class="settings-section">
+                <h2 class="settings-section-label">Connections</h2>
 
                 <!-- INTEGRATIONS Panel -->
                 <div class="settings-panel">
@@ -151,11 +152,11 @@
                         {% endif %}
                     </div>
                 </div>
+            </section>
 
-            </div>
-
-            <!-- RIGHT COLUMN: Domains + Maintenance -->
-            <div class="settings-column">
+            <!-- DATA Section -->
+            <section class="settings-section">
+                <h2 class="settings-section-label">Data</h2>
 
                 <!-- LIFE DOMAINS Panel -->
                 <div class="settings-panel">
@@ -247,6 +248,11 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <!-- SECURITY Section -->
+            <section class="settings-section">
+                <h2 class="settings-section-label">Security</h2>
 
                 <!-- SECURITY Panel -->
                 <div class="settings-panel">
@@ -407,6 +413,11 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <!-- ACCOUNT Section (Danger Zone) -->
+            <section class="settings-section settings-section--danger">
+                <h2 class="settings-section-label">Account</h2>
 
                 <!-- SETUP Panel -->
                 <div class="settings-panel">
@@ -457,9 +468,7 @@
                         </div>
                     </div>
                 </div>
-
-
-            </div>
+            </section>
         </div>
 
         <!-- Settings Footer - spans full width -->

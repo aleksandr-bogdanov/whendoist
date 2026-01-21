@@ -58,15 +58,15 @@
 }
 
 .settings-section-label {
-    font-size: 0.72rem;
+    font-size: 0.8125rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-secondary);
-    padding-left: 4px;
+    letter-spacing: 0.10em;
+    color: var(--text-primary);
+    padding-left: 12px;
     border-left: 3px solid var(--primary);
-    padding-left: calc(4px + 8px);
-    margin-left: -3px;
+    margin-left: 0;
+    margin-bottom: 4px;
 }
 
 /* =============================================================================

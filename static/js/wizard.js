@@ -250,12 +250,8 @@ class WhenWizard {
     }
 
     canProceed() {
-        switch (this.state.currentStep) {
-            case 6: // Domains - require at least one
-                return this.state.data.domains.length > 0;
-            default:
-                return true;
-        }
+        // All steps are optional - users can skip or proceed
+        return true;
     }
 
     transitionTo(step, direction) {
@@ -484,11 +480,17 @@ class WhenWizard {
                 }
                 break;
             case 6:
-                const canContinue = this.state.data.domains.length > 0;
-                navHTML = `
-                    <button class="wizard-btn-secondary" onclick="wizard.goBack()">Back</button>
-                    <button class="wizard-btn-primary" onclick="wizard.goForward()" ${canContinue ? '' : 'disabled'}>Continue</button>
-                `;
+                if (this.state.data.domains.length > 0) {
+                    navHTML = `
+                        <button class="wizard-btn-secondary" onclick="wizard.goBack()">Back</button>
+                        <button class="wizard-btn-primary" onclick="wizard.goForward()">Continue</button>
+                    `;
+                } else {
+                    navHTML = `
+                        <button class="wizard-btn-secondary" onclick="wizard.goBack()">Back</button>
+                        <button class="wizard-btn-secondary" onclick="wizard.skipStep()">Skip</button>
+                    `;
+                }
                 break;
             case 7:
                 // Button is now in the content area, nav is hidden
@@ -511,8 +513,13 @@ class WhenWizard {
         return `
             <div class="wizard-step-content wizard-step-welcome">
                 <div class="wizard-welcome-hero">
-                    <div class="wizard-welcome-logo">
-                        <img src="/static/img/logo.png" alt="Whendoist">
+                    <div class="wm lg" aria-label="Whendoist">
+                        <svg viewBox="38 40 180 160" aria-hidden="true">
+                            <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                            <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                            <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                        </svg>
+                        <span>hendoist</span>
                     </div>
                 </div>
 

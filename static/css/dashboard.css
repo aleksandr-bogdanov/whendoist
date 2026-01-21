@@ -4,6 +4,83 @@
  */
 
 /* =============================================================================
+   Energy Selector - In Panel Header (Option B)
+   ============================================================================= */
+
+.header-energy {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 16px;
+    padding-left: 16px;
+    border-left: 1px solid var(--border-subtle);
+}
+
+.header-energy__label {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.header-energy__pills {
+    display: flex;
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: 5px;
+    padding: 1px;
+}
+
+.header-energy .energy-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 20px;
+    padding: 0;
+    margin: 0 !important; /* Override PICO */
+    border: none;
+    border-radius: 4px;
+    background: var(--bg-surface);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.header-energy .energy-pill:hover {
+    background: var(--bg-panel);
+}
+
+.header-energy .energy-pill.active {
+    background: var(--primary);
+    box-shadow: 0 1px 2px rgba(109, 94, 246, 0.3);
+}
+
+/* Dark mode for energy selector */
+[data-theme="dark"] .header-energy {
+    border-left-color: var(--border-default);
+}
+
+[data-theme="dark"] .header-energy__pills {
+    background: var(--border-default);
+    border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .header-energy .energy-pill {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .header-energy .energy-pill:hover {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .header-energy .energy-pill.active {
+    background: var(--primary);
+}
+
+/* =============================================================================
    Layout
    ============================================================================= */
 
@@ -1346,7 +1423,7 @@
 
 .task-text {
     font-size: 0.85rem;
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;

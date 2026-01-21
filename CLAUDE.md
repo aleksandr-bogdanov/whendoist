@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.9.4 (Design System Infrastructure)
+**Current Version:** v0.9.6 (Documentation Cleanup)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -126,57 +126,16 @@ When implementing the W icon + "hendoist" wordmark, use EXACT specs from the tab
 
 ## Design System Overview
 
-### Design System Transition (v0.9.3 → v1.0)
+### Design Documentation
 
-**IMPORTANT:** The codebase is transitioning from legacy tokens to a new unified token system.
+| Document | Purpose |
+|----------|---------|
+| **[BRAND.md](BRAND.md)** | Brand identity, wordmark, colors, typography |
+| **[docs/brand/COLOR-SYSTEM.md](docs/brand/COLOR-SYSTEM.md)** | Complete color palette (107 tokens) |
+| **[docs/brand/UI-KIT.md](docs/brand/UI-KIT.md)** | Button, form, panel specifications |
+| **[docs/brand/PRESS-KIT.md](docs/brand/PRESS-KIT.md)** | Media resources, logos, screenshots |
 
-### Which Document to Use
-
-| Task | Document |
-|------|----------|
-| Understanding current behavior | **DESIGN.md** (legacy) |
-| Implementing new features (v1.0+) | **docs/DESIGN-IMPLEMENTATION-PLAN.md** |
-| Looking up color values | **docs/brand/COLOR-SYSTEM.md** |
-| Button/form/panel specs | **docs/brand/UI-KIT.md** |
-| Brand identity (wordmark, logos) | **BRAND.md** |
-
-### Document Status
-
-| Document | Purpose | Status |
-|----------|---------|--------|
-| **docs/DESIGN-IMPLEMENTATION-PLAN.md** | Complete v1.0 migration roadmap | **PRIMARY REFERENCE** |
-| **DESIGN.md** | Documents CURRENT (legacy) implementation | **DEPRECATED** after v1.0 |
-| **docs/brand/UI-KIT.md** | Component specifications | Complete |
-| **docs/brand/COLOR-SYSTEM.md** | Complete color palette (107 tokens) | Complete |
-| **BRAND.md** | Brand identity, wordmark, colors, typography | Complete |
-
-### Implementation Phases (v1.0 Target)
-
-| Phase | Description | Key Deliverables |
-|-------|-------------|------------------|
-| **Phase 1** | Foundation | `tokens.css` — single source of truth for all design tokens |
-| **Phase 2** | Components | `components/*.css` — buttons, forms, panels, typography |
-| **Phase 3** | Page Redesigns | Extract inline CSS from Tasks, Thoughts, Analytics, Settings |
-| **Phase 4** | Dark Mode | Theme toggle, `[data-theme="dark"]`, ApexCharts theming |
-| **Phase 5** | Polish | Icons, illustrations, accessibility audit, testing |
-
-### Key Sections in Implementation Plan
-
-The implementation plan (`docs/DESIGN-IMPLEMENTATION-PLAN.md`) contains:
-
-- **CSS Import Order** — Critical: Pico → tokens → base → components → app → page
-- **Component Migration Priority** — tokens → buttons → forms → panels → typography
-- **Visual Regression Testing** — Baseline capture and comparison scripts
-- **CSS Error Boundaries** — Graceful fallback if tokens.css fails
-- **Animation Keyframes** — Complete set (spin, shimmer, toast, modal, dropdown)
-- **Print Styles** — Analytics and task list printing
-- **Template Update Sequence** — Order for migrating templates without breaking
-- **CSS Bundling Strategy** — Keep separate for v1.0, bundle post-v1.0
-- **Mobile-First Patterns** — Breakpoints, touch targets, safe areas, keyboard handling
-- **Accessibility Requirements** — WCAG AA, focus indicators, keyboard navigation, ARIA
-- **Migration Rollback Plan** — Per-phase rollback procedures if issues arise
-- **Icon/Illustration Integration** — SVG sprite usage, per-page asset mapping
-- **ApexCharts Theme** — Complete chart theming config for Analytics
+**Note:** Historical planning docs are archived in `docs/archive/` for reference.
 
 ### Token Migration Map
 
@@ -760,21 +719,19 @@ Contract tests in `tests/test_hotfix_wizard_bugs.py` verify:
 
 ## Files to Read First
 
-### Design System (v1.0 Migration)
-1. `docs/DESIGN-IMPLEMENTATION-PLAN.md` — **PRIMARY**: Complete v1.0 migration roadmap
-2. `BRAND.md` — Brand identity, wordmark, colors, typography
-3. `docs/brand/COLOR-SYSTEM.md` — Complete color palette (107 tokens)
-4. `docs/brand/UI-KIT.md` — Component specifications (buttons, forms, panels)
-5. `DESIGN.md` — LEGACY: Current implementation (deprecated after v1.0)
+### Design System
+1. `BRAND.md` — Brand identity, wordmark, colors, typography
+2. `docs/brand/COLOR-SYSTEM.md` — Complete color palette (107 tokens)
+3. `docs/brand/UI-KIT.md` — Component specifications (buttons, forms, panels)
 
 ### Code Understanding
-6. `CHANGELOG.md` — Version history and changes
-7. `tests/README.md` — Test architecture and how to write tests
-8. `static/css/app.css` — Design tokens (first 120 lines)
-9. `static/css/wizard.css` — Reference implementation of new design patterns
-10. `static/js/crypto.js` — Client-side encryption library
-11. `app/templates/dashboard.html` — Tasks page template
-12. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
+4. `CHANGELOG.md` — Version history and changes
+5. `tests/README.md` — Test architecture and how to write tests
+6. `static/css/app.css` — Design tokens (first 120 lines)
+7. `static/css/wizard.css` — Reference implementation of new design patterns
+8. `static/js/crypto.js` — Client-side encryption library
+9. `app/templates/dashboard.html` — Tasks page template
+10. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
 
 ## Known Issues
 
@@ -782,32 +739,8 @@ None currently tracked.
 
 ## Next Up (v1.0)
 
-### Design System Overhaul
-
-The v1.0 release centers on implementing the new design system documented in `docs/DESIGN-IMPLEMENTATION-PLAN.md`.
-
-| Phase | Goal | Key Deliverables |
-|-------|------|------------------|
-| **Phase 1** | Foundation | `tokens.css` with all design tokens, legacy aliases |
-| **Phase 2** | Components | `components/*.css` — buttons, forms, panels, typography |
-| **Phase 3** | Page Redesigns | Extract inline CSS; Tasks, Thoughts, Analytics, Settings |
-| **Phase 4** | Dark Mode | Theme toggle, `[data-theme="dark"]`, ApexCharts theming |
-| **Phase 5** | Polish | Icon sprite integration, empty state illustrations, accessibility audit |
-
-**Implementation Plan Highlights:**
-- CSS Import Order (critical for specificity)
-- Visual regression testing with Playwright
-- Pico CSS override strategy
-- Component migration priority
-- Template update sequence to avoid broken states
-- CSS error boundaries for graceful degradation
-- Print styles for analytics/task lists
-
-**Phase Completion Criteria** are documented in the implementation plan. Each phase must pass all criteria before proceeding.
-
-**Rollback procedures** are available per-phase if issues arise during migration.
-
-### Other Features
+### Planned Features
+- Design system overhaul with dark mode support
 - Time blocking templates
 - Key rotation (change passphrase without re-encrypting all data)
 - Recovery key generation during encryption setup

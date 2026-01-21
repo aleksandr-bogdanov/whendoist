@@ -980,3 +980,9 @@ async def terms(request: Request):
 async def privacy(request: Request):
     """Privacy Policy - redirects to terms page with anchor."""
     return RedirectResponse(url="/terms#privacy", status_code=302)
+
+
+@router.get("/showcase", response_class=HTMLResponse)
+async def showcase(request: Request):
+    """UI Component Showcase - for design review."""
+    return templates.TemplateResponse("showcase.html", {"request": request})

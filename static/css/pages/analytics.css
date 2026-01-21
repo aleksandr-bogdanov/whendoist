@@ -83,7 +83,7 @@
 /* Grid layouts */
 .stats-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
     margin-bottom: 20px;
 }
@@ -123,16 +123,28 @@
     min-height: 110px;
 }
 
-/* Hero stat - larger, centered (for Completed) */
+/* Hero stat - full width, prominent (for Completed) */
 .stat-card.hero {
-    grid-column: span 2;
-    padding: 32px;
-    min-height: 140px;
-    background: linear-gradient(180deg, rgba(109, 94, 246, 0.02) 0%, transparent 100%), var(--bg-surface);
+    grid-column: 1 / -1;
+    padding: 24px 32px;
+    min-height: auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 16px;
+    background: linear-gradient(90deg, rgba(109, 94, 246, 0.04) 0%, transparent 50%), var(--bg-surface);
 }
 
 .stat-card.hero .stat-value {
-    font-size: 4rem;
+    font-size: 3rem;
+}
+
+.stat-card.hero .stat-label {
+    margin-top: 0;
+}
+
+.stat-card.hero .stat-change {
+    margin-top: 0;
+    margin-left: auto;
 }
 
 .analytics-page .stat-value {
@@ -420,7 +432,7 @@
 /* Mobile responsive */
 @media (max-width: 1000px) {
     .stats-row {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
     .charts-row {
         grid-template-columns: 1fr;
@@ -433,6 +445,20 @@
     }
 }
 
+@media (max-width: 768px) {
+    .stats-row {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    .stat-card.hero {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+    .stat-card.hero .stat-change {
+        margin-left: 0;
+    }
+}
+
 @media (max-width: 600px) {
     .analytics-page {
         padding: 12px;
@@ -442,8 +468,14 @@
         border-radius: var(--radius-md);
     }
     .stats-row {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         gap: 12px;
+    }
+    .stat-card.hero {
+        padding: 20px;
+    }
+    .stat-card.hero .stat-value {
+        font-size: 2.5rem;
     }
     .analytics-page .stat-value {
         font-size: 1.75rem;

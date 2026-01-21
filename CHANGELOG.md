@@ -16,6 +16,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.6] - 2026-01-21
+
+### Summary
+**Documentation Cleanup** — Consolidated scattered documentation, archived planning docs, updated README as central hub.
+
+### Changed
+
+- **README.md** — Added Documentation section with links to all permanent docs
+- **CLAUDE.md** — Simplified design system references, removed deprecated doc pointers
+
+### Removed
+
+- **DESIGN.md** — Legacy file, superseded by `docs/brand/*`
+- **5 planning docs** — Moved to `docs/archive/` (DESIGN-IMPLEMENTATION-PLAN, DESIGN-REVAMP-PLAN, IMPLEMENTATION-PROMPT, VISUAL-REDESIGN-PLAN, VISUAL-REDESIGN-STRUCTURAL)
+
+### Added
+
+- **docs/archive/** — New folder for historical planning documents with README index
+
+---
+
+## [0.9.5] - 2026-01-21
+
+### Summary
+**Visual Polish** — CSS refinements, template cleanup, improved hover states and transitions.
+
+---
+
 ## [0.9.4] - 2026-01-21
 
 ### Summary

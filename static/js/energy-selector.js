@@ -13,8 +13,7 @@
  *   body[data-energy-level="1"] .task-item[data-clarity="defined"] { display: none }
  *   body[data-energy-level="2"] .task-item[data-clarity="exploratory"] { display: none }
  *
- * Supports both header energy selector and inline task list energy selector.
- * Both selectors stay in sync.
+ * Uses panel header energy selector (.header-energy) with compact pill buttons.
  *
  * Note: Not persisted - resets to Normal (level 2) on page load.
  *
@@ -29,13 +28,13 @@
 
     /**
      * Initialize energy selector.
-     * Attaches click handlers to energy pills in task list header.
+     * Attaches click handlers to energy pills in panel header.
      */
     function init() {
-        // Attach handlers to inline energy selector (in task list header)
-        const inlineEnergy = document.getElementById('header-energy-inline');
-        if (inlineEnergy) {
-            attachPillHandlers(inlineEnergy, '.energy-pill-inline');
+        // Attach handlers to panel header energy selector
+        const headerEnergy = document.getElementById('header-energy');
+        if (headerEnergy) {
+            attachPillHandlers(headerEnergy, '.energy-pill');
         }
 
         // Apply initial state
@@ -66,13 +65,16 @@
     function setEnergy(level) {
         currentEnergy = level;
 
-        // Update energy pill states
-        document.querySelectorAll('.energy-pill-inline').forEach(pill => {
-            const pillLevel = parseInt(pill.dataset.energy, 10);
-            const isActive = pillLevel === level;
-            pill.classList.toggle('active', isActive);
-            pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        });
+        // Update energy pill states in panel header
+        const headerEnergy = document.getElementById('header-energy');
+        if (headerEnergy) {
+            headerEnergy.querySelectorAll('.energy-pill').forEach(pill => {
+                const pillLevel = parseInt(pill.dataset.energy, 10);
+                const isActive = pillLevel === level;
+                pill.classList.toggle('active', isActive);
+                pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        }
 
         // Apply filter (CSS-based visibility only)
         applyEnergyFilter();

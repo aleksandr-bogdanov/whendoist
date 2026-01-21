@@ -297,7 +297,19 @@ static/
 └── img/              # Logo and favicons
 ```
 
-See `DESIGN.md` for full design system documentation.
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Brand Guidelines](BRAND.md) | Wordmark, colors, typography, design principles |
+| [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette (107 tokens) |
+| [UI Components](docs/brand/UI-KIT.md) | Button, form, panel specifications |
+| [Press Kit](docs/brand/PRESS-KIT.md) | Media resources, logos, screenshots |
+| [Icon System](static/img/icons/README.md) | 107 icons across 3 tiers |
+| [Test Architecture](tests/README.md) | Unit, contract, and E2E testing |
+| [Changelog](CHANGELOG.md) | Version history and release notes |
 
 ---
 

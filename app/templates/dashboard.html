@@ -21,17 +21,17 @@
         <div class="task-list-container">
             <!-- Column Headers (sticky, sortable) -->
             <div class="task-list-header">
-                <!-- Energy selector - positioned absolutely, centered between TASK and DURATION -->
-                <div class="header-energy-inline" id="header-energy-inline">
-                    <span class="energy-label">Energy</span>
-                    <div class="energy-chips">
-                        <button type="button" data-energy="1" class="energy-pill-inline" aria-pressed="false" title="Zombie: executable only">🧟</button>
-                        <button type="button" data-energy="2" class="energy-pill-inline active" aria-pressed="true" title="Normal: executable + defined">☕</button>
-                        <button type="button" data-energy="3" class="energy-pill-inline" aria-pressed="false" title="Focus: all tasks">🧠</button>
-                    </div>
-                </div>
                 <span class="header-task">
-                    <span class="header-task-label" id="header-task-label">Task</span>
+                    <span class="header-task-label" id="header-task-label">Tasks</span>
+                    <!-- Energy Selector (Option B: in panel header) -->
+                    <div class="header-energy" id="header-energy">
+                        <span class="header-energy__label">Energy</span>
+                        <div class="header-energy__pills">
+                            <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie: executable only">🧟</button>
+                            <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal: executable + defined">☕</button>
+                            <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus: all tasks">🧠</button>
+                        </div>
+                    </div>
                     <button type="button" class="header-back-btn" id="header-back-btn" hidden>
                         <svg class="icon icon-sm back-arrow" aria-hidden="true">
                             <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-left"></use>
