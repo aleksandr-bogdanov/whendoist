@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.middleware.csrf import get_csrf_token
 from app.models import (
     GoogleCalendarSelection,
     GoogleToken,
@@ -70,6 +71,18 @@ router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
 
 
+def render_template(request: Request, template_name: str, context: dict) -> HTMLResponse:
+    """
+    Render a template with CSRF token automatically included.
+
+    This wrapper ensures all templates have access to the csrf_token variable.
+    """
+    # Add CSRF token to context (from middleware-populated session)
+    context["csrf_token"] = get_csrf_token(request)
+    context["request"] = request
+    return templates.TemplateResponse(template_name, context)
+
+
 # -----------------------------------------------------------------------------
 # Routes
 # -----------------------------------------------------------------------------
@@ -88,7 +101,7 @@ async def index(
             return RedirectResponse(url="/dashboard", status_code=303)
         # Wizard done → normal flow to thoughts
         return RedirectResponse(url="/thoughts", status_code=303)
-    return templates.TemplateResponse("login.html", {"request": request})
+    return render_template(request, "login.html", {})
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
@@ -329,10 +342,10 @@ async def dashboard(
     # Check if wizard should be shown
     show_wizard = not user.wizard_completed
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "dashboard.html",
         {
-            "request": request,
             "user": user,
             "google_connected": google_token is not None,
             "domains_with_tasks": domains_with_tasks,
@@ -396,10 +409,10 @@ async def task_list_partial(
 
     domains_with_tasks = group_tasks_by_domain(tasks, domains, next_instances, today_instance_completions, user_prefs)
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "_task_list.html",
         {
-            "request": request,
             "domains_with_tasks": domains_with_tasks,
         },
     )
@@ -444,10 +457,10 @@ async def deleted_tasks_partial(
     # Get encryption context
     encryption_ctx = await get_encryption_context(db, user.id)
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "_deleted_tasks.html",
         {
-            "request": request,
             "domains_with_tasks": deleted_domains_with_tasks,
             "total_count": len(deleted_tasks),
             "encryption_enabled": encryption_ctx["encryption_enabled"],
@@ -497,10 +510,10 @@ async def scheduled_tasks_partial(
     # Get encryption context
     encryption_ctx = await get_encryption_context(db, user.id)
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "_scheduled_tasks.html",
         {
-            "request": request,
             "domains_with_tasks": scheduled_domains_with_tasks,
             "total_count": len(scheduled_tasks),
             "encryption_enabled": encryption_ctx["encryption_enabled"],
@@ -547,10 +560,10 @@ async def completed_tasks_partial(
     # Get encryption context
     encryption_ctx = await get_encryption_context(db, user.id)
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "_completed_tasks.html",
         {
-            "request": request,
             "domains_with_tasks": completed_domains_with_tasks,
             "total_count": len(completed_tasks),
             "encryption_enabled": encryption_ctx["encryption_enabled"],
@@ -580,10 +593,10 @@ async def thoughts(
     # Get encryption context for base template
     encryption_ctx = await get_encryption_context(db, user.id)
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "thoughts.html",
         {
-            "request": request,
             "user": user,
             "tasks": task_items,
             **encryption_ctx,
@@ -665,10 +678,10 @@ async def settings(
     )
     user_passkeys = list(passkeys_result.scalars().all())
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "settings.html",
         {
-            "request": request,
             "user": user,
             "domains": domains,
             "domain_task_counts": domain_task_counts,
@@ -712,10 +725,10 @@ async def analytics(
     # Get encryption context for base template
     encryption_ctx = await get_encryption_context(db, user.id)
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "analytics.html",
         {
-            "request": request,
             "user": user,
             "days": days,
             "start_date": start_date,
@@ -735,7 +748,7 @@ async def analytics(
 @router.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
     """Terms of Service page."""
-    return templates.TemplateResponse("terms.html", {"request": request})
+    return render_template(request, "terms.html", {})
 
 
 @router.get("/privacy", response_class=HTMLResponse)
@@ -747,4 +760,4 @@ async def privacy(request: Request):
 @router.get("/showcase", response_class=HTMLResponse)
 async def showcase(request: Request):
     """UI Component Showcase - for design review."""
-    return templates.TemplateResponse("showcase.html", {"request": request})
+    return render_template(request, "showcase.html", {})

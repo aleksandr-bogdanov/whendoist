@@ -1054,7 +1054,7 @@
 
                 const response = await fetch(`/api/tasks/${state.taskId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(payload),
                 });
 
@@ -1352,7 +1352,7 @@
         try {
             const response = await fetch(`/api/tasks/${task.taskId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     scheduled_date: day,
                     scheduled_time: scheduledTime,

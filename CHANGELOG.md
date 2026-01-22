@@ -15,6 +15,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.24.0] - 2026-01-22
+
+### Summary
+**Security Hardening** — CSRF protection, standardized error handling, and code cleanup.
+
+### Added
+
+- **CSRF Protection** — Cross-Site Request Forgery prevention:
+  - `CSRFMiddleware` validates tokens on POST/PUT/DELETE/PATCH requests
+  - Synchronizer Token Pattern with cryptographically secure tokens
+  - OAuth callbacks exempt (use their own state protection)
+  - `getCSRFToken()` and `getCSRFHeaders()` JS helpers
+  - Meta tag in base.html for JavaScript access
+
+- **Standardized Error Handler** — `static/js/error-handler.js`:
+  - `handleError(error, userMessage)` for consistent error handling
+  - `getCSRFHeaders()` to include CSRF token in fetch requests
+  - `safeFetch()` wrapper with automatic CSRF and error handling
+
+- **IMPACT_COLORS Constant** — Centralized color palette:
+  - Added `IMPACT_COLORS` dict to `app/constants.py`
+  - Added `color` property to `Impact` enum
+  - Analytics service now uses constants instead of hardcoded values
+
+- **CSRF Tests** — `tests/test_csrf.py`:
+  - Token generation security tests
+  - Protected methods validation
+  - Exempt paths verification
+  - JavaScript integration tests
+
+### Changed
+
+- All fetch() calls updated to include CSRF headers
+- Files updated: settings.html, task-dialog.js, task-complete.js, drag-drop.js,
+  plan-tasks.js, wizard.js, passkey.js, task-swipe.js, mobile-sheet.js, task-list-options.js
+
+### Removed
+
+- Unused CSP nonce generation in `app/middleware/security.py`
+  (was generating nonce but never using it)
+
+---
+
 ## [0.19.0] - 2026-01-22
 
 ### Summary

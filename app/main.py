@@ -13,6 +13,7 @@ from app import __version__
 from app.config import get_settings
 from app.logging_config import setup_logging
 from app.metrics import PrometheusMiddleware, get_metrics
+from app.middleware.csrf import CSRFMiddleware
 from app.middleware.rate_limit import limiter
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
@@ -148,6 +149,9 @@ app.add_middleware(
     same_site="lax",
     https_only=is_production,
 )
+
+# CSRF protection middleware (must be after SessionMiddleware)
+app.add_middleware(CSRFMiddleware)
 
 
 # Global exception handler for unexpected errors only

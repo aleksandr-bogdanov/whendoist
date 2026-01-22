@@ -365,7 +365,7 @@ class TaskActionSheet {
         try {
             const response = await fetch(`/api/tasks/${taskId}`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' }
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             });
 
             if (response.ok) {

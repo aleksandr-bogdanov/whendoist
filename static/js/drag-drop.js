@@ -469,6 +469,7 @@
         try {
             const response = await fetch(`/api/tasks/${taskId}`, {
                 method: 'DELETE',
+                headers: window.getCSRFHeaders(),
             });
 
             if (response.ok) {
@@ -631,7 +632,7 @@
             try {
                 const response = await fetch(`/api/tasks/${taskId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({
                         scheduled_date: null,
                         scheduled_time: null,
@@ -799,7 +800,7 @@
         try {
             const response = await fetch(`/api/tasks/${taskId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     scheduled_date: scheduledDate,
                     scheduled_time: scheduledTime,
@@ -1089,7 +1090,7 @@
         try {
             const response = await fetch(`/api/tasks/${taskId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     scheduled_date: day,
                     scheduled_time: null,

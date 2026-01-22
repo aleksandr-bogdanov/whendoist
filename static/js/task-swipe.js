@@ -260,7 +260,10 @@ class TaskSwipeHandler {
                     ? `/api/tasks/${taskId}/uncomplete`
                     : `/api/tasks/${taskId}/complete`;
 
-                const response = await fetch(endpoint, { method: 'POST' });
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: window.getCSRFHeaders(),
+                });
 
                 if (response.ok) {
                     // Reload task list
@@ -330,7 +333,7 @@ class TaskSwipeHandler {
             try {
                 const response = await fetch(`/api/tasks/${taskId}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 });
 
                 if (response.ok) {

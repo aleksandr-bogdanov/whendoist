@@ -625,7 +625,7 @@ async function disconnectTodoist() {
     try {
         const response = await fetch('/auth/todoist/disconnect', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
         });
 
         if (response.ok) {
@@ -652,8 +652,8 @@ async function addDomain() {
 
         const response = await fetch('/api/domains', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: encryptedName, icon: icon || null })
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ name: encryptedName, icon: icon || null }),
         });
         if (response.ok) {
             window.location.reload();
@@ -706,8 +706,8 @@ async function saveDomainEdit(e) {
 
         const response = await fetch(`/api/domains/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: encryptedName, icon: icon || null })
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ name: encryptedName, icon: icon || null }),
         });
         if (response.ok) {
             window.location.reload();
@@ -725,7 +725,8 @@ async function deleteDomain(id) {
 
     try {
         const response = await fetch(`/api/domains/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: window.getCSRFHeaders(),
         });
         if (response.ok) {
             window.location.reload();
@@ -857,11 +858,11 @@ async function executeImport() {
     try {
         const response = await fetch('/api/import/todoist', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({
                 include_completed: includeCompleted,
-                skip_existing: true
-            })
+                skip_existing: true,
+            }),
         });
 
         const data = await response.json();
@@ -916,8 +917,8 @@ async function executeImport() {
                     if (encrypted.tasks.length > 0) {
                         const taskResp = await fetch('/api/tasks/batch-update', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ tasks: encrypted.tasks })
+                            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                            body: JSON.stringify({ tasks: encrypted.tasks }),
                         });
                         if (!taskResp.ok) {
                             const err = await taskResp.json().catch(() => ({}));
@@ -929,8 +930,8 @@ async function executeImport() {
                     if (encrypted.domains.length > 0) {
                         const domainResp = await fetch('/api/domains/batch-update', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ domains: encrypted.domains })
+                            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                            body: JSON.stringify({ domains: encrypted.domains }),
                         });
                         if (!domainResp.ok) {
                             const err = await domainResp.json().catch(() => ({}));
@@ -980,7 +981,7 @@ async function wipeAllData() {
     try {
         const response = await fetch('/api/import/wipe', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
         });
 
         const data = await response.json();
@@ -1071,7 +1072,8 @@ async function importBackup(input) {
 
         const response = await fetch('/api/backup/import', {
             method: 'POST',
-            body: formData
+            headers: window.getCSRFHeaders(),
+            body: formData,
         });
 
         const data = await response.json();
@@ -1156,8 +1158,8 @@ async function setTaskClarity(taskId, clarity) {
     try {
         const response = await fetch(`/api/tasks/${taskId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ clarity })
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ clarity }),
         });
 
         if (response.ok) {
@@ -1195,8 +1197,8 @@ async function updatePreference(key, value) {
     try {
         const response = await fetch('/api/preferences', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ [key]: value })
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ [key]: value }),
         });
 
         if (!response.ok) {
@@ -1290,8 +1292,8 @@ async function setupEncryption() {
         if (encrypted.tasks.length > 0) {
             const taskResponse = await fetch('/api/tasks/batch-update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tasks: encrypted.tasks })
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ tasks: encrypted.tasks }),
             });
             if (!taskResponse.ok) {
                 throw new Error('Failed to save encrypted tasks');
@@ -1302,8 +1304,8 @@ async function setupEncryption() {
         if (encrypted.domains.length > 0) {
             const domainResponse = await fetch('/api/domains/batch-update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domains: encrypted.domains })
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ domains: encrypted.domains }),
             });
             if (!domainResponse.ok) {
                 throw new Error('Failed to save encrypted domains');
@@ -1313,8 +1315,8 @@ async function setupEncryption() {
         // Enable encryption on server
         const response = await fetch('/api/preferences/encryption/setup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ salt, test_value: testValue, version })
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ salt, test_value: testValue, version }),
         });
 
         if (response.ok) {
@@ -1367,8 +1369,8 @@ async function disableEncryption() {
         if (decrypted.tasks.length > 0) {
             const taskResponse = await fetch('/api/tasks/batch-update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tasks: decrypted.tasks })
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ tasks: decrypted.tasks }),
             });
             if (!taskResponse.ok) {
                 throw new Error('Failed to save decrypted tasks');
@@ -1378,8 +1380,8 @@ async function disableEncryption() {
         if (decrypted.domains.length > 0) {
             const domainResponse = await fetch('/api/domains/batch-update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domains: decrypted.domains })
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ domains: decrypted.domains }),
             });
             if (!domainResponse.ok) {
                 throw new Error('Failed to save decrypted domains');
@@ -1389,7 +1391,7 @@ async function disableEncryption() {
         // Disable encryption on server
         const response = await fetch('/api/preferences/encryption/disable', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
         });
 
         if (response.ok) {
@@ -1527,7 +1529,8 @@ async function deletePasskey(passkeyId, passkeyName) {
     try {
         const response = await fetch(`/api/passkeys/${passkeyId}`, {
             method: 'DELETE',
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            headers: window.getCSRFHeaders(),
         });
 
         if (response.ok) {
@@ -1553,7 +1556,8 @@ async function rerunWizard() {
     try {
         const response = await fetch('/api/wizard/reset', {
             method: 'POST',
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            headers: window.getCSRFHeaders(),
         });
 
         if (response.ok) {

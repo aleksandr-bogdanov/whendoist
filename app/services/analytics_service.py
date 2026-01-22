@@ -16,6 +16,7 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import Date, cast, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import IMPACT_COLORS, IMPACT_LABELS
 from app.models import Domain, Task, TaskInstance
 from app.utils.timing import log_timing
 
@@ -252,15 +253,12 @@ class AnalyticsService:
             if impact in impact_counts:
                 impact_counts[impact] += 1
 
-        labels = {1: "Critical", 2: "High", 3: "Medium", 4: "Low"}
-        colors = {1: "#dc2626", 2: "#f97316", 3: "#eab308", 4: "#22c55e"}
-
         return [
             {
                 "impact": i,
-                "label": labels[i],
+                "label": IMPACT_LABELS[i],
                 "count": impact_counts[i],
-                "color": colors[i],
+                "color": IMPACT_COLORS[i],
             }
             for i in [1, 2, 3, 4]
         ]

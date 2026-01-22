@@ -8,8 +8,6 @@ Adds essential security headers to all responses:
 - Referrer-Policy: Controls referrer information leakage
 """
 
-import secrets
-
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -20,10 +18,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next) -> Response:
         response = await call_next(request)
-
-        # Generate nonce for inline scripts (not used yet, prepared for future CSP tightening)
-        nonce = secrets.token_urlsafe(16)
-        request.state.csp_nonce = nonce
 
         # Content Security Policy
         # Note: 'unsafe-inline' is required for Pico CSS and some inline styles

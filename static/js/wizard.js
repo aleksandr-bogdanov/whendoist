@@ -322,7 +322,7 @@ class WhenWizard {
             // Mark wizard as complete
             await fetch('/api/wizard/complete', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             });
         } catch (e) {
             console.error('Failed to complete wizard:', e);
@@ -342,10 +342,10 @@ class WhenWizard {
         try {
             await fetch('/api/calendars/selections', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     calendar_ids: this.state.data.selectedCalendars
-                })
+                }),
             });
         } catch (e) {
             console.error('Failed to save calendar selections:', e);
@@ -948,8 +948,8 @@ class WhenWizard {
         try {
             const response = await fetch('/api/import/todoist', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ include_completed: false })
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ include_completed: false }),
             });
 
             if (!response.ok) {
@@ -1196,8 +1196,8 @@ class WhenWizard {
         try {
             await fetch('/api/domains', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, icon })
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ name, icon }),
             });
         } catch (e) {
             console.error('Failed to create domain:', e);

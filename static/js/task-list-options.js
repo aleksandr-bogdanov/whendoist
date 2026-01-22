@@ -226,9 +226,9 @@
         try {
             const response = await fetch('/api/preferences', {
                 method: 'PUT',
-                headers: {
+                headers: window.getCSRFHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
                 body: JSON.stringify({ [key]: value }),
             });
 
@@ -373,6 +373,7 @@
         try {
             const response = await fetch(`/api/tasks/${taskId}/restore`, {
                 method: 'POST',
+                headers: window.getCSRFHeaders(),
             });
 
             if (!response.ok) {

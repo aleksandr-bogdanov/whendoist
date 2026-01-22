@@ -105,9 +105,9 @@
 
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
+                headers: window.getCSRFHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
                 body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
             });
 

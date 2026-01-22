@@ -361,6 +361,7 @@ const Passkey = (() => {
             const optionsRes = await fetch('/api/passkeys/register/options', {
                 method: 'POST',
                 credentials: 'same-origin',
+                headers: window.getCSRFHeaders(),
             });
 
             if (!optionsRes.ok) {
@@ -389,7 +390,7 @@ const Passkey = (() => {
             const verifyRes = await fetch('/api/passkeys/register/verify', {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     credential,
                     name,
@@ -469,6 +470,7 @@ const Passkey = (() => {
             const optionsRes = await fetch('/api/passkeys/authenticate/options', {
                 method: 'POST',
                 credentials: 'same-origin',
+                headers: window.getCSRFHeaders(),
             });
 
             if (!optionsRes.ok) {
@@ -552,7 +554,7 @@ const Passkey = (() => {
             await fetch('/api/passkeys/authenticate/verify', {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ credential }),
             });
 

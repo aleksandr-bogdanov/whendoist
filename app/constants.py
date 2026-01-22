@@ -26,12 +26,30 @@ class Impact(IntEnum):
     @property
     def label(self) -> str:
         """Human-readable label for the impact level."""
-        return {
-            1: "Critical",
-            2: "High",
-            3: "Medium",
-            4: "Low",
-        }[self.value]
+        return IMPACT_LABELS[self.value]
+
+    @property
+    def color(self) -> str:
+        """Hex color for the impact level (used in charts and UI)."""
+        return IMPACT_COLORS[self.value]
+
+
+# Impact level labels (used by Impact.label property)
+IMPACT_LABELS: dict[int, str] = {
+    1: "Critical",
+    2: "High",
+    3: "Medium",
+    4: "Low",
+}
+
+# Impact level colors (Tailwind-inspired palette)
+# Used in analytics charts and UI elements
+IMPACT_COLORS: dict[int, str] = {
+    1: "#dc2626",  # red-600 (Critical)
+    2: "#f97316",  # orange-500 (High)
+    3: "#eab308",  # yellow-500 (Medium)
+    4: "#22c55e",  # green-500 (Low)
+}
 
 
 class RetentionDays(IntEnum):

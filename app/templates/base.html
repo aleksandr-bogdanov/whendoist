@@ -49,6 +49,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- CSRF Token for JavaScript -->
+    <meta name="csrf-token" content="{{ csrf_token|default('') }}">
+
     <!-- Theme initialization (must be before CSS to prevent flash) -->
     <script src="/static/js/theme.js"></script>
 
@@ -91,6 +94,7 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3/air-datepicker.js"></script>
     <script src="/static/js/toast.js"></script>
+    <script src="/static/js/error-handler.js"></script>
     <script src="/static/js/crypto.js"></script>
     <script src="/static/js/passkey.js"></script>
     <!-- Mobile utilities -->

@@ -1075,6 +1075,7 @@
         try {
             const response = await fetch(`/api/tasks/${taskId}`, {
                 method: 'DELETE',
+                headers: window.getCSRFHeaders(),
             });
 
             if (!response.ok) {
@@ -1144,7 +1145,7 @@
 
             const response = await fetch(`/api/tasks/${taskId}/toggle-complete`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(requestBody),
             });
 
@@ -1245,7 +1246,7 @@
 
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(data),
             });
 
