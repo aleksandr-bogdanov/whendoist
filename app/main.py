@@ -35,29 +35,37 @@ logger = logging.getLogger("whendoist")
 settings = get_settings()
 
 
+def _run_migrations() -> None:
+    """Run database migrations synchronously (called from async context via executor)."""
+    import subprocess
+
+    result = subprocess.run(
+        ["python", "scripts/migrate.py"],
+        capture_output=True,
+        text=True,
+    )
+    if result.stdout:
+        for line in result.stdout.strip().split("\n"):
+            logger.info(f"migrate: {line}")
+    if result.stderr:
+        for line in result.stderr.strip().split("\n"):
+            logger.warning(f"migrate: {line}")
+    if result.returncode != 0:
+        logger.error(f"Migration failed with exit code {result.returncode}")
+        raise RuntimeError("Database migration failed")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import asyncio
+
     logger.info("Starting Whendoist...")
     logger.info(f"Base URL: {settings.base_url}")
     try:
         # Run migrations on startup (Railway releaseCommand not working with Railpack)
-        import subprocess
-
         logger.info("Running database migrations...")
-        result = subprocess.run(
-            ["python", "scripts/migrate.py"],
-            capture_output=True,
-            text=True,
-        )
-        if result.stdout:
-            for line in result.stdout.strip().split("\n"):
-                logger.info(f"migrate: {line}")
-        if result.stderr:
-            for line in result.stderr.strip().split("\n"):
-                logger.warning(f"migrate: {line}")
-        if result.returncode != 0:
-            logger.error(f"Migration failed with exit code {result.returncode}")
-            raise RuntimeError("Database migration failed")
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _run_migrations)
         logger.info("Migrations complete")
 
         from sqlalchemy import text
