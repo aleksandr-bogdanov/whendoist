@@ -21,10 +21,11 @@ class TestRateLimitConfiguration:
 
     def test_rate_limit_constants_exist(self):
         """Rate limit constants should be defined."""
-        from app.middleware.rate_limit import AUTH_LIMIT, ENCRYPTION_LIMIT
+        from app.middleware.rate_limit import AUTH_LIMIT, BACKUP_LIMIT, ENCRYPTION_LIMIT
 
         assert AUTH_LIMIT is not None
         assert ENCRYPTION_LIMIT is not None
+        assert BACKUP_LIMIT is not None
 
     def test_auth_limit_value(self):
         """Auth endpoints should be limited to 10/minute."""
@@ -37,6 +38,18 @@ class TestRateLimitConfiguration:
         from app.middleware.rate_limit import ENCRYPTION_LIMIT
 
         assert ENCRYPTION_LIMIT == "5/minute"
+
+    def test_backup_limit_value(self):
+        """Backup endpoints should be limited to 5/minute."""
+        from app.middleware.rate_limit import BACKUP_LIMIT
+
+        assert BACKUP_LIMIT == "5/minute"
+
+    def test_get_user_or_ip_function_exists(self):
+        """Custom key function for user-based rate limiting should exist."""
+        from app.middleware.rate_limit import get_user_or_ip
+
+        assert callable(get_user_or_ip)
 
 
 class TestRateLimitedEndpoints:
@@ -93,6 +106,28 @@ class TestRateLimitedEndpoints:
         assert "@limiter.limit(AUTH_LIMIT)" in auth_content
         assert "async def google_callback" in auth_content
         assert "async def todoist_callback" in auth_content
+
+    def test_backup_export_has_rate_limit(self):
+        """backup.py export should have rate limiting."""
+        backup_content = Path("app/routers/backup.py").read_text()
+
+        assert "@limiter.limit(BACKUP_LIMIT" in backup_content
+        assert "async def export_backup" in backup_content
+
+    def test_backup_import_has_rate_limit(self):
+        """backup.py import should have rate limiting."""
+        backup_content = Path("app/routers/backup.py").read_text()
+
+        assert "@limiter.limit(BACKUP_LIMIT" in backup_content
+        assert "async def import_backup" in backup_content
+
+    def test_backup_rate_limits_use_user_key(self):
+        """Backup rate limits should use user-based key function."""
+        backup_content = Path("app/routers/backup.py").read_text()
+
+        # Verify get_user_or_ip is imported and used
+        assert "get_user_or_ip" in backup_content
+        assert "key_func=get_user_or_ip" in backup_content
 
 
 class TestMainAppIntegration:

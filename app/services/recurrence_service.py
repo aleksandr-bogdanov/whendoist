@@ -8,7 +8,7 @@ Instances are materialized for a rolling window (default 60 days ahead).
 from datetime import UTC, date, datetime, time, timedelta
 
 from dateutil.rrule import DAILY, FR, MO, MONTHLY, SA, SU, TH, TU, WE, WEEKLY, YEARLY, rrule
-from sqlalchemy import and_, delete, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -345,12 +345,10 @@ class RecurrenceService:
             return []
 
         # Subquery to get the minimum instance_date per task
-        from sqlalchemy import func as sqlfunc
-
         subquery = (
             select(
                 TaskInstance.task_id,
-                sqlfunc.min(TaskInstance.instance_date).label("min_date"),
+                func.min(TaskInstance.instance_date).label("min_date"),
             )
             .where(
                 TaskInstance.task_id.in_(task_ids),
@@ -434,6 +432,8 @@ class RecurrenceService:
 
         Called on dashboard load to ensure instances exist.
         Returns count of tasks processed.
+
+        Optimized to use a single GROUP BY query instead of N+1 queries.
         """
         # Find recurring tasks that might need instance generation
         result = await self.db.execute(
@@ -443,21 +443,29 @@ class RecurrenceService:
                 Task.status == "pending",
             )
         )
-        recurring_tasks = result.scalars().all()
+        recurring_tasks = list(result.scalars().all())
+
+        if not recurring_tasks:
+            return 0
+
+        # Get max(instance_date) for all tasks in a single query
+        task_ids = [task.id for task in recurring_tasks]
+        result = await self.db.execute(
+            select(
+                TaskInstance.task_id,
+                func.max(TaskInstance.instance_date).label("max_date"),
+            )
+            .where(TaskInstance.task_id.in_(task_ids))
+            .group_by(TaskInstance.task_id)
+        )
+        latest_dates = {row.task_id: row.max_date for row in result.all()}
 
         count = 0
         cutoff_date = date.today() + timedelta(days=horizon_days - 7)
 
+        # Determine which tasks need instance generation
         for task in recurring_tasks:
-            # Check if we need more instances
-            result = await self.db.execute(
-                select(TaskInstance.instance_date)
-                .where(TaskInstance.task_id == task.id)
-                .order_by(TaskInstance.instance_date.desc())
-                .limit(1)
-            )
-            latest = result.scalar_one_or_none()
-
+            latest = latest_dates.get(task.id)
             if not latest or latest < cutoff_date:
                 await self.materialize_instances(task, horizon_days)
                 count += 1

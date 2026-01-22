@@ -2,18 +2,21 @@
 Backup and restore API endpoints.
 
 Provides endpoints for exporting and importing user data.
+
+Rate limited to 5 requests/minute per user due to computational expense.
 """
 
 import json
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import User
 from app.routers.auth import require_user
 from app.services.backup_service import BackupService
@@ -32,7 +35,9 @@ class ImportResponse(BaseModel):
 
 
 @router.get("/export")
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
 async def export_backup(
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -57,7 +62,9 @@ async def export_backup(
 
 
 @router.post("/import", response_model=ImportResponse)
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
 async def import_backup(
+    request: Request,
     file: UploadFile = File(...),
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
