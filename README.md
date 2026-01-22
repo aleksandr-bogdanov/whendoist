@@ -352,7 +352,8 @@ Legacy routes remain for backwards compatibility. New integrations should use `/
 |----------|-------------|
 | [Claude Code Context](CLAUDE.md) | Quick reference for Claude Code sessions — **read this first** |
 | [Deployment Guide](docs/DEPLOYMENT.md) | Railway deployment, environment variables, monitoring |
-| [Security Guide](docs/SECURITY.md) | Authentication, encryption, rate limiting, best practices |
+| [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, CSRF, security headers |
+| [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption: do you need it, how it works, limitations |
 | [Database Migrations](docs/MIGRATIONS.md) | Schema changes, Alembic workflows, troubleshooting |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, background tasks (v0.14.0) |
 | [Architectural Review (2026)](docs/ARCHITECTURAL-REVIEW-2026-01.md) | January 2026 comprehensive review — all issues addressed |

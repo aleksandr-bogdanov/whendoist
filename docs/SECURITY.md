@@ -24,6 +24,8 @@ This document describes the security measures implemented in Whendoist.
 
 ## Encryption
 
+> **For a complete guide** — including whether you need encryption, what it protects against, and its limitations — see [ENCRYPTION.md](ENCRYPTION.md).
+
 ### Client-Side E2E Encryption
 - AES-256-GCM for task data encryption
 - PBKDF2 with 600,000 iterations (OWASP 2024)
