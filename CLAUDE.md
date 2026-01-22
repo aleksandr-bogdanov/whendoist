@@ -26,7 +26,17 @@
 
 ## Database Migrations
 
-**Schema changes require Alembic migrations.** See `docs/MIGRATIONS.md` for the full guide.
+> **⚠️ CRITICAL: ALL schema changes MUST have migrations.**
+>
+> Before modifying `app/models.py` (adding columns, changing types, renaming fields, adding tables), you MUST:
+> 1. Create a migration with `just migrate-new "description"`
+> 2. Review the generated migration file
+> 3. Test with `just migrate`
+> 4. Commit BOTH the model change AND the migration file
+>
+> **Breaking the schema without a migration will cause production deployment failures.**
+
+See [`docs/MIGRATIONS.md`](docs/MIGRATIONS.md) for the full guide.
 
 ### Quick Reference
 
@@ -47,12 +57,12 @@ just migrate-rollback     # Revert last migration
 
 ### Production (Railway)
 
-Migrations run automatically on deploy via release command:
-```toml
-releaseCommand = "uv run alembic upgrade head"
-```
+Migrations run automatically on app startup via `scripts/migrate.py`:
+- Detects fresh vs existing databases
+- Stamps existing DBs before upgrading
+- Runs `alembic upgrade head`
 
-For existing databases, stamp first: `railway run uv run alembic stamp 0001_initial`
+> **Note:** `releaseCommand` is in `railway.toml` but doesn't work with Railpack. Migrations run during FastAPI lifespan startup instead.
 
 ## Project Structure
 

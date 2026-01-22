@@ -314,6 +314,7 @@ static/
 
 | Document | Description |
 |----------|-------------|
+| [Database Migrations](docs/MIGRATIONS.md) | Schema changes, Alembic workflows, troubleshooting |
 | [Architectural Review](docs/ARCHITECTURAL-REVIEW.md) | Security/scalability assessment (25 issues) |
 | [Production Roadmap](docs/PRODUCTION-ROADMAP.md) | 8-stage plan from v0.11.0 → v1.0.0 |
 | [Brand Guidelines](BRAND.md) | Wordmark, colors, typography, design principles |

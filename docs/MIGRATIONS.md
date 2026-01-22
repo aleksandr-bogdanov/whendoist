@@ -101,29 +101,27 @@ def upgrade() -> None:
 
 ### Automatic Migrations
 
-Railway runs migrations automatically on every deploy:
+Migrations run automatically on every deploy during app startup. This is handled by `scripts/migrate.py`, which:
 
-```toml
-# railway.toml
-[deploy]
-releaseCommand = "uv run alembic upgrade head"
-```
+1. Checks if the database has an `alembic_version` table
+2. If tables exist but no alembic_version (existing DB), stamps with initial migration
+3. Runs `alembic upgrade head` to apply pending migrations
 
-The release command runs:
-1. After the build completes
-2. Before the new version starts serving traffic
-3. Only once per deploy (not per worker)
+The migration script is called from `app/main.py` during the FastAPI lifespan startup.
+
+> **Note:** Railway's `releaseCommand` is defined in `railway.toml` but doesn't work with the Railpack builder. The app startup approach ensures migrations always run.
 
 ### First Deployment with Existing Database
 
-If you have an existing database that was created with `create_all()`:
+The migration script handles this automatically:
+- Detects existing tables (checks for `users` table)
+- Stamps with `0001_initial` before upgrading
+- No manual intervention required
 
+To manually stamp (if needed):
 ```bash
-# SSH into Railway or use railway run
 railway run uv run alembic stamp 0001_initial
 ```
-
-This marks the database as being at the initial migration without running it.
 
 ### Viewing Migration Status
 
