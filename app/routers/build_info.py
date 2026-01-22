@@ -7,6 +7,7 @@ Part of the Code Provenance / Three Pillars system.
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -27,18 +28,44 @@ def get_version() -> str:
 
 
 def get_git_commit() -> dict[str, str]:
-    """Get current git commit info."""
+    """
+    Get current git commit info.
+
+    Checks multiple sources in order of priority:
+    1. CI/deployment environment variables (Railway, GitHub Actions, etc.)
+    2. Git command (local development)
+    3. Falls back to "unknown" if neither available
+    """
+    # Check CI/deployment environment variables first
+    # These are set by various platforms during deployment
+    env_vars = [
+        "RAILWAY_GIT_COMMIT_SHA",  # Railway
+        "GITHUB_SHA",  # GitHub Actions
+        "VERCEL_GIT_COMMIT_SHA",  # Vercel
+        "RENDER_GIT_COMMIT",  # Render
+        "SOURCE_VERSION",  # Heroku
+        "COMMIT_SHA",  # Generic fallback
+    ]
+
+    for var in env_vars:
+        sha = os.environ.get(var)
+        if sha:
+            return {"sha": sha, "short": sha[:7]}
+
+    # Fall back to git command (local development)
     import subprocess
 
     try:
         sha = subprocess.check_output(
             ["git", "rev-parse", "HEAD"],
             text=True,
+            stderr=subprocess.DEVNULL,
             cwd=Path(__file__).parent.parent.parent,
         ).strip()
         short = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"],
             text=True,
+            stderr=subprocess.DEVNULL,
             cwd=Path(__file__).parent.parent.parent,
         ).strip()
         return {"sha": sha, "short": short}
