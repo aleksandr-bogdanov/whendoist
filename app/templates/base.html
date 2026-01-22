@@ -104,7 +104,6 @@
         encryptionEnabled: {{ encryption_enabled|default(false)|tojson }},
         encryptionSalt: {{ encryption_salt|default(none)|tojson }},
         encryptionTestValue: {{ encryption_test_value|default(none)|tojson }},
-        encryptionVersion: {{ encryption_version|default(1)|tojson }},
         hasPasskeys: {{ has_passkeys|default(false)|tojson }},
         passkeyCount: {{ passkey_count|default(0)|tojson }},
         unlockMethod: {{ unlock_method|default('passphrase')|tojson }},

@@ -57,8 +57,7 @@ class RetentionDays(IntEnum):
 # These mirror the values in static/js/crypto.js for documentation purposes.
 # The authoritative values are in the JS file (client-side encryption).
 
-PBKDF2_ITERATIONS_V1 = 100_000  # Legacy (v0.8.0 - v0.11.x)
-PBKDF2_ITERATIONS_V2 = 600_000  # Current OWASP recommendation (v0.12.0+)
+PBKDF2_ITERATIONS = 600_000  # 2024 OWASP recommendation
 
 # WebAuthn challenge expiration (5 minutes as per WebAuthn recommendation)
 CHALLENGE_TTL_SECONDS = 300

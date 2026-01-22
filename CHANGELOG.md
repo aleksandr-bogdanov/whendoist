@@ -15,6 +15,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.16.0] - 2026-01-22
+
+### Summary
+**Legacy Cleanup** — Removed all legacy backwards-compatibility code. Pre-1.0 policy: no backwards compatibility needed, keep codebase clean.
+
+### Removed
+
+- **Legacy API routes** — Removed duplicate `/api/*` routes:
+  - Only versioned `/api/v1/*` routes remain
+  - Simplified `main.py` router mounting
+  - Removed 9 duplicate route registrations
+
+- **PBKDF2 v1 iterations** — Removed 100k iteration support:
+  - Only 600k iterations (2024 OWASP recommendation) supported
+  - Removed `PBKDF2_ITERATIONS_V1` from `crypto.js` and `constants.py`
+  - Removed `getIterationCount()` version-switching logic
+
+- **Encryption version tracking** — Removed version field:
+  - Removed `encryption_version` from `UserPreferences` model
+  - Removed `encryptionVersion` from window.WHENDOIST config
+  - Removed `version` parameter from encryption setup API
+
+### Changed
+
+- **test_api_versioning.py** — Simplified to test only v1 routes
+- **test_constants.py** — Removed v1/v2 iteration comparison tests
+- **test_encryption.py** — Updated to check for 600k iterations only
+
+### Technical
+
+- Removed files: None (in-place modifications)
+- Modified files:
+  - `app/main.py` — Removed legacy_api router, simplified imports
+  - `app/routers/v1/__init__.py` — Updated docstring
+  - `app/routers/preferences.py` — Removed version from EncryptionSetupRequest
+  - `app/routers/pages.py` — Removed encryption_version from context
+  - `app/services/preferences_service.py` — Removed version parameter
+  - `app/models.py` — Removed encryption_version field
+  - `app/constants.py` — Simplified to single PBKDF2_ITERATIONS
+  - `app/templates/base.html` — Removed encryptionVersion
+  - `static/js/crypto.js` — Removed version logic, simplified iteration handling
+
+### Rationale
+
+Before v1.0.0, there are no production users requiring backwards compatibility. Maintaining legacy code paths:
+- Doubles route surface area
+- Complicates encryption logic with version switching
+- Creates confusion about which API to use
+- Adds unnecessary test coverage requirements
+
+This cleanup reduces cognitive load and ensures clean architecture for v1.0.0.
+
+---
+
 ## [0.15.0] - 2026-01-22
 
 ### Summary

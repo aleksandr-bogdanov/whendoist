@@ -1,12 +1,13 @@
 """
 API Versioning Tests.
 
-Verifies both legacy (/api/*) and versioned (/api/v1/*) routes work.
+Verifies /api/v1/* routes are registered.
 
 Test Category: Unit
 Related Code: app/main.py, app/routers/v1/__init__.py
 
 v0.15.0: Architecture Cleanup
+v0.16.0: Removed legacy /api/* routes - only v1 routes remain
 """
 
 from app.main import app
@@ -14,15 +15,6 @@ from app.main import app
 
 class TestRouteRegistration:
     """Tests for route registration."""
-
-    def test_legacy_api_routes_exist(self):
-        """Legacy /api/* routes are registered."""
-        routes = [r.path for r in app.routes if hasattr(r, "path")]
-
-        # Check key legacy API routes exist
-        assert "/api/tasks" in routes or any(r.startswith("/api/tasks") for r in routes)
-        assert "/api/domains" in routes or any(r.startswith("/api/domains") for r in routes)
-        assert "/api/preferences" in routes or any(r.startswith("/api/preferences") for r in routes)
 
     def test_v1_api_routes_exist(self):
         """Versioned /api/v1/* routes are registered."""
@@ -49,32 +41,6 @@ class TestRouteRegistration:
                 v1_prefixes.add(parts[3])
 
         assert len(v1_prefixes) >= 9, f"Expected at least 9 v1 prefixes, got: {v1_prefixes}"
-
-
-class TestLegacyRoutes:
-    """Tests for legacy API route patterns."""
-
-    def test_tasks_routes_at_legacy_prefix(self):
-        """Task routes are available at /api/tasks."""
-        routes = [r.path for r in app.routes if hasattr(r, "path")]
-        task_routes = [r for r in routes if r.startswith("/api/tasks") and not r.startswith("/api/v1")]
-
-        # Should have at least the base /api/tasks route
-        assert len(task_routes) > 0, "No legacy task routes found"
-
-    def test_domains_routes_at_legacy_prefix(self):
-        """Domain routes are available at /api/domains."""
-        routes = [r.path for r in app.routes if hasattr(r, "path")]
-        domain_routes = [r for r in routes if r.startswith("/api/domains") and not r.startswith("/api/v1")]
-
-        assert len(domain_routes) > 0, "No legacy domain routes found"
-
-    def test_preferences_routes_at_legacy_prefix(self):
-        """Preference routes are available at /api/preferences."""
-        routes = [r.path for r in app.routes if hasattr(r, "path")]
-        pref_routes = [r for r in routes if r.startswith("/api/preferences") and not r.startswith("/api/v1")]
-
-        assert len(pref_routes) > 0, "No legacy preference routes found"
 
 
 class TestV1Routes:
@@ -115,49 +81,16 @@ class TestV1Routes:
 
         assert len(wizard_routes) > 0, "No v1 wizard routes found"
 
-
-class TestRouteSymmetry:
-    """Tests that v1 routes are included in legacy routes."""
-
-    def test_v1_tasks_routes_are_subset_of_legacy(self):
-        """V1 task routes are available in legacy API.
-
-        Note: Legacy API may have additional routes from the old api.router
-        for backwards compatibility with Todoist integration.
-        """
+    def test_preferences_routes_at_v1_prefix(self):
+        """Preference routes are available at /api/v1/preferences."""
         routes = [r.path for r in app.routes if hasattr(r, "path")]
+        pref_routes = [r for r in routes if r.startswith("/api/v1/preferences")]
 
-        legacy_tasks = set(
-            r.replace("/api/tasks", "") for r in routes if r.startswith("/api/tasks") and not r.startswith("/api/v1")
-        )
-        v1_tasks = set(r.replace("/api/v1/tasks", "") for r in routes if r.startswith("/api/v1/tasks"))
+        assert len(pref_routes) > 0, "No v1 preference routes found"
 
-        # V1 routes should be a subset of legacy routes (legacy may have extra old routes)
-        missing = v1_tasks - legacy_tasks
-        assert not missing, f"V1 task routes missing from legacy:\n{missing}"
-
-    def test_v1_domains_routes_match_legacy(self):
-        """V1 and legacy domain routes match."""
+    def test_instances_routes_at_v1_prefix(self):
+        """Instance routes are available at /api/v1/instances."""
         routes = [r.path for r in app.routes if hasattr(r, "path")]
+        instance_routes = [r for r in routes if r.startswith("/api/v1/instances")]
 
-        legacy = set(
-            r.replace("/api/domains", "")
-            for r in routes
-            if r.startswith("/api/domains") and not r.startswith("/api/v1")
-        )
-        v1 = set(r.replace("/api/v1/domains", "") for r in routes if r.startswith("/api/v1/domains"))
-
-        assert legacy == v1, f"Domain routes differ:\nLegacy: {legacy}\nV1: {v1}"
-
-    def test_v1_preferences_routes_match_legacy(self):
-        """V1 and legacy preference routes match."""
-        routes = [r.path for r in app.routes if hasattr(r, "path")]
-
-        legacy = set(
-            r.replace("/api/preferences", "")
-            for r in routes
-            if r.startswith("/api/preferences") and not r.startswith("/api/v1")
-        )
-        v1 = set(r.replace("/api/v1/preferences", "") for r in routes if r.startswith("/api/v1/preferences"))
-
-        assert legacy == v1, f"Preference routes differ:\nLegacy: {legacy}\nV1: {v1}"
+        assert len(instance_routes) > 0, "No v1 instance routes found"

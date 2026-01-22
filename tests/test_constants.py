@@ -14,8 +14,7 @@ from app.constants import (
     DEFAULT_IMPACT,
     DEFAULT_RETENTION_DAYS,
     ENCRYPTION_TEST_VALUE,
-    PBKDF2_ITERATIONS_V1,
-    PBKDF2_ITERATIONS_V2,
+    PBKDF2_ITERATIONS,
     Impact,
     RetentionDays,
 )
@@ -80,17 +79,9 @@ class TestRetentionDays:
 class TestCryptoConstants:
     """Tests for crypto-related constants."""
 
-    def test_pbkdf2_iterations_v1(self):
-        """PBKDF2 v1 iterations match legacy value."""
-        assert PBKDF2_ITERATIONS_V1 == 100_000
-
-    def test_pbkdf2_iterations_v2(self):
-        """PBKDF2 v2 iterations match OWASP recommendation."""
-        assert PBKDF2_ITERATIONS_V2 == 600_000
-
-    def test_v2_stronger_than_v1(self):
-        """v2 uses more iterations than v1."""
-        assert PBKDF2_ITERATIONS_V2 > PBKDF2_ITERATIONS_V1
+    def test_pbkdf2_iterations(self):
+        """PBKDF2 iterations match 2024 OWASP recommendation."""
+        assert PBKDF2_ITERATIONS == 600_000
 
     def test_challenge_ttl(self):
         """Challenge TTL is 5 minutes (300 seconds)."""

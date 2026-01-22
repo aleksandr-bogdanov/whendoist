@@ -498,9 +498,9 @@ class TestCryptoModuleArchitecture:
         assert "sessionStorage" in crypto_js
 
     def test_uses_pbkdf2_iterations(self, crypto_js: str):
-        """Must use PBKDF2 with sufficient iterations (100k+)."""
+        """Must use PBKDF2 with sufficient iterations (600k OWASP 2024)."""
         assert "PBKDF2_ITERATIONS" in crypto_js
-        assert "100000" in crypto_js
+        assert "600000" in crypto_js
 
     def test_uses_aes_gcm(self, crypto_js: str):
         """Must use AES-GCM for authenticated encryption."""

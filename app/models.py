@@ -206,8 +206,6 @@ class UserPreferences(Base):
     encryption_test_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Unlock method: 'passphrase', 'passkey', or 'both' (default: passphrase when encryption is first enabled)
     encryption_unlock_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    # Key derivation version: 1 = 100k iterations, 2 = 600k iterations (default: 1 for legacy, 2 for new setups)
-    encryption_version: Mapped[int] = mapped_column(Integer, default=1)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

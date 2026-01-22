@@ -1,10 +1,10 @@
 """
 API v1 Router.
 
-Aggregates all API routers under /api/v1 prefix for versioned API access.
-Legacy routes at /api remain for backwards compatibility.
+Aggregates all API routers under /api/v1 prefix.
 
 v0.15.0: Architecture Cleanup
+v0.16.0: Removed legacy /api/* routes (pre-1.0, no backwards compatibility needed)
 """
 
 from fastapi import APIRouter

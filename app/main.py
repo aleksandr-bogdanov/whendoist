@@ -2,7 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
@@ -14,20 +14,7 @@ from app.config import get_settings
 from app.logging_config import setup_logging
 from app.middleware.rate_limit import limiter
 from app.middleware.security import SecurityHeadersMiddleware
-from app.routers import (
-    api,
-    auth,
-    backup,
-    build_info,
-    domains,
-    import_data,
-    instances,
-    pages,
-    passkeys,
-    preferences,
-    tasks,
-    wizard,
-)
+from app.routers import api, auth, pages
 from app.routers import v1 as api_v1
 
 # Setup logging first
@@ -211,24 +198,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Auth router (no /api prefix - uses /auth)
 app.include_router(auth.router)
 
-# Legacy API routes at /api/* (backwards compatibility)
-# Note: tasks.router must come before api.router to avoid route conflict
-legacy_api = APIRouter(prefix="/api")
-legacy_api.include_router(tasks.router)
-legacy_api.include_router(domains.router)
-legacy_api.include_router(preferences.router)
-legacy_api.include_router(passkeys.router)
-legacy_api.include_router(backup.router)
-legacy_api.include_router(instances.router)
-legacy_api.include_router(import_data.router)
-legacy_api.include_router(build_info.router)
-legacy_api.include_router(wizard.router)
-app.include_router(legacy_api)
-
-# Legacy Todoist/Calendar API (has its own /api prefix internally)
+# Todoist/Calendar API (has its own /api prefix internally)
 app.include_router(api.router)
 
-# Versioned API at /api/v1/*
+# API v1 routes at /api/v1/*
 app.include_router(api_v1.router)
 
 # Page routes (HTML pages, must be last)

@@ -66,7 +66,6 @@ class EncryptionSetupRequest(BaseModel):
 
     salt: str  # Base64-encoded 32-byte salt (generated client-side)
     test_value: str  # Encrypted test value for passphrase verification
-    version: int = 2  # Key derivation version (1=100k, 2=600k iterations)
 
 
 class EncryptionSetupResponse(BaseModel):
@@ -172,7 +171,6 @@ async def setup_encryption(
     await service.setup_encryption(
         salt=data.salt,
         test_value=data.test_value,
-        version=data.version,
     )
     await db.commit()
 
