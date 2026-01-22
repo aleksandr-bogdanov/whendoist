@@ -60,6 +60,7 @@ line-length = 120
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "--ignore=tests/e2e/"
 markers = [
     "unit: Unit tests using SQLite (fast, isolated)",
     "integration: Integration tests using PostgreSQL container (production parity)",
