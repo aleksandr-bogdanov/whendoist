@@ -89,10 +89,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
-      - name: Run tests
+      - name: Run unit tests
         env:
-          # Test database connection (matches service container above)
-          DATABASE_URL: postgresql+asyncpg://whendoist:whendoist@localhost:5432/whendoist_test
           # Dummy values for required env vars (not used in unit tests)
           SECRET_KEY: test-secret-key-for-ci
           BASE_URL: http://localhost:8000
@@ -100,7 +98,20 @@ jobs:
           TODOIST_CLIENT_SECRET: test
           GOOGLE_CLIENT_ID: test
           GOOGLE_CLIENT_SECRET: test
-        run: uv run pytest -v
+        run: uv run pytest -v -m "not integration and not e2e"
+
+      - name: Run integration tests (PostgreSQL)
+        env:
+          # Test database connection (matches service container above)
+          DATABASE_URL: postgresql+asyncpg://whendoist:whendoist@localhost:5432/whendoist_test
+          # Dummy values for required env vars
+          SECRET_KEY: test-secret-key-for-ci
+          BASE_URL: http://localhost:8000
+          TODOIST_CLIENT_ID: test
+          TODOIST_CLIENT_SECRET: test
+          GOOGLE_CLIENT_ID: test
+          GOOGLE_CLIENT_SECRET: test
+        run: uv run pytest -v -m integration
 
   # ---------------------------------------------------------------------------
   # Type Check: Static type analysis with pyright

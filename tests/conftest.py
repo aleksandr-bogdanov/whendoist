@@ -43,8 +43,12 @@ def postgres_container():
         pytest.skip("testcontainers[postgres] not installed")
         return
 
-    with PostgresContainer("postgres:16-alpine") as postgres:
-        yield postgres
+    try:
+        with PostgresContainer("postgres:16-alpine") as postgres:
+            yield postgres
+    except Exception as e:
+        # Docker not running or container failed to start
+        pytest.skip(f"PostgreSQL container unavailable: {e}")
 
 
 @pytest.fixture
