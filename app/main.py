@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
-    version="0.10.0",
+    version="0.11.0",
     lifespan=lifespan,
 )
 
@@ -81,10 +81,30 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Health check endpoint for Railway
+# Health check endpoints for Railway and load balancers
 @app.get("/health", include_in_schema=False)
 async def health_check():
-    return JSONResponse({"status": "healthy"})
+    """Basic liveness check - app is running."""
+    from app import __version__
+
+    return JSONResponse({"status": "healthy", "version": __version__})
+
+
+@app.get("/ready", include_in_schema=False)
+async def readiness_check():
+    """Readiness check - app can serve requests (includes DB check)."""
+    from sqlalchemy import text
+
+    from app import __version__
+    from app.database import async_session_factory
+
+    try:
+        async with async_session_factory() as db:
+            await db.execute(text("SELECT 1"))
+        return JSONResponse({"status": "ready", "database": "connected", "version": __version__})
+    except Exception as e:
+        logger.error(f"Readiness check failed: {e}")
+        return JSONResponse({"status": "not_ready", "database": str(e)}, status_code=503)
 
 
 # Service worker route - served from root for proper scope

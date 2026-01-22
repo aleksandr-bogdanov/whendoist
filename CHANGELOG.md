@@ -8,11 +8,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Recovery key generation during encryption setup (trigger 1password etc to save it)
 - Redesign CMPCT view
 
 ### Known Issues
 - Minor horizontal wordmark shift on external displays during font load (cosmetic only)
+
+---
+
+## [0.11.0] - 2025-01-22
+
+### Summary
+**Production Foundation** — First stage of production-readiness improvements with version synchronization, health check endpoints, database indexes, and backup validation.
+
+### Added
+
+- **Readiness endpoint** (`/ready`) — Checks database connectivity for load balancer health checks, returns 503 if unavailable
+- **Health endpoint version** — Both `/health` and `/ready` now include app version in response
+- **Version module** (`app/__init__.py`) — Single source of truth for `__version__`
+- **Database indexes** — Composite indexes for common query patterns:
+  - `ix_task_user_status` — Fast status filtering
+  - `ix_task_user_scheduled` — Calendar queries
+  - `ix_task_user_domain` — Domain filtering
+  - `ix_task_parent` — Subtask lookups
+  - `ix_instance_task_date` — Instance date lookups
+  - `ix_instance_user_status` — Instance status filtering
+  - `ix_instance_user_date` — Instance date range queries
+- **Backup validation** — Pydantic schemas validate backup data BEFORE clearing existing data
+- **BackupValidationError** — Clear error messages for invalid backups
+- **New test suites:**
+  - `test_version.py` — Version consistency across codebase
+  - `test_health.py` — Health endpoint contract tests
+  - `test_backup_validation.py` — Backup validation coverage
+
+### Changed
+
+- **Backup import safety** — Uses savepoint/nested transaction for rollback on partial failure
+- **pyright in dev dependencies** — Now properly listed for CI consistency
+
+### Fixed
+
+- **Version drift** — `pyproject.toml`, `app/__init__.py`, and FastAPI app version now synchronized
+
+### Documentation
+
+- **ARCHITECTURAL-REVIEW.md** — Comprehensive 25-issue security/scalability assessment
+- **PRODUCTION-ROADMAP.md** — 8-stage implementation plan (v0.11.0 → v1.0.0)
 
 ---
 
