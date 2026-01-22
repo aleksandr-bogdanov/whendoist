@@ -7,17 +7,105 @@ Exports/imports user data as JSON for backup purposes.
 from datetime import date, datetime, time
 from typing import Any
 
+from pydantic import BaseModel, ValidationError, field_validator
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Domain, Task, TaskInstance, UserPreferences
 
+# =============================================================================
+# Validation Schemas
+# =============================================================================
+
+
+class BackupInstanceSchema(BaseModel):
+    """Schema for task instance in backup."""
+
+    instance_date: str
+    status: str = "pending"
+    scheduled_datetime: str | None = None
+    completed_at: str | None = None
+
+
+class BackupTaskSchema(BaseModel):
+    """Schema for task in backup."""
+
+    title: str
+    id: int | None = None
+    domain_id: int | None = None
+    description: str | None = None
+    status: str = "pending"
+    clarity: str | None = None
+    impact: int | None = None
+    duration_minutes: int | None = None
+    scheduled_date: str | None = None
+    scheduled_time: str | None = None
+    due_date: str | None = None
+    is_recurring: bool = False
+    recurrence_rule: dict | None = None
+    completed_at: str | None = None
+    external_id: str | None = None
+    external_source: str | None = None
+    external_created_at: str | None = None
+    instances: list[BackupInstanceSchema] = []
+
+    @field_validator("title")
+    @classmethod
+    def title_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Task title cannot be empty")
+        return v
+
+
+class BackupDomainSchema(BaseModel):
+    """Schema for domain in backup."""
+
+    name: str
+    id: int | None = None
+    icon: str | None = None
+    color: str | None = None
+    external_id: str | None = None
+    external_source: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Domain name cannot be empty")
+        return v
+
+
+class BackupPreferencesSchema(BaseModel):
+    """Schema for preferences in backup."""
+
+    show_completed_in_planner: bool = True
+    completed_retention_days: int = 3
+    completed_move_to_bottom: bool = True
+    show_completed_in_list: bool = True
+    hide_recurring_after_completion: bool = False
+
+
+class BackupSchema(BaseModel):
+    """Top-level backup schema."""
+
+    version: str
+    exported_at: str
+    domains: list[BackupDomainSchema] = []
+    tasks: list[BackupTaskSchema] = []
+    preferences: BackupPreferencesSchema | None = None
+
+
+class BackupValidationError(ValueError):
+    """Raised when backup data fails validation."""
+
+    pass
+
 
 class BackupService:
     """Service for exporting and importing user data."""
 
-    VERSION = "0.8.0"
+    VERSION = "0.11.0"
 
     def __init__(self, db: AsyncSession, user_id: int):
         self.db = db
@@ -51,9 +139,35 @@ class BackupService:
             "preferences": self._serialize_preferences(preferences) if preferences else None,
         }
 
+    def validate_backup(self, data: dict[str, Any]) -> BackupSchema:
+        """
+        Validate backup data before import.
+
+        Args:
+            data: The backup data dictionary
+
+        Returns:
+            Validated BackupSchema
+
+        Raises:
+            BackupValidationError: If validation fails
+        """
+        try:
+            return BackupSchema.model_validate(data)
+        except ValidationError as e:
+            # Convert Pydantic errors to user-friendly message
+            errors = []
+            for err in e.errors():
+                loc = ".".join(str(x) for x in err["loc"])
+                errors.append(f"{loc}: {err['msg']}")
+            raise BackupValidationError(f"Invalid backup format: {'; '.join(errors)}") from e
+
     async def import_all(self, data: dict[str, Any], clear_existing: bool = True) -> dict[str, int]:
         """
         Import user data from a backup.
+
+        IMPORTANT: Validates entire backup BEFORE clearing existing data.
+        Uses savepoint for transaction safety on partial failure.
 
         Args:
             data: The backup data dictionary
@@ -61,87 +175,96 @@ class BackupService:
 
         Returns:
             Dict with counts of imported items
+
+        Raises:
+            BackupValidationError: If backup data is invalid
         """
-        if clear_existing:
-            await self._clear_user_data()
+        # STEP 1: Validate entire backup BEFORE any mutations
+        validated = self.validate_backup(data)
 
-        # Import in order: domains first (for foreign keys), then tasks
-        domain_id_map: dict[int, int] = {}  # old_id -> new_id
+        # STEP 2: Use savepoint so we can roll back on partial failure
+        async with self.db.begin_nested():
+            # STEP 3: Only now clear existing data (inside savepoint)
+            if clear_existing:
+                await self._clear_user_data()
 
-        # Import domains
-        for domain_data in data.get("domains", []):
-            old_id = domain_data.get("id")
-            domain = Domain(
-                user_id=self.user_id,
-                name=domain_data["name"],
-                icon=domain_data.get("icon"),
-                color=domain_data.get("color"),
-                external_id=domain_data.get("external_id"),
-                external_source=domain_data.get("external_source"),
-            )
-            self.db.add(domain)
-            await self.db.flush()
-            if old_id:
-                domain_id_map[old_id] = domain.id
+            # STEP 4: Import validated data
+            domain_id_map: dict[int, int] = {}  # old_id -> new_id
 
-        # Import tasks
-        for task_data in data.get("tasks", []):
-            old_domain_id = task_data.get("domain_id")
-            new_domain_id = domain_id_map.get(old_domain_id) if old_domain_id else None
-
-            task = Task(
-                user_id=self.user_id,
-                domain_id=new_domain_id,
-                title=task_data["title"],
-                description=task_data.get("description"),
-                status=task_data.get("status", "pending"),
-                clarity=task_data.get("clarity"),
-                impact=task_data.get("impact"),
-                duration_minutes=task_data.get("duration_minutes"),
-                scheduled_date=self._parse_date(task_data.get("scheduled_date")),
-                scheduled_time=self._parse_time(task_data.get("scheduled_time")),
-                due_date=self._parse_date(task_data.get("due_date")),
-                is_recurring=task_data.get("is_recurring", False),
-                recurrence_rule=task_data.get("recurrence_rule"),
-                completed_at=self._parse_datetime(task_data.get("completed_at")),
-                external_id=task_data.get("external_id"),
-                external_source=task_data.get("external_source"),
-                external_created_at=self._parse_datetime(task_data.get("external_created_at")),
-            )
-            self.db.add(task)
-            await self.db.flush()
-
-            # Import task instances
-            for instance_data in task_data.get("instances", []):
-                instance = TaskInstance(
-                    task_id=task.id,
+            # Import domains
+            for domain_data in validated.domains:
+                old_id = domain_data.id
+                domain = Domain(
                     user_id=self.user_id,
-                    instance_date=self._parse_date(instance_data["instance_date"]),
-                    status=instance_data.get("status", "pending"),
-                    scheduled_datetime=self._parse_datetime(instance_data.get("scheduled_datetime")),
-                    completed_at=self._parse_datetime(instance_data.get("completed_at")),
+                    name=domain_data.name,
+                    icon=domain_data.icon,
+                    color=domain_data.color,
+                    external_id=domain_data.external_id,
+                    external_source=domain_data.external_source,
                 )
-                self.db.add(instance)
+                self.db.add(domain)
+                await self.db.flush()
+                if old_id:
+                    domain_id_map[old_id] = domain.id
 
-        # Import preferences
-        if data.get("preferences"):
-            prefs_data = data["preferences"]
-            preferences = UserPreferences(
-                user_id=self.user_id,
-                show_completed_in_planner=prefs_data.get("show_completed_in_planner", True),
-                completed_retention_days=prefs_data.get("completed_retention_days", 3),
-                completed_move_to_bottom=prefs_data.get("completed_move_to_bottom", True),
-                show_completed_in_list=prefs_data.get("show_completed_in_list", True),
-                hide_recurring_after_completion=prefs_data.get("hide_recurring_after_completion", False),
-            )
-            self.db.add(preferences)
+            # Import tasks
+            for task_data in validated.tasks:
+                old_domain_id = task_data.domain_id
+                new_domain_id = domain_id_map.get(old_domain_id) if old_domain_id else None
+
+                task = Task(
+                    user_id=self.user_id,
+                    domain_id=new_domain_id,
+                    title=task_data.title,
+                    description=task_data.description,
+                    status=task_data.status,
+                    clarity=task_data.clarity,
+                    impact=task_data.impact,
+                    duration_minutes=task_data.duration_minutes,
+                    scheduled_date=self._parse_date(task_data.scheduled_date),
+                    scheduled_time=self._parse_time(task_data.scheduled_time),
+                    due_date=self._parse_date(task_data.due_date),
+                    is_recurring=task_data.is_recurring,
+                    recurrence_rule=task_data.recurrence_rule,
+                    completed_at=self._parse_datetime(task_data.completed_at),
+                    external_id=task_data.external_id,
+                    external_source=task_data.external_source,
+                    external_created_at=self._parse_datetime(task_data.external_created_at),
+                )
+                self.db.add(task)
+                await self.db.flush()
+
+                # Import task instances
+                for instance_data in task_data.instances:
+                    instance = TaskInstance(
+                        task_id=task.id,
+                        user_id=self.user_id,
+                        instance_date=self._parse_date(instance_data.instance_date),
+                        status=instance_data.status,
+                        scheduled_datetime=self._parse_datetime(instance_data.scheduled_datetime),
+                        completed_at=self._parse_datetime(instance_data.completed_at),
+                    )
+                    self.db.add(instance)
+
+            # Import preferences
+            if validated.preferences:
+                prefs_data = validated.preferences
+                preferences = UserPreferences(
+                    user_id=self.user_id,
+                    show_completed_in_planner=prefs_data.show_completed_in_planner,
+                    completed_retention_days=prefs_data.completed_retention_days,
+                    completed_move_to_bottom=prefs_data.completed_move_to_bottom,
+                    show_completed_in_list=prefs_data.show_completed_in_list,
+                    hide_recurring_after_completion=prefs_data.hide_recurring_after_completion,
+                )
+                self.db.add(preferences)
 
         await self.db.commit()
 
         return {
-            "domains": len(data.get("domains", [])),
-            "tasks": len(data.get("tasks", [])),
-            "preferences": 1 if data.get("preferences") else 0,
+            "domains": len(validated.domains),
+            "tasks": len(validated.tasks),
+            "preferences": 1 if validated.preferences else 0,
         }
 
     async def _clear_user_data(self) -> None:

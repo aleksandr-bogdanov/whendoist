@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.10.1 (UI Polish)
+**Current Version:** v0.11.0 (Production Foundation)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -405,7 +405,50 @@ Pico CSS aggressively styles input focus states. To override with custom glow:
 - `.modal-backdrop` prefix + `!important` needed to override Pico CSS
 - `z-index: 1` fixes joined inputs overlapping each other's borders on focus
 
-## Recent Changes (v0.8)
+## Recent Changes (v0.11.0)
+
+### Production Foundation
+
+v0.11.0 begins the production-readiness effort documented in `docs/PRODUCTION-ROADMAP.md`.
+
+- **Version Module** (`app/__init__.py`) — Single source of truth for `__version__`
+- **Health Endpoints**:
+  - `GET /health` — Basic liveness check, always returns 200 if app is running
+  - `GET /ready` — Readiness check with database connectivity verification, returns 503 if DB unavailable
+  - Both endpoints include app version in response
+- **Database Indexes** — Composite indexes for common query patterns:
+  - `ix_task_user_status` — Fast status filtering
+  - `ix_task_user_scheduled` — Calendar queries
+  - `ix_task_user_domain` — Domain filtering
+  - `ix_task_parent` — Subtask lookups
+  - `ix_instance_task_date`, `ix_instance_user_status`, `ix_instance_user_date` — Instance queries
+- **Backup Validation** — Pydantic schemas validate backup data BEFORE clearing existing data:
+  - `BackupValidationError` with clear error messages
+  - Uses nested transaction/savepoint for rollback on failure
+  - Existing data preserved if validation fails
+
+### New Test Suites
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `test_version.py` | 3 | Version consistency across codebase |
+| `test_health.py` | 6 | Health endpoint contract tests |
+| `test_backup_validation.py` | 11 | Backup validation, data preservation |
+
+### Production Roadmap
+
+See `docs/PRODUCTION-ROADMAP.md` for the 8-stage plan from v0.11.0 → v1.0.0:
+- v0.12.0: Security (rate limiting, challenge storage, CSP)
+- v0.13.0: Database migrations (Alembic)
+- v0.14.0: Performance (query optimization, caching)
+- v0.15.0: Architecture (code organization, API versioning)
+- v0.16.0: Testing (PostgreSQL containers, E2E expansion)
+- v0.17.0: Operations (structured logging, metrics)
+- v1.0.0: Launch
+
+---
+
+## Previous Changes (v0.8)
 
 - **E2E Encryption** — Optional end-to-end encryption for task data:
   - Uses Web Crypto API with AES-256-GCM
@@ -721,29 +764,44 @@ Contract tests in `tests/test_hotfix_wizard_bugs.py` verify:
 
 ## Files to Read First
 
+### Production Planning
+1. `docs/ARCHITECTURAL-REVIEW.md` — 25-issue security/scalability assessment
+2. `docs/PRODUCTION-ROADMAP.md` — 8-stage implementation plan (v0.11.0 → v1.0.0)
+
 ### Design System
-1. `BRAND.md` — Brand identity, wordmark, colors, typography
-2. `docs/brand/COLOR-SYSTEM.md` — Complete color palette (107 tokens)
-3. `docs/brand/UI-KIT.md` — Component specifications (buttons, forms, panels)
+3. `BRAND.md` — Brand identity, wordmark, colors, typography
+4. `docs/brand/COLOR-SYSTEM.md` — Complete color palette (107 tokens)
+5. `docs/brand/UI-KIT.md` — Component specifications (buttons, forms, panels)
 
 ### Code Understanding
-4. `CHANGELOG.md` — Version history and changes
-5. `tests/README.md` — Test architecture and how to write tests
-6. `static/css/app.css` — Design tokens (first 120 lines)
-7. `static/css/wizard.css` — Reference implementation of new design patterns
-8. `static/js/crypto.js` — Client-side encryption library
-9. `app/templates/dashboard.html` — Tasks page template
-10. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
+6. `CHANGELOG.md` — Version history and changes
+7. `tests/README.md` — Test architecture and how to write tests
+8. `static/css/app.css` — Design tokens (first 120 lines)
+9. `static/css/wizard.css` — Reference implementation of new design patterns
+10. `static/js/crypto.js` — Client-side encryption library
+11. `app/templates/dashboard.html` — Tasks page template
+12. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
 
 ## Known Issues
 
-None currently tracked.
+See `docs/ARCHITECTURAL-REVIEW.md` for 25 tracked issues with severity ratings.
 
 ## Next Up (v1.0)
 
-### Planned Features
+The path to v1.0 is documented in `docs/PRODUCTION-ROADMAP.md`. Key milestones:
+
+| Version | Focus |
+|---------|-------|
+| v0.12.0 | Security (rate limiting, WebAuthn challenge storage, CSP) |
+| v0.13.0 | Database migrations (Alembic) |
+| v0.14.0 | Performance (N+1 queries, caching) |
+| v0.15.0 | Architecture (code organization, API versioning) |
+| v0.16.0 | Testing (PostgreSQL containers, E2E expansion) |
+| v0.17.0 | Operations (structured logging, metrics) |
+| v1.0.0 | Launch (security audit, documentation) |
+
+### Feature Backlog
 - Design system overhaul with dark mode support
 - Time blocking templates
 - Key rotation (change passphrase without re-encrypting all data)
 - Recovery key generation during encryption setup
-- Database migrations (post-v1.0)

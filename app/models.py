@@ -16,6 +16,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     String,
@@ -319,6 +320,14 @@ class Task(Base):
     subtasks: Mapped[list["Task"]] = relationship(back_populates="parent", cascade="all, delete-orphan")
     instances: Mapped[list["TaskInstance"]] = relationship(back_populates="task", cascade="all, delete-orphan")
 
+    __table_args__ = (
+        # Performance indexes for common query patterns
+        Index("ix_task_user_status", "user_id", "status"),
+        Index("ix_task_user_scheduled", "user_id", "scheduled_date"),
+        Index("ix_task_user_domain", "user_id", "domain_id"),
+        Index("ix_task_parent", "parent_id"),
+    )
+
 
 class TaskInstance(Base):
     """
@@ -348,7 +357,13 @@ class TaskInstance(Base):
     # Relationships
     task: Mapped["Task"] = relationship(back_populates="instances")
 
-    __table_args__ = (UniqueConstraint("task_id", "instance_date", name="uq_task_instance_date"),)
+    __table_args__ = (
+        UniqueConstraint("task_id", "instance_date", name="uq_task_instance_date"),
+        # Performance indexes for common query patterns
+        Index("ix_instance_task_date", "task_id", "instance_date"),
+        Index("ix_instance_user_status", "user_id", "status"),
+        Index("ix_instance_user_date", "user_id", "instance_date"),
+    )
 
 
 # =============================================================================
