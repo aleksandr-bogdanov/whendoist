@@ -15,6 +15,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.14.0] - 2026-01-22
+
+### Summary
+**Performance Optimization** — Stage 4 of production readiness. Reduced analytics queries by 60%, eliminated N+1 patterns, added calendar caching, and moved instance materialization to background tasks.
+
+### Added
+
+- **Analytics Query Optimization** — CTE-based queries:
+  - UNION ALL for Task + TaskInstance queries (26+ → ~10 queries)
+  - Batch recurring stats with GROUP BY (eliminated N+1)
+  - Shared daily counts for heatmap and velocity
+  - `@log_timing` decorator for performance monitoring
+
+- **SQL Task Filtering** — New `task_service.get_tasks()` parameters:
+  - `has_domain: bool | None` — Filter by domain presence
+  - `exclude_statuses: list[str] | None` — Exclude specific statuses
+  - Replaces Python list comprehensions with SQL WHERE
+
+- **Calendar Event Caching** — TTL-based cache:
+  - 5-minute cache for Google Calendar events
+  - User-scoped cache keys
+  - Automatic invalidation on calendar selection change
+  - `get_calendar_cache()` singleton
+
+- **Background Instance Materialization** — Background tasks:
+  - Initial materialization on app startup
+  - Hourly background refresh loop
+  - 60-day horizon for recurring instances
+  - Removed request-time blocking
+
+- **Timing Utilities** — Performance monitoring:
+  - `app/utils/timing.py` with `@log_timing` decorator
+  - Logs execution time in milliseconds
+
+- **Documentation** — `docs/PERFORMANCE.md`:
+  - Technical details for all optimizations
+  - Query patterns and best practices
+  - Configuration options
+
+### Changed
+
+- **Analytics Service** — Refactored for performance:
+  - Uses CTEs instead of multiple queries
+  - Batch operations for recurring task stats
+  - Shared computation for related metrics
+
+- **Task Service** — SQL-level filtering:
+  - Domain filtering moved from Python to SQL
+  - Status exclusion moved from Python to SQL
+
+- **App Lifespan** — Background task management:
+  - Runs instance materialization on startup
+  - Starts hourly background task loop
+  - Graceful shutdown of background tasks
+
+- **API Router** — Cache invalidation:
+  - Calendar toggle invalidates cache
+  - Calendar selection changes invalidate cache
+
+### Technical
+
+- New files:
+  - `app/services/calendar_cache.py`
+  - `app/tasks/__init__.py`, `app/tasks/recurring.py`
+  - `app/utils/timing.py`
+  - `tests/test_calendar_cache.py`
+  - `tests/test_task_filtering.py`
+  - `docs/PERFORMANCE.md`
+
+- Modified files:
+  - `app/services/analytics_service.py` (major refactor)
+  - `app/services/task_service.py` (new parameters)
+  - `app/routers/pages.py` (SQL filters, cache integration)
+  - `app/routers/api.py` (cache invalidation)
+  - `app/main.py` (background task lifecycle)
+
+### Performance Metrics
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Analytics queries | 26+ | ~10 |
+| Recurring stats | 1 + 2N | 2 |
+| Task filtering | Python memory | SQL WHERE |
+| Calendar API | Every request | 5-min cache |
+| Instance materialization | Request-blocking | Background |
+
+---
+
 ## [0.13.0] - 2026-01-22
 
 ### Summary

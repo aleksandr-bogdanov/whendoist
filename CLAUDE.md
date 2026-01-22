@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.13.0 (Database Migrations)
+**Current Version:** v0.14.0 (Performance Optimization)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -75,10 +75,15 @@ app/
 ├── auth/             # OAuth2 flows
 ├── services/
 │   ├── task_service.py        # Native task CRUD
-│   ├── analytics_service.py   # Completion stats and trends
+│   ├── analytics_service.py   # Completion stats and trends (CTE-optimized)
 │   ├── preferences_service.py # User preferences CRUD
 │   ├── backup_service.py      # Data export/import as JSON
+│   ├── calendar_cache.py      # TTL-based calendar event cache
 │   └── todoist_import.py      # Optional Todoist import
+├── tasks/
+│   └── recurring.py           # Background instance materialization
+├── utils/
+│   └── timing.py              # Query timing decorator
 ├── routers/          # HTTP routes
 └── templates/        # Jinja2 templates
 
@@ -441,7 +446,123 @@ Pico CSS aggressively styles input focus states. To override with custom glow:
 - `.modal-backdrop` prefix + `!important` needed to override Pico CSS
 - `z-index: 1` fixes joined inputs overlapping each other's borders on focus
 
-## Recent Changes (v0.12.0)
+## Recent Changes (v0.14.0)
+
+### Performance Optimization
+
+v0.14.0 addresses N+1 queries and performance bottlenecks. See [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for full technical details.
+
+#### Key Metrics Achieved
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Analytics queries | 26+ | ~10 |
+| Recurring stats | 1 + 2N queries | 2 queries |
+| Task filtering | Python memory | SQL WHERE |
+| Calendar API | Every request | 5-min cache |
+
+#### MUST-KNOW: Query Patterns
+
+**1. Use UNION ALL for Task + Instance queries**
+
+When querying both Task and TaskInstance tables for the same data, use `union_all`:
+
+```python
+from sqlalchemy import union_all, literal
+
+# CORRECT: Single query
+task_q = select(Task.completed_at, literal(False).label("is_instance")).where(...)
+instance_q = select(TaskInstance.completed_at, literal(True).label("is_instance")).where(...)
+combined = union_all(task_q, instance_q)
+result = await db.execute(combined)
+
+# WRONG: Two separate queries
+tasks = await db.execute(select(Task).where(...))
+instances = await db.execute(select(TaskInstance).where(...))
+```
+
+**2. Batch queries instead of N+1 loops**
+
+```python
+# CORRECT: Single batch query with GROUP BY
+stats = (
+    select(TaskInstance.task_id, func.count().label("total"))
+    .where(TaskInstance.task_id.in_(task_ids))
+    .group_by(TaskInstance.task_id)
+)
+
+# WRONG: N+1 loop
+for task in tasks:
+    count = await db.execute(select(func.count()).where(TaskInstance.task_id == task.id))
+```
+
+**3. Use SQL filter parameters, not Python filtering**
+
+```python
+# CORRECT: Filter in SQL
+tasks = await task_service.get_tasks(has_domain=True, exclude_statuses=["archived"])
+
+# WRONG: Filter in Python after fetching all
+all_tasks = await task_service.get_tasks(status=None)
+filtered = [t for t in all_tasks if t.domain_id is not None]
+```
+
+#### Calendar Cache Usage
+
+```python
+from app.services.calendar_cache import get_calendar_cache
+
+cache = get_calendar_cache()
+
+# Check cache first
+events = cache.get(user_id, calendar_ids, start_date, end_date)
+if events is None:
+    events = await fetch_from_google_api(...)
+    cache.set(user_id, calendar_ids, start_date, end_date, events)
+
+# Invalidate when calendar selection changes
+cache.invalidate_user(user_id)
+```
+
+**Important:** Cache is in-memory (single process). For multi-worker deployments, replace with Redis.
+
+#### Background Tasks
+
+Instance materialization runs automatically:
+- **Startup:** `materialize_all_instances()` runs blocking
+- **Hourly:** Background loop refreshes instances
+- **Horizon:** 60 days ahead
+
+Don't call `ensure_instances_materialized()` in request handlers — it's already handled.
+
+#### Timing Decorator
+
+Use `@log_timing` for performance monitoring:
+
+```python
+from app.utils.timing import log_timing
+
+@log_timing("my_operation")
+async def my_function():
+    ...
+
+# Logs: INFO whendoist.timing: my_operation: 45.2ms
+```
+
+#### Key Files
+
+| File | Purpose |
+|------|---------|
+| `app/services/analytics_service.py` | CTE-optimized queries |
+| `app/services/calendar_cache.py` | TTL cache (5 min) |
+| `app/services/task_service.py` | `has_domain`, `exclude_statuses` params |
+| `app/tasks/recurring.py` | Background materialization |
+| `app/utils/timing.py` | `@log_timing` decorator |
+| `docs/PERFORMANCE.md` | Full technical documentation |
+
+---
+
+## Previous Changes (v0.12.0)
 
 ### Security Hardening
 
@@ -886,6 +1007,7 @@ Contract tests in `tests/test_hotfix_wizard_bugs.py` verify:
 ### Production Planning
 1. `docs/ARCHITECTURAL-REVIEW.md` — 25-issue security/scalability assessment
 2. `docs/PRODUCTION-ROADMAP.md` — 8-stage implementation plan (v0.11.0 → v1.0.0)
+3. `docs/PERFORMANCE.md` — Query optimization, caching, background tasks (v0.14.0)
 
 ### Design System
 3. `BRAND.md` — Brand identity, wordmark, colors, typography
@@ -909,15 +1031,15 @@ See `docs/ARCHITECTURAL-REVIEW.md` for 25 tracked issues with severity ratings.
 
 The path to v1.0 is documented in `docs/PRODUCTION-ROADMAP.md`. Key milestones:
 
-| Version | Focus |
-|---------|-------|
-| v0.12.0 | Security (rate limiting, WebAuthn challenge storage, CSP) |
-| v0.13.0 | Database migrations (Alembic) |
-| v0.14.0 | Performance (N+1 queries, caching) |
-| v0.15.0 | Architecture (code organization, API versioning) |
-| v0.16.0 | Testing (PostgreSQL containers, E2E expansion) |
-| v0.17.0 | Operations (structured logging, metrics) |
-| v1.0.0 | Launch (security audit, documentation) |
+| Version | Focus | Status |
+|---------|-------|--------|
+| v0.12.0 | Security (rate limiting, WebAuthn challenge storage, CSP) | Done |
+| v0.13.0 | Database migrations (Alembic) | Done |
+| v0.14.0 | Performance (N+1 queries, caching) | Done |
+| v0.15.0 | Architecture (code organization, API versioning) | Next |
+| v0.16.0 | Testing (PostgreSQL containers, E2E expansion) | |
+| v0.17.0 | Operations (structured logging, metrics) | |
+| v1.0.0 | Launch (security audit, documentation) | |
 
 ### Feature Backlog
 - Design system overhaul with dark mode support

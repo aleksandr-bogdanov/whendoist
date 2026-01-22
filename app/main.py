@@ -72,6 +72,11 @@ async def lifespan(app: FastAPI):
 
         from app.database import async_session_factory
         from app.services.challenge_service import ChallengeService
+        from app.tasks.recurring import (
+            materialize_all_instances,
+            start_materialization_background,
+            stop_materialization_background,
+        )
 
         # Verify database connectivity
         async with async_session_factory() as db:
@@ -88,11 +93,32 @@ async def lifespan(app: FastAPI):
                     logger.warning("WebAuthn challenges table not found")
                 else:
                     raise
+
+        # Run initial instance materialization
+        logger.info("Running initial instance materialization...")
+        try:
+            stats = await materialize_all_instances()
+            logger.info(f"Initial materialization: {stats['users_processed']} users processed")
+        except Exception as e:
+            logger.warning(f"Initial materialization failed (non-fatal): {e}")
+
+        # Start background materialization loop
+        start_materialization_background()
+
     except Exception as e:
         logger.error(f"Startup failed: {e}")
         raise
+
     yield
+
+    # Shutdown
     logger.info("Shutting down Whendoist...")
+    try:
+        from app.tasks.recurring import stop_materialization_background
+
+        stop_materialization_background()
+    except Exception as e:
+        logger.warning(f"Error stopping background tasks: {e}")
 
 
 app = FastAPI(

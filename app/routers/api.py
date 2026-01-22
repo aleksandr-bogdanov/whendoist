@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import GoogleCalendarSelection, GoogleToken, TodoistToken, User
 from app.routers.auth import require_user
+from app.services.calendar_cache import get_calendar_cache
 from app.services.gcal import GoogleCalendarClient
 from app.services.labels import clarity_display, parse_labels
 from app.services.todoist import TodoistClient
@@ -336,6 +337,10 @@ async def toggle_calendar(
         db.add(selection)
 
     await db.commit()
+
+    # Invalidate calendar cache when selection changes
+    get_calendar_cache().invalidate_user(user.id)
+
     return {"enabled": selection.enabled}
 
 
@@ -390,6 +395,10 @@ async def set_calendar_selections(
             selection.enabled = False
 
     await db.commit()
+
+    # Invalidate calendar cache when selections change
+    get_calendar_cache().invalidate_user(user.id)
+
     return {"success": True, "enabled_count": len(request.calendar_ids)}
 
 

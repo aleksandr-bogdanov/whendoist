@@ -130,6 +130,8 @@ class TaskService:
         clarity: str | None = None,
         include_subtasks: bool = True,
         top_level_only: bool = True,
+        has_domain: bool | None = None,
+        exclude_statuses: list[str] | None = None,
     ) -> list[Task]:
         """
         Get tasks with optional filtering.
@@ -143,12 +145,23 @@ class TaskService:
             clarity: Filter by clarity (executable/defined/exploratory/none)
             include_subtasks: Eager load subtasks
             top_level_only: Only return top-level tasks (parent_id is None)
+            has_domain: True = only tasks WITH a domain, False = only tasks WITHOUT (inbox)
+            exclude_statuses: List of statuses to exclude (e.g., ["deleted", "archived"])
         """
         query = select(Task).where(Task.user_id == self.user_id)
 
-        # Filter by domain
-        if domain_id is not None:
+        # Filter by domain presence (has_domain takes precedence over domain_id)
+        if has_domain is True:
+            query = query.where(Task.domain_id.isnot(None))
+        elif has_domain is False:
+            query = query.where(Task.domain_id.is_(None))
+        elif domain_id is not None:
+            # Only apply domain_id filter if has_domain is not specified
             query = query.where(Task.domain_id == domain_id)
+
+        # Exclude specific statuses
+        if exclude_statuses:
+            query = query.where(Task.status.notin_(exclude_statuses))
 
         # Filter by parent
         if top_level_only and parent_id is None:

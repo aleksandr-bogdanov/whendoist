@@ -28,6 +28,7 @@ from app.models import (
 )
 from app.routers.auth import get_current_user
 from app.services.analytics_service import AnalyticsService
+from app.services.calendar_cache import get_calendar_cache
 from app.services.gcal import GoogleCalendarClient
 from app.services.labels import Clarity, clarity_display
 from app.services.preferences_service import PreferencesService
@@ -382,15 +383,14 @@ async def dashboard(
     task_service = TaskService(db, user.id)
     recurrence_service = RecurrenceService(db, user.id)
 
-    # Ensure recurring task instances are materialized and committed
-    await recurrence_service.ensure_instances_materialized()
-    await db.commit()
+    # Note: Instance materialization is now handled by background task (v0.14.0)
+    # No longer blocking request here
 
     # Get domains and tasks (exclude inbox/thoughts - tasks without domain)
     # Include both pending and completed tasks so completed ones show dimmed
     domains = await task_service.get_domains()
-    all_tasks = await task_service.get_tasks(status=None, top_level_only=True)
-    tasks = [t for t in all_tasks if t.domain_id is not None]
+    # Use SQL filter for has_domain instead of Python list comprehension
+    tasks = await task_service.get_tasks(status=None, top_level_only=True, has_domain=True)
 
     # Get next occurrence for each recurring task (date + instance ID for completion)
     next_instances: dict[int, dict] = {}
@@ -510,7 +510,7 @@ async def dashboard(
             )
 
     # ==========================================================================
-    # Google Calendar Events
+    # Google Calendar Events (with caching)
     # ==========================================================================
     if google_token:
         try:
@@ -528,21 +528,32 @@ async def dashboard(
             )
 
             if selections:
-                time_min = datetime.combine(start_date, datetime.min.time(), tzinfo=UTC)
-                time_max = datetime.combine(end_date, datetime.min.time(), tzinfo=UTC)
+                calendar_ids = [s.calendar_id for s in selections]
+                cache = get_calendar_cache()
 
-                events = []
-                async with GoogleCalendarClient(google_token) as client:
-                    for selection in selections:
-                        try:
-                            cal_events = await client.get_events(selection.calendar_id, time_min, time_max)
-                            events.extend(cal_events)
-                        except Exception as e:
-                            logger.debug(f"Failed to fetch calendar {selection.calendar_id}: {e}")
-                            continue
+                # Try cache first
+                events = cache.get(user.id, calendar_ids, start_date, end_date)
 
-                await db.commit()
-                events.sort(key=lambda e: e.start)
+                if events is None:
+                    # Cache miss - fetch from Google API
+                    time_min = datetime.combine(start_date, datetime.min.time(), tzinfo=UTC)
+                    time_max = datetime.combine(end_date, datetime.min.time(), tzinfo=UTC)
+
+                    events = []
+                    async with GoogleCalendarClient(google_token) as client:
+                        for selection in selections:
+                            try:
+                                cal_events = await client.get_events(selection.calendar_id, time_min, time_max)
+                                events.extend(cal_events)
+                            except Exception as e:
+                                logger.debug(f"Failed to fetch calendar {selection.calendar_id}: {e}")
+                                continue
+
+                    await db.commit()
+                    events.sort(key=lambda e: e.start)
+
+                    # Store in cache
+                    cache.set(user.id, calendar_ids, start_date, end_date, events)
 
                 # Group events by date
                 events_by_date = {}
@@ -610,14 +621,12 @@ async def task_list_partial(
     task_service = TaskService(db, user.id)
     recurrence_service = RecurrenceService(db, user.id)
 
-    # Ensure recurring task instances are materialized and committed
-    await recurrence_service.ensure_instances_materialized()
-    await db.commit()
+    # Note: Instance materialization is now handled by background task (v0.14.0)
+    # No longer blocking request here
 
-    # Get domains and tasks
+    # Get domains and tasks (use SQL filter for has_domain)
     domains = await task_service.get_domains()
-    all_tasks = await task_service.get_tasks(status=None, top_level_only=True)
-    tasks = [t for t in all_tasks if t.domain_id is not None]
+    tasks = await task_service.get_tasks(status=None, top_level_only=True, has_domain=True)
 
     # Get next occurrence for each recurring task (date + instance ID for completion)
     next_instances: dict[int, dict] = {}
@@ -810,9 +819,8 @@ async def thoughts(
 
     task_service = TaskService(db, user.id)
 
-    # Get tasks without a domain (inbox/thoughts)
-    all_tasks = await task_service.get_tasks(status="pending", top_level_only=True)
-    inbox_tasks = [t for t in all_tasks if t.domain_id is None]
+    # Get tasks without a domain (inbox/thoughts) - use SQL filter
+    inbox_tasks = await task_service.get_tasks(status="pending", top_level_only=True, has_domain=False)
 
     # Build task items for display
     task_items = [build_native_task_item(t) for t in inbox_tasks]
@@ -850,9 +858,10 @@ async def settings(
     task_service = TaskService(db, user.id)
     domains = await task_service.get_domains()
 
-    # Count tasks per domain (active tasks only)
-    all_tasks = await task_service.get_tasks(status=None, top_level_only=True)
-    active_tasks = [t for t in all_tasks if t.status not in ("deleted", "archived")]
+    # Count tasks per domain (active tasks only) - use SQL filter
+    active_tasks = await task_service.get_tasks(
+        status=None, top_level_only=True, exclude_statuses=["deleted", "archived"]
+    )
     domain_task_counts: dict[int, int] = {}
     for task in active_tasks:
         if task.domain_id:

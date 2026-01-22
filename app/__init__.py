@@ -4,4 +4,4 @@ Whendoist - Task scheduling app.
 WHEN do I do my tasks?
 """
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
