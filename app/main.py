@@ -12,14 +12,20 @@ from starlette.middleware.sessions import SessionMiddleware
 from app import __version__
 from app.config import get_settings
 from app.logging_config import setup_logging
+from app.metrics import PrometheusMiddleware, get_metrics
 from app.middleware.rate_limit import limiter
+from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
 from app.routers import api, auth, pages
 from app.routers import v1 as api_v1
+from app.sentry_integration import init_sentry
 
 # Setup logging first
 setup_logging()
 logger = logging.getLogger("whendoist")
+
+# Initialize Sentry (optional - only if SENTRY_DSN is set)
+init_sentry()
 
 settings = get_settings()
 
@@ -127,6 +133,12 @@ is_production = settings.base_url.startswith("https://")
 # Security headers middleware (outermost - applied last to response)
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Request ID middleware (adds X-Request-ID header and logging context)
+app.add_middleware(RequestIDMiddleware)
+
+# Prometheus metrics middleware (tracks request count/latency)
+app.add_middleware(PrometheusMiddleware)
+
 # Session middleware for signed cookies
 app.add_middleware(
     SessionMiddleware,
@@ -159,6 +171,14 @@ async def health_check():
     from app import __version__
 
     return JSONResponse({"status": "healthy", "version": __version__})
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    """Prometheus metrics endpoint."""
+    from starlette.responses import Response
+
+    return Response(content=get_metrics(), media_type="text/plain; charset=utf-8")
 
 
 @app.get("/ready", include_in_schema=False)
