@@ -9,6 +9,10 @@ before running migrations (tables exist but alembic_version doesn't).
 import asyncio
 import subprocess
 import sys
+from pathlib import Path
+
+# Add project root to path for imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import asyncpg
 
