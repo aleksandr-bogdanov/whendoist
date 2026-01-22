@@ -9,6 +9,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
 
+from app import __version__
 from app.config import get_settings
 from app.logging_config import setup_logging
 from app.middleware.rate_limit import limiter
@@ -124,7 +125,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
-    version="0.13.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
