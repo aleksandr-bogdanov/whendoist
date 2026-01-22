@@ -98,7 +98,7 @@ jobs:
           TODOIST_CLIENT_SECRET: test
           GOOGLE_CLIENT_ID: test
           GOOGLE_CLIENT_SECRET: test
-        run: uv run pytest -v -m "not integration and not e2e"
+        run: uv run pytest -v -m "not integration"
 
       - name: Run integration tests (PostgreSQL)
         env:

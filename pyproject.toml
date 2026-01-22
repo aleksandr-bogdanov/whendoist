@@ -35,7 +35,6 @@ dev = [
     "pyright>=1.1.390",
     "httpx>=0.28.0",
     "testcontainers[postgres]>=4.0.0",
-    "pytest-playwright>=0.6.0",
 ]
 sentry = [
     "sentry-sdk>=2.19.0",
@@ -62,6 +61,5 @@ testpaths = ["tests"]
 markers = [
     "unit: Unit tests using SQLite (fast, isolated)",
     "integration: Integration tests using PostgreSQL container (production parity)",
-    "e2e: End-to-end Playwright browser tests (requires running server)",
 ]
 

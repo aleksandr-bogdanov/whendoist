@@ -6,6 +6,19 @@ Task scheduling app: native tasks + Google Calendar.
 
 ---
 
+## Vibecode-First Project
+
+This is a vibecoded project. Testing philosophy:
+
+- **Only write tests that run in CI automatically** — no manual test execution
+- **No E2E/Playwright tests** — they require manual setup and won't be run
+- **Unit tests (SQLite)** — fast, run on every PR
+- **Integration tests (PostgreSQL)** — run in CI with service containers
+
+If a test can't run automatically in GitHub Actions, don't write it.
+
+---
+
 ## Commands
 
 ```bash

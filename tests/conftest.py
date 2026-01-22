@@ -4,7 +4,6 @@ Test fixtures for Whendoist.
 Test Categories:
 - @pytest.mark.unit: SQLite-based unit tests (fast, isolated)
 - @pytest.mark.integration: PostgreSQL container tests (production parity)
-- @pytest.mark.e2e: Playwright browser tests (requires running server)
 """
 
 import pytest
