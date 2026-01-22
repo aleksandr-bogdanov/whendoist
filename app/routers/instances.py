@@ -15,7 +15,7 @@ from app.models import TaskInstance, User
 from app.routers.auth import require_user
 from app.services.recurrence_service import RecurrenceService
 
-router = APIRouter(prefix="/api/instances", tags=["instances"])
+router = APIRouter(prefix="/instances", tags=["instances"])
 
 
 # =============================================================================

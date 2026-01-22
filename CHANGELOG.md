@@ -15,6 +15,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.15.0] - 2026-01-22
+
+### Summary
+**Architecture Cleanup** — Stage 5 of production readiness. Extracted business logic from pages.py, centralized constants, created dedicated services for task sorting/grouping, and prepared API versioning with both legacy `/api/*` and versioned `/api/v1/*` routes.
+
+### Added
+
+- **Centralized Constants** — `app/constants.py`:
+  - `Impact` enum (P1-P4) with labels
+  - `RetentionDays` enum with validation
+  - Crypto constants (PBKDF2 iterations, challenge TTL)
+  - Default values for impact and retention
+
+- **Task Sorting Service** — `app/services/task_sorting.py`:
+  - Pure sorting functions extracted from pages.py
+  - `native_task_sort_key()` — Sort by impact, position
+  - `scheduled_task_sort_key()` — Sort by date, impact
+  - `completed_task_sort_key()` — Sort by completion date
+
+- **Task Grouping Service** — `app/services/task_grouping.py`:
+  - `build_native_task_item()` — Create task item dict
+  - `group_tasks_by_domain()` — Group and sort tasks
+  - Handles preferences, filtering, retention windows
+
+- **API Versioning** — Dual route mounting:
+  - Legacy routes at `/api/*` (backwards compatibility)
+  - Versioned routes at `/api/v1/*`
+  - Both route sets share the same handler code
+  - `app/routers/v1/__init__.py` aggregator
+
+- **New Test Files**:
+  - `tests/test_constants.py` — Constants validation
+  - `tests/test_task_grouping.py` — Grouping service tests
+  - `tests/test_api_versioning.py` — Route registration tests
+
+### Changed
+
+- **pages.py Refactored** — Reduced from 999 to 754 lines:
+  - Business logic extracted to services
+  - Routes-only focus
+  - Updated imports
+
+- **Router Prefixes** — Modified 9 API routers:
+  - Changed from `/api/<resource>` to `/<resource>`
+  - Mounted at both `/api` and `/api/v1` via main.py
+  - Affected: tasks, domains, preferences, passkeys, instances, backup, import_data, build_info, wizard
+
+- **test_task_sorting.py** — Updated imports:
+  - Now imports from `app.services.task_sorting`
+  - Now imports from `app.services.task_grouping`
+
+### Technical
+
+- New files:
+  - `app/constants.py`
+  - `app/services/task_sorting.py`
+  - `app/services/task_grouping.py`
+  - `app/routers/v1/__init__.py`
+  - `tests/test_constants.py`
+  - `tests/test_task_grouping.py`
+  - `tests/test_api_versioning.py`
+
+- Modified files:
+  - `app/routers/pages.py` (major refactor)
+  - `app/main.py` (dual route mounting)
+  - 9 API routers (prefix changes)
+  - `tests/test_task_sorting.py` (import updates)
+
+### Metrics
+
+| Metric | Before | After |
+|--------|--------|-------|
+| pages.py lines | 999 | 754 |
+| Business logic in routes | Yes | No |
+| Constants centralized | No | Yes |
+| API versioning | No | Yes |
+| Test count | 373 | 377 |
+
+---
+
 ## [0.14.0] - 2026-01-22
 
 ### Summary

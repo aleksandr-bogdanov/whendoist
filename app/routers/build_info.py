@@ -14,7 +14,7 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-router = APIRouter(prefix="/api/build", tags=["build"])
+router = APIRouter(prefix="/build", tags=["build"])
 
 
 def get_version_from_changelog() -> str:

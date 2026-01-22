@@ -244,8 +244,8 @@ For deployment and load balancer configuration:
 
 | Endpoint | Purpose | Response |
 |----------|---------|----------|
-| `GET /health` | Liveness check | `{"status": "healthy", "version": "0.14.0"}` |
-| `GET /ready` | Readiness check (includes DB) | `{"status": "ready", "database": "connected", "version": "0.14.0"}` |
+| `GET /health` | Liveness check | `{"status": "healthy", "version": "0.15.0"}` |
+| `GET /ready` | Readiness check (includes DB) | `{"status": "ready", "database": "connected", "version": "0.15.0"}` |
 
 The `/ready` endpoint returns 503 if the database is unavailable.
 
@@ -298,8 +298,17 @@ uv run pytest tests/e2e/ -v
 app/
 ├── main.py           # FastAPI entrypoint
 ├── models.py         # ORM models (Task, Domain, User, etc.)
-├── services/         # Task, Analytics, Preferences services
-├── routers/          # HTTP routes
+├── constants.py      # Business constants (Impact, RetentionDays)
+├── services/
+│   ├── task_service.py       # Task CRUD
+│   ├── task_sorting.py       # Pure sorting functions
+│   ├── task_grouping.py      # Group tasks by domain
+│   ├── analytics_service.py  # Completion stats
+│   └── preferences_service.py
+├── routers/
+│   ├── pages.py      # HTML page routes
+│   ├── tasks.py      # Task API endpoints
+│   └── v1/           # Versioned API (/api/v1/*)
 └── templates/        # Jinja2 templates
 
 static/
@@ -308,12 +317,25 @@ static/
 └── img/              # Logo and favicons
 ```
 
+### API Versioning
+
+Both legacy and versioned API routes are available:
+
+| Legacy | Versioned | Example |
+|--------|-----------|---------|
+| `/api/tasks` | `/api/v1/tasks` | List/create tasks |
+| `/api/domains` | `/api/v1/domains` | List/create domains |
+| `/api/preferences` | `/api/v1/preferences` | User preferences |
+
+Legacy routes remain for backwards compatibility. New integrations should use `/api/v1/*`.
+
 ---
 
 ## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
+| [Claude Code Context](CLAUDE.md) | Quick reference for Claude Code sessions — **read this first** |
 | [Database Migrations](docs/MIGRATIONS.md) | Schema changes, Alembic workflows, troubleshooting |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, background tasks (v0.14.0) |
 | [Architectural Review](docs/ARCHITECTURAL-REVIEW.md) | Security/scalability assessment (25 issues) |

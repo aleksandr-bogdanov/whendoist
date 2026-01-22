@@ -18,7 +18,7 @@ from app.routers.auth import require_user
 from app.services.challenge_service import ChallengeService
 from app.services.passkey_service import PasskeyService
 
-router = APIRouter(prefix="/api/passkeys", tags=["passkeys"])
+router = APIRouter(prefix="/passkeys", tags=["passkeys"])
 
 
 # =============================================================================

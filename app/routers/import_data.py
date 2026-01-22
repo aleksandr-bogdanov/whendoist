@@ -20,7 +20,7 @@ from app.services.todoist_import import TodoistImportService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/import", tags=["import"])
+router = APIRouter(prefix="/import", tags=["import"])
 
 
 class WipeResponse(BaseModel):

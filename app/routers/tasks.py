@@ -19,7 +19,7 @@ from app.services.task_service import TaskService
 
 logger = logging.getLogger("whendoist.tasks")
 
-router = APIRouter(prefix="/api/tasks", tags=["tasks"])
+router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 # =============================================================================

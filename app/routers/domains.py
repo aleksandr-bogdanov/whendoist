@@ -17,7 +17,7 @@ from app.services.task_service import TaskService
 
 logger = logging.getLogger("whendoist.domains")
 
-router = APIRouter(prefix="/api/domains", tags=["domains"])
+router = APIRouter(prefix="/domains", tags=["domains"])
 
 
 # =============================================================================

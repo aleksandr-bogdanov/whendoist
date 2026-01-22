@@ -14,7 +14,7 @@ from app.models import User
 from app.routers.auth import require_user
 from app.services.preferences_service import PreferencesService
 
-router = APIRouter(prefix="/api/preferences", tags=["preferences"])
+router = APIRouter(prefix="/preferences", tags=["preferences"])
 
 
 # =============================================================================

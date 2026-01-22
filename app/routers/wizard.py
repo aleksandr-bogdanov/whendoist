@@ -14,7 +14,7 @@ from app.database import get_db
 from app.models import User
 from app.routers.auth import require_user
 
-router = APIRouter(prefix="/api/wizard", tags=["wizard"])
+router = APIRouter(prefix="/wizard", tags=["wizard"])
 
 
 # =============================================================================

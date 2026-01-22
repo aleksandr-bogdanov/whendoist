@@ -19,7 +19,7 @@ from app.routers.auth import require_user
 from app.services.backup_service import BackupService
 
 logger = logging.getLogger("whendoist")
-router = APIRouter(prefix="/api/backup", tags=["backup"])
+router = APIRouter(prefix="/backup", tags=["backup"])
 
 
 class ImportResponse(BaseModel):

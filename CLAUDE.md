@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.14.0 (Performance Optimization)
+**Current Version:** v0.15.0 (Architecture Cleanup)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -446,7 +446,168 @@ Pico CSS aggressively styles input focus states. To override with custom glow:
 - `.modal-backdrop` prefix + `!important` needed to override Pico CSS
 - `z-index: 1` fixes joined inputs overlapping each other's borders on focus
 
-## Recent Changes (v0.14.0)
+## Recent Changes (v0.15.0)
+
+### Architecture Cleanup
+
+v0.15.0 is Stage 5 of the production roadmap, focusing on code organization and maintainability.
+
+#### Key Changes
+
+| Metric | Before | After |
+|--------|--------|-------|
+| pages.py lines | 999 | 754 |
+| Business logic in routes | Yes | No |
+| Constants centralized | No | Yes |
+| API versioning | No | Yes |
+
+#### New Modules
+
+| File | Purpose |
+|------|---------|
+| `app/constants.py` | Centralized business constants (Impact, RetentionDays) |
+| `app/services/task_sorting.py` | Pure sorting functions |
+| `app/services/task_grouping.py` | Task grouping by domain |
+| `app/routers/v1/__init__.py` | API v1 aggregator |
+
+#### Constants Module
+
+```python
+from app.constants import Impact, RetentionDays, DEFAULT_IMPACT
+
+# Impact levels
+Impact.P1  # Critical (1)
+Impact.P2  # High (2)
+Impact.P3  # Medium (3)
+Impact.P4  # Low (4, default)
+
+# Retention validation
+RetentionDays.is_valid(3)  # True
+RetentionDays.is_valid(5)  # False
+
+# Crypto constants
+PBKDF2_ITERATIONS_V1 = 100_000
+PBKDF2_ITERATIONS_V2 = 600_000
+CHALLENGE_TTL_SECONDS = 300
+```
+
+#### Task Sorting Functions
+
+```python
+from app.services.task_sorting import (
+    native_task_sort_key,      # Sort by impact, position
+    scheduled_task_sort_key,   # Sort by date, then impact
+    completed_task_sort_key,   # Sort by completion date
+)
+```
+
+#### Task Grouping
+
+```python
+from app.services.task_grouping import (
+    build_native_task_item,    # Create task item dict
+    group_tasks_by_domain,     # Group and sort tasks
+)
+```
+
+#### API Versioning
+
+Both legacy and versioned routes are available:
+
+| Legacy Route | Versioned Route |
+|--------------|-----------------|
+| `/api/tasks` | `/api/v1/tasks` |
+| `/api/domains` | `/api/v1/domains` |
+| `/api/preferences` | `/api/v1/preferences` |
+
+Both route sets use the same handlers. Legacy routes remain for backwards compatibility.
+
+#### MUST-KNOW: When Modifying These Modules
+
+**1. Adding New Constants**
+
+Always add new business constants to `app/constants.py`:
+
+```python
+# CORRECT: Use centralized constant
+from app.constants import DEFAULT_IMPACT, CHALLENGE_TTL_SECONDS
+
+# WRONG: Hardcode in multiple places
+TTL = 300  # Magic number scattered in code
+```
+
+**2. Adding New Sorting Logic**
+
+Put pure sorting functions in `app/services/task_sorting.py`:
+
+```python
+# task_sorting.py - pure functions, no DB access
+def my_sort_key(task_item: TaskItem) -> tuple:
+    """Sort by custom criteria."""
+    task = task_item["task"]
+    return (task.some_field, task.position)
+```
+
+**3. Adding New API Routes**
+
+When adding a new router, you MUST add it to THREE places:
+
+```python
+# 1. app/main.py - Legacy routes
+legacy_api = APIRouter(prefix="/api")
+legacy_api.include_router(my_new_router.router)  # ← Add here
+
+# 2. app/routers/v1/__init__.py - Versioned routes
+router.include_router(my_new_router.router)  # ← Add here
+
+# 3. Router file - Use resource prefix, not /api
+router = APIRouter(prefix="/myresource", tags=["myresource"])  # ← NOT /api/myresource
+```
+
+**4. Task Item Structure**
+
+When building task items for templates, use `build_native_task_item()`:
+
+```python
+from app.services.task_grouping import build_native_task_item
+
+# Returns dict with: task, clarity_display, next_occurrence,
+# next_instance_id, subtasks, completion_age_class, instance_completed_at
+item = build_native_task_item(task, next_instances, instance_completed_at)
+```
+
+**5. Grouping Tasks for Display**
+
+Use `group_tasks_by_domain()` which handles:
+- Filtering by retention window
+- Sorting by preferences (impact vs date)
+- Section separation (unscheduled → scheduled → completed)
+- User preference respect
+
+```python
+from app.services.task_grouping import group_tasks_by_domain
+
+domains_with_tasks = group_tasks_by_domain(
+    tasks, domains, next_instances,
+    today_instance_completions, user_prefs
+)
+```
+
+#### Key Files (v0.15.0)
+
+| File | Purpose |
+|------|---------|
+| `app/constants.py` | Business constants — use instead of hardcoding |
+| `app/services/task_sorting.py` | Pure sorting functions for tasks |
+| `app/services/task_grouping.py` | Group tasks by domain for display |
+| `app/routers/v1/__init__.py` | API v1 route aggregator |
+| `tests/test_constants.py` | Constant validation tests |
+| `tests/test_task_grouping.py` | Grouping service tests |
+| `tests/test_api_versioning.py` | Route registration tests |
+
+---
+
+## Previous Changes (v0.14.0)
 
 ### Performance Optimization
 
@@ -1009,19 +1170,25 @@ Contract tests in `tests/test_hotfix_wizard_bugs.py` verify:
 2. `docs/PRODUCTION-ROADMAP.md` — 8-stage implementation plan (v0.11.0 → v1.0.0)
 3. `docs/PERFORMANCE.md` — Query optimization, caching, background tasks (v0.14.0)
 
+### Architecture (v0.15.0)
+4. `app/constants.py` — Business constants (Impact, RetentionDays, crypto)
+5. `app/services/task_sorting.py` — Pure sorting functions
+6. `app/services/task_grouping.py` — Task grouping by domain
+7. `app/routers/v1/__init__.py` — API versioning aggregator
+
 ### Design System
-3. `BRAND.md` — Brand identity, wordmark, colors, typography
-4. `docs/brand/COLOR-SYSTEM.md` — Complete color palette (107 tokens)
-5. `docs/brand/UI-KIT.md` — Component specifications (buttons, forms, panels)
+8. `BRAND.md` — Brand identity, wordmark, colors, typography
+9. `docs/brand/COLOR-SYSTEM.md` — Complete color palette (107 tokens)
+10. `docs/brand/UI-KIT.md` — Component specifications (buttons, forms, panels)
 
 ### Code Understanding
-6. `CHANGELOG.md` — Version history and changes
-7. `tests/README.md` — Test architecture and how to write tests
-8. `static/css/app.css` — Design tokens (first 120 lines)
-9. `static/css/wizard.css` — Reference implementation of new design patterns
-10. `static/js/crypto.js` — Client-side encryption library
-11. `app/templates/dashboard.html` — Tasks page template
-12. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
+11. `CHANGELOG.md` — Version history and changes
+12. `tests/README.md` — Test architecture and how to write tests
+13. `static/css/app.css` — Design tokens (first 120 lines)
+14. `static/css/wizard.css` — Reference implementation of new design patterns
+15. `static/js/crypto.js` — Client-side encryption library
+16. `app/templates/dashboard.html` — Tasks page template
+17. `app/templates/settings.html` — Settings page with Security and Build Provenance panels
 
 ## Known Issues
 
@@ -1036,8 +1203,8 @@ The path to v1.0 is documented in `docs/PRODUCTION-ROADMAP.md`. Key milestones:
 | v0.12.0 | Security (rate limiting, WebAuthn challenge storage, CSP) | Done |
 | v0.13.0 | Database migrations (Alembic) | Done |
 | v0.14.0 | Performance (N+1 queries, caching) | Done |
-| v0.15.0 | Architecture (code organization, API versioning) | Next |
-| v0.16.0 | Testing (PostgreSQL containers, E2E expansion) | |
+| v0.15.0 | Architecture (code organization, API versioning) | Done |
+| v0.16.0 | Testing (PostgreSQL containers, E2E expansion) | Next |
 | v0.17.0 | Operations (structured logging, metrics) | |
 | v1.0.0 | Launch (security audit, documentation) | |
 

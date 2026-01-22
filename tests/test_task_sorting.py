@@ -1,11 +1,11 @@
 """
 Server-Side Task Sorting Tests.
 
-Tests the Python sorting logic in app/routers/pages.py that determines
-task order based on user preferences.
+Tests the Python sorting logic in app/services/task_sorting.py and
+app/services/task_grouping.py that determines task order based on user preferences.
 
 Test Category: Unit (async, uses in-memory SQLite)
-Related Code: app/routers/pages.py (group_tasks_by_domain, sort key functions)
+Related Code: app/services/task_sorting.py, app/services/task_grouping.py
 
 Coverage:
 - All 4 preference combinations for section ordering:
@@ -29,10 +29,9 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Domain, Task, User, UserPreferences
-from app.routers.pages import (
-    build_native_task_item,
+from app.services.task_grouping import build_native_task_item, group_tasks_by_domain
+from app.services.task_sorting import (
     completed_task_sort_key,
-    group_tasks_by_domain,
     native_task_sort_key,
     scheduled_task_sort_key,
 )
