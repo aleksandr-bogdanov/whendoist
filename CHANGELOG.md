@@ -15,6 +15,138 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.19.0] - 2026-01-22
+
+### Summary
+**Final Polish** — Production documentation and roadmap completion.
+
+### Added
+
+- **Deployment Documentation** — `docs/DEPLOYMENT.md`:
+  - Railway deployment guide with step-by-step instructions
+  - Environment variable reference
+  - Health check endpoint documentation
+  - Monitoring and scaling guidance
+  - Troubleshooting section
+
+- **Security Documentation** — `docs/SECURITY.md`:
+  - Authentication mechanisms (sessions, OAuth, WebAuthn)
+  - Client-side E2E encryption architecture
+  - Network security and headers
+  - Rate limiting configuration
+  - Input validation practices
+  - Security checklist
+
+### Changed
+
+- **PRODUCTION-ROADMAP.md** — Updated to reflect all completed stages (v0.11.0 → v0.19.0)
+
+---
+
+## [0.18.0] - 2026-01-22
+
+### Summary
+**Production Operations** — Observability, metrics, and error tracking for production deployments.
+
+### Added
+
+- **JSON Structured Logging** — `app/logging_config.py` enhanced:
+  - JSON formatter for production (machine-parseable)
+  - Request ID context via contextvars
+  - User ID context for audit trails
+  - Clean exception formatting for development
+
+- **Request ID Middleware** — `app/middleware/request_id.py`:
+  - X-Request-ID header for request tracing
+  - Generates UUID if not provided by client/load balancer
+  - Sets ID in response headers and logging context
+  - Supports distributed tracing
+
+- **Prometheus Metrics** — `app/metrics.py`:
+  - `http_requests_total` counter by method, endpoint, status
+  - `http_request_duration_seconds` histogram with sensible buckets
+  - `whendoist_task_operations_total` business metric
+  - `whendoist_scheduled_tasks_total` business metric
+  - `/metrics` endpoint for Prometheus scraping
+  - PrometheusMiddleware for automatic collection
+
+- **Sentry Integration** — `app/sentry_integration.py` (optional):
+  - Automatic exception tracking when `SENTRY_DSN` is set
+  - Performance tracing (10% sample rate)
+  - Request context (user ID, request ID)
+  - Sensitive data scrubbing (cookies, auth headers)
+  - sentry-sdk as optional dependency: `pip install whendoist[sentry]`
+
+- **prometheus-client** dependency added to core dependencies
+
+### Technical
+
+- New files:
+  - `app/metrics.py`
+  - `app/middleware/request_id.py`
+  - `app/sentry_integration.py`
+
+- Modified files:
+  - `app/logging_config.py` (JSON formatter, context vars)
+  - `app/middleware/__init__.py` (exports)
+  - `app/main.py` (middleware integration, /metrics endpoint)
+  - `pyproject.toml` (dependencies)
+
+---
+
+## [0.17.0] - 2026-01-22
+
+### Summary
+**Testing Infrastructure** — Production-grade testing with PostgreSQL parity and expanded contract tests.
+
+### Added
+
+- **PostgreSQL Test Container** — `tests/conftest.py`:
+  - `postgres_container` fixture (session-scoped)
+  - `pg_session` fixture for integration tests
+  - Requires Docker for PostgreSQL container
+
+- **Pytest Markers** — Test categorization:
+  - `@pytest.mark.unit` — SQLite tests (fast, isolated)
+  - `@pytest.mark.integration` — PostgreSQL tests (production parity)
+  - `@pytest.mark.e2e` — Playwright browser tests
+
+- **Playwright E2E Scaffolding**:
+  - `tests/e2e/conftest.py` — Playwright configuration
+  - `tests/e2e/test_smoke.py` — Basic smoke tests
+  - Browser context configuration
+  - Base URL fixture
+
+- **Expanded JS Contract Tests** — `tests/test_js_module_contract.py`:
+  - `TestCryptoModuleExportsAPI` — encryption API verification
+  - `TestDragDropModuleExportsAPI` — scheduling functions
+  - `TestToastModuleExportsAPI` — notification API
+  - `TestThemeModuleContract` — dark/light mode
+  - `TestDeviceDetectionModule` — touch/mobile detection
+  - `TestHapticsModule` — vibration feedback
+  - `TestRecurrencePickerModule` — recurring patterns
+  - `TestTaskDialogModule` — task CRUD UI
+  - `TestPlanTasksModule` — Plan My Day
+  - `TestEnergySelectorModule` — energy filtering
+  - `TestWizardModule` — onboarding flow
+  - `TestTaskCompleteModule` — completion handling
+
+### Changed
+
+- **testcontainers[postgres]** added to dev dependencies
+- **playwright** and **pytest-playwright** added to dev dependencies
+- `tests/e2e/test_task_sorting_e2e.py` — Updated to use @pytest.mark.e2e
+- `tests/test_health.py` — Fixed to handle DB connection failures gracefully
+
+### Technical
+
+- New dependencies:
+  - `testcontainers[postgres]>=4.0.0`
+  - `playwright>=1.49.0`
+  - `pytest-playwright>=0.6.2`
+
+---
+
 ## [0.16.0] - 2026-01-22
 
 ### Summary

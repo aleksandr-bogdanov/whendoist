@@ -336,10 +336,12 @@ Legacy routes remain for backwards compatibility. New integrations should use `/
 | Document | Description |
 |----------|-------------|
 | [Claude Code Context](CLAUDE.md) | Quick reference for Claude Code sessions — **read this first** |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Railway deployment, environment variables, monitoring |
+| [Security Guide](docs/SECURITY.md) | Authentication, encryption, rate limiting, best practices |
 | [Database Migrations](docs/MIGRATIONS.md) | Schema changes, Alembic workflows, troubleshooting |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, background tasks (v0.14.0) |
 | [Architectural Review](docs/ARCHITECTURAL-REVIEW.md) | Security/scalability assessment (25 issues) |
-| [Production Roadmap](docs/PRODUCTION-ROADMAP.md) | 8-stage plan from v0.11.0 → v1.0.0 |
+| [Production Roadmap](docs/PRODUCTION-ROADMAP.md) | 9-stage plan from v0.11.0 → v0.19.0 (COMPLETE) |
 | [Brand Guidelines](BRAND.md) | Wordmark, colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette (107 tokens) |
 | [UI Components](docs/brand/UI-KIT.md) | Button, form, panel specifications |
