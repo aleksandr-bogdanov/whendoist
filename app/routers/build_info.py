@@ -122,21 +122,11 @@ async def get_build_info() -> JSONResponse:
             }
         )
 
-    # Fall back to live calculation (development mode)
+    # Fall back to live calculation (development/production without manifest)
     version = get_version()
     commit = get_git_commit()
-
-    # Calculate build hash from key files
-    static_dir = Path(__file__).parent.parent.parent / "static"
-    key_files = ["css/app.css", "css/dashboard.css", "js/crypto.js", "js/passkey.js", "js/toast.js"]
-
-    hashes = []
-    for key_file in key_files:
-        filepath = static_dir / key_file
-        if filepath.exists():
-            hashes.append(f"{key_file}:{calculate_file_hash(filepath)}")
-
-    build_hash = hashlib.sha256("\n".join(hashes).encode()).hexdigest()[:16]
+    hashes = calculate_live_hashes()
+    build_hash = calculate_build_hash(hashes)
 
     return JSONResponse(
         {
@@ -145,7 +135,7 @@ async def get_build_info() -> JSONResponse:
             "build": {
                 "hash": build_hash,
                 "runner": "live",
-                "environment": "development",
+                "environment": "production",
             },
             "repository": {
                 "url": "https://github.com/aleksandr-bogdanov/whendoist",
@@ -175,6 +165,18 @@ async def get_file_hashes() -> JSONResponse:
         )
 
     # Fall back to live calculation
+    hashes = calculate_live_hashes()
+
+    return JSONResponse(
+        {
+            "source": "live",
+            "files": hashes,
+        }
+    )
+
+
+def calculate_live_hashes() -> dict[str, str]:
+    """Calculate SHA256 hashes for all CSS and JS files."""
     static_dir = Path(__file__).parent.parent.parent / "static"
     hashes = {}
 
@@ -190,12 +192,15 @@ async def get_file_hashes() -> JSONResponse:
         for js_file in js_dir.glob("*.js"):
             hashes[f"js/{js_file.name}"] = calculate_file_hash(js_file)
 
-    return JSONResponse(
-        {
-            "source": "live",
-            "files": hashes,
-        }
-    )
+    return hashes
+
+
+def calculate_build_hash(hashes: dict[str, str]) -> str:
+    """Calculate a build fingerprint from file hashes."""
+    # Sort for consistency, then hash the combined string
+    sorted_items = sorted(hashes.items())
+    combined = "\n".join(f"{k}:{v}" for k, v in sorted_items)
+    return hashlib.sha256(combined.encode()).hexdigest()[:16]
 
 
 @router.get("/verify")
@@ -213,13 +218,25 @@ async def get_verification_info() -> JSONResponse:
     version = manifest.get("version") if manifest else get_version()
     commit = manifest.get("commit") if manifest else get_git_commit()
 
+    # Get hashes - from manifest or calculate live
+    if manifest and "files" in manifest:
+        hashes = manifest["files"]
+        build_info = manifest.get("build", {})
+    else:
+        hashes = calculate_live_hashes()
+        build_info = {
+            "hash": calculate_build_hash(hashes),
+            "runner": "live",
+            "environment": "production",
+        }
+
     repo_url = "https://github.com/aleksandr-bogdanov/whendoist"
 
     return JSONResponse(
         {
             "version": version,
             "commit": commit,
-            "build": manifest.get("build") if manifest else None,
+            "build": build_info,
             "verification": {
                 "github_release": f"{repo_url}/releases/tag/{version}",
                 "attestations": f"{repo_url}/attestations",
@@ -231,7 +248,7 @@ async def get_verification_info() -> JSONResponse:
                     "4. Compare with the hashes shown below",
                 ],
             },
-            "hashes": manifest.get("files") if manifest else None,
+            "hashes": hashes,
             "sri": manifest.get("sri") if manifest else None,
         }
     )
