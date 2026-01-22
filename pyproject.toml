@@ -1,6 +1,6 @@
 [project]
 name = "whendoist"
-version = "0.16.0"
+version = "0.17.0"
 description = "Task scheduling app - WHEN do I do my tasks?"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -33,6 +33,9 @@ dev = [
     "black>=24.10.0",
     "pyright>=1.1.390",
     "httpx>=0.28.0",
+    "testcontainers[postgres]>=4.0.0",
+    "playwright>=1.49.0",
+    "pytest-playwright>=0.6.2",
 ]
 
 [tool.ruff]
@@ -53,9 +56,9 @@ line-length = 120
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-
-[dependency-groups]
-dev = [
-    "playwright>=1.57.0",
-    "pytest-playwright>=0.7.2",
+markers = [
+    "unit: Unit tests using SQLite (fast, isolated)",
+    "integration: Integration tests using PostgreSQL container (production parity)",
+    "e2e: End-to-end tests using Playwright (requires running server)",
 ]
+

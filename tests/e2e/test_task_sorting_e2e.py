@@ -25,11 +25,8 @@ See tests/README.md for full test architecture.
 import pytest
 from playwright.sync_api import Page
 
-# Skip all tests in this file if no live server is available
-pytestmark = pytest.mark.skipif(
-    True,  # TODO: Set to False when test infrastructure is ready
-    reason="E2E tests require running server with test data",
-)
+# Mark all tests as e2e - they require a running server
+pytestmark = pytest.mark.e2e
 
 
 class TestPreferenceSynchronization:
