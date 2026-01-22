@@ -79,3 +79,39 @@ build-manifest:
 # Verify build - check Python, JS, CSS, and templates
 verify:
     @uv run python scripts/verify_build.py
+
+# ============================================================================
+# Database Migrations (Alembic)
+# ============================================================================
+
+# Apply all pending migrations
+migrate:
+    uv run alembic upgrade head
+
+# Show current migration status
+migrate-status:
+    uv run alembic current
+
+# Show migration history
+migrate-history:
+    uv run alembic history
+
+# Create new migration from model changes (autogenerate)
+migrate-new message:
+    uv run alembic revision --autogenerate -m "{{message}}"
+
+# Create empty migration for manual edits
+migrate-empty message:
+    uv run alembic revision -m "{{message}}"
+
+# Rollback last migration
+migrate-rollback:
+    uv run alembic downgrade -1
+
+# Stamp database with migration version (for existing DBs)
+migrate-stamp revision="0001_initial":
+    uv run alembic stamp {{revision}}
+
+# Generate SQL for migrations (without applying)
+migrate-sql:
+    uv run alembic upgrade head --sql

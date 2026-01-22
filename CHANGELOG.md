@@ -15,6 +15,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.13.0] - 2026-01-22
+
+### Summary
+**Database Migrations** — Stage 3 of production readiness. Schema changes now use Alembic migrations instead of auto-create, enabling safe production deployments.
+
+### Added
+
+- **Alembic Integration** — Professional database migrations:
+  - Async SQLAlchemy support for PostgreSQL
+  - Auto-format new migrations with ruff
+  - Timestamp-based revision naming
+
+- **Initial Migration** — Baseline schema (v0.12.0):
+  - All 10 tables: users, tokens, domains, tasks, instances, preferences, passkeys, challenges
+  - All indexes and constraints preserved
+
+- **Railway Release Command** — Automatic migrations on deploy:
+  - `releaseCommand = "uv run alembic upgrade head"`
+  - Runs once per deploy, before app starts
+
+- **Migration Commands** — New justfile commands:
+  - `just migrate` — Apply pending migrations
+  - `just migrate-status` — Show current version
+  - `just migrate-new "msg"` — Create from model changes
+  - `just migrate-rollback` — Revert last migration
+
+- **Documentation** — Complete migration guide:
+  - `docs/MIGRATIONS.md` with workflows, troubleshooting, best practices
+  - Quick reference in `alembic/README`
+
+### Changed
+
+- **App Startup** — No longer calls `create_all()`:
+  - Schema managed exclusively by migrations
+  - Startup verifies database connectivity only
+  - Tests still use in-memory SQLite with `create_all()`
+
+### Technical
+
+- New dependency: `alembic>=1.14.0`
+- New files: `alembic.ini`, `alembic/env.py`, `alembic/script.py.mako`
+- Initial migration: `alembic/versions/20250122_000000_initial_schema.py`
+- Removed: `create_tables()` call from app lifespan
+
+### Migration Notes
+
+**Existing Production Database:**
+```bash
+# Mark database as at initial migration (without running it)
+railway run uv run alembic stamp 0001_initial
+```
+
+**New Database:**
+```bash
+# Apply all migrations
+just migrate
+```
+
+---
+
 ## [0.12.0] - 2026-01-22
 
 ### Summary

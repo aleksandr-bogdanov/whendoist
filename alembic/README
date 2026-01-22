@@ -1,0 +1,8 @@
+Alembic migrations for Whendoist.
+
+See docs/MIGRATIONS.md for the complete guide.
+
+Quick reference:
+  just migrate         # Apply pending migrations
+  just migrate-new     # Create new migration from model changes
+  just migrate-status  # Show current migration status

@@ -10,7 +10,6 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import get_settings
-from app.database import create_tables
 from app.logging_config import setup_logging
 from app.middleware.rate_limit import limiter
 from app.middleware.security import SecurityHeadersMiddleware
@@ -41,14 +40,19 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Whendoist...")
     logger.info(f"Base URL: {settings.base_url}")
     try:
-        await create_tables()
-        logger.info("Database tables ready")
+        # Database schema is managed by Alembic migrations
+        # Run `just migrate` locally or rely on Railway release command
+        from sqlalchemy import text
 
-        # Clean up expired WebAuthn challenges on startup
         from app.database import async_session_factory
         from app.services.challenge_service import ChallengeService
 
+        # Verify database connectivity
         async with async_session_factory() as db:
+            await db.execute(text("SELECT 1"))
+            logger.info("Database connected")
+
+            # Clean up expired WebAuthn challenges on startup
             deleted = await ChallengeService.cleanup_expired(db)
             if deleted > 0:
                 logger.info(f"Cleaned up {deleted} expired WebAuthn challenges")
@@ -62,7 +66,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
-    version="0.12.0",
+    version="0.13.0",
     lifespan=lifespan,
 )
 
