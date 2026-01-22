@@ -10,10 +10,8 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import CHALLENGE_TTL_SECONDS
 from app.models import WebAuthnChallenge
-
-# Challenge TTL in seconds (5 minutes as per WebAuthn recommendation)
-CHALLENGE_TTL_SECONDS = 300
 
 
 class ChallengeService:

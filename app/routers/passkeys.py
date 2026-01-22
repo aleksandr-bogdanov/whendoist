@@ -7,7 +7,7 @@ Provides REST endpoints for managing WebAuthn passkeys used for E2E encryption u
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from webauthn.helpers import base64url_to_bytes
 
@@ -76,13 +76,12 @@ class AuthenticationVerifyResponse(BaseModel):
 class PasskeyInfo(BaseModel):
     """Public passkey information for listing."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     created_at: str
     last_used_at: str | None
-
-    class Config:
-        from_attributes = True
 
 
 class PasskeyListResponse(BaseModel):

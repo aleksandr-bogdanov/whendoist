@@ -9,7 +9,7 @@ import re
 from datetime import date, datetime, time
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import TASK_DESCRIPTION_MAX_LENGTH, TASK_TITLE_MAX_LENGTH
@@ -123,6 +123,8 @@ class TaskUpdate(BaseModel):
 class SubtaskResponse(BaseModel):
     """Response model for a subtask (without nested subtasks)."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     title: str
     description: str | None
@@ -134,12 +136,11 @@ class SubtaskResponse(BaseModel):
     status: str
     position: int
 
-    class Config:
-        from_attributes = True
-
 
 class TaskResponse(BaseModel):
     """Response model for a task."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     title: str
@@ -163,9 +164,6 @@ class TaskResponse(BaseModel):
     subtasks: list[SubtaskResponse] = []
     # For recurring tasks: whether today's instance is completed
     today_instance_completed: bool | None = None
-
-    class Config:
-        from_attributes = True
 
 
 def _task_to_response(task: Task) -> TaskResponse:

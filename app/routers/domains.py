@@ -8,7 +8,7 @@ import logging
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import DOMAIN_NAME_MAX_LENGTH
@@ -77,15 +77,14 @@ class DomainUpdate(BaseModel):
 class DomainResponse(BaseModel):
     """Response model for a domain."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     color: str | None
     icon: str | None
     position: int
     is_archived: bool
-
-    class Config:
-        from_attributes = True
 
 
 # =============================================================================

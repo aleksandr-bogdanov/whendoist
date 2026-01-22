@@ -7,7 +7,7 @@ Provides REST endpoints for managing recurring task instances.
 from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -32,6 +32,8 @@ class InstanceSchedule(BaseModel):
 class InstanceResponse(BaseModel):
     """Response model for a task instance."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     task_id: int
     task_title: str
@@ -42,9 +44,6 @@ class InstanceResponse(BaseModel):
     impact: int
     clarity: str | None
     domain_name: str | None = None
-
-    class Config:
-        from_attributes = True
 
 
 def _instance_to_response(instance: TaskInstance) -> InstanceResponse:

@@ -80,6 +80,9 @@ PBKDF2_ITERATIONS = 600_000  # 2024 OWASP recommendation
 # WebAuthn challenge expiration (5 minutes as per WebAuthn recommendation)
 CHALLENGE_TTL_SECONDS = 300
 
+# WebAuthn timeout for registration/authentication (60 seconds)
+WEBAUTHN_TIMEOUT_MS = 60000
+
 # Known value used to verify encryption passphrase is correct
 ENCRYPTION_TEST_VALUE = "WHENDOIST_ENCRYPTION_TEST"
 

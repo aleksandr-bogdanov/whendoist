@@ -5,7 +5,7 @@ Provides REST endpoints for managing task display preferences and E2E encryption
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -39,6 +39,8 @@ class PreferencesUpdate(BaseModel):
 class PreferencesResponse(BaseModel):
     """Response model for user preferences."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     show_completed_in_planner: bool
     completed_retention_days: int
     completed_move_to_bottom: bool
@@ -48,9 +50,6 @@ class PreferencesResponse(BaseModel):
     show_scheduled_in_list: bool
     scheduled_move_to_bottom: bool
     scheduled_sort_by_date: bool
-
-    class Config:
-        from_attributes = True
 
 
 # E2E Encryption Models

@@ -26,6 +26,7 @@ from webauthn.helpers.structs import (
 )
 
 from app.config import get_settings
+from app.constants import WEBAUTHN_TIMEOUT_MS
 from app.models import User, UserPasskey, UserPreferences
 
 
@@ -93,7 +94,7 @@ class PasskeyService:
                 resident_key=ResidentKeyRequirement.PREFERRED,
                 user_verification=UserVerificationRequirement.PREFERRED,
             ),
-            timeout=60000,  # 60 seconds
+            timeout=WEBAUTHN_TIMEOUT_MS,
         )
 
         return options_to_json(options)
@@ -174,7 +175,7 @@ class PasskeyService:
             # No passkeys registered - return empty options
             options = generate_authentication_options(
                 rp_id=self.settings.passkey_rp_id,
-                timeout=60000,
+                timeout=WEBAUTHN_TIMEOUT_MS,
                 user_verification=UserVerificationRequirement.PREFERRED,
             )
             return options_to_json(options), None
@@ -190,7 +191,7 @@ class PasskeyService:
 
         options = generate_authentication_options(
             rp_id=self.settings.passkey_rp_id,
-            timeout=60000,
+            timeout=WEBAUTHN_TIMEOUT_MS,
             allow_credentials=allow_credentials,
             user_verification=UserVerificationRequirement.PREFERRED,
         )

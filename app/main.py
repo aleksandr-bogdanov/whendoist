@@ -117,11 +117,17 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Error stopping background tasks: {e}")
 
 
+# Determine if running in development (for conditional docs exposure)
+_is_dev = settings.base_url.startswith("http://localhost") or settings.base_url.startswith("http://127.0.0.1")
+
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
     version=__version__,
     lifespan=lifespan,
+    # Expose OpenAPI docs only in development
+    docs_url="/docs" if _is_dev else None,
+    redoc_url="/redoc" if _is_dev else None,
 )
 
 # Rate limiter setup
