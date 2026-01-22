@@ -7,27 +7,23 @@ Part of the Code Provenance / Three Pillars system.
 
 import hashlib
 import json
-import re
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app import __version__
+
 router = APIRouter(prefix="/build", tags=["build"])
 
 
-def get_version_from_changelog() -> str:
-    """Extract latest version from CHANGELOG.md."""
-    changelog_path = Path(__file__).parent.parent.parent / "CHANGELOG.md"
-    try:
-        content = changelog_path.read_text()
-        match = re.search(r"## \[(\d+\.\d+\.\d+)\]", content)
-        if match:
-            return f"v{match.group(1)}"
-    except Exception:
-        pass
-    return "v0.0.0"
+def get_version() -> str:
+    """Get canonical version from app.__version__."""
+    # Always use app.__version__ as the single source of truth
+    version = __version__
+    # Ensure it has 'v' prefix for consistency
+    return version if version.startswith("v") else f"v{version}"
 
 
 def get_git_commit() -> dict[str, str]:
@@ -100,7 +96,7 @@ async def get_build_info() -> JSONResponse:
         )
 
     # Fall back to live calculation (development mode)
-    version = get_version_from_changelog()
+    version = get_version()
     commit = get_git_commit()
 
     # Calculate build hash from key files
@@ -187,7 +183,7 @@ async def get_verification_info() -> JSONResponse:
     - Links to GitHub release and attestations
     """
     manifest = load_build_manifest()
-    version = manifest.get("version") if manifest else get_version_from_changelog()
+    version = manifest.get("version") if manifest else get_version()
     commit = manifest.get("commit") if manifest else get_git_commit()
 
     repo_url = "https://github.com/aleksandr-bogdanov/whendoist"

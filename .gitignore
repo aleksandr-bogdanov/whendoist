@@ -49,3 +49,6 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Build artifacts (generated during CI release)
+static/build-manifest.json
