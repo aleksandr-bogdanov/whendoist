@@ -35,8 +35,6 @@ dev = [
     "pyright>=1.1.390",
     "httpx>=0.28.0",
     "testcontainers[postgres]>=4.0.0",
-    "playwright>=1.49.0",
-    "pytest-playwright>=0.6.2",
 ]
 sentry = [
     "sentry-sdk>=2.19.0",
@@ -60,10 +58,8 @@ line-length = 120
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "--ignore=tests/e2e/"
 markers = [
     "unit: Unit tests using SQLite (fast, isolated)",
     "integration: Integration tests using PostgreSQL container (production parity)",
-    "e2e: End-to-end tests using Playwright (requires running server)",
 ]
 
