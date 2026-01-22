@@ -87,19 +87,21 @@ class PreferencesService:
         await self.db.flush()
         return prefs
 
-    async def setup_encryption(self, salt: str, test_value: str) -> UserPreferences:
+    async def setup_encryption(self, salt: str, test_value: str, version: int = 2) -> UserPreferences:
         """
         Enable E2E encryption with the provided salt and test value.
 
         Args:
             salt: Base64-encoded 32-byte salt for key derivation
             test_value: Encrypted known value for passphrase verification
+            version: Key derivation version (1=100k iterations, 2=600k iterations)
         """
         prefs = await self.get_preferences()
 
         prefs.encryption_enabled = True
         prefs.encryption_salt = salt
         prefs.encryption_test_value = test_value
+        prefs.encryption_version = version
 
         await self.db.flush()
         return prefs

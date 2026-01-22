@@ -1268,8 +1268,8 @@ async function setupEncryption() {
     status.style.display = 'block';
 
     try {
-        // Generate salt, derive key, create test value
-        const { salt, testValue } = await Crypto.setupEncryption(passphrase);
+        // Generate salt, derive key, create test value (v2 = 600k iterations)
+        const { salt, testValue, version } = await Crypto.setupEncryption(passphrase);
 
         // Fetch all content to encrypt
         status.textContent = 'Fetching data to encrypt...';
@@ -1314,7 +1314,7 @@ async function setupEncryption() {
         const response = await fetch('/api/preferences/encryption/setup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ salt, test_value: testValue })
+            body: JSON.stringify({ salt, test_value: testValue, version })
         });
 
         if (response.ok) {

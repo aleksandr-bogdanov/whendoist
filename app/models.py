@@ -206,6 +206,8 @@ class UserPreferences(Base):
     encryption_test_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Unlock method: 'passphrase', 'passkey', or 'both' (default: passphrase when encryption is first enabled)
     encryption_unlock_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Key derivation version: 1 = 100k iterations, 2 = 600k iterations (default: 1 for legacy, 2 for new setups)
+    encryption_version: Mapped[int] = mapped_column(Integer, default=1)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -369,6 +371,25 @@ class TaskInstance(Base):
 # =============================================================================
 # Passkey Models (v0.8.4)
 # =============================================================================
+
+
+class WebAuthnChallenge(Base):
+    """
+    Temporary storage for WebAuthn challenges.
+
+    Challenges have a short TTL (5 minutes) and are consumed on use.
+    This replaces in-memory challenge storage to support multiple workers.
+    """
+
+    __tablename__ = "webauthn_challenges"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    challenge: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (Index("ix_challenge_user_expires", "user_id", "expires_at"),)
 
 
 class UserPasskey(Base):

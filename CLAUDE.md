@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.11.0 (Production Foundation)
+**Current Version:** v0.12.0 (Security Hardening)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -405,7 +405,91 @@ Pico CSS aggressively styles input focus states. To override with custom glow:
 - `.modal-backdrop` prefix + `!important` needed to override Pico CSS
 - `z-index: 1` fixes joined inputs overlapping each other's borders on focus
 
-## Recent Changes (v0.11.0)
+## Recent Changes (v0.12.0)
+
+### Security Hardening
+
+v0.12.0 is Stage 2 of the production roadmap, focusing on security improvements.
+
+### WebAuthn Challenge Storage
+
+Challenges are now stored in PostgreSQL instead of in-memory dict:
+
+```python
+# OLD (broken with multiple workers):
+_challenges: dict[int, bytes] = {}
+
+# NEW (works with multiple workers):
+from app.services.challenge_service import ChallengeService
+
+service = ChallengeService(db, user.id)
+await service.store_challenge(challenge_bytes)
+challenge = await service.get_and_consume_challenge()
+```
+
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `app/models.py` | `WebAuthnChallenge` model |
+| `app/services/challenge_service.py` | Challenge CRUD with TTL |
+| `tests/test_challenge_storage.py` | 12 tests including multitenancy |
+
+### Rate Limiting
+
+Sensitive endpoints are rate-limited using slowapi:
+
+| Endpoint Category | Limit | Applied To |
+|-------------------|-------|------------|
+| Auth | 10/min | OAuth callbacks |
+| Encryption | 5/min | Passkey, encryption setup |
+| Default | 100/min | All other endpoints |
+
+**Usage:**
+```python
+from app.middleware.rate_limit import limiter, ENCRYPTION_LIMIT
+
+@router.post("/endpoint")
+@limiter.limit(ENCRYPTION_LIMIT)
+async def my_endpoint(request: Request, ...):
+    ...
+```
+
+### PBKDF2 Iteration Versioning
+
+Key derivation now supports versioned iteration counts:
+
+| Version | Iterations | Use Case |
+|---------|------------|----------|
+| 1 | 100,000 | Legacy (v0.8.0 - v0.11.x) |
+| 2 | 600,000 | New setups (v0.12.0+) |
+
+**Automatic version detection:**
+```javascript
+// crypto.js
+const version = window.WHENDOIST.encryptionVersion || 1;
+const iterations = getIterationCount(version);  // 100k or 600k
+```
+
+### Security Headers
+
+All responses include security headers via `SecurityHeadersMiddleware`:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| Content-Security-Policy | (see below) | XSS prevention |
+| X-Frame-Options | DENY | Clickjacking prevention |
+| X-Content-Type-Options | nosniff | MIME sniffing prevention |
+| Referrer-Policy | strict-origin-when-cross-origin | Information leakage |
+
+**CSP Policy:**
+- `default-src 'self'` — Only same-origin by default
+- `script-src 'self' 'unsafe-inline' cdn.jsdelivr.net` — Scripts from self and CDN
+- `frame-ancestors 'none'` — Cannot be embedded in iframe
+- No `unsafe-eval` — Prevents XSS via eval()
+
+---
+
+## Previous Changes (v0.11.0)
 
 ### Production Foundation
 
@@ -437,8 +521,7 @@ v0.11.0 begins the production-readiness effort documented in `docs/PRODUCTION-RO
 
 ### Production Roadmap
 
-See `docs/PRODUCTION-ROADMAP.md` for the 8-stage plan from v0.11.0 → v1.0.0:
-- v0.12.0: Security (rate limiting, challenge storage, CSP)
+See `docs/PRODUCTION-ROADMAP.md` for the 8-stage plan from v0.12.0 → v1.0.0:
 - v0.13.0: Database migrations (Alembic)
 - v0.14.0: Performance (query optimization, caching)
 - v0.15.0: Architecture (code organization, API versioning)

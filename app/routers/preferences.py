@@ -4,11 +4,12 @@ User preferences API endpoints.
 Provides REST endpoints for managing task display preferences and E2E encryption.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.middleware.rate_limit import ENCRYPTION_LIMIT, limiter
 from app.models import User
 from app.routers.auth import require_user
 from app.services.preferences_service import PreferencesService
@@ -65,6 +66,7 @@ class EncryptionSetupRequest(BaseModel):
 
     salt: str  # Base64-encoded 32-byte salt (generated client-side)
     test_value: str  # Encrypted test value for passphrase verification
+    version: int = 2  # Key derivation version (1=100k, 2=600k iterations)
 
 
 class EncryptionSetupResponse(BaseModel):
@@ -141,7 +143,9 @@ async def get_encryption_status(
 
 
 @router.post("/encryption/setup", response_model=EncryptionSetupResponse)
+@limiter.limit(ENCRYPTION_LIMIT)
 async def setup_encryption(
+    request: Request,
     data: EncryptionSetupRequest,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
@@ -168,6 +172,7 @@ async def setup_encryption(
     await service.setup_encryption(
         salt=data.salt,
         test_value=data.test_value,
+        version=data.version,
     )
     await db.commit()
 
@@ -178,7 +183,9 @@ async def setup_encryption(
 
 
 @router.post("/encryption/disable", response_model=EncryptionSetupResponse)
+@limiter.limit(ENCRYPTION_LIMIT)
 async def disable_encryption(
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):

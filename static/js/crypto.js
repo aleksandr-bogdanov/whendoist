@@ -17,9 +17,19 @@
 
 const Crypto = (() => {
     // Constants
-    const PBKDF2_ITERATIONS = 100000;  // OWASP minimum, don't reduce
+    const PBKDF2_ITERATIONS_V1 = 100000;  // Legacy (v0.8.0 - v0.11.x)
+    const PBKDF2_ITERATIONS_V2 = 600000;  // Current - 2024 OWASP recommendation
     const IV_LENGTH = 12;  // 96 bits for AES-GCM
     const TEST_VALUE = 'WHENDOIST_ENCRYPTION_TEST';
+
+    /**
+     * Get iteration count based on encryption version.
+     * @param {number} version - 1 for legacy, 2 for current
+     * @returns {number} PBKDF2 iteration count
+     */
+    function getIterationCount(version) {
+        return version >= 2 ? PBKDF2_ITERATIONS_V2 : PBKDF2_ITERATIONS_V1;
+    }
 
     // Storage key for the derived encryption key (base64)
     const KEY_STORAGE_KEY = 'whendoist_encryption_key';
@@ -36,9 +46,10 @@ const Crypto = (() => {
      * Derive an AES-256-GCM key from a passphrase using PBKDF2.
      * @param {string} passphrase - User's encryption passphrase
      * @param {Uint8Array} salt - Random salt for key derivation
+     * @param {number} iterations - PBKDF2 iteration count
      * @returns {Promise<CryptoKey>} Derived encryption key
      */
-    async function deriveKey(passphrase, salt) {
+    async function deriveKey(passphrase, salt, iterations) {
         const encoder = new TextEncoder();
 
         // Import passphrase as key material
@@ -55,7 +66,7 @@ const Crypto = (() => {
             {
                 name: 'PBKDF2',
                 salt: salt,
-                iterations: PBKDF2_ITERATIONS,
+                iterations: iterations,
                 hash: 'SHA-256'
             },
             keyMaterial,
@@ -254,12 +265,15 @@ const Crypto = (() => {
     /**
      * Setup encryption with a new passphrase.
      * Generates salt, derives key, creates test value.
+     * New setups use v2 (600k iterations) for stronger security.
      * @param {string} passphrase - User's chosen passphrase
-     * @returns {Promise<{salt: string, testValue: string}>} Salt and encrypted test value for server
+     * @returns {Promise<{salt: string, testValue: string, version: number}>} Salt, encrypted test value, and version for server
      */
     async function setupEncryption(passphrase) {
         const salt = generateSalt();
-        const key = await deriveKey(passphrase, salt);
+        const version = 2;  // New setups always use v2 (600k iterations)
+        const iterations = getIterationCount(version);
+        const key = await deriveKey(passphrase, salt, iterations);
 
         // Create encrypted test value for verification
         const testValue = await encrypt(key, TEST_VALUE);
@@ -269,13 +283,23 @@ const Crypto = (() => {
 
         return {
             salt: arrayToBase64(salt),
-            testValue: testValue
+            testValue: testValue,
+            version: version
         };
+    }
+
+    /**
+     * Get the encryption version from window config.
+     * @returns {number} Encryption version (1 or 2, defaults to 1 for legacy)
+     */
+    function getEncryptionVersion() {
+        return window.WHENDOIST?.encryptionVersion || 1;
     }
 
     /**
      * Unlock encryption with existing passphrase.
      * Verifies against stored test value before storing key.
+     * Automatically uses correct iteration count based on encryption version.
      * @param {string} passphrase - User's passphrase
      * @returns {Promise<boolean>} True if unlock successful
      */
@@ -288,7 +312,9 @@ const Crypto = (() => {
         }
 
         const salt = base64ToArray(saltBase64);
-        const key = await deriveKey(passphrase, salt);
+        const version = getEncryptionVersion();
+        const iterations = getIterationCount(version);
+        const key = await deriveKey(passphrase, salt, iterations);
 
         // Verify passphrase by decrypting test value
         try {
@@ -310,12 +336,14 @@ const Crypto = (() => {
      * @param {string} passphrase - Passphrase to test
      * @param {string} saltBase64 - Base64-encoded salt
      * @param {string} testCiphertext - Encrypted test value
+     * @param {number} version - Encryption version (1 or 2, defaults to 1)
      * @returns {Promise<boolean>} True if passphrase is correct
      */
-    async function verifyPassphrase(passphrase, saltBase64, testCiphertext) {
+    async function verifyPassphrase(passphrase, saltBase64, testCiphertext, version = 1) {
         try {
             const salt = base64ToArray(saltBase64);
-            const key = await deriveKey(passphrase, salt);
+            const iterations = getIterationCount(version);
+            const key = await deriveKey(passphrase, salt, iterations);
             const decrypted = await decrypt(key, testCiphertext);
             return decrypted === TEST_VALUE;
         } catch {

@@ -15,6 +15,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.0] - 2026-01-22
+
+### Summary
+**Security Hardening** — Stage 2 of production readiness with WebAuthn challenge storage, rate limiting, PBKDF2 iteration upgrade, and security headers.
+
+### Added
+
+- **WebAuthn Challenge Storage** — Database-backed challenge storage for multi-worker support:
+  - `WebAuthnChallenge` model with TTL (5 minutes)
+  - `ChallengeService` with `store_challenge()` and `get_and_consume_challenge()`
+  - Automatic cleanup of expired challenges on startup
+  - Replaces in-memory `_challenges` dict that didn't work across workers
+
+- **Rate Limiting** — Protection against brute force and abuse:
+  - Auth/passkey endpoints: 10 requests/minute
+  - Encryption endpoints: 5 requests/minute
+  - Returns 429 Too Many Requests with Retry-After header when exceeded
+  - Uses slowapi with IP-based rate limiting
+
+- **Content Security Policy** — XSS mitigation headers on all responses:
+  - Strict CSP preventing `unsafe-eval`
+  - Frame-ancestors 'none' to prevent clickjacking
+  - Base-uri restriction to prevent injection
+  - Allowed domains for Google OAuth, fonts, and CDN
+
+- **PBKDF2 Iteration Upgrade** — Stronger key derivation:
+  - New encryption setups use 600k iterations (OWASP 2024 recommendation)
+  - Existing users continue with 100k iterations (version 1)
+  - Version tracked in `UserPreferences.encryption_version`
+  - Automatic version detection during unlock
+
+- **Security Headers** — Additional security headers:
+  - X-Frame-Options: DENY
+  - X-Content-Type-Options: nosniff
+  - Referrer-Policy: strict-origin-when-cross-origin
+
+- **New Test Suites:**
+  - `test_challenge_storage.py` — Challenge CRUD, TTL, multitenancy isolation
+  - `test_rate_limiting.py` — Rate limit configuration and endpoint coverage
+  - `test_security_headers.py` — CSP and security header verification
+
+### Changed
+
+- **Challenge storage** — Moved from in-memory dict to PostgreSQL for reliability across restarts and multiple workers
+- **Passkey endpoints** — Now use `ChallengeService` instead of in-memory storage
+
+### Technical
+
+- New dependency: `slowapi>=0.1.9`
+- New model: `WebAuthnChallenge` with `ix_challenge_user_expires` index
+- New field: `UserPreferences.encryption_version` (default 1)
+- New middleware: `SecurityHeadersMiddleware`
+- New service: `ChallengeService`
+- Updated: `crypto.js` with `PBKDF2_ITERATIONS_V1/V2` and `getIterationCount()`
+
+### Security
+
+- WebAuthn challenges now survive server restarts
+- Challenges isolated per user (multitenancy)
+- Rate limits prevent credential stuffing attacks
+- CSP prevents XSS attacks on encryption keys in sessionStorage
+
+---
+
 ## [0.11.0] - 2025-01-22
 
 ### Summary
