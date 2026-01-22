@@ -126,6 +126,7 @@ async def get_registration_options(
     challenge_b64 = options.get("challenge", "")
     challenge_bytes = base64url_to_bytes(challenge_b64)
     await challenge_service.store_challenge(challenge_bytes)
+    await db.commit()  # Commit so challenge persists for the verify request
 
     return RegistrationOptionsResponse(
         options=options,
@@ -205,6 +206,7 @@ async def get_authentication_options(
     challenge_b64 = options.get("challenge", "")
     challenge_bytes = base64url_to_bytes(challenge_b64)
     await challenge_service.store_challenge(challenge_bytes)
+    await db.commit()  # Commit so challenge persists for the verify request
 
     if passkey:
         return AuthenticationOptionsResponse(
