@@ -72,3 +72,12 @@ ENCRYPTION_TEST_VALUE = "WHENDOIST_ENCRYPTION_TEST"
 
 DEFAULT_RETENTION_DAYS = RetentionDays.THREE_DAYS
 DEFAULT_IMPACT = Impact.P4
+
+
+# =============================================================================
+# Input Validation Limits
+# =============================================================================
+
+TASK_TITLE_MAX_LENGTH = 500
+TASK_DESCRIPTION_MAX_LENGTH = 10000
+DOMAIN_NAME_MAX_LENGTH = 255

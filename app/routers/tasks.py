@@ -5,17 +5,23 @@ Provides REST endpoints for managing native tasks.
 """
 
 import logging
+import re
 from datetime import date, datetime, time
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import TASK_DESCRIPTION_MAX_LENGTH, TASK_TITLE_MAX_LENGTH
 from app.database import get_db
+from app.middleware.rate_limit import TASK_CREATE_LIMIT, limiter
 from app.models import Task, User
 from app.routers.auth import require_user
 from app.services.recurrence_service import RecurrenceService
 from app.services.task_service import TaskService
+
+# Regex to match control characters except \n (newline) and \t (tab)
+CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 logger = logging.getLogger("whendoist.tasks")
 
@@ -25,6 +31,11 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 # =============================================================================
 # Request/Response Models
 # =============================================================================
+
+
+def _strip_control_chars(value: str) -> str:
+    """Strip control characters except newline and tab."""
+    return CONTROL_CHAR_PATTERN.sub("", value)
 
 
 class TaskCreate(BaseModel):
@@ -46,6 +57,26 @@ class TaskCreate(BaseModel):
     recurrence_start: date | None = None
     recurrence_end: date | None = None
 
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        v = _strip_control_chars(v).strip()
+        if not v:
+            raise ValueError("Title cannot be empty")
+        if len(v) > TASK_TITLE_MAX_LENGTH:
+            raise ValueError(f"Title cannot exceed {TASK_TITLE_MAX_LENGTH} characters")
+        return v
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = _strip_control_chars(v)
+        if len(v) > TASK_DESCRIPTION_MAX_LENGTH:
+            raise ValueError(f"Description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
+        return v
+
 
 class TaskUpdate(BaseModel):
     """Request body for updating a task."""
@@ -65,6 +96,28 @@ class TaskUpdate(BaseModel):
     recurrence_start: date | None = None
     recurrence_end: date | None = None
     position: int | None = None
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = _strip_control_chars(v).strip()
+        if not v:
+            raise ValueError("Title cannot be empty")
+        if len(v) > TASK_TITLE_MAX_LENGTH:
+            raise ValueError(f"Title cannot exceed {TASK_TITLE_MAX_LENGTH} characters")
+        return v
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = _strip_control_chars(v)
+        if len(v) > TASK_DESCRIPTION_MAX_LENGTH:
+            raise ValueError(f"Description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
+        return v
 
 
 class SubtaskResponse(BaseModel):
@@ -263,7 +316,9 @@ async def get_task(
 
 
 @router.post("", response_model=TaskResponse, status_code=201)
+@limiter.limit(TASK_CREATE_LIMIT)
 async def create_task(
+    request: Request,
     data: TaskCreate,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),

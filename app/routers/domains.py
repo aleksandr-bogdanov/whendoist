@@ -5,15 +5,20 @@ Provides REST endpoints for managing task domains (formerly projects).
 """
 
 import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import DOMAIN_NAME_MAX_LENGTH
 from app.database import get_db
 from app.models import User
 from app.routers.auth import require_user
 from app.services.task_service import TaskService
+
+# Regex to match control characters except \n (newline) and \t (tab)
+CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 logger = logging.getLogger("whendoist.domains")
 
@@ -25,12 +30,27 @@ router = APIRouter(prefix="/domains", tags=["domains"])
 # =============================================================================
 
 
+def _strip_control_chars(value: str) -> str:
+    """Strip control characters except newline and tab."""
+    return CONTROL_CHAR_PATTERN.sub("", value)
+
+
 class DomainCreate(BaseModel):
     """Request body for creating a domain."""
 
     name: str
     color: str | None = None
     icon: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = _strip_control_chars(v).strip()
+        if not v:
+            raise ValueError("Name cannot be empty")
+        if len(v) > DOMAIN_NAME_MAX_LENGTH:
+            raise ValueError(f"Name cannot exceed {DOMAIN_NAME_MAX_LENGTH} characters")
+        return v
 
 
 class DomainUpdate(BaseModel):
@@ -40,6 +60,18 @@ class DomainUpdate(BaseModel):
     color: str | None = None
     icon: str | None = None
     position: int | None = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = _strip_control_chars(v).strip()
+        if not v:
+            raise ValueError("Name cannot be empty")
+        if len(v) > DOMAIN_NAME_MAX_LENGTH:
+            raise ValueError(f"Name cannot exceed {DOMAIN_NAME_MAX_LENGTH} characters")
+        return v
 
 
 class DomainResponse(BaseModel):

@@ -4,6 +4,7 @@ Backup and restore service.
 Exports/imports user data as JSON for backup purposes.
 """
 
+import re
 from datetime import date, datetime, time
 from typing import Any
 
@@ -12,7 +13,21 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.constants import (
+    DOMAIN_NAME_MAX_LENGTH,
+    TASK_DESCRIPTION_MAX_LENGTH,
+    TASK_TITLE_MAX_LENGTH,
+)
 from app.models import Domain, Task, TaskInstance, UserPreferences
+
+# Regex to match control characters except \n (newline) and \t (tab)
+CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _strip_control_chars(value: str) -> str:
+    """Strip control characters except newline and tab."""
+    return CONTROL_CHAR_PATTERN.sub("", value)
+
 
 # =============================================================================
 # Validation Schemas
@@ -52,9 +67,22 @@ class BackupTaskSchema(BaseModel):
 
     @field_validator("title")
     @classmethod
-    def title_not_empty(cls, v: str) -> str:
-        if not v or not v.strip():
+    def validate_title(cls, v: str) -> str:
+        v = _strip_control_chars(v).strip()
+        if not v:
             raise ValueError("Task title cannot be empty")
+        if len(v) > TASK_TITLE_MAX_LENGTH:
+            raise ValueError(f"Task title cannot exceed {TASK_TITLE_MAX_LENGTH} characters")
+        return v
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = _strip_control_chars(v)
+        if len(v) > TASK_DESCRIPTION_MAX_LENGTH:
+            raise ValueError(f"Task description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
         return v
 
 
@@ -70,9 +98,12 @@ class BackupDomainSchema(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def name_not_empty(cls, v: str) -> str:
-        if not v or not v.strip():
+    def validate_name(cls, v: str) -> str:
+        v = _strip_control_chars(v).strip()
+        if not v:
             raise ValueError("Domain name cannot be empty")
+        if len(v) > DOMAIN_NAME_MAX_LENGTH:
+            raise ValueError(f"Domain name cannot exceed {DOMAIN_NAME_MAX_LENGTH} characters")
         return v
 
 

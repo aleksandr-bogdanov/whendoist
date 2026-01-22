@@ -17,3 +17,4 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 AUTH_LIMIT = "10/minute"  # Auth and passkey endpoints
 ENCRYPTION_LIMIT = "5/minute"  # Encryption setup/disable endpoints
 API_LIMIT = "60/minute"  # General API endpoints
+TASK_CREATE_LIMIT = "30/minute"  # Task creation (prevents storage abuse)
