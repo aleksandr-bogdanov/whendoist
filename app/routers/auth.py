@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import google, todoist
 from app.config import get_settings
 from app.database import get_db
+from app.middleware.rate_limit import AUTH_LIMIT, limiter
 from app.models import GoogleToken, TodoistToken, User
 
 logger = logging.getLogger("whendoist.auth")
@@ -90,6 +91,7 @@ async def todoist_login(wizard: bool = False) -> Response:
 
 
 @router.get("/todoist/callback")
+@limiter.limit(AUTH_LIMIT)
 async def todoist_callback(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -174,6 +176,7 @@ async def google_login(wizard: bool = False) -> Response:
 
 
 @router.get("/google/callback")
+@limiter.limit(AUTH_LIMIT)
 async def google_callback(
     request: Request,
     code: str,

@@ -6,36 +6,19 @@ Provides REST endpoints for managing WebAuthn passkeys used for E2E encryption u
 
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from webauthn.helpers import base64url_to_bytes
 
 from app.database import get_db
+from app.middleware.rate_limit import ENCRYPTION_LIMIT, limiter
 from app.models import User
 from app.routers.auth import require_user
+from app.services.challenge_service import ChallengeService
 from app.services.passkey_service import PasskeyService
 
 router = APIRouter(prefix="/api/passkeys", tags=["passkeys"])
-
-
-# =============================================================================
-# Challenge Storage (In-memory for simplicity, should use Redis in production)
-# =============================================================================
-
-# Store challenges temporarily keyed by user_id
-# In production, use Redis with TTL
-_challenges: dict[int, bytes] = {}
-
-
-def store_challenge(user_id: int, challenge: bytes) -> None:
-    """Store a challenge for a user."""
-    _challenges[user_id] = challenge
-
-
-def get_challenge(user_id: int) -> bytes | None:
-    """Get and consume the stored challenge for a user."""
-    return _challenges.pop(user_id, None)
 
 
 # =============================================================================
@@ -122,7 +105,9 @@ class DeletePasskeyResponse(BaseModel):
 
 
 @router.post("/register/options", response_model=RegistrationOptionsResponse)
+@limiter.limit(ENCRYPTION_LIMIT)
 async def get_registration_options(
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -131,15 +116,16 @@ async def get_registration_options(
 
     The browser uses these options with navigator.credentials.create().
     """
-    service = PasskeyService(db, user.id)
+    passkey_service = PasskeyService(db, user.id)
+    challenge_service = ChallengeService(db, user.id)
 
-    options_json = await service.generate_registration_options()
+    options_json = await passkey_service.generate_registration_options()
     options = json.loads(options_json)
 
-    # Extract and store the challenge for verification
+    # Extract and store the challenge for verification (database-backed for multi-worker support)
     challenge_b64 = options.get("challenge", "")
     challenge_bytes = base64url_to_bytes(challenge_b64)
-    store_challenge(user.id, challenge_bytes)
+    await challenge_service.store_challenge(challenge_bytes)
 
     return RegistrationOptionsResponse(
         options=options,
@@ -148,7 +134,9 @@ async def get_registration_options(
 
 
 @router.post("/register/verify", response_model=RegistrationVerifyResponse)
+@limiter.limit(ENCRYPTION_LIMIT)
 async def verify_registration(
+    request: Request,
     data: RegistrationVerifyRequest,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
@@ -159,17 +147,18 @@ async def verify_registration(
     After navigator.credentials.create() returns, the client sends the
     credential along with the PRF salt and encrypted test value.
     """
-    challenge = get_challenge(user.id)
+    challenge_service = ChallengeService(db, user.id)
+    challenge = await challenge_service.get_and_consume_challenge()
     if not challenge:
         raise HTTPException(
             status_code=400,
             detail="No pending registration challenge. Please start registration again.",
         )
 
-    service = PasskeyService(db, user.id)
+    passkey_service = PasskeyService(db, user.id)
 
     try:
-        passkey = await service.verify_registration(
+        passkey = await passkey_service.verify_registration(
             credential_json=json.dumps(data.credential),
             name=data.name,
             prf_salt=data.prf_salt,
@@ -194,7 +183,9 @@ async def verify_registration(
 
 
 @router.post("/authenticate/options", response_model=AuthenticationOptionsResponse)
+@limiter.limit(ENCRYPTION_LIMIT)
 async def get_authentication_options(
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -204,15 +195,16 @@ async def get_authentication_options(
     Also returns the PRF salt and test value for the first passkey.
     The browser uses these options with navigator.credentials.get().
     """
-    service = PasskeyService(db, user.id)
+    passkey_service = PasskeyService(db, user.id)
+    challenge_service = ChallengeService(db, user.id)
 
-    options_json, passkey = await service.generate_authentication_options()
+    options_json, passkey = await passkey_service.generate_authentication_options()
     options = json.loads(options_json)
 
-    # Extract and store the challenge for verification
+    # Extract and store the challenge for verification (database-backed for multi-worker support)
     challenge_b64 = options.get("challenge", "")
     challenge_bytes = base64url_to_bytes(challenge_b64)
-    store_challenge(user.id, challenge_bytes)
+    await challenge_service.store_challenge(challenge_bytes)
 
     if passkey:
         return AuthenticationOptionsResponse(
@@ -231,7 +223,9 @@ async def get_authentication_options(
 
 
 @router.post("/authenticate/verify", response_model=AuthenticationVerifyResponse)
+@limiter.limit(ENCRYPTION_LIMIT)
 async def verify_authentication(
+    request: Request,
     data: AuthenticationVerifyRequest,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
@@ -242,17 +236,18 @@ async def verify_authentication(
     Returns the PRF salt and wrapped key for the authenticated passkey.
     The client unwraps this to get the master encryption key.
     """
-    challenge = get_challenge(user.id)
+    challenge_service = ChallengeService(db, user.id)
+    challenge = await challenge_service.get_and_consume_challenge()
     if not challenge:
         raise HTTPException(
             status_code=400,
             detail="No pending authentication challenge. Please start authentication again.",
         )
 
-    service = PasskeyService(db, user.id)
+    passkey_service = PasskeyService(db, user.id)
 
     try:
-        passkey = await service.verify_authentication(
+        passkey = await passkey_service.verify_authentication(
             credential_json=json.dumps(data.credential),
             expected_challenge=challenge,
         )

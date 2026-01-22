@@ -5,11 +5,15 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import get_settings
 from app.database import create_tables
 from app.logging_config import setup_logging
+from app.middleware.rate_limit import limiter
+from app.middleware.security import SecurityHeadersMiddleware
 from app.routers import (
     api,
     auth,
@@ -39,6 +43,15 @@ async def lifespan(app: FastAPI):
     try:
         await create_tables()
         logger.info("Database tables ready")
+
+        # Clean up expired WebAuthn challenges on startup
+        from app.database import async_session_factory
+        from app.services.challenge_service import ChallengeService
+
+        async with async_session_factory() as db:
+            deleted = await ChallengeService.cleanup_expired(db)
+            if deleted > 0:
+                logger.info(f"Cleaned up {deleted} expired WebAuthn challenges")
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
         raise
@@ -49,12 +62,19 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Whendoist",
     description="WHEN do I do my tasks?",
-    version="0.11.0",
+    version="0.12.0",
     lifespan=lifespan,
 )
 
+# Rate limiter setup
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
 # Determine if running in production (Railway sets RAILWAY_ENVIRONMENT)
 is_production = settings.base_url.startswith("https://")
+
+# Security headers middleware (outermost - applied last to response)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Session middleware for signed cookies
 app.add_middleware(
