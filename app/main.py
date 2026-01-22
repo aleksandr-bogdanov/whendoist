@@ -53,9 +53,16 @@ async def lifespan(app: FastAPI):
             logger.info("Database connected")
 
             # Clean up expired WebAuthn challenges on startup
-            deleted = await ChallengeService.cleanup_expired(db)
-            if deleted > 0:
-                logger.info(f"Cleaned up {deleted} expired WebAuthn challenges")
+            # Skip if table doesn't exist (migrations not yet run)
+            try:
+                deleted = await ChallengeService.cleanup_expired(db)
+                if deleted > 0:
+                    logger.info(f"Cleaned up {deleted} expired WebAuthn challenges")
+            except Exception as e:
+                if "webauthn_challenges" in str(e).lower():
+                    logger.warning("WebAuthn challenges table not found - run migrations")
+                else:
+                    raise
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
         raise
