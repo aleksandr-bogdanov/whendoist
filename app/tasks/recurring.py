@@ -8,16 +8,21 @@ Performance optimization (v0.14.0):
 - Moves instance materialization from request-time to background
 - Runs initial materialization on app startup
 - Periodic refresh every hour
+
+Operational polish (v0.25.0):
+- Added cleanup job for old task instances (90-day retention)
 """
 
 import asyncio
 import logging
+from datetime import date, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
+from app.constants import INSTANCE_RETENTION_DAYS
 from app.database import async_session_factory
-from app.models import Task, User
+from app.models import Task, TaskInstance, User
 from app.services.recurrence_service import RecurrenceService
 
 logger = logging.getLogger("whendoist.tasks.recurring")
@@ -75,17 +80,53 @@ async def materialize_all_instances() -> dict[str, Any]:
     return stats
 
 
+async def cleanup_old_instances() -> dict[str, Any]:
+    """
+    Delete TaskInstances older than INSTANCE_RETENTION_DAYS.
+
+    This prevents table bloat from accumulating historical instances.
+    Completed and skipped instances beyond retention period are removed.
+
+    Returns dict with stats: {deleted_count}
+    """
+    cutoff_date = date.today() - timedelta(days=INSTANCE_RETENTION_DAYS)
+
+    async with async_session_factory() as db:
+        # Delete old instances that are completed or skipped
+        # Keep pending instances even if old (user may still want to complete them)
+        result = await db.execute(
+            delete(TaskInstance).where(
+                TaskInstance.instance_date < cutoff_date,
+                TaskInstance.status.in_(["completed", "skipped"]),
+            )
+        )
+        deleted_count: int = result.rowcount or 0  # type: ignore[union-attr]
+        await db.commit()
+
+    if deleted_count > 0:
+        logger.info(f"Cleaned up {deleted_count} old task instances (before {cutoff_date})")
+
+    return {"deleted_count": deleted_count}
+
+
 async def run_materialization_loop() -> None:
     """
-    Background loop that periodically materializes instances.
+    Background loop that periodically materializes instances and cleans up old ones.
 
-    Runs every MATERIALIZATION_INTERVAL_SECONDS.
+    Runs every MATERIALIZATION_INTERVAL_SECONDS (1 hour).
     """
     while True:
         try:
             await asyncio.sleep(MATERIALIZATION_INTERVAL_SECONDS)
+
+            # Materialize new instances
             logger.debug("Running periodic instance materialization")
             await materialize_all_instances()
+
+            # Clean up old instances
+            logger.debug("Running periodic instance cleanup")
+            await cleanup_old_instances()
+
         except asyncio.CancelledError:
             logger.debug("Materialization loop cancelled")
             break

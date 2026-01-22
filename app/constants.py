@@ -110,3 +110,20 @@ GCAL_PAGE_SIZE = 250  # Google's max results per page
 TOKEN_REFRESH_BUFFER_SECONDS = 300  # Proactive refresh 5 min before expiry
 TOKEN_REFRESH_MAX_RETRIES = 3  # Retry attempts for token refresh
 TOKEN_REFRESH_BACKOFF_BASE = 1  # Base seconds for exponential backoff (1s, 2s, 4s)
+
+
+# =============================================================================
+# Analytics Constants
+# =============================================================================
+
+HEATMAP_WEEKS = 12  # Number of weeks to show in completion heatmap
+VELOCITY_DAYS = 30  # Number of days for velocity chart
+RECURRING_STATS_LIMIT = 10  # Max recurring tasks to show in stats
+TITLE_TRUNCATE_LENGTH = 40  # Max chars for truncated task titles in stats
+
+
+# =============================================================================
+# Task Instance Constants
+# =============================================================================
+
+INSTANCE_RETENTION_DAYS = 90  # Days to keep completed/skipped instances

@@ -15,6 +15,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.25.0] - 2026-01-22
+
+### Summary
+**Operational Polish** — Health checks, cleanup jobs, and centralized constants.
+
+### Added
+
+- **External Service Health Checks** — Enhanced `/ready` endpoint:
+  - Database connectivity check (required for readiness)
+  - Google Calendar integration status (informational)
+  - Structured `checks` object in response
+  - Supports degraded mode (503 only for critical failures)
+
+- **TaskInstance Cleanup Job** — Automated data hygiene:
+  - `cleanup_old_instances()` in `app/tasks/recurring.py`
+  - Deletes completed/skipped instances older than 90 days
+  - Runs alongside hourly materialization job
+  - `INSTANCE_RETENTION_DAYS` constant for configuration
+
+- **Analytics Constants** — Centralized magic numbers in `app/constants.py`:
+  - `HEATMAP_WEEKS = 12` — Weeks displayed in heatmap
+  - `VELOCITY_DAYS = 30` — Days for velocity chart
+  - `RECURRING_STATS_LIMIT = 10` — Max recurring tasks in stats
+  - `TITLE_TRUNCATE_LENGTH = 40` — Truncation for task titles
+
+### Changed
+
+- Analytics service now uses constants instead of magic numbers
+- `/ready` endpoint returns structured response with service checks
+- Documentation updated for v1.0.0 release
+
+### Documentation
+
+- Updated README with enhanced health check documentation
+- Updated ARCHITECTURAL-REVIEW-2026-01.md marking all Stage 6 issues as fixed
+- Updated PRODUCTION-ROADMAP.md with v1.0.0 completion
+- Updated IMPLEMENTATION-PLAN.md with Stage 6 completion status
+
+---
+
 ## [0.24.0] - 2026-01-22
 
 ### Summary

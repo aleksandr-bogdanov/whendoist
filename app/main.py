@@ -193,19 +193,48 @@ async def metrics():
 
 @app.get("/ready", include_in_schema=False)
 async def readiness_check():
-    """Readiness check - app can serve requests (includes DB check)."""
+    """Readiness check - app can serve requests (includes DB and external service checks)."""
     from sqlalchemy import text
 
     from app import __version__
     from app.database import async_session_factory
 
+    checks: dict[str, str] = {}
+    is_ready = True
+
+    # Check database connectivity (required)
     try:
         async with async_session_factory() as db:
             await db.execute(text("SELECT 1"))
-        return JSONResponse({"status": "ready", "database": "connected", "version": __version__})
+        checks["database"] = "connected"
     except Exception as e:
-        logger.error(f"Readiness check failed: {e}")
-        return JSONResponse({"status": "not_ready", "database": str(e)}, status_code=503)
+        logger.error(f"Database check failed: {e}")
+        checks["database"] = f"error: {e}"
+        is_ready = False
+
+    # Check Google Calendar API (optional - only if user has connected)
+    # This is informational only; degraded mode is acceptable
+    try:
+        async with async_session_factory() as db:
+            # Just check if any valid tokens exist (don't actually call Google API)
+            result = await db.execute(text("SELECT COUNT(*) FROM google_tokens WHERE access_token IS NOT NULL"))
+            token_count = result.scalar() or 0
+            if token_count > 0:
+                checks["google_calendar"] = f"configured ({token_count} users)"
+            else:
+                checks["google_calendar"] = "no users connected"
+    except Exception as e:
+        # Table might not exist yet, or other issue - non-fatal
+        checks["google_calendar"] = "unavailable"
+        logger.debug(f"Google Calendar check skipped: {e}")
+
+    status = "ready" if is_ready else "degraded"
+    status_code = 200 if is_ready else 503
+
+    return JSONResponse(
+        {"status": status, "checks": checks, "version": __version__},
+        status_code=status_code,
+    )
 
 
 # Service worker route - served from root for proper scope

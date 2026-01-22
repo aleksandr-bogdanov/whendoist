@@ -4,14 +4,14 @@
 >
 > **Created:** 2025-01-22
 > **Starting Version:** v0.10.1
-> **Current Version:** v0.19.0
+> **Current Version:** v0.25.0
 > **Status:** Production Ready
 
 ---
 
 ## Completion Status
 
-All planned stages have been completed:
+All planned stages have been completed.
 
 | Version | Stage | Focus | Status |
 |---------|-------|-------|--------|
@@ -24,6 +24,19 @@ All planned stages have been completed:
 | v0.17.0 | 7 | Testing Infrastructure | COMPLETE |
 | v0.18.0 | 8 | Production Operations | COMPLETE |
 | v0.19.0 | 9 | Final Polish | COMPLETE |
+
+**Post-roadmap releases (January 2026 review):**
+
+| Version | Focus | Status |
+|---------|-------|--------|
+| v0.20.0 | Input Validation | COMPLETE |
+| v0.21.0 | Google Calendar Robustness | COMPLETE |
+| v0.22.0 | Database & Performance | COMPLETE |
+| v0.23.0 | Testing Infrastructure | COMPLETE |
+| v0.24.0 | Security Hardening | COMPLETE |
+| **v0.25.0** | **Operational Polish** | **COMPLETE** |
+
+See [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) for details on the v0.20.0 → v1.0.0 implementation.
 
 ---
 

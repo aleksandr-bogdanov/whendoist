@@ -54,23 +54,32 @@ async def test_ready_endpoint_returns_200_with_db(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_ready_endpoint_includes_database_status(client: AsyncClient):
-    """Ready response should include database connection status."""
+    """Ready response should include database connection status in checks."""
     response = await client.get("/ready")
     data = response.json()
-    assert "database" in data
+    assert "checks" in data
+    assert "database" in data["checks"]
     assert "status" in data
 
 
 @pytest.mark.asyncio
 async def test_ready_endpoint_includes_version(client: AsyncClient):
-    """Ready response should include app version when DB connected."""
+    """Ready response should include app version."""
     from app import __version__
 
     response = await client.get("/ready")
     data = response.json()
-    # Version is only included when DB is connected
-    if response.status_code == 200:
-        assert "version" in data
-        assert data["version"] == __version__
-    # When DB fails, version may not be present
+    # Version is always included in the new format
+    assert "version" in data
+    assert data["version"] == __version__
     assert "status" in data
+
+
+@pytest.mark.asyncio
+async def test_ready_endpoint_includes_google_calendar_status(client: AsyncClient):
+    """Ready response should include Google Calendar status in checks."""
+    response = await client.get("/ready")
+    data = response.json()
+    assert "checks" in data
+    # Google Calendar check is always present (may be 'unavailable' if DB not up)
+    assert "google_calendar" in data["checks"]

@@ -244,10 +244,25 @@ For deployment and load balancer configuration:
 
 | Endpoint | Purpose | Response |
 |----------|---------|----------|
-| `GET /health` | Liveness check | `{"status": "healthy", "version": "0.15.0"}` |
-| `GET /ready` | Readiness check (includes DB) | `{"status": "ready", "database": "connected", "version": "0.15.0"}` |
+| `GET /health` | Liveness check | `{"status": "healthy", "version": "0.25.0"}` |
+| `GET /ready` | Readiness check (includes DB + services) | See below |
 
-The `/ready` endpoint returns 503 if the database is unavailable.
+The `/ready` endpoint returns a structured response:
+
+```json
+{
+  "status": "ready",
+  "checks": {
+    "database": "connected",
+    "google_calendar": "configured (5 users)"
+  },
+  "version": "0.25.0"
+}
+```
+
+- Returns 200 if all critical services (database) are healthy
+- Returns 503 if the database is unavailable
+- Google Calendar status is informational (degraded mode acceptable)
 
 ---
 
@@ -340,8 +355,10 @@ Legacy routes remain for backwards compatibility. New integrations should use `/
 | [Security Guide](docs/SECURITY.md) | Authentication, encryption, rate limiting, best practices |
 | [Database Migrations](docs/MIGRATIONS.md) | Schema changes, Alembic workflows, troubleshooting |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, background tasks (v0.14.0) |
-| [Architectural Review](docs/ARCHITECTURAL-REVIEW.md) | Security/scalability assessment (25 issues) |
-| [Production Roadmap](docs/PRODUCTION-ROADMAP.md) | 9-stage plan from v0.11.0 → v0.19.0 (COMPLETE) |
+| [Architectural Review (2026)](docs/ARCHITECTURAL-REVIEW-2026-01.md) | January 2026 comprehensive review — all issues addressed |
+| [Architectural Review (legacy)](docs/ARCHITECTURAL-REVIEW.md) | Original v0.10.1 review (25 issues) |
+| [Implementation Plan](docs/IMPLEMENTATION-PLAN.md) | v0.20.0 → v1.0.0 staged implementation (COMPLETE) |
+| [Production Roadmap](docs/PRODUCTION-ROADMAP.md) | v0.11.0 → v0.19.0 roadmap (COMPLETE) |
 | [Brand Guidelines](BRAND.md) | Wordmark, colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette (107 tokens) |
 | [UI Components](docs/brand/UI-KIT.md) | Button, form, panel specifications |

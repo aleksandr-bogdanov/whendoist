@@ -16,7 +16,14 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import Date, cast, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants import IMPACT_COLORS, IMPACT_LABELS
+from app.constants import (
+    HEATMAP_WEEKS,
+    IMPACT_COLORS,
+    IMPACT_LABELS,
+    RECURRING_STATS_LIMIT,
+    TITLE_TRUNCATE_LENGTH,
+    VELOCITY_DAYS,
+)
 from app.models import Domain, Task, TaskInstance
 from app.utils.timing import log_timing
 
@@ -66,8 +73,8 @@ class AnalyticsService:
 
         # Query 5: Daily counts for heatmap + velocity (shared query)
         today = date.today()
-        heatmap_start = today - timedelta(days=today.weekday() + 7 * 12)
-        velocity_start = today - timedelta(days=36)
+        heatmap_start = today - timedelta(days=today.weekday() + 7 * HEATMAP_WEEKS)
+        velocity_start = today - timedelta(days=VELOCITY_DAYS + 6)  # +6 for 7-day rolling average
         counts_start = min(heatmap_start, velocity_start)
         daily_counts = await self._get_daily_counts(counts_start, today)
 
@@ -409,8 +416,8 @@ class AnalyticsService:
     def _build_velocity(self, daily_counts: dict[date, int], today: date) -> list[dict]:
         """Build velocity data (7-day rolling average) from daily counts."""
         velocity = []
-        for i in range(30):
-            d = today - timedelta(days=29 - i)
+        for i in range(VELOCITY_DAYS):
+            d = today - timedelta(days=VELOCITY_DAYS - 1 - i)
             # Sum of last 7 days
             week_sum = sum(daily_counts.get(d - timedelta(days=j), 0) for j in range(7))
             avg = round(week_sum / 7, 1)
@@ -493,7 +500,7 @@ class AnalyticsService:
         Optimized: Uses batch query instead of N+1 pattern.
         Shows ALL recurring tasks, even those without instances in the date range.
         """
-        # Query 1: Get recurring tasks (limited to 10)
+        # Query 1: Get recurring tasks (limited for performance)
         recurring_query = (
             select(Task.id, Task.title)
             .where(
@@ -501,7 +508,7 @@ class AnalyticsService:
                 Task.is_recurring == True,
                 Task.status != "archived",
             )
-            .limit(10)
+            .limit(RECURRING_STATS_LIMIT)
         )
         result = await self.db.execute(recurring_query)
         recurring_tasks = {row.id: row.title for row in result}
@@ -533,10 +540,11 @@ class AnalyticsService:
         for task_id, title in recurring_tasks.items():
             completed, total = stats_map.get(task_id, (0, 0))
             rate = round(completed / total * 100) if total > 0 else 0
+            truncated_title = title[:TITLE_TRUNCATE_LENGTH] + ("..." if len(title) > TITLE_TRUNCATE_LENGTH else "")
             stats.append(
                 {
                     "task_id": task_id,
-                    "title": title[:40] + ("..." if len(title) > 40 else ""),
+                    "title": truncated_title,
                     "completed": completed,
                     "total": total,
                     "rate": rate,
