@@ -6,7 +6,12 @@ environment variable DATABASE_URL (same as the app).
 """
 
 import asyncio
+import sys
 from logging.config import fileConfig
+from pathlib import Path
+
+# Add project root to path for imports (needed for `railway run`)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
