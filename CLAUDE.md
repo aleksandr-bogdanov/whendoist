@@ -6,7 +6,7 @@
 
 **Whendoist** is a task scheduling app that answers "WHEN do I do my tasks?" by combining native tasks with Google Calendar events.
 
-**Current Version:** v0.12.0 (Security Hardening)
+**Current Version:** v0.13.0 (Database Migrations)
 
 **Four Pages:**
 - **Tasks** — Day planning with task list + calendar (v0.5 design complete)
@@ -22,11 +22,37 @@
 | Frontend | HTMX, Jinja2, Pico CSS, vanilla JS, ApexCharts |
 | Database | PostgreSQL with asyncpg |
 | APIs | Google Calendar v3, Todoist API v1 (optional import) |
-| Tooling | uv, ruff, pytest |
+| Tooling | uv, ruff, pytest, alembic |
 
-**CRITICAL: No Database Migrations Before v1.0**
+## Database Migrations
 
-The database is dropped and recreated frequently during pre-1.0 development. Do NOT create migration files. Schema changes go directly in `app/models.py` and the DB is recreated via `Base.metadata.create_all()`.
+**Schema changes require Alembic migrations.** See `docs/MIGRATIONS.md` for the full guide.
+
+### Quick Reference
+
+```bash
+just migrate              # Apply pending migrations
+just migrate-new "desc"   # Create migration from model changes
+just migrate-status       # Show current version
+just migrate-rollback     # Revert last migration
+```
+
+### Workflow
+
+1. Modify model in `app/models.py`
+2. Run `just migrate-new "description"`
+3. Review generated file in `alembic/versions/`
+4. Run `just migrate`
+5. Commit both model and migration
+
+### Production (Railway)
+
+Migrations run automatically on deploy via release command:
+```toml
+releaseCommand = "uv run alembic upgrade head"
+```
+
+For existing databases, stamp first: `railway run uv run alembic stamp 0001_initial`
 
 ## Project Structure
 
