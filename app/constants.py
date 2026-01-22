@@ -81,3 +81,14 @@ DEFAULT_IMPACT = Impact.P4
 TASK_TITLE_MAX_LENGTH = 500
 TASK_DESCRIPTION_MAX_LENGTH = 10000
 DOMAIN_NAME_MAX_LENGTH = 255
+
+
+# =============================================================================
+# Google Calendar Constants
+# =============================================================================
+
+GCAL_MAX_EVENTS = 1000  # Default max events to fetch per calendar
+GCAL_PAGE_SIZE = 250  # Google's max results per page
+TOKEN_REFRESH_BUFFER_SECONDS = 300  # Proactive refresh 5 min before expiry
+TOKEN_REFRESH_MAX_RETRIES = 3  # Retry attempts for token refresh
+TOKEN_REFRESH_BACKOFF_BASE = 1  # Base seconds for exponential backoff (1s, 2s, 4s)

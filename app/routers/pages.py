@@ -291,7 +291,7 @@ async def dashboard(
                     time_max = datetime.combine(end_date, datetime.min.time(), tzinfo=UTC)
 
                     events = []
-                    async with GoogleCalendarClient(google_token) as client:
+                    async with GoogleCalendarClient(db, google_token) as client:
                         for selection in selections:
                             try:
                                 cal_events = await client.get_events(selection.calendar_id, time_min, time_max)
@@ -300,7 +300,7 @@ async def dashboard(
                                 logger.debug(f"Failed to fetch calendar {selection.calendar_id}: {e}")
                                 continue
 
-                    await db.commit()
+                    # Token refresh commits internally; no explicit commit needed here
                     events.sort(key=lambda e: e.start)
 
                     # Store in cache
@@ -633,10 +633,10 @@ async def settings(
                 .all()
             }
 
-            async with GoogleCalendarClient(google_token) as client:
+            async with GoogleCalendarClient(db, google_token) as client:
                 all_calendars = await client.list_calendars()
 
-            await db.commit()
+            # Token refresh commits internally; no explicit commit needed here
 
             calendars = [
                 {

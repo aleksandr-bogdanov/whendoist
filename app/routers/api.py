@@ -228,7 +228,7 @@ async def get_events(
     time_max = datetime.combine(end_date, datetime.max.time(), tzinfo=UTC)
 
     all_events = []
-    async with GoogleCalendarClient(google_token) as client:
+    async with GoogleCalendarClient(db, google_token) as client:
         for selection in selections:
             try:
                 events = await client.get_events(selection.calendar_id, time_min, time_max)
@@ -238,8 +238,7 @@ async def get_events(
                 logger.debug(f"Failed to fetch calendar {selection.calendar_id}: {e}")
                 continue
 
-    # Commit any token refresh
-    await db.commit()
+    # Token refresh commits internally; no explicit commit needed here
 
     # Sort by start time
     all_events.sort(key=lambda e: e.start)
@@ -274,11 +273,10 @@ async def get_calendars(
     result = await db.execute(select(GoogleCalendarSelection).where(GoogleCalendarSelection.user_id == user.id))
     selections = {s.calendar_id: s for s in result.scalars().all()}
 
-    async with GoogleCalendarClient(google_token) as client:
+    async with GoogleCalendarClient(db, google_token) as client:
         calendars = await client.list_calendars()
 
-    # Commit any token refresh
-    await db.commit()
+    # Token refresh commits internally; no explicit commit needed here
 
     responses = []
     for cal in calendars:
@@ -322,7 +320,7 @@ async def toggle_calendar(
         selection.enabled = not selection.enabled
     else:
         # Need to get calendar name
-        async with GoogleCalendarClient(google_token) as client:
+        async with GoogleCalendarClient(db, google_token) as client:
             calendars = await client.list_calendars()
         cal = next((c for c in calendars if c.id == calendar_id), None)
         if not cal:
@@ -364,7 +362,7 @@ async def set_calendar_selections(
         raise HTTPException(status_code=400, detail="Google Calendar not connected")
 
     # Get all available calendars
-    async with GoogleCalendarClient(google_token) as client:
+    async with GoogleCalendarClient(db, google_token) as client:
         calendars = await client.list_calendars()
     calendar_map = {c.id: c for c in calendars}
 
