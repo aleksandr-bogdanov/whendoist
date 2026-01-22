@@ -74,9 +74,9 @@ async def pg_session(postgres_container):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # expire_on_commit=True ensures fresh data is loaded after commits,
-    # which is critical for testing relationship population (e.g., subtasks)
-    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=True)
+    # expire_on_commit=False is required for async SQLAlchemy to avoid
+    # lazy loading errors (MissingGreenlet). Use explicit refresh when needed.
+    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
         yield session

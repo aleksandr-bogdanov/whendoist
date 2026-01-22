@@ -243,6 +243,9 @@ class TestSubtasks:
 
         assert subtask.parent_id == parent.id
 
+        # Expire parent to force fresh query with relationship loading
+        pg_session.expire(parent)
+
         # Verify subtask appears in parent's subtasks
         fetched_parent = await task_service.get_task(parent.id)
         assert fetched_parent is not None
