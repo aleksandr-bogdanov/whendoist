@@ -93,7 +93,8 @@ def upgrade() -> None:
         sa.Column("encryption_salt", sa.String(64), nullable=True),
         sa.Column("encryption_test_value", sa.Text(), nullable=True),
         sa.Column("encryption_unlock_method", sa.String(20), nullable=True),
-        sa.Column("encryption_version", sa.Integer(), default=1, nullable=False),
+        # Timezone preference (IANA format)
+        sa.Column("timezone", sa.String(50), nullable=True),
         # Timestamps
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),

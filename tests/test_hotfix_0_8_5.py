@@ -143,7 +143,7 @@ class TestImportEncryptionContract:
         """
         Import encryption MUST update domains via batch-update endpoint.
 
-        Contract test: Verify the JS code calls /api/domains/batch-update
+        Contract test: Verify the JS code calls /api/v1/domains/batch-update
         after encrypting imported data.
         """
         settings_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
@@ -156,8 +156,8 @@ class TestImportEncryptionContract:
         import_section = source.split("async function executeImport()")[1].split("async function")[0]
 
         # Check for domains batch-update call
-        assert "/api/domains/batch-update" in import_section, (
-            "Import encryption must call /api/domains/batch-update to save encrypted domain names. "
+        assert "/api/v1/domains/batch-update" in import_section, (
+            "Import encryption must call /api/v1/domains/batch-update to save encrypted domain names. "
             "Without this, domains remain as plaintext even when encryption is enabled."
         )
 

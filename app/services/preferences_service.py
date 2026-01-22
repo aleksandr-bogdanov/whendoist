@@ -34,6 +34,16 @@ class PreferencesService:
 
         return prefs
 
+    async def get_timezone(self) -> str | None:
+        """
+        Get user's timezone preference.
+
+        Returns:
+            IANA timezone string (e.g., "America/New_York") or None if not set.
+        """
+        prefs = await self.get_preferences()
+        return prefs.timezone
+
     async def update_preferences(
         self,
         show_completed_in_planner: bool | None = None,
@@ -45,6 +55,7 @@ class PreferencesService:
         show_scheduled_in_list: bool | None = None,
         scheduled_move_to_bottom: bool | None = None,
         scheduled_sort_by_date: bool | None = None,
+        timezone: str | None = None,
     ) -> UserPreferences:
         """
         Update user preferences.
@@ -83,6 +94,20 @@ class PreferencesService:
 
         if scheduled_sort_by_date is not None:
             prefs.scheduled_sort_by_date = scheduled_sort_by_date
+
+        if timezone is not None:
+            # Validate timezone string (empty string clears it)
+            if timezone == "":
+                prefs.timezone = None
+            else:
+                # Validate against zoneinfo
+                from zoneinfo import ZoneInfo
+
+                try:
+                    ZoneInfo(timezone)  # Raises if invalid
+                    prefs.timezone = timezone
+                except (KeyError, TypeError):
+                    pass  # Silently ignore invalid timezones
 
         await self.db.flush()
         return prefs

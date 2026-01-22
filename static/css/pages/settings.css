@@ -144,6 +144,13 @@
     flex-shrink: 0;
 }
 
+/* Reset Pico's margin-bottom on form elements inside row right */
+.settings-row__right select,
+.settings-row__right input,
+.settings-row__right button {
+    margin-bottom: 0;
+}
+
 /* Row actions - hidden until hover */
 .row-actions {
     margin-left: auto;

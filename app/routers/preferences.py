@@ -34,6 +34,7 @@ class PreferencesUpdate(BaseModel):
     show_scheduled_in_list: bool | None = None
     scheduled_move_to_bottom: bool | None = None
     scheduled_sort_by_date: bool | None = None
+    timezone: str | None = Field(None, max_length=50)  # IANA timezone (e.g., "America/New_York")
 
 
 class PreferencesResponse(BaseModel):
@@ -50,6 +51,7 @@ class PreferencesResponse(BaseModel):
     show_scheduled_in_list: bool
     scheduled_move_to_bottom: bool
     scheduled_sort_by_date: bool
+    timezone: str | None = None  # IANA timezone (e.g., "America/New_York")
 
 
 # E2E Encryption Models
@@ -109,6 +111,7 @@ async def update_preferences(
         show_scheduled_in_list=data.show_scheduled_in_list,
         scheduled_move_to_bottom=data.scheduled_move_to_bottom,
         scheduled_sort_by_date=data.scheduled_sort_by_date,
+        timezone=data.timezone,
     )
     await db.commit()
     return prefs

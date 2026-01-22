@@ -358,7 +358,7 @@ const Passkey = (() => {
             }
 
             // 2. Get registration options from server
-            const optionsRes = await fetch('/api/passkeys/register/options', {
+            const optionsRes = await fetch('/api/v1/passkeys/register/options', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: window.getCSRFHeaders(),
@@ -387,7 +387,7 @@ const Passkey = (() => {
             const wrappedKey = await wrapMasterKey(wrappingKey, masterKey);
 
             // 7. Send to server for verification
-            const verifyRes = await fetch('/api/passkeys/register/verify', {
+            const verifyRes = await fetch('/api/v1/passkeys/register/verify', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
@@ -467,7 +467,7 @@ const Passkey = (() => {
     async function unlockWithPasskey() {
         try {
             // 1. Get authentication options from server
-            const optionsRes = await fetch('/api/passkeys/authenticate/options', {
+            const optionsRes = await fetch('/api/v1/passkeys/authenticate/options', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: window.getCSRFHeaders(),
@@ -504,7 +504,7 @@ const Passkey = (() => {
                 // Look up the correct wrapped_key for this credential
                 console.log('Initial unwrap failed, looking up credential-specific data...');
 
-                const lookupRes = await fetch(`/api/passkeys/by-credential/${encodeURIComponent(credentialId)}`, {
+                const lookupRes = await fetch(`/api/v1/passkeys/by-credential/${encodeURIComponent(credentialId)}`, {
                     credentials: 'same-origin',
                 });
 
@@ -551,7 +551,7 @@ const Passkey = (() => {
             await Crypto.storeKey(masterKey);
 
             // 7. Notify server of successful authentication (updates sign count)
-            await fetch('/api/passkeys/authenticate/verify', {
+            await fetch('/api/v1/passkeys/authenticate/verify', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),

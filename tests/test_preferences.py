@@ -240,6 +240,55 @@ class TestPreferencesServiceEncryption:
         assert result.encryption_test_value is None
 
 
+class TestPreferencesTimezone:
+    """Tests for timezone preference."""
+
+    async def test_timezone_default_is_none(self, db_session: AsyncSession, test_user: User):
+        """New preferences have no timezone set."""
+        service = PreferencesService(db_session, test_user.id)
+        prefs = await service.get_preferences()
+
+        assert prefs.timezone is None
+
+    async def test_get_timezone_returns_value(self, db_session: AsyncSession, test_user: User):
+        """get_timezone() returns the stored timezone."""
+        service = PreferencesService(db_session, test_user.id)
+        await service.update_preferences(timezone="America/New_York")
+
+        result = await service.get_timezone()
+        assert result == "America/New_York"
+
+    async def test_update_timezone_with_valid_iana(self, db_session: AsyncSession, test_user: User):
+        """Can update timezone with valid IANA string."""
+        service = PreferencesService(db_session, test_user.id)
+        await service.get_preferences()
+
+        result = await service.update_preferences(timezone="Europe/London")
+        assert result.timezone == "Europe/London"
+
+        result = await service.update_preferences(timezone="Asia/Tokyo")
+        assert result.timezone == "Asia/Tokyo"
+
+    async def test_update_timezone_invalid_ignored(self, db_session: AsyncSession, test_user: User):
+        """Invalid timezone strings are silently ignored."""
+        service = PreferencesService(db_session, test_user.id)
+        await service.update_preferences(timezone="America/New_York")
+
+        # Try to set invalid timezone
+        result = await service.update_preferences(timezone="Invalid/Timezone")
+
+        # Should keep the old value
+        assert result.timezone == "America/New_York"
+
+    async def test_update_timezone_empty_string_clears(self, db_session: AsyncSession, test_user: User):
+        """Empty string clears the timezone."""
+        service = PreferencesService(db_session, test_user.id)
+        await service.update_preferences(timezone="America/New_York")
+
+        result = await service.update_preferences(timezone="")
+        assert result.timezone is None
+
+
 class TestPreferencesDefaults:
     """Tests for verifying correct default values."""
 
@@ -265,3 +314,6 @@ class TestPreferencesDefaults:
         assert prefs.encryption_enabled is False
         assert prefs.encryption_salt is None
         assert prefs.encryption_test_value is None
+
+        # Timezone
+        assert prefs.timezone is None

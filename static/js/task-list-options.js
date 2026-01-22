@@ -128,7 +128,7 @@
     function refreshTaskList() {
         const taskListScroll = document.getElementById('task-list-scroll');
         if (taskListScroll && window.htmx) {
-            htmx.ajax('GET', '/api/task-list', {
+            htmx.ajax('GET', '/api/v1/task-list', {
                 target: '#task-list-scroll',
                 swap: 'innerHTML'
             }).then(() => {
@@ -224,7 +224,7 @@
      */
     async function savePreference(key, value) {
         try {
-            const response = await fetch('/api/preferences', {
+            const response = await fetch('/api/v1/preferences', {
                 method: 'PUT',
                 headers: window.getCSRFHeaders({
                     'Content-Type': 'application/json',
@@ -259,7 +259,7 @@
 
         const taskListScroll = document.getElementById('task-list-scroll');
         if (taskListScroll && window.htmx) {
-            htmx.ajax('GET', '/api/deleted-tasks', {
+            htmx.ajax('GET', '/api/v1/deleted-tasks', {
                 target: '#task-list-scroll',
                 swap: 'innerHTML'
             });
@@ -278,7 +278,7 @@
 
         const taskListScroll = document.getElementById('task-list-scroll');
         if (taskListScroll && window.htmx) {
-            htmx.ajax('GET', '/api/scheduled-tasks', {
+            htmx.ajax('GET', '/api/v1/scheduled-tasks', {
                 target: '#task-list-scroll',
                 swap: 'innerHTML'
             });
@@ -297,7 +297,7 @@
 
         const taskListScroll = document.getElementById('task-list-scroll');
         if (taskListScroll && window.htmx) {
-            htmx.ajax('GET', '/api/completed-tasks', {
+            htmx.ajax('GET', '/api/v1/completed-tasks', {
                 target: '#task-list-scroll',
                 swap: 'innerHTML'
             });
@@ -371,7 +371,7 @@
         taskEl.style.pointerEvents = 'none';
 
         try {
-            const response = await fetch(`/api/tasks/${taskId}/restore`, {
+            const response = await fetch(`/api/v1/tasks/${taskId}/restore`, {
                 method: 'POST',
                 headers: window.getCSRFHeaders(),
             });

@@ -467,7 +467,7 @@
         deletionTimeout = null;
 
         try {
-            const response = await fetch(`/api/tasks/${taskId}`, {
+            const response = await fetch(`/api/v1/tasks/${taskId}`, {
                 method: 'DELETE',
                 headers: window.getCSRFHeaders(),
             });
@@ -630,7 +630,7 @@
 
             // Unschedule via API
             try {
-                const response = await fetch(`/api/tasks/${taskId}`, {
+                const response = await fetch(`/api/v1/tasks/${taskId}`, {
                     method: 'PUT',
                     headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({
@@ -798,7 +798,7 @@
         const scheduledTime = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 
         try {
-            const response = await fetch(`/api/tasks/${taskId}`, {
+            const response = await fetch(`/api/v1/tasks/${taskId}`, {
                 method: 'PUT',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
@@ -1088,7 +1088,7 @@
 
         // Save to API - scheduled_date only, no scheduled_time
         try {
-            const response = await fetch(`/api/tasks/${taskId}`, {
+            const response = await fetch(`/api/v1/tasks/${taskId}`, {
                 method: 'PUT',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({

@@ -30,7 +30,7 @@
      */
     async function loadUserPreferences() {
         try {
-            const response = await fetch('/api/preferences');
+            const response = await fetch('/api/v1/preferences');
             if (response.ok) {
                 userPrefs = await response.json();
             }
@@ -83,10 +83,10 @@
 
             if (instanceId) {
                 // Recurring task instance with known ID
-                url = `/api/instances/${instanceId}/toggle-complete`;
+                url = `/api/v1/instances/${instanceId}/toggle-complete`;
             } else {
                 // Regular task OR recurring task without known instance
-                url = `/api/tasks/${taskId}/toggle-complete`;
+                url = `/api/v1/tasks/${taskId}/toggle-complete`;
 
                 // For calendar items, get the target date from the parent calendar
                 const calendarEl = taskEl.closest('.day-calendar');

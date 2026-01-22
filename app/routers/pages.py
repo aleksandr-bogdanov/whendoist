@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import get_user_today
 from app.database import get_db
 from app.middleware.csrf import get_csrf_token
 from app.models import (
@@ -38,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 async def get_encryption_context(db: AsyncSession, user_id: int) -> dict[str, Any]:
-    """Get encryption settings for template context."""
+    """Get encryption and user preference settings for template context."""
     from sqlalchemy import func
 
     result = await db.execute(select(UserPreferences).where(UserPreferences.user_id == user_id))
@@ -48,8 +49,14 @@ async def get_encryption_context(db: AsyncSession, user_id: int) -> dict[str, An
     passkey_count_result = await db.execute(select(func.count(UserPasskey.id)).where(UserPasskey.user_id == user_id))
     passkey_count = passkey_count_result.scalar() or 0
 
+    # Base context with timezone (always included)
+    base_context = {
+        "user_timezone": prefs.timezone if prefs else "",
+    }
+
     if prefs and prefs.encryption_enabled:
         return {
+            **base_context,
             "encryption_enabled": True,
             "encryption_salt": prefs.encryption_salt,
             "encryption_test_value": prefs.encryption_test_value,
@@ -58,6 +65,7 @@ async def get_encryption_context(db: AsyncSession, user_id: int) -> dict[str, An
             "unlock_method": prefs.encryption_unlock_method or "passphrase",
         }
     return {
+        **base_context,
         "encryption_enabled": False,
         "encryption_salt": None,
         "encryption_test_value": None,
@@ -118,7 +126,10 @@ async def dashboard(
     google_token = (await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))).scalar_one_or_none()
     todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
 
-    today = date.today()
+    # Get user's timezone for "today" calculations
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    today = get_user_today(timezone)
 
     # Generate date range: 7 days before and after today (15 days total)
     calendar_days = []
@@ -365,7 +376,7 @@ async def dashboard(
     )
 
 
-@router.get("/api/task-list", response_class=HTMLResponse)
+@router.get("/api/v1/task-list", response_class=HTMLResponse)
 async def task_list_partial(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -375,15 +386,15 @@ async def task_list_partial(
     if not user:
         return HTMLResponse(status_code=401)
 
-    today = date.today()
-
     # User Preferences
     prefs_service = PreferencesService(db, user.id)
     user_prefs = await prefs_service.get_preferences()
+    timezone = user_prefs.timezone
+    today = get_user_today(timezone)
 
     # Native Task Loading
     task_service = TaskService(db, user.id)
-    recurrence_service = RecurrenceService(db, user.id)
+    recurrence_service = RecurrenceService(db, user.id, timezone=timezone)
 
     # Note: Instance materialization is now handled by background task (v0.14.0)
     # No longer blocking request here
@@ -418,7 +429,7 @@ async def task_list_partial(
     )
 
 
-@router.get("/api/deleted-tasks", response_class=HTMLResponse)
+@router.get("/api/v1/deleted-tasks", response_class=HTMLResponse)
 async def deleted_tasks_partial(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -468,7 +479,7 @@ async def deleted_tasks_partial(
     )
 
 
-@router.get("/api/scheduled-tasks", response_class=HTMLResponse)
+@router.get("/api/v1/scheduled-tasks", response_class=HTMLResponse)
 async def scheduled_tasks_partial(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -521,7 +532,7 @@ async def scheduled_tasks_partial(
     )
 
 
-@router.get("/api/completed-tasks", response_class=HTMLResponse)
+@router.get("/api/v1/completed-tasks", response_class=HTMLResponse)
 async def completed_tasks_partial(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -710,7 +721,10 @@ async def analytics(
     if days not in (7, 30, 90):
         days = 7
 
-    today = date.today()
+    # Get user's timezone for "today" calculations
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    today = get_user_today(timezone)
     start_date = today - timedelta(days=days - 1)
     end_date = today
 

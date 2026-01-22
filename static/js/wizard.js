@@ -320,7 +320,7 @@ class WhenWizard {
             }
 
             // Mark wizard as complete
-            await fetch('/api/wizard/complete', {
+            await fetch('/api/v1/wizard/complete', {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             });
@@ -340,7 +340,7 @@ class WhenWizard {
     async saveCalendarSelections() {
         // Save selected calendars to the database
         try {
-            await fetch('/api/calendars/selections', {
+            await fetch('/api/v1/calendars/selections', {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
@@ -725,14 +725,14 @@ class WhenWizard {
             try {
                 // Fetch calendars if not cached
                 if (!this.state.data.cachedCalendars) {
-                    const response = await fetch('/api/calendars');
+                    const response = await fetch('/api/v1/calendars');
                     const calendars = await response.json();
                     this.state.data.cachedCalendars = calendars;
                 }
 
                 // Fetch upcoming events for preview (if not cached)
                 if (!this.state.data.cachedEvents) {
-                    const eventsResponse = await fetch('/api/events/upcoming?days=2&limit=3');
+                    const eventsResponse = await fetch('/api/v1/events?days=2&limit=3');
                     if (eventsResponse.ok) {
                         const events = await eventsResponse.json();
                         this.state.data.cachedEvents = events;
@@ -783,7 +783,7 @@ class WhenWizard {
             // Use cached calendars if available
             let calendars = this.state.data.cachedCalendars;
             if (!calendars) {
-                const response = await fetch('/api/calendars');
+                const response = await fetch('/api/v1/calendars');
                 calendars = await response.json();
                 this.state.data.cachedCalendars = calendars;
                 this.saveState();
@@ -946,7 +946,7 @@ class WhenWizard {
         }
 
         try {
-            const response = await fetch('/api/import/todoist', {
+            const response = await fetch('/api/v1/import/todoist', {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ include_completed: false }),
@@ -1194,7 +1194,7 @@ class WhenWizard {
 
     async createDomain(name, icon = '📁') {
         try {
-            await fetch('/api/domains', {
+            await fetch('/api/v1/domains', {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ name, icon }),

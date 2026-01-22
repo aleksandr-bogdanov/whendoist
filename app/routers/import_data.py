@@ -9,11 +9,11 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import TodoistToken, User
+from app.models import Domain, Task, TaskInstance, TodoistToken, User
 from app.routers.auth import get_current_user
 from app.services.todoist import TodoistClient
 from app.services.todoist_import import TodoistImportService
@@ -73,29 +73,40 @@ async def wipe_user_data(
     Delete all tasks and domains for the current user.
 
     This is a destructive operation for testing purposes.
+    No external service connection required.
     """
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    # Get Todoist token (needed to instantiate service, even for wipe)
-    todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
+    # Get task IDs for this user to delete instances
+    task_ids_result = await db.execute(select(Task.id).where(Task.user_id == user.id))
+    task_ids = [row[0] for row in task_ids_result.fetchall()]
 
-    if not todoist_token:
-        raise HTTPException(
-            status_code=400,
-            detail="Todoist not connected. Connect Todoist first to use import features.",
-        )
+    # Delete task instances (must be deleted before tasks due to FK constraint)
+    instances_deleted = 0
+    if task_ids:
+        instance_result = await db.execute(delete(TaskInstance).where(TaskInstance.task_id.in_(task_ids)))
+        instances_deleted: int = instance_result.rowcount  # type: ignore[assignment]
 
-    service = TodoistImportService(db, user.id, todoist_token.access_token)
-    result = await service.wipe_user_data()
+    # Delete all tasks for this user
+    task_result = await db.execute(delete(Task).where(Task.user_id == user.id))
+    tasks_deleted: int = task_result.rowcount  # type: ignore[assignment]
 
-    logger.info(f"User {user.id} wiped data: {result}")
+    # Delete all domains for this user
+    domain_result = await db.execute(delete(Domain).where(Domain.user_id == user.id))
+    domains_deleted: int = domain_result.rowcount  # type: ignore[assignment]
+
+    await db.commit()
+
+    logger.info(
+        f"User {user.id} wiped data: instances={instances_deleted}, tasks={tasks_deleted}, domains={domains_deleted}"
+    )
 
     return WipeResponse(
         success=True,
-        instances_deleted=result["instances_deleted"],
-        tasks_deleted=result["tasks_deleted"],
-        domains_deleted=result["domains_deleted"],
+        instances_deleted=instances_deleted,
+        tasks_deleted=tasks_deleted,
+        domains_deleted=domains_deleted,
     )
 
 

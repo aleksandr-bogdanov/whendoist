@@ -7,6 +7,7 @@ used across the application. Constants are grouped by domain.
 v0.15.0: Architecture Cleanup
 """
 
+from datetime import date
 from enum import IntEnum
 
 
@@ -130,3 +131,32 @@ TITLE_TRUNCATE_LENGTH = 40  # Max chars for truncated task titles in stats
 # =============================================================================
 
 INSTANCE_RETENTION_DAYS = 90  # Days to keep completed/skipped instances
+
+
+# =============================================================================
+# Timezone Constants
+# =============================================================================
+
+DEFAULT_TIMEZONE = "UTC"  # Fallback when user hasn't set timezone
+
+
+def get_user_today(timezone: str | None) -> date:
+    """
+    Get today's date in the user's timezone.
+
+    Args:
+        timezone: IANA timezone string (e.g., "America/New_York") or None.
+
+    Returns:
+        Today's date in the specified timezone, or UTC if timezone is None/invalid.
+    """
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    try:
+        tz = ZoneInfo(timezone) if timezone else ZoneInfo(DEFAULT_TIMEZONE)
+    except (KeyError, TypeError):
+        # Invalid timezone string - fall back to UTC
+        tz = ZoneInfo(DEFAULT_TIMEZONE)
+
+    return datetime.now(tz).date()

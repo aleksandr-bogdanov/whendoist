@@ -1052,7 +1052,7 @@
                     scheduled_time: state.scheduledTime,
                 };
 
-                const response = await fetch(`/api/tasks/${state.taskId}`, {
+                const response = await fetch(`/api/v1/tasks/${state.taskId}`, {
                     method: 'PUT',
                     headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(payload),
@@ -1350,7 +1350,7 @@
         // Persist to API
         const scheduledTime = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
         try {
-            const response = await fetch(`/api/tasks/${task.taskId}`, {
+            const response = await fetch(`/api/v1/tasks/${task.taskId}`, {
                 method: 'PUT',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({

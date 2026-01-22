@@ -12,6 +12,7 @@ from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.constants import get_user_today
 from app.models import Task, TaskInstance
 
 # Day of week mapping for rrule
@@ -36,9 +37,10 @@ FREQ_MAP = {
 class RecurrenceService:
     """Service for managing recurring task instances."""
 
-    def __init__(self, db: AsyncSession, user_id: int):
+    def __init__(self, db: AsyncSession, user_id: int, timezone: str | None = None):
         self.db = db
         self.user_id = user_id
+        self.timezone = timezone
 
     def generate_occurrences(
         self,
@@ -129,13 +131,14 @@ class RecurrenceService:
         if not task.is_recurring or not task.recurrence_rule:
             return []
 
-        # Determine start date
-        start_date = task.recurrence_start or date.today()
-        if start_date < date.today():
-            start_date = date.today()
+        # Determine start date (use user's timezone for "today")
+        today = get_user_today(self.timezone)
+        start_date = task.recurrence_start or today
+        if start_date < today:
+            start_date = today
 
         # Determine end date
-        end_date = date.today() + timedelta(days=horizon_days)
+        end_date = today + timedelta(days=horizon_days)
         if task.recurrence_end and task.recurrence_end < end_date:
             end_date = task.recurrence_end
 
@@ -188,11 +191,11 @@ class RecurrenceService:
 
         Call this when recurrence rule changes.
         """
-        # Delete future pending instances
+        # Delete future pending instances (use user's timezone for "today")
         await self.db.execute(
             delete(TaskInstance).where(
                 TaskInstance.task_id == task.id,
-                TaskInstance.instance_date >= date.today(),
+                TaskInstance.instance_date >= get_user_today(self.timezone),
                 TaskInstance.status == "pending",
             )
         )
@@ -344,7 +347,7 @@ class RecurrenceService:
         if not task_ids:
             return []
 
-        # Subquery to get the minimum instance_date per task
+        # Subquery to get the minimum instance_date per task (use user's timezone)
         subquery = (
             select(
                 TaskInstance.task_id,
@@ -352,7 +355,7 @@ class RecurrenceService:
             )
             .where(
                 TaskInstance.task_id.in_(task_ids),
-                TaskInstance.instance_date >= date.today(),
+                TaskInstance.instance_date >= get_user_today(self.timezone),
                 TaskInstance.status == "pending",
             )
             .group_by(TaskInstance.task_id)
@@ -376,8 +379,9 @@ class RecurrenceService:
         Get or create today's instance for a recurring task.
 
         Used when completing a recurring task from the task dialog.
+        Uses user's timezone to determine "today".
         """
-        return await self.get_or_create_instance_for_date(task, date.today())
+        return await self.get_or_create_instance_for_date(task, get_user_today(self.timezone))
 
     async def get_or_create_instance_for_date(self, task: Task, target_date: date) -> TaskInstance | None:
         """
@@ -461,7 +465,7 @@ class RecurrenceService:
         latest_dates = {row.task_id: row.max_date for row in result.all()}
 
         count = 0
-        cutoff_date = date.today() + timedelta(days=horizon_days - 7)
+        cutoff_date = get_user_today(self.timezone) + timedelta(days=horizon_days - 7)
 
         # Determine which tasks need instance generation
         for task in recurring_tasks:

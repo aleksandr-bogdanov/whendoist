@@ -33,6 +33,16 @@
     ];
 
     /**
+     * Escape HTML to prevent XSS when inserting user content via innerHTML.
+     */
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    /**
      * Format a datetime string to a readable format.
      * e.g. "Jan 5, 2026 at 2:30 PM"
      */
@@ -698,7 +708,7 @@
 
     async function loadDomains() {
         try {
-            const response = await fetch('/api/domains');
+            const response = await fetch('/api/v1/domains');
             if (response.ok) {
                 domains = await response.json();
 
@@ -719,7 +729,7 @@
     function updateDomainSelect() {
         const menu = backdropEl.querySelector('#domain-dropdown-menu');
         menu.innerHTML = '<button type="button" class="domain-dropdown-item" data-value="">📥 Inbox</button>' +
-            domains.map(d => `<button type="button" class="domain-dropdown-item" data-value="${d.id}">${d.icon || '📁'} ${d.name}</button>`).join('');
+            domains.map(d => `<button type="button" class="domain-dropdown-item" data-value="${d.id}">${escapeHtml(d.icon) || '📁'} ${escapeHtml(d.name)}</button>`).join('');
 
         // Re-attach click handlers
         menu.querySelectorAll('.domain-dropdown-item').forEach(item => {
@@ -834,7 +844,7 @@
 
     async function loadTask(taskId) {
         try {
-            const response = await fetch(`/api/tasks/${taskId}`);
+            const response = await fetch(`/api/v1/tasks/${taskId}`);
             if (!response.ok) {
                 throw new Error('Task not found');
             }
@@ -1073,7 +1083,7 @@
         }
 
         try {
-            const response = await fetch(`/api/tasks/${taskId}`, {
+            const response = await fetch(`/api/v1/tasks/${taskId}`, {
                 method: 'DELETE',
                 headers: window.getCSRFHeaders(),
             });
@@ -1143,7 +1153,7 @@
                 requestBody.target_date = today.toISOString().split('T')[0];
             }
 
-            const response = await fetch(`/api/tasks/${taskId}/toggle-complete`, {
+            const response = await fetch(`/api/v1/tasks/${taskId}/toggle-complete`, {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(requestBody),
@@ -1231,7 +1241,7 @@
         };
 
         const method = currentTaskId ? 'PUT' : 'POST';
-        const url = currentTaskId ? `/api/tasks/${currentTaskId}` : '/api/tasks';
+        const url = currentTaskId ? `/api/v1/tasks/${currentTaskId}` : '/api/v1/tasks';
 
         try {
             const submitBtn = backdropEl.querySelector('.btn-submit');

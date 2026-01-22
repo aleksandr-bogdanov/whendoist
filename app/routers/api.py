@@ -12,17 +12,19 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import get_user_today
 from app.database import get_db
 from app.models import GoogleCalendarSelection, GoogleToken, TodoistToken, User
 from app.routers.auth import require_user
 from app.services.calendar_cache import get_calendar_cache
 from app.services.gcal import GoogleCalendarClient
 from app.services.labels import clarity_display, parse_labels
+from app.services.preferences_service import PreferencesService
 from app.services.todoist import TodoistClient
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api", tags=["api"])
+router = APIRouter(prefix="/api/v1", tags=["api"])
 
 
 # =============================================================================
@@ -200,9 +202,11 @@ async def get_events(
     end_date: date = Query(default=None),
 ):
     """Get calendar events for enabled calendars."""
-    # Default to today and tomorrow
+    # Default to today and tomorrow (using user's timezone)
     if not start_date:
-        start_date = date.today()
+        prefs_service = PreferencesService(db, user.id)
+        timezone = await prefs_service.get_timezone()
+        start_date = get_user_today(timezone)
     if not end_date:
         end_date = start_date + timedelta(days=2)
 

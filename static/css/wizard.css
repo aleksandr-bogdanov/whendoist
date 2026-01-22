@@ -2574,3 +2574,31 @@ body.keyboard-open .wizard-nav {
             0 8px 24px rgba(109, 94, 246, 0.12);
     }
 }
+
+/* =============================================================================
+   Dark Mode Overrides
+   ============================================================================= */
+
+/* Mode cards (Step 2) - fix bright hover in dark theme */
+[data-theme="dark"] .wizard-mode-card:hover {
+    background: var(--interactive-hover);
+    border-color: var(--border-strong);
+}
+
+/* Calendar rows (Step 4) - fix bright backgrounds in dark theme */
+[data-theme="dark"] .wizard-calendar-row:active {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .wizard-calendar-row.selected {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .wizard-calendar-row:hover {
+    background: var(--interactive-hover);
+}
+
+/* Domain chips (Step 6) - fix bright hover in dark theme */
+[data-theme="dark"] .wizard-domain-chip:hover {
+    background: var(--interactive-hover);
+}

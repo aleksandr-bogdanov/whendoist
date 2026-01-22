@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // E2E Encryption: Encrypt if enabled
                 const encryptedTitle = await Crypto.encryptField(title);
 
-                const response = await fetch('/api/tasks', {
+                const response = await fetch('/api/v1/tasks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: encryptedTitle })
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+            await fetch(`/api/v1/tasks/${taskId}`, { method: 'DELETE' });
         } catch (err) {
             console.error('Failed to delete:', err);
             if (window.Toast) {

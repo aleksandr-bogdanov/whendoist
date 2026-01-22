@@ -116,8 +116,22 @@
         calendarConnected: {{ calendar_connected|default(false)|tojson }},
         todoistConnected: {{ todoist_connected|default(false)|tojson }},
         userName: {{ user_name|default('')|tojson }},
-        userEmail: {{ user_email|default('')|tojson }}
+        userEmail: {{ user_email|default('')|tojson }},
+        // Timezone
+        userTimezone: {{ user_timezone|default('')|tojson }}
     };
+
+    // Auto-detect timezone on first visit (silent, no toast)
+    if (!window.WHENDOIST.userTimezone && window.WHENDOIST.userEmail) {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        fetch('/api/v1/preferences', {
+            method: 'PUT',
+            headers: window.getCSRFHeaders ? window.getCSRFHeaders({ 'Content-Type': 'application/json' }) : { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timezone: detected })
+        }).then(() => {
+            window.WHENDOIST.userTimezone = detected;
+        }).catch(() => {}); // Fire-and-forget, don't block page
+    }
     </script>
 </head>
 <body>

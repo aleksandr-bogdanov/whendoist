@@ -257,8 +257,8 @@ class TaskSwipeHandler {
             } else {
                 // Fallback to direct API call
                 const endpoint = isCompleted
-                    ? `/api/tasks/${taskId}/uncomplete`
-                    : `/api/tasks/${taskId}/complete`;
+                    ? `/api/v1/tasks/${taskId}/uncomplete`
+                    : `/api/v1/tasks/${taskId}/complete`;
 
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -331,7 +331,7 @@ class TaskSwipeHandler {
             if (undone) return;
 
             try {
-                const response = await fetch(`/api/tasks/${taskId}`, {
+                const response = await fetch(`/api/v1/tasks/${taskId}`, {
                     method: 'DELETE',
                     headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 });

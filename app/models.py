@@ -207,6 +207,9 @@ class UserPreferences(Base):
     # Unlock method: 'passphrase', 'passkey', or 'both' (default: passphrase when encryption is first enabled)
     encryption_unlock_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
+    # Timezone preference (IANA format: "America/New_York", "Europe/London", etc.)
+    timezone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

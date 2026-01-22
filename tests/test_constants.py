@@ -9,14 +9,18 @@ Related Code: app/constants.py
 v0.15.0: Architecture Cleanup
 """
 
+from datetime import date
+
 from app.constants import (
     CHALLENGE_TTL_SECONDS,
     DEFAULT_IMPACT,
     DEFAULT_RETENTION_DAYS,
+    DEFAULT_TIMEZONE,
     ENCRYPTION_TEST_VALUE,
     PBKDF2_ITERATIONS,
     Impact,
     RetentionDays,
+    get_user_today,
 )
 
 
@@ -104,3 +108,43 @@ class TestDefaultValues:
         """Default impact is P4 (Low)."""
         assert DEFAULT_IMPACT == Impact.P4
         assert DEFAULT_IMPACT == 4
+
+    def test_default_timezone(self):
+        """Default timezone is UTC."""
+        assert DEFAULT_TIMEZONE == "UTC"
+
+
+class TestGetUserToday:
+    """Tests for get_user_today() function."""
+
+    def test_returns_date(self):
+        """get_user_today() returns a date object."""
+        result = get_user_today(None)
+        assert isinstance(result, date)
+
+    def test_none_timezone_uses_utc(self):
+        """None timezone falls back to UTC."""
+        result = get_user_today(None)
+        # Should not raise, and return a date
+        assert isinstance(result, date)
+
+    def test_valid_timezone(self):
+        """Valid IANA timezone string is accepted."""
+        result = get_user_today("America/New_York")
+        assert isinstance(result, date)
+
+        result = get_user_today("Europe/London")
+        assert isinstance(result, date)
+
+        result = get_user_today("Asia/Tokyo")
+        assert isinstance(result, date)
+
+    def test_invalid_timezone_uses_utc(self):
+        """Invalid timezone string falls back to UTC without error."""
+        result = get_user_today("Invalid/Timezone")
+        assert isinstance(result, date)
+
+    def test_empty_string_uses_utc(self):
+        """Empty string falls back to UTC."""
+        result = get_user_today("")
+        assert isinstance(result, date)

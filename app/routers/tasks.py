@@ -12,11 +12,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants import TASK_DESCRIPTION_MAX_LENGTH, TASK_TITLE_MAX_LENGTH
+from app.constants import TASK_DESCRIPTION_MAX_LENGTH, TASK_TITLE_MAX_LENGTH, get_user_today
 from app.database import get_db
 from app.middleware.rate_limit import TASK_CREATE_LIMIT, limiter
 from app.models import Task, User
 from app.routers.auth import require_user
+from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
 from app.services.task_service import TaskService
 
@@ -166,12 +167,17 @@ class TaskResponse(BaseModel):
     today_instance_completed: bool | None = None
 
 
-def _task_to_response(task: Task) -> TaskResponse:
-    """Convert a Task model to TaskResponse."""
+def _task_to_response(task: Task, user_today: date | None = None) -> TaskResponse:
+    """Convert a Task model to TaskResponse.
+
+    Args:
+        task: The task to convert
+        user_today: User's "today" in their timezone. If None, uses server time.
+    """
     # For recurring tasks, check if today's instance is completed
     today_instance_completed: bool | None = None
     if task.is_recurring and hasattr(task, "instances") and task.instances:
-        today = date.today()
+        today = user_today or date.today()
         for instance in task.instances:
             if instance.instance_date == today:
                 today_instance_completed = instance.status == "completed"
@@ -233,6 +239,11 @@ async def list_tasks(
     db: AsyncSession = Depends(get_db),
 ):
     """Get tasks with optional filtering."""
+    # Get user's timezone for "today" calculations
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    user_today = get_user_today(timezone)
+
     service = TaskService(db, user.id)
     tasks = await service.get_tasks(
         domain_id=domain_id,
@@ -243,7 +254,7 @@ async def list_tasks(
         parent_id=parent_id,
         top_level_only=(parent_id is None),
     )
-    return [_task_to_response(t) for t in tasks]
+    return [_task_to_response(t, user_today) for t in tasks]
 
 
 # =============================================================================
@@ -306,11 +317,16 @@ async def get_task(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a single task by ID."""
+    # Get user's timezone for "today" calculations
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    user_today = get_user_today(timezone)
+
     service = TaskService(db, user.id)
     task = await service.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return _task_to_response(task)
+    return _task_to_response(task, user_today)
 
 
 @router.post("", response_model=TaskResponse, status_code=201)
@@ -322,6 +338,11 @@ async def create_task(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new task."""
+    # Get user's timezone for "today" calculations
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    user_today = get_user_today(timezone)
+
     service = TaskService(db, user.id)
     task = await service.create_task(
         title=data.title,
@@ -343,7 +364,7 @@ async def create_task(
 
     # Materialize instances if recurring
     if task.is_recurring and task.recurrence_rule:
-        recurrence = RecurrenceService(db, user.id)
+        recurrence = RecurrenceService(db, user.id, timezone=timezone)
         await recurrence.materialize_instances(task)
 
     await db.commit()
@@ -352,7 +373,7 @@ async def create_task(
     reloaded = await service.get_task(task.id)
     if not reloaded:
         raise HTTPException(status_code=500, detail="Failed to reload task")
-    return _task_to_response(reloaded)
+    return _task_to_response(reloaded, user_today)
 
 
 @router.put("/{task_id}", response_model=TaskResponse)
@@ -363,6 +384,11 @@ async def update_task(
     db: AsyncSession = Depends(get_db),
 ):
     """Update a task."""
+    # Get user's timezone for "today" calculations
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    user_today = get_user_today(timezone)
+
     service = TaskService(db, user.id)
 
     # Get current task to check for recurrence changes
@@ -385,7 +411,7 @@ async def update_task(
 
     # Regenerate instances if recurrence changed
     if task.is_recurring and task.recurrence_rule != old_rule:
-        recurrence = RecurrenceService(db, user.id)
+        recurrence = RecurrenceService(db, user.id, timezone=timezone)
         await recurrence.regenerate_instances(task)
 
     await db.commit()
@@ -394,7 +420,7 @@ async def update_task(
     reloaded = await service.get_task(task_id)
     if not reloaded:
         raise HTTPException(status_code=500, detail="Failed to reload task")
-    return _task_to_response(reloaded)
+    return _task_to_response(reloaded, user_today)
 
 
 @router.delete("/{task_id}", status_code=204)
@@ -486,6 +512,11 @@ async def toggle_task_complete(
     For recurring tasks, this toggles the instance for the specified date
     (or today if no date provided).
     """
+    # Get user's timezone for "today" calculations
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    user_today = get_user_today(timezone)
+
     service = TaskService(db, user.id)
     task = await service.get_task(task_id)
 
@@ -494,8 +525,8 @@ async def toggle_task_complete(
 
     if task.is_recurring:
         # For recurring tasks, toggle the instance for the target date
-        recurrence_service = RecurrenceService(db, user.id)
-        target_date = data.target_date if data and data.target_date else date.today()
+        recurrence_service = RecurrenceService(db, user.id, timezone=timezone)
+        target_date = data.target_date if data and data.target_date else user_today
         instance = await recurrence_service.get_or_create_instance_for_date(task, target_date)
         if not instance:
             raise HTTPException(status_code=400, detail="Could not create instance for recurring task")
@@ -542,8 +573,15 @@ async def batch_update_tasks(
     Used when enabling encryption (to save encrypted content) or
     disabling encryption (to save decrypted content).
 
-    Commits in batches of 25 to prevent connection timeouts on
-    cloud databases (Railway, etc). Returns count of tasks updated.
+    **Non-Atomic Behavior:** Commits in batches of 25 to prevent connection
+    timeouts on cloud databases (Railway, etc). If an error occurs mid-batch,
+    previously committed batches remain persisted. The operation is idempotent -
+    retry to complete any remaining tasks.
+
+    Returns:
+        - updated_count: Number of tasks successfully updated
+        - total_requested: Total tasks in request
+        - errors: List of {id, error} for failed tasks (only if any failed)
     """
     service = TaskService(db, user.id)
     updated_count = 0

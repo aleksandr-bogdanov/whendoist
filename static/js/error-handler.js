@@ -32,7 +32,7 @@
      * @returns {Object} Headers object with CSRF token
      *
      * @example
-     * fetch('/api/tasks', {
+     * fetch('/api/v1/tasks', {
      *     method: 'POST',
      *     headers: getCSRFHeaders({ 'Content-Type': 'application/json' }),
      *     body: JSON.stringify(data)
@@ -61,7 +61,7 @@
      *
      * @example
      * try {
-     *     await fetch('/api/tasks');
+     *     await fetch('/api/v1/tasks');
      * } catch (error) {
      *     handleError(error, 'Failed to load tasks');
      * }
@@ -92,7 +92,7 @@
      * @throws {Error} If the response is not ok
      *
      * @example
-     * const response = await safeFetch('/api/tasks', {
+     * const response = await safeFetch('/api/v1/tasks', {
      *     method: 'POST',
      *     headers: { 'Content-Type': 'application/json' },
      *     body: JSON.stringify({ title: 'New Task' })

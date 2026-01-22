@@ -63,6 +63,33 @@
                 </div>
             </section>
 
+            <!-- REGIONAL Section -->
+            <section class="settings-section">
+                <h2 class="settings-section-label">Regional</h2>
+
+                <!-- TIMEZONE Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Timezone</p>
+                            <p class="panel-desc">Your timezone for scheduling and "today" calculations.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd">
+                        <div class="settings-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Current Timezone</span>
+                                <span class="pref-desc" id="timezone-display">{{ user_timezone or 'Auto-detected on next page load' }}</span>
+                            </div>
+                            <div class="settings-row__right">
+                                <select id="timezone-select" class="pref-select" onchange="updateTimezone(this.value)">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- CONNECTIONS Section -->
             <section class="settings-section">
                 <h2 class="settings-section-label">Connections</h2>
@@ -191,7 +218,7 @@
                                         class="toggle-switch {% if cal.enabled %}enabled{% endif %}"
                                         data-calendar-id="{{ cal.id }}"
                                         onclick="event.stopPropagation()"
-                                        hx-post="/api/calendars/{{ cal.id }}/toggle"
+                                        hx-post="/api/v1/calendars/{{ cal.id }}/toggle"
                                         hx-swap="none"
                                         hx-on::after-request="handleCalendarToggle(this)"
                                         aria-label="Toggle calendar"
@@ -530,6 +557,87 @@
 </div>
 
 <script>
+// Timezone picker
+(function initTimezoneSelect() {
+    const select = document.getElementById('timezone-select');
+    if (!select) return;
+
+    const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const savedTz = '{{ user_timezone|default("") }}';
+    const currentTz = savedTz || detectedTz;
+
+    // Get common timezones (subset of IANA timezones)
+    const commonTimezones = [
+        'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+        'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu',
+        'America/Toronto', 'America/Vancouver', 'America/Mexico_City', 'America/Sao_Paulo',
+        'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Rome', 'Europe/Madrid',
+        'Europe/Amsterdam', 'Europe/Brussels', 'Europe/Moscow', 'Europe/Istanbul',
+        'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Hong_Kong', 'Asia/Singapore', 'Asia/Seoul',
+        'Asia/Kolkata', 'Asia/Dubai', 'Asia/Bangkok', 'Asia/Jakarta',
+        'Australia/Sydney', 'Australia/Melbourne', 'Australia/Perth', 'Pacific/Auckland',
+        'Africa/Cairo', 'Africa/Johannesburg', 'Africa/Lagos'
+    ];
+
+    // Try to get full list from browser, fall back to common list
+    let timezones = commonTimezones;
+    try {
+        if (Intl.supportedValuesOf) {
+            timezones = Intl.supportedValuesOf('timeZone');
+        }
+    } catch (e) {
+        // Browser doesn't support supportedValuesOf, use common list
+    }
+
+    // Add current timezone first if not in list
+    if (currentTz && !timezones.includes(currentTz)) {
+        const option = document.createElement('option');
+        option.value = currentTz;
+        option.textContent = currentTz.replace(/_/g, ' ');
+        option.selected = true;
+        select.appendChild(option);
+    }
+
+    // Populate the dropdown
+    timezones.forEach(tz => {
+        const option = document.createElement('option');
+        option.value = tz;
+        option.textContent = tz.replace(/_/g, ' ');
+        if (tz === currentTz) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+})();
+
+async function updateTimezone(timezone) {
+    const display = document.getElementById('timezone-display');
+
+    try {
+        const response = await fetch('/api/v1/preferences', {
+            method: 'PUT',
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ timezone })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update timezone');
+        }
+
+        // Update display
+        display.textContent = timezone.replace(/_/g, ' ');
+        window.WHENDOIST.userTimezone = timezone;
+
+        // Show success feedback
+        display.style.color = 'var(--color-success)';
+        setTimeout(() => { display.style.color = ''; }, 1000);
+    } catch (error) {
+        console.error('Timezone update failed:', error);
+        display.textContent = 'Update failed';
+        display.style.color = 'var(--color-danger)';
+    }
+}
+
 // Emoji picker
 const DOMAIN_EMOJIS = [
     '📁', '💼', '🏠', '👤', '👥', '💪', '🧘',
@@ -650,7 +758,7 @@ async function addDomain() {
         // Encrypt domain name if encryption is enabled
         const encryptedName = await Crypto.encryptField(name);
 
-        const response = await fetch('/api/domains', {
+        const response = await fetch('/api/v1/domains', {
             method: 'POST',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ name: encryptedName, icon: icon || null }),
@@ -704,7 +812,7 @@ async function saveDomainEdit(e) {
         // Encrypt domain name if encryption is enabled
         const encryptedName = await Crypto.encryptField(name);
 
-        const response = await fetch(`/api/domains/${id}`, {
+        const response = await fetch(`/api/v1/domains/${id}`, {
             method: 'PUT',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ name: encryptedName, icon: icon || null }),
@@ -724,7 +832,7 @@ async function deleteDomain(id) {
     if (!confirm('Delete this domain? Tasks will be moved to Unsorted.')) return;
 
     try {
-        const response = await fetch(`/api/domains/${id}`, {
+        const response = await fetch(`/api/v1/domains/${id}`, {
             method: 'DELETE',
             headers: window.getCSRFHeaders(),
         });
@@ -765,7 +873,7 @@ async function importFromTodoist() {
 
     try {
         // First, fetch preview
-        const previewResponse = await fetch('/api/import/todoist/preview');
+        const previewResponse = await fetch('/api/v1/import/todoist/preview');
         const preview = await previewResponse.json();
 
         if (!previewResponse.ok) {
@@ -856,7 +964,7 @@ async function executeImport() {
     btn.disabled = true;
 
     try {
-        const response = await fetch('/api/import/todoist', {
+        const response = await fetch('/api/v1/import/todoist', {
             method: 'POST',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({
@@ -904,7 +1012,7 @@ async function executeImport() {
                 status.innerHTML += '<br>🔐 Encrypting imported data...';
                 try {
                     // Fetch all content (including newly imported)
-                    const contentResponse = await fetch('/api/tasks/all-content');
+                    const contentResponse = await fetch('/api/v1/tasks/all-content');
                     if (!contentResponse.ok) {
                         throw new Error('Failed to fetch content for encryption');
                     }
@@ -915,7 +1023,7 @@ async function executeImport() {
 
                     // Update tasks
                     if (encrypted.tasks.length > 0) {
-                        const taskResp = await fetch('/api/tasks/batch-update', {
+                        const taskResp = await fetch('/api/v1/tasks/batch-update', {
                             method: 'POST',
                             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                             body: JSON.stringify({ tasks: encrypted.tasks }),
@@ -928,7 +1036,7 @@ async function executeImport() {
 
                     // Update domains
                     if (encrypted.domains.length > 0) {
-                        const domainResp = await fetch('/api/domains/batch-update', {
+                        const domainResp = await fetch('/api/v1/domains/batch-update', {
                             method: 'POST',
                             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                             body: JSON.stringify({ domains: encrypted.domains }),
@@ -979,7 +1087,7 @@ async function wipeAllData() {
     btn.textContent = 'Wiping...';
 
     try {
-        const response = await fetch('/api/import/wipe', {
+        const response = await fetch('/api/v1/import/wipe', {
             method: 'POST',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
         });
@@ -1010,7 +1118,7 @@ async function exportBackup() {
     statusWrap.style.display = 'none';
 
     try {
-        const response = await fetch('/api/backup/export');
+        const response = await fetch('/api/v1/backup/export');
 
         if (!response.ok) {
             throw new Error('Export failed');
@@ -1070,7 +1178,7 @@ async function importBackup(input) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/backup/import', {
+        const response = await fetch('/api/v1/backup/import', {
             method: 'POST',
             headers: window.getCSRFHeaders(),
             body: formData,
@@ -1121,7 +1229,7 @@ async function showUnclearTasks() {
     btn.textContent = 'Loading...';
 
     try {
-        const response = await fetch('/api/tasks?clarity=none');
+        const response = await fetch('/api/v1/tasks?clarity=none');
         const tasks = await response.json();
 
         if (tasks.length === 0) {
@@ -1156,7 +1264,7 @@ async function showUnclearTasks() {
 
 async function setTaskClarity(taskId, clarity) {
     try {
-        const response = await fetch(`/api/tasks/${taskId}`, {
+        const response = await fetch(`/api/v1/tasks/${taskId}`, {
             method: 'PUT',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ clarity }),
@@ -1195,7 +1303,7 @@ function escapeHtml(text) {
 
 async function updatePreference(key, value) {
     try {
-        const response = await fetch('/api/preferences', {
+        const response = await fetch('/api/v1/preferences', {
             method: 'PUT',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ [key]: value }),
@@ -1275,7 +1383,7 @@ async function setupEncryption() {
 
         // Fetch all content to encrypt
         status.textContent = 'Fetching data to encrypt...';
-        const contentResponse = await fetch('/api/tasks/all-content');
+        const contentResponse = await fetch('/api/v1/tasks/all-content');
         if (!contentResponse.ok) {
             throw new Error('Failed to fetch data');
         }
@@ -1290,7 +1398,7 @@ async function setupEncryption() {
 
         // Batch update tasks
         if (encrypted.tasks.length > 0) {
-            const taskResponse = await fetch('/api/tasks/batch-update', {
+            const taskResponse = await fetch('/api/v1/tasks/batch-update', {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ tasks: encrypted.tasks }),
@@ -1302,7 +1410,7 @@ async function setupEncryption() {
 
         // Batch update domains
         if (encrypted.domains.length > 0) {
-            const domainResponse = await fetch('/api/domains/batch-update', {
+            const domainResponse = await fetch('/api/v1/domains/batch-update', {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ domains: encrypted.domains }),
@@ -1313,7 +1421,7 @@ async function setupEncryption() {
         }
 
         // Enable encryption on server
-        const response = await fetch('/api/preferences/encryption/setup', {
+        const response = await fetch('/api/v1/preferences/encryption/setup', {
             method: 'POST',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ salt, test_value: testValue, version }),
@@ -1356,7 +1464,7 @@ async function disableEncryption() {
 
     try {
         // Fetch all encrypted content
-        const contentResponse = await fetch('/api/tasks/all-content');
+        const contentResponse = await fetch('/api/v1/tasks/all-content');
         if (!contentResponse.ok) {
             throw new Error('Failed to fetch data');
         }
@@ -1367,7 +1475,7 @@ async function disableEncryption() {
 
         // Save decrypted data to server
         if (decrypted.tasks.length > 0) {
-            const taskResponse = await fetch('/api/tasks/batch-update', {
+            const taskResponse = await fetch('/api/v1/tasks/batch-update', {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ tasks: decrypted.tasks }),
@@ -1378,7 +1486,7 @@ async function disableEncryption() {
         }
 
         if (decrypted.domains.length > 0) {
-            const domainResponse = await fetch('/api/domains/batch-update', {
+            const domainResponse = await fetch('/api/v1/domains/batch-update', {
                 method: 'POST',
                 headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ domains: decrypted.domains }),
@@ -1389,7 +1497,7 @@ async function disableEncryption() {
         }
 
         // Disable encryption on server
-        const response = await fetch('/api/preferences/encryption/disable', {
+        const response = await fetch('/api/v1/preferences/encryption/disable', {
             method: 'POST',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
         });
@@ -1527,7 +1635,7 @@ async function deletePasskey(passkeyId, passkeyName) {
     }
 
     try {
-        const response = await fetch(`/api/passkeys/${passkeyId}`, {
+        const response = await fetch(`/api/v1/passkeys/${passkeyId}`, {
             method: 'DELETE',
             credentials: 'same-origin',
             headers: window.getCSRFHeaders(),
@@ -1554,7 +1662,7 @@ async function rerunWizard() {
     }
 
     try {
-        const response = await fetch('/api/wizard/reset', {
+        const response = await fetch('/api/v1/wizard/reset', {
             method: 'POST',
             credentials: 'same-origin',
             headers: window.getCSRFHeaders(),
@@ -1582,7 +1690,7 @@ let verificationInfo = null;
 // Load build info on page load
 async function loadBuildInfo() {
     try {
-        const response = await fetch('/api/build/info');
+        const response = await fetch('/api/v1/build/info');
         if (response.ok) {
             buildInfo = await response.json();
             updateBuildDisplay();
@@ -1621,7 +1729,7 @@ async function loadVerificationInfo() {
     const content = document.getElementById('verify-build-content');
 
     try {
-        const response = await fetch('/api/build/verify');
+        const response = await fetch('/api/v1/build/verify');
         if (!response.ok) throw new Error('Failed to load');
 
         verificationInfo = await response.json();

@@ -576,21 +576,21 @@ class TestPasskeyAPIContract:
         return (JS_DIR / "passkey.js").read_text()
 
     def test_registration_options_endpoint(self, passkey_js: str):
-        """/api/passkeys/register/options endpoint."""
-        assert "/api/passkeys/register/options" in passkey_js
+        """/api/v1/passkeys/register/options endpoint."""
+        assert "/api/v1/passkeys/register/options" in passkey_js
 
     def test_registration_verify_endpoint(self, passkey_js: str):
-        """/api/passkeys/register/verify endpoint."""
-        assert "/api/passkeys/register/verify" in passkey_js
+        """/api/v1/passkeys/register/verify endpoint."""
+        assert "/api/v1/passkeys/register/verify" in passkey_js
 
     def test_authentication_options_endpoint(self, passkey_js: str):
-        """/api/passkeys/authenticate/options endpoint."""
-        assert "/api/passkeys/authenticate/options" in passkey_js
+        """/api/v1/passkeys/authenticate/options endpoint."""
+        assert "/api/v1/passkeys/authenticate/options" in passkey_js
 
     def test_authentication_verify_endpoint(self, passkey_js: str):
-        """/api/passkeys/authenticate/verify endpoint."""
-        assert "/api/passkeys/authenticate/verify" in passkey_js
+        """/api/v1/passkeys/authenticate/verify endpoint."""
+        assert "/api/v1/passkeys/authenticate/verify" in passkey_js
 
     def test_credential_lookup_endpoint(self, passkey_js: str):
-        """/api/passkeys/by-credential/ endpoint for retry logic."""
-        assert "/api/passkeys/by-credential/" in passkey_js
+        """/api/v1/passkeys/by-credential/ endpoint for retry logic."""
+        assert "/api/v1/passkeys/by-credential/" in passkey_js

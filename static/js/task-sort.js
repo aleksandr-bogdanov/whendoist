@@ -59,7 +59,7 @@
      */
     async function loadUserPreferences() {
         try {
-            const response = await fetch('/api/preferences');
+            const response = await fetch('/api/v1/preferences');
             if (response.ok) {
                 const prefs = await response.json();
                 // Only update the preferences we care about for sorting

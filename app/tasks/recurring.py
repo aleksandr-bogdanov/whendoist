@@ -23,6 +23,7 @@ from sqlalchemy import delete, select
 from app.constants import INSTANCE_RETENTION_DAYS
 from app.database import async_session_factory
 from app.models import Task, TaskInstance, User
+from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
 
 logger = logging.getLogger("whendoist.tasks.recurring")
@@ -66,7 +67,11 @@ async def materialize_all_instances() -> dict[str, Any]:
 
         for user_id in user_ids:
             try:
-                service = RecurrenceService(db, user_id)
+                # Get user's timezone preference
+                prefs_service = PreferencesService(db, user_id)
+                timezone = await prefs_service.get_timezone()
+
+                service = RecurrenceService(db, user_id, timezone=timezone)
                 await service.ensure_instances_materialized(horizon_days=MATERIALIZATION_HORIZON_DAYS)
                 stats["users_processed"] += 1
             except Exception as e:

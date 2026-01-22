@@ -207,7 +207,7 @@
       domains.forEach((domainId) => {
         const target = document.getElementById(`domain-${domainId}`);
         if (target) {
-          htmx.ajax('GET', `/api/domains/${domainId}/section`, {
+          htmx.ajax('GET', `/api/v1/domains/${domainId}/section`, {
             target: `#domain-${domainId}`,
             swap: 'outerHTML'
           });
@@ -219,7 +219,7 @@
       if (!anyFound) {
         const listScroll = document.getElementById('task-list-scroll');
         if (listScroll) {
-          htmx.ajax('GET', '/api/tasks/list', { target: '#task-list-scroll', swap: 'innerHTML' });
+          htmx.ajax('GET', '/api/v1/task-list', { target: '#task-list-scroll', swap: 'innerHTML' });
         }
       }
       return;
@@ -229,7 +229,7 @@
     if (typeof htmx !== 'undefined') {
       const listScroll = document.getElementById('task-list-scroll');
       if (listScroll) {
-        htmx.ajax('GET', '/api/tasks/list', { target: '#task-list-scroll', swap: 'innerHTML' });
+        htmx.ajax('GET', '/api/v1/task-list', { target: '#task-list-scroll', swap: 'innerHTML' });
       }
     }
 
