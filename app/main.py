@@ -178,6 +178,12 @@ async def metrics():
     """Prometheus metrics endpoint."""
     from starlette.responses import Response
 
+    from app.database import engine
+    from app.metrics import update_db_pool_metrics
+
+    # Update pool metrics before returning
+    update_db_pool_metrics(engine.pool)
+
     return Response(content=get_metrics(), media_type="text/plain; charset=utf-8")
 
 

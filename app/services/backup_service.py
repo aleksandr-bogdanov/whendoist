@@ -5,7 +5,7 @@ Exports/imports user data as JSON for backup purposes.
 """
 
 import re
-from datetime import date, datetime, time
+from datetime import UTC, date, datetime, time
 from typing import Any
 
 from pydantic import BaseModel, ValidationError, field_validator
@@ -13,6 +13,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app import __version__
 from app.constants import (
     DOMAIN_NAME_MAX_LENGTH,
     TASK_DESCRIPTION_MAX_LENGTH,
@@ -136,7 +137,7 @@ class BackupValidationError(ValueError):
 class BackupService:
     """Service for exporting and importing user data."""
 
-    VERSION = "0.11.0"
+    VERSION = __version__
 
     def __init__(self, db: AsyncSession, user_id: int):
         self.db = db
@@ -164,7 +165,7 @@ class BackupService:
 
         return {
             "version": self.VERSION,
-            "exported_at": datetime.utcnow().isoformat(),
+            "exported_at": datetime.now(UTC).isoformat(),
             "domains": [self._serialize_domain(d) for d in domains],
             "tasks": [self._serialize_task(t) for t in tasks],
             "preferences": self._serialize_preferences(preferences) if preferences else None,

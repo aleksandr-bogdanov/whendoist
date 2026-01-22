@@ -8,7 +8,7 @@ Metrics are exposed at /metrics endpoint.
 import time
 from collections.abc import Callable
 
-from prometheus_client import Counter, Histogram, generate_latest
+from prometheus_client import Counter, Gauge, Histogram, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -38,6 +38,17 @@ SCHEDULED_TASKS = Counter(
     "whendoist_scheduled_tasks_total",
     "Tasks scheduled via drag-drop",
     ["method"],  # schedule, unschedule, reschedule
+)
+
+# Database pool metrics
+DB_POOL_SIZE = Gauge(
+    "whendoist_db_pool_size",
+    "Database connection pool size (current number of connections)",
+)
+
+DB_POOL_CHECKEDOUT = Gauge(
+    "whendoist_db_pool_checkedout",
+    "Number of connections currently checked out from the pool",
 )
 
 
@@ -123,3 +134,15 @@ def record_task_operation(operation: str) -> None:
 def record_scheduled_task(method: str) -> None:
     """Record a task scheduling event."""
     SCHEDULED_TASKS.labels(method=method).inc()
+
+
+def update_db_pool_metrics(pool: object) -> None:
+    """
+    Update database pool metrics.
+
+    Args:
+        pool: SQLAlchemy connection pool (from engine.pool)
+    """
+    # Pool has size() and checkedout() methods
+    DB_POOL_SIZE.set(pool.size())  # type: ignore[attr-defined]
+    DB_POOL_CHECKEDOUT.set(pool.checkedout())  # type: ignore[attr-defined]
