@@ -40,8 +40,26 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Whendoist...")
     logger.info(f"Base URL: {settings.base_url}")
     try:
-        # Database schema is managed by Alembic migrations
-        # Run `just migrate` locally or rely on Railway release command
+        # Run migrations on startup (Railway releaseCommand not working with Railpack)
+        import subprocess
+
+        logger.info("Running database migrations...")
+        result = subprocess.run(
+            ["python", "scripts/migrate.py"],
+            capture_output=True,
+            text=True,
+        )
+        if result.stdout:
+            for line in result.stdout.strip().split("\n"):
+                logger.info(f"migrate: {line}")
+        if result.stderr:
+            for line in result.stderr.strip().split("\n"):
+                logger.warning(f"migrate: {line}")
+        if result.returncode != 0:
+            logger.error(f"Migration failed with exit code {result.returncode}")
+            raise RuntimeError("Database migration failed")
+        logger.info("Migrations complete")
+
         from sqlalchemy import text
 
         from app.database import async_session_factory
@@ -53,18 +71,17 @@ async def lifespan(app: FastAPI):
             logger.info("Database connected")
 
             # Clean up expired WebAuthn challenges on startup
-            # Skip if table doesn't exist (migrations not yet run)
             try:
                 deleted = await ChallengeService.cleanup_expired(db)
                 if deleted > 0:
                     logger.info(f"Cleaned up {deleted} expired WebAuthn challenges")
             except Exception as e:
                 if "webauthn_challenges" in str(e).lower():
-                    logger.warning("WebAuthn challenges table not found - run migrations")
+                    logger.warning("WebAuthn challenges table not found")
                 else:
                     raise
     except Exception as e:
-        logger.error(f"Database connection failed: {e}")
+        logger.error(f"Startup failed: {e}")
         raise
     yield
     logger.info("Shutting down Whendoist...")
