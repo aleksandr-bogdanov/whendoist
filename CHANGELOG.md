@@ -15,6 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.28.0] - 2026-01-22
+
+### Summary
+**CI Fix** — Added missing psycopg2-binary dependency for PostgreSQL integration tests.
+
+### Fixed
+
+- **Integration tests failing in CI** — Added `psycopg2-binary>=2.9.0` to dev dependencies:
+  - `testcontainers[postgres]` requires psycopg2 to manage PostgreSQL containers
+  - Tests were failing with `ModuleNotFoundError: No module named 'psycopg2'`
+
+---
+
 ## [0.25.0] - 2026-01-22
 
 ### Summary

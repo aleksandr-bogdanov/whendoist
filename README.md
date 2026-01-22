@@ -356,9 +356,9 @@ Legacy routes remain for backwards compatibility. New integrations should use `/
 | [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption: do you need it, how it works, limitations |
 | [Database Migrations](docs/MIGRATIONS.md) | Schema changes, Alembic workflows, troubleshooting |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, background tasks (v0.14.0) |
-| [Comprehensive Audit (2026-01)](docs/AUDIT-2026-01.md) | January 2026 full codebase audit — security, code quality, architecture |
-| [Architectural Review (2026)](docs/ARCHITECTURAL-REVIEW-2026-01.md) | January 2026 comprehensive review — all issues addressed |
-| [Architectural Review (legacy)](docs/ARCHITECTURAL-REVIEW.md) | Original v0.10.1 review (25 issues) |
+| [Comprehensive Audit (2026-01)](docs/2026-01-22-AUDIT-1.md) | January 2026 full codebase audit — security, code quality, architecture |
+| [Architectural Review (2026)](docs/2026-01-22-ARCHITECTURAL-REVIEW-2.md) | January 2026 comprehensive review — all issues addressed |
+| [Architectural Review (legacy)](docs/2026-01-22-ARCHITECTURAL-REVIEW-1.md) | Original v0.10.1 review (25 issues) |
 | [Implementation Plan](docs/IMPLEMENTATION-PLAN.md) | v0.20.0 → v1.0.0 staged implementation (COMPLETE) |
 | [Production Roadmap](docs/PRODUCTION-ROADMAP.md) | v0.11.0 → v0.19.0 roadmap (COMPLETE) |
 | [Brand Guidelines](BRAND.md) | Wordmark, colors, typography, design principles |

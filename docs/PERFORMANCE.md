@@ -4,7 +4,7 @@
 
 ## Overview
 
-v0.14.0 addresses N+1 queries and performance bottlenecks identified in the [Architectural Review](ARCHITECTURAL-REVIEW.md). The optimizations reduce query counts by 60%+ and move expensive operations to background tasks.
+v0.14.0 addresses N+1 queries and performance bottlenecks identified in the [Architectural Review](2026-01-22-ARCHITECTURAL-REVIEW-1.md). The optimizations reduce query counts by 60%+ and move expensive operations to background tasks.
 
 ### Results Summary
 
@@ -643,6 +643,6 @@ analytics.comprehensive_stats: 45.2ms
 
 ## Related Documentation
 
-- [Architectural Review](ARCHITECTURAL-REVIEW.md) — Full list of 25 tracked issues
+- [Architectural Review](2026-01-22-ARCHITECTURAL-REVIEW-1.md) — Full list of 25 tracked issues
 - [Production Roadmap](PRODUCTION-ROADMAP.md) — v0.11.0 → v1.0.0 plan
 - [Migrations Guide](MIGRATIONS.md) — Database schema changes
