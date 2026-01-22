@@ -74,7 +74,9 @@ async def pg_session(postgres_container):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    # expire_on_commit=True ensures fresh data is loaded after commits,
+    # which is critical for testing relationship population (e.g., subtasks)
+    async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=True)
 
     async with async_session() as session:
         yield session
