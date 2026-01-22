@@ -234,20 +234,21 @@ class TestSubtasks:
         """Create a subtask under a parent task."""
         parent = await task_service.create_task(title="Parent Task")
         await pg_session.commit()
+        parent_id = parent.id  # Save ID before any expiration
 
         subtask = await task_service.create_task(
             title="Subtask",
-            parent_id=parent.id,
+            parent_id=parent_id,
         )
         await pg_session.commit()
 
-        assert subtask.parent_id == parent.id
+        assert subtask.parent_id == parent_id
 
-        # Expire parent to force fresh query with relationship loading
-        pg_session.expire(parent)
+        # Expire all to force fresh query with relationship loading
+        pg_session.expire_all()
 
         # Verify subtask appears in parent's subtasks
-        fetched_parent = await task_service.get_task(parent.id)
+        fetched_parent = await task_service.get_task(parent_id)
         assert fetched_parent is not None
         assert len(fetched_parent.subtasks) == 1
         assert fetched_parent.subtasks[0].title == "Subtask"
