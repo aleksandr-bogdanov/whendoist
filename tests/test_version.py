@@ -1,7 +1,7 @@
 """
 Version consistency tests.
 
-Ensures all version references match across the codebase.
+Ensures version is correctly read from pyproject.toml (single source of truth).
 """
 
 import tomllib
@@ -9,7 +9,12 @@ from pathlib import Path
 
 
 def test_version_consistency():
-    """Ensure app/__init__.py and pyproject.toml versions match."""
+    """Ensure app.__version__ correctly reads from pyproject.toml.
+
+    The version is defined only in pyproject.toml. app/__init__.py reads it
+    via importlib.metadata (installed) or tomllib (development mode).
+    This test validates the reading mechanism works correctly.
+    """
     from app import __version__
 
     with open(Path("pyproject.toml"), "rb") as f:
