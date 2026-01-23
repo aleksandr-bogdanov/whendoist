@@ -23,34 +23,19 @@
 
 ## Design Tokens
 
-All components use these CSS custom properties from `app.css`:
+All components use CSS custom properties from `app.css`. For the complete color system including dark mode tokens and WCAG accessibility verification, see [COLOR-SYSTEM.md](COLOR-SYSTEM.md).
 
-### Colors
+### Key Color Tokens
 
 ```css
 /* Primary */
---primary: #6D5EF6;           /* Digital lavender */
+--primary: #6D5EF6;
 --primary-hover: #5B4CF0;
---primary-tint: #E9E7FF;
-
-/* Text */
---text: #0B1220;              /* Primary text */
---text-muted: rgba(15, 23, 42, 0.64);
---text-faint: rgba(15, 23, 42, 0.46);
-
-/* Backgrounds */
---dark-bg: #F8FAFC;           /* Canvas */
---grey-bg: #F1F5F9;           /* Panels */
---light-bg: #FFFFFF;          /* Cards */
-
-/* Borders */
---border-hair: rgba(15, 23, 42, 0.055);
---border: rgba(15, 23, 42, 0.085);
---border-strong: rgba(15, 23, 42, 0.12);
 
 /* Semantic */
 --danger: #DC2626;
---danger-bg: rgba(220, 38, 38, 0.08);
+
+/* See COLOR-SYSTEM.md for complete palette */
 ```
 
 ### Spacing
@@ -1274,4 +1259,4 @@ See `docs/brand/COLOR-SYSTEM.md` for complete dark mode token definitions.
 
 ---
 
-*This document is part of the Whendoist Brand Kit, maintained alongside BRAND.md and DESIGN.md.*
+*Part of the Whendoist Brand System. See [BRAND.md](/BRAND.md) for design principles and [COLOR-SYSTEM.md](COLOR-SYSTEM.md) for color tokens.*

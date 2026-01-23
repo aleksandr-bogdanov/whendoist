@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="static/img/logo.png" alt="Whendoist" width="200">
+  <img src="static/img/w-icon-512.png" alt="Whendoist" width="120">
 </p>
-
-<h1 align="center">Whendoist</h1>
 
 <p align="center">
   <strong>WHEN do I do my tasks?</strong><br>
@@ -10,10 +8,10 @@
 </p>
 
 <p align="center">
+  <a href="https://whendoist.com">whendoist.com</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-features">Features</a> •
-  <a href="#-setup">Setup</a> •
-  <a href="#-development">Development</a>
+  <a href="#-documentation">Documentation</a>
 </p>
 
 ---
@@ -31,20 +29,16 @@ Whendoist brings tasks and calendar together. Create tasks with impact and clari
 ## ⚡ Quick Start
 
 ```bash
-# Clone and install
 git clone https://github.com/aleksandr-bogdanov/whendoist.git
 cd whendoist
 uv sync
-
-# Configure (see Setup section for OAuth credentials)
-cp .env.example .env
-
-# Start database and server
-just db-up
-just dev
-
-# Open http://localhost:8000
+cp .env.example .env   # Configure OAuth credentials
+just db-up && just dev
 ```
+
+Open http://localhost:8000 and connect Google Calendar.
+
+See the [Deployment Guide](docs/DEPLOYMENT.md) for production setup.
 
 ---
 
@@ -57,11 +51,11 @@ just dev
 | **Tasks** | Day planning with task list + calendar |
 | **Thought Cabinet** | Quick capture inbox, promote thoughts to tasks |
 | **Analytics** | Completion stats, trends, streaks |
-| **Settings** | Integrations, domains, security, task display preferences |
+| **Settings** | Integrations, domains, security, preferences |
 
 ### Energy-Based Filtering
 
-Filter tasks by clarity (how defined the work is):
+Filter tasks by how much energy they require:
 
 | Clarity | Energy | Use When |
 |---------|--------|----------|
@@ -86,98 +80,30 @@ Filter tasks by clarity (how defined the work is):
 - **Plan** — auto-schedule tasks into a selected time range
 - **Complete** — mark tasks done with visual aging
 
-### Task List Organization
-
-Tasks are organized into three sections within each domain:
-
-| Section | Sorting | Purpose |
-|---------|---------|---------|
-| **Unscheduled** | By impact (P1 → P4) | Tasks without a scheduled date — highest priority first |
-| **Scheduled** | By date (soonest first) | Tasks with a scheduled date — what's coming up next |
-| **Completed** | By impact | Recently completed tasks (faded styling) |
-
-**Why date-based sorting for scheduled tasks?**
-
-When you schedule a task for a specific date, that date represents when you plan to do it. A task due tomorrow is more urgent than one due next week, regardless of impact level. This gives you a natural "what's coming up next" view in your task list.
-
 ### Analytics Dashboard
 
-Powered by ApexCharts:
 - Daily completions, completion rate, streaks
 - Domain breakdown, impact distribution
-- Day-of-week and hour-of-day patterns
 - GitHub-style contribution heatmap
 - Velocity trends with rolling averages
 
 ---
 
-## 🔐 End-to-End Encryption (Optional)
+## 🔐 Optional: End-to-End Encryption
 
-Your task titles, descriptions, and project names can be encrypted so that only you can read them. When enabled, we store ciphertext — not your actual content.
-
-### How It Works
-
-1. You set a passphrase in Settings → Security
-2. A key is derived from your passphrase using PBKDF2 (100,000 iterations) and stored only in your browser session
-3. All sensitive fields are encrypted client-side (AES-256-GCM) before being sent to the server
-4. We store encrypted blobs — we cannot read your task content
-
-### What's Encrypted
+Your task titles, descriptions, and project names can be encrypted so only you can read them.
 
 | Encrypted | Not Encrypted |
 |-----------|---------------|
 | Task titles | Dates and times |
-| Task descriptions | Priority (P1-P4) |
-| Project/domain names | Clarity labels |
-| | Task status |
-| | Recurrence patterns |
-| | Duration estimates |
+| Task descriptions | Priority, clarity, status |
+| Project/domain names | Recurrence, duration |
 
-We keep dates and metadata unencrypted so the calendar and filters work server-side. Your actual content — *what* you're doing — is hidden from us.
+When enabled, we store ciphertext — we cannot read your content. Dates stay unencrypted for calendar/filter functionality.
 
-### What the Database Actually Sees
+**Trade-offs:** You must enter your passphrase each session. If you lose it, data is unrecoverable.
 
-**Before encryption:**
-```
-title: "Call mom about birthday party"
-description: "Discuss cake flavors and guest list"
-domain: "Personal"
-```
-
-**After encryption:**
-```
-title: "6PXEDPhiCWWl0spDbb6ysrSns0ofm9MyFfWjyoh1DNEsO0SwTYSWmj44rE8BNeekxTlFBoNR90F+y4/tqXo/"
-description: "R5xCjedmPpZeIfv13sL5JZJUl97TsZWhVX8W0uY5tYkYFToXkAnbW32VFLWHP2m+vjzTaQE="
-domain: "ZdZE+kIOQty8tzqwlay/MSBOlfPXcnj2zqiIqAX94k7FPiaFBtsZ9MUMGNvLu2ICyKqPpb+ITUPqxQUARFUlqg=="
-```
-
-The metadata is still visible (when, priority, status), but the content is gibberish without your passphrase.
-
-### What This Means
-
-- **With encryption off:** Standard security. Data encrypted at rest by our database provider. We could technically read your tasks.
-- **With encryption on:** Zero-knowledge of content. We see that you have 50 tasks scheduled this week, but not what they say.
-
-### Trade-offs
-
-- You must enter your passphrase each browser session (key is in sessionStorage, cleared on tab close)
-- If you lose your passphrase, your data is **unrecoverable** — we cannot reset it
-- No server-side search (we can't search what we can't read)
-
-### Self-Hosting
-
-The code is open source. Run your own instance if you prefer full control.
-
----
-
-### Other Security Features
-
-- **Code Provenance** — Verify deployed code matches GitHub source with build hashes (Settings → Build Provenance)
-- **Backup & Restore** — Export/import all data as JSON
-
-### Optional: Import from Todoist
-
-Already have tasks in Todoist? Import them with one click.
+See the [Encryption Guide](docs/ENCRYPTION.md) for technical details.
 
 ---
 
@@ -185,84 +111,24 @@ Already have tasks in Todoist? Import them with one click.
 
 ### Prerequisites
 
-- Python 3.13+ (we use [uv](https://github.com/astral-sh/uv))
+- Python 3.13+ ([uv](https://github.com/astral-sh/uv) recommended)
 - PostgreSQL (or Docker)
-- Google account with Calendar
+- Google Cloud credentials for Calendar API
 
-### 1. Google OAuth (Required)
+### Configuration
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Create a new project (or select existing)
-3. Enable **Google Calendar API** in [API Library](https://console.cloud.google.com/apis/library)
-4. Go to **Credentials** → Create **OAuth 2.0 Client ID**
-   - Application type: Web application
-   - Authorized redirect URI: `http://localhost:8000/auth/google/callback`
-5. Copy Client ID and Client Secret to `.env`
+1. **Google OAuth** — Create credentials in [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. **Todoist OAuth** (optional) — Create app in [Todoist App Console](https://developer.todoist.com/appconsole.html)
+3. **Environment** — Copy `.env.example` to `.env` and fill in credentials
 
-### 2. Todoist OAuth (Optional)
+See the [Deployment Guide](docs/DEPLOYMENT.md) for detailed instructions.
 
-Only needed if you want to import existing Todoist tasks:
+### Health Endpoints
 
-1. Go to [Todoist App Console](https://developer.todoist.com/appconsole.html)
-2. Create a new app
-3. Set OAuth redirect URL: `http://localhost:8000/auth/todoist/callback`
-4. Copy Client ID and Client Secret to `.env`
-
-### 3. Environment Variables
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
-```bash
-DATABASE_URL=postgresql+asyncpg://whendoist:whendoist@localhost:5432/whendoist
-SECRET_KEY=generate-a-random-secret-key
-BASE_URL=http://localhost:8000
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-# Optional - only for Todoist import
-TODOIST_CLIENT_ID=your-todoist-client-id
-TODOIST_CLIENT_SECRET=your-todoist-client-secret
-```
-
-> Generate a secret key: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
-
-### 4. Run
-
-```bash
-just db-up   # Start PostgreSQL
-just dev     # Start dev server
-```
-
-Open http://localhost:8000 and connect Google Calendar.
-
-### Health Check Endpoints
-
-For deployment and load balancer configuration:
-
-| Endpoint | Purpose | Response |
-|----------|---------|----------|
-| `GET /health` | Liveness check | `{"status": "healthy", "version": "0.25.0"}` |
-| `GET /ready` | Readiness check (includes DB + services) | See below |
-
-The `/ready` endpoint returns a structured response:
-
-```json
-{
-  "status": "ready",
-  "checks": {
-    "database": "connected",
-    "google_calendar": "configured (5 users)"
-  },
-  "version": "0.25.0"
-}
-```
-
-- Returns 200 if all critical services (database) are healthy
-- Returns 503 if the database is unavailable
-- Google Calendar status is informational (degraded mode acceptable)
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /health` | Liveness check |
+| `GET /ready` | Readiness check (DB + services) |
 
 ---
 
@@ -275,28 +141,6 @@ just lint     # Run ruff
 just fmt      # Format code
 ```
 
-### Testing
-
-See [`tests/README.md`](tests/README.md) for full test architecture.
-
-```bash
-# Run all unit tests
-just test
-
-# Run specific test file
-uv run pytest tests/test_task_sorting.py -v
-
-# Run E2E tests (requires running server)
-uv run playwright install chromium
-uv run pytest tests/e2e/ -v
-```
-
-| Category | Files | Purpose |
-|----------|-------|---------|
-| Unit | `test_*.py` | Fast tests, no I/O |
-| Contract | `test_js_module_contract.py` | Verify JS module APIs |
-| E2E | `e2e/test_*.py` | Full browser flows |
-
 ### Tech Stack
 
 | Layer | Technology |
@@ -304,45 +148,7 @@ uv run pytest tests/e2e/ -v
 | Backend | Python 3.13, FastAPI, SQLAlchemy 2.0 (async) |
 | Frontend | HTMX, Jinja2, Pico CSS, ApexCharts |
 | Database | PostgreSQL with asyncpg |
-| APIs | Google Calendar v3, Todoist API v1 (optional import) |
 | Tooling | uv, ruff, pytest |
-
-### Project Structure
-
-```
-app/
-├── main.py           # FastAPI entrypoint
-├── models.py         # ORM models (Task, Domain, User, etc.)
-├── constants.py      # Business constants (Impact, RetentionDays)
-├── services/
-│   ├── task_service.py       # Task CRUD
-│   ├── task_sorting.py       # Pure sorting functions
-│   ├── task_grouping.py      # Group tasks by domain
-│   ├── analytics_service.py  # Completion stats
-│   └── preferences_service.py
-├── routers/
-│   ├── pages.py      # HTML page routes
-│   ├── tasks.py      # Task API endpoints
-│   └── v1/           # Versioned API (/api/v1/*)
-└── templates/        # Jinja2 templates
-
-static/
-├── css/              # Styles + design tokens
-├── js/               # Drag-drop, planning, dialogs
-└── img/              # Logo and favicons
-```
-
-### API Versioning
-
-Both legacy and versioned API routes are available:
-
-| Legacy | Versioned | Example |
-|--------|-----------|---------|
-| `/api/tasks` | `/api/v1/tasks` | List/create tasks |
-| `/api/domains` | `/api/v1/domains` | List/create domains |
-| `/api/preferences` | `/api/v1/preferences` | User preferences |
-
-Legacy routes remain for backwards compatibility. New integrations should use `/api/v1/*`.
 
 ---
 
@@ -350,24 +156,22 @@ Legacy routes remain for backwards compatibility. New integrations should use `/
 
 | Document | Description |
 |----------|-------------|
-| [Claude Code Context](CLAUDE.md) | Quick reference for Claude Code sessions — **read this first** |
-| [Deployment Guide](docs/DEPLOYMENT.md) | Railway deployment, environment variables, monitoring |
-| [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, CSRF, security headers |
-| [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption: do you need it, how it works, limitations |
-| [Database Migrations](docs/MIGRATIONS.md) | Schema changes, Alembic workflows, troubleshooting |
-| [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, background tasks (v0.14.0) |
-| [Comprehensive Audit (2026-01)](docs/2026-01-22-AUDIT-1.md) | January 2026 full codebase audit — security, code quality, architecture |
-| [Architectural Review (2026)](docs/2026-01-22-ARCHITECTURAL-REVIEW-2.md) | January 2026 comprehensive review — all issues addressed |
-| [Architectural Review (legacy)](docs/2026-01-22-ARCHITECTURAL-REVIEW-1.md) | Original v0.10.1 review (25 issues) |
-| [Implementation Plan](docs/IMPLEMENTATION-PLAN.md) | v0.20.0 → v1.0.0 staged implementation (COMPLETE) |
-| [Production Roadmap](docs/PRODUCTION-ROADMAP.md) | v0.11.0 → v0.19.0 roadmap (COMPLETE) |
-| [Brand Guidelines](BRAND.md) | Wordmark, colors, typography, design principles |
-| [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette (107 tokens) |
-| [UI Components](docs/brand/UI-KIT.md) | Button, form, panel specifications |
-| [Press Kit](docs/brand/PRESS-KIT.md) | Media resources, logos, screenshots |
-| [Icon System](static/img/icons/README.md) | 107 icons across 3 tiers |
-| [Test Architecture](tests/README.md) | Unit, contract, and E2E testing |
-| [Changelog](CHANGELOG.md) | Version history and release notes |
+| **Getting Started** | |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Railway deployment, environment variables |
+| [Database Migrations](docs/MIGRATIONS.md) | Schema changes with Alembic |
+| **Security** | |
+| [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, headers |
+| [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption details |
+| **Architecture** | |
+| [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching |
+| **Brand & Design** | |
+| [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
+| [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |
+| [UI Components](docs/brand/UI-KIT.md) | Button, form, panel specs |
+| **Reference** | |
+| [Changelog](CHANGELOG.md) | Version history |
+| [Test Architecture](tests/README.md) | Testing patterns |
+| [Archived Docs](docs/archive/) | Historical audits, reviews, and plans |
 
 ---
 

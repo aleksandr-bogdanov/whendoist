@@ -2,7 +2,8 @@
 
 Task scheduling app: native tasks + Google Calendar.
 
-**Docs index:** See [README.md#documentation](README.md#-documentation) for all guides.
+**Website:** [whendoist.com](https://whendoist.com)
+**Docs:** See [README.md#documentation](README.md#-documentation) for all guides.
 
 ---
 
@@ -48,14 +49,8 @@ select(Task).where(Task.id == task_id)
 ```
 Batch operations: **skip** unowned IDs silently, never fail.
 
-### 3. API Routes: Register in BOTH places
-```python
-# 1. app/main.py (legacy_api, ~line 217)
-legacy_api.include_router(my_router.router)
-
-# 2. app/routers/v1/__init__.py (versioned)
-router.include_router(my_router.router)
-```
+### 3. API Routes: Versioned only
+All API routes are registered in `app/routers/v1/__init__.py` and served at `/api/v1/*`.
 Router files use resource prefix only: `APIRouter(prefix="/tasks")` — not `/api/tasks`.
 
 ### 4. Encryption: Global toggle only

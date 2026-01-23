@@ -1,10 +1,10 @@
 # Performance Optimization Guide
 
-> Technical documentation for v0.14.0 performance optimizations.
+> Technical documentation for performance optimizations implemented in v0.14.0.
 
 ## Overview
 
-v0.14.0 addresses N+1 queries and performance bottlenecks identified in the [Architectural Review](2026-01-22-ARCHITECTURAL-REVIEW-1.md). The optimizations reduce query counts by 60%+ and move expensive operations to background tasks.
+This guide documents the N+1 query fixes and performance optimizations. The optimizations reduce query counts by 60%+ and move expensive operations to background tasks.
 
 ### Results Summary
 
@@ -629,7 +629,7 @@ analytics.comprehensive_stats: 45.2ms
 
 ### Planned
 
-1. **Redis caching** — For multi-worker deployments (tracked in PRODUCTION-ROADMAP.md)
+1. **Redis caching** — For multi-worker deployments
 2. **Query result caching** — Cache analytics results with short TTL
 3. **Incremental materialization** — Only process changed recurring tasks
 
@@ -643,6 +643,5 @@ analytics.comprehensive_stats: 45.2ms
 
 ## Related Documentation
 
-- [Architectural Review](2026-01-22-ARCHITECTURAL-REVIEW-1.md) — Full list of 25 tracked issues
-- [Production Roadmap](PRODUCTION-ROADMAP.md) — v0.11.0 → v1.0.0 plan
 - [Migrations Guide](MIGRATIONS.md) — Database schema changes
+- [Security Guide](SECURITY.md) — Rate limiting, headers

@@ -153,13 +153,3 @@ Railway PostgreSQL includes automatic backups:
 1. Check migration files for syntax errors
 2. Verify database permissions
 3. Review migration logs in startup output
-
-## Security Checklist
-
-Before going live:
-- [ ] `SECRET_KEY` is unique and secure
-- [ ] `BASE_URL` uses HTTPS
-- [ ] OAuth credentials are production values
-- [ ] Database has secure password
-- [ ] Rate limiting is enabled (default)
-- [ ] Security headers are configured (default)
