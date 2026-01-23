@@ -135,37 +135,35 @@
     </script>
 </head>
 <body>
-    <!-- SVG Sprite Container (injected for iOS Safari compatibility) -->
-    <div id="svg-sprite-container" style="display:none"></div>
+    <!-- Inline SVG Sprite for iOS Safari compatibility (external <use> refs don't work) -->
+    {% include '_svg_sprites.html' %}
     <script>
-    // Inject SVG sprite for iOS Safari compatibility (external <use> refs don't work reliably)
+    // Rewrite SVG <use> hrefs from external URLs to local #id refs (iOS Safari fix)
     (function() {
-        function rewriteSvgUseRefs(root) {
-            (root || document).querySelectorAll('use[href*="#"]').forEach(function(use) {
-                var href = use.getAttribute('href');
-                if (href && href.indexOf('/') !== -1) {
-                    var hash = href.indexOf('#');
-                    if (hash !== -1) {
-                        use.setAttribute('href', href.substring(hash));
-                    }
-                }
-            });
+        function rewriteUse(use) {
+            var href = use.getAttribute('href');
+            if (href && href.indexOf('/') !== -1 && href.indexOf('#') !== -1) {
+                use.setAttribute('href', href.substring(href.indexOf('#')));
+            }
         }
-
-        var url = '{{ url_for("static", path="img/icons/ui-icons.svg") }}';
-        var container = document.getElementById('svg-sprite-container');
-        fetch(url)
-            .then(function(r) { return r.text(); })
-            .then(function(svg) {
-                container.innerHTML = svg;
-                rewriteSvgUseRefs();
-            })
-            .catch(function() {}); // Graceful fallback
-
-        // Rewrite refs in dynamically loaded content (HTMX)
-        document.body.addEventListener('htmx:afterSwap', function(e) {
-            rewriteSvgUseRefs(e.detail.target);
+        function rewriteAll(root) {
+            (root || document).querySelectorAll('use[href*="/"]').forEach(rewriteUse);
+        }
+        // MutationObserver to catch <use> elements as they're added to DOM
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                m.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) {
+                        if (node.tagName && node.tagName.toLowerCase() === 'use') rewriteUse(node);
+                        if (node.querySelectorAll) rewriteAll(node);
+                    }
+                });
+            });
         });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        // Also rewrite any already-parsed elements and handle HTMX
+        document.addEventListener('DOMContentLoaded', function() { rewriteAll(); });
+        document.body && document.body.addEventListener('htmx:afterSwap', function(e) { rewriteAll(e.detail.target); });
     })();
     </script>
 
