@@ -1618,21 +1618,23 @@
    ============================================================================= */
 
 /* Hide tasks without clarity tag (except in Show All mode) */
-body:not([data-energy-level="0"]) .task-item[data-clarity="none"],
-body:not([data-energy-level="0"]) .task-item[data-clarity=""],
-body:not([data-energy-level="0"]) .task-item:not([data-clarity]) {
-    display: none;
+/* Using !important to override mobile.css flex display */
+/* :not(.deleted-item):not(.scheduled-item) bypasses filter for those items */
+body:not([data-energy-level="0"]) .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="none"],
+body:not([data-energy-level="0"]) .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity=""],
+body:not([data-energy-level="0"]) .task-item:not(.deleted-item):not(.scheduled-item):not([data-clarity]) {
+    display: none !important;
 }
 
 /* Zombie mode: only executable tasks */
-body[data-energy-level="1"] .task-item[data-clarity="defined"],
-body[data-energy-level="1"] .task-item[data-clarity="exploratory"] {
-    display: none;
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="defined"],
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="exploratory"] {
+    display: none !important;
 }
 
 /* Normal mode: executable + defined */
-body[data-energy-level="2"] .task-item[data-clarity="exploratory"] {
-    display: none;
+body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="exploratory"] {
+    display: none !important;
 }
 
 /* Focus mode: all tasks available (except none) */
@@ -1655,20 +1657,8 @@ body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="exe
     display: none;
 }
 
-/* Deleted items bypass energy filter */
-body[data-energy-level] .deleted-item.task-item {
-    display: grid !important;
-}
-
-body[data-energy-level] .deleted-group.project-group {
-    display: block !important;
-}
-
-/* Scheduled items bypass energy filter */
-body[data-energy-level] .scheduled-item.task-item {
-    display: grid !important;
-}
-
+/* Deleted/scheduled groups always visible (items excluded via :not() above) */
+body[data-energy-level] .deleted-group.project-group,
 body[data-energy-level] .scheduled-group.project-group {
     display: block !important;
 }

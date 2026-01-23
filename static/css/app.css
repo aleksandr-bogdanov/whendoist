@@ -65,12 +65,14 @@ html, body {
     background: var(--bg-canvas);  /* Match header background in both modes */
 }
 
-/* Safe area padding for notched devices */
+/* Safe area padding for notched devices (browser mode, not PWA)
+   PWA mode has specific overrides in mobile.css */
 @supports (padding: env(safe-area-inset-top)) {
     .site-header {
-        padding-top: env(safe-area-inset-top);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
+        /* Add safe area on top of existing padding, preserve minimum padding */
+        padding-top: max(env(safe-area-inset-top), 15px);
+        padding-left: max(env(safe-area-inset-left), var(--content-padding));
+        padding-right: max(env(safe-area-inset-right), var(--content-padding));
     }
 
     main.container-fluid {

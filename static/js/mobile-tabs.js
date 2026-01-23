@@ -15,15 +15,12 @@ class MobileTabs {
         this.tasksPanel = null;
         this.calendarPanel = null;
         this.activeTab = 'tasks';
+        this.initialized = false;
         this.init();
     }
 
     init() {
-        // Only initialize on mobile
-        if (!window.matchMedia('(max-width: 900px)').matches) {
-            return;
-        }
-
+        // Get DOM elements (always, not just on mobile)
         this.container = document.querySelector('.mobile-tabs');
         this.tasksPanel = document.querySelector('.tasks-panel');
         this.calendarPanel = document.querySelector('.calendar-panel');
@@ -32,10 +29,7 @@ class MobileTabs {
             return;
         }
 
-        // Set initial state
-        this.switchTo(this.activeTab);
-
-        // Tab click handlers
+        // Always attach click handlers (they're no-op on desktop since tabs are hidden)
         this.container.querySelectorAll('.mobile-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 const view = tab.dataset.view;
@@ -43,22 +37,31 @@ class MobileTabs {
             });
         });
 
-        // Update badge on task changes
-        this.updateBadge();
+        // Always listen for badge updates
         document.body.addEventListener('htmx:afterSwap', () => {
             this.updateBadge();
         });
 
-        // Handle viewport changes
+        // Handle viewport changes - always listen
         window.matchMedia('(max-width: 900px)').addEventListener('change', (e) => {
             if (e.matches) {
+                // Switched to mobile - activate current tab
                 this.switchTo(this.activeTab);
+                this.updateBadge();
             } else {
                 // Desktop: show both panels
                 this.tasksPanel?.classList.remove('mobile-active');
                 this.calendarPanel?.classList.remove('mobile-active');
             }
         });
+
+        // Initialize mobile state if currently on mobile
+        if (window.matchMedia('(max-width: 900px)').matches) {
+            this.switchTo(this.activeTab);
+            this.updateBadge();
+        }
+
+        this.initialized = true;
     }
 
     switchTo(view) {

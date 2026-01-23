@@ -135,6 +135,40 @@
     </script>
 </head>
 <body>
+    <!-- SVG Sprite Container (injected for iOS Safari compatibility) -->
+    <div id="svg-sprite-container" style="display:none"></div>
+    <script>
+    // Inject SVG sprite for iOS Safari compatibility (external <use> refs don't work reliably)
+    (function() {
+        function rewriteSvgUseRefs(root) {
+            (root || document).querySelectorAll('use[href*="#"]').forEach(function(use) {
+                var href = use.getAttribute('href');
+                if (href && href.indexOf('/') !== -1) {
+                    var hash = href.indexOf('#');
+                    if (hash !== -1) {
+                        use.setAttribute('href', href.substring(hash));
+                    }
+                }
+            });
+        }
+
+        var url = '{{ url_for("static", path="img/icons/ui-icons.svg") }}';
+        var container = document.getElementById('svg-sprite-container');
+        fetch(url)
+            .then(function(r) { return r.text(); })
+            .then(function(svg) {
+                container.innerHTML = svg;
+                rewriteSvgUseRefs();
+            })
+            .catch(function() {}); // Graceful fallback
+
+        // Rewrite refs in dynamically loaded content (HTMX)
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            rewriteSvgUseRefs(e.detail.target);
+        });
+    })();
+    </script>
+
     <!-- Skip to main content link for keyboard navigation -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
