@@ -218,7 +218,7 @@
                                         class="toggle-switch {% if cal.enabled %}enabled{% endif %}"
                                         data-calendar-id="{{ cal.id }}"
                                         onclick="event.stopPropagation()"
-                                        hx-post="/api/v1/calendars/{{ cal.id }}/toggle"
+                                        hx-post="/api/v1/calendars/{{ cal.id | urlencode }}/toggle"
                                         hx-swap="none"
                                         hx-on::after-request="handleCalendarToggle(this)"
                                         aria-label="Toggle calendar"

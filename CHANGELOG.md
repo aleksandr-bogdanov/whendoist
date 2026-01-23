@@ -15,6 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.28.1] - 2026-01-23
+
+### Summary
+**Hotfix** — Fixed Google Calendar toggle not working in Settings.
+
+### Fixed
+
+- **Calendar toggle broken in Settings** — Calendar IDs containing `#` or `@` characters (common in Google Calendar, e.g., `en.usa#holiday@group.v.calendar.google.com`) were not being URL-encoded in the HTMX toggle URL. The `#` was interpreted as a URL fragment delimiter, causing the request to be truncated and fail silently. Added `| urlencode` filter to the template.
+
+---
+
 ## [0.28.0] - 2026-01-22
 
 ### Summary
