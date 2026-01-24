@@ -24,10 +24,15 @@
      * Initialize the options menu.
      */
     function init() {
+        console.log('[TaskListOptions] init() called');
         optionsBtn = document.getElementById('header-actions-btn');
         optionsMenu = document.getElementById('task-list-options-menu');
+        console.log('[TaskListOptions] optionsBtn:', optionsBtn, 'optionsMenu:', optionsMenu);
 
-        if (!optionsBtn || !optionsMenu) return;
+        if (!optionsBtn || !optionsMenu) {
+            console.log('[TaskListOptions] Early return - missing elements');
+            return;
+        }
 
         // Toggle menu on button click
         optionsBtn.addEventListener('click', toggleMenu);
@@ -47,18 +52,21 @@
 
         // Handle "Show deleted tasks" button
         const showDeletedBtn = document.getElementById('show-deleted-tasks-btn');
+        console.log('[TaskListOptions] showDeletedBtn:', showDeletedBtn);
         if (showDeletedBtn) {
             showDeletedBtn.addEventListener('click', showDeletedTasks);
         }
 
         // Handle "Show scheduled tasks" button
         const showScheduledBtn = document.getElementById('show-scheduled-tasks-btn');
+        console.log('[TaskListOptions] showScheduledBtn:', showScheduledBtn);
         if (showScheduledBtn) {
             showScheduledBtn.addEventListener('click', showScheduledTasks);
         }
 
         // Handle "Show completed tasks" button
         const showCompletedBtn = document.getElementById('show-completed-tasks-btn');
+        console.log('[TaskListOptions] showCompletedBtn:', showCompletedBtn);
         if (showCompletedBtn) {
             showCompletedBtn.addEventListener('click', showCompletedTasks);
         }
@@ -251,6 +259,7 @@
      * Show deleted tasks view.
      */
     function showDeletedTasks() {
+        console.log('[TaskListOptions] showDeletedTasks called');
         closeMenu();
         currentView = 'deleted';
 
@@ -258,10 +267,16 @@
         setSpecialViewHeader(true);
 
         const taskListScroll = document.getElementById('task-list-scroll');
+        console.log('[TaskListOptions] taskListScroll:', taskListScroll, 'htmx:', !!window.htmx);
         if (taskListScroll && window.htmx) {
+            console.log('[TaskListOptions] Making HTMX request to /api/v1/deleted-tasks');
             htmx.ajax('GET', '/api/v1/deleted-tasks', {
                 target: '#task-list-scroll',
                 swap: 'innerHTML'
+            }).then(() => {
+                console.log('[TaskListOptions] HTMX request completed');
+            }).catch(err => {
+                console.error('[TaskListOptions] HTMX request failed:', err);
             });
         }
     }
