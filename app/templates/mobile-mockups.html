@@ -5,19 +5,26 @@
 {% block extra_css %}
 <style>
 /* =============================================================================
-   MOBILE MOCKUPS PAGE
-   View at /mockups - test layout options on mobile
-
-   Core UX principle: User selects exact time range on calendar, not presets.
-   Power users want control, not hand-holding.
+   MOBILE MOCKUPS - Optimized for iPhone 15 Pro Max (430×932pt)
    ============================================================================= */
+
+:root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --nav-height: 52px;
+}
 
 .mockups-page {
     min-height: 100vh;
+    min-height: 100dvh;
     background: var(--bg-canvas);
+    -webkit-user-select: none;
+    user-select: none;
 }
 
-/* Navigation between mockups */
+/* =============================================================================
+   NAVIGATION
+   ============================================================================= */
 .mockup-nav {
     position: fixed;
     top: 0;
@@ -26,75 +33,83 @@
     z-index: 1000;
     background: var(--bg-panel);
     border-bottom: 1px solid var(--border-default);
-    padding: 8px 16px;
+    padding: calc(var(--safe-top) + 8px) 16px 12px;
     display: flex;
-    gap: 8px;
+    gap: 12px;
 }
 
 .mockup-nav-btn {
     flex: 1;
-    padding: 10px 16px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-default);
+    padding: 14px 20px;
+    border-radius: 12px;
+    border: none;
     background: var(--bg-surface);
     color: var(--text-primary);
-    font-size: 0.8125rem;
+    font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .mockup-nav-btn.active {
     background: var(--primary);
     color: white;
-    border-color: var(--primary);
-}
-
-/* Mockup containers */
-.mockup-container {
-    display: none;
-    padding-top: 56px;
-    min-height: 100vh;
-}
-
-.mockup-container.active {
-    display: block;
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.3);
 }
 
 /* =============================================================================
-   SHARED COMPONENTS
+   MOCKUP CONTAINERS
    ============================================================================= */
-
-/* Task item */
-.task-item {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-    transition: all 0.15s ease;
+.mockup-container {
+    display: none;
+    padding-top: calc(var(--safe-top) + var(--nav-height) + 12px);
+    min-height: 100vh;
+    min-height: 100dvh;
 }
 
-.task-item[data-impact="1"] { border-left: 3px solid #ef4444; }
-.task-item[data-impact="2"] { border-left: 3px solid #f59e0b; }
-.task-item[data-impact="3"] { border-left: 3px solid #3b82f6; }
-.task-item[data-impact="4"] { border-left: 3px solid #94a3b8; }
+.mockup-container.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* =============================================================================
+   SHARED: TASK ITEMS
+   ============================================================================= */
+.task-item {
+    background: var(--bg-surface);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.task-item:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.task-item[data-impact="1"] { border-left: 4px solid #ef4444; }
+.task-item[data-impact="2"] { border-left: 4px solid #f59e0b; }
+.task-item[data-impact="3"] { border-left: 4px solid #3b82f6; }
+.task-item[data-impact="4"] { border-left: 4px solid #94a3b8; }
 
 .task-item__check {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--border-default);
+    width: 24px;
+    height: 24px;
+    border: 2.5px solid var(--border-default);
     border-radius: 50%;
     flex-shrink: 0;
-    cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .task-item__check:active {
-    transform: scale(0.9);
+    transform: scale(0.85);
     background: var(--primary);
     border-color: var(--primary);
 }
@@ -105,74 +120,114 @@
 }
 
 .task-item__title {
-    font-size: 0.875rem;
+    font-size: 1rem;
+    font-weight: 500;
     color: var(--text-primary);
-    white-space: nowrap;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .task-item__meta {
     display: flex;
     gap: 8px;
-    margin-top: 4px;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
+    margin-top: 6px;
 }
 
 .task-item__tag {
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.6875rem;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8125rem;
     font-weight: 600;
 }
 
-.task-item__tag--energy { background: rgba(109, 94, 246, 0.1); color: var(--primary); }
-.task-item__tag--duration { background: rgba(0, 0, 0, 0.05); }
+.task-item__tag--energy {
+    background: rgba(109, 94, 246, 0.12);
+    color: var(--primary);
+}
 
-/* Energy filter pills */
+.task-item__tag--duration {
+    background: var(--bg-panel);
+    color: var(--text-secondary);
+}
+
+/* =============================================================================
+   SHARED: ENERGY FILTER
+   ============================================================================= */
 .energy-filter {
     display: flex;
-    gap: 6px;
+    gap: 8px;
 }
 
 .energy-pill {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--bg-surface);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    font-size: 1rem;
+    border: 2px solid var(--border-subtle);
+    border-radius: 12px;
+    font-size: 1.25rem;
     cursor: pointer;
-    opacity: 0.5;
-    transition: all 0.15s ease;
+    opacity: 0.4;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .energy-pill.active {
     opacity: 1;
     border-color: var(--primary);
     background: rgba(109, 94, 246, 0.1);
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.2);
 }
 
-/* Hour grid (shared calendar component) */
+/* =============================================================================
+   SHARED: DOMAIN HEADERS
+   ============================================================================= */
+.domain-group {
+    margin-bottom: 24px;
+}
+
+.domain-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    padding-left: 4px;
+}
+
+/* =============================================================================
+   SHARED: HOUR GRID
+   ============================================================================= */
 .hour-grid {
     position: relative;
+    background: var(--bg-surface);
+    border-radius: 16px;
+    overflow: hidden;
+    margin: 0 12px;
 }
 
 .hour-row {
     display: flex;
     align-items: flex-start;
-    min-height: 48px;
+    min-height: 56px;
     border-top: 1px solid var(--border-subtle);
 }
 
+.hour-row:first-of-type {
+    border-top: none;
+}
+
 .hour-label {
-    width: 44px;
-    padding: 4px 8px 4px 0;
-    font-size: 0.6875rem;
+    width: 52px;
+    padding: 8px 12px 8px 0;
+    font-size: 0.75rem;
+    font-weight: 500;
     color: var(--text-muted);
     text-align: right;
     flex-shrink: 0;
@@ -180,36 +235,26 @@
 
 .hour-slot {
     flex: 1;
-    min-height: 48px;
+    min-height: 56px;
     position: relative;
 }
 
-/* Calendar event */
+/* Calendar events */
 .cal-event {
     position: absolute;
     left: 4px;
-    right: 4px;
-    padding: 4px 8px;
-    background: rgba(109, 94, 246, 0.12);
-    border-left: 3px solid var(--primary);
-    border-radius: 4px;
-    font-size: 0.75rem;
-    color: var(--text-primary);
+    right: 8px;
+    padding: 6px 10px;
+    background: rgba(66, 133, 244, 0.12);
+    border-left: 3px solid #4285f4;
+    border-radius: 6px;
+    font-size: 0.8125rem;
     overflow: hidden;
 }
 
-.cal-event--gcal {
-    background: rgba(66, 133, 244, 0.12);
-    border-left-color: #4285f4;
-}
-
-.cal-event__time {
-    font-size: 0.625rem;
-    color: var(--text-secondary);
-}
-
 .cal-event__title {
-    font-weight: 500;
+    font-weight: 600;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -218,68 +263,61 @@
 /* Selection overlay */
 .selection-overlay {
     position: absolute;
-    left: 44px;
-    right: 0;
+    left: 52px;
+    right: 8px;
     background: rgba(109, 94, 246, 0.15);
-    border: 2px solid var(--primary);
-    border-radius: 4px;
-    pointer-events: none;
+    border: 2.5px solid var(--primary);
+    border-radius: 10px;
     z-index: 10;
     display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 
 .selection-overlay.active {
-    display: block;
+    display: flex;
 }
 
 .selection-overlay__time {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     background: var(--primary);
     color: white;
-    padding: 6px 12px;
-    border-radius: var(--radius-md);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    white-space: nowrap;
-    pointer-events: auto;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.3);
 }
 
-/* Plan button that appears in selection */
 .plan-selection-btn {
-    position: absolute;
-    bottom: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 20px;
-    background: var(--primary);
-    color: white;
+    padding: 12px 24px;
+    background: white;
+    color: var(--primary);
     border: none;
-    border-radius: var(--radius-lg);
-    font-size: 0.875rem;
+    border-radius: 12px;
+    font-size: 0.9375rem;
     font-weight: 700;
     cursor: pointer;
-    pointer-events: auto;
-    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.plan-selection-btn:active {
+    transform: scale(0.96);
 }
 
 /* =============================================================================
-   OPTION B: BOTTOM SHEET CALENDAR
-
-   - Tasks are the main view (full screen)
-   - Calendar lives in a bottom sheet
-   - Tap "Plan" → sheet expands → user drags to select time range
-   - Selection shows "Plan Tasks" button
+   OPTION B: BOTTOM SHEET
    ============================================================================= */
 .option-b {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 56px);
     background: var(--bg-canvas);
 }
 
@@ -287,36 +325,22 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 16px 20px;
     background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-default);
 }
 
 .option-b__title {
-    font-size: 1rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .option-b__tasks {
     flex: 1;
-    padding: 12px 16px;
+    padding: 20px;
     overflow-y: auto;
-    padding-bottom: 100px; /* space for bottom sheet */
-}
-
-.option-b__domain {
-    margin-bottom: 16px;
-}
-
-.option-b__domain-name {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    padding-left: 4px;
+    padding-bottom: 120px;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Bottom Sheet */
@@ -326,33 +350,36 @@
     left: 0;
     right: 0;
     background: var(--bg-panel);
-    border-top: 1px solid var(--border-default);
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     z-index: 100;
-    max-height: 85vh;
-    transform: translateY(calc(100% - 72px)); /* Show only peek */
+    max-height: 80vh;
+    transform: translateY(calc(100% - 88px - var(--safe-bottom)));
 }
 
 .option-b__sheet.expanded {
     transform: translateY(0);
 }
 
-.option-b__sheet-handle {
-    width: 36px;
-    height: 4px;
-    background: var(--border-default);
-    border-radius: 2px;
-    margin: 10px auto;
+.option-b__sheet-handle-area {
+    padding: 12px 0 8px;
     cursor: grab;
+}
+
+.option-b__sheet-handle {
+    width: 40px;
+    height: 5px;
+    background: var(--border-default);
+    border-radius: 3px;
+    margin: 0 auto;
 }
 
 .option-b__sheet-peek {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px 12px;
+    padding: 4px 20px 16px;
 }
 
 .option-b__sheet-info {
@@ -360,49 +387,72 @@
 }
 
 .option-b__sheet-date {
-    font-size: 0.9375rem;
+    font-size: 1.125rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .option-b__sheet-stats {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     color: var(--text-secondary);
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
-.option-b__sheet-plan-btn {
-    padding: 10px 16px;
-    background: var(--primary);
+.option-b__plan-btn {
+    padding: 14px 24px;
+    background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
-    font-size: 0.8125rem;
+    border-radius: 14px;
+    font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    box-shadow: 0 4px 16px rgba(109, 94, 246, 0.35);
     transition: transform 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.option-b__sheet-plan-btn:active {
-    transform: scale(0.97);
+.option-b__plan-btn:active {
+    transform: scale(0.96);
 }
 
-/* Calendar content */
+/* Selection mode styling */
+.option-b__selection-hint {
+    display: none;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(109, 94, 246, 0.1) 0%, rgba(139, 124, 247, 0.1) 100%);
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.option-b__sheet.selection-mode .option-b__selection-hint {
+    display: block;
+}
+
+.option-b__sheet.selection-mode .option-b__plan-btn {
+    background: var(--text-muted);
+    box-shadow: none;
+}
+
+/* Calendar in sheet */
 .option-b__sheet-calendar {
-    padding: 0 8px 16px;
+    padding: 0 8px calc(var(--safe-bottom) + 16px);
     overflow-y: auto;
-    max-height: calc(85vh - 72px);
+    max-height: calc(80vh - 140px);
+    -webkit-overflow-scrolling: touch;
 }
 
-.option-b__sheet-day-nav {
+.option-b__day-nav {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    padding: 8px 16px 16px;
+    gap: 20px;
+    padding: 12px 20px 20px;
     position: sticky;
     top: 0;
     background: var(--bg-panel);
@@ -410,79 +460,63 @@
 }
 
 .option-b__nav-btn {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border: none;
     background: var(--bg-surface);
-    border-radius: var(--radius-sm);
-    font-size: 0.875rem;
+    border-radius: 12px;
+    font-size: 1rem;
     cursor: pointer;
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.option-b__nav-btn:active {
+    background: var(--bg-panel);
 }
 
 .option-b__nav-date {
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-/* Selection mode indicator */
-.option-b__selection-hint {
-    display: none;
-    padding: 8px 16px;
-    background: rgba(109, 94, 246, 0.1);
-    text-align: center;
-    font-size: 0.75rem;
-    color: var(--primary);
-    font-weight: 500;
-}
-
-.option-b__sheet.selection-mode .option-b__selection-hint {
-    display: block;
-}
-
-.option-b__sheet.selection-mode .option-b__sheet-plan-btn {
-    background: var(--text-secondary);
-}
-
 /* =============================================================================
-   OPTION C: FAB + INLINE SELECTION
-
-   - Keeps familiar tab structure (Tasks / Schedule)
-   - FAB always visible, shows count of plannable tasks
-   - Tap FAB → switches to Schedule tab + enters selection mode
-   - User drags to select time range directly on calendar
-   - No modal, no presets - direct manipulation
+   OPTION C: FAB + TABS
    ============================================================================= */
 .option-c {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 56px);
     background: var(--bg-canvas);
 }
 
 .option-c__tabs {
     display: flex;
     background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-default);
+    padding: 0 8px;
 }
 
 .option-c__tab {
     flex: 1;
-    padding: 12px;
+    padding: 16px 12px;
     text-align: center;
-    font-size: 0.875rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-secondary);
     border: none;
     background: none;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s ease;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .option-c__tab.active {
@@ -490,12 +524,16 @@
     border-bottom-color: var(--primary);
 }
 
+.option-c__tab-icon {
+    font-size: 1.25rem;
+}
+
 .option-c__tab-badge {
-    padding: 2px 6px;
+    padding: 3px 8px;
     background: var(--primary);
     color: white;
     border-radius: 10px;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
 }
 
@@ -503,6 +541,7 @@
     display: none;
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .option-c__panel.active {
@@ -510,37 +549,18 @@
 }
 
 /* Tasks panel */
-.option-c__tasks {
-    padding: 12px 16px;
-    padding-bottom: 100px;
-}
-
-.option-c__domain {
-    margin-bottom: 16px;
-}
-
-.option-c__domain-name {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    padding-left: 4px;
+.option-c__tasks-content {
+    padding: 20px;
+    padding-bottom: 120px;
 }
 
 /* Schedule panel */
-.option-c__schedule {
-    padding-bottom: 100px;
-}
-
 .option-c__schedule-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 16px 20px;
     background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-default);
     position: sticky;
     top: 0;
     z-index: 5;
@@ -549,147 +569,124 @@
 .option-c__date-nav {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
 }
 
 .option-c__nav-btn {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border: none;
     background: var(--bg-surface);
-    border-radius: var(--radius-sm);
-    font-size: 0.875rem;
+    border-radius: 12px;
+    font-size: 1rem;
     cursor: pointer;
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .option-c__date {
-    font-size: 0.9375rem;
+    font-size: 1.125rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .option-c__today-btn {
-    padding: 6px 12px;
+    padding: 10px 16px;
     background: var(--bg-surface);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--text-secondary);
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.option-c__calendar {
-    padding: 0 8px 16px;
+.option-c__calendar-wrap {
+    padding: 16px 0 calc(120px + var(--safe-bottom));
 }
 
-/* Selection mode banner */
+/* Selection banner */
 .option-c__selection-banner {
     display: none;
-    padding: 10px 16px;
+    padding: 14px 20px;
     background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
     color: white;
-    text-align: center;
-    font-size: 0.8125rem;
-    font-weight: 500;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .option-c.selection-mode .option-c__selection-banner {
-    display: block;
+    display: flex;
 }
 
-.option-c__cancel-selection {
-    background: rgba(255,255,255,0.2);
+.option-c__selection-text {
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.option-c__cancel-btn {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.2);
     border: none;
+    border-radius: 8px;
     color: white;
-    padding: 4px 12px;
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    margin-left: 12px;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* FAB */
 .option-c__fab {
     position: fixed;
-    bottom: 24px;
+    bottom: calc(24px + var(--safe-bottom));
     right: 24px;
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
     color: white;
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(109, 94, 246, 0.4);
+    box-shadow: 0 6px 24px rgba(109, 94, 246, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 100;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .option-c__fab:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
+    box-shadow: 0 4px 16px rgba(109, 94, 246, 0.5);
 }
 
 .option-c__fab-badge {
     position: absolute;
-    top: -2px;
-    right: -2px;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 5px;
+    top: -4px;
+    right: -4px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 7px;
     background: #ef4444;
     color: white;
-    border-radius: 10px;
-    font-size: 0.6875rem;
+    border-radius: 12px;
+    font-size: 0.8125rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--bg-canvas);
+    border: 3px solid var(--bg-canvas);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
-/* FAB tooltip on first visit */
-.option-c__fab-hint {
-    position: fixed;
-    bottom: 92px;
-    right: 24px;
-    background: var(--text-primary);
-    color: var(--bg-panel);
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
-    font-size: 0.75rem;
-    font-weight: 500;
-    white-space: nowrap;
-    z-index: 100;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: all 0.2s ease;
-    pointer-events: none;
-}
-
-.option-c__fab-hint::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    right: 24px;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-top: 6px solid var(--text-primary);
-}
-
-.option-c__fab:hover + .option-c__fab-hint,
-.option-c__fab-hint.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Selection mode: hide FAB, show cancel in banner */
+/* Hide FAB in selection mode */
 .option-c.selection-mode .option-c__fab {
     display: none;
 }
@@ -700,15 +697,12 @@
 <div class="mockups-page">
     <!-- Navigation -->
     <nav class="mockup-nav">
-        <button class="mockup-nav-btn active" data-mockup="b">B: Bottom Sheet</button>
-        <button class="mockup-nav-btn" data-mockup="c">C: FAB + Direct</button>
+        <button class="mockup-nav-btn active" data-mockup="b">Bottom Sheet</button>
+        <button class="mockup-nav-btn" data-mockup="c">FAB + Tabs</button>
     </nav>
 
     <!-- =======================================================================
-         OPTION B: BOTTOM SHEET CALENDAR
-
-         Tasks as main view. Calendar slides up from bottom.
-         Tap Plan → expand sheet → drag to select interval → Plan Tasks.
+         OPTION B: BOTTOM SHEET
          ======================================================================= -->
     <div class="mockup-container active" data-mockup="b">
         <div class="option-b">
@@ -722,8 +716,8 @@
             </div>
 
             <div class="option-b__tasks">
-                <div class="option-b__domain">
-                    <div class="option-b__domain-name">Work</div>
+                <div class="domain-group">
+                    <div class="domain-name">Work</div>
                     <div class="task-item" data-impact="1">
                         <div class="task-item__check"></div>
                         <div class="task-item__content">
@@ -756,8 +750,8 @@
                     </div>
                 </div>
 
-                <div class="option-b__domain">
-                    <div class="option-b__domain-name">Personal</div>
+                <div class="domain-group">
+                    <div class="domain-name">Personal</div>
                     <div class="task-item" data-impact="2">
                         <div class="task-item__check"></div>
                         <div class="task-item__content">
@@ -779,17 +773,43 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="domain-group">
+                    <div class="domain-name">Side Project</div>
+                    <div class="task-item" data-impact="2">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Fix authentication bug</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧠</span>
+                                <span class="task-item__tag task-item__tag--duration">1h</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item" data-impact="3">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Write unit tests for API</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">☕</span>
+                                <span class="task-item__tag task-item__tag--duration">45m</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Bottom Sheet -->
             <div class="option-b__sheet" id="option-b-sheet">
-                <div class="option-b__sheet-handle"></div>
+                <div class="option-b__sheet-handle-area">
+                    <div class="option-b__sheet-handle"></div>
+                </div>
                 <div class="option-b__sheet-peek">
                     <div class="option-b__sheet-info">
-                        <div class="option-b__sheet-date">Fri, Jan 24</div>
-                        <div class="option-b__sheet-stats">3 events • 2h free</div>
+                        <div class="option-b__sheet-date">Friday, Jan 24</div>
+                        <div class="option-b__sheet-stats">3 events · 2h 30m free</div>
                     </div>
-                    <button class="option-b__sheet-plan-btn" id="option-b-plan-btn">
+                    <button class="option-b__plan-btn" id="option-b-plan-btn">
                         <span>✨</span>
                         <span>Plan</span>
                     </button>
@@ -799,7 +819,7 @@
                     Drag on calendar to select time range
                 </div>
 
-                <div class="option-b__sheet-day-nav">
+                <div class="option-b__day-nav">
                     <button class="option-b__nav-btn">◀</button>
                     <span class="option-b__nav-date">Friday, January 24</span>
                     <button class="option-b__nav-btn">▶</button>
@@ -808,7 +828,7 @@
                 <div class="option-b__sheet-calendar">
                     <div class="hour-grid" id="option-b-grid">
                         <div class="selection-overlay" id="option-b-selection">
-                            <span class="selection-overlay__time" id="option-b-selection-time">10:00 - 12:00</span>
+                            <span class="selection-overlay__time" id="option-b-selection-time">10:00 – 12:00</span>
                             <button class="plan-selection-btn" id="option-b-plan-selection">
                                 <span>✨</span> Plan Tasks
                             </button>
@@ -821,7 +841,7 @@
                         <div class="hour-row" data-hour="9">
                             <span class="hour-label">9:00</span>
                             <div class="hour-slot">
-                                <div class="cal-event cal-event--gcal" style="top: 0; height: 32px;">
+                                <div class="cal-event" style="top: 0; height: 36px;">
                                     <div class="cal-event__title">Team standup</div>
                                 </div>
                             </div>
@@ -833,7 +853,7 @@
                         <div class="hour-row" data-hour="11">
                             <span class="hour-label">11:00</span>
                             <div class="hour-slot">
-                                <div class="cal-event cal-event--gcal" style="top: 0; height: 32px;">
+                                <div class="cal-event" style="top: 0; height: 36px;">
                                     <div class="cal-event__title">1:1 with manager</div>
                                 </div>
                             </div>
@@ -849,7 +869,7 @@
                         <div class="hour-row" data-hour="14">
                             <span class="hour-label">14:00</span>
                             <div class="hour-slot">
-                                <div class="cal-event cal-event--gcal" style="top: 0; height: 48px;">
+                                <div class="cal-event" style="top: 0; height: 56px;">
                                     <div class="cal-event__title">Sprint planning</div>
                                 </div>
                             </div>
@@ -877,86 +897,108 @@
     </div>
 
     <!-- =======================================================================
-         OPTION C: FAB + DIRECT CALENDAR SELECTION
-
-         Familiar tabs (Tasks / Schedule). FAB always visible.
-         Tap FAB → jumps to Schedule tab + enters selection mode.
-         Drag to select interval. No modal, no presets.
+         OPTION C: FAB + TABS
          ======================================================================= -->
     <div class="mockup-container" data-mockup="c">
         <div class="option-c" id="option-c-container">
             <div class="option-c__tabs">
                 <button class="option-c__tab active" data-tab="tasks">
-                    <span>📋</span>
+                    <span class="option-c__tab-icon">📋</span>
                     <span>Tasks</span>
-                    <span class="option-c__tab-badge">5</span>
+                    <span class="option-c__tab-badge">7</span>
                 </button>
                 <button class="option-c__tab" data-tab="schedule">
-                    <span>📅</span>
+                    <span class="option-c__tab-icon">📅</span>
                     <span>Schedule</span>
                 </button>
             </div>
 
-            <div class="option-c__selection-banner" id="option-c-selection-banner">
-                Drag to select time range
-                <button class="option-c__cancel-selection" id="option-c-cancel">Cancel</button>
+            <div class="option-c__selection-banner">
+                <span class="option-c__selection-text">Drag to select time</span>
+                <button class="option-c__cancel-btn" id="option-c-cancel">Cancel</button>
             </div>
 
             <!-- Tasks Panel -->
-            <div class="option-c__panel option-c__tasks active" data-panel="tasks">
-                <div class="option-c__domain">
-                    <div class="option-c__domain-name">Work</div>
-                    <div class="task-item" data-impact="1">
-                        <div class="task-item__check"></div>
-                        <div class="task-item__content">
-                            <div class="task-item__title">Review Q4 budget proposal</div>
-                            <div class="task-item__meta">
-                                <span class="task-item__tag task-item__tag--energy">🧠</span>
-                                <span class="task-item__tag task-item__tag--duration">45m</span>
+            <div class="option-c__panel active" data-panel="tasks">
+                <div class="option-c__tasks-content">
+                    <div class="domain-group">
+                        <div class="domain-name">Work</div>
+                        <div class="task-item" data-impact="1">
+                            <div class="task-item__check"></div>
+                            <div class="task-item__content">
+                                <div class="task-item__title">Review Q4 budget proposal</div>
+                                <div class="task-item__meta">
+                                    <span class="task-item__tag task-item__tag--energy">🧠</span>
+                                    <span class="task-item__tag task-item__tag--duration">45m</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="task-item" data-impact="2">
+                            <div class="task-item__check"></div>
+                            <div class="task-item__content">
+                                <div class="task-item__title">Prepare presentation slides</div>
+                                <div class="task-item__meta">
+                                    <span class="task-item__tag task-item__tag--energy">☕</span>
+                                    <span class="task-item__tag task-item__tag--duration">1h</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="task-item" data-impact="3">
+                            <div class="task-item__check"></div>
+                            <div class="task-item__content">
+                                <div class="task-item__title">Reply to client emails</div>
+                                <div class="task-item__meta">
+                                    <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                    <span class="task-item__tag task-item__tag--duration">30m</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="task-item" data-impact="2">
-                        <div class="task-item__check"></div>
-                        <div class="task-item__content">
-                            <div class="task-item__title">Prepare presentation slides</div>
-                            <div class="task-item__meta">
-                                <span class="task-item__tag task-item__tag--energy">☕</span>
-                                <span class="task-item__tag task-item__tag--duration">1h</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="task-item" data-impact="3">
-                        <div class="task-item__check"></div>
-                        <div class="task-item__content">
-                            <div class="task-item__title">Reply to client emails</div>
-                            <div class="task-item__meta">
-                                <span class="task-item__tag task-item__tag--energy">🧟</span>
-                                <span class="task-item__tag task-item__tag--duration">30m</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="option-c__domain">
-                    <div class="option-c__domain-name">Personal</div>
-                    <div class="task-item" data-impact="2">
-                        <div class="task-item__check"></div>
-                        <div class="task-item__content">
-                            <div class="task-item__title">Call dentist for appointment</div>
-                            <div class="task-item__meta">
-                                <span class="task-item__tag task-item__tag--energy">🧟</span>
-                                <span class="task-item__tag task-item__tag--duration">10m</span>
+                    <div class="domain-group">
+                        <div class="domain-name">Personal</div>
+                        <div class="task-item" data-impact="2">
+                            <div class="task-item__check"></div>
+                            <div class="task-item__content">
+                                <div class="task-item__title">Call dentist for appointment</div>
+                                <div class="task-item__meta">
+                                    <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                    <span class="task-item__tag task-item__tag--duration">10m</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="task-item" data-impact="4">
+                            <div class="task-item__check"></div>
+                            <div class="task-item__content">
+                                <div class="task-item__title">Organize desktop files</div>
+                                <div class="task-item__meta">
+                                    <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                    <span class="task-item__tag task-item__tag--duration">30m</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="task-item" data-impact="4">
-                        <div class="task-item__check"></div>
-                        <div class="task-item__content">
-                            <div class="task-item__title">Organize desktop files</div>
-                            <div class="task-item__meta">
-                                <span class="task-item__tag task-item__tag--energy">🧟</span>
-                                <span class="task-item__tag task-item__tag--duration">30m</span>
+
+                    <div class="domain-group">
+                        <div class="domain-name">Side Project</div>
+                        <div class="task-item" data-impact="2">
+                            <div class="task-item__check"></div>
+                            <div class="task-item__content">
+                                <div class="task-item__title">Fix authentication bug</div>
+                                <div class="task-item__meta">
+                                    <span class="task-item__tag task-item__tag--energy">🧠</span>
+                                    <span class="task-item__tag task-item__tag--duration">1h</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="task-item" data-impact="3">
+                            <div class="task-item__check"></div>
+                            <div class="task-item__content">
+                                <div class="task-item__title">Write unit tests for API</div>
+                                <div class="task-item__meta">
+                                    <span class="task-item__tag task-item__tag--energy">☕</span>
+                                    <span class="task-item__tag task-item__tag--duration">45m</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -964,7 +1006,7 @@
             </div>
 
             <!-- Schedule Panel -->
-            <div class="option-c__panel option-c__schedule" data-panel="schedule">
+            <div class="option-c__panel" data-panel="schedule">
                 <div class="option-c__schedule-header">
                     <div class="option-c__date-nav">
                         <button class="option-c__nav-btn">◀</button>
@@ -974,10 +1016,10 @@
                     <button class="option-c__today-btn">Today</button>
                 </div>
 
-                <div class="option-c__calendar">
+                <div class="option-c__calendar-wrap">
                     <div class="hour-grid" id="option-c-grid">
                         <div class="selection-overlay" id="option-c-selection">
-                            <span class="selection-overlay__time" id="option-c-selection-time">15:00 - 17:00</span>
+                            <span class="selection-overlay__time" id="option-c-selection-time">15:00 – 17:00</span>
                             <button class="plan-selection-btn" id="option-c-plan-selection">
                                 <span>✨</span> Plan Tasks
                             </button>
@@ -990,7 +1032,7 @@
                         <div class="hour-row" data-hour="9">
                             <span class="hour-label">9:00</span>
                             <div class="hour-slot">
-                                <div class="cal-event cal-event--gcal" style="top: 0; height: 32px;">
+                                <div class="cal-event" style="top: 0; height: 36px;">
                                     <div class="cal-event__title">Team standup</div>
                                 </div>
                             </div>
@@ -1002,7 +1044,7 @@
                         <div class="hour-row" data-hour="11">
                             <span class="hour-label">11:00</span>
                             <div class="hour-slot">
-                                <div class="cal-event cal-event--gcal" style="top: 0; height: 32px;">
+                                <div class="cal-event" style="top: 0; height: 36px;">
                                     <div class="cal-event__title">1:1 with manager</div>
                                 </div>
                             </div>
@@ -1018,7 +1060,7 @@
                         <div class="hour-row" data-hour="14">
                             <span class="hour-label">14:00</span>
                             <div class="hour-slot">
-                                <div class="cal-event cal-event--gcal" style="top: 0; height: 48px;">
+                                <div class="cal-event" style="top: 0; height: 56px;">
                                     <div class="cal-event__title">Sprint planning</div>
                                 </div>
                             </div>
@@ -1045,16 +1087,15 @@
 
             <!-- FAB -->
             <button class="option-c__fab" id="option-c-fab">✨
-                <span class="option-c__fab-badge">5</span>
+                <span class="option-c__fab-badge">7</span>
             </button>
-            <div class="option-c__fab-hint" id="option-c-fab-hint">Tap to plan tasks</div>
         </div>
     </div>
 </div>
 
 <script>
 // =============================================================================
-// MOCKUP NAVIGATION
+// NAVIGATION
 // =============================================================================
 document.querySelectorAll('.mockup-nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1066,7 +1107,7 @@ document.querySelectorAll('.mockup-nav-btn').forEach(btn => {
     });
 });
 
-// Energy pills (both options)
+// Energy pills
 document.querySelectorAll('.energy-pill').forEach(pill => {
     pill.addEventListener('click', () => {
         const container = pill.closest('.energy-filter');
@@ -1085,35 +1126,35 @@ const selectionB = document.getElementById('option-b-selection');
 const selectionTimeB = document.getElementById('option-b-selection-time');
 
 let isDraggingB = false;
+let startYB = null;
 let startHourB = null;
 let endHourB = null;
 
-// Tap Plan → expand sheet and enter selection mode
-planBtnB.addEventListener('click', () => {
-    sheetB.classList.add('expanded');
-    sheetB.classList.add('selection-mode');
+planBtnB.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sheetB.classList.add('expanded', 'selection-mode');
 });
 
-// Handle touch/drag on calendar
+// Touch handling for selection
 gridB.addEventListener('touchstart', handleStartB, { passive: false });
 gridB.addEventListener('touchmove', handleMoveB, { passive: false });
 gridB.addEventListener('touchend', handleEndB);
 gridB.addEventListener('mousedown', handleStartB);
-gridB.addEventListener('mousemove', handleMoveB);
-gridB.addEventListener('mouseup', handleEndB);
+document.addEventListener('mousemove', handleMoveB);
+document.addEventListener('mouseup', handleEndB);
 
-function getHourFromEvent(e, grid) {
+function getHourFromY(y, grid) {
     const rect = grid.getBoundingClientRect();
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const y = clientY - rect.top + grid.scrollTop;
-    const hourHeight = 48;
-    return Math.floor(y / hourHeight) + 8; // Starting at 8:00
+    const relativeY = y - rect.top + grid.parentElement.scrollTop;
+    const hourHeight = 56;
+    return Math.floor(relativeY / hourHeight) + 8;
 }
 
 function handleStartB(e) {
     if (!sheetB.classList.contains('selection-mode')) return;
     isDraggingB = true;
-    startHourB = getHourFromEvent(e, gridB);
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    startHourB = getHourFromY(clientY, gridB);
     endHourB = startHourB + 1;
     updateSelectionB();
     e.preventDefault();
@@ -1121,48 +1162,48 @@ function handleStartB(e) {
 
 function handleMoveB(e) {
     if (!isDraggingB) return;
-    endHourB = getHourFromEvent(e, gridB) + 1;
-    if (endHourB <= startHourB) endHourB = startHourB + 1;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const newHour = getHourFromY(clientY, gridB);
+    endHourB = Math.max(startHourB + 1, newHour + 1);
     updateSelectionB();
     e.preventDefault();
 }
 
 function handleEndB() {
-    if (!isDraggingB) return;
     isDraggingB = false;
 }
 
 function updateSelectionB() {
     if (startHourB === null) return;
-    const hourHeight = 48;
-    const top = (Math.min(startHourB, endHourB) - 8) * hourHeight;
-    const height = Math.abs(endHourB - startHourB) * hourHeight;
+    const hourHeight = 56;
+    const minHour = Math.min(startHourB, endHourB - 1);
+    const maxHour = Math.max(startHourB, endHourB - 1) + 1;
+    const top = (minHour - 8) * hourHeight;
+    const height = (maxHour - minHour) * hourHeight;
 
     selectionB.style.top = top + 'px';
     selectionB.style.height = height + 'px';
     selectionB.classList.add('active');
 
-    const startFormatted = String(Math.min(startHourB, endHourB)).padStart(2, '0') + ':00';
-    const endFormatted = String(Math.max(startHourB, endHourB)).padStart(2, '0') + ':00';
-    selectionTimeB.textContent = `${startFormatted} - ${endFormatted}`;
+    const startStr = String(minHour).padStart(2, '0') + ':00';
+    const endStr = String(maxHour).padStart(2, '0') + ':00';
+    selectionTimeB.textContent = `${startStr} – ${endStr}`;
 }
 
-// Close sheet when clicking outside
+// Close sheet on outside click
 document.addEventListener('click', (e) => {
-    if (sheetB.classList.contains('expanded') && !sheetB.contains(e.target)) {
-        sheetB.classList.remove('expanded');
-        sheetB.classList.remove('selection-mode');
+    if (sheetB.classList.contains('expanded') && !sheetB.contains(e.target) && e.target !== planBtnB) {
+        sheetB.classList.remove('expanded', 'selection-mode');
         selectionB.classList.remove('active');
         startHourB = null;
     }
 });
 
 // =============================================================================
-// OPTION C: FAB + DIRECT SELECTION
+// OPTION C: FAB + TABS
 // =============================================================================
 const containerC = document.getElementById('option-c-container');
 const fabC = document.getElementById('option-c-fab');
-const fabHintC = document.getElementById('option-c-fab-hint');
 const cancelC = document.getElementById('option-c-cancel');
 const gridC = document.getElementById('option-c-grid');
 const selectionC = document.getElementById('option-c-selection');
@@ -1183,43 +1224,36 @@ document.querySelectorAll('.option-c__tab').forEach(tab => {
     });
 });
 
-// FAB: switch to schedule tab + enter selection mode
+// FAB action
 fabC.addEventListener('click', () => {
-    // Switch to schedule tab
+    // Switch to schedule
     document.querySelectorAll('.option-c__tab').forEach(t => t.classList.remove('active'));
     document.querySelector('[data-tab="schedule"]').classList.add('active');
     document.querySelectorAll('.option-c__panel').forEach(p => p.classList.remove('active'));
     document.querySelector('[data-panel="schedule"]').classList.add('active');
-
     // Enter selection mode
     containerC.classList.add('selection-mode');
 });
 
-// Cancel selection
 cancelC.addEventListener('click', () => {
     containerC.classList.remove('selection-mode');
     selectionC.classList.remove('active');
     startHourC = null;
 });
 
-// Show FAB hint briefly
-setTimeout(() => {
-    fabHintC.classList.add('show');
-    setTimeout(() => fabHintC.classList.remove('show'), 3000);
-}, 1000);
-
-// Handle touch/drag on calendar
+// Touch handling
 gridC.addEventListener('touchstart', handleStartC, { passive: false });
 gridC.addEventListener('touchmove', handleMoveC, { passive: false });
 gridC.addEventListener('touchend', handleEndC);
 gridC.addEventListener('mousedown', handleStartC);
-gridC.addEventListener('mousemove', handleMoveC);
-gridC.addEventListener('mouseup', handleEndC);
+document.addEventListener('mousemove', handleMoveC);
+document.addEventListener('mouseup', handleEndC);
 
 function handleStartC(e) {
     if (!containerC.classList.contains('selection-mode')) return;
     isDraggingC = true;
-    startHourC = getHourFromEvent(e, gridC);
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    startHourC = getHourFromY(clientY, gridC);
     endHourC = startHourC + 1;
     updateSelectionC();
     e.preventDefault();
@@ -1227,30 +1261,32 @@ function handleStartC(e) {
 
 function handleMoveC(e) {
     if (!isDraggingC) return;
-    endHourC = getHourFromEvent(e, gridC) + 1;
-    if (endHourC <= startHourC) endHourC = startHourC + 1;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const newHour = getHourFromY(clientY, gridC);
+    endHourC = Math.max(startHourC + 1, newHour + 1);
     updateSelectionC();
     e.preventDefault();
 }
 
 function handleEndC() {
-    if (!isDraggingC) return;
     isDraggingC = false;
 }
 
 function updateSelectionC() {
     if (startHourC === null) return;
-    const hourHeight = 48;
-    const top = (Math.min(startHourC, endHourC) - 8) * hourHeight;
-    const height = Math.abs(endHourC - startHourC) * hourHeight;
+    const hourHeight = 56;
+    const minHour = Math.min(startHourC, endHourC - 1);
+    const maxHour = Math.max(startHourC, endHourC - 1) + 1;
+    const top = (minHour - 8) * hourHeight;
+    const height = (maxHour - minHour) * hourHeight;
 
     selectionC.style.top = top + 'px';
     selectionC.style.height = height + 'px';
     selectionC.classList.add('active');
 
-    const startFormatted = String(Math.min(startHourC, endHourC)).padStart(2, '0') + ':00';
-    const endFormatted = String(Math.max(startHourC, endHourC)).padStart(2, '0') + ':00';
-    selectionTimeC.textContent = `${startFormatted} - ${endFormatted}`;
+    const startStr = String(minHour).padStart(2, '0') + ':00';
+    const endStr = String(maxHour).padStart(2, '0') + ':00';
+    selectionTimeC.textContent = `${startStr} – ${endStr}`;
 }
 </script>
 {% endblock %}
