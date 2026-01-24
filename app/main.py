@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app import __version__
 from app.config import get_settings
@@ -158,6 +159,11 @@ app.add_middleware(
 
 # CSRF protection middleware (must be after SessionMiddleware)
 app.add_middleware(CSRFMiddleware)
+
+# Proxy headers middleware (trust X-Forwarded-Proto from Railway)
+# Must be last so it runs first on request, making url_for() use https://
+if is_production:
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 
 # Global exception handler for unexpected errors only
