@@ -6,7 +6,10 @@
 <style>
 /* =============================================================================
    MOBILE MOCKUPS PAGE
-   View at /mockups - test each layout option on mobile
+   View at /mockups - test layout options on mobile
+
+   Core UX principle: User selects exact time range on calendar, not presets.
+   Power users want control, not hand-holding.
    ============================================================================= */
 
 .mockups-page {
@@ -23,16 +26,14 @@
     z-index: 1000;
     background: var(--bg-panel);
     border-bottom: 1px solid var(--border-default);
-    padding: 8px 12px;
+    padding: 8px 16px;
     display: flex;
     gap: 8px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
 .mockup-nav-btn {
-    flex-shrink: 0;
-    padding: 8px 16px;
+    flex: 1;
+    padding: 10px 16px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-default);
     background: var(--bg-surface);
@@ -49,14 +50,10 @@
     border-color: var(--primary);
 }
 
-.mockup-nav-btn:hover:not(.active) {
-    border-color: var(--primary);
-}
-
 /* Mockup containers */
 .mockup-container {
     display: none;
-    padding-top: 56px; /* nav height */
+    padding-top: 56px;
     min-height: 100vh;
 }
 
@@ -65,9 +62,11 @@
 }
 
 /* =============================================================================
-   SAMPLE DATA (shared across all mockups)
+   SHARED COMPONENTS
    ============================================================================= */
-.sample-task {
+
+/* Task item */
+.task-item {
     background: var(--bg-surface);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -76,22 +75,36 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 8px;
+    transition: all 0.15s ease;
 }
 
-.sample-task__check {
+.task-item[data-impact="1"] { border-left: 3px solid #ef4444; }
+.task-item[data-impact="2"] { border-left: 3px solid #f59e0b; }
+.task-item[data-impact="3"] { border-left: 3px solid #3b82f6; }
+.task-item[data-impact="4"] { border-left: 3px solid #94a3b8; }
+
+.task-item__check {
     width: 20px;
     height: 20px;
     border: 2px solid var(--border-default);
     border-radius: 50%;
     flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-.sample-task__content {
+.task-item__check:active {
+    transform: scale(0.9);
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.task-item__content {
     flex: 1;
     min-width: 0;
 }
 
-.sample-task__title {
+.task-item__title {
     font-size: 0.875rem;
     color: var(--text-primary);
     white-space: nowrap;
@@ -99,7 +112,7 @@
     text-overflow: ellipsis;
 }
 
-.sample-task__meta {
+.task-item__meta {
     display: flex;
     gap: 8px;
     margin-top: 4px;
@@ -107,147 +120,28 @@
     color: var(--text-secondary);
 }
 
-.sample-task__tag {
+.task-item__tag {
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.6875rem;
     font-weight: 600;
 }
 
-.sample-task__tag--energy { background: rgba(109, 94, 246, 0.1); color: var(--primary); }
-.sample-task__tag--duration { background: rgba(0, 0, 0, 0.05); }
-.sample-task__tag--impact { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.task-item__tag--energy { background: rgba(109, 94, 246, 0.1); color: var(--primary); }
+.task-item__tag--duration { background: rgba(0, 0, 0, 0.05); }
 
-/* Impact rail */
-.sample-task[data-impact="1"] { border-left: 3px solid #ef4444; }
-.sample-task[data-impact="2"] { border-left: 3px solid #f59e0b; }
-.sample-task[data-impact="3"] { border-left: 3px solid #3b82f6; }
-.sample-task[data-impact="4"] { border-left: 3px solid #94a3b8; }
-
-/* =============================================================================
-   OPTION A: PLAN-FIRST HERO LAYOUT
-   ============================================================================= */
-.option-a {
+/* Energy filter pills */
+.energy-filter {
     display: flex;
-    flex-direction: column;
-    min-height: calc(100vh - 56px);
-    background: var(--bg-canvas);
+    gap: 6px;
 }
 
-.option-a__hero {
-    background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
-    color: white;
-    padding: 20px 16px;
-    text-align: center;
-}
-
-.option-a__summary {
-    font-size: 0.875rem;
-    opacity: 0.9;
-    margin-bottom: 16px;
-}
-
-.option-a__plan-btn {
-    display: inline-flex;
+.energy-pill {
+    width: 36px;
+    height: 36px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 14px 32px;
-    background: white;
-    color: var(--primary);
-    border: none;
-    border-radius: var(--radius-lg);
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: transform 0.15s ease;
-}
-
-.option-a__plan-btn:active {
-    transform: scale(0.98);
-}
-
-/* Time Presets */
-.option-a__presets {
-    display: flex;
-    gap: 8px;
-    padding: 16px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-default);
-}
-
-.option-a__preset {
-    flex-shrink: 0;
-    padding: 10px 16px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    font-size: 0.8125rem;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.option-a__preset.selected {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-.option-a__preset-time {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 2px;
-}
-
-.option-a__preset-label {
-    display: block;
-    font-size: 0.6875rem;
-    opacity: 0.7;
-}
-
-/* Task List */
-.option-a__tasks {
-    flex: 1;
-    padding: 16px;
-    overflow-y: auto;
-}
-
-.option-a__section-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    margin-bottom: 12px;
-}
-
-/* =============================================================================
-   OPTION B: BOTTOM SHEET CALENDAR
-   ============================================================================= */
-.option-b {
-    display: flex;
-    flex-direction: column;
-    min-height: calc(100vh - 56px);
-    background: var(--bg-canvas);
-}
-
-.option-b__header {
-    padding: 16px;
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-default);
-}
-
-.option-b__filter {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.option-b__energy-btn {
-    padding: 8px 12px;
     background: var(--bg-surface);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
@@ -257,23 +151,172 @@
     transition: all 0.15s ease;
 }
 
-.option-b__energy-btn.active {
+.energy-pill.active {
     opacity: 1;
     border-color: var(--primary);
     background: rgba(109, 94, 246, 0.1);
 }
 
+/* Hour grid (shared calendar component) */
+.hour-grid {
+    position: relative;
+}
+
+.hour-row {
+    display: flex;
+    align-items: flex-start;
+    min-height: 48px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.hour-label {
+    width: 44px;
+    padding: 4px 8px 4px 0;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.hour-slot {
+    flex: 1;
+    min-height: 48px;
+    position: relative;
+}
+
+/* Calendar event */
+.cal-event {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    padding: 4px 8px;
+    background: rgba(109, 94, 246, 0.12);
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+.cal-event--gcal {
+    background: rgba(66, 133, 244, 0.12);
+    border-left-color: #4285f4;
+}
+
+.cal-event__time {
+    font-size: 0.625rem;
+    color: var(--text-secondary);
+}
+
+.cal-event__title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Selection overlay */
+.selection-overlay {
+    position: absolute;
+    left: 44px;
+    right: 0;
+    background: rgba(109, 94, 246, 0.15);
+    border: 2px solid var(--primary);
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 10;
+    display: none;
+}
+
+.selection-overlay.active {
+    display: block;
+}
+
+.selection-overlay__time {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--primary);
+    color: white;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: auto;
+}
+
+/* Plan button that appears in selection */
+.plan-selection-btn {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* =============================================================================
+   OPTION B: BOTTOM SHEET CALENDAR
+
+   - Tasks are the main view (full screen)
+   - Calendar lives in a bottom sheet
+   - Tap "Plan" → sheet expands → user drags to select time range
+   - Selection shows "Plan Tasks" button
+   ============================================================================= */
+.option-b {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px);
+    background: var(--bg-canvas);
+}
+
+.option-b__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+}
+
 .option-b__title {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .option-b__tasks {
     flex: 1;
-    padding: 16px;
+    padding: 12px 16px;
     overflow-y: auto;
-    padding-bottom: 80px; /* space for bottom sheet */
+    padding-bottom: 100px; /* space for bottom sheet */
+}
+
+.option-b__domain {
+    margin-bottom: 16px;
+}
+
+.option-b__domain-name {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    padding-left: 4px;
 }
 
 /* Bottom Sheet */
@@ -285,9 +328,11 @@
     background: var(--bg-panel);
     border-top: 1px solid var(--border-default);
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
+    max-height: 85vh;
+    transform: translateY(calc(100% - 72px)); /* Show only peek */
 }
 
 .option-b__sheet.expanded {
@@ -299,97 +344,115 @@
     height: 4px;
     background: var(--border-default);
     border-radius: 2px;
-    margin: 12px auto;
+    margin: 10px auto;
+    cursor: grab;
 }
 
 .option-b__sheet-peek {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px 16px;
+    padding: 0 16px 12px;
 }
 
 .option-b__sheet-info {
-    font-size: 0.875rem;
-    color: var(--text-primary);
-}
-
-.option-b__sheet-date {
-    font-weight: 600;
-}
-
-.option-b__sheet-count {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.option-b__sheet-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.option-b__sheet-btn {
-    padding: 10px 16px;
-    border-radius: var(--radius-md);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-}
-
-.option-b__sheet-btn--plan {
-    background: var(--primary);
-    color: white;
-}
-
-.option-b__sheet-btn--view {
-    background: var(--bg-surface);
-    color: var(--text-primary);
-    border: 1px solid var(--border-default);
-}
-
-/* Expanded calendar view */
-.option-b__sheet-calendar {
-    display: none;
-    padding: 16px;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-.option-b__sheet.expanded .option-b__sheet-calendar {
-    display: block;
-}
-
-.option-b__hour-slot {
-    display: flex;
-    align-items: flex-start;
-    padding: 8px 0;
-    border-top: 1px solid var(--border-subtle);
-    min-height: 48px;
-}
-
-.option-b__hour-label {
-    width: 48px;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    flex-shrink: 0;
-}
-
-.option-b__hour-content {
     flex: 1;
 }
 
-.option-b__hour-event {
-    padding: 6px 10px;
-    background: rgba(109, 94, 246, 0.15);
-    border-left: 3px solid var(--primary);
-    border-radius: 4px;
+.option-b__sheet-date {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.option-b__sheet-stats {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.option-b__sheet-plan-btn {
+    padding: 10px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
     font-size: 0.8125rem;
-    margin-bottom: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.15s ease;
+}
+
+.option-b__sheet-plan-btn:active {
+    transform: scale(0.97);
+}
+
+/* Calendar content */
+.option-b__sheet-calendar {
+    padding: 0 8px 16px;
+    overflow-y: auto;
+    max-height: calc(85vh - 72px);
+}
+
+.option-b__sheet-day-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 8px 16px 16px;
+    position: sticky;
+    top: 0;
+    background: var(--bg-panel);
+    z-index: 5;
+}
+
+.option-b__nav-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.option-b__nav-date {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Selection mode indicator */
+.option-b__selection-hint {
+    display: none;
+    padding: 8px 16px;
+    background: rgba(109, 94, 246, 0.1);
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.option-b__sheet.selection-mode .option-b__selection-hint {
+    display: block;
+}
+
+.option-b__sheet.selection-mode .option-b__sheet-plan-btn {
+    background: var(--text-secondary);
 }
 
 /* =============================================================================
-   OPTION C: FAB WITH SMART MODAL
+   OPTION C: FAB + INLINE SELECTION
+
+   - Keeps familiar tab structure (Tasks / Schedule)
+   - FAB always visible, shows count of plannable tasks
+   - Tap FAB → switches to Schedule tab + enters selection mode
+   - User drags to select time range directly on calendar
+   - No modal, no presets - direct manipulation
    ============================================================================= */
 .option-c {
     display: flex;
@@ -398,7 +461,6 @@
     background: var(--bg-canvas);
 }
 
-/* Tabs (keeping current pattern) */
 .option-c__tabs {
     display: flex;
     background: var(--bg-panel);
@@ -417,6 +479,10 @@
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .option-c__tab.active {
@@ -424,11 +490,125 @@
     border-bottom-color: var(--primary);
 }
 
-.option-c__content {
+.option-c__tab-badge {
+    padding: 2px 6px;
+    background: var(--primary);
+    color: white;
+    border-radius: 10px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+.option-c__panel {
+    display: none;
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
-    padding-bottom: 100px; /* space for FAB */
+}
+
+.option-c__panel.active {
+    display: block;
+}
+
+/* Tasks panel */
+.option-c__tasks {
+    padding: 12px 16px;
+    padding-bottom: 100px;
+}
+
+.option-c__domain {
+    margin-bottom: 16px;
+}
+
+.option-c__domain-name {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    padding-left: 4px;
+}
+
+/* Schedule panel */
+.option-c__schedule {
+    padding-bottom: 100px;
+}
+
+.option-c__schedule-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.option-c__date-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.option-c__nav-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.option-c__date {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.option-c__today-btn {
+    padding: 6px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.option-c__calendar {
+    padding: 0 8px 16px;
+}
+
+/* Selection mode banner */
+.option-c__selection-banner {
+    display: none;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
+    color: white;
+    text-align: center;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.option-c.selection-mode .option-c__selection-banner {
+    display: block;
+}
+
+.option-c__cancel-selection {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 12px;
 }
 
 /* FAB */
@@ -436,8 +616,8 @@
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
     color: white;
@@ -458,355 +638,60 @@
 
 .option-c__fab-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 6px;
+    top: -2px;
+    right: -2px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
     background: #ef4444;
     color: white;
-    border-radius: 11px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Modal */
-.option-c__modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    background: rgba(0, 0, 0, 0.5);
-    align-items: flex-end;
-    justify-content: center;
-}
-
-.option-c__modal.open {
-    display: flex;
-}
-
-.option-c__modal-content {
-    background: var(--bg-panel);
-    width: 100%;
-    max-height: 80vh;
-    border-radius: 16px 16px 0 0;
-    overflow: hidden;
-    animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-}
-
-.option-c__modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    border-bottom: 1px solid var(--border-default);
-}
-
-.option-c__modal-title {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.option-c__modal-close {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: var(--bg-surface);
-    border-radius: 50%;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: var(--text-secondary);
-}
-
-.option-c__modal-body {
-    padding: 16px;
-}
-
-.option-c__modal-section {
-    margin-bottom: 20px;
-}
-
-.option-c__modal-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    margin-bottom: 12px;
-}
-
-.option-c__time-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-}
-
-.option-c__time-btn {
-    padding: 14px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.option-c__time-btn.selected {
-    border-color: var(--primary);
-    background: rgba(109, 94, 246, 0.1);
-}
-
-.option-c__time-btn:active {
-    transform: scale(0.98);
-}
-
-.option-c__time-icon {
-    font-size: 1.25rem;
-    margin-bottom: 4px;
-}
-
-.option-c__time-label {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--text-primary);
-}
-
-.option-c__time-range {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.option-c__modal-stats {
-    display: flex;
-    gap: 16px;
-    padding: 12px;
-    background: var(--bg-surface);
-    border-radius: var(--radius-md);
-    margin-bottom: 16px;
-}
-
-.option-c__modal-stat {
-    text-align: center;
-}
-
-.option-c__modal-stat-value {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--primary);
-}
-
-.option-c__modal-stat-label {
-    font-size: 0.6875rem;
-    color: var(--text-secondary);
-}
-
-.option-c__modal-action {
-    width: 100%;
-    padding: 16px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-lg);
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.15s ease;
-}
-
-.option-c__modal-action:active {
-    transform: scale(0.98);
-}
-
-/* =============================================================================
-   OPTION D: TIMELINE-FIRST UNIFIED VIEW
-   ============================================================================= */
-.option-d {
-    display: flex;
-    flex-direction: column;
-    min-height: calc(100vh - 56px);
-    background: var(--bg-canvas);
-}
-
-.option-d__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-default);
-}
-
-.option-d__date-nav {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.option-d__nav-btn {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: var(--bg-surface);
-    border-radius: var(--radius-sm);
-    font-size: 1rem;
-    cursor: pointer;
-    color: var(--text-secondary);
-}
-
-.option-d__date {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.option-d__today-btn {
-    padding: 6px 12px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-}
-
-.option-d__content {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 80px;
-}
-
-/* Time blocks */
-.option-d__block {
-    padding: 16px;
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.option-d__block-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-.option-d__block-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.option-d__block-icon {
-    font-size: 1.25rem;
-}
-
-.option-d__block-time {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.option-d__block-add {
-    padding: 6px 12px;
-    background: transparent;
-    border: 1px dashed var(--border-default);
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-}
-
-.option-d__block-add:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-}
-
-.option-d__event {
-    padding: 10px 12px;
-    background: rgba(109, 94, 246, 0.1);
-    border-left: 3px solid var(--primary);
-    border-radius: 4px;
-    margin-bottom: 8px;
-}
-
-.option-d__event-time {
-    font-size: 0.6875rem;
-    color: var(--text-secondary);
-    margin-bottom: 2px;
-}
-
-.option-d__event-title {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-/* Unscheduled section */
-.option-d__unscheduled {
-    background: var(--bg-panel);
-}
-
-.option-d__unscheduled-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    cursor: pointer;
-}
-
-.option-d__unscheduled-title {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.option-d__unscheduled-count {
-    padding: 2px 8px;
-    background: var(--primary);
-    color: white;
     border-radius: 10px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.option-d__unscheduled-tasks {
-    padding: 0 16px 16px;
-}
-
-/* Auto-plan button */
-.option-d__auto-plan {
-    position: fixed;
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
-    padding: 14px;
-    background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
-    color: white;
-    border: none;
-    border-radius: var(--radius-lg);
-    font-size: 0.9375rem;
+    font-size: 0.6875rem;
     font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(109, 94, 246, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    z-index: 100;
+    border: 2px solid var(--bg-canvas);
 }
 
-.option-d__auto-plan:active {
-    transform: scale(0.98);
+/* FAB tooltip on first visit */
+.option-c__fab-hint {
+    position: fixed;
+    bottom: 92px;
+    right: 24px;
+    background: var(--text-primary);
+    color: var(--bg-panel);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+}
+
+.option-c__fab-hint::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    right: 24px;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--text-primary);
+}
+
+.option-c__fab:hover + .option-c__fab-hint,
+.option-c__fab-hint.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Selection mode: hide FAB, show cancel in banner */
+.option-c.selection-mode .option-c__fab {
+    display: none;
 }
 </style>
 {% endblock %}
@@ -815,174 +700,82 @@
 <div class="mockups-page">
     <!-- Navigation -->
     <nav class="mockup-nav">
-        <button class="mockup-nav-btn active" data-mockup="a">A: Plan-First</button>
-        <button class="mockup-nav-btn" data-mockup="b">B: Bottom Sheet</button>
-        <button class="mockup-nav-btn" data-mockup="c">C: FAB Modal</button>
-        <button class="mockup-nav-btn" data-mockup="d">D: Timeline</button>
+        <button class="mockup-nav-btn active" data-mockup="b">B: Bottom Sheet</button>
+        <button class="mockup-nav-btn" data-mockup="c">C: FAB + Direct</button>
     </nav>
 
-    <!-- OPTION A: Plan-First Hero -->
-    <div class="mockup-container active" data-mockup="a">
-        <div class="option-a">
-            <div class="option-a__hero">
-                <div class="option-a__summary">
-                    <strong>Today:</strong> 5 tasks &bull; ~3h 15m of work
-                </div>
-                <button class="option-a__plan-btn">
-                    <span>✨</span>
-                    <span>Plan My Day</span>
-                </button>
-            </div>
+    <!-- =======================================================================
+         OPTION B: BOTTOM SHEET CALENDAR
 
-            <div class="option-a__presets">
-                <button class="option-a__preset selected">
-                    <span class="option-a__preset-time">9am - 12pm</span>
-                    <span class="option-a__preset-label">Morning</span>
-                </button>
-                <button class="option-a__preset">
-                    <span class="option-a__preset-time">1pm - 5pm</span>
-                    <span class="option-a__preset-label">Afternoon</span>
-                </button>
-                <button class="option-a__preset">
-                    <span class="option-a__preset-time">6pm - 9pm</span>
-                    <span class="option-a__preset-label">Evening</span>
-                </button>
-                <button class="option-a__preset">
-                    <span class="option-a__preset-time">Custom</span>
-                    <span class="option-a__preset-label">Set range</span>
-                </button>
-            </div>
-
-            <div class="option-a__tasks">
-                <div class="option-a__section-title">Tasks to Schedule (5)</div>
-
-                <div class="sample-task" data-impact="1">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Review Q4 budget proposal</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧠</span>
-                            <span class="sample-task__tag sample-task__tag--duration">45m</span>
-                            <span class="sample-task__tag sample-task__tag--impact">P1</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sample-task" data-impact="2">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Prepare presentation slides</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
-                            <span class="sample-task__tag sample-task__tag--duration">1h</span>
-                            <span class="sample-task__tag sample-task__tag--impact">P2</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sample-task" data-impact="3">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Reply to client emails</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
-                            <span class="sample-task__tag sample-task__tag--impact">P3</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sample-task" data-impact="2">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Update project documentation</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
-                            <span class="sample-task__tag sample-task__tag--impact">P2</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sample-task" data-impact="4">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Organize desktop files</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
-                            <span class="sample-task__tag sample-task__tag--impact">P4</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- OPTION B: Bottom Sheet Calendar -->
-    <div class="mockup-container" data-mockup="b">
+         Tasks as main view. Calendar slides up from bottom.
+         Tap Plan → expand sheet → drag to select interval → Plan Tasks.
+         ======================================================================= -->
+    <div class="mockup-container active" data-mockup="b">
         <div class="option-b">
             <div class="option-b__header">
-                <div class="option-b__filter">
-                    <button class="option-b__energy-btn">🧟</button>
-                    <button class="option-b__energy-btn active">☕</button>
-                    <button class="option-b__energy-btn">🧠</button>
+                <div class="option-b__title">Tasks</div>
+                <div class="energy-filter">
+                    <button class="energy-pill" data-energy="1">🧟</button>
+                    <button class="energy-pill active" data-energy="2">☕</button>
+                    <button class="energy-pill" data-energy="3">🧠</button>
                 </div>
-                <div class="option-b__title">Tasks (8)</div>
             </div>
 
             <div class="option-b__tasks">
-                <div class="sample-task" data-impact="1">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Review Q4 budget proposal</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧠</span>
-                            <span class="sample-task__tag sample-task__tag--duration">45m</span>
+                <div class="option-b__domain">
+                    <div class="option-b__domain-name">Work</div>
+                    <div class="task-item" data-impact="1">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Review Q4 budget proposal</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧠</span>
+                                <span class="task-item__tag task-item__tag--duration">45m</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item" data-impact="2">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Prepare presentation slides</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">☕</span>
+                                <span class="task-item__tag task-item__tag--duration">1h</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item" data-impact="3">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Reply to client emails</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                <span class="task-item__tag task-item__tag--duration">30m</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="sample-task" data-impact="2">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Prepare presentation slides</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
-                            <span class="sample-task__tag sample-task__tag--duration">1h</span>
+                <div class="option-b__domain">
+                    <div class="option-b__domain-name">Personal</div>
+                    <div class="task-item" data-impact="2">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Call dentist for appointment</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                <span class="task-item__tag task-item__tag--duration">10m</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="sample-task" data-impact="3">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Reply to client emails</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sample-task" data-impact="2">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Update project documentation</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sample-task" data-impact="4">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Organize desktop files</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                    <div class="task-item" data-impact="4">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Organize desktop files</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                <span class="task-item__tag task-item__tag--duration">30m</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -993,45 +786,89 @@
                 <div class="option-b__sheet-handle"></div>
                 <div class="option-b__sheet-peek">
                     <div class="option-b__sheet-info">
-                        <div class="option-b__sheet-date">📅 Jan 24, Fri</div>
-                        <div class="option-b__sheet-count">3 events &bull; 2 scheduled tasks</div>
+                        <div class="option-b__sheet-date">Fri, Jan 24</div>
+                        <div class="option-b__sheet-stats">3 events • 2h free</div>
                     </div>
-                    <div class="option-b__sheet-actions">
-                        <button class="option-b__sheet-btn option-b__sheet-btn--plan">✨ Plan</button>
-                        <button class="option-b__sheet-btn option-b__sheet-btn--view" id="option-b-toggle">View</button>
-                    </div>
+                    <button class="option-b__sheet-plan-btn" id="option-b-plan-btn">
+                        <span>✨</span>
+                        <span>Plan</span>
+                    </button>
                 </div>
 
-                <!-- Expanded calendar -->
+                <div class="option-b__selection-hint">
+                    Drag on calendar to select time range
+                </div>
+
+                <div class="option-b__sheet-day-nav">
+                    <button class="option-b__nav-btn">◀</button>
+                    <span class="option-b__nav-date">Friday, January 24</span>
+                    <button class="option-b__nav-btn">▶</button>
+                </div>
+
                 <div class="option-b__sheet-calendar">
-                    <div class="option-b__hour-slot">
-                        <div class="option-b__hour-label">9:00</div>
-                        <div class="option-b__hour-content">
-                            <div class="option-b__hour-event">Team standup</div>
+                    <div class="hour-grid" id="option-b-grid">
+                        <div class="selection-overlay" id="option-b-selection">
+                            <span class="selection-overlay__time" id="option-b-selection-time">10:00 - 12:00</span>
+                            <button class="plan-selection-btn" id="option-b-plan-selection">
+                                <span>✨</span> Plan Tasks
+                            </button>
                         </div>
-                    </div>
-                    <div class="option-b__hour-slot">
-                        <div class="option-b__hour-label">10:00</div>
-                        <div class="option-b__hour-content"></div>
-                    </div>
-                    <div class="option-b__hour-slot">
-                        <div class="option-b__hour-label">11:00</div>
-                        <div class="option-b__hour-content">
-                            <div class="option-b__hour-event">1:1 with manager</div>
+
+                        <div class="hour-row" data-hour="8">
+                            <span class="hour-label">8:00</span>
+                            <div class="hour-slot"></div>
                         </div>
-                    </div>
-                    <div class="option-b__hour-slot">
-                        <div class="option-b__hour-label">12:00</div>
-                        <div class="option-b__hour-content"></div>
-                    </div>
-                    <div class="option-b__hour-slot">
-                        <div class="option-b__hour-label">1:00</div>
-                        <div class="option-b__hour-content"></div>
-                    </div>
-                    <div class="option-b__hour-slot">
-                        <div class="option-b__hour-label">2:00</div>
-                        <div class="option-b__hour-content">
-                            <div class="option-b__hour-event">Sprint planning</div>
+                        <div class="hour-row" data-hour="9">
+                            <span class="hour-label">9:00</span>
+                            <div class="hour-slot">
+                                <div class="cal-event cal-event--gcal" style="top: 0; height: 32px;">
+                                    <div class="cal-event__title">Team standup</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hour-row" data-hour="10">
+                            <span class="hour-label">10:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="11">
+                            <span class="hour-label">11:00</span>
+                            <div class="hour-slot">
+                                <div class="cal-event cal-event--gcal" style="top: 0; height: 32px;">
+                                    <div class="cal-event__title">1:1 with manager</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hour-row" data-hour="12">
+                            <span class="hour-label">12:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="13">
+                            <span class="hour-label">13:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="14">
+                            <span class="hour-label">14:00</span>
+                            <div class="hour-slot">
+                                <div class="cal-event cal-event--gcal" style="top: 0; height: 48px;">
+                                    <div class="cal-event__title">Sprint planning</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hour-row" data-hour="15">
+                            <span class="hour-label">15:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="16">
+                            <span class="hour-label">16:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="17">
+                            <span class="hour-label">17:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="18">
+                            <span class="hour-label">18:00</span>
+                            <div class="hour-slot"></div>
                         </div>
                     </div>
                 </div>
@@ -1039,316 +876,381 @@
         </div>
     </div>
 
-    <!-- OPTION C: FAB with Smart Modal -->
+    <!-- =======================================================================
+         OPTION C: FAB + DIRECT CALENDAR SELECTION
+
+         Familiar tabs (Tasks / Schedule). FAB always visible.
+         Tap FAB → jumps to Schedule tab + enters selection mode.
+         Drag to select interval. No modal, no presets.
+         ======================================================================= -->
     <div class="mockup-container" data-mockup="c">
-        <div class="option-c">
+        <div class="option-c" id="option-c-container">
             <div class="option-c__tabs">
-                <button class="option-c__tab active">📋 Tasks</button>
-                <button class="option-c__tab">📅 Schedule</button>
+                <button class="option-c__tab active" data-tab="tasks">
+                    <span>📋</span>
+                    <span>Tasks</span>
+                    <span class="option-c__tab-badge">5</span>
+                </button>
+                <button class="option-c__tab" data-tab="schedule">
+                    <span>📅</span>
+                    <span>Schedule</span>
+                </button>
             </div>
 
-            <div class="option-c__content">
-                <div class="sample-task" data-impact="1">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Review Q4 budget proposal</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧠</span>
-                            <span class="sample-task__tag sample-task__tag--duration">45m</span>
+            <div class="option-c__selection-banner" id="option-c-selection-banner">
+                Drag to select time range
+                <button class="option-c__cancel-selection" id="option-c-cancel">Cancel</button>
+            </div>
+
+            <!-- Tasks Panel -->
+            <div class="option-c__panel option-c__tasks active" data-panel="tasks">
+                <div class="option-c__domain">
+                    <div class="option-c__domain-name">Work</div>
+                    <div class="task-item" data-impact="1">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Review Q4 budget proposal</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧠</span>
+                                <span class="task-item__tag task-item__tag--duration">45m</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item" data-impact="2">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Prepare presentation slides</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">☕</span>
+                                <span class="task-item__tag task-item__tag--duration">1h</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item" data-impact="3">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Reply to client emails</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                <span class="task-item__tag task-item__tag--duration">30m</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="sample-task" data-impact="2">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Prepare presentation slides</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
-                            <span class="sample-task__tag sample-task__tag--duration">1h</span>
+                <div class="option-c__domain">
+                    <div class="option-c__domain-name">Personal</div>
+                    <div class="task-item" data-impact="2">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Call dentist for appointment</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                <span class="task-item__tag task-item__tag--duration">10m</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-item" data-impact="4">
+                        <div class="task-item__check"></div>
+                        <div class="task-item__content">
+                            <div class="task-item__title">Organize desktop files</div>
+                            <div class="task-item__meta">
+                                <span class="task-item__tag task-item__tag--energy">🧟</span>
+                                <span class="task-item__tag task-item__tag--duration">30m</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="sample-task" data-impact="3">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Reply to client emails</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
-                        </div>
+            <!-- Schedule Panel -->
+            <div class="option-c__panel option-c__schedule" data-panel="schedule">
+                <div class="option-c__schedule-header">
+                    <div class="option-c__date-nav">
+                        <button class="option-c__nav-btn">◀</button>
+                        <div class="option-c__date">Fri, Jan 24</div>
+                        <button class="option-c__nav-btn">▶</button>
                     </div>
+                    <button class="option-c__today-btn">Today</button>
                 </div>
 
-                <div class="sample-task" data-impact="2">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Update project documentation</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                <div class="option-c__calendar">
+                    <div class="hour-grid" id="option-c-grid">
+                        <div class="selection-overlay" id="option-c-selection">
+                            <span class="selection-overlay__time" id="option-c-selection-time">15:00 - 17:00</span>
+                            <button class="plan-selection-btn" id="option-c-plan-selection">
+                                <span>✨</span> Plan Tasks
+                            </button>
                         </div>
-                    </div>
-                </div>
 
-                <div class="sample-task" data-impact="4">
-                    <div class="sample-task__check"></div>
-                    <div class="sample-task__content">
-                        <div class="sample-task__title">Organize desktop files</div>
-                        <div class="sample-task__meta">
-                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
-                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                        <div class="hour-row" data-hour="8">
+                            <span class="hour-label">8:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="9">
+                            <span class="hour-label">9:00</span>
+                            <div class="hour-slot">
+                                <div class="cal-event cal-event--gcal" style="top: 0; height: 32px;">
+                                    <div class="cal-event__title">Team standup</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hour-row" data-hour="10">
+                            <span class="hour-label">10:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="11">
+                            <span class="hour-label">11:00</span>
+                            <div class="hour-slot">
+                                <div class="cal-event cal-event--gcal" style="top: 0; height: 32px;">
+                                    <div class="cal-event__title">1:1 with manager</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hour-row" data-hour="12">
+                            <span class="hour-label">12:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="13">
+                            <span class="hour-label">13:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="14">
+                            <span class="hour-label">14:00</span>
+                            <div class="hour-slot">
+                                <div class="cal-event cal-event--gcal" style="top: 0; height: 48px;">
+                                    <div class="cal-event__title">Sprint planning</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hour-row" data-hour="15">
+                            <span class="hour-label">15:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="16">
+                            <span class="hour-label">16:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="17">
+                            <span class="hour-label">17:00</span>
+                            <div class="hour-slot"></div>
+                        </div>
+                        <div class="hour-row" data-hour="18">
+                            <span class="hour-label">18:00</span>
+                            <div class="hour-slot"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- FAB -->
-            <button class="option-c__fab" id="option-c-fab">
-                ✨
+            <button class="option-c__fab" id="option-c-fab">✨
                 <span class="option-c__fab-badge">5</span>
             </button>
-
-            <!-- Modal -->
-            <div class="option-c__modal" id="option-c-modal">
-                <div class="option-c__modal-content">
-                    <div class="option-c__modal-header">
-                        <div class="option-c__modal-title">Plan My Day</div>
-                        <button class="option-c__modal-close" id="option-c-close">&times;</button>
-                    </div>
-                    <div class="option-c__modal-body">
-                        <div class="option-c__modal-section">
-                            <div class="option-c__modal-label">When do you want to work?</div>
-                            <div class="option-c__time-grid">
-                                <button class="option-c__time-btn selected">
-                                    <div class="option-c__time-icon">☀️</div>
-                                    <div class="option-c__time-label">Morning</div>
-                                    <div class="option-c__time-range">9am - 12pm</div>
-                                </button>
-                                <button class="option-c__time-btn">
-                                    <div class="option-c__time-icon">🌤️</div>
-                                    <div class="option-c__time-label">Afternoon</div>
-                                    <div class="option-c__time-range">1pm - 5pm</div>
-                                </button>
-                                <button class="option-c__time-btn">
-                                    <div class="option-c__time-icon">🌙</div>
-                                    <div class="option-c__time-label">Evening</div>
-                                    <div class="option-c__time-range">6pm - 9pm</div>
-                                </button>
-                                <button class="option-c__time-btn">
-                                    <div class="option-c__time-icon">⚙️</div>
-                                    <div class="option-c__time-label">Custom</div>
-                                    <div class="option-c__time-range">Set range</div>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="option-c__modal-stats">
-                            <div class="option-c__modal-stat">
-                                <div class="option-c__modal-stat-value">5</div>
-                                <div class="option-c__modal-stat-label">Tasks ready</div>
-                            </div>
-                            <div class="option-c__modal-stat">
-                                <div class="option-c__modal-stat-value">3h 15m</div>
-                                <div class="option-c__modal-stat-label">Est. time</div>
-                            </div>
-                            <div class="option-c__modal-stat">
-                                <div class="option-c__modal-stat-value">2h 45m</div>
-                                <div class="option-c__modal-stat-label">Free slots</div>
-                            </div>
-                        </div>
-
-                        <button class="option-c__modal-action">✨ Plan Now</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- OPTION D: Timeline-First Unified View -->
-    <div class="mockup-container" data-mockup="d">
-        <div class="option-d">
-            <div class="option-d__header">
-                <div class="option-d__date-nav">
-                    <button class="option-d__nav-btn">◀</button>
-                    <div class="option-d__date">Jan 24, Fri</div>
-                    <button class="option-d__nav-btn">▶</button>
-                </div>
-                <button class="option-d__today-btn">Today</button>
-            </div>
-
-            <div class="option-d__content">
-                <!-- Morning block -->
-                <div class="option-d__block">
-                    <div class="option-d__block-header">
-                        <div class="option-d__block-title">
-                            <span class="option-d__block-icon">☀️</span>
-                            <span>Morning</span>
-                            <span class="option-d__block-time">9am - 12pm</span>
-                        </div>
-                        <button class="option-d__block-add">+ Add</button>
-                    </div>
-                    <div class="option-d__event">
-                        <div class="option-d__event-time">9:00 - 9:30</div>
-                        <div class="option-d__event-title">Team standup</div>
-                    </div>
-                    <div class="option-d__event">
-                        <div class="option-d__event-time">11:00 - 11:30</div>
-                        <div class="option-d__event-title">1:1 with manager</div>
-                    </div>
-                </div>
-
-                <!-- Afternoon block -->
-                <div class="option-d__block">
-                    <div class="option-d__block-header">
-                        <div class="option-d__block-title">
-                            <span class="option-d__block-icon">🌤️</span>
-                            <span>Afternoon</span>
-                            <span class="option-d__block-time">12pm - 5pm</span>
-                        </div>
-                        <button class="option-d__block-add">+ Add</button>
-                    </div>
-                    <div class="option-d__event">
-                        <div class="option-d__event-time">2:00 - 3:00</div>
-                        <div class="option-d__event-title">Sprint planning</div>
-                    </div>
-                </div>
-
-                <!-- Evening block -->
-                <div class="option-d__block">
-                    <div class="option-d__block-header">
-                        <div class="option-d__block-title">
-                            <span class="option-d__block-icon">🌙</span>
-                            <span>Evening</span>
-                            <span class="option-d__block-time">5pm - 9pm</span>
-                        </div>
-                        <button class="option-d__block-add">+ Add</button>
-                    </div>
-                    <p style="color: var(--text-secondary); font-size: 0.8125rem; padding: 8px 0;">No events scheduled</p>
-                </div>
-
-                <!-- Unscheduled section -->
-                <div class="option-d__unscheduled">
-                    <div class="option-d__unscheduled-header">
-                        <div class="option-d__unscheduled-title">📋 Unscheduled</div>
-                        <span class="option-d__unscheduled-count">5</span>
-                    </div>
-                    <div class="option-d__unscheduled-tasks">
-                        <div class="sample-task" data-impact="1">
-                            <div class="sample-task__check"></div>
-                            <div class="sample-task__content">
-                                <div class="sample-task__title">Review Q4 budget proposal</div>
-                                <div class="sample-task__meta">
-                                    <span class="sample-task__tag sample-task__tag--energy">🧠</span>
-                                    <span class="sample-task__tag sample-task__tag--duration">45m</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="sample-task" data-impact="2">
-                            <div class="sample-task__check"></div>
-                            <div class="sample-task__content">
-                                <div class="sample-task__title">Prepare presentation slides</div>
-                                <div class="sample-task__meta">
-                                    <span class="sample-task__tag sample-task__tag--energy">☕</span>
-                                    <span class="sample-task__tag sample-task__tag--duration">1h</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="sample-task" data-impact="3">
-                            <div class="sample-task__check"></div>
-                            <div class="sample-task__content">
-                                <div class="sample-task__title">Reply to client emails</div>
-                                <div class="sample-task__meta">
-                                    <span class="sample-task__tag sample-task__tag--energy">🧟</span>
-                                    <span class="sample-task__tag sample-task__tag--duration">30m</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Auto-plan button -->
-            <button class="option-d__auto-plan">
-                <span>✨</span>
-                <span>Auto-Plan Free Time</span>
-            </button>
+            <div class="option-c__fab-hint" id="option-c-fab-hint">Tap to plan tasks</div>
         </div>
     </div>
 </div>
 
 <script>
-// Mockup navigation
+// =============================================================================
+// MOCKUP NAVIGATION
+// =============================================================================
 document.querySelectorAll('.mockup-nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const mockup = btn.dataset.mockup;
-
-        // Update nav
         document.querySelectorAll('.mockup-nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
-        // Update content
         document.querySelectorAll('.mockup-container').forEach(c => c.classList.remove('active'));
         document.querySelector(`[data-mockup="${mockup}"].mockup-container`).classList.add('active');
     });
 });
 
-// Option A: Preset selection
-document.querySelectorAll('.option-a__preset').forEach(preset => {
-    preset.addEventListener('click', () => {
-        document.querySelectorAll('.option-a__preset').forEach(p => p.classList.remove('selected'));
-        preset.classList.add('selected');
+// Energy pills (both options)
+document.querySelectorAll('.energy-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+        const container = pill.closest('.energy-filter');
+        container.querySelectorAll('.energy-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
     });
 });
 
-// Option B: Bottom sheet toggle
-const sheetToggle = document.getElementById('option-b-toggle');
-const sheet = document.getElementById('option-b-sheet');
-if (sheetToggle && sheet) {
-    sheetToggle.addEventListener('click', () => {
-        sheet.classList.toggle('expanded');
-        sheetToggle.textContent = sheet.classList.contains('expanded') ? 'Hide' : 'View';
-    });
+// =============================================================================
+// OPTION B: BOTTOM SHEET
+// =============================================================================
+const sheetB = document.getElementById('option-b-sheet');
+const planBtnB = document.getElementById('option-b-plan-btn');
+const gridB = document.getElementById('option-b-grid');
+const selectionB = document.getElementById('option-b-selection');
+const selectionTimeB = document.getElementById('option-b-selection-time');
+
+let isDraggingB = false;
+let startHourB = null;
+let endHourB = null;
+
+// Tap Plan → expand sheet and enter selection mode
+planBtnB.addEventListener('click', () => {
+    sheetB.classList.add('expanded');
+    sheetB.classList.add('selection-mode');
+});
+
+// Handle touch/drag on calendar
+gridB.addEventListener('touchstart', handleStartB, { passive: false });
+gridB.addEventListener('touchmove', handleMoveB, { passive: false });
+gridB.addEventListener('touchend', handleEndB);
+gridB.addEventListener('mousedown', handleStartB);
+gridB.addEventListener('mousemove', handleMoveB);
+gridB.addEventListener('mouseup', handleEndB);
+
+function getHourFromEvent(e, grid) {
+    const rect = grid.getBoundingClientRect();
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const y = clientY - rect.top + grid.scrollTop;
+    const hourHeight = 48;
+    return Math.floor(y / hourHeight) + 8; // Starting at 8:00
 }
 
-// Option B: Energy buttons
-document.querySelectorAll('.option-b__energy-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.option-b__energy-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    });
-});
-
-// Option C: FAB modal
-const fab = document.getElementById('option-c-fab');
-const modal = document.getElementById('option-c-modal');
-const closeBtn = document.getElementById('option-c-close');
-
-if (fab && modal) {
-    fab.addEventListener('click', () => modal.classList.add('open'));
-    closeBtn.addEventListener('click', () => modal.classList.remove('open'));
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.remove('open');
-    });
+function handleStartB(e) {
+    if (!sheetB.classList.contains('selection-mode')) return;
+    isDraggingB = true;
+    startHourB = getHourFromEvent(e, gridB);
+    endHourB = startHourB + 1;
+    updateSelectionB();
+    e.preventDefault();
 }
 
-// Option C: Time selection
-document.querySelectorAll('.option-c__time-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.option-c__time-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-    });
+function handleMoveB(e) {
+    if (!isDraggingB) return;
+    endHourB = getHourFromEvent(e, gridB) + 1;
+    if (endHourB <= startHourB) endHourB = startHourB + 1;
+    updateSelectionB();
+    e.preventDefault();
+}
+
+function handleEndB() {
+    if (!isDraggingB) return;
+    isDraggingB = false;
+}
+
+function updateSelectionB() {
+    if (startHourB === null) return;
+    const hourHeight = 48;
+    const top = (Math.min(startHourB, endHourB) - 8) * hourHeight;
+    const height = Math.abs(endHourB - startHourB) * hourHeight;
+
+    selectionB.style.top = top + 'px';
+    selectionB.style.height = height + 'px';
+    selectionB.classList.add('active');
+
+    const startFormatted = String(Math.min(startHourB, endHourB)).padStart(2, '0') + ':00';
+    const endFormatted = String(Math.max(startHourB, endHourB)).padStart(2, '0') + ':00';
+    selectionTimeB.textContent = `${startFormatted} - ${endFormatted}`;
+}
+
+// Close sheet when clicking outside
+document.addEventListener('click', (e) => {
+    if (sheetB.classList.contains('expanded') && !sheetB.contains(e.target)) {
+        sheetB.classList.remove('expanded');
+        sheetB.classList.remove('selection-mode');
+        selectionB.classList.remove('active');
+        startHourB = null;
+    }
 });
 
-// Option C: Tabs
+// =============================================================================
+// OPTION C: FAB + DIRECT SELECTION
+// =============================================================================
+const containerC = document.getElementById('option-c-container');
+const fabC = document.getElementById('option-c-fab');
+const fabHintC = document.getElementById('option-c-fab-hint');
+const cancelC = document.getElementById('option-c-cancel');
+const gridC = document.getElementById('option-c-grid');
+const selectionC = document.getElementById('option-c-selection');
+const selectionTimeC = document.getElementById('option-c-selection-time');
+
+let isDraggingC = false;
+let startHourC = null;
+let endHourC = null;
+
+// Tab switching
 document.querySelectorAll('.option-c__tab').forEach(tab => {
     tab.addEventListener('click', () => {
+        const panel = tab.dataset.tab;
         document.querySelectorAll('.option-c__tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
+        document.querySelectorAll('.option-c__panel').forEach(p => p.classList.remove('active'));
+        document.querySelector(`[data-panel="${panel}"]`).classList.add('active');
     });
 });
+
+// FAB: switch to schedule tab + enter selection mode
+fabC.addEventListener('click', () => {
+    // Switch to schedule tab
+    document.querySelectorAll('.option-c__tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('[data-tab="schedule"]').classList.add('active');
+    document.querySelectorAll('.option-c__panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('[data-panel="schedule"]').classList.add('active');
+
+    // Enter selection mode
+    containerC.classList.add('selection-mode');
+});
+
+// Cancel selection
+cancelC.addEventListener('click', () => {
+    containerC.classList.remove('selection-mode');
+    selectionC.classList.remove('active');
+    startHourC = null;
+});
+
+// Show FAB hint briefly
+setTimeout(() => {
+    fabHintC.classList.add('show');
+    setTimeout(() => fabHintC.classList.remove('show'), 3000);
+}, 1000);
+
+// Handle touch/drag on calendar
+gridC.addEventListener('touchstart', handleStartC, { passive: false });
+gridC.addEventListener('touchmove', handleMoveC, { passive: false });
+gridC.addEventListener('touchend', handleEndC);
+gridC.addEventListener('mousedown', handleStartC);
+gridC.addEventListener('mousemove', handleMoveC);
+gridC.addEventListener('mouseup', handleEndC);
+
+function handleStartC(e) {
+    if (!containerC.classList.contains('selection-mode')) return;
+    isDraggingC = true;
+    startHourC = getHourFromEvent(e, gridC);
+    endHourC = startHourC + 1;
+    updateSelectionC();
+    e.preventDefault();
+}
+
+function handleMoveC(e) {
+    if (!isDraggingC) return;
+    endHourC = getHourFromEvent(e, gridC) + 1;
+    if (endHourC <= startHourC) endHourC = startHourC + 1;
+    updateSelectionC();
+    e.preventDefault();
+}
+
+function handleEndC() {
+    if (!isDraggingC) return;
+    isDraggingC = false;
+}
+
+function updateSelectionC() {
+    if (startHourC === null) return;
+    const hourHeight = 48;
+    const top = (Math.min(startHourC, endHourC) - 8) * hourHeight;
+    const height = Math.abs(endHourC - startHourC) * hourHeight;
+
+    selectionC.style.top = top + 'px';
+    selectionC.style.height = height + 'px';
+    selectionC.classList.add('active');
+
+    const startFormatted = String(Math.min(startHourC, endHourC)).padStart(2, '0') + ':00';
+    const endFormatted = String(Math.max(startHourC, endHourC)).padStart(2, '0') + ':00';
+    selectionTimeC.textContent = `${startFormatted} - ${endFormatted}`;
+}
 </script>
 {% endblock %}
