@@ -33,7 +33,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             # Fonts: self + Google Fonts + CDN
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             # Connect: self + Google APIs for OAuth/Calendar + Google Fonts
-            "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com; "
+            "connect-src 'self' https://accounts.google.com https://www.googleapis.com "
+            "https://fonts.googleapis.com https://fonts.gstatic.com; "
             # Prevent embedding in frames (clickjacking protection)
             "frame-ancestors 'none'; "
             # Restrict base URI to prevent base tag injection
