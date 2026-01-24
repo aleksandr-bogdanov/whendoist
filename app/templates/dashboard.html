@@ -36,7 +36,15 @@
             <div class="task-list-header">
                 <span class="header-task">
                     <span class="header-task-label" id="header-task-label">Tasks</span>
-                    <!-- Energy Selector (Option B: in panel header) -->
+                    <!-- Back button (shown in deleted/scheduled/completed views) -->
+                    <button type="button" class="header-back-btn" id="header-back-btn" hidden>
+                        <svg class="icon icon-sm back-arrow" aria-hidden="true">
+                            <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-left"></use>
+                        </svg>
+                        <span class="back-text">Back to tasks</span>
+                    </button>
+                    <span class="header-view-count" id="header-view-count" hidden></span>
+                    <!-- Energy Selector (in panel header) -->
                     <div class="header-energy" id="header-energy">
                         <span class="header-energy__label">Energy</span>
                         <div class="header-energy__pills">
@@ -45,13 +53,6 @@
                             <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus: all tasks">🧠</button>
                         </div>
                     </div>
-                    <button type="button" class="header-back-btn" id="header-back-btn" hidden>
-                        <svg class="icon icon-sm back-arrow" aria-hidden="true">
-                            <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-left"></use>
-                        </svg>
-                        <span class="back-text">Back to tasks</span>
-                    </button>
-                    <span class="header-view-count" id="header-view-count" hidden></span>
                 </span>
                 <span class="header-meta">
                     <button type="button" class="header-sort" data-sort="duration" title="Sort by duration">

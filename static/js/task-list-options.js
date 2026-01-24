@@ -324,7 +324,7 @@
         const taskLabel = document.getElementById('header-task-label');
         const backBtn = document.getElementById('header-back-btn');
         const viewCount = document.getElementById('header-view-count');
-        const energySelector = document.getElementById('header-energy-inline');
+        const energySelector = document.getElementById('header-energy');
 
         if (taskLabel) taskLabel.hidden = isSpecialView;
         if (backBtn) backBtn.hidden = !isSpecialView;
