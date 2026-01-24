@@ -1061,10 +1061,30 @@ body.modal-open {
 @media (max-width: 640px) {
     .modal-backdrop {
         padding: 16px 12px;
+        /* Use safe area to avoid iOS notch/home indicator */
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     }
 
     .modal-window {
-        max-height: calc(100vh - 48px);
+        /* Fallback for browsers that don't support dvh */
+        max-height: calc(var(--app-height, 100vh) - 48px - env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Use dynamic viewport height for iOS Safari compatibility (preferred) */
+    @supports (height: 100dvh) {
+        .modal-window {
+            max-height: calc(100dvh - 48px - env(safe-area-inset-bottom, 0px));
+        }
+    }
+
+    .modal-ft {
+        /* Extra bottom padding on mobile for safe area */
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .modal-body {
+        /* Ensure body is scrollable with momentum on iOS */
+        -webkit-overflow-scrolling: touch;
     }
 
     .form-grid-2 {
@@ -1106,6 +1126,23 @@ body.modal-open {
         right: 16px;
         width: 48px;
         height: 48px;
+    }
+
+    /* PWA standalone mode - account for top safe area (notch) as well */
+    @media (display-mode: standalone) {
+        .modal-backdrop {
+            padding-top: calc(16px + env(safe-area-inset-top, 0px));
+        }
+
+        .modal-window {
+            max-height: calc(var(--app-height, 100vh) - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        }
+
+        @supports (height: 100dvh) {
+            .modal-window {
+                max-height: calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            }
+        }
     }
 }
 
