@@ -1,0 +1,1354 @@
+{% extends "base.html" %}
+
+{% block title %}Mobile Layout Mockups - Whendoist{% endblock %}
+
+{% block extra_css %}
+<style>
+/* =============================================================================
+   MOBILE MOCKUPS PAGE
+   View at /mockups - test each layout option on mobile
+   ============================================================================= */
+
+.mockups-page {
+    min-height: 100vh;
+    background: var(--bg-canvas);
+}
+
+/* Navigation between mockups */
+.mockup-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+    padding: 8px 12px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.mockup-nav-btn {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mockup-nav-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.mockup-nav-btn:hover:not(.active) {
+    border-color: var(--primary);
+}
+
+/* Mockup containers */
+.mockup-container {
+    display: none;
+    padding-top: 56px; /* nav height */
+    min-height: 100vh;
+}
+
+.mockup-container.active {
+    display: block;
+}
+
+/* =============================================================================
+   SAMPLE DATA (shared across all mockups)
+   ============================================================================= */
+.sample-task {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.sample-task__check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-default);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.sample-task__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.sample-task__title {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sample-task__meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.sample-task__tag {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.sample-task__tag--energy { background: rgba(109, 94, 246, 0.1); color: var(--primary); }
+.sample-task__tag--duration { background: rgba(0, 0, 0, 0.05); }
+.sample-task__tag--impact { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+/* Impact rail */
+.sample-task[data-impact="1"] { border-left: 3px solid #ef4444; }
+.sample-task[data-impact="2"] { border-left: 3px solid #f59e0b; }
+.sample-task[data-impact="3"] { border-left: 3px solid #3b82f6; }
+.sample-task[data-impact="4"] { border-left: 3px solid #94a3b8; }
+
+/* =============================================================================
+   OPTION A: PLAN-FIRST HERO LAYOUT
+   ============================================================================= */
+.option-a {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px);
+    background: var(--bg-canvas);
+}
+
+.option-a__hero {
+    background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
+    color: white;
+    padding: 20px 16px;
+    text-align: center;
+}
+
+.option-a__summary {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    margin-bottom: 16px;
+}
+
+.option-a__plan-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 32px;
+    background: white;
+    color: var(--primary);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s ease;
+}
+
+.option-a__plan-btn:active {
+    transform: scale(0.98);
+}
+
+/* Time Presets */
+.option-a__presets {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.option-a__preset {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.option-a__preset.selected {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.option-a__preset-time {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.option-a__preset-label {
+    display: block;
+    font-size: 0.6875rem;
+    opacity: 0.7;
+}
+
+/* Task List */
+.option-a__tasks {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.option-a__section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+/* =============================================================================
+   OPTION B: BOTTOM SHEET CALENDAR
+   ============================================================================= */
+.option-b {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px);
+    background: var(--bg-canvas);
+}
+
+.option-b__header {
+    padding: 16px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.option-b__filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.option-b__energy-btn {
+    padding: 8px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+}
+
+.option-b__energy-btn.active {
+    opacity: 1;
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.1);
+}
+
+.option-b__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.option-b__tasks {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    padding-bottom: 80px; /* space for bottom sheet */
+}
+
+/* Bottom Sheet */
+.option-b__sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border-default);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    z-index: 100;
+}
+
+.option-b__sheet.expanded {
+    transform: translateY(0);
+}
+
+.option-b__sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border-default);
+    border-radius: 2px;
+    margin: 12px auto;
+}
+
+.option-b__sheet-peek {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px 16px;
+}
+
+.option-b__sheet-info {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.option-b__sheet-date {
+    font-weight: 600;
+}
+
+.option-b__sheet-count {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.option-b__sheet-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.option-b__sheet-btn {
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+}
+
+.option-b__sheet-btn--plan {
+    background: var(--primary);
+    color: white;
+}
+
+.option-b__sheet-btn--view {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+}
+
+/* Expanded calendar view */
+.option-b__sheet-calendar {
+    display: none;
+    padding: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.option-b__sheet.expanded .option-b__sheet-calendar {
+    display: block;
+}
+
+.option-b__hour-slot {
+    display: flex;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-top: 1px solid var(--border-subtle);
+    min-height: 48px;
+}
+
+.option-b__hour-label {
+    width: 48px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.option-b__hour-content {
+    flex: 1;
+}
+
+.option-b__hour-event {
+    padding: 6px 10px;
+    background: rgba(109, 94, 246, 0.15);
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    margin-bottom: 4px;
+}
+
+/* =============================================================================
+   OPTION C: FAB WITH SMART MODAL
+   ============================================================================= */
+.option-c {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px);
+    background: var(--bg-canvas);
+}
+
+/* Tabs (keeping current pattern) */
+.option-c__tabs {
+    display: flex;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.option-c__tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.option-c__tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.option-c__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    padding-bottom: 100px; /* space for FAB */
+}
+
+/* FAB */
+.option-c__fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(109, 94, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-c__fab:active {
+    transform: scale(0.95);
+}
+
+.option-c__fab-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: #ef4444;
+    color: white;
+    border-radius: 11px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal */
+.option-c__modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.option-c__modal.open {
+    display: flex;
+}
+
+.option-c__modal-content {
+    background: var(--bg-panel);
+    width: 100%;
+    max-height: 80vh;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.option-c__modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.option-c__modal-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.option-c__modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-surface);
+    border-radius: 50%;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.option-c__modal-body {
+    padding: 16px;
+}
+
+.option-c__modal-section {
+    margin-bottom: 20px;
+}
+
+.option-c__modal-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.option-c__time-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.option-c__time-btn {
+    padding: 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.option-c__time-btn.selected {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.1);
+}
+
+.option-c__time-btn:active {
+    transform: scale(0.98);
+}
+
+.option-c__time-icon {
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+}
+
+.option-c__time-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.option-c__time-range {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.option-c__modal-stats {
+    display: flex;
+    gap: 16px;
+    padding: 12px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+}
+
+.option-c__modal-stat {
+    text-align: center;
+}
+
+.option-c__modal-stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.option-c__modal-stat-label {
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+}
+
+.option-c__modal-action {
+    width: 100%;
+    padding: 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.option-c__modal-action:active {
+    transform: scale(0.98);
+}
+
+/* =============================================================================
+   OPTION D: TIMELINE-FIRST UNIFIED VIEW
+   ============================================================================= */
+.option-d {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 56px);
+    background: var(--bg-canvas);
+}
+
+.option-d__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.option-d__date-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.option-d__nav-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.option-d__date {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.option-d__today-btn {
+    padding: 6px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.option-d__content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 80px;
+}
+
+/* Time blocks */
+.option-d__block {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.option-d__block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.option-d__block-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.option-d__block-icon {
+    font-size: 1.25rem;
+}
+
+.option-d__block-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.option-d__block-add {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px dashed var(--border-default);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.option-d__block-add:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.option-d__event {
+    padding: 10px 12px;
+    background: rgba(109, 94, 246, 0.1);
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.option-d__event-time {
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.option-d__event-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Unscheduled section */
+.option-d__unscheduled {
+    background: var(--bg-panel);
+}
+
+.option-d__unscheduled-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+}
+
+.option-d__unscheduled-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.option-d__unscheduled-count {
+    padding: 2px 8px;
+    background: var(--primary);
+    color: white;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.option-d__unscheduled-tasks {
+    padding: 0 16px 16px;
+}
+
+/* Auto-plan button */
+.option-d__auto-plan {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--primary) 0%, #8B7CF7 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(109, 94, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    z-index: 100;
+}
+
+.option-d__auto-plan:active {
+    transform: scale(0.98);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mockups-page">
+    <!-- Navigation -->
+    <nav class="mockup-nav">
+        <button class="mockup-nav-btn active" data-mockup="a">A: Plan-First</button>
+        <button class="mockup-nav-btn" data-mockup="b">B: Bottom Sheet</button>
+        <button class="mockup-nav-btn" data-mockup="c">C: FAB Modal</button>
+        <button class="mockup-nav-btn" data-mockup="d">D: Timeline</button>
+    </nav>
+
+    <!-- OPTION A: Plan-First Hero -->
+    <div class="mockup-container active" data-mockup="a">
+        <div class="option-a">
+            <div class="option-a__hero">
+                <div class="option-a__summary">
+                    <strong>Today:</strong> 5 tasks &bull; ~3h 15m of work
+                </div>
+                <button class="option-a__plan-btn">
+                    <span>✨</span>
+                    <span>Plan My Day</span>
+                </button>
+            </div>
+
+            <div class="option-a__presets">
+                <button class="option-a__preset selected">
+                    <span class="option-a__preset-time">9am - 12pm</span>
+                    <span class="option-a__preset-label">Morning</span>
+                </button>
+                <button class="option-a__preset">
+                    <span class="option-a__preset-time">1pm - 5pm</span>
+                    <span class="option-a__preset-label">Afternoon</span>
+                </button>
+                <button class="option-a__preset">
+                    <span class="option-a__preset-time">6pm - 9pm</span>
+                    <span class="option-a__preset-label">Evening</span>
+                </button>
+                <button class="option-a__preset">
+                    <span class="option-a__preset-time">Custom</span>
+                    <span class="option-a__preset-label">Set range</span>
+                </button>
+            </div>
+
+            <div class="option-a__tasks">
+                <div class="option-a__section-title">Tasks to Schedule (5)</div>
+
+                <div class="sample-task" data-impact="1">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Review Q4 budget proposal</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧠</span>
+                            <span class="sample-task__tag sample-task__tag--duration">45m</span>
+                            <span class="sample-task__tag sample-task__tag--impact">P1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="2">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Prepare presentation slides</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
+                            <span class="sample-task__tag sample-task__tag--duration">1h</span>
+                            <span class="sample-task__tag sample-task__tag--impact">P2</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="3">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Reply to client emails</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                            <span class="sample-task__tag sample-task__tag--impact">P3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="2">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Update project documentation</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                            <span class="sample-task__tag sample-task__tag--impact">P2</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="4">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Organize desktop files</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                            <span class="sample-task__tag sample-task__tag--impact">P4</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPTION B: Bottom Sheet Calendar -->
+    <div class="mockup-container" data-mockup="b">
+        <div class="option-b">
+            <div class="option-b__header">
+                <div class="option-b__filter">
+                    <button class="option-b__energy-btn">🧟</button>
+                    <button class="option-b__energy-btn active">☕</button>
+                    <button class="option-b__energy-btn">🧠</button>
+                </div>
+                <div class="option-b__title">Tasks (8)</div>
+            </div>
+
+            <div class="option-b__tasks">
+                <div class="sample-task" data-impact="1">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Review Q4 budget proposal</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧠</span>
+                            <span class="sample-task__tag sample-task__tag--duration">45m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="2">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Prepare presentation slides</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
+                            <span class="sample-task__tag sample-task__tag--duration">1h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="3">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Reply to client emails</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="2">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Update project documentation</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="4">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Organize desktop files</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Sheet -->
+            <div class="option-b__sheet" id="option-b-sheet">
+                <div class="option-b__sheet-handle"></div>
+                <div class="option-b__sheet-peek">
+                    <div class="option-b__sheet-info">
+                        <div class="option-b__sheet-date">📅 Jan 24, Fri</div>
+                        <div class="option-b__sheet-count">3 events &bull; 2 scheduled tasks</div>
+                    </div>
+                    <div class="option-b__sheet-actions">
+                        <button class="option-b__sheet-btn option-b__sheet-btn--plan">✨ Plan</button>
+                        <button class="option-b__sheet-btn option-b__sheet-btn--view" id="option-b-toggle">View</button>
+                    </div>
+                </div>
+
+                <!-- Expanded calendar -->
+                <div class="option-b__sheet-calendar">
+                    <div class="option-b__hour-slot">
+                        <div class="option-b__hour-label">9:00</div>
+                        <div class="option-b__hour-content">
+                            <div class="option-b__hour-event">Team standup</div>
+                        </div>
+                    </div>
+                    <div class="option-b__hour-slot">
+                        <div class="option-b__hour-label">10:00</div>
+                        <div class="option-b__hour-content"></div>
+                    </div>
+                    <div class="option-b__hour-slot">
+                        <div class="option-b__hour-label">11:00</div>
+                        <div class="option-b__hour-content">
+                            <div class="option-b__hour-event">1:1 with manager</div>
+                        </div>
+                    </div>
+                    <div class="option-b__hour-slot">
+                        <div class="option-b__hour-label">12:00</div>
+                        <div class="option-b__hour-content"></div>
+                    </div>
+                    <div class="option-b__hour-slot">
+                        <div class="option-b__hour-label">1:00</div>
+                        <div class="option-b__hour-content"></div>
+                    </div>
+                    <div class="option-b__hour-slot">
+                        <div class="option-b__hour-label">2:00</div>
+                        <div class="option-b__hour-content">
+                            <div class="option-b__hour-event">Sprint planning</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPTION C: FAB with Smart Modal -->
+    <div class="mockup-container" data-mockup="c">
+        <div class="option-c">
+            <div class="option-c__tabs">
+                <button class="option-c__tab active">📋 Tasks</button>
+                <button class="option-c__tab">📅 Schedule</button>
+            </div>
+
+            <div class="option-c__content">
+                <div class="sample-task" data-impact="1">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Review Q4 budget proposal</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧠</span>
+                            <span class="sample-task__tag sample-task__tag--duration">45m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="2">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Prepare presentation slides</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
+                            <span class="sample-task__tag sample-task__tag--duration">1h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="3">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Reply to client emails</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="2">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Update project documentation</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">☕</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sample-task" data-impact="4">
+                    <div class="sample-task__check"></div>
+                    <div class="sample-task__content">
+                        <div class="sample-task__title">Organize desktop files</div>
+                        <div class="sample-task__meta">
+                            <span class="sample-task__tag sample-task__tag--energy">🧟</span>
+                            <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAB -->
+            <button class="option-c__fab" id="option-c-fab">
+                ✨
+                <span class="option-c__fab-badge">5</span>
+            </button>
+
+            <!-- Modal -->
+            <div class="option-c__modal" id="option-c-modal">
+                <div class="option-c__modal-content">
+                    <div class="option-c__modal-header">
+                        <div class="option-c__modal-title">Plan My Day</div>
+                        <button class="option-c__modal-close" id="option-c-close">&times;</button>
+                    </div>
+                    <div class="option-c__modal-body">
+                        <div class="option-c__modal-section">
+                            <div class="option-c__modal-label">When do you want to work?</div>
+                            <div class="option-c__time-grid">
+                                <button class="option-c__time-btn selected">
+                                    <div class="option-c__time-icon">☀️</div>
+                                    <div class="option-c__time-label">Morning</div>
+                                    <div class="option-c__time-range">9am - 12pm</div>
+                                </button>
+                                <button class="option-c__time-btn">
+                                    <div class="option-c__time-icon">🌤️</div>
+                                    <div class="option-c__time-label">Afternoon</div>
+                                    <div class="option-c__time-range">1pm - 5pm</div>
+                                </button>
+                                <button class="option-c__time-btn">
+                                    <div class="option-c__time-icon">🌙</div>
+                                    <div class="option-c__time-label">Evening</div>
+                                    <div class="option-c__time-range">6pm - 9pm</div>
+                                </button>
+                                <button class="option-c__time-btn">
+                                    <div class="option-c__time-icon">⚙️</div>
+                                    <div class="option-c__time-label">Custom</div>
+                                    <div class="option-c__time-range">Set range</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="option-c__modal-stats">
+                            <div class="option-c__modal-stat">
+                                <div class="option-c__modal-stat-value">5</div>
+                                <div class="option-c__modal-stat-label">Tasks ready</div>
+                            </div>
+                            <div class="option-c__modal-stat">
+                                <div class="option-c__modal-stat-value">3h 15m</div>
+                                <div class="option-c__modal-stat-label">Est. time</div>
+                            </div>
+                            <div class="option-c__modal-stat">
+                                <div class="option-c__modal-stat-value">2h 45m</div>
+                                <div class="option-c__modal-stat-label">Free slots</div>
+                            </div>
+                        </div>
+
+                        <button class="option-c__modal-action">✨ Plan Now</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPTION D: Timeline-First Unified View -->
+    <div class="mockup-container" data-mockup="d">
+        <div class="option-d">
+            <div class="option-d__header">
+                <div class="option-d__date-nav">
+                    <button class="option-d__nav-btn">◀</button>
+                    <div class="option-d__date">Jan 24, Fri</div>
+                    <button class="option-d__nav-btn">▶</button>
+                </div>
+                <button class="option-d__today-btn">Today</button>
+            </div>
+
+            <div class="option-d__content">
+                <!-- Morning block -->
+                <div class="option-d__block">
+                    <div class="option-d__block-header">
+                        <div class="option-d__block-title">
+                            <span class="option-d__block-icon">☀️</span>
+                            <span>Morning</span>
+                            <span class="option-d__block-time">9am - 12pm</span>
+                        </div>
+                        <button class="option-d__block-add">+ Add</button>
+                    </div>
+                    <div class="option-d__event">
+                        <div class="option-d__event-time">9:00 - 9:30</div>
+                        <div class="option-d__event-title">Team standup</div>
+                    </div>
+                    <div class="option-d__event">
+                        <div class="option-d__event-time">11:00 - 11:30</div>
+                        <div class="option-d__event-title">1:1 with manager</div>
+                    </div>
+                </div>
+
+                <!-- Afternoon block -->
+                <div class="option-d__block">
+                    <div class="option-d__block-header">
+                        <div class="option-d__block-title">
+                            <span class="option-d__block-icon">🌤️</span>
+                            <span>Afternoon</span>
+                            <span class="option-d__block-time">12pm - 5pm</span>
+                        </div>
+                        <button class="option-d__block-add">+ Add</button>
+                    </div>
+                    <div class="option-d__event">
+                        <div class="option-d__event-time">2:00 - 3:00</div>
+                        <div class="option-d__event-title">Sprint planning</div>
+                    </div>
+                </div>
+
+                <!-- Evening block -->
+                <div class="option-d__block">
+                    <div class="option-d__block-header">
+                        <div class="option-d__block-title">
+                            <span class="option-d__block-icon">🌙</span>
+                            <span>Evening</span>
+                            <span class="option-d__block-time">5pm - 9pm</span>
+                        </div>
+                        <button class="option-d__block-add">+ Add</button>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.8125rem; padding: 8px 0;">No events scheduled</p>
+                </div>
+
+                <!-- Unscheduled section -->
+                <div class="option-d__unscheduled">
+                    <div class="option-d__unscheduled-header">
+                        <div class="option-d__unscheduled-title">📋 Unscheduled</div>
+                        <span class="option-d__unscheduled-count">5</span>
+                    </div>
+                    <div class="option-d__unscheduled-tasks">
+                        <div class="sample-task" data-impact="1">
+                            <div class="sample-task__check"></div>
+                            <div class="sample-task__content">
+                                <div class="sample-task__title">Review Q4 budget proposal</div>
+                                <div class="sample-task__meta">
+                                    <span class="sample-task__tag sample-task__tag--energy">🧠</span>
+                                    <span class="sample-task__tag sample-task__tag--duration">45m</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sample-task" data-impact="2">
+                            <div class="sample-task__check"></div>
+                            <div class="sample-task__content">
+                                <div class="sample-task__title">Prepare presentation slides</div>
+                                <div class="sample-task__meta">
+                                    <span class="sample-task__tag sample-task__tag--energy">☕</span>
+                                    <span class="sample-task__tag sample-task__tag--duration">1h</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sample-task" data-impact="3">
+                            <div class="sample-task__check"></div>
+                            <div class="sample-task__content">
+                                <div class="sample-task__title">Reply to client emails</div>
+                                <div class="sample-task__meta">
+                                    <span class="sample-task__tag sample-task__tag--energy">🧟</span>
+                                    <span class="sample-task__tag sample-task__tag--duration">30m</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auto-plan button -->
+            <button class="option-d__auto-plan">
+                <span>✨</span>
+                <span>Auto-Plan Free Time</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mockup navigation
+document.querySelectorAll('.mockup-nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const mockup = btn.dataset.mockup;
+
+        // Update nav
+        document.querySelectorAll('.mockup-nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Update content
+        document.querySelectorAll('.mockup-container').forEach(c => c.classList.remove('active'));
+        document.querySelector(`[data-mockup="${mockup}"].mockup-container`).classList.add('active');
+    });
+});
+
+// Option A: Preset selection
+document.querySelectorAll('.option-a__preset').forEach(preset => {
+    preset.addEventListener('click', () => {
+        document.querySelectorAll('.option-a__preset').forEach(p => p.classList.remove('selected'));
+        preset.classList.add('selected');
+    });
+});
+
+// Option B: Bottom sheet toggle
+const sheetToggle = document.getElementById('option-b-toggle');
+const sheet = document.getElementById('option-b-sheet');
+if (sheetToggle && sheet) {
+    sheetToggle.addEventListener('click', () => {
+        sheet.classList.toggle('expanded');
+        sheetToggle.textContent = sheet.classList.contains('expanded') ? 'Hide' : 'View';
+    });
+}
+
+// Option B: Energy buttons
+document.querySelectorAll('.option-b__energy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.option-b__energy-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+});
+
+// Option C: FAB modal
+const fab = document.getElementById('option-c-fab');
+const modal = document.getElementById('option-c-modal');
+const closeBtn = document.getElementById('option-c-close');
+
+if (fab && modal) {
+    fab.addEventListener('click', () => modal.classList.add('open'));
+    closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('open');
+    });
+}
+
+// Option C: Time selection
+document.querySelectorAll('.option-c__time-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.option-c__time-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    });
+});
+
+// Option C: Tabs
+document.querySelectorAll('.option-c__tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.option-c__tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+    });
+});
+</script>
+{% endblock %}

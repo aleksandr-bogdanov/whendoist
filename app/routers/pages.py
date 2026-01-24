@@ -775,3 +775,9 @@ async def privacy(request: Request):
 async def showcase(request: Request):
     """UI Component Showcase - for design review."""
     return render_template(request, "showcase.html", {})
+
+
+@router.get("/mockups", response_class=HTMLResponse)
+async def mobile_mockups(request: Request):
+    """Mobile layout mockups - for testing layout options on phone."""
+    return render_template(request, "mobile-mockups.html", {})
