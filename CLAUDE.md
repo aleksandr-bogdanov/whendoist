@@ -45,7 +45,16 @@ Always create PRs — even for version bumps or small fixes. "Push to deploy" me
 "create a PR so CI runs and Railway deploys on merge." Only push directly to master
 if the user says **exactly** "push to master" or "push directly."
 
-### 2. Multitenancy: Always filter by user_id
+### 2. PR titles: `v{version}/{type}: Description`
+Every PR title must follow this format. Types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`.
+```
+v0.30.1/fix: Resolve login timeout on slow connections
+v0.30.2/feat: Add subtask hierarchy to Todoist import
+v0.30.3/chore: Quieter production logs
+v0.31.0/refactor: Rewrite calendar sync engine
+```
+
+### 3. Multitenancy: Always filter by user_id
 ```python
 # CORRECT
 select(Task).where(Task.id == task_id, Task.user_id == self.user_id)
@@ -55,22 +64,22 @@ select(Task).where(Task.id == task_id)
 ```
 Batch operations: **skip** unowned IDs silently, never fail.
 
-### 3. API Routes: Versioned only
+### 4. API Routes: Versioned only
 All API routes are registered in `app/routers/v1/__init__.py` and served at `/api/v1/*`.
 Router files use resource prefix only: `APIRouter(prefix="/tasks")` — not `/api/tasks`.
 
-### 4. Encryption: Global toggle only
+### 5. Encryption: Global toggle only
 - **One toggle:** `user.encryption_enabled` — no per-record flags
 - **Encrypted fields (3 only):** `Task.title`, `Task.description`, `Domain.name`
 - Everything else (dates, priority, status) stays plaintext for server-side filtering
 
-### 5. Constants: Use `app.constants`
+### 6. Constants: Use `app.constants`
 ```python
 from app.constants import DEFAULT_IMPACT, CHALLENGE_TTL_SECONDS  # correct
 TTL = 300  # wrong - magic number
 ```
 
-### 6. Query patterns: Batch, don't loop
+### 7. Query patterns: Batch, don't loop
 ```python
 # CORRECT: Single query with GROUP BY
 stats = select(Task.id, func.count()).where(Task.id.in_(ids)).group_by(Task.id)
