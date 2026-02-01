@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.30.1] - 2026-02-01 — Quieter Production Logs
+
+### Changed
+- Startup logs now include version and boot timing (e.g., `Starting Whendoist v0.30.1 ... Startup complete (2.5s)`)
+- Migration script is quiet on no-op (single line instead of 10-line banner)
+- Materialization logs include task counts; silent at INFO level when idle
+- Alembic context info downgraded from WARNING to DEBUG in production
+- Periodic materialization loop only logs at INFO when work is actually done
+
+---
+
 ## [0.30.0] - 2026-02-01 — Subtask Hierarchy & CI/CD Simplification
 
 ### Added

@@ -63,8 +63,6 @@ async def materialize_all_instances() -> dict[str, Any]:
             logger.debug("No users with recurring tasks found")
             return stats
 
-        logger.info(f"Materializing instances for {len(user_ids)} users")
-
         for user_id in user_ids:
             try:
                 # Get user's timezone preference
@@ -72,15 +70,19 @@ async def materialize_all_instances() -> dict[str, Any]:
                 timezone = await prefs_service.get_timezone()
 
                 service = RecurrenceService(db, user_id, timezone=timezone)
-                await service.ensure_instances_materialized(horizon_days=MATERIALIZATION_HORIZON_DAYS)
+                tasks_count = await service.ensure_instances_materialized(horizon_days=MATERIALIZATION_HORIZON_DAYS)
                 stats["users_processed"] += 1
+                stats["tasks_processed"] += tasks_count
             except Exception as e:
                 logger.error(f"Failed to materialize for user {user_id}: {e}")
                 continue
 
         await db.commit()
 
-    logger.info(f"Materialization complete: {stats['users_processed']} users processed")
+    if stats["tasks_processed"] > 0:
+        logger.info(f"Materialized: {stats['users_processed']} users, {stats['tasks_processed']} tasks updated")
+    else:
+        logger.debug(f"Materialization: {stats['users_processed']} users checked, nothing to do")
 
     return stats
 
@@ -124,13 +126,16 @@ async def run_materialization_loop() -> None:
         try:
             await asyncio.sleep(MATERIALIZATION_INTERVAL_SECONDS)
 
-            # Materialize new instances
-            logger.debug("Running periodic instance materialization")
-            await materialize_all_instances()
+            # Materialize new instances + clean up old ones
+            stats = await materialize_all_instances()
+            cleanup = await cleanup_old_instances()
 
-            # Clean up old instances
-            logger.debug("Running periodic instance cleanup")
-            await cleanup_old_instances()
+            # Only log at INFO if work was actually done
+            if stats["tasks_processed"] > 0 or cleanup["deleted_count"] > 0:
+                logger.info(
+                    f"Periodic materialization: {stats['tasks_processed']} tasks updated, "
+                    f"{cleanup['deleted_count']} old instances cleaned"
+                )
 
         except asyncio.CancelledError:
             logger.debug("Materialization loop cancelled")

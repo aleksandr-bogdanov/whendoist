@@ -51,15 +51,8 @@ async def check_database_state() -> tuple[bool, bool]:
 
 def main():
     """Run migrations, stamping first if needed for existing databases."""
-    print("=" * 60)
-    print("WHENDOIST MIGRATION SCRIPT")
-    print("=" * 60)
-
     try:
-        print("Checking database state...")
         has_alembic, has_tables = asyncio.run(check_database_state())
-        print(f"  - alembic_version table exists: {has_alembic}")
-        print(f"  - users table exists: {has_tables}")
 
         if not has_alembic and has_tables:
             print("Existing database detected. Stamping with initial migration...")
@@ -67,8 +60,6 @@ def main():
             print(f"  Stamp completed with exit code: {result.returncode}")
         elif not has_alembic:
             print("Fresh database detected. Will create all tables.")
-        else:
-            print("Alembic already initialized.")
 
     except Exception as e:
         print(f"Warning: Could not check database state: {e}")
@@ -77,11 +68,30 @@ def main():
         traceback.print_exc()
         # Continue anyway - alembic upgrade will fail clearly if there's an issue
 
-    # Run migrations
-    print("Running alembic upgrade head...")
-    result = subprocess.run(["alembic", "upgrade", "head"])
-    print(f"Migration completed with exit code: {result.returncode}")
-    print("=" * 60)
+    # Run migrations (capture output to detect no-op)
+    result = subprocess.run(
+        ["alembic", "upgrade", "head"],
+        capture_output=True,
+        text=True,
+    )
+    # Alembic logs to stderr; check if any migrations actually ran
+    stderr = result.stderr.strip() if result.stderr else ""
+    has_pending = "Running upgrade" in stderr
+
+    if has_pending:
+        print("Applied migrations:")
+        for line in stderr.split("\n"):
+            print(f"  {line.strip()}")
+    else:
+        print("No pending migrations")
+
+    if result.returncode != 0:
+        print(f"Migration FAILED (exit code {result.returncode})")
+        if result.stdout:
+            print(result.stdout)
+        if stderr:
+            print(stderr)
+
     sys.exit(result.returncode)
 
 

@@ -26,7 +26,8 @@ If a test can't run automatically in GitHub Actions, don't write it.
 # Before EVERY commit (all must pass, CI enforces)
 uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
 
-# After bumping version in pyproject.toml (Railway build requires lockfile in sync)
+# IMPORTANT: After bumping version in pyproject.toml, ALWAYS run uv lock
+# Railway build requires lockfile in sync — deploy will fail without this
 uv lock
 
 # Database migrations (required for ALL schema changes)

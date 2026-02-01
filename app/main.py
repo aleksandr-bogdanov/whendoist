@@ -1,4 +1,5 @@
 import logging
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -46,7 +47,11 @@ def _run_migrations() -> None:
             logger.info(f"migrate: {line}")
     if result.stderr:
         for line in result.stderr.strip().split("\n"):
-            logger.warning(f"migrate: {line}")
+            # Alembic context info is routine, log at debug
+            if "Context impl" in line or "Will assume" in line:
+                logger.debug(f"migrate: {line}")
+            else:
+                logger.warning(f"migrate: {line}")
     if result.returncode != 0:
         logger.error(f"Migration failed with exit code {result.returncode}")
         raise RuntimeError("Database migration failed")
@@ -56,14 +61,14 @@ def _run_migrations() -> None:
 async def lifespan(app: FastAPI):
     import asyncio
 
-    logger.info("Starting Whendoist...")
-    logger.info(f"Base URL: {settings.base_url}")
+    logger.info(f"Starting Whendoist v{__version__} (base_url={settings.base_url})")
+    boot_start = time.monotonic()
     try:
         # Run migrations on startup (Railway releaseCommand not working with Railpack)
-        logger.info("Running database migrations...")
+        t0 = time.monotonic()
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, _run_migrations)
-        logger.info("Migrations complete")
+        logger.info(f"Migrations complete ({time.monotonic() - t0:.1f}s)")
 
         from sqlalchemy import text
 
@@ -92,15 +97,20 @@ async def lifespan(app: FastAPI):
                     raise
 
         # Run initial instance materialization
-        logger.info("Running initial instance materialization...")
+        t0 = time.monotonic()
         try:
             stats = await materialize_all_instances()
-            logger.info(f"Initial materialization: {stats['users_processed']} users processed")
+            elapsed = time.monotonic() - t0
+            logger.info(
+                f"Initial materialization: {stats['users_processed']} users, "
+                f"{stats['tasks_processed']} tasks ({elapsed:.1f}s)"
+            )
         except Exception as e:
             logger.warning(f"Initial materialization failed (non-fatal): {e}")
 
         # Start background materialization loop
         start_materialization_background()
+        logger.info(f"Startup complete ({time.monotonic() - boot_start:.1f}s)")
 
     except Exception as e:
         logger.error(f"Startup failed: {e}")
