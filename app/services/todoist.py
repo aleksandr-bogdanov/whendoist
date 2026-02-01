@@ -264,12 +264,16 @@ class TodoistClient:
             response.raise_for_status()
             return response.json()["user"]["id"]
 
-    async def get_completed_tasks(self, limit: int = 200) -> list[dict]:
+    async def get_completed_tasks(self, limit: int = 200, parent_id: str | None = None) -> list[dict]:
         """
         Fetch completed tasks.
 
         Returns raw dicts since completed tasks have different structure.
         Paginates automatically up to limit.
+
+        Args:
+            limit: Max number of completed tasks to fetch.
+            parent_id: If set, only fetch completed subtasks of this parent.
         """
         client = self._ensure_client()
         all_items: list[dict] = []
@@ -277,13 +281,14 @@ class TodoistClient:
         page_size = 50  # API max per request
 
         while len(all_items) < limit:
-            response = await client.get(
-                "/tasks/completed",
-                params={
-                    "limit": min(page_size, limit - len(all_items)),
-                    "offset": offset,
-                },
-            )
+            params: dict[str, str | int] = {
+                "limit": min(page_size, limit - len(all_items)),
+                "offset": offset,
+            }
+            if parent_id:
+                params["parent_id"] = parent_id
+
+            response = await client.get("/tasks/completed", params=params)
             response.raise_for_status()
             data = response.json()
             items = data.get("items", [])

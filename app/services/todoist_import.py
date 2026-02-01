@@ -128,7 +128,29 @@ class TodoistImportService:
                 # Import completed tasks for analytics
                 if include_completed:
                     completed = await client.get_completed_tasks(limit=completed_limit)
-                    await self._import_completed_tasks(completed, tasks, domain_map, result, skip_existing)
+
+                    # Build definitive parent mapping by fetching completed subtasks
+                    # per parent. The general /tasks/completed response may return
+                    # parent_id as null, so we use the parent_id query filter to
+                    # identify which completed tasks are subtasks of which parents.
+                    active_parent_ids = {t.parent_id for t in tasks if t.parent_id is not None}
+                    completed_child_to_parent: dict[str, str] = {}
+                    completed_by_id = {str(item.get("id") or item.get("task_id") or ""): item for item in completed}
+
+                    for pid in active_parent_ids:
+                        parent_children = await client.get_completed_tasks(parent_id=pid, limit=50)
+                        for item in parent_children:
+                            child_id = str(item.get("id") or item.get("task_id") or "")
+                            if child_id:
+                                completed_child_to_parent[child_id] = pid
+                                # Also add to main list if not already present
+                                if child_id not in completed_by_id:
+                                    completed.append(item)
+                                    completed_by_id[child_id] = item
+
+                    await self._import_completed_tasks(
+                        completed, tasks, completed_child_to_parent, domain_map, result, skip_existing
+                    )
 
             await self.db.commit()
 
@@ -530,6 +552,7 @@ class TodoistImportService:
         self,
         completed_tasks: list[dict],
         active_tasks: list[TodoistTask],
+        completed_child_to_parent: dict[str, str],
         domain_map: dict[str, int],
         result: ImportResult,
         skip_existing: bool,
@@ -538,8 +561,10 @@ class TodoistImportService:
         Import completed tasks from Todoist API v1.
 
         These tasks are marked as completed with their completed_at timestamp.
-        Subtasks are flattened using parent titles from both active and completed tasks,
-        since a completed subtask's parent is typically still active.
+        Subtasks are flattened using parent titles from active tasks. The
+        completed_child_to_parent map provides a definitive parent mapping
+        built from per-parent API calls (since the general completed tasks
+        response may not populate parent_id).
         """
         # Get existing tasks with Todoist external_id
         existing = await self.db.execute(
@@ -550,18 +575,16 @@ class TodoistImportService:
         )
         existing_by_ext_id = {t.external_id: t for t in existing.scalars().all()}
 
-        # Build parent title map from active tasks (most parents of completed subtasks
-        # are still active — completing a subtask doesn't complete the parent)
+        # Build parent title map from active tasks
         parent_titles: dict[str, str] = {t.id: t.content for t in active_tasks}
 
         # Also add completed tasks as potential parents (parent and subtasks both completed)
-        tasks_with_children: set[str] = set()
+        tasks_with_children: set[str] = set(completed_child_to_parent.values())
         for item in completed_tasks:
             item_id = str(item.get("id") or item.get("task_id") or "")
             parent_id = item.get("parent_id")
             if not item_id:
                 continue
-            # Add to parent_titles (active tasks take precedence if ID overlaps)
             if item_id not in parent_titles:
                 parent_titles[item_id] = item.get("content", "")
             if parent_id:
@@ -595,7 +618,9 @@ class TodoistImportService:
             # Create new completed task
             content = item.get("content", "")
             project_id = item.get("project_id")
-            parent_id = item.get("parent_id")
+
+            # Resolve parent: try response field first, fall back to per-parent API map
+            parent_id = item.get("parent_id") or completed_child_to_parent.get(task_id)
 
             # Flatten subtasks: prefix title with parent name
             if parent_id and str(parent_id) in parent_titles:
