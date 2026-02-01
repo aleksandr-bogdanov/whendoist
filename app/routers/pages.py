@@ -295,6 +295,9 @@ async def dashboard(
     # ==========================================================================
     # Google Calendar Events (with caching)
     # ==========================================================================
+    # Get the user's Whendoist sync calendar ID to filter out duplicates
+    gcal_sync_calendar_id = user_prefs.gcal_sync_calendar_id if user_prefs else None
+
     if google_token:
         try:
             selections = (
@@ -337,6 +340,10 @@ async def dashboard(
 
                     # Store in cache
                     cache.set(user.id, calendar_ids, start_date, end_date, events)
+
+                # Filter out events from the Whendoist sync calendar to avoid duplicates
+                if gcal_sync_calendar_id:
+                    events = [e for e in events if e.calendar_id != gcal_sync_calendar_id]
 
                 # Group events by date
                 events_by_date = {}

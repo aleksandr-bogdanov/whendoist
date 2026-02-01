@@ -231,6 +231,83 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- GOOGLE CALENDAR SYNC Panel -->
+                <div class="settings-panel {% if not google_connected %}settings-panel--disabled{% endif %}" id="gcal-sync-panel">
+                    <div class="settings-panel__hd">
+                        <div class="panel-hd-left">
+                            <p class="panel-title">Task Sync</p>
+                            <p class="panel-desc">Sync scheduled tasks to a dedicated "Whendoist" calendar in Google Calendar.</p>
+                        </div>
+                    </div>
+                    <div class="settings-panel__bd">
+                        {% if not google_connected %}
+                        <div class="panel-disabled-notice">
+                            Connect Google Calendar to enable task sync.
+                        </div>
+                        {% elif encryption_enabled %}
+                        <div class="settings-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Sync tasks to Google Calendar</span>
+                                <span class="pref-desc" style="color: var(--color-text-muted);">
+                                    Sync requires unencrypted task titles. Disable E2E encryption to use this feature.
+                                </span>
+                            </div>
+                            <div class="settings-row__right">
+                                <button type="button" class="toggle-switch" disabled title="Requires encryption to be disabled"></button>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="settings-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Sync tasks to Google Calendar</span>
+                                <span class="pref-desc" id="gcal-sync-status">
+                                    {% if user_prefs and user_prefs.gcal_sync_enabled %}
+                                    Synced to: Whendoist calendar
+                                    {% else %}
+                                    One-way sync &mdash; changes in Whendoist appear in Google Calendar.
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="settings-row__right">
+                                <button
+                                    type="button"
+                                    class="toggle-switch {% if user_prefs and user_prefs.gcal_sync_enabled %}enabled{% endif %}"
+                                    id="gcal-sync-toggle"
+                                    onclick="toggleGcalSync(this)"
+                                    aria-label="Toggle Google Calendar sync"
+                                ></button>
+                            </div>
+                        </div>
+                        {% if user_prefs and user_prefs.gcal_sync_enabled %}
+                        <div class="settings-row" id="gcal-sync-options">
+                            <div class="backup-info">
+                                <span class="pref-label">Include date-only tasks as all-day events</span>
+                                <span class="pref-desc">Tasks without a specific time will appear as all-day events.</span>
+                            </div>
+                            <div class="settings-row__right">
+                                <button
+                                    type="button"
+                                    class="toggle-switch {% if user_prefs.gcal_sync_all_day %}enabled{% endif %}"
+                                    id="gcal-sync-allday-toggle"
+                                    onclick="toggleGcalSyncAllDay(this)"
+                                    aria-label="Toggle all-day event sync"
+                                ></button>
+                            </div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Re-sync all tasks</span>
+                                <span class="pref-desc">Force a full re-sync of all scheduled tasks.</span>
+                            </div>
+                            <div class="settings-row__right">
+                                <button type="button" class="btn-sm btn-sm--secondary" id="btn-resync" onclick="resyncAllTasks()">Re-sync</button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
             </section>
 
             <!-- DATA Section -->
@@ -1759,5 +1836,123 @@ document.addEventListener('DOMContentLoaded', updateThemeToggleUI);
         }
     }
 })();
+
+// =============================================================================
+// Google Calendar Sync
+// =============================================================================
+
+async function toggleGcalSync(btn) {
+    const isEnabled = btn.classList.contains('enabled');
+
+    if (isEnabled) {
+        // Disable sync
+        if (!confirm('Disable Google Calendar sync? You can choose to keep or delete synced events.')) {
+            return;
+        }
+        const deleteEvents = confirm('Delete all synced events from Google Calendar?\n\nClick OK to delete, Cancel to keep them.');
+        try {
+            const res = await fetch('/api/v1/gcal-sync/disable', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ delete_events: deleteEvents })
+            });
+            if (res.ok) {
+                btn.classList.remove('enabled');
+                document.getElementById('gcal-sync-status').textContent = 'One-way sync \u2014 changes in Whendoist appear in Google Calendar.';
+                const options = document.getElementById('gcal-sync-options');
+                if (options) options.remove();
+                const resyncRow = document.querySelector('#gcal-sync-panel .settings-row:last-child');
+                if (resyncRow && resyncRow.querySelector('#btn-resync')) resyncRow.remove();
+                location.reload();
+            }
+        } catch (e) {
+            console.error('Failed to disable sync:', e);
+        }
+    } else {
+        // Enable sync
+        try {
+            const res = await fetch('/api/v1/gcal-sync/enable', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            });
+            const data = await res.json();
+            if (data.needs_reauth) {
+                // Redirect to Google OAuth with write scope
+                window.location.href = data.reauth_url;
+                return;
+            }
+            if (data.success) {
+                btn.classList.add('enabled');
+                document.getElementById('gcal-sync-status').textContent = 'Synced to: Whendoist calendar';
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to enable sync.');
+            }
+        } catch (e) {
+            console.error('Failed to enable sync:', e);
+            alert('Failed to enable sync. Please try again.');
+        }
+    }
+}
+
+async function toggleGcalSyncAllDay(btn) {
+    const newValue = !btn.classList.contains('enabled');
+    try {
+        const res = await fetch('/api/v1/preferences', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({ gcal_sync_all_day: newValue })
+        });
+        if (res.ok) {
+            btn.classList.toggle('enabled', newValue);
+            // Trigger re-sync to apply the change
+            fetch('/api/v1/gcal-sync/full-sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Failed to update all-day preference:', e);
+    }
+}
+
+async function resyncAllTasks() {
+    const btn = document.getElementById('btn-resync');
+    btn.disabled = true;
+    btn.textContent = 'Syncing...';
+    try {
+        const res = await fetch('/api/v1/gcal-sync/full-sync', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            btn.textContent = `Done (${data.created} new, ${data.updated} updated)`;
+            setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 3000);
+        } else {
+            btn.textContent = 'Failed';
+            setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 2000);
+        }
+    } catch (e) {
+        console.error('Re-sync failed:', e);
+        btn.textContent = 'Failed';
+        setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 2000);
+    }
+}
 </script>
 {% endblock %}

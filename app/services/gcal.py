@@ -10,9 +10,11 @@ Handles automatic token refresh with:
 """
 
 import asyncio
+import hashlib
+import json
 import logging
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 import httpx
 from sqlalchemy import select
@@ -20,8 +22,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.google import TokenRefreshError, refresh_access_token
 from app.constants import (
+    GCAL_COMPLETED_COLOR_ID,
+    GCAL_IMPACT_COLOR_MAP,
     GCAL_MAX_EVENTS,
     GCAL_PAGE_SIZE,
+    GCAL_SYNC_DEFAULT_DURATION_MINUTES,
     TOKEN_REFRESH_BACKOFF_BASE,
     TOKEN_REFRESH_BUFFER_SECONDS,
     TOKEN_REFRESH_MAX_RETRIES,
@@ -337,3 +342,131 @@ class GoogleCalendarClient:
         except (KeyError, ValueError) as e:
             logger.warning(f"Failed to parse event {item.get('id')}: {e}")
             return None
+
+    # =========================================================================
+    # Write Methods (for Google Calendar Sync)
+    # =========================================================================
+
+    async def create_calendar(self, name: str = "Whendoist") -> str:
+        """Create a new secondary calendar. Returns the calendar_id."""
+        client = self._ensure_client()
+        response = await client.post(
+            "/calendars",
+            json={"summary": name},
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["id"]
+
+    async def create_event(self, calendar_id: str, event: dict) -> str:
+        """Create an event in the specified calendar. Returns the event_id."""
+        client = self._ensure_client()
+        response = await client.post(
+            f"/calendars/{calendar_id}/events",
+            json=event,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["id"]
+
+    async def update_event(self, calendar_id: str, event_id: str, event: dict) -> None:
+        """Update an existing event."""
+        client = self._ensure_client()
+        response = await client.put(
+            f"/calendars/{calendar_id}/events/{event_id}",
+            json=event,
+        )
+        response.raise_for_status()
+
+    async def delete_event(self, calendar_id: str, event_id: str) -> None:
+        """Delete an event. Silently ignores 404/410 (already deleted)."""
+        client = self._ensure_client()
+        try:
+            response = await client.delete(
+                f"/calendars/{calendar_id}/events/{event_id}",
+            )
+            # 204 No Content is success, 404/410 means already deleted
+            if response.status_code not in (204, 404, 410):
+                response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (404, 410):
+                logger.debug(f"Event {event_id} already deleted from Google Calendar")
+            else:
+                raise
+
+
+def build_event_data(
+    title: str,
+    description: str | None,
+    scheduled_date: date,
+    scheduled_time: time | None,
+    duration_minutes: int | None,
+    impact: int,
+    is_completed: bool,
+    user_timezone: str,
+) -> dict:
+    """
+    Build a Google Calendar event payload from task fields.
+
+    Args:
+        title: Task title (plaintext)
+        description: Task description
+        scheduled_date: The date the task is scheduled for
+        scheduled_time: Optional time of day
+        duration_minutes: Duration in minutes (used for timed events)
+        impact: Priority level (1-4)
+        is_completed: Whether the task is completed
+        user_timezone: IANA timezone string
+    """
+    summary = f"\u2713 {title}" if is_completed else title
+
+    event: dict = {
+        "summary": summary,
+        "description": description or "",
+    }
+
+    if scheduled_time:
+        # Timed event
+        start_dt = datetime.combine(scheduled_date, scheduled_time)
+        duration = duration_minutes or GCAL_SYNC_DEFAULT_DURATION_MINUTES
+        end_dt = start_dt + timedelta(minutes=duration)
+        event["start"] = {"dateTime": start_dt.isoformat(), "timeZone": user_timezone}
+        event["end"] = {"dateTime": end_dt.isoformat(), "timeZone": user_timezone}
+    else:
+        # All-day event
+        event["start"] = {"date": scheduled_date.isoformat()}
+        end_date = scheduled_date + timedelta(days=1)
+        event["end"] = {"date": end_date.isoformat()}
+
+    # Color by impact (or Graphite if completed)
+    if is_completed:
+        event["colorId"] = GCAL_COMPLETED_COLOR_ID
+    else:
+        event["colorId"] = GCAL_IMPACT_COLOR_MAP.get(impact, GCAL_IMPACT_COLOR_MAP[4])
+
+    return event
+
+
+def compute_sync_hash(
+    title: str,
+    description: str | None,
+    scheduled_date: date,
+    scheduled_time: time | None,
+    duration_minutes: int | None,
+    impact: int,
+    status: str,
+) -> str:
+    """Compute a hash of syncable fields to detect changes."""
+    data = json.dumps(
+        {
+            "title": title,
+            "description": description or "",
+            "scheduled_date": scheduled_date.isoformat(),
+            "scheduled_time": scheduled_time.isoformat() if scheduled_time else None,
+            "duration_minutes": duration_minutes,
+            "impact": impact,
+            "status": status,
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(data.encode()).hexdigest()[:16]

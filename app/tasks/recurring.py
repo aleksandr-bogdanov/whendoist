@@ -22,7 +22,7 @@ from sqlalchemy import delete, select
 
 from app.constants import INSTANCE_RETENTION_DAYS
 from app.database import async_session_factory
-from app.models import Task, TaskInstance, User
+from app.models import Task, TaskInstance, User, UserPreferences
 from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
 
@@ -78,6 +78,20 @@ async def materialize_all_instances() -> dict[str, Any]:
                 continue
 
         await db.commit()
+
+        # Sync newly materialized instances to Google Calendar (fire-and-forget per user)
+        for user_id in user_ids:
+            try:
+                prefs_result = await db.execute(select(UserPreferences).where(UserPreferences.user_id == user_id))
+                prefs = prefs_result.scalar_one_or_none()
+                if prefs and prefs.gcal_sync_enabled:
+                    from app.services.gcal_sync import GCalSyncService
+
+                    sync_service = GCalSyncService(db, user_id)
+                    await sync_service.bulk_sync()
+                    await db.commit()
+            except Exception as e:
+                logger.debug(f"GCal sync after materialization failed for user {user_id}: {e}")
 
     if stats["tasks_processed"] > 0:
         logger.info(f"Materialized: {stats['users_processed']} users, {stats['tasks_processed']} tasks updated")

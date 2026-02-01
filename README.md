@@ -164,6 +164,7 @@ just fmt      # Format code
 | [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption details |
 | **Architecture** | |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching |
+| [GCal Sync Plan](docs/GCAL-SYNC-PLAN.md) | Google Calendar one-way sync design |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |
