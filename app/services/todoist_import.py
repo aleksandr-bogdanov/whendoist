@@ -547,6 +547,19 @@ class TodoistImportService:
         )
         existing_by_ext_id = {t.external_id: t for t in existing.scalars().all()}
 
+        # Build parent title map for subtask flattening (same as active tasks)
+        parent_titles: dict[str, str] = {}
+        tasks_with_children: set[str] = set()
+        for item in completed_tasks:
+            item_id = str(item.get("id") or item.get("task_id") or "")
+            parent_id = item.get("parent_id")
+            if not item_id:
+                continue
+            if parent_id is None:
+                parent_titles[item_id] = item.get("content", "")
+            else:
+                tasks_with_children.add(str(parent_id))
+
         for item in completed_tasks:
             task_id = item.get("id") or item.get("task_id")
             if not task_id:
@@ -554,6 +567,11 @@ class TodoistImportService:
 
             # Ensure task_id is string (API v1 may return integers)
             task_id = str(task_id)
+
+            # Skip parent tasks that have subtasks (they get flattened into subtasks)
+            if task_id in tasks_with_children:
+                result.parents_flattened += 1
+                continue
 
             # Check if already imported
             if task_id in existing_by_ext_id:
@@ -570,6 +588,11 @@ class TodoistImportService:
             # Create new completed task
             content = item.get("content", "")
             project_id = item.get("project_id")
+            parent_id = item.get("parent_id")
+
+            # Flatten subtasks: prefix title with parent name
+            if parent_id and str(parent_id) in parent_titles:
+                content = f"{parent_titles[str(parent_id)]} → {content}"
 
             # Parse clarity from content (completed tasks have labels embedded like "@executable")
             clarity, clean_title = self._parse_clarity_from_content(content)
