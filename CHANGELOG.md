@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.31.1] - 2026-02-02 — Sync Completed Todoist Imports
+
+### Fixed
+- Completed tasks imported from Todoist now sync to Google Calendar using `completed_at` date as fallback when `scheduled_date` is missing
+
+---
+
 ## [0.31.0] - 2026-02-02 — Google Calendar Task Sync
 
 ### Added
