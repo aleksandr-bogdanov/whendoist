@@ -41,7 +41,9 @@ just migrate                     # Apply migration
 ## Rules
 
 ### 1. Git: Never push to master
-Always create PRs. Only push directly if user explicitly requests it.
+Always create PRs — even for version bumps or small fixes. "Push to deploy" means
+"create a PR so CI runs and Railway deploys on merge." Only push directly to master
+if the user says **exactly** "push to master" or "push directly."
 
 ### 2. Multitenancy: Always filter by user_id
 ```python
