@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service - Whendoist{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/legal.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <div class="legal-container">
+        <header class="legal-header">
+            <a href="/" class="legal-back">&larr; Back to Whendoist</a>
+            <h1 class="legal-title">TERMS OF SERVICE</h1>
+            <p class="legal-updated">Last updated: January 2026</p>
+        </header>
+
+        <article class="legal-content">
+            <section>
+                <h2>1. Acceptance of Terms</h2>
+                <p>
+                    By accessing or using Whendoist ("the Service"), you agree to be bound by these
+                    Terms of Service. If you do not agree to these terms, please do not use the Service.
+                </p>
+            </section>
+
+            <section>
+                <h2>2. Description of Service</h2>
+                <p>
+                    Whendoist is a task management and day planning application that helps you
+                    schedule tasks alongside your Google Calendar events. The Service is provided
+                    free of charge and is open source.
+                </p>
+            </section>
+
+            <section>
+                <h2>3. Account Registration</h2>
+                <p>
+                    To use Whendoist, you must sign in with a Google account. You are responsible
+                    for maintaining the security of your Google account credentials. You must be
+                    at least 13 years old to use this Service.
+                </p>
+            </section>
+
+            <section>
+                <h2>4. User Data</h2>
+                <p>
+                    You retain ownership of all content you create within the Service, including
+                    tasks, domains, and any other data you input.
+                </p>
+                <p>
+                    <strong>Google Calendar Access:</strong> We request read-only access to your
+                    Google Calendar to display your events. We never modify, delete, or share your
+                    calendar data.
+                </p>
+                <p>
+                    <strong>Optional Encryption:</strong> If you enable end-to-end encryption,
+                    your task content is encrypted client-side before being stored. We cannot
+                    read encrypted content, and we cannot recover your data if you lose your
+                    passphrase and passkey.
+                </p>
+            </section>
+
+            <section>
+                <h2>5. Acceptable Use</h2>
+                <p>You agree not to:</p>
+                <ul>
+                    <li>Use the Service for any illegal purpose</li>
+                    <li>Attempt to gain unauthorized access to the Service or its systems</li>
+                    <li>Interfere with or disrupt the Service</li>
+                    <li>Use automated systems to access the Service without permission</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>6. Service Availability</h2>
+                <p>
+                    We strive to maintain high availability but do not guarantee uninterrupted
+                    access to the Service. We may modify, suspend, or discontinue the Service
+                    at any time without notice.
+                </p>
+            </section>
+
+            <section>
+                <h2>7. Disclaimer of Warranties</h2>
+                <p>
+                    THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EITHER
+                    EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE WILL BE ERROR-FREE
+                    OR UNINTERRUPTED.
+                </p>
+            </section>
+
+            <section>
+                <h2>8. Limitation of Liability</h2>
+                <p>
+                    TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE SHALL NOT BE LIABLE FOR ANY
+                    INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING
+                    OUT OF YOUR USE OF THE SERVICE.
+                </p>
+            </section>
+
+            <section>
+                <h2>9. Changes to Terms</h2>
+                <p>
+                    We may update these Terms from time to time. We will notify users of
+                    significant changes by posting a notice on the Service. Continued use
+                    after changes constitutes acceptance of the new Terms.
+                </p>
+            </section>
+
+            <section id="privacy">
+                <h2>10. Privacy Policy</h2>
+                <p>
+                    <strong>What We Collect:</strong>
+                </p>
+                <ul>
+                    <li>Google account information (email, name, profile picture)</li>
+                    <li>Tasks, domains, and preferences you create</li>
+                    <li>Google Calendar events (read-only, for display purposes)</li>
+                    <li>Todoist data (only if you choose to import)</li>
+                </ul>
+
+                <p>
+                    <strong>How We Use Your Data:</strong>
+                </p>
+                <ul>
+                    <li>To provide and improve the Service</li>
+                    <li>To display your calendar events alongside your tasks</li>
+                    <li>To sync your task data across devices</li>
+                </ul>
+
+                <p>
+                    <strong>Data Storage:</strong>
+                </p>
+                <ul>
+                    <li>Your data is stored in a PostgreSQL database</li>
+                    <li>If encryption is enabled, task content is stored as encrypted ciphertext</li>
+                    <li>We do not sell or share your data with third parties</li>
+                </ul>
+
+                <p>
+                    <strong>Data Deletion:</strong>
+                </p>
+                <p>
+                    You can delete your account and all associated data at any time from the
+                    Settings page. This action is irreversible.
+                </p>
+
+                <p>
+                    <strong>Third-Party Services:</strong>
+                </p>
+                <ul>
+                    <li>Google OAuth for authentication</li>
+                    <li>Google Calendar API for event display</li>
+                    <li>Todoist API (optional, for import only)</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>11. Open Source</h2>
+                <p>
+                    Whendoist is open source software. You can view, audit, and contribute to
+                    the source code at
+                    <a href="https://github.com/aleksandr-bogdanov/whendoist" target="_blank" rel="noopener">
+                        github.com/aleksandr-bogdanov/whendoist
+                    </a>.
+                </p>
+            </section>
+
+            <section>
+                <h2>12. Contact</h2>
+                <p>
+                    For questions about these Terms, please contact
+                    <a href="mailto:alex@bogdanov.wtf">alex@bogdanov.wtf</a>.
+                </p>
+            </section>
+        </article>
+
+        <footer class="legal-footer">
+            <a href="/" class="legal-back-button">Back to Whendoist</a>
+        </footer>
+    </div>
+</div>
+{% endblock %}

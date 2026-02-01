@@ -1,0 +1,84 @@
+<!--
+  Whendoist Wordmark Component
+  
+  Usage: Copy the <div class="whendoist-wordmark"> and include the CSS.
+  Requires: Google Fonts Quicksand (link in <head>)
+-->
+
+<!-- Add to <head> -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+
+<style>
+.whendoist-wordmark {
+  display: inline-flex;
+  align-items: flex-end;
+}
+
+.whendoist-wordmark svg {
+  /* Scale factor: 1.125 (90/80) to maintain aspect at different sizes */
+  flex-shrink: 0;
+}
+
+.whendoist-wordmark .wordmark-text {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 500;
+  color: #1E293B;
+  line-height: 1;
+}
+
+/* Size: Hero (6.5rem / 104px text) */
+.whendoist-wordmark.size-hero svg {
+  width: 90px;
+  height: 80px;
+  margin-bottom: 12px;
+  margin-right: 4px;
+}
+.whendoist-wordmark.size-hero .wordmark-text {
+  font-size: 6.5rem;
+}
+
+/* Size: Large (3rem / 48px text) */
+.whendoist-wordmark.size-large svg {
+  width: 42px;
+  height: 37px;
+  margin-bottom: 5.5px;
+  margin-right: 2px;
+}
+.whendoist-wordmark.size-large .wordmark-text {
+  font-size: 3rem;
+}
+
+/* Size: Medium (1.75rem / 28px text) */
+.whendoist-wordmark.size-medium svg {
+  width: 24px;
+  height: 21px;
+  margin-bottom: 3px;
+  margin-right: 1px;
+}
+.whendoist-wordmark.size-medium .wordmark-text {
+  font-size: 1.75rem;
+}
+
+/* Size: Small (1.25rem / 20px text) */
+.whendoist-wordmark.size-small svg {
+  width: 17px;
+  height: 15px;
+  margin-bottom: 2px;
+  margin-right: 1px;
+}
+.whendoist-wordmark.size-small .wordmark-text {
+  font-size: 1.25rem;
+}
+</style>
+
+<!-- Wordmark Component -->
+<div class="whendoist-wordmark size-hero">
+  <svg viewBox="38 40 180 160">
+    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+  </svg>
+  <span class="wordmark-text">hendoist</span>
+</div>

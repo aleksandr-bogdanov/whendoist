@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist Illustration System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #167BFF;
+            --purple: #6D5EF6;
+            --magenta: #A020C0;
+            --blue-tint: #EAF2FF;
+            --purple-tint: #EFEEFF;
+            --magenta-tint: #F3ECFA;
+            --orange: #F97316;
+            --red: #DC2626;
+            --slate-50: #F8FAFC;
+            --slate-100: #F1F5F9;
+            --slate-200: #E2E8F0;
+            --slate-400: #94A3B8;
+            --slate-600: #475569;
+            --slate-800: #1E293B;
+            --slate-900: #0F172A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--slate-100);
+            color: var(--slate-800);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--slate-200);
+            padding: 24px 32px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        /* Wordmark: Small size (1.25rem text, 17×15 icon, 1px gap, 2px offset) */
+        .logo {
+            display: inline-flex;
+            align-items: flex-end;
+        }
+
+        .logo svg {
+            width: 17px;
+            height: 15px;
+            margin-bottom: 2px;
+            margin-right: 1px;
+            flex-shrink: 0;
+        }
+
+        .logo span {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 1.25rem;
+            color: var(--slate-800);
+            line-height: 1;
+        }
+
+        .header h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 1.125rem;
+            color: var(--slate-600);
+        }
+
+        .header-badge {
+            background: var(--purple-tint);
+            color: var(--purple);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Main content */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        /* Section headers */
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .section-icon.empty { background: var(--purple-tint); }
+        .section-icon.error { background: #FEE2E2; }
+        .section-icon.success { background: #DCFCE7; }
+        .section-icon.onboarding { background: var(--blue-tint); }
+        .section-icon.action { background: var(--blue-tint); }
+
+        .section h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 1.5rem;
+            color: var(--slate-800);
+        }
+
+        .section-desc {
+            color: var(--slate-600);
+            font-size: 0.875rem;
+            margin-left: 52px;
+            margin-top: -16px;
+            margin-bottom: 24px;
+        }
+
+        /* Illustration grid */
+        .illustration-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .illustration-card {
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .illustration-card:hover {
+            border-color: var(--purple);
+            box-shadow: 0 4px 12px rgba(109, 94, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .illustration-preview {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 160px;
+            background: var(--slate-50);
+        }
+
+        .illustration-preview img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+        }
+
+        .illustration-info {
+            padding: 16px;
+            border-top: 1px solid var(--slate-200);
+        }
+
+        .illustration-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--slate-800);
+            margin-bottom: 4px;
+        }
+
+        .illustration-file {
+            font-family: monospace;
+            font-size: 0.7rem;
+            color: var(--slate-400);
+        }
+
+        /* Size preview section */
+        .size-preview-section {
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 48px;
+        }
+
+        .size-preview-section h3 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 20px;
+        }
+
+        .size-grid {
+            display: flex;
+            align-items: flex-end;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .size-item {
+            text-align: center;
+        }
+
+        .size-item img {
+            display: block;
+            margin: 0 auto 8px;
+            border: 1px dashed var(--slate-200);
+            border-radius: 8px;
+            padding: 8px;
+            background: var(--slate-50);
+        }
+
+        .size-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--slate-600);
+        }
+
+        .size-context {
+            font-size: 0.625rem;
+            color: var(--slate-400);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Color palette preview */
+        .color-palette {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .color-swatch {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .color-info {
+            font-size: 0.75rem;
+        }
+
+        .color-name {
+            font-weight: 600;
+            color: var(--slate-800);
+        }
+
+        .color-hex {
+            font-family: monospace;
+            color: var(--slate-400);
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: auto;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--slate-400);
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--slate-600);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-preview {
+            background: var(--slate-50);
+            border-radius: 12px;
+            padding: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-preview img {
+            width: 120px;
+            height: 120px;
+        }
+
+        .modal-info {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--slate-100);
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: var(--slate-600);
+        }
+
+        .info-value {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--slate-800);
+            font-family: monospace;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5B4DD4;
+        }
+
+        .btn-secondary {
+            background: var(--slate-100);
+            color: var(--slate-700);
+            border: 1px solid var(--slate-200);
+        }
+
+        .btn-secondary:hover {
+            background: var(--slate-200);
+        }
+
+        /* Usage code */
+        .code-block {
+            background: var(--slate-900);
+            color: #E2E8F0;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            margin-top: 16px;
+        }
+
+        .code-block .tag { color: #F472B6; }
+        .code-block .attr { color: #7DD3FC; }
+        .code-block .value { color: #86EFAC; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-wrap: wrap;
+            }
+
+            .main {
+                padding: 20px;
+            }
+
+            .illustration-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .size-grid {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <svg viewBox="38 40 180 160">
+                    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                </svg>
+                <span>hendoist</span>
+            </div>
+            <h1>Illustration System</h1>
+            <span class="header-badge">Phase 2E</span>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main">
+        <!-- Color Palette -->
+        <div class="color-palette">
+            <div class="color-swatch">
+                <div class="color-dot" style="background: #167BFF;"></div>
+                <div class="color-info">
+                    <div class="color-name">Blue</div>
+                    <div class="color-hex">#167BFF</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-dot" style="background: #6D5EF6;"></div>
+                <div class="color-info">
+                    <div class="color-name">Purple</div>
+                    <div class="color-hex">#6D5EF6</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-dot" style="background: #A020C0;"></div>
+                <div class="color-info">
+                    <div class="color-name">Magenta</div>
+                    <div class="color-hex">#A020C0</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-dot" style="background: #F97316;"></div>
+                <div class="color-info">
+                    <div class="color-name">Warning</div>
+                    <div class="color-hex">#F97316</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-dot" style="background: #DC2626;"></div>
+                <div class="color-info">
+                    <div class="color-name">Error</div>
+                    <div class="color-hex">#DC2626</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Size Preview -->
+        <div class="size-preview-section">
+            <h3>Size Scale</h3>
+            <div class="size-grid">
+                <div class="size-item">
+                    <img src="../../static/img/illustrations/success-complete.svg" width="120" height="120" alt="">
+                    <div class="size-label">120 × 120</div>
+                    <div class="size-context">Full page</div>
+                </div>
+                <div class="size-item">
+                    <img src="../../static/img/illustrations/success-complete.svg" width="80" height="80" alt="">
+                    <div class="size-label">80 × 80</div>
+                    <div class="size-context">Panel empty</div>
+                </div>
+                <div class="size-item">
+                    <img src="../../static/img/illustrations/success-complete.svg" width="64" height="64" alt="">
+                    <div class="size-label">64 × 64</div>
+                    <div class="size-context">Modal</div>
+                </div>
+                <div class="size-item">
+                    <img src="../../static/img/illustrations/success-complete.svg" width="32" height="32" alt="">
+                    <div class="size-label">32 × 32</div>
+                    <div class="size-context">Toast</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty States -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon empty">📭</div>
+                <h2>Empty States</h2>
+            </div>
+            <p class="section-desc">Friendly illustrations for when there's no content to display.</p>
+            <div class="illustration-grid" id="empty-grid"></div>
+        </section>
+
+        <!-- Error States -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon error">⚠️</div>
+                <h2>Error States</h2>
+            </div>
+            <p class="section-desc">Clear visual feedback when something goes wrong.</p>
+            <div class="illustration-grid" id="error-grid"></div>
+        </section>
+
+        <!-- Success States -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon success">✓</div>
+                <h2>Success States</h2>
+            </div>
+            <p class="section-desc">Celebratory graphics for completed actions and achievements.</p>
+            <div class="illustration-grid" id="success-grid"></div>
+        </section>
+
+        <!-- Onboarding -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon onboarding">🚀</div>
+                <h2>Onboarding</h2>
+            </div>
+            <p class="section-desc">Welcoming illustrations for the setup wizard.</p>
+            <div class="illustration-grid" id="onboarding-grid"></div>
+        </section>
+
+        <!-- Actions -->
+        <section class="section">
+            <div class="section-header">
+                <div class="section-icon action">📥</div>
+                <h2>Actions</h2>
+            </div>
+            <p class="section-desc">Illustrations for user actions and operations.</p>
+            <div class="illustration-grid" id="action-grid"></div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-backdrop" id="modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Illustration</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-preview">
+                    <img id="modal-preview" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <div class="info-row">
+                        <span class="info-label">File</span>
+                        <span class="info-value" id="modal-file"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">ViewBox</span>
+                        <span class="info-value">120 × 120</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Category</span>
+                        <span class="info-value" id="modal-category"></span>
+                    </div>
+                </div>
+                <div class="code-block">
+                    <span class="tag">&lt;img</span> <span class="attr">src</span>=<span class="value" id="modal-path">""</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="attr">alt</span>=<span class="value">""</span> <span class="attr">width</span>=<span class="value">"80"</span> <span class="attr">height</span>=<span class="value">"80"</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="attr">aria-hidden</span>=<span class="value">"true"</span><span class="tag">&gt;</span>
+                </div>
+                <div class="modal-actions">
+                    <a id="download-link" class="btn btn-primary" download>Download SVG</a>
+                    <button class="btn btn-secondary" onclick="copyCode()">Copy Code</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Illustration data
+        const illustrations = {
+            empty: [
+                { name: 'Empty Tasks', file: 'empty-tasks.svg', desc: 'Clipboard with empty checkboxes' },
+                { name: 'Empty Thoughts', file: 'empty-thoughts.svg', desc: 'Lightbulb outline' },
+                { name: 'Empty Calendar', file: 'empty-calendar.svg', desc: 'Calendar with no events' },
+                { name: 'Empty Analytics', file: 'empty-analytics.svg', desc: 'Bar chart with no data' },
+                { name: 'No Search Results', file: 'empty-search.svg', desc: 'Magnifying glass with ?' },
+                { name: 'Empty Inbox', file: 'empty-inbox.svg', desc: 'Open box (clean inbox)' },
+            ],
+            error: [
+                { name: 'Connection Error', file: 'error-connection.svg', desc: 'Broken chain links' },
+                { name: 'Sync Error', file: 'error-sync.svg', desc: 'Broken circular arrows' },
+                { name: 'Generic Error', file: 'error-generic.svg', desc: 'Warning triangle' },
+                { name: 'Auth Error', file: 'error-auth.svg', desc: 'Lock with X badge' },
+                { name: 'Calendar Error', file: 'error-calendar.svg', desc: 'Calendar with warning' },
+            ],
+            success: [
+                { name: 'Task Complete', file: 'success-complete.svg', desc: 'Checkmark circle' },
+                { name: 'All Clear', file: 'success-allclear.svg', desc: 'Sun with rays' },
+                { name: 'Connected', file: 'success-connected.svg', desc: 'Linked chain' },
+                { name: 'Setup Complete', file: 'success-setup.svg', desc: 'Rocket launch' },
+                { name: 'Encrypted', file: 'success-encrypted.svg', desc: 'Shield with lock' },
+            ],
+            onboarding: [
+                { name: 'Welcome', file: 'onboarding-welcome.svg', desc: 'W icon with Hi! bubble' },
+                { name: 'Time Management', file: 'onboarding-time.svg', desc: 'Clock' },
+                { name: 'Energy Modes', file: 'onboarding-energy.svg', desc: 'Three bars' },
+                { name: 'Organization', file: 'onboarding-organize.svg', desc: 'Folder with items' },
+            ],
+            action: [
+                { name: 'Import Data', file: 'import-data.svg', desc: 'Tasks flowing into container' },
+            ]
+        };
+
+        const basePath = '../../static/img/illustrations/';
+
+        // Render grids
+        function renderGrid(category, containerId) {
+            const container = document.getElementById(containerId);
+            const items = illustrations[category];
+
+            container.innerHTML = items.map(item => `
+                <div class="illustration-card" onclick="openModal('${item.name}', '${item.file}', '${category}')">
+                    <div class="illustration-preview">
+                        <img src="${basePath}${item.file}" alt="${item.name}">
+                    </div>
+                    <div class="illustration-info">
+                        <div class="illustration-name">${item.name}</div>
+                        <div class="illustration-file">${item.file}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        renderGrid('empty', 'empty-grid');
+        renderGrid('error', 'error-grid');
+        renderGrid('success', 'success-grid');
+        renderGrid('onboarding', 'onboarding-grid');
+        renderGrid('action', 'action-grid');
+
+        // Modal functions
+        function openModal(name, file, category) {
+            document.getElementById('modal-title').textContent = name;
+            document.getElementById('modal-preview').src = basePath + file;
+            document.getElementById('modal-file').textContent = file;
+            document.getElementById('modal-category').textContent = category.charAt(0).toUpperCase() + category.slice(1);
+            document.getElementById('modal-path').textContent = `"/static/img/illustrations/${file}"`;
+            document.getElementById('download-link').href = basePath + file;
+            document.getElementById('download-link').download = file;
+            document.getElementById('modal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open');
+        }
+
+        function copyCode() {
+            const file = document.getElementById('modal-file').textContent;
+            const code = `<img src="/static/img/illustrations/${file}" alt="" width="80" height="80" aria-hidden="true">`;
+            navigator.clipboard.writeText(code);
+            alert('Code copied to clipboard!');
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+
+        // Close modal on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+</html>

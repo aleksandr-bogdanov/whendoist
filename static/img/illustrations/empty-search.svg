@@ -1,0 +1,12 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Empty Search: Magnifying glass -->
+  <circle cx="60" cy="60" r="44" fill="#EAF2FF"/>
+  <!-- Glass circle -->
+  <circle cx="52" cy="52" r="22" fill="white" stroke="#167BFF" stroke-width="3"/>
+  <!-- Highlight -->
+  <path d="M40 44 Q44 38 50 40" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Handle -->
+  <line x1="68" y1="68" x2="88" y2="88" stroke="#167BFF" stroke-width="4" stroke-linecap="round"/>
+  <!-- Question mark -->
+  <text x="52" y="58" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#C7CFDA" text-anchor="middle">?</text>
+</svg>

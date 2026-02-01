@@ -1,0 +1,160 @@
+{
+  "brand": "Whendoist",
+  "version": "1.7",
+  "updated": "2026-01-20",
+
+  "colors": {
+    "clarity": {
+      "executable": {
+        "hex": "#167BFF",
+        "rgb": [22, 123, 255],
+        "usage": "Left bar, 'ready to execute' state"
+      },
+      "defined": {
+        "hex": "#6D5EF6",
+        "rgb": [109, 94, 246],
+        "usage": "Center bar, 'defined but needs focus' state"
+      },
+      "exploratory": {
+        "hex": "#A020C0",
+        "rgb": [160, 32, 192],
+        "usage": "Right bar, 'needs exploration' state"
+      }
+    },
+    "semantic": {
+      "success": {
+        "hex": "#6D5EF6",
+        "note": "Purple for success states (brand rule: not green)"
+      },
+      "danger": {
+        "hex": "#DC2626"
+      },
+      "warning": {
+        "hex": "#F97316"
+      },
+      "info": {
+        "hex": "#167BFF"
+      }
+    },
+    "text": {
+      "brand": {
+        "hex": "#1E293B",
+        "rgb": [30, 41, 59],
+        "usage": "Wordmark text on light backgrounds"
+      },
+      "brandInverse": {
+        "hex": "#FFFFFF",
+        "rgb": [255, 255, 255],
+        "usage": "Wordmark text on dark backgrounds"
+      }
+    },
+    "tints": {
+      "executable": "#EAF2FF",
+      "defined": "#EFEEFF",
+      "exploratory": "#F3ECFA"
+    },
+    "gradients": {
+      "primary": "linear-gradient(135deg, #6D5EF6 0%, #8B7CF7 50%, #A78BFA 100%)",
+      "primaryHover": "linear-gradient(135deg, #5B4CF0 0%, #7B6CF5 50%, #9B7BF8 100%)"
+    }
+  },
+  
+  "typography": {
+    "font": {
+      "family": "Quicksand",
+      "source": "Google Fonts",
+      "url": "https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap"
+    },
+    "wordmark": {
+      "weight": 500,
+      "color": "#1E293B"
+    }
+  },
+  
+  "icon": {
+    "viewBox": "38 40 180 160",
+    "dimensions": {
+      "width": 180,
+      "height": 160
+    },
+    "bars": {
+      "width": 28,
+      "outerHeight": 160,
+      "centerHeight": 127.3,
+      "cornerRadius": 14,
+      "rotation": 8
+    }
+  },
+  
+  "wordmark": {
+    "baseSize": {
+      "textHeight": "6.5rem",
+      "textHeightPx": 104,
+      "iconWidth": 90,
+      "iconHeight": 80,
+      "gap": 4,
+      "verticalOffset": 12
+    },
+    "sizes": {
+      "hero": {
+        "textSize": "6.5rem",
+        "iconWidth": 90,
+        "iconHeight": 80,
+        "gap": 4,
+        "offset": 12
+      },
+      "large": {
+        "textSize": "3rem",
+        "iconWidth": 42,
+        "iconHeight": 37,
+        "gap": 2,
+        "offset": 5.5
+      },
+      "medium": {
+        "textSize": "1.75rem",
+        "iconWidth": 24,
+        "iconHeight": 21,
+        "gap": 1,
+        "offset": 3
+      },
+      "small": {
+        "textSize": "1.25rem",
+        "iconWidth": 17,
+        "iconHeight": 15,
+        "gap": 1,
+        "offset": 2
+      }
+    }
+  },
+  
+  "borderRadius": {
+    "xs": "4px",
+    "sm": "6px",
+    "md": "8px",
+    "lg": "12px",
+    "xl": "14px",
+    "full": "9999px"
+  },
+
+  "files": {
+    "svg": [
+      "w-icon-color.svg",
+      "w-icon-dark.svg",
+      "w-icon-white.svg",
+      "app-icon-512.svg",
+      "favicon.svg"
+    ],
+    "html": [
+      "brand-guide.html",
+      "wordmark-component.html",
+      "png-export.html",
+      "color-reference.html",
+      "ui-kit-reference.html",
+      "icon-reference.html",
+      "illustration-reference.html"
+    ],
+    "css": [
+      "brand-tokens.css"
+    ]
+  }
+}

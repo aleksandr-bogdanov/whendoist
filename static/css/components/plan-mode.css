@@ -1,0 +1,116 @@
+/*
+ * Whendoist - Plan Mode Component Styles
+ * Time range selection and helper tooltip for Plan My Day feature
+ * Extracted from dashboard.css for better maintainability
+ */
+
+/* =============================================================================
+   Plan Mode Helper Tooltip
+   ============================================================================= */
+
+/* Plan helper tooltip - appears below header when plan mode active */
+.plan-helper {
+    position: absolute;
+    top: 3.5rem;
+    right: 0.75rem;
+    z-index: 20;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+}
+
+/* Selection mode active - brand purple highlight */
+.day-calendar.selection-mode .hour-grid {
+    cursor: crosshair;
+    box-shadow: inset 0 0 30px rgba(109, 94, 246, 0.12);
+}
+
+/* =============================================================================
+   Time Range Selection (Plan Tasks)
+   ============================================================================= */
+
+.time-selection-overlay {
+    position: absolute;
+    left: 50px;  /* After hour label */
+    right: 0;
+    background: rgba(109, 94, 246, 0.08);
+    border: 2px dashed #6D5EF6;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6D5EF6;
+    z-index: 15;
+    pointer-events: auto;
+    box-sizing: border-box;
+}
+
+.time-selection-range {
+    margin-bottom: 0.25rem;
+}
+
+/* Second overlay for cross-day selections */
+.time-selection-overlay-2 {
+    position: absolute;
+    left: 50px;
+    right: 0;
+    background: rgba(109, 94, 246, 0.08);
+    border: 2px dashed #6D5EF6;
+    border-radius: 4px;
+    z-index: 15;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.plan-tasks-btn {
+    padding: 0.5rem 1rem;
+    background: #6D5EF6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.3);
+    transition: all 0.15s ease;
+    margin-top: auto;
+}
+
+.plan-tasks-btn:hover {
+    background: #5B4CF0;
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.4);
+}
+
+/* =============================================================================
+   Dark Mode - uses purple-400 (#8B7CF7) per brand spec
+   ============================================================================= */
+
+[data-theme="dark"] .day-calendar.selection-mode .hour-grid {
+    box-shadow: inset 0 0 20px rgba(139, 124, 247, 0.08);
+}
+
+[data-theme="dark"] .time-selection-overlay,
+[data-theme="dark"] .time-selection-overlay-2 {
+    background: rgba(139, 124, 247, 0.06);
+    border-color: rgba(139, 124, 247, 0.35);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .plan-tasks-btn {
+    background: var(--primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .plan-tasks-btn:hover {
+    background: var(--primary-hover);
+}

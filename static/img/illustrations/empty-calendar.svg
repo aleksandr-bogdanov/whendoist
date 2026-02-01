@@ -1,0 +1,18 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Empty Calendar -->
+  <circle cx="60" cy="60" r="44" fill="#F3ECFA"/>
+  <!-- Calendar body -->
+  <rect x="28" y="34" width="64" height="58" rx="6" fill="white" stroke="#A020C0" stroke-width="2"/>
+  <!-- Header -->
+  <rect x="28" y="34" width="64" height="16" rx="6" fill="#A020C0"/>
+  <rect x="28" y="44" width="64" height="6" fill="#A020C0"/>
+  <!-- Rings -->
+  <circle cx="44" cy="34" r="3" fill="white" stroke="#A020C0" stroke-width="1.5"/>
+  <circle cx="60" cy="34" r="3" fill="white" stroke="#A020C0" stroke-width="1.5"/>
+  <circle cx="76" cy="34" r="3" fill="white" stroke="#A020C0" stroke-width="1.5"/>
+  <!-- Grid -->
+  <line x1="48" y1="50" x2="48" y2="92" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="68" y1="50" x2="68" y2="92" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="28" y1="64" x2="92" y2="64" stroke="#E2E8F0" stroke-width="1"/>
+  <line x1="28" y1="78" x2="92" y2="78" stroke="#E2E8F0" stroke-width="1"/>
+</svg>

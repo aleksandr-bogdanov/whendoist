@@ -1,0 +1,16 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Empty Tasks: Clipboard -->
+  <circle cx="60" cy="60" r="44" fill="#EFEEFF"/>
+  <!-- Clipboard body -->
+  <rect x="34" y="32" width="52" height="64" rx="6" fill="white" stroke="#6D5EF6" stroke-width="2"/>
+  <!-- Clipboard clip -->
+  <rect x="46" y="26" width="28" height="12" rx="4" fill="#6D5EF6"/>
+  <circle cx="60" cy="32" r="3" fill="white"/>
+  <!-- Empty lines -->
+  <rect x="44" y="50" width="10" height="10" rx="2" fill="none" stroke="#C7CFDA" stroke-width="1.5"/>
+  <line x1="60" y1="55" x2="76" y2="55" stroke="#E2E8F0" stroke-width="2" stroke-linecap="round"/>
+  <rect x="44" y="66" width="10" height="10" rx="2" fill="none" stroke="#C7CFDA" stroke-width="1.5"/>
+  <line x1="60" y1="71" x2="72" y2="71" stroke="#E2E8F0" stroke-width="2" stroke-linecap="round"/>
+  <rect x="44" y="82" width="10" height="10" rx="2" fill="none" stroke="#C7CFDA" stroke-width="1.5"/>
+  <line x1="60" y1="87" x2="68" y2="87" stroke="#E2E8F0" stroke-width="2" stroke-linecap="round"/>
+</svg>

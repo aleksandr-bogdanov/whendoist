@@ -1,0 +1,89 @@
+{# Task List Partial - used by dashboard and HTMX refreshes #}
+{% if domains_with_tasks %}
+    {% for domain_item in domains_with_tasks %}
+    <details class="project-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
+        <summary class="project-header">
+            <span class="project-name">
+                {% if domain_item.domain %}
+                    {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}<span class="domain-name-text">{% if encryption_enabled %}🔒{% else %}{{ domain_item.domain.name }}{% endif %}</span>
+                {% else %}
+                    Inbox
+                {% endif %}
+            </span>
+        </summary>
+        <div class="task-list">
+            {% for task_item in domain_item.tasks %}
+            {% set task = task_item.task %}
+            {% set is_completed = task.status == 'completed' or task_item.instance_completed_at %}
+            {% set completed_at = task_item.instance_completed_at or task.completed_at %}
+            <div class="task-item impact-{{ task.impact }}{% if task.scheduled_date %} scheduled{% endif %}{% if task_item.completion_age_class %} {{ task_item.completion_age_class }}{% endif %}"
+                 data-clarity="{{ task.clarity or 'none' }}"
+                 data-impact="{{ task.impact or 4 }}"
+                 data-task-id="{{ task.id }}"
+                 data-completed="{{ '1' if is_completed else '0' }}"
+                 data-completed-at="{{ completed_at.isoformat() if completed_at else '' }}"
+                 data-duration="{{ task.duration_minutes or '' }}"
+                 data-scheduled-date="{{ (task_item.next_occurrence or task.scheduled_date).isoformat() if (task_item.next_occurrence or task.scheduled_date) else '' }}"
+                 data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
+                 {% if task_item.next_instance_id %}data-instance-id="{{ task_item.next_instance_id }}"{% endif %}
+                 data-title="{{ task.title }}"
+                 data-subtask-count="{{ task_item.subtask_count or 0 }}"
+                 {% if task.parent_id %}data-parent-id="{{ task.parent_id }}"{% endif %}
+                 {% if not task.scheduled_date %}draggable="true"{% endif %}>
+                <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task.status == 'completed' else 'false' }}">
+                    <span class="complete-bar"></span>
+                    <span class="complete-check" aria-hidden="true">✓</span>
+                </button>
+                <div class="task-content">
+                    {% if task_item.parent_name %}
+                    <span class="task-breadcrumb">{% if encryption_enabled %}🔒{% else %}{{ task_item.parent_name }} →{% endif %}</span>
+                    {% endif %}
+                    <span class="task-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
+                    {% if task_item.subtask_count %}
+                    <span class="subtask-badge">{{ task_item.subtask_count }} subtask{{ 's' if task_item.subtask_count > 1 else '' }}</span>
+                    {% endif %}
+                    {% if task_item.next_occurrence or task.scheduled_date %}
+                    <span class="task-due">
+                        {% if task.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}
+                        {{ (task_item.next_occurrence or task.scheduled_date).strftime('%b %d') }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="task-meta">
+                    <span class="meta-duration">
+                        {% if task.duration_minutes %}
+                            {% if task.duration_minutes >= 60 %}
+                            {{ task.duration_minutes // 60 }}h{% if task.duration_minutes % 60 %}{{ task.duration_minutes % 60 }}m{% endif %}
+                            {% else %}
+                            {{ task.duration_minutes }}m
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </span>
+                    <span class="meta-impact impact-{{ task.impact }}">
+                        {% if task.impact == 1 %}P1
+                        {% elif task.impact == 2 %}P2
+                        {% elif task.impact == 3 %}P3
+                        {% else %}P4{% endif %}
+                    </span>
+                    <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
+                        {% if task.clarity %}
+                            {{ task_item.clarity_display }}
+                        {% else %}—{% endif %}
+                    </span>
+                </div>
+                <span class="task-actions"></span>
+            </div>
+            {% endfor %}
+            <div class="add-task-row" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}">
+                <span class="add-task-text">+ Add task</span>
+            </div>
+        </div>
+    </details>
+    {% endfor %}
+{% else %}
+<div class="empty-state">
+    <img src="{{ url_for('static', path='img/illustrations/empty-tasks.svg') }}" alt="" class="empty-state-illustration" width="120" height="120" aria-hidden="true">
+    <p>No tasks with domains yet.</p>
+    <p>Create a domain in Settings, then promote thoughts to tasks.</p>
+</div>
+{% endif %}

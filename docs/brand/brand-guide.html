@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist Brand Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #F8FAFC;
+            color: #1E293B;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding-bottom: 3rem;
+            border-bottom: 1px solid rgba(15,23,42,0.08);
+        }
+        
+        .brand-title {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #6D5EF6;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #1E293B;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #64748B;
+            font-size: 1.1rem;
+        }
+        
+        /* Sections */
+        section {
+            margin-bottom: 4rem;
+        }
+        
+        h2 {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #64748B;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(15,23,42,0.08);
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border: 1px solid rgba(15,23,42,0.08);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-dark {
+            background: #1E293B;
+            border-color: transparent;
+        }
+        
+        /* Wordmark display */
+        .wordmark-display {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+        
+        .wordmark-display svg {
+            margin-bottom: 12px;
+            margin-right: 4px;
+        }
+        
+        .wordmark-display .text {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            font-size: 6.5rem;
+            line-height: 1;
+            color: #1E293B;
+        }
+        
+        .wordmark-display.on-dark .text {
+            color: #FFFFFF;
+        }
+        
+        /* Icon grid */
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .icon-item {
+            text-align: center;
+        }
+        
+        .icon-box {
+            background: white;
+            border: 1px solid rgba(15,23,42,0.08);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+        }
+        
+        .icon-box.dark {
+            background: #1E293B;
+            border-color: transparent;
+        }
+        
+        .icon-box.checkered {
+            background-image: 
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+        
+        .icon-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748B;
+        }
+        
+        /* Color swatches */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        
+        .color-swatch {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(15,23,42,0.08);
+        }
+        
+        .color-sample {
+            height: 80px;
+        }
+        
+        .color-info {
+            background: white;
+            padding: 0.75rem 1rem;
+        }
+        
+        .color-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .color-value {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.75rem;
+            color: #64748B;
+        }
+        
+        /* Specs table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .specs-table th,
+        .specs-table td {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(15,23,42,0.06);
+        }
+        
+        .specs-table th {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748B;
+            background: #F8FAFC;
+        }
+        
+        .specs-table td {
+            font-size: 0.9rem;
+        }
+        
+        .specs-table code {
+            background: #F1F5F9;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.8rem;
+            color: #6D5EF6;
+        }
+        
+        /* Size scale */
+        .size-scale {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+        
+        .size-item {
+            display: flex;
+            align-items: flex-end;
+            gap: 1.5rem;
+        }
+        
+        .size-wordmark {
+            display: flex;
+            align-items: flex-end;
+        }
+        
+        .size-wordmark .text {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 500;
+            line-height: 1;
+            color: #1E293B;
+        }
+        
+        .size-meta {
+            font-size: 0.7rem;
+            color: #94A3B8;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(15,23,42,0.08);
+            color: #94A3B8;
+            font-size: 0.85rem;
+        }
+        
+        /* Download section */
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .download-item {
+            background: #F8FAFC;
+            border: 1px solid rgba(15,23,42,0.08);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .download-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .download-info {
+            flex: 1;
+        }
+        
+        .download-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .download-desc {
+            font-size: 0.7rem;
+            color: #64748B;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="brand-title">Brand Guidelines</div>
+        <h1>Whendoist</h1>
+        <p class="subtitle">Visual Identity System — January 2026</p>
+    </header>
+    
+    <!-- Primary Wordmark -->
+    <section>
+        <h2>Primary Wordmark</h2>
+        <div class="card">
+            <div class="wordmark-display">
+                <svg viewBox="38 40 180 160" width="90" height="80">
+                    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                </svg>
+                <span class="text">hendoist</span>
+            </div>
+        </div>
+        <div class="card card-dark">
+            <div class="wordmark-display on-dark">
+                <svg viewBox="38 40 180 160" width="90" height="80">
+                    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                </svg>
+                <span class="text">hendoist</span>
+            </div>
+        </div>
+    </section>
+    
+    <!-- W Icon -->
+    <section>
+        <h2>W Icon Variations</h2>
+        <div class="icon-grid">
+            <div class="icon-item">
+                <div class="icon-box">
+                    <svg viewBox="38 40 180 160" width="72" height="64">
+                        <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                        <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                        <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                    </svg>
+                </div>
+                <div class="icon-label">Full Color</div>
+            </div>
+            <div class="icon-item">
+                <div class="icon-box">
+                    <svg viewBox="38 40 180 160" width="72" height="64">
+                        <rect x="48" y="40" width="28" height="160" rx="14" fill="#1E293B" transform="rotate(-8 62 120)"/>
+                        <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#1E293B"/>
+                        <rect x="180" y="40" width="28" height="160" rx="14" fill="#1E293B" transform="rotate(8 194 120)"/>
+                    </svg>
+                </div>
+                <div class="icon-label">Monochrome Dark</div>
+            </div>
+            <div class="icon-item">
+                <div class="icon-box dark">
+                    <svg viewBox="38 40 180 160" width="72" height="64">
+                        <rect x="48" y="40" width="28" height="160" rx="14" fill="#FFFFFF" transform="rotate(-8 62 120)"/>
+                        <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#FFFFFF"/>
+                        <rect x="180" y="40" width="28" height="160" rx="14" fill="#FFFFFF" transform="rotate(8 194 120)"/>
+                    </svg>
+                </div>
+                <div class="icon-label">Monochrome White</div>
+            </div>
+            <div class="icon-item">
+                <div class="icon-box checkered">
+                    <svg viewBox="38 40 180 160" width="72" height="64">
+                        <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                        <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                        <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                    </svg>
+                </div>
+                <div class="icon-label">Transparent BG</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Color Palette -->
+    <section>
+        <h2>Clarity Colors</h2>
+        <div class="color-grid">
+            <div class="color-swatch">
+                <div class="color-sample" style="background: #167BFF;"></div>
+                <div class="color-info">
+                    <div class="color-name">Executable Blue</div>
+                    <div class="color-value">#167BFF</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-sample" style="background: #6D5EF6;"></div>
+                <div class="color-info">
+                    <div class="color-name">Defined Purple</div>
+                    <div class="color-value">#6D5EF6</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-sample" style="background: #A020C0;"></div>
+                <div class="color-info">
+                    <div class="color-name">Exploratory Magenta</div>
+                    <div class="color-value">#A020C0</div>
+                </div>
+            </div>
+        </div>
+        
+        <h2 style="margin-top: 2rem;">Text Color</h2>
+        <div class="color-grid" style="grid-template-columns: 1fr;">
+            <div class="color-swatch" style="max-width: 300px;">
+                <div class="color-sample" style="background: #1E293B;"></div>
+                <div class="color-info">
+                    <div class="color-name">Dark Slate</div>
+                    <div class="color-value">#1E293B</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Typography -->
+    <section>
+        <h2>Typography</h2>
+        <div class="card">
+            <table class="specs-table">
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Font Family</td>
+                    <td><code>Quicksand</code></td>
+                </tr>
+                <tr>
+                    <td>Font Weight</td>
+                    <td><code>500</code> (Medium)</td>
+                </tr>
+                <tr>
+                    <td>Text Color</td>
+                    <td><code>#1E293B</code></td>
+                </tr>
+                <tr>
+                    <td>Gap (W → h)</td>
+                    <td><code>4px</code> @ 6.5rem base</td>
+                </tr>
+                <tr>
+                    <td>Vertical Offset</td>
+                    <td><code>12px</code> @ 6.5rem base</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+    
+    <!-- Size Scale -->
+    <section>
+        <h2>Size Scale</h2>
+        <div class="card">
+            <div class="size-scale">
+                <div class="size-item">
+                    <div class="size-wordmark">
+                        <svg viewBox="38 40 180 160" width="90" height="80" style="margin-bottom: 12px; margin-right: 4px;">
+                            <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                            <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                            <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                        </svg>
+                        <span class="text" style="font-size: 6.5rem;">hendoist</span>
+                    </div>
+                    <span class="size-meta">Hero — 6.5rem</span>
+                </div>
+                <div class="size-item">
+                    <div class="size-wordmark">
+                        <svg viewBox="38 40 180 160" width="42" height="37" style="margin-bottom: 5.5px; margin-right: 2px;">
+                            <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                            <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                            <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                        </svg>
+                        <span class="text" style="font-size: 3rem;">hendoist</span>
+                    </div>
+                    <span class="size-meta">Large — 3rem</span>
+                </div>
+                <div class="size-item">
+                    <div class="size-wordmark">
+                        <svg viewBox="38 40 180 160" width="24" height="21" style="margin-bottom: 3px; margin-right: 1px;">
+                            <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                            <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                            <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                        </svg>
+                        <span class="text" style="font-size: 1.75rem;">hendoist</span>
+                    </div>
+                    <span class="size-meta">Medium — 1.75rem</span>
+                </div>
+                <div class="size-item">
+                    <div class="size-wordmark">
+                        <svg viewBox="38 40 180 160" width="17" height="15" style="margin-bottom: 2px; margin-right: 1px;">
+                            <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                            <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                            <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                        </svg>
+                        <span class="text" style="font-size: 1.25rem;">hendoist</span>
+                    </div>
+                    <span class="size-meta">Small — 1.25rem</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Icon Construction -->
+    <section>
+        <h2>Icon Construction</h2>
+        <div class="card">
+            <table class="specs-table">
+                <tr>
+                    <th>Element</th>
+                    <th>Specification</th>
+                </tr>
+                <tr>
+                    <td>Bar Width</td>
+                    <td><code>28px</code></td>
+                </tr>
+                <tr>
+                    <td>Bar Height</td>
+                    <td><code>160px</code> (outer) / <code>127.3px</code> (center)</td>
+                </tr>
+                <tr>
+                    <td>Corner Radius</td>
+                    <td><code>14px</code> (50% of width)</td>
+                </tr>
+                <tr>
+                    <td>Rotation</td>
+                    <td><code>±8°</code> (outer bars)</td>
+                </tr>
+                <tr>
+                    <td>ViewBox</td>
+                    <td><code>38 40 180 160</code></td>
+                </tr>
+            </table>
+        </div>
+    </section>
+    
+    <!-- Files -->
+    <section>
+        <h2>Asset Files</h2>
+        <div class="download-grid">
+            <div class="download-item">
+                <div class="download-icon">📄</div>
+                <div class="download-info">
+                    <div class="download-name">w-icon-color.svg</div>
+                    <div class="download-desc">Full color icon</div>
+                </div>
+            </div>
+            <div class="download-item">
+                <div class="download-icon">📄</div>
+                <div class="download-info">
+                    <div class="download-name">w-icon-dark.svg</div>
+                    <div class="download-desc">Monochrome dark</div>
+                </div>
+            </div>
+            <div class="download-item">
+                <div class="download-icon">📄</div>
+                <div class="download-info">
+                    <div class="download-name">w-icon-white.svg</div>
+                    <div class="download-desc">Monochrome white</div>
+                </div>
+            </div>
+            <div class="download-item">
+                <div class="download-icon">📄</div>
+                <div class="download-info">
+                    <div class="download-name">app-icon-512.svg</div>
+                    <div class="download-desc">App icon with background</div>
+                </div>
+            </div>
+            <div class="download-item">
+                <div class="download-icon">📄</div>
+                <div class="download-info">
+                    <div class="download-name">favicon.svg</div>
+                    <div class="download-desc">Browser favicon</div>
+                </div>
+            </div>
+            <div class="download-item">
+                <div class="download-icon">📦</div>
+                <div class="download-info">
+                    <div class="download-name">wordmark-component.html</div>
+                    <div class="download-desc">Copy-paste HTML/CSS</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <footer>
+        <p>Whendoist Brand Guide v1.0 — January 2026</p>
+    </footer>
+</div>
+
+</body>
+</html>

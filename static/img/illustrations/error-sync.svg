@@ -1,0 +1,13 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sync Error: Broken arrows -->
+  <circle cx="60" cy="60" r="44" fill="#FEF3C7"/>
+  <!-- Top arrow -->
+  <path d="M38 60 A22 22 0 0 1 60 38" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="58,30 66,38 58,46" fill="#F97316"/>
+  <!-- Bottom arrow -->
+  <path d="M82 60 A22 22 0 0 1 60 82" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="62,90 54,82 62,74" fill="#F97316"/>
+  <!-- Center warning -->
+  <circle cx="60" cy="60" r="10" fill="#DC2626"/>
+  <text x="60" y="65" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">!</text>
+</svg>

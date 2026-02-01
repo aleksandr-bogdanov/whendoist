@@ -1,0 +1,131 @@
+# =============================================================================
+# Whendoist CI Pipeline
+# =============================================================================
+#
+# Runs on every push/PR to master/main branches.
+#
+# Jobs:
+#   1. lint      - Code style checks (ruff)          ┐
+#   2. typecheck - Static type analysis (pyright)     ├ run in parallel
+#   3. test      - Unit + integration tests (pytest)  ┘
+#
+# All jobs must pass for PRs to be mergeable.
+# Railway "Wait for CI" pauses deploys until this workflow succeeds.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint: Code style and formatting checks
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ruff check
+        run: uv run ruff check .
+
+      - name: Run ruff format check
+        run: uv run ruff format --check .
+
+  # ---------------------------------------------------------------------------
+  # Type Check: Static type analysis with pyright (parallel with lint)
+  # ---------------------------------------------------------------------------
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+          uv pip install pyright
+
+      - name: Run pyright
+        run: uv run pyright app/
+
+  # ---------------------------------------------------------------------------
+  # Test: Run pytest with PostgreSQL service container (parallel with lint)
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: whendoist
+          POSTGRES_PASSWORD: whendoist
+          POSTGRES_DB: whendoist_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run unit tests
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          BASE_URL: http://localhost:8000
+          TODOIST_CLIENT_ID: test
+          TODOIST_CLIENT_SECRET: test
+          GOOGLE_CLIENT_ID: test
+          GOOGLE_CLIENT_SECRET: test
+        run: uv run pytest -v -m "not integration"
+
+      - name: Run integration tests (PostgreSQL)
+        env:
+          DATABASE_URL: postgresql+asyncpg://whendoist:whendoist@localhost:5432/whendoist_test
+          SECRET_KEY: test-secret-key-for-ci
+          BASE_URL: http://localhost:8000
+          TODOIST_CLIENT_ID: test
+          TODOIST_CLIENT_SECRET: test
+          GOOGLE_CLIENT_ID: test
+          GOOGLE_CLIENT_SECRET: test
+        run: uv run pytest -v -m integration
