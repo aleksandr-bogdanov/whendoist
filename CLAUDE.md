@@ -26,6 +26,9 @@ If a test can't run automatically in GitHub Actions, don't write it.
 # Before EVERY commit (all must pass, CI enforces)
 uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
 
+# After bumping version in pyproject.toml (Railway build requires lockfile in sync)
+uv lock
+
 # Database migrations (required for ALL schema changes)
 just migrate-new "description"   # Create migration after changing models.py
 just migrate                     # Apply migration
