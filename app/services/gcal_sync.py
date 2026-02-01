@@ -7,9 +7,9 @@ Scheduled tasks appear as events in a dedicated "Whendoist" calendar.
 
 import contextlib
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import DEFAULT_TIMEZONE
@@ -27,6 +27,20 @@ from app.services.gcal import (
 )
 
 logger = logging.getLogger("whendoist.gcal_sync")
+
+
+def _effective_date(task: Task) -> date | None:
+    """
+    Get the effective calendar date for a task.
+
+    Uses scheduled_date if available, otherwise falls back to completed_at date
+    for completed tasks (e.g. Todoist imports that lack scheduling info).
+    """
+    if task.scheduled_date:
+        return task.scheduled_date
+    if task.status == "completed" and task.completed_at:
+        return task.completed_at.date()
+    return None
 
 
 class GCalSyncService:
@@ -57,12 +71,13 @@ class GCalSyncService:
         if not prefs or not prefs.gcal_sync_enabled or not prefs.gcal_sync_calendar_id:
             return
 
-        # If task has no scheduled_date, unsync it
-        if not task.scheduled_date:
+        # Resolve effective date (scheduled_date or completed_at for Todoist imports)
+        eff_date = _effective_date(task)
+        if not eff_date:
             await self._unsync_by_task_id(task.id, prefs.gcal_sync_calendar_id)
             return
 
-        # If task is date-only and user disabled all-day sync, unsync
+        # For date-only tasks (no scheduled_time), check all-day preference
         if not task.scheduled_time and not prefs.gcal_sync_all_day:
             await self._unsync_by_task_id(task.id, prefs.gcal_sync_calendar_id)
             return
@@ -73,7 +88,7 @@ class GCalSyncService:
         current_hash = compute_sync_hash(
             title=task.title,
             description=task.description,
-            scheduled_date=task.scheduled_date,
+            scheduled_date=eff_date,
             scheduled_time=task.scheduled_time,
             duration_minutes=task.duration_minutes,
             impact=task.impact,
@@ -95,7 +110,7 @@ class GCalSyncService:
         event_data = build_event_data(
             title=task.title,
             description=task.description,
-            scheduled_date=task.scheduled_date,
+            scheduled_date=eff_date,
             scheduled_time=task.scheduled_time,
             duration_minutes=task.duration_minutes,
             impact=task.impact,
@@ -262,13 +277,17 @@ class GCalSyncService:
         timezone = await self._get_timezone(prefs)
         stats = {"created": 0, "updated": 0, "deleted": 0, "skipped": 0}
 
-        # Get all scheduled tasks (non-archived) - scheduled_date is guaranteed non-None by the filter
+        # Get all syncable tasks: either has scheduled_date, or is completed with completed_at
+        # (completed Todoist imports may lack scheduled_date but have completed_at)
         tasks_result = await self.db.execute(
             select(Task).where(
                 Task.user_id == self.user_id,
-                Task.scheduled_date.isnot(None),
                 Task.is_recurring == False,
                 Task.status != "archived",
+                or_(
+                    Task.scheduled_date.isnot(None),
+                    Task.completed_at.isnot(None),
+                ),
             )
         )
         tasks = list(tasks_result.scalars().all())
@@ -307,8 +326,9 @@ class GCalSyncService:
         async with GoogleCalendarClient(self.db, google_token) as client:
             # Sync non-recurring tasks
             for task in tasks:
-                # scheduled_date is guaranteed non-None by the query filter
-                assert task.scheduled_date is not None
+                eff_date = _effective_date(task)
+                if not eff_date:
+                    continue
                 if not task.scheduled_time and not prefs.gcal_sync_all_day:
                     continue
 
@@ -316,7 +336,7 @@ class GCalSyncService:
                 current_hash = compute_sync_hash(
                     title=task.title,
                     description=task.description,
-                    scheduled_date=task.scheduled_date,
+                    scheduled_date=eff_date,
                     scheduled_time=task.scheduled_time,
                     duration_minutes=task.duration_minutes,
                     impact=task.impact,
@@ -334,7 +354,7 @@ class GCalSyncService:
                     event_data = build_event_data(
                         title=task.title,
                         description=task.description,
-                        scheduled_date=task.scheduled_date,
+                        scheduled_date=eff_date,
                         scheduled_time=task.scheduled_time,
                         duration_minutes=task.duration_minutes,
                         impact=task.impact,
@@ -360,7 +380,7 @@ class GCalSyncService:
                     event_data = build_event_data(
                         title=task.title,
                         description=task.description,
-                        scheduled_date=task.scheduled_date,
+                        scheduled_date=eff_date,
                         scheduled_time=task.scheduled_time,
                         duration_minutes=task.duration_minutes,
                         impact=task.impact,
