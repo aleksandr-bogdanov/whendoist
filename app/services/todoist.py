@@ -5,7 +5,7 @@ Provides async access to tasks, projects, and labels via Todoist API v1.
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 
@@ -264,39 +264,44 @@ class TodoistClient:
             response.raise_for_status()
             return response.json()["user"]["id"]
 
-    async def get_completed_tasks(self, limit: int = 200, parent_id: str | None = None) -> list[dict]:
+    async def get_completed_tasks(self, limit: int = 200) -> list[dict]:
         """
-        Fetch completed tasks.
+        Fetch completed tasks via /tasks/completed/by_completion_date.
 
-        Returns raw dicts since completed tasks have different structure.
-        Paginates automatically up to limit.
+        Returns raw dicts with parent_id populated for subtasks.
+        Uses cursor-based pagination and requires since/until params.
+        Fetches up to 3 months of completed tasks (API max window).
 
         Args:
             limit: Max number of completed tasks to fetch.
-            parent_id: If set, only fetch completed subtasks of this parent.
         """
         client = self._ensure_client()
         all_items: list[dict] = []
-        offset = 0
-        page_size = 50  # API max per request
+        cursor: str | None = None
+        page_size = min(200, limit)
+
+        now = datetime.now(UTC)
+        since = (now - timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        until = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         while len(all_items) < limit:
-            params: dict[str, str | int] = {
-                "limit": min(page_size, limit - len(all_items)),
-                "offset": offset,
+            params: dict[str, str] = {
+                "limit": str(min(page_size, limit - len(all_items))),
+                "since": since,
+                "until": until,
             }
-            if parent_id:
-                params["parent_id"] = parent_id
+            if cursor:
+                params["cursor"] = cursor
 
-            response = await client.get("/tasks/completed", params=params)
+            response = await client.get("/tasks/completed/by_completion_date", params=params)
             response.raise_for_status()
             data = response.json()
             items = data.get("items", [])
             all_items.extend(items)
 
-            if not data.get("has_more", False) or not items:
+            cursor = data.get("next_cursor")
+            if not cursor or not items:
                 break
-            offset += len(items)
 
         return all_items
 

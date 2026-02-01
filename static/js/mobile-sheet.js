@@ -357,6 +357,15 @@ class TaskActionSheet {
     async _deleteTask(taskId) {
         const taskTitle = this.currentTask.querySelector('.task-text')?.textContent || 'Task';
 
+        // Check for subtasks and confirm cascade delete
+        const subtaskCount = parseInt(this.currentTask.dataset.subtaskCount || '0', 10);
+        if (subtaskCount > 0) {
+            const confirmed = confirm(
+                `This task has ${subtaskCount} subtask${subtaskCount > 1 ? 's' : ''}. Deleting it will also delete all subtasks. Continue?`
+            );
+            if (!confirmed) return;
+        }
+
         // Haptic warning
         if (window.HapticEngine) {
             window.HapticEngine.trigger('warning');

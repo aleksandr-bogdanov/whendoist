@@ -1485,6 +1485,26 @@
     min-width: 0;
 }
 
+.task-breadcrumb {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.subtask-badge {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: rgba(109, 94, 246, 0.1);
+    padding: 1px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .task-due {
     display: inline-flex;
     align-items: center;

@@ -31,6 +31,7 @@ def build_native_task_item(
     task: Task,
     next_instances: dict[int, dict] | None = None,
     instance_completed_at: datetime | None = None,
+    subtask_count: int = 0,
 ) -> TaskItem:
     """
     Create a task item dict from native Task model.
@@ -39,6 +40,7 @@ def build_native_task_item(
         task: The task to build item for
         next_instances: Dict of task_id -> {date, id} for recurring tasks
         instance_completed_at: For recurring tasks, the completion time of today's instance
+        subtask_count: Number of subtasks this task has (for parent badge)
 
     Returns:
         Dict with task metadata suitable for template rendering
@@ -63,6 +65,11 @@ def build_native_task_item(
     completed_at = instance_completed_at if task.is_recurring else task.completed_at
     completion_age_class = TaskService.get_completion_age_class(completed_at, task.status)
 
+    # Get parent name for breadcrumb display (if parent was eagerly loaded)
+    parent_name = None
+    if task.parent_id and "parent" in sa_inspect(task).dict and task.parent:
+        parent_name = task.parent.title
+
     # Only access subtasks if already eagerly loaded (avoids lazy loading in async context)
     subtasks = []
     if "subtasks" in sa_inspect(task).dict:
@@ -74,6 +81,8 @@ def build_native_task_item(
         "next_occurrence": next_occurrence,
         "next_instance_id": next_instance_id,
         "subtasks": subtasks,
+        "parent_name": parent_name,
+        "subtask_count": subtask_count,
         "completion_age_class": completion_age_class,
         "instance_completed_at": instance_completed_at,
     }
@@ -85,6 +94,7 @@ def group_tasks_by_domain(
     next_instances: dict[int, dict] | None = None,
     today_instance_completions: dict[int, datetime] | None = None,
     user_prefs: UserPreferences | None = None,
+    subtask_counts: dict[int, int] | None = None,
 ) -> list[DomainWithTasks]:
     """
     Group tasks by domain, sorted by impact.
@@ -143,7 +153,8 @@ def group_tasks_by_domain(
             if task.is_recurring and hide_recurring_after and instance_completed_at:
                 continue
 
-        task_item = build_native_task_item(task, next_instances, instance_completed_at)
+        count = subtask_counts.get(task.id, 0) if subtask_counts else 0
+        task_item = build_native_task_item(task, next_instances, instance_completed_at, subtask_count=count)
         domain_id = task.domain_id
         tasks_by_domain.setdefault(domain_id, []).append(task_item)
 

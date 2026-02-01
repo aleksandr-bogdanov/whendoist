@@ -71,15 +71,6 @@ backups:
     @echo "📋 Available backups:"
     @ls -lh .backups/*.sql 2>/dev/null || echo "   (none)"
 
-# Build provenance
-build-manifest:
-    @echo "🔨 Generating build manifest..."
-    uv run python scripts/generate_build_manifest.py
-
-# Verify build - check Python, JS, CSS, and templates
-verify:
-    @uv run python scripts/verify_build.py
-
 # ============================================================================
 # Database Migrations (Alembic)
 # ============================================================================

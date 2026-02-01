@@ -187,7 +187,7 @@ class TaskService:
         elif clarity is not None:
             query = query.where(Task.clarity == clarity)
 
-        # Eager load subtasks and domain
+        # Eager load relationships
         if include_subtasks:
             query = query.options(
                 selectinload(Task.subtasks),
@@ -195,6 +195,10 @@ class TaskService:
             )
         else:
             query = query.options(selectinload(Task.domain))
+
+        # When loading all tasks (not just top-level), also load parent for breadcrumbs
+        if not top_level_only or parent_id is not None:
+            query = query.options(selectinload(Task.parent))
 
         # Order: unscheduled first, scheduled second, completed last
         # Then by impact (highest first), then position

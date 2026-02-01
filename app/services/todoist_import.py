@@ -53,7 +53,7 @@ class ImportResult:
     tasks_created: int = 0
     tasks_skipped: int = 0  # Already existed (duplicate)
     tasks_completed: int = 0  # Completed tasks imported
-    parents_flattened: int = 0  # Parent tasks merged into subtasks
+    parent_tasks_imported: int = 0  # Parent tasks imported with children
     tasks_need_clarity: int = 0  # Tasks imported without clarity label
     errors: list[str] = field(default_factory=list)
 
@@ -129,24 +129,14 @@ class TodoistImportService:
                 if include_completed:
                     completed = await client.get_completed_tasks(limit=completed_limit)
 
-                    # Build definitive parent mapping by fetching completed subtasks
-                    # per parent. The general /tasks/completed response may return
-                    # parent_id as null, so we use the parent_id query filter to
-                    # identify which completed tasks are subtasks of which parents.
-                    active_parent_ids = {t.parent_id for t in tasks if t.parent_id is not None}
+                    # Build parent mapping from response data. Each completed task
+                    # item includes parent_id directly (null for top-level tasks).
                     completed_child_to_parent: dict[str, str] = {}
-                    completed_by_id = {str(item.get("id") or item.get("task_id") or ""): item for item in completed}
-
-                    for pid in active_parent_ids:
-                        parent_children = await client.get_completed_tasks(parent_id=pid, limit=50)
-                        for item in parent_children:
-                            child_id = str(item.get("id") or item.get("task_id") or "")
-                            if child_id:
-                                completed_child_to_parent[child_id] = pid
-                                # Also add to main list if not already present
-                                if child_id not in completed_by_id:
-                                    completed.append(item)
-                                    completed_by_id[child_id] = item
+                    for item in completed:
+                        child_id = str(item.get("id") or item.get("task_id") or "")
+                        parent_id = item.get("parent_id")
+                        if child_id and parent_id:
+                            completed_child_to_parent[child_id] = str(parent_id)
 
                     await self._import_completed_tasks(
                         completed, tasks, completed_child_to_parent, domain_map, result, skip_existing
@@ -220,10 +210,10 @@ class TodoistImportService:
         skip_existing: bool,
     ) -> None:
         """
-        Import Todoist tasks.
+        Import Todoist tasks preserving parent-child hierarchy.
 
-        Subtasks are flattened: their title is prefixed with "Parent → "
-        and they become independent top-level tasks (no parent_id).
+        Two-pass import: top-level tasks first, then subtasks with parent_id mapped.
+        Subtasks inherit domain_id from their parent task.
         """
         # Get existing tasks with Todoist external_id
         existing = await self.db.execute(
@@ -234,10 +224,7 @@ class TodoistImportService:
         )
         existing_by_ext_id = {t.external_id: t for t in existing.scalars().all()}
 
-        # Build parent title map for subtask flattening
-        parent_titles: dict[str, str] = {t.id: t.content for t in tasks if t.parent_id is None}
-
-        # Identify tasks that have children (these will be skipped)
+        # Identify tasks that have children (for counter tracking)
         tasks_with_children: set[str] = {t.parent_id for t in tasks if t.parent_id is not None}
 
         # Map of Todoist task ID to local task ID
@@ -248,27 +235,33 @@ class TodoistImportService:
             if task.id in existing_by_ext_id:
                 task_id_map[task.id] = existing_by_ext_id[task.id].id
 
-        for task in tasks:
-            # Skip parent tasks that have subtasks (they get flattened into subtasks)
-            if task.id in tasks_with_children:
-                result.parents_flattened += 1
-                continue
+        # Two-pass import: top-level tasks first, then subtasks
+        top_level = [t for t in tasks if t.parent_id is None]
+        subtasks = [t for t in tasks if t.parent_id is not None]
+
+        for task in top_level + subtasks:
             # Check if already imported
             if task.id in existing_by_ext_id and skip_existing:
                 result.tasks_skipped += 1
                 continue
 
-            # Map domain
-            domain_id = domain_map.get(task.project_id)
+            # Map domain: subtasks inherit parent's domain, top-level use project mapping
+            if task.parent_id and task.parent_id in task_id_map:
+                # Subtask: look up parent's domain from domain_map via project_id
+                domain_id = domain_map.get(task.project_id)
+            else:
+                domain_id = domain_map.get(task.project_id)
             # Note: domain_id can be None for Inbox tasks
 
-            # Flatten subtasks: prefix title with parent name, no parent_id
-            task_title = task.content
-            if task.parent_id and task.parent_id in parent_titles:
-                task_title = f"{parent_titles[task.parent_id]} → {task.content}"
+            # Resolve parent_id: map Todoist parent_id to local task ID
+            local_parent_id = None
+            if task.parent_id:
+                local_parent_id = task_id_map.get(task.parent_id)
+                # If parent wasn't imported (skipped/error), task becomes top-level
 
-            # No parent_id - all tasks are flat
-            # (parent_id field kept in model for potential future use)
+            # Track parent tasks
+            if task.id in tasks_with_children:
+                result.parent_tasks_imported += 1
 
             # Map priority: Todoist API returns priority 4 for P1 (highest), 1 for P4 (lowest)
             # Invert to match visual labels: P1→1, P2→2, P3→3, P4→4
@@ -289,8 +282,10 @@ class TodoistImportService:
                     # Also use time as scheduled if specific time provided
                     scheduled_time = due_time
 
-            # Determine clarity from labels
+            # Determine clarity from labels; parent tasks default to "executable"
             clarity = self._parse_clarity_from_labels(task.labels)
+            if not clarity and task.id in tasks_with_children:
+                clarity = "executable"
 
             # Parse duration from description (d:30m format)
             # Prefer description duration over Todoist's native duration
@@ -303,12 +298,12 @@ class TodoistImportService:
             if is_recurring and task.due and task.due.string:
                 recurrence_rule = self._parse_recurrence_string(task.due.string)
 
-            # Create task (flattened - no parent_id)
+            # Create task with parent_id preserving hierarchy
             new_task = Task(
                 user_id=self.user_id,
                 domain_id=domain_id,
-                parent_id=None,
-                title=task_title,
+                parent_id=local_parent_id,
+                title=task.content,
                 description=cleaned_description,
                 duration_minutes=duration_minutes,
                 impact=impact,
@@ -558,15 +553,13 @@ class TodoistImportService:
         skip_existing: bool,
     ) -> None:
         """
-        Import completed tasks from Todoist API v1.
+        Import completed tasks from Todoist API v1 preserving hierarchy.
 
         These tasks are marked as completed with their completed_at timestamp.
-        Subtasks are flattened using parent titles from active tasks. The
-        completed_child_to_parent map provides a definitive parent mapping
-        built from per-parent API calls (since the general completed tasks
-        response may not populate parent_id).
+        Parent-child relationships are preserved using completed_child_to_parent
+        mapping (built from parent_id in the by_completion_date response).
         """
-        # Get existing tasks with Todoist external_id
+        # Get existing tasks with Todoist external_id (includes active tasks just imported)
         existing = await self.db.execute(
             select(Task).where(
                 Task.user_id == self.user_id,
@@ -575,33 +568,32 @@ class TodoistImportService:
         )
         existing_by_ext_id = {t.external_id: t for t in existing.scalars().all()}
 
-        # Build parent title map from active tasks
-        parent_titles: dict[str, str] = {t.id: t.content for t in active_tasks}
+        # Build task_id_map from existing tasks (includes active tasks just imported)
+        task_id_map: dict[str, int] = {t.external_id: t.id for t in existing_by_ext_id.values() if t.external_id}
 
-        # Also add completed tasks as potential parents (parent and subtasks both completed)
+        # Identify completed tasks that have children (for counter tracking and clarity default)
         tasks_with_children: set[str] = set(completed_child_to_parent.values())
-        for item in completed_tasks:
-            item_id = str(item.get("id") or item.get("task_id") or "")
-            parent_id = item.get("parent_id")
-            if not item_id:
-                continue
-            if item_id not in parent_titles:
-                parent_titles[item_id] = item.get("content", "")
-            if parent_id:
-                tasks_with_children.add(str(parent_id))
+
+        # Two-pass: tasks without parents first, then subtasks
+        without_parent: list[dict] = []
+        with_parent: list[dict] = []
 
         for item in completed_tasks:
+            task_id = item.get("id") or item.get("task_id")
+            if not task_id:
+                continue
+            if str(task_id) in completed_child_to_parent:
+                with_parent.append(item)
+            else:
+                without_parent.append(item)
+
+        for item in without_parent + with_parent:
             task_id = item.get("id") or item.get("task_id")
             if not task_id:
                 continue
 
             # Ensure task_id is string (API v1 may return integers)
             task_id = str(task_id)
-
-            # Skip parent tasks that have subtasks (they get flattened into subtasks)
-            if task_id in tasks_with_children:
-                result.parents_flattened += 1
-                continue
 
             # Check if already imported
             if task_id in existing_by_ext_id:
@@ -619,15 +611,29 @@ class TodoistImportService:
             content = item.get("content", "")
             project_id = item.get("project_id")
 
-            # Resolve parent: try response field first, fall back to per-parent API map
-            parent_id = item.get("parent_id") or completed_child_to_parent.get(task_id)
+            # Resolve parent_id from completed_child_to_parent (built from
+            # parent_id field in the by_completion_date API response).
+            todoist_parent_id = completed_child_to_parent.get(task_id)
+            local_parent_id = None
+            if todoist_parent_id:
+                local_parent_id = task_id_map.get(str(todoist_parent_id))
+                # If parent wasn't imported, task becomes top-level
 
-            # Flatten subtasks: prefix title with parent name
-            if parent_id and str(parent_id) in parent_titles:
-                content = f"{parent_titles[str(parent_id)]} → {content}"
+            # Track parent tasks
+            if task_id in tasks_with_children:
+                result.parent_tasks_imported += 1
 
             # Parse clarity from content (completed tasks have labels embedded like "@executable")
             clarity, clean_title = self._parse_clarity_from_content(content)
+
+            # Parent tasks default to "executable", others to "defined"
+            is_parent = task_id in tasks_with_children
+            if not clarity:
+                clarity = "executable" if is_parent else "defined"
+
+            # Map priority: Todoist API returns priority 4 for P1 (highest), 1 for P4 (lowest)
+            priority = item.get("priority", 1)
+            impact = 5 - priority  # priority 4 → impact 1, priority 1 → impact 4
 
             # Ensure project_id is string for domain_map lookup
             if project_id:
@@ -649,14 +655,18 @@ class TodoistImportService:
             new_task = Task(
                 user_id=self.user_id,
                 domain_id=domain_id,
+                parent_id=local_parent_id,
                 title=clean_title,
                 status="completed",
                 completed_at=completed_at,
-                impact=4,  # No priority info in completed tasks API
-                clarity=clarity or "defined",
+                impact=impact,
+                clarity=clarity,
                 external_id=task_id,
                 external_source="todoist",
                 external_created_at=external_created_at,
             )
             self.db.add(new_task)
+            await self.db.flush()
+
+            task_id_map[task_id] = new_task.id
             result.tasks_completed += 1

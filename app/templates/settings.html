@@ -510,27 +510,12 @@
             <span class="footer-sep">·</span>
             <span id="build-commit" class="footer-muted"></span>
             <span class="footer-sep">·</span>
-            <a href="#" onclick="showVerifyBuildModal(); return false;" class="footer-link">Build info</a>
-            <span class="footer-sep">·</span>
             <a href="https://github.com/aleksandr-bogdanov/whendoist" target="_blank" class="footer-link">GitHub</a>
             <span class="footer-sep">·</span>
             <a href="https://github.com/aleksandr-bogdanov/whendoist/blob/main/LICENSE" target="_blank" class="footer-link">MIT License</a>
             <span class="footer-sep">·</span>
             <a href="https://github.com/aleksandr-bogdanov/whendoist#acknowledgments" target="_blank" class="footer-link">Credits</a>
         </footer>
-    </div>
-</div>
-
-<!-- Build Verification Modal -->
-<div class="modal-overlay" id="verify-build-overlay" onclick="if(event.target === this) closeVerifyBuildModal()">
-    <div class="modal" style="width: 480px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
-        <h3 class="modal__title" style="flex-shrink: 0;">Build Information</h3>
-        <div id="verify-build-content" style="font-size: 0.8125rem; overflow-y: auto; flex: 1; min-height: 0;">
-            <div class="verify-loading">Loading verification info...</div>
-        </div>
-        <div class="modal__actions" style="margin-top: 16px; flex-shrink: 0;">
-            <button type="button" class="btn-sm btn-sm--secondary" onclick="closeVerifyBuildModal()">Close</button>
-        </div>
     </div>
 </div>
 
@@ -987,9 +972,9 @@ async function executeImport() {
                 lines.push(`↳ ${data.tasks_completed} completed tasks (for analytics)`);
             }
 
-            // Parent tasks flattened (expected behavior)
-            if (data.parents_flattened > 0) {
-                lines.push(`↳ ${data.parents_flattened} parent tasks merged into subtasks`);
+            // Parent tasks with children
+            if (data.parent_tasks_imported > 0) {
+                lines.push(`↳ ${data.parent_tasks_imported} parent tasks with subtasks`);
             }
 
             // Duplicates skipped
@@ -1681,324 +1666,25 @@ async function rerunWizard() {
 }
 
 // ============================================================================
-// Build Provenance
+// Build Info
 // ============================================================================
 
-let buildInfo = null;
-let verificationInfo = null;
-
-// Load build info on page load
 async function loadBuildInfo() {
     try {
         const response = await fetch('/api/v1/build/info');
         if (response.ok) {
-            buildInfo = await response.json();
-            updateBuildDisplay();
+            const buildInfo = await response.json();
+            const versionEl = document.getElementById('build-version');
+            const commitEl = document.getElementById('build-commit');
+            if (versionEl) versionEl.textContent = `Whendoist ${buildInfo.version}`;
+            if (commitEl) commitEl.textContent = (buildInfo.commit || {}).short || '';
         }
     } catch (e) {
         console.error('Failed to load build info:', e);
     }
 }
 
-function updateBuildDisplay() {
-    if (!buildInfo) return;
-
-    const versionEl = document.getElementById('build-version');
-    const commitEl = document.getElementById('build-commit');
-
-    if (versionEl) {
-        versionEl.textContent = `Whendoist ${buildInfo.version}`;
-    }
-
-    if (commitEl) {
-        const commit = buildInfo.commit || {};
-        commitEl.textContent = commit.short ? `${commit.short}` : '';
-    }
-}
-
-function showVerifyBuildModal() {
-    document.getElementById('verify-build-overlay').classList.add('open');
-    loadVerificationInfo();
-}
-
-function closeVerifyBuildModal() {
-    document.getElementById('verify-build-overlay').classList.remove('open');
-}
-
-async function loadVerificationInfo() {
-    const content = document.getElementById('verify-build-content');
-
-    try {
-        const response = await fetch('/api/v1/build/verify');
-        if (!response.ok) throw new Error('Failed to load');
-
-        verificationInfo = await response.json();
-        renderVerificationModal();
-    } catch (e) {
-        content.innerHTML = `
-            <div style="color: var(--danger);">
-                Failed to load verification info: ${e.message}
-            </div>
-        `;
-    }
-}
-
-async function verifyBuildHashes() {
-    const statusEl = document.getElementById('verify-status');
-    const btnEl = document.getElementById('btn-verify-build');
-
-    if (!verificationInfo || !verificationInfo.hashes) {
-        statusEl.innerHTML = '<span style="color: var(--danger);">No hashes available to verify</span>';
-        statusEl.style.display = 'block';
-        return;
-    }
-
-    btnEl.disabled = true;
-    btnEl.textContent = 'Verifying...';
-    statusEl.innerHTML = '<span style="color: var(--text-muted);">Computing hashes...</span>';
-    statusEl.style.display = 'block';
-
-    const expectedHashes = verificationInfo.hashes;
-    // All CSS and JS files for comprehensive verification
-    const keyFiles = [
-        'css/app.css',
-        'css/dashboard.css',
-        'css/dialog.css',
-        'js/crypto.js',
-        'js/drag-drop.js',
-        'js/energy-selector.js',
-        'js/plan-tasks.js',
-        'js/recurrence-picker.js',
-        'js/task-complete.js',
-        'js/task-dialog.js',
-        'js/task-list-options.js',
-        'js/task-sheet.js',
-        'js/task-sort.js',
-        'js/toast.js'
-    ];
-    const results = [];
-    let allPassed = true;
-
-    for (const file of keyFiles) {
-        if (!expectedHashes[file]) continue;
-
-        try {
-            // Fetch the file
-            const response = await fetch(`/static/${file}`, { cache: 'no-store' });
-            const text = await response.text();
-
-            // Compute SHA256 hash
-            const encoder = new TextEncoder();
-            const data = encoder.encode(text);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-            const expected = expectedHashes[file];
-            const passed = computedHash === expected;
-
-            if (!passed) allPassed = false;
-
-            results.push({
-                file,
-                passed,
-                computed: computedHash,
-                expected: expected,
-                error: null
-            });
-        } catch (e) {
-            allPassed = false;
-            results.push({ file, passed: false, computed: null, expected: expectedHashes[file], error: e.message });
-        }
-    }
-
-    // Render results - show full hash comparison for mismatches
-    const resultsHtml = results.map(r => {
-        const icon = r.passed ? '✓' : '✗';
-        const color = r.passed ? '#16a34a' : 'var(--danger)';
-
-        if (r.error) {
-            return `<div style="margin-bottom: 8px; padding: 8px; background: rgba(220, 38, 38, 0.04); border-radius: 4px;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <span style="color: ${color}; font-weight: 600;">${icon}</span>
-                    <span style="flex: 1; font-weight: 500;">${r.file}</span>
-                    <span style="font-size: 0.65rem; color: var(--danger);">error</span>
-                </div>
-                <div style="font-size: 0.65rem; color: var(--danger); margin-top: 4px; margin-left: 18px;">
-                    ${r.error}
-                </div>
-            </div>`;
-        }
-
-        if (r.passed) {
-            return `<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding: 4px 0;">
-                <span style="color: ${color}; font-weight: 600;">${icon}</span>
-                <span style="flex: 1;">${r.file}</span>
-                <span style="font-size: 0.65rem; color: var(--text-muted);">match</span>
-            </div>`;
-        }
-
-        // Mismatch - show full details
-        return `<div style="margin-bottom: 8px; padding: 8px; background: rgba(220, 38, 38, 0.04); border-radius: 4px;">
-            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-                <span style="color: ${color}; font-weight: 600;">${icon}</span>
-                <span style="flex: 1; font-weight: 500;">${r.file}</span>
-                <span style="font-size: 0.65rem; color: var(--danger);">mismatch</span>
-            </div>
-            <div style="font-size: 0.62rem; font-family: monospace; margin-left: 18px;">
-                <div style="color: var(--text-muted); margin-bottom: 2px;">
-                    <span style="display: inline-block; width: 60px;">Expected:</span>
-                    <code style="background: var(--grey-bg); padding: 1px 4px; border-radius: 2px; word-break: break-all;">${r.expected}</code>
-                </div>
-                <div style="color: var(--danger);">
-                    <span style="display: inline-block; width: 60px;">Got:</span>
-                    <code style="background: rgba(220, 38, 38, 0.08); padding: 1px 4px; border-radius: 2px; word-break: break-all;">${r.computed}</code>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-
-    const matchCount = results.filter(r => r.passed).length;
-    const mismatchCount = results.filter(r => !r.passed).length;
-    const summaryColor = allPassed ? '#16a34a' : 'var(--danger)';
-    const summaryText = allPassed
-        ? `All ${matchCount} files verified ✓`
-        : `${mismatchCount} file${mismatchCount === 1 ? '' : 's'} modified (${matchCount} matched)`;
-
-    const explanation = allPassed
-        ? 'The served files match the expected hashes from the build manifest.'
-        : 'Some files differ from the build manifest. This may be expected in development, or could indicate tampering in production.';
-
-    statusEl.innerHTML = `
-        <div style="margin-bottom: 10px; padding: 10px; background: ${allPassed ? 'rgba(22, 163, 74, 0.08)' : 'rgba(220, 38, 38, 0.08)'}; border-radius: 6px;">
-            <div style="text-align: center; margin-bottom: 4px;">
-                <span style="color: ${summaryColor}; font-weight: 600;">${summaryText}</span>
-            </div>
-            <div style="text-align: center; font-size: 0.68rem; color: var(--text-muted);">
-                ${explanation}
-            </div>
-        </div>
-        <div style="font-size: 0.72rem;">${resultsHtml}</div>
-    `;
-
-    btnEl.disabled = false;
-    btnEl.textContent = 'Verify Again';
-}
-
-function renderVerificationModal() {
-    const content = document.getElementById('verify-build-content');
-    const info = verificationInfo;
-
-    if (!info) return;
-
-    const commit = info.commit || {};
-    const build = info.build || {};
-    const verification = info.verification || {};
-
-    content.innerHTML = `
-        <div style="margin-bottom: 16px;">
-            <div style="color: var(--text-muted); font-size: 0.75rem;">
-                Running from commit <code style="background: var(--grey-bg); padding: 1px 4px; border-radius: 3px;">${commit.short || 'unknown'}</code>
-                ${commit.date ? ` (${new Date(commit.date).toLocaleDateString()})` : ''}
-            </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-            <div style="background: var(--grey-bg); padding: 10px; border-radius: 6px; text-align: center;">
-                <div style="font-size: 0.9rem; font-weight: 600; color: var(--text);">${info.version || 'unknown'}</div>
-                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Version</div>
-            </div>
-            <div style="background: var(--grey-bg); padding: 10px; border-radius: 6px; text-align: center;">
-                <div style="font-size: 0.9rem; font-weight: 600; color: var(--text); font-family: monospace;">${build.hash || 'n/a'}</div>
-                <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Build Hash</div>
-            </div>
-        </div>
-
-        <!-- Verify Build Section -->
-        <div style="border-top: 1px solid var(--border-hair); padding-top: 12px; margin-bottom: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">
-                    Verify Build Integrity
-                </div>
-                <button type="button" class="btn-sm btn-sm--primary" id="btn-verify-build" onclick="verifyBuildHashes()">
-                    Verify Build
-                </button>
-            </div>
-            <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 8px;">
-                Computes SHA256 hashes of served files (CSS/JS) and compares against the build manifest.
-                <br>The manifest contains hashes generated when the build was created.
-            </div>
-            <div id="verify-status" style="display: none;"></div>
-        </div>
-
-        <!-- Manual Verification Section -->
-        <div style="border-top: 1px solid var(--border-hair); padding-top: 12px; margin-top: 12px;">
-            <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
-                Manual Verification
-            </div>
-            <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 8px;">
-                To independently verify the build, clone the repo and compare SHA256 hashes:
-            </div>
-            <div style="background: var(--grey-bg); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.68rem; white-space: pre-wrap; overflow-x: auto; position: relative;">
-<code style="display: block; line-height: 1.6;"># 1. Clone and checkout this version
-git clone https://github.com/aleksandr-bogdanov/whendoist
-cd whendoist && git checkout ${info.version || 'master'}
-
-# 2. Generate SHA256 hashes locally
-sha256sum static/css/*.css static/js/*.js</code>
-            </div>
-            <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 10px; margin-bottom: 6px;">
-                Expected hashes from build manifest (first 3 key files):
-            </div>
-            ${info.hashes ? `
-            <div style="background: var(--grey-bg); border-radius: 6px; padding: 8px 10px; font-family: monospace; font-size: 0.62rem; overflow-x: auto;">
-                ${['css/app.css', 'js/crypto.js', 'js/toast.js'].map(f => info.hashes[f] ?
-                    `<div style="margin-bottom: 3px; display: flex; gap: 8px;">
-                        <span style="color: var(--text-muted); flex-shrink: 0;">${f}:</span>
-                        <code style="word-break: break-all; color: var(--text);">${info.hashes[f]}</code>
-                    </div>` : '').join('')}
-                <div style="color: var(--text-faint); font-size: 0.6rem; margin-top: 4px;">
-                    + ${Object.keys(info.hashes).length - 3} more files... (click "Verify Build" to see all)
-                </div>
-            </div>
-            ` : '<div style="color: var(--text-muted); font-size: 0.68rem;">No hashes available in manifest</div>'}
-        </div>
-
-        <!-- Links Section -->
-        <div style="border-top: 1px solid var(--border-hair); padding-top: 12px; margin-top: 12px;">
-            <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
-                External Links
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <a href="${verification.github_release || '#'}" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 6px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                        <polyline points="15 3 21 3 21 9"/>
-                        <line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                    GitHub Release
-                </a>
-                <a href="${verification.source_code || '#'}" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 6px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="16 18 22 12 16 6"/>
-                        <polyline points="8 6 2 12 8 18"/>
-                    </svg>
-                    View Source Code
-                </a>
-            </div>
-        </div>
-    `;
-}
-
-// Load build info when page loads
 document.addEventListener('DOMContentLoaded', loadBuildInfo);
-
-// Escape key to close verify modal
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeVerifyBuildModal();
-    }
-});
 
 // ============================================================================
 // Theme Toggle

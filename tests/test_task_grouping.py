@@ -70,6 +70,8 @@ class TestBuildNativeTaskItem:
         assert "next_occurrence" in item
         assert "next_instance_id" in item
         assert "subtasks" in item
+        assert "parent_name" in item
+        assert "subtask_count" in item
         assert "completion_age_class" in item
         assert "instance_completed_at" in item
 
@@ -315,3 +317,79 @@ class TestBuildNativeTaskItem:
         item = build_native_task_item(task)
 
         assert item["subtasks"] == []
+
+    async def test_parent_name_none_for_top_level_task(
+        self, db_session: AsyncSession, test_user: User, test_domain: Domain
+    ):
+        """Top-level tasks have parent_name=None."""
+        task = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Top Level Task",
+        )
+        db_session.add(task)
+        await db_session.flush()
+
+        item = build_native_task_item(task)
+
+        assert item["parent_name"] is None
+
+    async def test_subtask_count_default_zero(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Tasks without subtask_count parameter have count=0."""
+        task = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Test Task",
+        )
+        db_session.add(task)
+        await db_session.flush()
+
+        item = build_native_task_item(task)
+
+        assert item["subtask_count"] == 0
+
+    async def test_subtask_count_passed_through(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Subtask count is passed through to task item."""
+        task = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Parent Task",
+        )
+        db_session.add(task)
+        await db_session.flush()
+
+        item = build_native_task_item(task, subtask_count=3)
+
+        assert item["subtask_count"] == 3
+
+    async def test_parent_name_from_eagerly_loaded_parent(
+        self, db_session: AsyncSession, test_user: User, test_domain: Domain
+    ):
+        """Subtask with eagerly loaded parent shows parent_name."""
+        parent = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Parent Task",
+        )
+        db_session.add(parent)
+        await db_session.flush()
+
+        child = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Child Task",
+            parent_id=parent.id,
+        )
+        db_session.add(child)
+        await db_session.flush()
+
+        # Eagerly load the parent relationship
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        result = await db_session.execute(select(Task).where(Task.id == child.id).options(selectinload(Task.parent)))
+        loaded_child = result.scalar_one()
+
+        item = build_native_task_item(loaded_child)
+
+        assert item["parent_name"] == "Parent Task"

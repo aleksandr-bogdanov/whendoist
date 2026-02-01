@@ -392,6 +392,16 @@
         const { taskId, content } = taskData;
         if (!taskId) return;
 
+        // Check for subtasks and confirm cascade delete
+        const taskEl = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+        const subtaskCount = parseInt(taskEl?.dataset.subtaskCount || '0', 10);
+        if (subtaskCount > 0) {
+            const confirmed = confirm(
+                `This task has ${subtaskCount} subtask${subtaskCount > 1 ? 's' : ''}. Deleting it will also delete all subtasks. Continue?`
+            );
+            if (!confirmed) return;
+        }
+
         wasDroppedSuccessfully = true; // Prevent unschedule logic
 
         // Cancel any pending deletion

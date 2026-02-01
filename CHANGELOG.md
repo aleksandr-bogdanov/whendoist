@@ -13,11 +13,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleanup justfile
 - Find unused/dead code
 - Clear up legal aspect (LICENSE?)
-- Polish railway.toml
 - Remove old logo everywhere
 - Add contact form on the website
 - Mobile view sorting doesn't work
 - Show only * tasks doesn't work
+
+---
+
+## [0.30.0] - 2026-02-01
+
+**Subtask Hierarchy & CI/CD Simplification** — Todoist import now preserves parent-child relationships, task list shows subtask breadcrumbs and badges, and the deployment pipeline is streamlined to let Railway handle releases.
+
+### Added
+- Subtask hierarchy in Todoist import (two-pass import preserving parent-child relationships)
+- Parent breadcrumb display in task list ("Parent →" prefix for subtasks)
+- Subtask count badge on parent tasks
+- Cascade delete confirmation when deleting parent tasks (drag-drop, swipe, mobile sheet)
+- Todoist completed tasks API v1 cursor-based pagination (by_completion_date endpoint)
+
+### Changed
+- CI pipeline: all 3 jobs (lint, typecheck, test) now run in parallel
+- Deployment model: Railway auto-deploys on merge with "Wait for CI" — no release workflow
+- Todoist import: subtasks inherit parent's domain instead of being flattened with "Parent →" prefix
+- Parent tasks imported with children now tracked as `parent_tasks_imported` (was `parents_flattened`)
+
+### Removed
+- Release workflow (`.github/workflows/release.yml`) — GPG signing, build manifests, SRI hashes, artifact attestations
+- Build provenance system (`build_info /hashes`, `/verify` endpoints, verification modal in settings)
+- Build manifest scripts (`generate_build_manifest.py`, `verify_build.py`)
+- `build-manifest` and `verify` justfile recipes
 
 ---
 

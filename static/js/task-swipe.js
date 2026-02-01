@@ -287,6 +287,15 @@ class TaskSwipeHandler {
         const taskId = task.dataset.taskId;
         const taskTitle = task.querySelector('.task-text')?.textContent || 'Task';
 
+        // Check for subtasks and confirm cascade delete
+        const subtaskCount = parseInt(task.dataset.subtaskCount || '0', 10);
+        if (subtaskCount > 0) {
+            const confirmed = confirm(
+                `This task has ${subtaskCount} subtask${subtaskCount > 1 ? 's' : ''}. Deleting it will also delete all subtasks. Continue?`
+            );
+            if (!confirmed) return;
+        }
+
         // Haptic feedback - warning for destructive action
         if (window.HapticEngine) {
             window.HapticEngine.trigger('warning');

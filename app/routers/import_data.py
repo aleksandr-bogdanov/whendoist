@@ -59,7 +59,7 @@ class ImportResponse(BaseModel):
     tasks_created: int
     tasks_skipped: int  # Already existed (duplicate)
     tasks_completed: int  # Completed tasks imported
-    parents_flattened: int  # Parent tasks merged into subtasks
+    parent_tasks_imported: int  # Parent tasks imported with children
     tasks_need_clarity: int  # Tasks without clarity label
     errors: list[str]
 
@@ -219,7 +219,7 @@ async def import_from_todoist(
         tasks_created=result.tasks_created,
         tasks_skipped=result.tasks_skipped,
         tasks_completed=result.tasks_completed,
-        parents_flattened=result.parents_flattened,
+        parent_tasks_imported=result.parent_tasks_imported,
         tasks_need_clarity=result.tasks_need_clarity,
         errors=result.errors,
     )

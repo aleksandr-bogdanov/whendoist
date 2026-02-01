@@ -27,13 +27,21 @@
                  data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
                  {% if task_item.next_instance_id %}data-instance-id="{{ task_item.next_instance_id }}"{% endif %}
                  data-title="{{ task.title }}"
+                 data-subtask-count="{{ task_item.subtask_count or 0 }}"
+                 {% if task.parent_id %}data-parent-id="{{ task.parent_id }}"{% endif %}
                  {% if not task.scheduled_date %}draggable="true"{% endif %}>
                 <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task.status == 'completed' else 'false' }}">
                     <span class="complete-bar"></span>
                     <span class="complete-check" aria-hidden="true">✓</span>
                 </button>
                 <div class="task-content">
+                    {% if task_item.parent_name %}
+                    <span class="task-breadcrumb">{% if encryption_enabled %}🔒{% else %}{{ task_item.parent_name }} →{% endif %}</span>
+                    {% endif %}
                     <span class="task-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
+                    {% if task_item.subtask_count %}
+                    <span class="subtask-badge">{{ task_item.subtask_count }} subtask{{ 's' if task_item.subtask_count > 1 else '' }}</span>
+                    {% endif %}
                     {% if task_item.next_occurrence or task.scheduled_date %}
                     <span class="task-due">
                         {% if task.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}
