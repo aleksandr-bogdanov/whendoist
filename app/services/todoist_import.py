@@ -128,7 +128,7 @@ class TodoistImportService:
                 # Import completed tasks for analytics
                 if include_completed:
                     completed = await client.get_completed_tasks(limit=completed_limit)
-                    await self._import_completed_tasks(completed, domain_map, result, skip_existing)
+                    await self._import_completed_tasks(completed, tasks, domain_map, result, skip_existing)
 
             await self.db.commit()
 
@@ -529,6 +529,7 @@ class TodoistImportService:
     async def _import_completed_tasks(
         self,
         completed_tasks: list[dict],
+        active_tasks: list[TodoistTask],
         domain_map: dict[str, int],
         result: ImportResult,
         skip_existing: bool,
@@ -537,6 +538,8 @@ class TodoistImportService:
         Import completed tasks from Todoist API v1.
 
         These tasks are marked as completed with their completed_at timestamp.
+        Subtasks are flattened using parent titles from both active and completed tasks,
+        since a completed subtask's parent is typically still active.
         """
         # Get existing tasks with Todoist external_id
         existing = await self.db.execute(
@@ -547,17 +550,21 @@ class TodoistImportService:
         )
         existing_by_ext_id = {t.external_id: t for t in existing.scalars().all()}
 
-        # Build parent title map for subtask flattening (same as active tasks)
-        parent_titles: dict[str, str] = {}
+        # Build parent title map from active tasks (most parents of completed subtasks
+        # are still active — completing a subtask doesn't complete the parent)
+        parent_titles: dict[str, str] = {t.id: t.content for t in active_tasks}
+
+        # Also add completed tasks as potential parents (parent and subtasks both completed)
         tasks_with_children: set[str] = set()
         for item in completed_tasks:
             item_id = str(item.get("id") or item.get("task_id") or "")
             parent_id = item.get("parent_id")
             if not item_id:
                 continue
-            if parent_id is None:
+            # Add to parent_titles (active tasks take precedence if ID overlaps)
+            if item_id not in parent_titles:
                 parent_titles[item_id] = item.get("content", "")
-            else:
+            if parent_id:
                 tasks_with_children.add(str(parent_id))
 
         for item in completed_tasks:
