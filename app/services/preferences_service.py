@@ -56,6 +56,7 @@ class PreferencesService:
         scheduled_move_to_bottom: bool | None = None,
         scheduled_sort_by_date: bool | None = None,
         timezone: str | None = None,
+        gcal_sync_all_day: bool | None = None,
     ) -> UserPreferences:
         """
         Update user preferences.
@@ -108,6 +109,9 @@ class PreferencesService:
                     prefs.timezone = timezone
                 except (KeyError, TypeError):
                     pass  # Silently ignore invalid timezones
+
+        if gcal_sync_all_day is not None:
+            prefs.gcal_sync_all_day = gcal_sync_all_day
 
         await self.db.flush()
         return prefs

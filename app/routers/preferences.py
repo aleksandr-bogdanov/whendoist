@@ -35,6 +35,7 @@ class PreferencesUpdate(BaseModel):
     scheduled_move_to_bottom: bool | None = None
     scheduled_sort_by_date: bool | None = None
     timezone: str | None = Field(None, max_length=50)  # IANA timezone (e.g., "America/New_York")
+    gcal_sync_all_day: bool | None = None
 
 
 class PreferencesResponse(BaseModel):
@@ -52,6 +53,8 @@ class PreferencesResponse(BaseModel):
     scheduled_move_to_bottom: bool
     scheduled_sort_by_date: bool
     timezone: str | None = None  # IANA timezone (e.g., "America/New_York")
+    gcal_sync_enabled: bool = False
+    gcal_sync_all_day: bool = True
 
 
 # E2E Encryption Models
@@ -112,6 +115,7 @@ async def update_preferences(
         scheduled_move_to_bottom=data.scheduled_move_to_bottom,
         scheduled_sort_by_date=data.scheduled_sort_by_date,
         timezone=data.timezone,
+        gcal_sync_all_day=data.gcal_sync_all_day,
     )
     await db.commit()
     return prefs

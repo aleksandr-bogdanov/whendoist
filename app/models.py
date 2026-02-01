@@ -13,6 +13,7 @@ from functools import lru_cache
 from cryptography.fernet import Fernet
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -129,6 +130,7 @@ class GoogleToken(Base):
     access_token_encrypted: Mapped[str] = mapped_column(Text)
     refresh_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    gcal_write_scope: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user: Mapped["User"] = relationship(back_populates="google_token")
 
@@ -209,6 +211,11 @@ class UserPreferences(Base):
 
     # Timezone preference (IANA format: "America/New_York", "Europe/London", etc.)
     timezone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    # Google Calendar Sync preferences
+    gcal_sync_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    gcal_sync_calendar_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    gcal_sync_all_day: Mapped[bool] = mapped_column(Boolean, default=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -428,3 +435,41 @@ class UserPasskey(Base):
     wrapped_key: Mapped[str] = mapped_column(Text)  # Master key wrapped (encrypted) with PRF-derived key
 
     user: Mapped["User"] = relationship(back_populates="passkeys")
+
+
+# =============================================================================
+# Google Calendar Sync Models (v0.31.0)
+# =============================================================================
+
+
+class GoogleCalendarEventSync(Base):
+    """
+    Maps Whendoist tasks/instances to Google Calendar events.
+
+    Tracks the sync state between a task (or task instance) and its
+    corresponding Google Calendar event. Used for one-way sync
+    (Whendoist -> Google Calendar).
+    """
+
+    __tablename__ = "google_calendar_event_syncs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    task_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)
+    task_instance_id: Mapped[int | None] = mapped_column(
+        ForeignKey("task_instances.id", ondelete="CASCADE"), nullable=True
+    )
+    google_event_id: Mapped[str] = mapped_column(String(255))
+    sync_hash: Mapped[str] = mapped_column(String(64))
+    last_synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        # Exactly one of task_id or task_instance_id must be set
+        CheckConstraint(
+            "(task_id IS NOT NULL AND task_instance_id IS NULL) OR (task_id IS NULL AND task_instance_id IS NOT NULL)",
+            name="ck_gcal_sync_one_reference",
+        ),
+        Index("ix_gcal_sync_user_task", "user_id", "task_id"),
+        Index("ix_gcal_sync_user_instance", "user_id", "task_instance_id"),
+    )

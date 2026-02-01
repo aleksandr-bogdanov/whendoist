@@ -22,14 +22,23 @@ SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly",
 ]
 
+# Extended scopes for calendar write access (task sync)
+SCOPES_WITH_WRITE = [
+    "openid",
+    "email",
+    "profile",
+    "https://www.googleapis.com/auth/calendar",  # Full read-write
+]
 
-def get_authorize_url(state: str) -> str:
+
+def get_authorize_url(state: str, write_scope: bool = False) -> str:
     settings = get_settings()
+    scopes = SCOPES_WITH_WRITE if write_scope else SCOPES
     params = {
         "client_id": settings.google_client_id,
         "redirect_uri": settings.google_redirect_uri,
         "response_type": "code",
-        "scope": " ".join(SCOPES),
+        "scope": " ".join(scopes),
         "state": state,
         "access_type": "offline",
         "prompt": "consent",

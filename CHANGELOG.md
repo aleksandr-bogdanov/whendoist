@@ -6,6 +6,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.31.0] - 2026-02-02 — Google Calendar Task Sync
+
+### Added
+- One-way sync: scheduled tasks appear in a dedicated "Whendoist" calendar in Google Calendar
+- Impact-based event colors: P1=Tomato, P2=Tangerine, P3=Banana, P4=Sage
+- Completed tasks show with "✓ " prefix and Graphite color
+- Recurring task instances synced individually (no RRULE)
+- Settings UI: enable/disable sync toggle, all-day event toggle, re-sync button
+- OAuth scope upgrade flow for calendar write access (incremental consent)
+- Dashboard deduplication: filters out events from the Whendoist sync calendar
+- `duration_minutes` auto-set to 30 when `scheduled_time` is provided without a duration
+- New database table `google_calendar_event_syncs` for sync state tracking
+- API endpoints: `/api/v1/gcal-sync/enable`, `/disable`, `/status`, `/full-sync`
+- Fire-and-forget background sync on task create/update/complete/delete
+
+### Changed
+- Google OAuth now supports optional write scope for calendar sync
+- Encryption users see sync toggle greyed out (requires plaintext titles)
+
+---
+
 ## [0.30.1] - 2026-02-01 — Quieter Production Logs
 
 ### Changed

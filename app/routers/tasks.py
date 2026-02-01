@@ -4,16 +4,22 @@ Task API endpoints.
 Provides REST endpoints for managing native tasks.
 """
 
+import asyncio
 import logging
 import re
 from datetime import date, datetime, time
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants import TASK_DESCRIPTION_MAX_LENGTH, TASK_TITLE_MAX_LENGTH, get_user_today
-from app.database import get_db
+from app.constants import (
+    GCAL_SYNC_DEFAULT_DURATION_MINUTES,
+    TASK_DESCRIPTION_MAX_LENGTH,
+    TASK_TITLE_MAX_LENGTH,
+    get_user_today,
+)
+from app.database import async_session_factory, get_db
 from app.middleware.rate_limit import TASK_CREATE_LIMIT, limiter
 from app.models import Task, User
 from app.routers.auth import require_user
@@ -27,6 +33,61 @@ CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 logger = logging.getLogger("whendoist.tasks")
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
+
+
+async def _fire_and_forget_sync_task(task_id: int, user_id: int) -> None:
+    """Fire-and-forget: sync a task to Google Calendar in a background coroutine."""
+    try:
+        async with async_session_factory() as db:
+            from app.services.gcal_sync import GCalSyncService
+
+            sync_service = GCalSyncService(db, user_id)
+            task_service = TaskService(db, user_id)
+            task = await task_service.get_task(task_id)
+            if task:
+                await sync_service.sync_task(task)
+            await db.commit()
+    except Exception as e:
+        logger.debug(f"GCal sync failed for task {task_id}: {e}")
+
+
+async def _fire_and_forget_unsync_task(task_id: int, user_id: int) -> None:
+    """Fire-and-forget: unsync a task from Google Calendar."""
+    try:
+        async with async_session_factory() as db:
+            from app.services.gcal_sync import GCalSyncService
+
+            sync_service = GCalSyncService(db, user_id)
+            task_service = TaskService(db, user_id)
+            task = await task_service.get_task(task_id)
+            if task:
+                await sync_service.unsync_task(task)
+            await db.commit()
+    except Exception as e:
+        logger.debug(f"GCal unsync failed for task {task_id}: {e}")
+
+
+async def _fire_and_forget_sync_instance(instance_id: int, task_id: int, user_id: int) -> None:
+    """Fire-and-forget: sync a task instance to Google Calendar."""
+    try:
+        async with async_session_factory() as db:
+            from sqlalchemy import select as sa_select
+
+            from app.models import TaskInstance
+            from app.services.gcal_sync import GCalSyncService
+
+            sync_service = GCalSyncService(db, user_id)
+            task_service = TaskService(db, user_id)
+            task = await task_service.get_task(task_id)
+
+            result = await db.execute(sa_select(TaskInstance).where(TaskInstance.id == instance_id))
+            instance = result.scalar_one_or_none()
+
+            if task and instance:
+                await sync_service.sync_task_instance(instance, task)
+            await db.commit()
+    except Exception as e:
+        logger.debug(f"GCal sync failed for instance {instance_id}: {e}")
 
 
 # =============================================================================
@@ -78,6 +139,13 @@ class TaskCreate(BaseModel):
             raise ValueError(f"Description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
         return v
 
+    @model_validator(mode="after")
+    def ensure_duration_with_time(self) -> "TaskCreate":
+        """If scheduled_time is set, ensure duration_minutes has a value."""
+        if self.scheduled_time is not None and self.duration_minutes is None:
+            self.duration_minutes = GCAL_SYNC_DEFAULT_DURATION_MINUTES
+        return self
+
 
 class TaskUpdate(BaseModel):
     """Request body for updating a task."""
@@ -119,6 +187,14 @@ class TaskUpdate(BaseModel):
         if len(v) > TASK_DESCRIPTION_MAX_LENGTH:
             raise ValueError(f"Description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
         return v
+
+    @model_validator(mode="after")
+    def ensure_duration_with_time(self) -> "TaskUpdate":
+        """If scheduled_time is being set, ensure duration_minutes has a value."""
+        if self.scheduled_time is not None and self.duration_minutes is None:
+            # Only auto-fill if scheduled_time was explicitly provided in the request
+            self.duration_minutes = GCAL_SYNC_DEFAULT_DURATION_MINUTES
+        return self
 
 
 class SubtaskResponse(BaseModel):
@@ -373,6 +449,11 @@ async def create_task(
     reloaded = await service.get_task(task.id)
     if not reloaded:
         raise HTTPException(status_code=500, detail="Failed to reload task")
+
+    # Fire-and-forget sync to Google Calendar
+    if task.scheduled_date:
+        asyncio.create_task(_fire_and_forget_sync_task(task.id, user.id))
+
     return _task_to_response(reloaded, user_today)
 
 
@@ -420,6 +501,10 @@ async def update_task(
     reloaded = await service.get_task(task_id)
     if not reloaded:
         raise HTTPException(status_code=500, detail="Failed to reload task")
+
+    # Fire-and-forget sync to Google Calendar
+    asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
+
     return _task_to_response(reloaded, user_today)
 
 
@@ -436,6 +521,9 @@ async def delete_task(
         raise HTTPException(status_code=404, detail="Task not found")
     await db.commit()
 
+    # Fire-and-forget unsync from Google Calendar
+    asyncio.create_task(_fire_and_forget_unsync_task(task_id, user.id))
+
 
 @router.post("/{task_id}/restore", status_code=200)
 async def restore_task(
@@ -449,6 +537,11 @@ async def restore_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found or not archived")
     await db.commit()
+
+    # Fire-and-forget re-sync to Google Calendar
+    if task.scheduled_date:
+        asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
+
     return {"status": "restored", "task_id": task_id}
 
 
@@ -473,6 +566,10 @@ async def complete_task(
 
     await service.complete_task(task_id)
     await db.commit()
+
+    # Fire-and-forget sync (updates title with ✓ and color to Graphite)
+    asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
+
     return {"status": "completed", "task_id": task_id}
 
 
@@ -491,6 +588,10 @@ async def uncomplete_task(
 
     await service.uncomplete_task(task_id)
     await db.commit()
+
+    # Fire-and-forget sync (removes ✓ and restores impact color)
+    asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
+
     return {"status": "pending", "task_id": task_id}
 
 
@@ -534,6 +635,11 @@ async def toggle_task_complete(
         # Toggle the instance
         toggled_instance = await recurrence_service.toggle_instance_completion(instance.id)
         await db.commit()
+
+        # Fire-and-forget sync instance to Google Calendar
+        if toggled_instance:
+            asyncio.create_task(_fire_and_forget_sync_instance(instance.id, task_id, user.id))
+
         return {
             "status": toggled_instance.status if toggled_instance else "error",
             "task_id": task_id,
@@ -543,6 +649,10 @@ async def toggle_task_complete(
 
     updated_task = await service.toggle_task_completion(task_id)
     await db.commit()
+
+    # Fire-and-forget sync to Google Calendar
+    asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
+
     return {
         "status": updated_task.status if updated_task else "error",
         "task_id": task_id,

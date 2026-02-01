@@ -146,10 +146,10 @@ async def todoist_callback(
 
 
 @router.get("/google")
-async def google_login(wizard: bool = False) -> Response:
-    """Redirect to Google OAuth."""
+async def google_login(wizard: bool = False, write_scope: bool = False) -> Response:
+    """Redirect to Google OAuth. Set write_scope=true to request calendar write access."""
     state = google.generate_state()
-    url = google.get_authorize_url(state)
+    url = google.get_authorize_url(state, write_scope=write_scope)
     response = RedirectResponse(url, status_code=302)
     response.set_cookie(
         key="google_oauth_state",
@@ -171,6 +171,17 @@ async def google_login(wizard: bool = False) -> Response:
             secure=_is_production,
             path="/",
         )
+    # Track if we requested write scope (for gcal sync setup)
+    if write_scope:
+        response.set_cookie(
+            key="oauth_gcal_write_scope",
+            value="true",
+            max_age=600,
+            httponly=True,
+            samesite="lax",
+            secure=_is_production,
+            path="/",
+        )
     logger.debug(f"Set google_oauth_state cookie, secure={_is_production}")
     return response
 
@@ -184,6 +195,7 @@ async def google_callback(
     db: AsyncSession = Depends(get_db),
     google_oauth_state: str | None = Cookie(default=None),
     oauth_return_to_wizard: str | None = Cookie(default=None),
+    oauth_gcal_write_scope: str | None = Cookie(default=None),
 ) -> Response:
     """Handle Google OAuth callback."""
     if not google_oauth_state:
@@ -223,13 +235,21 @@ async def google_callback(
     result = await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))
     token = result.scalar_one_or_none()
 
+    has_write_scope = oauth_gcal_write_scope == "true"
+
     if token:
         token.access_token = access_token
         if refresh_token:
             token.refresh_token = refresh_token
         token.expires_at = google.calculate_expires_at(expires_in)
+        if has_write_scope:
+            token.gcal_write_scope = True
     else:
-        token = GoogleToken(user_id=user.id, expires_at=google.calculate_expires_at(expires_in))
+        token = GoogleToken(
+            user_id=user.id,
+            expires_at=google.calculate_expires_at(expires_in),
+            gcal_write_scope=has_write_scope,
+        )
         token.access_token = access_token
         token.refresh_token = refresh_token
         db.add(token)
@@ -237,9 +257,14 @@ async def google_callback(
     await db.commit()
 
     request.session["user_id"] = str(user.id)
-    response = RedirectResponse(url="/dashboard", status_code=303)
+    # Redirect to settings if returning from write scope upgrade
+    redirect_url = "/settings" if has_write_scope else "/dashboard"
+    if oauth_return_to_wizard:
+        redirect_url = "/dashboard"
+    response = RedirectResponse(url=redirect_url, status_code=303)
     response.delete_cookie("google_oauth_state")
     response.delete_cookie("oauth_return_to_wizard")
+    response.delete_cookie("oauth_gcal_write_scope")
     return response
 
 

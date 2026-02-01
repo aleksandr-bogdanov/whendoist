@@ -13,6 +13,7 @@ from app.routers import (
     backup,
     build_info,
     domains,
+    gcal_sync,
     import_data,
     instances,
     passkeys,
@@ -33,3 +34,4 @@ router.include_router(backup.router)
 router.include_router(import_data.router)
 router.include_router(build_info.router)
 router.include_router(wizard.router)
+router.include_router(gcal_sync.router)
