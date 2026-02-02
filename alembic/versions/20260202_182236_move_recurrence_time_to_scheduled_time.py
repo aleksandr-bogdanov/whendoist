@@ -42,13 +42,15 @@ def upgrade() -> None:
     )
 
     # Step 2: Remove the "time" key from all recurrence_rule JSON objects
+    # Note: cast to jsonb because the column is json type, and the ? (key exists)
+    # and - (key removal) operators only work with jsonb in PostgreSQL.
     conn.execute(
         text("""
             UPDATE tasks
-            SET recurrence_rule = recurrence_rule - 'time'
+            SET recurrence_rule = (recurrence_rule::jsonb - 'time')::json
             WHERE is_recurring = true
               AND recurrence_rule IS NOT NULL
-              AND recurrence_rule ? 'time'
+              AND recurrence_rule::jsonb ? 'time'
         """)
     )
 
