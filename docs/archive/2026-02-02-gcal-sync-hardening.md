@@ -2,13 +2,13 @@
 
 Reliability and performance fixes for the GCal one-way sync, applied across two rounds of hardening after the initial v0.31.0 release.
 
-For the original sync design, see [GCAL-SYNC-PLAN.md](GCAL-SYNC-PLAN.md).
+For the original sync design, see [2026-02-02-gcal-sync-plan.md](2026-02-02-gcal-sync-plan.md). For current architecture, see [../GCAL-SYNC.md](../GCAL-SYNC.md).
 
 ---
 
 ## Round 1: v0.31.2 – v0.31.7
 
-Addressed rate limiting, duplicate calendars/events, synchronous blocking, and UI feedback. Archived in detail at [archive/2026-02-02-gcal-sync-hardening-v1.md](archive/2026-02-02-gcal-sync-hardening-v1.md).
+Addressed rate limiting, duplicate calendars/events, synchronous blocking, and UI feedback. Archived in detail at [2026-02-02-gcal-sync-hardening-v1.md](2026-02-02-gcal-sync-hardening-v1.md).
 
 **Key changes:**
 
