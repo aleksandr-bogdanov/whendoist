@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.7] - 2026-02-02 — Sync Recurring Task Instances on Create/Update
+
+### Fixed
+- **Recurring task instances not syncing to GCal on create/update** — creating or updating a recurring task now triggers a bulk sync so all materialized instances appear on Google Calendar immediately, instead of waiting for the hourly background job
+
+---
+
 ## [0.32.6] - 2026-02-02 — Faster Deploys
 
 Instance materialization now runs as a background task after the server starts accepting connections, instead of blocking startup. This fixes intermittent Railway healthcheck failures where the 30-second window expired during heavy materialization + GCal sync work.
