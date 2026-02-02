@@ -131,6 +131,31 @@
     color: var(--primary-hover);
 }
 
+.pending-past-banner {
+    background: var(--impact-high-tint, #fff3cd);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--impact-high, #ffc107);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.pending-past-text {
+    flex: 1 1 auto;
+}
+
+.pending-past-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
 /* =============================================================================
    Tasks Panel
    ============================================================================= */

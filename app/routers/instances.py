@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import TaskInstance, User
 from app.routers.auth import require_user
+from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
 
 router = APIRouter(prefix="/instances", tags=["instances"])
@@ -163,3 +164,69 @@ async def schedule_instance(
         raise HTTPException(status_code=404, detail="Instance not found")
     await db.commit()
     return _instance_to_response(instance)
+
+
+# =============================================================================
+# Batch Endpoints
+# =============================================================================
+
+
+class BatchCompleteRequest(BaseModel):
+    """Request body for batch completing instances of a single task."""
+
+    task_id: int
+    before_date: date
+
+
+class BatchAction(BaseModel):
+    """Request body for batch actions on all past instances."""
+
+    action: str  # "complete" or "skip"
+
+
+@router.post("/batch-complete", status_code=200)
+async def batch_complete_instances(
+    data: BatchCompleteRequest,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Complete all pending instances for a task before a given date."""
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    service = RecurrenceService(db, user.id, timezone=timezone)
+    count = await service.batch_complete_instances(data.task_id, data.before_date)
+    await db.commit()
+    return {"completed_count": count}
+
+
+@router.get("/pending-past-count", status_code=200)
+async def pending_past_count(
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Count pending instances from past days across all tasks."""
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    service = RecurrenceService(db, user.id, timezone=timezone)
+    count = await service.count_pending_past_instances()
+    return {"pending_count": count}
+
+
+@router.post("/batch-past", status_code=200)
+async def batch_past_instances(
+    data: BatchAction,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Complete or skip all pending past instances across all tasks."""
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    service = RecurrenceService(db, user.id, timezone=timezone)
+    if data.action == "complete":
+        count = await service.batch_complete_all_past_instances()
+    elif data.action == "skip":
+        count = await service.batch_skip_all_past_instances()
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action. Use 'complete' or 'skip'.")
+    await db.commit()
+    return {"affected_count": count}
