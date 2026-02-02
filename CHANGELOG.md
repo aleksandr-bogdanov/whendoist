@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.11] - 2026-02-02 — Weekly Preset Day of Week
+
+### Fixed
+- **Weekly preset ambiguity** — selecting "Weekly" recurrence now auto-selects today's day of week (e.g., "Every Monday" on a Monday) instead of sending a bare `{ freq: 'weekly', interval: 1 }` with no day, which relied on unpredictable backend defaults. Applied to both desktop dialog and mobile recurrence picker.
+
+---
+
 ## [0.32.10] - 2026-02-02 — Prevent Recurrence Rule Data Loss
 
 ### Fixed

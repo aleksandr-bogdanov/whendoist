@@ -637,7 +637,13 @@
                     customPanel.hidden = true;
                     // Store as JSON object or empty string
                     if (value && value !== '') {
-                        setRecurrenceRule({ freq: value, interval: 1 });
+                        const rule = { freq: value, interval: 1 };
+                        // For "Weekly", default to today's day of week
+                        if (value === 'weekly') {
+                            const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+                            rule.days_of_week = [dayMap[new Date().getDay()]];
+                        }
+                        setRecurrenceRule(rule);
                     } else {
                         setRecurrenceRule(null);
                     }
