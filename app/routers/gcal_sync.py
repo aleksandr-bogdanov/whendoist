@@ -83,10 +83,11 @@ def _is_sync_running(user_id: int) -> bool:
     return lock is not None and lock.locked()
 
 
-async def _background_bulk_sync(user_id: int) -> None:
+async def _background_bulk_sync(user_id: int, *, clear_calendar: bool = False) -> None:
     """Run bulk sync in background with its own DB session.
 
     Uses per-user lock to prevent concurrent syncs (e.g., user clicks enable twice).
+    If clear_calendar is True, clears stale events from the calendar before syncing.
     """
     lock = _bulk_sync_locks.setdefault(user_id, asyncio.Lock())
     if lock.locked():
@@ -96,6 +97,25 @@ async def _background_bulk_sync(user_id: int) -> None:
     async with lock:
         try:
             async with async_session_factory() as db:
+                # Clear stale events from reused calendar before syncing
+                if clear_calendar:
+                    prefs_service = PreferencesService(db, user_id)
+                    prefs = await prefs_service.get_preferences()
+                    if prefs and prefs.gcal_sync_calendar_id:
+                        token_result = await db.execute(select(GoogleToken).where(GoogleToken.user_id == user_id))
+                        google_token = token_result.scalar_one_or_none()
+                        if google_token:
+                            try:
+                                async with GoogleCalendarClient(db, google_token) as client:
+                                    cleared = await client.clear_all_events(prefs.gcal_sync_calendar_id)
+                                    if cleared:
+                                        logger.info(
+                                            f"Cleared {cleared} stale events from "
+                                            f"calendar {prefs.gcal_sync_calendar_id}"
+                                        )
+                            except Exception as e:
+                                logger.warning(f"Failed to clear stale events for user {user_id}: {e}")
+
                 sync_service = GCalSyncService(db, user_id)
                 stats = await sync_service.bulk_sync()
                 await db.commit()
@@ -187,16 +207,13 @@ async def enable_sync(
     try:
         async with GoogleCalendarClient(db, google_token) as client:
             calendar_id, created = await client.find_or_create_calendar(GCAL_SYNC_CALENDAR_NAME)
-
-            # If reusing an existing calendar, clear stale events so bulk_sync
-            # recreates everything from scratch (prevents orphan/duplicate events).
-            if not created:
-                cleared = await client.clear_all_events(calendar_id)
-                if cleared:
-                    logger.info(f"Cleared {cleared} stale events from reused calendar {calendar_id}")
     except Exception as e:
         logger.error(f"Failed to find/create Whendoist calendar: {e}")
         raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
+
+    # If reusing an existing calendar, stale events will be cleared
+    # in the background task before bulk_sync runs (avoids blocking the response).
+    clear_stale = not created
 
     # Always clear sync records — bulk_sync will recreate them from current task state.
     await db.execute(
@@ -210,12 +227,13 @@ async def enable_sync(
     prefs.gcal_sync_calendar_id = calendar_id
     await db.commit()
 
-    # Run bulk sync in background so enable returns instantly
-    asyncio.create_task(_background_bulk_sync(user.id))
+    # Run bulk sync in background so enable returns instantly.
+    # If reusing a calendar, clear stale events first.
+    asyncio.create_task(_background_bulk_sync(user.id, clear_calendar=clear_stale))
 
     msg = (
         "Sync enabled. Syncing tasks in background (may take up to 10 min)..."
-        if created
+        if not clear_stale
         else "Sync re-enabled. Syncing tasks in background (may take up to 10 min)..."
     )
     return SyncEnableResponse(
@@ -239,14 +257,27 @@ async def disable_sync(
         return SyncDisableResponse(success=True, message="Sync was already disabled.")
 
     deleted_count = 0
-    if data and data.delete_events:
+    calendar_id = prefs.gcal_sync_calendar_id
+    if data and data.delete_events and calendar_id:
+        # Delete the entire Whendoist calendar (1 API call) instead of
+        # looping through individual events which can take minutes and timeout.
         try:
-            sync_service = GCalSyncService(db, user.id)
-            deleted_count = await sync_service.delete_all_synced_events()
+            token_result = await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))
+            google_token = token_result.scalar_one_or_none()
+            if google_token:
+                async with GoogleCalendarClient(db, google_token) as client:
+                    await client.delete_calendar(calendar_id)
+                # Count sync records for the response message
+                count_result = await db.execute(select(func.count()).where(GoogleCalendarEventSync.user_id == user.id))
+                deleted_count = count_result.scalar() or 0
         except Exception as e:
-            logger.error(f"Failed to delete synced events for user {user.id}: {e}")
+            logger.error(f"Failed to delete Whendoist calendar for user {user.id}: {e}")
+
+    # Always clean up sync records
+    await db.execute(delete(GoogleCalendarEventSync).where(GoogleCalendarEventSync.user_id == user.id))
 
     prefs.gcal_sync_enabled = False
+    prefs.gcal_sync_calendar_id = None
     prefs.gcal_sync_error = None
     await db.commit()
 
