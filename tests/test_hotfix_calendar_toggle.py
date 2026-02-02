@@ -35,30 +35,24 @@ class TestCalendarToggleUrlEncoding:
 
     def test_calendar_toggle_url_is_urlencoded(self):
         """
-        Calendar toggle hx-post URL MUST use urlencode filter.
+        Calendar toggle URL MUST encode the calendar ID.
 
-        Without urlencode, calendar IDs containing # are broken:
+        Without encoding, calendar IDs containing # are broken:
         - /api/v1/calendars/en.usa#holiday@group.v.calendar.google.com/toggle
         - Browser sends: /api/v1/calendars/en.usa (everything after # is fragment)
 
-        With urlencode:
-        - /api/v1/calendars/en.usa%23holiday%40group.v.calendar.google.com/toggle
-        - Browser sends full path correctly
+        The toggle uses fetch() with encodeURIComponent() in JavaScript.
         """
         settings_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
         source = settings_file.read_text()
 
-        # Find the calendar toggle section - it's the hx-post for toggling calendars
-        assert "hx-post=" in source, "Template must have HTMX post for calendar toggle"
-
-        # Find the calendar toggle line specifically
-        # Should be: hx-post="/api/v1/calendars/{{ cal.id | urlencode }}/toggle"
-        assert "cal.id | urlencode" in source or "cal.id|urlencode" in source, (
-            "Calendar toggle hx-post URL must URL-encode the calendar ID using "
-            "{{ cal.id | urlencode }}. Without this, calendar IDs containing # or @ "
-            "characters will break (e.g., holiday calendars, shared calendars). "
-            "The # character is interpreted as a URL fragment delimiter, causing "
-            "the toggle to fail silently."
+        # Calendar toggle must use encodeURIComponent (fetch-based) or urlencode (HTMX)
+        has_js_encoding = "encodeURIComponent" in source and "calendars/" in source
+        has_htmx_encoding = "cal.id | urlencode" in source or "cal.id|urlencode" in source
+        assert has_js_encoding or has_htmx_encoding, (
+            "Calendar toggle URL must encode the calendar ID. "
+            "Use encodeURIComponent() in fetch or {{ cal.id | urlencode }} in HTMX. "
+            "Without this, calendar IDs containing # or @ characters will break."
         )
 
     def test_calendar_toggle_endpoint_registered(self):

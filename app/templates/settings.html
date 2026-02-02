@@ -104,23 +104,178 @@
                     </div>
                     <div class="settings-panel__bd">
                         <!-- Google Calendar row -->
+                        {% if google_connected %}
+                        <div class="settings-row settings-row--clickable" onclick="toggleGcalSection()" id="gcal-row">
+                            <div class="provider-icon">G</div>
+                            <div class="provider-info">
+                                <div class="provider-name">Google Calendar</div>
+                                <div class="provider-status">
+                                    <span class="status-dot connected"></span>
+                                    Connected
+                                </div>
+                            </div>
+                            <div class="settings-row__right">
+                                <div class="row-chevron" id="gcal-chevron">
+                                    <svg class="icon icon-sm" aria-hidden="true">
+                                        <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#chevron-down"></use>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Google Calendar expanded section -->
+                        <div class="expand-section" id="gcal-expand">
+                            <div class="expand-content">
+                                <!-- Sub-section: Visible Calendars -->
+                                <div class="expand-subsection">
+                                    <div class="expand-label-row">
+                                        <div class="expand-label">Visible Calendars</div>
+                                        {% if calendars %}
+                                        <span class="expand-hint">Toggle to show</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if calendars %}
+                                    <div class="expand-list">
+                                        {% for cal in calendars %}
+                                        {% if cal.summary == "Whendoist" or (user_prefs and user_prefs.gcal_sync_calendar_id and cal.id == user_prefs.gcal_sync_calendar_id) %}
+                                        {# Skip — shown in Task Sync sub-section instead #}
+                                        {% else %}
+                                        <div class="settings-row settings-row--clickable settings-row--calendar" onclick="toggleCalendarVisibility('{{ cal.id }}', this)">
+                                            <div class="calendar-dot" style="background-color: {{ cal.background_color }};"></div>
+                                            <div class="calendar-info">
+                                                <span class="calendar-name" title="{{ cal.summary }}">{{ cal.summary }}</span>
+                                                {% if cal.primary %}
+                                                <div class="calendar-meta">
+                                                    <span class="calendar-badge">Primary</span>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="settings-row__right">
+                                                <button
+                                                    type="button"
+                                                    class="toggle-switch {% if cal.enabled %}enabled{% endif %}"
+                                                    data-calendar-id="{{ cal.id }}"
+                                                    onclick="event.stopPropagation(); toggleCalendarVisibility('{{ cal.id }}', this.closest('.settings-row'))"
+                                                    aria-label="Toggle calendar"
+                                                ></button>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                        <div class="empty-state">No calendars found</div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Divider -->
+                                <div class="expand-divider"></div>
+
+                                <!-- Sub-section: Task Sync -->
+                                <div class="expand-subsection" id="gcal-sync-section">
+                                    <div class="expand-label-row">
+                                        <div class="expand-label">Task Sync</div>
+                                        {% for cal in calendars %}
+                                        {% if cal.summary == "Whendoist" or (user_prefs and user_prefs.gcal_sync_calendar_id and cal.id == user_prefs.gcal_sync_calendar_id) %}
+                                        <span class="sync-target-hint">
+                                            <span class="calendar-dot" style="background-color: {{ cal.background_color }};"></span>
+                                            {{ cal.summary }}
+                                        </span>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% if encryption_enabled %}
+                                    <div class="expand-list">
+                                        <div class="settings-row">
+                                            <div class="backup-info">
+                                                <span class="pref-label">Sync tasks to Google Calendar</span>
+                                                <span class="pref-desc" style="color: var(--color-text-muted);">
+                                                    Sync requires unencrypted task titles. Disable E2E encryption to use this feature.
+                                                </span>
+                                            </div>
+                                            <div class="settings-row__right">
+                                                <button type="button" class="toggle-switch" disabled title="Requires encryption to be disabled"></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    {% if user_prefs and user_prefs.gcal_sync_error %}
+                                    <div class="settings-row" id="gcal-sync-error-row" style="background: var(--color-danger-bg, #fef2f2); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;">
+                                        <div class="backup-info">
+                                            <span class="pref-label" style="color: var(--color-danger, #dc2626);">Sync stopped</span>
+                                            <span class="pref-desc" style="color: var(--color-danger, #dc2626);">
+                                                {{ user_prefs.gcal_sync_error }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    <div class="expand-list">
+                                        <div class="settings-row">
+                                            <div class="backup-info">
+                                                <span class="pref-label">Sync tasks to Google Calendar</span>
+                                                <span class="pref-desc" id="gcal-sync-status">
+                                                    {% if user_prefs and user_prefs.gcal_sync_enabled %}
+                                                    Synced to: Whendoist calendar
+                                                    {% else %}
+                                                    One-way sync &mdash; changes in Whendoist appear in Google Calendar.
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="settings-row__right">
+                                                <button
+                                                    type="button"
+                                                    class="toggle-switch {% if user_prefs and user_prefs.gcal_sync_enabled %}enabled{% endif %}"
+                                                    id="gcal-sync-toggle"
+                                                    onclick="event.stopPropagation(); toggleGcalSync(this)"
+                                                    aria-label="Toggle Google Calendar sync"
+                                                ></button>
+                                            </div>
+                                        </div>
+                                        {% if user_prefs and user_prefs.gcal_sync_enabled %}
+                                        <div class="settings-row" id="gcal-sync-options">
+                                            <div class="backup-info">
+                                                <span class="pref-label">Include date-only tasks as all-day events</span>
+                                                <span class="pref-desc">Tasks without a specific time will appear as all-day events.</span>
+                                            </div>
+                                            <div class="settings-row__right">
+                                                <button
+                                                    type="button"
+                                                    class="toggle-switch {% if user_prefs.gcal_sync_all_day %}enabled{% endif %}"
+                                                    id="gcal-sync-allday-toggle"
+                                                    onclick="event.stopPropagation(); toggleGcalSyncAllDay(this)"
+                                                    aria-label="Toggle all-day event sync"
+                                                ></button>
+                                            </div>
+                                        </div>
+                                        <div class="settings-row">
+                                            <div class="backup-info">
+                                                <span class="pref-label">Re-sync all tasks</span>
+                                                <span class="pref-desc">Force a full re-sync of all scheduled tasks.</span>
+                                            </div>
+                                            <div class="settings-row__right">
+                                                <button type="button" class="btn-sm btn-sm--secondary" id="btn-resync" onclick="event.stopPropagation(); resyncAllTasks()">Re-sync</button>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
                         <div class="settings-row">
                             <div class="provider-icon">G</div>
                             <div class="provider-info">
                                 <div class="provider-name">Google Calendar</div>
                                 <div class="provider-status">
-                                    <span class="status-dot {% if google_connected %}connected{% endif %}"></span>
-                                    {% if google_connected %}Connected{% else %}Not connected{% endif %}
+                                    <span class="status-dot"></span>
+                                    Not connected
                                 </div>
                             </div>
                             <div class="settings-row__right">
-                                {% if google_connected %}
-                                <span class="muted-label">Linked to login</span>
-                                {% else %}
                                 <a href="/auth/google" class="btn-sm btn-sm--primary">Connect</a>
-                                {% endif %}
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Todoist row (expandable when connected) -->
                         {% if todoist_connected %}
@@ -183,141 +338,6 @@
                     </div>
                 </div>
 
-                <!-- GOOGLE CALENDARS Panel -->
-                <div class="settings-panel {% if not google_connected %}settings-panel--disabled{% endif %}">
-                    <div class="settings-panel__hd">
-                        <div class="panel-hd-left">
-                            <p class="panel-title">Google Calendars</p>
-                            <p class="panel-desc">Choose which calendars are visible in the day view. Hidden calendars won't block time.</p>
-                        </div>
-                        {% if google_connected and calendars %}
-                        <span class="panel-hd-right">Toggle to show</span>
-                        {% endif %}
-                    </div>
-                    <div class="settings-panel__bd">
-                        {% if not google_connected %}
-                        <div class="panel-disabled-notice">
-                            Connect Google Calendar to choose calendars.
-                        </div>
-                        <div class="empty-state">—</div>
-                        {% elif calendars %}
-                            {% for cal in calendars %}
-                            <div class="settings-row settings-row--clickable settings-row--calendar" onclick="toggleCalendar(this, '{{ cal.id }}')">
-                                <div class="calendar-dot" style="background-color: {{ cal.background_color }};"></div>
-                                <div class="calendar-info">
-                                    <span class="calendar-name" title="{{ cal.summary }}">{{ cal.summary }}</span>
-                                    {% if cal.primary %}
-                                    <div class="calendar-meta">
-                                        <span class="calendar-badge">Primary</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <div class="settings-row__right">
-                                    <button
-                                        type="button"
-                                        class="toggle-switch {% if cal.enabled %}enabled{% endif %}"
-                                        data-calendar-id="{{ cal.id }}"
-                                        onclick="event.stopPropagation()"
-                                        hx-post="/api/v1/calendars/{{ cal.id | urlencode }}/toggle"
-                                        hx-swap="none"
-                                        hx-on::after-request="handleCalendarToggle(this)"
-                                        aria-label="Toggle calendar"
-                                    ></button>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="empty-state">No calendars found</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- GOOGLE CALENDAR SYNC Panel -->
-                <div class="settings-panel {% if not google_connected %}settings-panel--disabled{% endif %}" id="gcal-sync-panel">
-                    <div class="settings-panel__hd">
-                        <div class="panel-hd-left">
-                            <p class="panel-title">Task Sync</p>
-                            <p class="panel-desc">Sync scheduled tasks to a dedicated "Whendoist" calendar in Google Calendar. Initial sync and re-sync may take up to 10 minutes depending on the number of tasks.</p>
-                        </div>
-                    </div>
-                    <div class="settings-panel__bd">
-                        {% if not google_connected %}
-                        <div class="panel-disabled-notice">
-                            Connect Google Calendar to enable task sync.
-                        </div>
-                        {% elif encryption_enabled %}
-                        <div class="settings-row">
-                            <div class="backup-info">
-                                <span class="pref-label">Sync tasks to Google Calendar</span>
-                                <span class="pref-desc" style="color: var(--color-text-muted);">
-                                    Sync requires unencrypted task titles. Disable E2E encryption to use this feature.
-                                </span>
-                            </div>
-                            <div class="settings-row__right">
-                                <button type="button" class="toggle-switch" disabled title="Requires encryption to be disabled"></button>
-                            </div>
-                        </div>
-                        {% else %}
-                        {% if user_prefs and user_prefs.gcal_sync_error %}
-                        <div class="settings-row" id="gcal-sync-error-row" style="background: var(--color-danger-bg, #fef2f2); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;">
-                            <div class="backup-info">
-                                <span class="pref-label" style="color: var(--color-danger, #dc2626);">Sync stopped</span>
-                                <span class="pref-desc" style="color: var(--color-danger, #dc2626);">
-                                    {{ user_prefs.gcal_sync_error }}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-                        <div class="settings-row">
-                            <div class="backup-info">
-                                <span class="pref-label">Sync tasks to Google Calendar</span>
-                                <span class="pref-desc" id="gcal-sync-status">
-                                    {% if user_prefs and user_prefs.gcal_sync_enabled %}
-                                    Synced to: Whendoist calendar
-                                    {% else %}
-                                    One-way sync &mdash; changes in Whendoist appear in Google Calendar.
-                                    {% endif %}
-                                </span>
-                            </div>
-                            <div class="settings-row__right">
-                                <button
-                                    type="button"
-                                    class="toggle-switch {% if user_prefs and user_prefs.gcal_sync_enabled %}enabled{% endif %}"
-                                    id="gcal-sync-toggle"
-                                    onclick="toggleGcalSync(this)"
-                                    aria-label="Toggle Google Calendar sync"
-                                ></button>
-                            </div>
-                        </div>
-                        {% if user_prefs and user_prefs.gcal_sync_enabled %}
-                        <div class="settings-row" id="gcal-sync-options">
-                            <div class="backup-info">
-                                <span class="pref-label">Include date-only tasks as all-day events</span>
-                                <span class="pref-desc">Tasks without a specific time will appear as all-day events.</span>
-                            </div>
-                            <div class="settings-row__right">
-                                <button
-                                    type="button"
-                                    class="toggle-switch {% if user_prefs.gcal_sync_all_day %}enabled{% endif %}"
-                                    id="gcal-sync-allday-toggle"
-                                    onclick="toggleGcalSyncAllDay(this)"
-                                    aria-label="Toggle all-day event sync"
-                                ></button>
-                            </div>
-                        </div>
-                        <div class="settings-row">
-                            <div class="backup-info">
-                                <span class="pref-label">Re-sync all tasks</span>
-                                <span class="pref-desc">Force a full re-sync of all scheduled tasks. This runs in the background and may take up to 10 minutes.</span>
-                            </div>
-                            <div class="settings-row__right">
-                                <button type="button" class="btn-sm btn-sm--secondary" id="btn-resync" onclick="resyncAllTasks()">Re-sync</button>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% endif %}
-                    </div>
-                </div>
             </section>
 
             <!-- DATA Section -->
@@ -773,6 +793,20 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Google Calendar expandable section
+function toggleGcalSection() {
+    const expand = document.getElementById('gcal-expand');
+    const chevron = document.getElementById('gcal-chevron');
+    if (!expand) return;
+    const wasOpen = expand.classList.contains('open');
+    expand.classList.toggle('open');
+    if (chevron) chevron.classList.toggle('expanded');
+    // First open: ensure HTMX processes toggle elements that were hidden at page load
+    if (!wasOpen && typeof htmx !== 'undefined') {
+        htmx.process(expand);
+    }
+}
+
 // Todoist expandable section
 function toggleTodoistSection() {
     const expand = document.getElementById('todoist-expand');
@@ -783,17 +817,24 @@ function toggleTodoistSection() {
     if (chevron) chevron.classList.toggle('expanded');
 }
 
-// Calendar toggle via row click
-function toggleCalendar(row, calendarId) {
+// Calendar visibility toggle via fetch (replaces HTMX)
+async function toggleCalendarVisibility(calendarId, row) {
     const toggle = row.querySelector('.toggle-switch');
-    if (toggle) {
-        toggle.click();
+    if (!toggle) return;
+    try {
+        const res = await fetch(`/api/v1/calendars/${encodeURIComponent(calendarId)}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+        if (res.ok) {
+            toggle.classList.toggle('enabled');
+        }
+    } catch (e) {
+        console.error('Calendar toggle failed:', e);
     }
-}
-
-// Handle calendar toggle response
-function handleCalendarToggle(toggle) {
-    toggle.classList.toggle('enabled');
 }
 
 // Disconnect Todoist
@@ -1874,7 +1915,7 @@ async function toggleGcalSync(btn) {
                 document.getElementById('gcal-sync-status').textContent = 'One-way sync \u2014 changes in Whendoist appear in Google Calendar.';
                 const options = document.getElementById('gcal-sync-options');
                 if (options) options.remove();
-                const resyncRow = document.querySelector('#gcal-sync-panel .settings-row:last-child');
+                const resyncRow = document.querySelector('#gcal-sync-section .settings-row:last-child');
                 if (resyncRow && resyncRow.querySelector('#btn-resync')) resyncRow.remove();
                 location.reload();
             }
