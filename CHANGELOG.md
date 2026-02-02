@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.31.6] - 2026-02-02 — Fully Async GCal Sync
+
+### Changed
+- **All sync operations are now server-side background tasks** — enable, re-sync, and all-day toggle all return instantly
+- Full-sync endpoint fires background task instead of blocking the HTTP request
+- Status endpoint exposes `syncing` boolean so UI knows when sync is in progress
+- Re-sync button polls status every 3s, shows live event count while syncing
+- Page load auto-detects running sync and shows progress on re-sync button
+
+---
+
 ## [0.31.5] - 2026-02-02 — GCal Sync: Non-blocking, Adaptive Throttle, Dedup
 
 ### Fixed

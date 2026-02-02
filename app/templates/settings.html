@@ -1955,11 +1955,8 @@ async function resyncAllTasks() {
         });
         const data = await res.json();
         if (data.success) {
-            btn.textContent = `Done (${data.created} new, ${data.updated} updated)`;
-            setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 3000);
-        } else if (data.error) {
-            // Sync was auto-disabled due to calendar error — reload to show error
-            location.reload();
+            // Poll status until sync finishes
+            _pollSyncStatus(btn);
         } else {
             btn.textContent = 'Failed';
             setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 2000);
@@ -1970,5 +1967,43 @@ async function resyncAllTasks() {
         setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 2000);
     }
 }
+
+function _pollSyncStatus(btn) {
+    const poll = setInterval(async () => {
+        try {
+            const res = await fetch('/api/v1/gcal-sync/status');
+            const data = await res.json();
+            btn.textContent = `Syncing... (${data.synced_count} events)`;
+            if (!data.syncing) {
+                clearInterval(poll);
+                if (data.sync_error) {
+                    location.reload();
+                } else {
+                    btn.textContent = `Done (${data.synced_count} events)`;
+                    setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 3000);
+                }
+            }
+        } catch {
+            clearInterval(poll);
+            btn.textContent = 'Re-sync';
+            btn.disabled = false;
+        }
+    }, 3000);
+}
+
+// On page load: if sync is running, show progress on re-sync button
+(async function checkSyncOnLoad() {
+    const btn = document.getElementById('btn-resync');
+    if (!btn) return;
+    try {
+        const res = await fetch('/api/v1/gcal-sync/status');
+        const data = await res.json();
+        if (data.syncing) {
+            btn.disabled = true;
+            btn.textContent = `Syncing... (${data.synced_count} events)`;
+            _pollSyncStatus(btn);
+        }
+    } catch { /* ignore */ }
+})();
 </script>
 {% endblock %}

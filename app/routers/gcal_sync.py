@@ -39,6 +39,7 @@ class SyncStatusResponse(BaseModel):
     has_write_scope: bool = False
     reauth_url: str | None = None
     sync_error: str | None = None
+    syncing: bool = False
 
 
 class SyncEnableResponse(BaseModel):
@@ -74,6 +75,12 @@ class BulkSyncResponse(BaseModel):
 
 # Per-user lock to prevent concurrent bulk syncs
 _bulk_sync_locks: dict[int, asyncio.Lock] = {}
+
+
+def _is_sync_running(user_id: int) -> bool:
+    """Check if a bulk sync is currently running for this user."""
+    lock = _bulk_sync_locks.get(user_id)
+    return lock is not None and lock.locked()
 
 
 async def _background_bulk_sync(user_id: int) -> None:
@@ -136,6 +143,7 @@ async def get_sync_status(
         sync_all_day=prefs.gcal_sync_all_day,
         has_write_scope=has_write_scope,
         sync_error=prefs.gcal_sync_error,
+        syncing=_is_sync_running(user.id),
     )
 
 
@@ -247,23 +255,16 @@ async def full_sync(
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Manually trigger a full re-sync of all tasks."""
+    """Trigger a full re-sync of all tasks (runs in background)."""
     prefs_service = PreferencesService(db, user.id)
     prefs = await prefs_service.get_preferences()
 
     if not prefs.gcal_sync_enabled:
         raise HTTPException(status_code=400, detail="Sync is not enabled.")
 
-    sync_service = GCalSyncService(db, user.id)
-    stats = await sync_service.bulk_sync()
-    await db.commit()
+    if _is_sync_running(user.id):
+        return BulkSyncResponse(success=True, error="Sync already in progress.")
 
-    error = stats.get("error")
-    return BulkSyncResponse(
-        success=error is None,
-        created=stats["created"],
-        updated=stats["updated"],
-        deleted=stats["deleted"],
-        skipped=stats["skipped"],
-        error=error,
-    )
+    asyncio.create_task(_background_bulk_sync(user.id))
+
+    return BulkSyncResponse(success=True)
