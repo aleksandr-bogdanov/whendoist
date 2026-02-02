@@ -6,15 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [0.31.3] - 2026-02-02 — GCal Sync Rate Limiting & Reliability
+## [0.31.5] - 2026-02-02 — GCal Sync: Non-blocking, Adaptive Throttle, Dedup
 
 ### Fixed
-- Distinguish Google API rate limit 403 from permission 403 — rate limits now retry with exponential backoff instead of permanently disabling sync
-- Add 150ms delay between bulk sync API calls to avoid hitting Google's rate limit
-- Clean stale sync records when re-enabling sync — prevents duplicate events across calendars
-- Enable endpoint now returns failure when initial bulk sync auto-disables sync (previously returned `success: true`)
-- UI disables enable button during sync to prevent rapid re-enable clicks
-- All-day toggle's background full-sync no longer logs 400 errors when sync is disabled
+- **Bulk sync runs in background** — enable returns instantly, no more hanging UI
+- **Adaptive throttle** — starts at 1 QPS, automatically slows down when rate-limited (adds +3s penalty per hit)
+- **Reuse existing calendar** — `find_or_create_calendar` detects existing "Whendoist" calendar, cleans up duplicates instead of creating new ones every enable
+- **Per-user sync lock** — prevents concurrent bulk syncs (double-click, rapid re-enable)
+- **Rate limit vs permission 403** — Google `usageLimits` domain 403s retry with 5s/10s/20s backoff instead of permanently disabling sync
+- Stale sync records cleared only when calendar ID changes (not on every re-enable)
+- UI disables enable button during operation, all-day toggle ignores sync errors
 
 ---
 

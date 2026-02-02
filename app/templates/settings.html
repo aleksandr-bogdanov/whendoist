@@ -1900,10 +1900,6 @@ async function toggleGcalSync(btn) {
                 return;
             }
             if (data.success) {
-                btn.classList.add('enabled');
-                document.getElementById('gcal-sync-status').textContent = 'Synced to: Whendoist calendar';
-                const errorRow = document.getElementById('gcal-sync-error-row');
-                if (errorRow) errorRow.remove();
                 location.reload();
             } else {
                 alert(data.message || 'Failed to enable sync.');
@@ -1912,7 +1908,6 @@ async function toggleGcalSync(btn) {
         } catch (e) {
             console.error('Failed to enable sync:', e);
             alert('Failed to enable sync. Please try again.');
-        } finally {
             btn.disabled = false;
             btn.style.opacity = '';
         }

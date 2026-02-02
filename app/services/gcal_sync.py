@@ -21,6 +21,7 @@ from app.constants import (
     GCAL_SYNC_BATCH_DELAY_SECONDS,
     GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE,
     GCAL_SYNC_RATE_LIMIT_MAX_RETRIES,
+    GCAL_SYNC_RATE_LIMIT_PENALTY_SECONDS,
 )
 from app.models import (
     GoogleCalendarEventSync,
@@ -105,19 +106,36 @@ def _calendar_error_message(e: Exception) -> str:
     return f"Calendar sync error: {e}"
 
 
-async def _retry_on_rate_limit[T](fn: Callable[..., Coroutine[Any, Any, T]], *args: Any, **kwargs: Any) -> T:
-    """Retry an async function with exponential backoff on rate limit errors."""
-    for attempt in range(GCAL_SYNC_RATE_LIMIT_MAX_RETRIES + 1):
-        try:
-            return await fn(*args, **kwargs)
-        except httpx.HTTPStatusError as e:
-            if _is_rate_limit_error(e) and attempt < GCAL_SYNC_RATE_LIMIT_MAX_RETRIES:
-                backoff = GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE * (2**attempt)
-                logger.warning(f"Rate limited by Google API, retrying in {backoff}s (attempt {attempt + 1})")
-                await asyncio.sleep(backoff)
-                continue
-            raise
-    raise RuntimeError("Unreachable")
+class _AdaptiveThrottle:
+    """Adaptive rate limiter for Google Calendar API calls.
+
+    Starts with a base delay between calls. When rate-limited,
+    increases the delay for ALL subsequent calls in the batch.
+    Retries individual calls with exponential backoff.
+    """
+
+    def __init__(self) -> None:
+        self.delay = GCAL_SYNC_BATCH_DELAY_SECONDS
+
+    async def call[T](self, fn: Callable[..., Coroutine[Any, Any, T]], *args: Any, **kwargs: Any) -> T:
+        """Call fn with adaptive throttling and retry on rate limit."""
+        await asyncio.sleep(self.delay)
+        for attempt in range(GCAL_SYNC_RATE_LIMIT_MAX_RETRIES + 1):
+            try:
+                return await fn(*args, **kwargs)
+            except httpx.HTTPStatusError as e:
+                if _is_rate_limit_error(e) and attempt < GCAL_SYNC_RATE_LIMIT_MAX_RETRIES:
+                    # Slow down all future calls
+                    self.delay += GCAL_SYNC_RATE_LIMIT_PENALTY_SECONDS
+                    backoff = GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE * (2**attempt)
+                    logger.warning(
+                        f"Rate limited by Google API, backing off {backoff}s "
+                        f"(attempt {attempt + 1}, new delay {self.delay:.1f}s)"
+                    )
+                    await asyncio.sleep(backoff)
+                    continue
+                raise
+        raise RuntimeError("Unreachable")
 
 
 class GCalSyncService:
@@ -456,6 +474,8 @@ class GCalSyncService:
         # Track which sync records are still valid
         valid_sync_ids: set[int] = set()
 
+        throttle = _AdaptiveThrottle()
+
         try:
             async with GoogleCalendarClient(self.db, google_token) as client:
                 # Sync non-recurring tasks
@@ -496,8 +516,7 @@ class GCalSyncService:
                             user_timezone=timezone,
                         )
                         try:
-                            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
-                            await _retry_on_rate_limit(
+                            await throttle.call(
                                 client.update_event,
                                 prefs.gcal_sync_calendar_id,
                                 sync_record.google_event_id,
@@ -510,7 +529,7 @@ class GCalSyncService:
                             if _is_calendar_error(e):
                                 raise  # Will be caught by outer try/except
                             if _is_gone_error(e):
-                                event_id = await _retry_on_rate_limit(
+                                event_id = await throttle.call(
                                     client.create_event,
                                     prefs.gcal_sync_calendar_id,
                                     event_data,
@@ -534,8 +553,7 @@ class GCalSyncService:
                             user_timezone=timezone,
                         )
                         try:
-                            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
-                            event_id = await _retry_on_rate_limit(
+                            event_id = await throttle.call(
                                 client.create_event,
                                 prefs.gcal_sync_calendar_id,
                                 event_data,
@@ -601,8 +619,7 @@ class GCalSyncService:
                             user_timezone=timezone,
                         )
                         try:
-                            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
-                            await _retry_on_rate_limit(
+                            await throttle.call(
                                 client.update_event,
                                 prefs.gcal_sync_calendar_id,
                                 sync_record.google_event_id,
@@ -615,7 +632,7 @@ class GCalSyncService:
                             if _is_calendar_error(e):
                                 raise
                             if _is_gone_error(e):
-                                event_id = await _retry_on_rate_limit(
+                                event_id = await throttle.call(
                                     client.create_event,
                                     prefs.gcal_sync_calendar_id,
                                     event_data,
@@ -638,8 +655,7 @@ class GCalSyncService:
                             user_timezone=timezone,
                         )
                         try:
-                            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
-                            event_id = await _retry_on_rate_limit(
+                            event_id = await throttle.call(
                                 client.create_event,
                                 prefs.gcal_sync_calendar_id,
                                 event_data,
