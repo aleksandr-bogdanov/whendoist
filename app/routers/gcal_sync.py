@@ -5,6 +5,7 @@ Provides endpoints to enable/disable task sync to Google Calendar,
 trigger manual re-syncs, and check sync status.
 """
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,7 +14,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import GCAL_SYNC_CALENDAR_NAME
-from app.database import get_db
+from app.database import async_session_factory, get_db
 from app.models import GoogleCalendarEventSync, GoogleToken, User
 from app.routers.auth import require_user
 from app.services.gcal import GoogleCalendarClient
@@ -65,6 +66,40 @@ class BulkSyncResponse(BaseModel):
     deleted: int = 0
     skipped: int = 0
     error: str | None = None
+
+
+# =============================================================================
+# Background Tasks
+# =============================================================================
+
+# Per-user lock to prevent concurrent bulk syncs
+_bulk_sync_locks: dict[int, asyncio.Lock] = {}
+
+
+async def _background_bulk_sync(user_id: int) -> None:
+    """Run bulk sync in background with its own DB session.
+
+    Uses per-user lock to prevent concurrent syncs (e.g., user clicks enable twice).
+    """
+    if user_id not in _bulk_sync_locks:
+        _bulk_sync_locks[user_id] = asyncio.Lock()
+
+    lock = _bulk_sync_locks[user_id]
+    if lock.locked():
+        logger.info(f"Bulk sync already running for user {user_id}, skipping")
+        return
+
+    async with lock:
+        try:
+            async with async_session_factory() as db:
+                sync_service = GCalSyncService(db, user_id)
+                stats = await sync_service.bulk_sync()
+                await db.commit()
+                logger.info(f"Background bulk sync for user {user_id}: {stats}")
+                if stats.get("error"):
+                    logger.warning(f"Background bulk sync error for user {user_id}: {stats['error']}")
+        except Exception as e:
+            logger.error(f"Background bulk sync failed for user {user_id}: {e}")
 
 
 # =============================================================================
@@ -143,47 +178,37 @@ async def enable_sync(
     # Clear any previous sync error
     prefs.gcal_sync_error = None
 
-    # Create "Whendoist" calendar (always create fresh — old one may be deleted)
+    # Find existing Whendoist calendar or create a new one (also cleans up duplicates)
     try:
         async with GoogleCalendarClient(db, google_token) as client:
-            calendar_id = await client.create_calendar(GCAL_SYNC_CALENDAR_NAME)
+            calendar_id, created = await client.find_or_create_calendar(GCAL_SYNC_CALENDAR_NAME)
     except Exception as e:
-        logger.error(f"Failed to create Whendoist calendar: {e}")
+        logger.error(f"Failed to find/create Whendoist calendar: {e}")
         raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
 
-    # Clear stale sync records from previous calendar before enabling
-    await db.execute(
-        delete(GoogleCalendarEventSync).where(
-            GoogleCalendarEventSync.user_id == user.id,
+    # If reusing an existing calendar, keep sync records that match it.
+    # Only clear records if the calendar ID changed (new calendar).
+    if prefs.gcal_sync_calendar_id and prefs.gcal_sync_calendar_id != calendar_id:
+        await db.execute(
+            delete(GoogleCalendarEventSync).where(
+                GoogleCalendarEventSync.user_id == user.id,
+            )
         )
-    )
 
     # Enable sync
     prefs.gcal_sync_enabled = True
     prefs.gcal_sync_calendar_id = calendar_id
     await db.commit()
 
-    # Run initial bulk sync
-    sync_error = None
-    try:
-        sync_service = GCalSyncService(db, user.id)
-        stats = await sync_service.bulk_sync()
-        await db.commit()
-        sync_error = stats.get("error")
-        logger.info(f"Initial sync for user {user.id}: {stats}")
-    except Exception as e:
-        logger.error(f"Initial bulk sync failed for user {user.id}: {e}")
-        sync_error = str(e)
+    # Run bulk sync in background so enable returns instantly
+    asyncio.create_task(_background_bulk_sync(user.id))
 
-    if sync_error:
-        return SyncEnableResponse(
-            success=False,
-            message=sync_error,
-        )
-
+    msg = (
+        "Sync enabled. Syncing tasks in background..." if created else "Sync re-enabled. Syncing tasks in background..."
+    )
     return SyncEnableResponse(
         success=True,
-        message=f"Sync enabled. Calendar created: {GCAL_SYNC_CALENDAR_NAME}",
+        message=msg,
         calendar_id=calendar_id,
     )
 

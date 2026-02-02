@@ -358,6 +358,41 @@ class GoogleCalendarClient:
         data = response.json()
         return data["id"]
 
+    async def find_or_create_calendar(self, name: str = "Whendoist") -> tuple[str, bool]:
+        """Find existing calendar by name or create a new one.
+
+        Returns (calendar_id, created) where created is True if a new calendar was made.
+        If multiple calendars with the same name exist, reuses the first and deletes the rest.
+        """
+        calendars = await self.list_calendars()
+        matches = [c for c in calendars if c.summary == name and not c.primary]
+
+        if matches:
+            # Reuse first match, clean up duplicates
+            calendar_id = matches[0].id
+            for dup in matches[1:]:
+                try:
+                    await self.delete_calendar(dup.id)
+                    logger.info(f"Deleted duplicate '{name}' calendar: {dup.id}")
+                except Exception:
+                    logger.warning(f"Failed to delete duplicate calendar {dup.id}")
+            return calendar_id, False
+
+        # No existing calendar found, create one
+        calendar_id = await self.create_calendar(name)
+        return calendar_id, True
+
+    async def delete_calendar(self, calendar_id: str) -> None:
+        """Delete a secondary calendar. Silently ignores 404/410."""
+        client = self._ensure_client()
+        try:
+            response = await client.delete(f"/calendars/{calendar_id}")
+            if response.status_code not in (204, 404, 410):
+                response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code not in (404, 410):
+                raise
+
     async def create_event(self, calendar_id: str, event: dict) -> str:
         """Create an event in the specified calendar. Returns the event_id."""
         client = self._ensure_client()
