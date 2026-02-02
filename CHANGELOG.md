@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.18] - 2026-02-02 — Fix Migration for JSON Column Type
+
+### Fixed
+- **Migration cast to jsonb** — the `recurrence_rule` column is PostgreSQL `json` (not `jsonb`), so the `?` (key exists) and `-` (key removal) operators failed in production; added explicit `::jsonb` casts
+
+---
+
 ## [0.32.17] - 2026-02-02 — Unify Recurrence Time Handling
 
 ### Changed
