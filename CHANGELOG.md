@@ -6,6 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.6] - 2026-02-02 — Faster Deploys
+
+Instance materialization now runs as a background task after the server starts accepting connections, instead of blocking startup. This fixes intermittent Railway healthcheck failures where the 30-second window expired during heavy materialization + GCal sync work.
+
+### Fixed
+- **Intermittent deploy failures** — healthcheck no longer times out waiting for materialization to complete
+- Server responds to `/health` immediately after migrations and DB connectivity check
+
+### Changed
+- Initial instance materialization runs in the background task loop (first iteration is immediate, then hourly)
+
+---
+
 ## [0.32.5] - 2026-02-02 — Recurring Tasks Don't Clutter GCal
 
 Recurring tasks (habits) only sync to Google Calendar when scheduled for a specific time. Unscheduled recurring tasks stay in Whendoist, keeping your calendar clean.

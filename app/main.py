@@ -75,7 +75,6 @@ async def lifespan(app: FastAPI):
         from app.database import async_session_factory
         from app.services.challenge_service import ChallengeService
         from app.tasks.recurring import (
-            materialize_all_instances,
             start_materialization_background,
             stop_materialization_background,
         )
@@ -96,19 +95,8 @@ async def lifespan(app: FastAPI):
                 else:
                     raise
 
-        # Run initial instance materialization
-        t0 = time.monotonic()
-        try:
-            stats = await materialize_all_instances()
-            elapsed = time.monotonic() - t0
-            logger.info(
-                f"Initial materialization: {stats['users_processed']} users, "
-                f"{stats['tasks_processed']} tasks ({elapsed:.1f}s)"
-            )
-        except Exception as e:
-            logger.warning(f"Initial materialization failed (non-fatal): {e}")
-
-        # Start background materialization loop
+        # Start background materialization loop (runs initial materialization
+        # immediately without blocking server startup / healthchecks)
         start_materialization_background()
         logger.info(f"Startup complete ({time.monotonic() - boot_start:.1f}s)")
 
