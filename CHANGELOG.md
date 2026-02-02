@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.15] - 2026-02-02 — Recurrence Bounds UI
+
+### Added
+- **Recurrence start/end date pickers** — when any recurrence is active in the task dialog, "Starts" and "Ends" date fields appear, allowing users to define when a recurrence begins and optionally when it ends
+- **Backend fields exposed in API response** — `recurrence_start` and `recurrence_end` are now included in `TaskResponse`, so the frontend can read them back when editing
+- **Mobile recurrence picker bounds** — `recurrence-picker.js` now includes start/end date inputs with `getBounds()`/`setBounds()` API, and the task sheet template passes existing values when editing
+
+---
+
 ## [0.32.14] - 2026-02-02 — Instance Drag-and-Drop Rescheduling
 
 ### Fixed

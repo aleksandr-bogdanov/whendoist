@@ -242,6 +242,8 @@ def _create_mock_task(is_recurring: bool = False, instances: list | None = None)
     task.scheduled_time = None
     task.is_recurring = is_recurring
     task.recurrence_rule = None
+    task.recurrence_start = None
+    task.recurrence_end = None
     task.status = "pending"
     task.position = 1
     task.created_at = None
