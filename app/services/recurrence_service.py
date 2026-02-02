@@ -61,7 +61,6 @@ class RecurrenceService:
                     "day_of_month": 15,                  # for monthly
                     "week_of_month": 2,                  # for monthly (2nd week)
                     "month_of_year": 6,                  # for yearly
-                    "time": "09:00"                      # default time
                 }
             start_date: Start generating from this date
             end_date: Stop generating after this date
@@ -142,14 +141,8 @@ class RecurrenceService:
         if task.recurrence_end and task.recurrence_end < end_date:
             end_date = task.recurrence_end
 
-        # Parse time from rule or use scheduled_time
+        # Use task.scheduled_time as the single source of truth for time
         default_time = task.scheduled_time
-        if "time" in task.recurrence_rule:
-            try:
-                h, m = map(int, task.recurrence_rule["time"].split(":"))
-                default_time = time(h, m)
-            except (ValueError, KeyError):
-                pass
 
         # Generate occurrence dates
         occurrences = self.generate_occurrences(
@@ -474,12 +467,6 @@ class RecurrenceService:
 
         # Create a new instance for the target date
         default_time = task.scheduled_time
-        if task.recurrence_rule and "time" in task.recurrence_rule:
-            try:
-                h, m = map(int, task.recurrence_rule["time"].split(":"))
-                default_time = time(h, m)
-            except (ValueError, KeyError):
-                pass
 
         instance = TaskInstance(
             task_id=task.id,
