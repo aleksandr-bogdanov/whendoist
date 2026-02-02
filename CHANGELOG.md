@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.31.8] - 2026-02-02 — Drag-and-Drop Duration Fix
+
+### Fixed
+- **Drag-and-drop overwrites task duration to 30 minutes** — the drop handler now sends `duration_minutes` to the API, preventing the backend validator from replacing the existing duration with the default
+
+---
+
 ## [0.31.7] - 2026-02-02 — GCal Sync Hardening
 
 ### Fixed
