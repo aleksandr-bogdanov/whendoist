@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.17] - 2026-02-02 — Unify Recurrence Time Handling
+
+### Changed
+- **Single source of truth for time** — `task.scheduled_time` is now the only time field for recurring tasks; `recurrence_rule.time` is no longer used
+- **Alembic migration** — moves existing `rule.time` values to `task.scheduled_time` (where not already set) and strips the `time` key from all recurrence rule JSON
+
+### Removed
+- **Time input from recurrence picker** — removed the "At" time field from `recurrence-picker.js`; task time is set via the main scheduled time input
+- **rule.time override logic** — removed time parsing from `recurrence_service.py` (`materialize_instances` and `get_or_create_instance_for_date`)
+
+---
+
 ## [0.32.16] - 2026-02-02 — Batch Completion for Past Instances
 
 ### Added

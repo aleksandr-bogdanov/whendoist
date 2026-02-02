@@ -68,10 +68,6 @@
                     <label>On day</label>
                     <input type="number" name="day_of_month" min="1" max="31" value="1" class="day-of-month-input">
                 </div>
-                <div class="custom-row time-row">
-                    <label>At</label>
-                    <input type="time" name="recurrence_time" class="recurrence-time-input">
-                </div>
             </div>
             <div class="recurrence-bounds" style="display: none;">
                 <div class="bounds-row">
@@ -132,7 +128,6 @@
         // Other inputs
         containerEl.querySelector('.interval-input').addEventListener('change', updatePreview);
         containerEl.querySelector('.day-of-month-input')?.addEventListener('change', updatePreview);
-        containerEl.querySelector('.recurrence-time-input')?.addEventListener('change', updatePreview);
         containerEl.querySelectorAll('[name="days_of_week"]').forEach(cb => {
             cb.addEventListener('change', updatePreview);
         });
@@ -148,10 +143,6 @@
         if (preset.value === null) return null;
         if (preset.value !== 'custom') {
             const rule = { ...preset.value };
-            const timeInput = containerEl.querySelector('.recurrence-time-input');
-            if (timeInput && timeInput.value) {
-                rule.time = timeInput.value;
-            }
             // Merge preserved fields from original rule
             if (_originalRule) {
                 if (_originalRule.week_of_month !== undefined && rule.freq === 'monthly') {
@@ -190,12 +181,6 @@
             if (dayOfMonth >= 1 && dayOfMonth <= 31) {
                 rule.day_of_month = dayOfMonth;
             }
-        }
-
-        // Time
-        const timeInput = containerEl.querySelector('.recurrence-time-input');
-        if (timeInput && timeInput.value) {
-            rule.time = timeInput.value;
         }
 
         // Merge preserved fields from original rule that the UI doesn't expose
@@ -258,11 +243,6 @@
             }
         }
 
-        // Set time if present
-        if (rule.time) {
-            containerEl.querySelector('.recurrence-time-input').value = rule.time;
-        }
-
         // Update active preset
         containerEl.querySelectorAll('.recurrence-preset').forEach((btn, i) => {
             btn.classList.toggle('active', i === matchedIndex);
@@ -305,9 +285,6 @@
         containerEl.querySelectorAll('[name="days_of_week"]').forEach(cb => cb.checked = false);
         if (containerEl.querySelector('.day-of-month-input')) {
             containerEl.querySelector('.day-of-month-input').value = 1;
-        }
-        if (containerEl.querySelector('.recurrence-time-input')) {
-            containerEl.querySelector('.recurrence-time-input').value = '';
         }
         if (containerEl.querySelector('.recurrence-start-input')) {
             containerEl.querySelector('.recurrence-start-input').value = '';
@@ -358,10 +335,6 @@
             case 'yearly':
                 text = interval === 1 ? 'Every year' : `Every ${interval} years`;
                 break;
-        }
-
-        if (rule.time) {
-            text += ` at ${rule.time}`;
         }
 
         previewEl.textContent = text;
