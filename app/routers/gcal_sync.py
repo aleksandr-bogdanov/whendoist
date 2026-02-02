@@ -79,6 +79,9 @@ _bulk_sync_locks: dict[int, asyncio.Lock] = {}
 # In-memory progress tracking (visible to status endpoint while sync runs)
 _bulk_sync_progress: dict[int, dict] = {}
 
+# Cancellation signal: disable endpoint adds user_id, bulk_sync checks it
+_bulk_sync_cancelled: set[int] = set()
+
 
 def _is_sync_running(user_id: int) -> bool:
     """Check if a bulk sync is currently running for this user."""
@@ -89,6 +92,11 @@ def _is_sync_running(user_id: int) -> bool:
 def _get_sync_progress(user_id: int) -> dict | None:
     """Get live progress for a running bulk sync, or None if not running."""
     return _bulk_sync_progress.get(user_id)
+
+
+def _cancel_sync(user_id: int) -> None:
+    """Signal a running bulk sync to stop."""
+    _bulk_sync_cancelled.add(user_id)
 
 
 async def _background_bulk_sync(user_id: int, *, clear_calendar: bool = False) -> None:
@@ -127,8 +135,14 @@ async def _background_bulk_sync(user_id: int, *, clear_calendar: bool = False) -
                 def on_progress(stats: dict) -> None:
                     _bulk_sync_progress[user_id] = dict(stats)
 
+                def is_cancelled() -> bool:
+                    return user_id in _bulk_sync_cancelled
+
                 sync_service = GCalSyncService(db, user_id)
-                stats = await sync_service.bulk_sync(on_progress=on_progress)
+                stats = await sync_service.bulk_sync(
+                    on_progress=on_progress,
+                    is_cancelled=is_cancelled,
+                )
                 await db.commit()
                 logger.info(f"Background bulk sync for user {user_id}: {stats}")
                 if stats.get("error"):
@@ -137,6 +151,7 @@ async def _background_bulk_sync(user_id: int, *, clear_calendar: bool = False) -
             logger.error(f"Background bulk sync failed for user {user_id}: {e}")
         finally:
             _bulk_sync_progress.pop(user_id, None)
+            _bulk_sync_cancelled.discard(user_id)
 
 
 # =============================================================================
@@ -275,6 +290,9 @@ async def disable_sync(
 
     if not prefs.gcal_sync_enabled and not prefs.gcal_sync_error:
         return SyncDisableResponse(success=True, message="Sync was already disabled.")
+
+    # Signal any running background sync to stop immediately
+    _cancel_sync(user.id)
 
     deleted_count = 0
     calendar_id = prefs.gcal_sync_calendar_id
