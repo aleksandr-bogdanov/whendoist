@@ -136,11 +136,19 @@ async def run_materialization_loop() -> None:
     """
     Background loop that periodically materializes instances and cleans up old ones.
 
-    Runs every MATERIALIZATION_INTERVAL_SECONDS (1 hour).
+    Runs materialization immediately on startup (non-blocking to the server),
+    then repeats every MATERIALIZATION_INTERVAL_SECONDS (1 hour).
     """
+    first_run = True
     while True:
         try:
-            await asyncio.sleep(MATERIALIZATION_INTERVAL_SECONDS)
+            if first_run:
+                # Run immediately on startup so instances are fresh
+                # without blocking the server from accepting healthchecks
+                first_run = False
+                logger.info("Running initial instance materialization (background)...")
+            else:
+                await asyncio.sleep(MATERIALIZATION_INTERVAL_SECONDS)
 
             # Materialize new instances + clean up old ones
             stats = await materialize_all_instances()
@@ -159,6 +167,8 @@ async def run_materialization_loop() -> None:
         except Exception as e:
             logger.error(f"Materialization loop error: {e}")
             # Continue running despite errors
+            if first_run:
+                first_run = False
 
 
 # Keep reference to background task for cleanup
@@ -168,7 +178,7 @@ _materialization_task: asyncio.Task[None] | None = None
 def start_materialization_background() -> None:
     """Start the background materialization task."""
     global _materialization_task
-    _materialization_task = asyncio.create_task(run_materialization_loop())
+    _materialization_task = asyncio.create_task(run_materialization_loop(), name="materialization-loop")
     logger.info("Started background instance materialization (1 hour interval)")
 
 
