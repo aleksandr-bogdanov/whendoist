@@ -100,6 +100,19 @@ async def _fire_and_forget_sync_instance(instance_id: int, task_id: int, user_id
             logger.debug(f"GCal sync failed for instance {instance_id}: {e}")
 
 
+async def _fire_and_forget_bulk_sync(user_id: int) -> None:
+    """Fire-and-forget: run a bulk sync to Google Calendar."""
+    try:
+        async with async_session_factory() as db:
+            from app.services.gcal_sync import GCalSyncService
+
+            sync_service = GCalSyncService(db, user_id)
+            await sync_service.bulk_sync()
+            await db.commit()
+    except Exception as e:
+        logger.debug(f"GCal bulk sync failed for user {user_id}: {e}")
+
+
 # =============================================================================
 # Request/Response Models
 # =============================================================================
@@ -461,7 +474,9 @@ async def create_task(
         raise HTTPException(status_code=500, detail="Failed to reload task")
 
     # Fire-and-forget sync to Google Calendar
-    if task.scheduled_date:
+    if task.is_recurring:
+        asyncio.create_task(_fire_and_forget_bulk_sync(user.id))
+    elif task.scheduled_date:
         asyncio.create_task(_fire_and_forget_sync_task(task.id, user.id))
 
     return _task_to_response(reloaded, user_today)
@@ -513,7 +528,10 @@ async def update_task(
         raise HTTPException(status_code=500, detail="Failed to reload task")
 
     # Fire-and-forget sync to Google Calendar
-    asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
+    if task.is_recurring:
+        asyncio.create_task(_fire_and_forget_bulk_sync(user.id))
+    else:
+        asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
 
     return _task_to_response(reloaded, user_today)
 
