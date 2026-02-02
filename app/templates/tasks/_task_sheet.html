@@ -150,6 +150,40 @@
         }
       }
 
+      if (action === 'skip' && taskId) {
+        // Find the instance ID from the task element on the page
+        const taskEl = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+        const instanceId = taskEl?.dataset.instanceId;
+        if (!instanceId) {
+          if (window.Toast) window.Toast.show('No instance to skip');
+          return;
+        }
+        try {
+          const resp = await fetch(`/api/v1/instances/${instanceId}/skip`, {
+            method: 'POST',
+            headers: window.getCSRFHeaders(),
+          });
+          if (resp.ok) {
+            // Update all UI representations
+            document.querySelectorAll(`[data-instance-id="${instanceId}"]`).forEach(el => {
+              el.classList.add('skipped');
+              el.dataset.completed = '1';
+            });
+            if (taskEl) {
+              taskEl.classList.add('skipped');
+              taskEl.dataset.completed = '1';
+            }
+            document.body.dispatchEvent(new CustomEvent('taskSaved', {
+              detail: { task_id: taskId, action: 'skip' }
+            }));
+            if (window.Toast) window.Toast.show('Skipped for today');
+          }
+        } catch (e) {
+          console.error('Skip failed:', e);
+          if (window.Toast) window.Toast.show('Failed to skip instance');
+        }
+      }
+
       if (action === 'delete' && taskId) {
         if (!confirm('Delete this task?')) return;
         try {

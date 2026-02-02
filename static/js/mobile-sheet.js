@@ -262,6 +262,15 @@ class TaskActionSheet {
                     </span>
                     <span class="action-label">Schedule</span>
                 </button>
+                <button class="sheet-action sheet-action--skip" data-action="skip" hidden>
+                    <span class="action-icon">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 4 15 12 5 20 5 4"/>
+                            <line x1="19" y1="5" x2="19" y2="19"/>
+                        </svg>
+                    </span>
+                    <span class="action-label">Skip instance</span>
+                </button>
                 <button class="sheet-action sheet-action--danger" data-action="delete">
                     <span class="action-icon">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -309,6 +318,13 @@ class TaskActionSheet {
             completeBtn.querySelector('.action-label').textContent = isCompleted ? 'Uncomplete' : 'Complete';
         }
 
+        // Show skip button only for recurring task instances
+        const skipBtn = this.sheet.element.querySelector('[data-action="skip"]');
+        if (skipBtn) {
+            const instanceId = taskElement.dataset.instanceId;
+            skipBtn.hidden = !instanceId;
+        }
+
         this.sheet.open();
     }
 
@@ -346,12 +362,60 @@ class TaskActionSheet {
                 }
                 break;
 
+            case 'skip':
+                this._skipInstance(taskId);
+                break;
+
             case 'delete':
                 this._deleteTask(taskId);
                 break;
         }
 
         this.close();
+    }
+
+    async _skipInstance(taskId) {
+        const instanceId = this.currentTask?.dataset.instanceId;
+        if (!instanceId) return;
+
+        const taskEl = this.currentTask;
+
+        // Optimistic UI update
+        taskEl.classList.add('skipped');
+        taskEl.dataset.completed = '1';
+
+        try {
+            const response = await fetch(`/api/v1/instances/${instanceId}/skip`, {
+                method: 'POST',
+                headers: window.getCSRFHeaders(),
+            });
+
+            if (response.ok) {
+                // Sync across all representations of this instance
+                document.querySelectorAll(`[data-instance-id="${instanceId}"]`).forEach(el => {
+                    el.classList.add('skipped');
+                    el.dataset.completed = '1';
+                });
+
+                if (window.Toast) {
+                    window.Toast.show('Skipped for today');
+                }
+            } else {
+                // Revert
+                taskEl.classList.remove('skipped');
+                taskEl.dataset.completed = '0';
+                if (window.Toast) {
+                    window.Toast.show('Failed to skip instance');
+                }
+            }
+        } catch (err) {
+            console.error('Failed to skip instance:', err);
+            taskEl.classList.remove('skipped');
+            taskEl.dataset.completed = '0';
+            if (window.Toast) {
+                window.Toast.show('Failed to skip instance');
+            }
+        }
     }
 
     async _deleteTask(taskId) {

@@ -3220,3 +3220,100 @@ body[data-energy-level] .scheduled-group.project-group {
 [data-theme="dark"] .calendar-item[data-completed="1"] {
     opacity: 0.7 !important;  /* Match Tasks view */
 }
+
+/* =============================================================================
+   Skipped Instance Styling
+   ============================================================================= */
+
+/* Task list: skipped instances look distinctly muted (not just completed) */
+.task-item.skipped .task-text {
+    color: rgba(15, 23, 42, 0.35);
+    text-decoration: line-through;
+    font-style: italic;
+}
+
+.task-item.skipped .task-due,
+.task-item.skipped .meta-duration,
+.task-item.skipped .meta-impact,
+.task-item.skipped .meta-clarity {
+    color: rgba(15, 23, 42, 0.3);
+}
+
+.task-item.skipped::before {
+    opacity: 0.3;
+}
+
+/* Calendar: skipped instances */
+.calendar-item.skipped .scheduled-task-text,
+.calendar-item.skipped .date-only-task-text {
+    color: rgba(15, 23, 42, 0.35);
+    text-decoration: line-through;
+    font-style: italic;
+}
+
+.calendar-item.skipped {
+    opacity: 0.4;
+}
+
+/* Dark mode skipped */
+[data-theme="dark"] .task-item.skipped .task-text {
+    color: var(--text-muted) !important;
+    font-style: italic;
+}
+
+[data-theme="dark"] .task-item.skipped .task-due,
+[data-theme="dark"] .task-item.skipped .meta-duration,
+[data-theme="dark"] .task-item.skipped .meta-impact,
+[data-theme="dark"] .task-item.skipped .meta-clarity {
+    color: var(--text-secondary) !important;
+    opacity: 0.5;
+}
+
+[data-theme="dark"] .calendar-item.skipped {
+    opacity: 0.35 !important;
+}
+
+/* =============================================================================
+   Skip Context Menu
+   ============================================================================= */
+
+.skip-menu {
+    position: fixed;
+    z-index: 9999;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    padding: 4px;
+    min-width: 140px;
+    animation: skip-menu-in 0.12s ease-out;
+}
+
+@keyframes skip-menu-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.skip-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.skip-menu-item:hover {
+    background: var(--bg-hover);
+}
+
+.skip-menu-item .skip-icon {
+    font-size: 0.875rem;
+    opacity: 0.7;
+}
