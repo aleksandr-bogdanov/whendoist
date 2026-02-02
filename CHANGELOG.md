@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.16] - 2026-02-02 — Batch Completion for Past Instances
+
+### Added
+- **Batch complete endpoint** — `POST /api/v1/instances/batch-complete` completes all pending instances for a task before a given date
+- **Batch past actions endpoint** — `POST /api/v1/instances/batch-past` with `action: "complete"` or `"skip"` handles all past pending instances across all tasks
+- **Pending past count endpoint** — `GET /api/v1/instances/pending-past-count` returns count of pending past instances
+- **Task dialog button** — recurring tasks show "Complete past instances (N pending)" button when past pending instances exist
+- **Dashboard banner** — on dashboard load, a banner appears if pending past instances exist with "Complete all", "Skip all", and "Dismiss" actions
+
+---
+
 ## [0.32.15] - 2026-02-02 — Recurrence Bounds UI
 
 ### Added

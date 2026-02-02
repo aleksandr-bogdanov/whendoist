@@ -14,6 +14,17 @@
 </div>
 {% endif %}
 
+<div class="pending-past-banner" id="pending-past-banner" style="display: none;">
+    <span class="pending-past-text">
+        You have <strong id="pending-past-count">0</strong> pending recurring instance(s) from past days.
+    </span>
+    <span class="pending-past-actions">
+        <button type="button" class="btn btn-sm btn-primary" id="btn-complete-all-past">Complete all</button>
+        <button type="button" class="btn btn-sm btn-secondary" id="btn-skip-all-past">Skip all</button>
+        <button type="button" class="btn btn-sm btn-ghost" id="btn-dismiss-past">Dismiss</button>
+    </span>
+</div>
+
 <div class="tasks-layout">
     <!-- Mobile Tab Switcher (visible on mobile only) -->
     <div class="mobile-tabs">
@@ -606,5 +617,53 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+</script>
+
+<script>
+// Pending past instances banner
+(async function checkPendingPastInstances() {
+    try {
+        const resp = await fetch('/api/v1/instances/pending-past-count');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.pending_count > 0) {
+            const banner = document.getElementById('pending-past-banner');
+            document.getElementById('pending-past-count').textContent = data.pending_count;
+            banner.style.display = '';
+
+            document.getElementById('btn-complete-all-past').addEventListener('click', async () => {
+                const r = await fetch('/api/v1/instances/batch-past', {
+                    method: 'POST',
+                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ action: 'complete' }),
+                });
+                if (r.ok) {
+                    banner.style.display = 'none';
+                    const result = await r.json();
+                    if (window.Toast) Toast.show(`Completed ${result.affected_count} past instance(s)`);
+                }
+            });
+
+            document.getElementById('btn-skip-all-past').addEventListener('click', async () => {
+                const r = await fetch('/api/v1/instances/batch-past', {
+                    method: 'POST',
+                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ action: 'skip' }),
+                });
+                if (r.ok) {
+                    banner.style.display = 'none';
+                    const result = await r.json();
+                    if (window.Toast) Toast.show(`Skipped ${result.affected_count} past instance(s)`);
+                }
+            });
+
+            document.getElementById('btn-dismiss-past').addEventListener('click', () => {
+                banner.style.display = 'none';
+            });
+        }
+    } catch (e) {
+        // Non-critical
+    }
+})();
 </script>
 {% endblock %}

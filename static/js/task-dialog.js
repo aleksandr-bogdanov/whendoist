@@ -218,6 +218,16 @@
                             </div>
                         </div>
 
+                        <!-- BATCH COMPLETE (visible for recurring tasks with pending past instances) -->
+                        <div class="detail-row" id="batch-complete-row" style="display: none;">
+                            <div class="detail-label"></div>
+                            <div class="detail-control">
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-batch-complete">
+                                    Complete past instances
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- METADATA (compact, only visible for existing tasks) -->
                         <div class="task-metadata" id="metadata-section" style="display: none;">
                             <div class="meta-line" id="meta-created-at"></div>
@@ -606,9 +616,10 @@
         // Form submit
         backdropEl.querySelector('form').addEventListener('submit', handleSubmit);
 
-        // Delete and complete buttons
+        // Delete, complete, and batch complete buttons
         backdropEl.querySelector('#btn-delete').addEventListener('click', handleDelete);
         backdropEl.querySelector('#btn-complete').addEventListener('click', handleComplete);
+        backdropEl.querySelector('#btn-batch-complete').addEventListener('click', handleBatchComplete);
 
         // Click backdrop to close
         backdropEl.addEventListener('click', (e) => {
@@ -908,8 +919,9 @@
         // Update submit button text
         backdropEl.querySelector('.btn-submit').textContent = taskId ? 'Save' : 'Add task';
 
-        // Hide delete and complete buttons for new tasks
+        // Hide delete, complete, and batch complete buttons for new tasks
         backdropEl.querySelector('#btn-delete').style.display = 'none';
+        backdropEl.querySelector('#batch-complete-row').style.display = 'none';
         const completeBtn = backdropEl.querySelector('#btn-complete');
         completeBtn.style.display = 'none';
         completeBtn.innerHTML = '<span class="btn-complete-icon">✓</span> Complete';
@@ -1087,6 +1099,13 @@
             } else {
                 completedRow.style.display = 'none';
             }
+
+            // Check for pending past instances (async, non-blocking)
+            const batchRow = backdropEl.querySelector('#batch-complete-row');
+            batchRow.style.display = 'none';
+            if (task.is_recurring) {
+                fetchPendingPastCount(taskId, batchRow);
+            }
         } catch (err) {
             console.error('Failed to load task:', err);
             closeDialog();
@@ -1121,6 +1140,63 @@
         if (onLabel) onLabel.hidden = freq !== 'weekly';
         if (domLabel) domLabel.hidden = freq !== 'monthly';
         if (domField) domField.hidden = freq !== 'monthly';
+    }
+
+    async function fetchPendingPastCount(taskId, batchRow) {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            // Fetch pending instances in the past (up to 365 days back)
+            const pastDate = new Date();
+            pastDate.setDate(pastDate.getDate() - 365);
+            const startDate = pastDate.toISOString().split('T')[0];
+
+            const response = await fetch(`/api/v1/instances?start_date=${startDate}&end_date=${today}&status=pending`);
+            if (response.ok) {
+                const instances = await response.json();
+                // Filter to this task and only dates before today
+                const pastPending = instances.filter(i => i.task_id === taskId && i.instance_date < today);
+                if (pastPending.length > 0) {
+                    const btn = batchRow.querySelector('#btn-batch-complete');
+                    btn.textContent = `Complete past instances (${pastPending.length} pending)`;
+                    batchRow.style.display = '';
+                }
+            }
+        } catch (err) {
+            // Non-critical, just don't show the button
+        }
+    }
+
+    async function handleBatchComplete() {
+        if (!currentTaskId) return;
+
+        const btn = backdropEl.querySelector('#btn-batch-complete');
+        btn.disabled = true;
+        btn.textContent = 'Completing...';
+
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const response = await fetch('/api/v1/instances/batch-complete', {
+                method: 'POST',
+                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({
+                    task_id: currentTaskId,
+                    before_date: today,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (window.Toast) {
+                    Toast.show(`Completed ${data.completed_count} past instance${data.completed_count !== 1 ? 's' : ''}`, { showUndo: false });
+                }
+                backdropEl.querySelector('#batch-complete-row').style.display = 'none';
+            }
+        } catch (err) {
+            console.error('Failed to batch complete:', err);
+            if (window.Toast) Toast.show('Failed to complete past instances', { showUndo: false });
+        } finally {
+            btn.disabled = false;
+        }
     }
 
     // Track pending deletion for undo

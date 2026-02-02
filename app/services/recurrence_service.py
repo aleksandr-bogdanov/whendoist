@@ -331,6 +331,70 @@ class RecurrenceService:
 
         return instance
 
+    async def batch_complete_instances(self, task_id: int, before_date: date) -> int:
+        """Complete all pending instances for a task before a given date."""
+        result = await self.db.execute(
+            select(TaskInstance).where(
+                TaskInstance.task_id == task_id,
+                TaskInstance.user_id == self.user_id,
+                TaskInstance.instance_date < before_date,
+                TaskInstance.status == "pending",
+            )
+        )
+        instances = list(result.scalars().all())
+        now = datetime.now(UTC)
+        for inst in instances:
+            inst.status = "completed"
+            inst.completed_at = now
+        await self.db.flush()
+        return len(instances)
+
+    async def count_pending_past_instances(self) -> int:
+        """Count pending instances before today across all tasks for this user."""
+        today = get_user_today(self.timezone)
+        result = await self.db.execute(
+            select(func.count(TaskInstance.id)).where(
+                TaskInstance.user_id == self.user_id,
+                TaskInstance.instance_date < today,
+                TaskInstance.status == "pending",
+            )
+        )
+        return result.scalar_one()
+
+    async def batch_complete_all_past_instances(self) -> int:
+        """Complete all pending instances before today for all tasks."""
+        today = get_user_today(self.timezone)
+        result = await self.db.execute(
+            select(TaskInstance).where(
+                TaskInstance.user_id == self.user_id,
+                TaskInstance.instance_date < today,
+                TaskInstance.status == "pending",
+            )
+        )
+        instances = list(result.scalars().all())
+        now = datetime.now(UTC)
+        for inst in instances:
+            inst.status = "completed"
+            inst.completed_at = now
+        await self.db.flush()
+        return len(instances)
+
+    async def batch_skip_all_past_instances(self) -> int:
+        """Skip all pending instances before today for all tasks."""
+        today = get_user_today(self.timezone)
+        result = await self.db.execute(
+            select(TaskInstance).where(
+                TaskInstance.user_id == self.user_id,
+                TaskInstance.instance_date < today,
+                TaskInstance.status == "pending",
+            )
+        )
+        instances = list(result.scalars().all())
+        for inst in instances:
+            inst.status = "skipped"
+        await self.db.flush()
+        return len(instances)
+
     async def get_next_instances_for_tasks(
         self,
         task_ids: list[int],
