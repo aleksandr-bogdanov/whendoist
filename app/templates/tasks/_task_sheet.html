@@ -207,6 +207,10 @@
       window.RecurrencePicker.init(picker);
       {% if task and task.is_recurring and task.recurrence_rule %}
       window.RecurrencePicker.setRule({{ task.recurrence_rule | tojson }});
+      window.RecurrencePicker.setBounds(
+        {{ (task.recurrence_start.isoformat() | tojson) if task.recurrence_start else 'null' }},
+        {{ (task.recurrence_end.isoformat() | tojson) if task.recurrence_end else 'null' }}
+      );
       {% endif %}
     }
   }

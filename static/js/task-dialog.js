@@ -203,6 +203,19 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="subrow" id="recurrence-bounds" hidden>
+                                <div class="subrow-grid">
+                                    <span class="subrow-label">Starts</span>
+                                    <div class="field-controls">
+                                        <input type="text" id="recurrence-start" class="input input-sm" placeholder="Today" readonly>
+                                    </div>
+                                    <span class="subrow-label">Ends</span>
+                                    <div class="field-controls">
+                                        <input type="text" id="recurrence-end" class="input input-sm" placeholder="Never" readonly>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- METADATA (compact, only visible for existing tasks) -->
@@ -259,6 +272,8 @@
     let scheduledDatePicker = null;
     let scheduledTimePicker = null;
     let dueDatePicker = null;
+    let recurrenceStartPicker = null;
+    let recurrenceEndPicker = null;
 
     // English locale for Air Datepicker (CDN version defaults to non-English)
     const localeEn = {
@@ -295,6 +310,20 @@
             ...dateConfig,
             onSelect: ({date, formattedDate}) => {
                 backdropEl.querySelector('[name="due_date"]').dataset.value = formattedDate || '';
+            }
+        });
+
+        recurrenceStartPicker = new AirDatepicker(backdropEl.querySelector('#recurrence-start'), {
+            ...dateConfig,
+            onSelect: ({date, formattedDate}) => {
+                backdropEl.querySelector('#recurrence-start').dataset.value = formattedDate || '';
+            }
+        });
+
+        recurrenceEndPicker = new AirDatepicker(backdropEl.querySelector('#recurrence-end'), {
+            ...dateConfig,
+            onSelect: ({date, formattedDate}) => {
+                backdropEl.querySelector('#recurrence-end').dataset.value = formattedDate || '';
             }
         });
 
@@ -630,13 +659,16 @@
                 btn.classList.add('is-active');
 
                 const customPanel = backdropEl.querySelector('#custom-recurrence');
+                const boundsPanel = backdropEl.querySelector('#recurrence-bounds');
                 if (value === 'custom') {
                     customPanel.hidden = false;
+                    boundsPanel.hidden = false;
                     updateRecurrenceRule();
                 } else {
                     customPanel.hidden = true;
                     // Store as JSON object or empty string
                     if (value && value !== '') {
+                        boundsPanel.hidden = false;
                         const rule = { freq: value, interval: 1 };
                         // For "Weekly", default to today's day of week
                         if (value === 'weekly') {
@@ -645,6 +677,7 @@
                         }
                         setRecurrenceRule(rule);
                     } else {
+                        boundsPanel.hidden = true;
                         setRecurrenceRule(null);
                     }
                 }
@@ -846,6 +879,13 @@
         setRecurrenceRule(null);
         backdropEl.querySelector('.seg-btn[data-recurrence=""]').classList.add('is-active');
         backdropEl.querySelector('#custom-recurrence').hidden = true;
+        backdropEl.querySelector('#recurrence-bounds').hidden = true;
+
+        // Clear recurrence bounds pickers
+        if (recurrenceStartPicker) recurrenceStartPicker.clear();
+        if (recurrenceEndPicker) recurrenceEndPicker.clear();
+        backdropEl.querySelector('#recurrence-start').dataset.value = '';
+        backdropEl.querySelector('#recurrence-end').dataset.value = '';
 
         // Reset domain dropdown (or pre-select if domainId provided)
         if (domainId && !taskId) {
@@ -960,6 +1000,21 @@
             backdropEl.querySelectorAll('.seg-btn[data-clarity]').forEach(btn => {
                 btn.classList.toggle('is-active', btn.dataset.clarity === task.clarity);
             });
+
+            // Set recurrence bounds
+            if (task.is_recurring) {
+                backdropEl.querySelector('#recurrence-bounds').hidden = false;
+                if (task.recurrence_start) {
+                    const startDate = new Date(task.recurrence_start + 'T00:00:00');
+                    if (recurrenceStartPicker) recurrenceStartPicker.selectDate(startDate);
+                    backdropEl.querySelector('#recurrence-start').dataset.value = task.recurrence_start;
+                }
+                if (task.recurrence_end) {
+                    const endDate = new Date(task.recurrence_end + 'T00:00:00');
+                    if (recurrenceEndPicker) recurrenceEndPicker.selectDate(endDate);
+                    backdropEl.querySelector('#recurrence-end').dataset.value = task.recurrence_end;
+                }
+            }
 
             // Set recurrence
             if (task.is_recurring) {
@@ -1307,6 +1362,8 @@
             clarity: formData.get('clarity') || null,
             is_recurring: isRecurring,
             recurrence_rule: recurrenceRule,
+            recurrence_start: isRecurring ? (backdropEl.querySelector('#recurrence-start').dataset.value || null) : null,
+            recurrence_end: isRecurring ? (backdropEl.querySelector('#recurrence-end').dataset.value || null) : null,
         };
 
         const method = currentTaskId ? 'PUT' : 'POST';

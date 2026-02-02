@@ -257,6 +257,8 @@ class TaskResponse(BaseModel):
     scheduled_time: time | None
     is_recurring: bool
     recurrence_rule: dict | None
+    recurrence_start: date | None = None
+    recurrence_end: date | None = None
     status: str
     position: int
     created_at: datetime | None = None
@@ -298,6 +300,8 @@ def _task_to_response(task: Task, user_today: date | None = None) -> TaskRespons
         scheduled_time=task.scheduled_time,
         is_recurring=task.is_recurring,
         recurrence_rule=task.recurrence_rule,
+        recurrence_start=task.recurrence_start,
+        recurrence_end=task.recurrence_end,
         status=task.status,
         position=task.position,
         created_at=task.created_at,

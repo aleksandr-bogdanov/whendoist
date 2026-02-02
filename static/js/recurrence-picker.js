@@ -73,6 +73,16 @@
                     <input type="time" name="recurrence_time" class="recurrence-time-input">
                 </div>
             </div>
+            <div class="recurrence-bounds" style="display: none;">
+                <div class="bounds-row">
+                    <label>Starts</label>
+                    <input type="date" name="recurrence_start" class="recurrence-start-input">
+                </div>
+                <div class="bounds-row">
+                    <label>Ends</label>
+                    <input type="date" name="recurrence_end" class="recurrence-end-input" placeholder="Never">
+                </div>
+            </div>
             <div class="recurrence-preview"></div>
         `;
     }
@@ -90,10 +100,16 @@
 
                 // Show/hide custom section
                 const customSection = containerEl.querySelector('.recurrence-custom');
+                const boundsSection = containerEl.querySelector('.recurrence-bounds');
                 if (preset.value === 'custom') {
                     customSection.style.display = 'block';
+                    boundsSection.style.display = 'block';
+                } else if (preset.value === null) {
+                    customSection.style.display = 'none';
+                    boundsSection.style.display = 'none';
                 } else {
                     customSection.style.display = 'none';
+                    boundsSection.style.display = 'block';
                 }
 
                 updatePreview();
@@ -203,6 +219,10 @@
             return;
         }
 
+        // Show bounds section for any active recurrence
+        const boundsSection = containerEl.querySelector('.recurrence-bounds');
+        if (boundsSection) boundsSection.style.display = 'block';
+
         // Try to match a preset
         let matchedIndex = -1;
         for (let i = 0; i < PRESETS.length - 1; i++) {
@@ -251,11 +271,35 @@
         updatePreview();
     }
 
+    function getBounds() {
+        const startInput = containerEl.querySelector('.recurrence-start-input');
+        const endInput = containerEl.querySelector('.recurrence-end-input');
+        return {
+            recurrence_start: startInput?.value || null,
+            recurrence_end: endInput?.value || null,
+        };
+    }
+
+    function setBounds(start, end) {
+        const startInput = containerEl.querySelector('.recurrence-start-input');
+        const endInput = containerEl.querySelector('.recurrence-end-input');
+        if (startInput) startInput.value = start || '';
+        if (endInput) endInput.value = end || '';
+
+        // Show bounds section if recurrence is active
+        const boundsSection = containerEl.querySelector('.recurrence-bounds');
+        const rule = getRule();
+        if (boundsSection && rule) {
+            boundsSection.style.display = 'block';
+        }
+    }
+
     function reset() {
         _originalRule = null;
         containerEl.querySelectorAll('.recurrence-preset').forEach(btn => btn.classList.remove('active'));
         containerEl.querySelector('.recurrence-preset').classList.add('active'); // "None"
         containerEl.querySelector('.recurrence-custom').style.display = 'none';
+        containerEl.querySelector('.recurrence-bounds').style.display = 'none';
         containerEl.querySelector('.freq-select').value = 'daily';
         containerEl.querySelector('.interval-input').value = 1;
         containerEl.querySelectorAll('[name="days_of_week"]').forEach(cb => cb.checked = false);
@@ -264,6 +308,12 @@
         }
         if (containerEl.querySelector('.recurrence-time-input')) {
             containerEl.querySelector('.recurrence-time-input').value = '';
+        }
+        if (containerEl.querySelector('.recurrence-start-input')) {
+            containerEl.querySelector('.recurrence-start-input').value = '';
+        }
+        if (containerEl.querySelector('.recurrence-end-input')) {
+            containerEl.querySelector('.recurrence-end-input').value = '';
         }
         updatePreview();
     }
@@ -328,6 +378,8 @@
         init,
         getRule,
         setRule,
+        getBounds,
+        setBounds,
         reset,
     };
 })();
