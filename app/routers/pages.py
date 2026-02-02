@@ -448,6 +448,7 @@ async def task_list_partial(
         "_task_list.html",
         {
             "domains_with_tasks": domains_with_tasks,
+            "today": today,
         },
     )
 

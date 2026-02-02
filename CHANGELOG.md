@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.12] - 2026-02-02 — Completion Visual Mismatch Fix
+
+### Fixed
+- **Task list date/completion mismatch for recurring tasks** — when today's instance is completed, the task list now shows "Today ✓" instead of the next occurrence date (e.g., "Feb 04"), resolving the confusing visual where a checked checkbox appeared next to a future date
+- Pass `today` to the task list partial endpoint so it's available for the template
+
+---
+
 ## [0.32.11] - 2026-02-02 — Weekly Preset Day of Week
 
 ### Fixed
