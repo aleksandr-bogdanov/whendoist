@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.13] - 2026-02-02 — Skip Recurring Task Instances
+
+### Added
+- **Skip action for recurring task instances** — right-click the completion gutter on a recurring task to show a context menu with "Skip this instance" option
+- **Mobile skip support** — added "Skip instance" button to mobile task action sheet and task edit form for recurring tasks
+- **Skipped instance visual styling** — skipped instances show with italic strikethrough and reduced opacity, distinct from completed tasks; includes dark mode support
+
+---
+
 ## [0.32.12] - 2026-02-02 — Completion Visual Mismatch Fix
 
 ### Fixed
