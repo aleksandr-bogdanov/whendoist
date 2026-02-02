@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.31.3] - 2026-02-02 — GCal Sync Rate Limiting & Reliability
+
+### Fixed
+- Distinguish Google API rate limit 403 from permission 403 — rate limits now retry with exponential backoff instead of permanently disabling sync
+- Add 150ms delay between bulk sync API calls to avoid hitting Google's rate limit
+- Clean stale sync records when re-enabling sync — prevents duplicate events across calendars
+- Enable endpoint now returns failure when initial bulk sync auto-disables sync (previously returned `success: true`)
+- UI disables enable button during sync to prevent rapid re-enable clicks
+- All-day toggle's background full-sync no longer logs 400 errors when sync is disabled
+
+---
+
 ## [0.31.2] - 2026-02-02 — GCal Sync Circuit Breaker
 
 ### Fixed

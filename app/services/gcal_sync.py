@@ -5,15 +5,23 @@ One-way sync: Whendoist -> Google Calendar.
 Scheduled tasks appear as events in a dedicated "Whendoist" calendar.
 """
 
+import asyncio
 import contextlib
 import logging
+from collections.abc import Callable, Coroutine
 from datetime import UTC, date, datetime
+from typing import Any
 
 import httpx
 from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants import DEFAULT_TIMEZONE
+from app.constants import (
+    DEFAULT_TIMEZONE,
+    GCAL_SYNC_BATCH_DELAY_SECONDS,
+    GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE,
+    GCAL_SYNC_RATE_LIMIT_MAX_RETRIES,
+)
 from app.models import (
     GoogleCalendarEventSync,
     GoogleToken,
@@ -60,14 +68,30 @@ def _is_gone_error(e: Exception) -> bool:
     return False
 
 
+def _is_rate_limit_error(e: Exception) -> bool:
+    """Check if an exception is a Google API rate limit (403 with rateLimitExceeded)."""
+    if isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 403:
+        try:
+            body = e.response.json()
+            errors = body.get("error", {}).get("errors", [])
+            return any(err.get("domain") == "usageLimits" for err in errors)
+        except Exception:
+            pass
+    return False
+
+
 def _is_calendar_error(e: Exception) -> bool:
     """Check if an exception indicates a calendar-level failure (403/404/410).
 
     403 = no write access (token scope revoked or calendar ownership changed)
+          BUT NOT rate limit 403 (usageLimits domain)
     404/410 = calendar deleted externally
     """
     if isinstance(e, httpx.HTTPStatusError):
-        return e.response.status_code in (403, 404, 410)
+        if e.response.status_code in (404, 410):
+            return True
+        if e.response.status_code == 403:
+            return not _is_rate_limit_error(e)
     return False
 
 
@@ -79,6 +103,21 @@ def _calendar_error_message(e: Exception) -> str:
         if e.response.status_code in (404, 410):
             return "Whendoist calendar was deleted. Please re-enable sync in Settings."
     return f"Calendar sync error: {e}"
+
+
+async def _retry_on_rate_limit[T](fn: Callable[..., Coroutine[Any, Any, T]], *args: Any, **kwargs: Any) -> T:
+    """Retry an async function with exponential backoff on rate limit errors."""
+    for attempt in range(GCAL_SYNC_RATE_LIMIT_MAX_RETRIES + 1):
+        try:
+            return await fn(*args, **kwargs)
+        except httpx.HTTPStatusError as e:
+            if _is_rate_limit_error(e) and attempt < GCAL_SYNC_RATE_LIMIT_MAX_RETRIES:
+                backoff = GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE * (2**attempt)
+                logger.warning(f"Rate limited by Google API, retrying in {backoff}s (attempt {attempt + 1})")
+                await asyncio.sleep(backoff)
+                continue
+            raise
+    raise RuntimeError("Unreachable")
 
 
 class GCalSyncService:
@@ -457,8 +496,12 @@ class GCalSyncService:
                             user_timezone=timezone,
                         )
                         try:
-                            await client.update_event(
-                                prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data
+                            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
+                            await _retry_on_rate_limit(
+                                client.update_event,
+                                prefs.gcal_sync_calendar_id,
+                                sync_record.google_event_id,
+                                event_data,
                             )
                             sync_record.sync_hash = current_hash
                             sync_record.last_synced_at = datetime.now(UTC)
@@ -467,7 +510,11 @@ class GCalSyncService:
                             if _is_calendar_error(e):
                                 raise  # Will be caught by outer try/except
                             if _is_gone_error(e):
-                                event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                                event_id = await _retry_on_rate_limit(
+                                    client.create_event,
+                                    prefs.gcal_sync_calendar_id,
+                                    event_data,
+                                )
                                 sync_record.google_event_id = event_id
                                 sync_record.sync_hash = current_hash
                                 sync_record.last_synced_at = datetime.now(UTC)
@@ -487,7 +534,12 @@ class GCalSyncService:
                             user_timezone=timezone,
                         )
                         try:
-                            event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
+                            event_id = await _retry_on_rate_limit(
+                                client.create_event,
+                                prefs.gcal_sync_calendar_id,
+                                event_data,
+                            )
                             new_sync = GoogleCalendarEventSync(
                                 user_id=self.user_id,
                                 task_id=task.id,
@@ -549,8 +601,12 @@ class GCalSyncService:
                             user_timezone=timezone,
                         )
                         try:
-                            await client.update_event(
-                                prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data
+                            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
+                            await _retry_on_rate_limit(
+                                client.update_event,
+                                prefs.gcal_sync_calendar_id,
+                                sync_record.google_event_id,
+                                event_data,
                             )
                             sync_record.sync_hash = current_hash
                             sync_record.last_synced_at = datetime.now(UTC)
@@ -559,7 +615,11 @@ class GCalSyncService:
                             if _is_calendar_error(e):
                                 raise
                             if _is_gone_error(e):
-                                event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                                event_id = await _retry_on_rate_limit(
+                                    client.create_event,
+                                    prefs.gcal_sync_calendar_id,
+                                    event_data,
+                                )
                                 sync_record.google_event_id = event_id
                                 sync_record.sync_hash = current_hash
                                 sync_record.last_synced_at = datetime.now(UTC)
@@ -578,7 +638,12 @@ class GCalSyncService:
                             user_timezone=timezone,
                         )
                         try:
-                            event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
+                            event_id = await _retry_on_rate_limit(
+                                client.create_event,
+                                prefs.gcal_sync_calendar_id,
+                                event_data,
+                            )
                             new_sync = GoogleCalendarEventSync(
                                 user_id=self.user_id,
                                 task_instance_id=instance.id,

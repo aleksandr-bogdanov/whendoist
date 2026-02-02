@@ -9,7 +9,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import GCAL_SYNC_CALENDAR_NAME
@@ -151,20 +151,35 @@ async def enable_sync(
         logger.error(f"Failed to create Whendoist calendar: {e}")
         raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
 
+    # Clear stale sync records from previous calendar before enabling
+    await db.execute(
+        delete(GoogleCalendarEventSync).where(
+            GoogleCalendarEventSync.user_id == user.id,
+        )
+    )
+
     # Enable sync
     prefs.gcal_sync_enabled = True
     prefs.gcal_sync_calendar_id = calendar_id
     await db.commit()
 
     # Run initial bulk sync
+    sync_error = None
     try:
         sync_service = GCalSyncService(db, user.id)
         stats = await sync_service.bulk_sync()
         await db.commit()
+        sync_error = stats.get("error")
         logger.info(f"Initial sync for user {user.id}: {stats}")
     except Exception as e:
         logger.error(f"Initial bulk sync failed for user {user.id}: {e}")
-        # Don't fail the enable - sync will catch up on next mutation
+        sync_error = str(e)
+
+    if sync_error:
+        return SyncEnableResponse(
+            success=False,
+            message=sync_error,
+        )
 
     return SyncEnableResponse(
         success=True,
