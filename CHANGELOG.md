@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.10] - 2026-02-02 — Prevent Recurrence Rule Data Loss
+
+### Fixed
+- **Recurrence rule data loss on edit** — editing a task with advanced recurrence fields (week_of_month, month_of_year) no longer silently drops those fields on save; both desktop dialog and mobile picker now preserve unknown fields
+- **Desktop dialog missing yearly frequency** — added "years" option to the custom recurrence frequency select
+- **Desktop dialog missing day-of-month for monthly** — added day-of-month input that shows when monthly frequency is selected
+- **Desktop dialog `populateCustomRecurrence()` incomplete** — now restores day_of_month and correctly shows/hides freq-dependent UI rows
+
+---
+
 ## [0.32.9] - 2026-02-02 — Recurring Task UX Fixes
 
 ### Fixed

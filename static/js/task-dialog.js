@@ -184,6 +184,7 @@
                                             <option value="daily">days</option>
                                             <option value="weekly">weeks</option>
                                             <option value="monthly">months</option>
+                                            <option value="yearly">years</option>
                                         </select>
                                     </div>
                                     <span class="subrow-label">On</span>
@@ -195,6 +196,10 @@
                                         <button type="button" class="day-btn" data-day="FR">F</button>
                                         <button type="button" class="day-btn" data-day="SA">S</button>
                                         <button type="button" class="day-btn" data-day="SU">S</button>
+                                    </div>
+                                    <span class="subrow-label day-of-month-label" hidden>On day</span>
+                                    <div class="field-controls day-of-month-field" hidden>
+                                        <input type="number" id="recurrence-day-of-month" class="input input-sm" value="1" min="1" max="31">
                                     </div>
                                 </div>
                             </div>
@@ -642,7 +647,23 @@
 
         // Custom recurrence controls
         backdropEl.querySelector('#recurrence-interval').addEventListener('input', updateRecurrenceRule);
-        backdropEl.querySelector('#recurrence-freq').addEventListener('change', updateRecurrenceRule);
+        backdropEl.querySelector('#recurrence-freq').addEventListener('change', () => {
+            const freq = backdropEl.querySelector('#recurrence-freq').value;
+            const daysRow = backdropEl.querySelector('#recurrence-days');
+            const onLabel = backdropEl.querySelector('.subrow-grid > .subrow-label:nth-of-type(2)');
+            const domLabel = backdropEl.querySelector('.day-of-month-label');
+            const domField = backdropEl.querySelector('.day-of-month-field');
+
+            // Show days-of-week row only for weekly
+            if (daysRow) daysRow.hidden = freq !== 'weekly';
+            if (onLabel) onLabel.hidden = freq !== 'weekly';
+            // Show day-of-month only for monthly
+            if (domLabel) domLabel.hidden = freq !== 'monthly';
+            if (domField) domField.hidden = freq !== 'monthly';
+
+            updateRecurrenceRule();
+        });
+        backdropEl.querySelector('#recurrence-day-of-month').addEventListener('input', updateRecurrenceRule);
 
         // Day buttons for weekly recurrence
         backdropEl.querySelectorAll('#recurrence-days .day-btn').forEach(btn => {
@@ -686,16 +707,43 @@
         const interval = parseInt(backdropEl.querySelector('#recurrence-interval').value, 10) || 1;
         const freq = backdropEl.querySelector('#recurrence-freq').value;
 
-        const rule = {
-            freq: freq,
-            interval: interval
-        };
+        // Start from existing rule to preserve fields the UI doesn't expose
+        // (e.g., week_of_month, month_of_year)
+        const base = currentRecurrenceRule || {};
+        const rule = { ...base, freq, interval };
+
+        // Clean up freq-specific fields when freq changes
+        if (freq !== 'weekly') {
+            delete rule.days_of_week;
+        }
+        if (freq !== 'monthly') {
+            delete rule.day_of_month;
+            delete rule.week_of_month;
+        }
+        if (freq !== 'yearly') {
+            delete rule.month_of_year;
+            if (freq !== 'monthly') {
+                delete rule.day_of_month;
+            }
+        }
 
         if (freq === 'weekly') {
             const days = Array.from(backdropEl.querySelectorAll('#recurrence-days .day-btn.is-active'))
                 .map(btn => btn.dataset.day);
             if (days.length > 0) {
                 rule.days_of_week = days;
+            } else {
+                delete rule.days_of_week;
+            }
+        }
+
+        if (freq === 'monthly') {
+            const dayInput = backdropEl.querySelector('#recurrence-day-of-month');
+            if (dayInput) {
+                const val = parseInt(dayInput.value, 10);
+                if (val >= 1 && val <= 31) {
+                    rule.day_of_month = val;
+                }
             }
         }
 
@@ -997,6 +1045,21 @@
                 btn.classList.toggle('is-active', rule.days_of_week.includes(btn.dataset.day));
             });
         }
+        // Day of month for monthly
+        const domInput = backdropEl.querySelector('#recurrence-day-of-month');
+        if (domInput && rule.day_of_month) {
+            domInput.value = rule.day_of_month;
+        }
+        // Show/hide freq-dependent rows
+        const freq = rule.freq || 'daily';
+        const daysRow = backdropEl.querySelector('#recurrence-days');
+        const onLabel = backdropEl.querySelector('.subrow-grid > .subrow-label:nth-of-type(2)');
+        const domLabel = backdropEl.querySelector('.day-of-month-label');
+        const domField = backdropEl.querySelector('.day-of-month-field');
+        if (daysRow) daysRow.hidden = freq !== 'weekly';
+        if (onLabel) onLabel.hidden = freq !== 'weekly';
+        if (domLabel) domLabel.hidden = freq !== 'monthly';
+        if (domField) domField.hidden = freq !== 'monthly';
     }
 
     // Track pending deletion for undo
