@@ -145,6 +145,11 @@
                     rule.month_of_year = _originalRule.month_of_year;
                 }
             }
+            // For "Weekly" preset, inject today's day of week if no days specified
+            if (rule.freq === 'weekly' && !rule.days_of_week) {
+                const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+                rule.days_of_week = [dayMap[new Date().getDay()]];
+            }
             return rule;
         }
 
