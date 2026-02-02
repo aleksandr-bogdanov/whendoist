@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.2] - 2026-02-02 — Cancel Running Sync on Disable
+
+### Fixed
+- **Disable during sync doesn't stop it** — disabling sync while a bulk sync is running now signals the background task to stop immediately via in-memory cancellation flag, checked before each API call
+
+---
+
 ## [0.32.1] - 2026-02-02 — GCal Sync Progress & 5x Faster Sync
 
 ### Fixed

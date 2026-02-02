@@ -412,6 +412,7 @@ class GCalSyncService:
     async def bulk_sync(
         self,
         on_progress: Callable[[dict], None] | None = None,
+        is_cancelled: Callable[[], bool] | None = None,
     ) -> dict:
         """
         Full sync: create missing, update changed, delete orphaned.
@@ -419,6 +420,8 @@ class GCalSyncService:
         Args:
             on_progress: Optional callback invoked after each operation with
                 current stats dict, enabling real-time progress reporting.
+            is_cancelled: Optional callback that returns True when the sync
+                should stop (e.g., user disabled sync mid-run).
 
         Returns stats dict with counts. On calendar-level errors (403/404),
         auto-disables sync and returns immediately with an error key.
@@ -433,6 +436,9 @@ class GCalSyncService:
 
         timezone = await self._get_timezone(prefs)
         stats: dict = {"created": 0, "updated": 0, "deleted": 0, "skipped": 0}
+
+        def _check_cancelled() -> bool:
+            return is_cancelled() if is_cancelled else False
 
         def _report() -> None:
             if on_progress:
@@ -490,6 +496,9 @@ class GCalSyncService:
             async with GoogleCalendarClient(self.db, google_token) as client:
                 # Sync non-recurring tasks
                 for task in tasks:
+                    if _check_cancelled():
+                        stats["cancelled"] = True
+                        break
                     eff_date = _effective_date(task)
                     if not eff_date:
                         continue
@@ -596,6 +605,9 @@ class GCalSyncService:
                         task_lookup[t.id] = t
 
                 for instance in instances:
+                    if _check_cancelled():
+                        stats["cancelled"] = True
+                        break
                     parent_task = task_lookup.get(instance.task_id)
                     if not parent_task:
                         continue
@@ -693,7 +705,10 @@ class GCalSyncService:
                             logger.warning(f"Failed to create event for instance {instance.id}: {e}")
 
                 # Delete orphaned sync records (events for tasks that no longer exist or are unscheduled)
-                orphaned = [s for s in existing_syncs if s.id not in valid_sync_ids]
+                if not stats.get("cancelled"):
+                    orphaned = [s for s in existing_syncs if s.id not in valid_sync_ids]
+                else:
+                    orphaned = []
                 for sync_record in orphaned:
                     try:
                         await throttle.call(
