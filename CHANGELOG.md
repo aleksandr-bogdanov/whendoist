@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.14] - 2026-02-02 — Instance Drag-and-Drop Rescheduling
+
+### Fixed
+- **Recurring instance drag-and-drop rescheduling** — dragging a recurring task instance to a different time slot on the same day now correctly uses the instance schedule API (`PUT /api/v1/instances/{id}/schedule`) instead of updating the parent task's `scheduled_date`/`scheduled_time`. Cross-day drops still update the parent task (existing behavior).
+
+---
+
 ## [0.32.13] - 2026-02-02 — Skip Recurring Task Instances
 
 ### Added

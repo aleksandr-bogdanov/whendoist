@@ -808,21 +808,34 @@
         const scheduledTime = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 
         try {
-            const response = await fetch(`/api/v1/tasks/${taskId}`, {
-                method: 'PUT',
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({
-                    scheduled_date: scheduledDate,
-                    scheduled_time: scheduledTime,
-                    duration_minutes: draggedDuration,
-                }),
-            });
+            let response;
+
+            if (effectiveInstanceId) {
+                // Recurring instance: reschedule via instance API (same-day time change)
+                const scheduledDatetime = `${day}T${scheduledTime}`;
+                response = await fetch(`/api/v1/instances/${effectiveInstanceId}/schedule`, {
+                    method: 'PUT',
+                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ scheduled_datetime: scheduledDatetime }),
+                });
+            } else {
+                // Regular task (or cross-day instance drop): update task directly
+                response = await fetch(`/api/v1/tasks/${taskId}`, {
+                    method: 'PUT',
+                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({
+                        scheduled_date: scheduledDate,
+                        scheduled_time: scheduledTime,
+                        duration_minutes: draggedDuration,
+                    }),
+                });
+            }
 
             if (response.ok) {
-                log.info(`Scheduled ${taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
+                log.info(`Scheduled ${effectiveInstanceId ? 'instance ' + effectiveInstanceId : 'task ' + taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
                 // No reload needed - optimistic update is sufficient
             } else {
-                log.error(`Failed to schedule task ${taskId}`);
+                log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}`);
                 // Remove the optimistic element on failure
                 element.remove();
                 if (original) {
@@ -833,7 +846,7 @@
                 alert('Failed to schedule task. Please try again.');
             }
         } catch (error) {
-            log.error(`Failed to schedule task ${taskId}:`, error);
+            log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}:`, error);
             element.remove();
             if (original) {
                 original.classList.remove('scheduled');
