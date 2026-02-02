@@ -6,7 +6,6 @@ Scheduled tasks appear as events in a dedicated "Whendoist" calendar.
 """
 
 import asyncio
-import contextlib
 import logging
 from collections.abc import Callable, Coroutine
 from datetime import UTC, date, datetime
@@ -678,7 +677,11 @@ class GCalSyncService:
                 orphaned = [s for s in existing_syncs if s.id not in valid_sync_ids]
                 for sync_record in orphaned:
                     try:
-                        await client.delete_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id)
+                        await throttle.call(
+                            client.delete_event,
+                            prefs.gcal_sync_calendar_id,
+                            sync_record.google_event_id,
+                        )
                     except Exception:
                         logger.debug(f"Failed to delete orphaned event {sync_record.google_event_id}")
                     await self.db.delete(sync_record)
@@ -718,10 +721,17 @@ class GCalSyncService:
 
         deleted = 0
         if sync_records:
+            throttle = _AdaptiveThrottle()
             async with GoogleCalendarClient(self.db, google_token) as client:
                 for sync_record in sync_records:
-                    with contextlib.suppress(Exception):
-                        await client.delete_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id)
+                    try:
+                        await throttle.call(
+                            client.delete_event,
+                            prefs.gcal_sync_calendar_id,
+                            sync_record.google_event_id,
+                        )
+                    except Exception:
+                        logger.debug(f"Failed to delete event {sync_record.google_event_id}")
                     deleted += 1
 
             # Delete all sync records in one query
