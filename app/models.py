@@ -216,6 +216,7 @@ class UserPreferences(Base):
     gcal_sync_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     gcal_sync_calendar_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     gcal_sync_all_day: Mapped[bool] = mapped_column(Boolean, default=True)
+    gcal_sync_error: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

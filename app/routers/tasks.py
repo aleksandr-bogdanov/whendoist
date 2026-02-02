@@ -48,7 +48,12 @@ async def _fire_and_forget_sync_task(task_id: int, user_id: int) -> None:
                 await sync_service.sync_task(task)
             await db.commit()
     except Exception as e:
-        logger.debug(f"GCal sync failed for task {task_id}: {e}")
+        from app.services.gcal_sync import CalendarGoneError
+
+        if isinstance(e, CalendarGoneError):
+            logger.warning(f"GCal sync auto-disabled for user {user_id}: {e}")
+        else:
+            logger.debug(f"GCal sync failed for task {task_id}: {e}")
 
 
 async def _fire_and_forget_unsync_task(task_id: int, user_id: int) -> None:
@@ -87,7 +92,12 @@ async def _fire_and_forget_sync_instance(instance_id: int, task_id: int, user_id
                 await sync_service.sync_task_instance(instance, task)
             await db.commit()
     except Exception as e:
-        logger.debug(f"GCal sync failed for instance {instance_id}: {e}")
+        from app.services.gcal_sync import CalendarGoneError
+
+        if isinstance(e, CalendarGoneError):
+            logger.warning(f"GCal sync auto-disabled for user {user_id}: {e}")
+        else:
+            logger.debug(f"GCal sync failed for instance {instance_id}: {e}")
 
 
 # =============================================================================

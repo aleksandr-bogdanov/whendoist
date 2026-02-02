@@ -258,6 +258,16 @@
                             </div>
                         </div>
                         {% else %}
+                        {% if user_prefs and user_prefs.gcal_sync_error %}
+                        <div class="settings-row" id="gcal-sync-error-row" style="background: var(--color-danger-bg, #fef2f2); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;">
+                            <div class="backup-info">
+                                <span class="pref-label" style="color: var(--color-danger, #dc2626);">Sync stopped</span>
+                                <span class="pref-desc" style="color: var(--color-danger, #dc2626);">
+                                    {{ user_prefs.gcal_sync_error }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
                         <div class="settings-row">
                             <div class="backup-info">
                                 <span class="pref-label">Sync tasks to Google Calendar</span>
@@ -1890,6 +1900,8 @@ async function toggleGcalSync(btn) {
             if (data.success) {
                 btn.classList.add('enabled');
                 document.getElementById('gcal-sync-status').textContent = 'Synced to: Whendoist calendar';
+                const errorRow = document.getElementById('gcal-sync-error-row');
+                if (errorRow) errorRow.remove();
                 location.reload();
             } else {
                 alert(data.message || 'Failed to enable sync.');
@@ -1944,6 +1956,9 @@ async function resyncAllTasks() {
         if (data.success) {
             btn.textContent = `Done (${data.created} new, ${data.updated} updated)`;
             setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 3000);
+        } else if (data.error) {
+            // Sync was auto-disabled due to calendar error — reload to show error
+            location.reload();
         } else {
             btn.textContent = 'Failed';
             setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 2000);
