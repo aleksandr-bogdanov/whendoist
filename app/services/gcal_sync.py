@@ -12,7 +12,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 
 import httpx
-from sqlalchemy import delete, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import (
@@ -409,9 +409,16 @@ class GCalSyncService:
     # Bulk Operations
     # =========================================================================
 
-    async def bulk_sync(self) -> dict:
+    async def bulk_sync(
+        self,
+        on_progress: Callable[[dict], None] | None = None,
+    ) -> dict:
         """
         Full sync: create missing, update changed, delete orphaned.
+
+        Args:
+            on_progress: Optional callback invoked after each operation with
+                current stats dict, enabling real-time progress reporting.
 
         Returns stats dict with counts. On calendar-level errors (403/404),
         auto-disables sync and returns immediately with an error key.
@@ -426,6 +433,10 @@ class GCalSyncService:
 
         timezone = await self._get_timezone(prefs)
         stats: dict = {"created": 0, "updated": 0, "deleted": 0, "skipped": 0}
+
+        def _report() -> None:
+            if on_progress:
+                on_progress(stats)
 
         # Get all syncable tasks: either has scheduled_date, or is completed with completed_at
         # (completed Todoist imports may lack scheduled_date but have completed_at)
@@ -502,6 +513,7 @@ class GCalSyncService:
                         valid_sync_ids.add(sync_record.id)
                         if sync_record.sync_hash == current_hash:
                             stats["skipped"] += 1
+                            _report()
                             continue
                         # Update
                         event_data = build_event_data(
@@ -524,6 +536,7 @@ class GCalSyncService:
                             sync_record.sync_hash = current_hash
                             sync_record.last_synced_at = datetime.now(UTC)
                             stats["updated"] += 1
+                            _report()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise  # Will be caught by outer try/except
@@ -537,6 +550,7 @@ class GCalSyncService:
                                 sync_record.sync_hash = current_hash
                                 sync_record.last_synced_at = datetime.now(UTC)
                                 stats["created"] += 1
+                                _report()
                             else:
                                 logger.warning(f"Failed to update event for task {task.id}: {e}")
                     else:
@@ -566,6 +580,7 @@ class GCalSyncService:
                             )
                             self.db.add(new_sync)
                             stats["created"] += 1
+                            _report()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise  # Will be caught by outer try/except
@@ -606,6 +621,7 @@ class GCalSyncService:
                         valid_sync_ids.add(sync_record.id)
                         if sync_record.sync_hash == current_hash:
                             stats["skipped"] += 1
+                            _report()
                             continue
                         event_data = build_event_data(
                             title=parent_task.title,
@@ -627,6 +643,7 @@ class GCalSyncService:
                             sync_record.sync_hash = current_hash
                             sync_record.last_synced_at = datetime.now(UTC)
                             stats["updated"] += 1
+                            _report()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise
@@ -640,6 +657,7 @@ class GCalSyncService:
                                 sync_record.sync_hash = current_hash
                                 sync_record.last_synced_at = datetime.now(UTC)
                                 stats["created"] += 1
+                                _report()
                             else:
                                 logger.warning(f"Failed to update event for instance {instance.id}: {e}")
                     else:
@@ -668,6 +686,7 @@ class GCalSyncService:
                             )
                             self.db.add(new_sync)
                             stats["created"] += 1
+                            _report()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise
@@ -686,6 +705,7 @@ class GCalSyncService:
                         logger.debug(f"Failed to delete orphaned event {sync_record.google_event_id}")
                     await self.db.delete(sync_record)
                     stats["deleted"] += 1
+                    _report()
 
         except httpx.HTTPStatusError as e:
             if _is_calendar_error(e):
@@ -701,45 +721,3 @@ class GCalSyncService:
         await self._clear_sync_error()
         await self.db.flush()
         return stats
-
-    async def delete_all_synced_events(self) -> int:
-        """Delete all synced events from Google Calendar and remove sync records."""
-        prefs = await self._get_prefs()
-        if not prefs or not prefs.gcal_sync_calendar_id:
-            return 0
-
-        google_token = await self._get_google_token()
-        if not google_token:
-            return 0
-
-        syncs_result = await self.db.execute(
-            select(GoogleCalendarEventSync).where(
-                GoogleCalendarEventSync.user_id == self.user_id,
-            )
-        )
-        sync_records = list(syncs_result.scalars().all())
-
-        deleted = 0
-        if sync_records:
-            throttle = _AdaptiveThrottle()
-            async with GoogleCalendarClient(self.db, google_token) as client:
-                for sync_record in sync_records:
-                    try:
-                        await throttle.call(
-                            client.delete_event,
-                            prefs.gcal_sync_calendar_id,
-                            sync_record.google_event_id,
-                        )
-                    except Exception:
-                        logger.debug(f"Failed to delete event {sync_record.google_event_id}")
-                    deleted += 1
-
-            # Delete all sync records in one query
-            await self.db.execute(
-                delete(GoogleCalendarEventSync).where(
-                    GoogleCalendarEventSync.user_id == self.user_id,
-                )
-            )
-            await self.db.flush()
-
-        return deleted

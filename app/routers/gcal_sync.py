@@ -76,11 +76,19 @@ class BulkSyncResponse(BaseModel):
 # Per-user lock to prevent concurrent bulk syncs
 _bulk_sync_locks: dict[int, asyncio.Lock] = {}
 
+# In-memory progress tracking (visible to status endpoint while sync runs)
+_bulk_sync_progress: dict[int, dict] = {}
+
 
 def _is_sync_running(user_id: int) -> bool:
     """Check if a bulk sync is currently running for this user."""
     lock = _bulk_sync_locks.get(user_id)
     return lock is not None and lock.locked()
+
+
+def _get_sync_progress(user_id: int) -> dict | None:
+    """Get live progress for a running bulk sync, or None if not running."""
+    return _bulk_sync_progress.get(user_id)
 
 
 async def _background_bulk_sync(user_id: int, *, clear_calendar: bool = False) -> None:
@@ -116,14 +124,19 @@ async def _background_bulk_sync(user_id: int, *, clear_calendar: bool = False) -
                             except Exception as e:
                                 logger.warning(f"Failed to clear stale events for user {user_id}: {e}")
 
+                def on_progress(stats: dict) -> None:
+                    _bulk_sync_progress[user_id] = dict(stats)
+
                 sync_service = GCalSyncService(db, user_id)
-                stats = await sync_service.bulk_sync()
+                stats = await sync_service.bulk_sync(on_progress=on_progress)
                 await db.commit()
                 logger.info(f"Background bulk sync for user {user_id}: {stats}")
                 if stats.get("error"):
                     logger.warning(f"Background bulk sync error for user {user_id}: {stats['error']}")
         except Exception as e:
             logger.error(f"Background bulk sync failed for user {user_id}: {e}")
+        finally:
+            _bulk_sync_progress.pop(user_id, None)
 
 
 # =============================================================================
@@ -145,13 +158,20 @@ async def get_sync_status(
     google_token = token_result.scalar_one_or_none()
     has_write_scope = google_token.gcal_write_scope if google_token else False
 
-    # Count synced events
-    count_result = await db.execute(
-        select(func.count(GoogleCalendarEventSync.id)).where(
-            GoogleCalendarEventSync.user_id == user.id,
+    syncing = _is_sync_running(user.id)
+
+    # Use in-memory progress when sync is running (DB hasn't committed yet),
+    # fall back to DB count for stable state.
+    progress = _get_sync_progress(user.id)
+    if syncing and progress:
+        synced_count = sum(progress.get(k, 0) for k in ("created", "updated", "skipped"))
+    else:
+        count_result = await db.execute(
+            select(func.count(GoogleCalendarEventSync.id)).where(
+                GoogleCalendarEventSync.user_id == user.id,
+            )
         )
-    )
-    synced_count = count_result.scalar() or 0
+        synced_count = count_result.scalar() or 0
 
     return SyncStatusResponse(
         enabled=prefs.gcal_sync_enabled,
@@ -160,7 +180,7 @@ async def get_sync_status(
         sync_all_day=prefs.gcal_sync_all_day,
         has_write_scope=has_write_scope,
         sync_error=prefs.gcal_sync_error,
-        syncing=_is_sync_running(user.id),
+        syncing=syncing,
     )
 
 

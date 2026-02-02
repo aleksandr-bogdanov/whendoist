@@ -1894,6 +1894,7 @@ document.addEventListener('DOMContentLoaded', updateThemeToggleUI);
 
 async function toggleGcalSync(btn) {
     const isEnabled = btn.classList.contains('enabled');
+    const statusEl = document.getElementById('gcal-sync-status');
 
     if (isEnabled) {
         // Disable sync
@@ -1901,6 +1902,10 @@ async function toggleGcalSync(btn) {
             return;
         }
         const deleteEvents = confirm('Delete all synced events from Google Calendar?\n\nClick OK to delete, Cancel to keep them.');
+        // Optimistic UI: toggle off immediately
+        btn.classList.remove('enabled');
+        btn.disabled = true;
+        if (statusEl) statusEl.textContent = 'Disabling...';
         try {
             const res = await fetch('/api/v1/gcal-sync/disable', {
                 method: 'POST',
@@ -1910,21 +1915,19 @@ async function toggleGcalSync(btn) {
                 },
                 body: JSON.stringify({ delete_events: deleteEvents })
             });
-            if (res.ok) {
-                location.reload();
-            } else {
+            if (!res.ok) {
                 alert('Failed to disable sync. Please try again.');
-                location.reload();
             }
         } catch (e) {
             console.error('Failed to disable sync:', e);
             alert('Failed to disable sync. Please try again.');
-            location.reload();
         }
+        location.reload();
     } else {
-        // Enable sync
+        // Enable sync — optimistic UI: toggle on immediately
+        btn.classList.add('enabled');
         btn.disabled = true;
-        btn.style.opacity = '0.5';
+        if (statusEl) statusEl.textContent = 'Enabling...';
         try {
             const res = await fetch('/api/v1/gcal-sync/enable', {
                 method: 'POST',
@@ -1935,21 +1938,25 @@ async function toggleGcalSync(btn) {
             });
             const data = await res.json();
             if (data.needs_reauth) {
-                // Redirect to Google OAuth with write scope
                 window.location.href = data.reauth_url;
                 return;
             }
             if (data.success) {
+                // Show syncing status immediately, then reload to get full UI
+                if (statusEl) statusEl.textContent = 'Syncing tasks...';
                 location.reload();
             } else {
                 alert(data.message || 'Failed to enable sync.');
-                location.reload();
+                btn.classList.remove('enabled');
+                btn.disabled = false;
+                if (statusEl) statusEl.textContent = 'One-way sync \u2014 changes in Whendoist appear in Google Calendar.';
             }
         } catch (e) {
             console.error('Failed to enable sync:', e);
             alert('Failed to enable sync. Please try again.');
+            btn.classList.remove('enabled');
             btn.disabled = false;
-            btn.style.opacity = '';
+            if (statusEl) statusEl.textContent = 'One-way sync \u2014 changes in Whendoist appear in Google Calendar.';
         }
     }
 }
@@ -2020,7 +2027,7 @@ function _pollSyncStatus(btn) {
                     location.reload();
                 } else {
                     btn.textContent = `Done (${data.synced_count} events)`;
-                    setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 3000);
+                    setTimeout(() => { btn.textContent = 'Re-sync'; btn.disabled = false; }, 2000);
                 }
             }
         } catch {
@@ -2028,7 +2035,7 @@ function _pollSyncStatus(btn) {
             btn.textContent = 'Re-sync';
             btn.disabled = false;
         }
-    }, 3000);
+    }, 1000);
 }
 
 // On page load: if sync is running, show progress on re-sync button
