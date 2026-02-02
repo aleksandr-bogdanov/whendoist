@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.0] - 2026-02-02 — GCal Sync Toggle & Enable Performance Fix
+
+### Fixed
+- **Disable sync hangs / toggle stays on** — disabling sync with "delete events" now deletes the entire Whendoist calendar (1 API call) instead of looping through hundreds of individual events with throttled delays, which caused request timeouts
+- **Enable sync blocks for minutes** — clearing stale events from a reused calendar now runs in the background task instead of blocking the enable response
+- **Disable toggle has no error feedback** — added user-visible error alerts when the disable request fails, instead of silently doing nothing
+- Disable now also clears `gcal_sync_calendar_id` to ensure clean state for re-enable
+
+---
+
 ## [0.31.9] - 2026-02-02 — Settings Redesign & Uniform GCal Event Color
 
 ### Changed

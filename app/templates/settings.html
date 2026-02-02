@@ -1911,16 +1911,15 @@ async function toggleGcalSync(btn) {
                 body: JSON.stringify({ delete_events: deleteEvents })
             });
             if (res.ok) {
-                btn.classList.remove('enabled');
-                document.getElementById('gcal-sync-status').textContent = 'One-way sync \u2014 changes in Whendoist appear in Google Calendar.';
-                const options = document.getElementById('gcal-sync-options');
-                if (options) options.remove();
-                const resyncRow = document.querySelector('#gcal-sync-section .settings-row:last-child');
-                if (resyncRow && resyncRow.querySelector('#btn-resync')) resyncRow.remove();
+                location.reload();
+            } else {
+                alert('Failed to disable sync. Please try again.');
                 location.reload();
             }
         } catch (e) {
             console.error('Failed to disable sync:', e);
+            alert('Failed to disable sync. Please try again.');
+            location.reload();
         }
     } else {
         // Enable sync
