@@ -60,10 +60,11 @@
 
         const taskId = taskEl.dataset.taskId;
         const instanceId = taskEl.dataset.instanceId;
+        const isRecurring = taskEl.dataset.isRecurring === 'true' || !!instanceId;
         const isCompleted = taskEl.dataset.completed === '1';
 
         // Toggle completion
-        toggleCompletion(taskEl, taskId, instanceId, !isCompleted);
+        toggleCompletion(taskEl, taskId, instanceId, !isCompleted, isRecurring);
     }
 
     /**
@@ -73,7 +74,7 @@
      * @param {string|undefined} instanceId - Instance ID for recurring tasks
      * @param {boolean} shouldComplete - Whether to mark as completed
      */
-    async function toggleCompletion(taskEl, taskId, instanceId, shouldComplete) {
+    async function toggleCompletion(taskEl, taskId, instanceId, shouldComplete, isRecurring = false) {
         // Optimistic UI update
         taskEl.dataset.completed = shouldComplete ? '1' : '0';
 
@@ -154,7 +155,11 @@
             }
 
             // Show toast notification
-            showToast(data.completed ? 'Task completed' : 'Task reopened');
+            if (isRecurring) {
+                showToast(data.completed ? 'Done for today' : 'Reopened for today');
+            } else {
+                showToast(data.completed ? 'Task completed' : 'Task reopened');
+            }
 
         } catch (error) {
             console.error('Error toggling completion:', error);

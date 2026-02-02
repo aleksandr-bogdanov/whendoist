@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.9] - 2026-02-02 — Recurring Task UX Fixes
+
+### Fixed
+- **`aria-pressed` wrong for recurring tasks** — screen readers now correctly report completion state for recurring task instances (was always "false" because it checked `task.status` instead of instance completion)
+- **Toast text for recurring task completion** — gutter click now shows "Done for today" / "Reopened for today" instead of generic "Task completed" / "Task reopened"
+
+---
+
 ## [0.32.8] - 2026-02-02 — GCal Sync Docs Consolidation
 
 ### Changed
