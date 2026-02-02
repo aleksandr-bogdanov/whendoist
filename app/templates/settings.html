@@ -1883,6 +1883,8 @@ async function toggleGcalSync(btn) {
         }
     } else {
         // Enable sync
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
         try {
             const res = await fetch('/api/v1/gcal-sync/enable', {
                 method: 'POST',
@@ -1905,10 +1907,14 @@ async function toggleGcalSync(btn) {
                 location.reload();
             } else {
                 alert(data.message || 'Failed to enable sync.');
+                location.reload();
             }
         } catch (e) {
             console.error('Failed to enable sync:', e);
             alert('Failed to enable sync. Please try again.');
+        } finally {
+            btn.disabled = false;
+            btn.style.opacity = '';
         }
     }
 }
@@ -1926,14 +1932,14 @@ async function toggleGcalSyncAllDay(btn) {
         });
         if (res.ok) {
             btn.classList.toggle('enabled', newValue);
-            // Trigger re-sync to apply the change
+            // Trigger re-sync to apply the change (ignore errors — sync may be disabled)
             fetch('/api/v1/gcal-sync/full-sync', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
                 }
-            });
+            }).catch(() => {});
         }
     } catch (e) {
         console.error('Failed to update all-day preference:', e);
