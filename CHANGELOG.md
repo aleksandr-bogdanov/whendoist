@@ -6,13 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [0.32.0] - 2026-02-02 — GCal Sync Toggle & Enable Performance Fix
+## [0.32.1] - 2026-02-02 — GCal Sync Progress & 5x Faster Sync
 
 ### Fixed
 - **Disable sync hangs / toggle stays on** — disabling sync with "delete events" now deletes the entire Whendoist calendar (1 API call) instead of looping through hundreds of individual events with throttled delays, which caused request timeouts
 - **Enable sync blocks for minutes** — clearing stale events from a reused calendar now runs in the background task instead of blocking the enable response
+- **Progress stuck at "0 events"** — added in-memory progress tracking so the status endpoint reports real-time counts during bulk sync (DB session hasn't committed yet)
 - **Disable toggle has no error feedback** — added user-visible error alerts when the disable request fails, instead of silently doing nothing
-- Disable now also clears `gcal_sync_calendar_id` to ensure clean state for re-enable
+
+### Changed
+- **5x faster bulk sync** — reduced API throttle from 1.0s to 0.2s per call (~5 QPS, well under Google's 10 QPS limit). 384 events now syncs in ~80s instead of ~6.5 min
+- **Snappier toggle UI** — optimistic state changes on enable/disable (toggle flips immediately, shows "Enabling..."/"Disabling...")
+- **Faster progress polling** — reduced poll interval from 3s to 1s for more responsive sync progress display
+- Removed dead `delete_all_synced_events()` method (replaced by calendar-level deletion)
+- Disable now clears `gcal_sync_calendar_id` and sync records for clean re-enable state
 
 ---
 
