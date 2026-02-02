@@ -231,21 +231,6 @@
                                             </div>
                                         </div>
                                         {% if user_prefs and user_prefs.gcal_sync_enabled %}
-                                        <div class="settings-row" id="gcal-sync-options">
-                                            <div class="backup-info">
-                                                <span class="pref-label">Include date-only tasks as all-day events</span>
-                                                <span class="pref-desc">Tasks without a specific time will appear as all-day events.</span>
-                                            </div>
-                                            <div class="settings-row__right">
-                                                <button
-                                                    type="button"
-                                                    class="toggle-switch {% if user_prefs.gcal_sync_all_day %}enabled{% endif %}"
-                                                    id="gcal-sync-allday-toggle"
-                                                    onclick="event.stopPropagation(); toggleGcalSyncAllDay(this)"
-                                                    aria-label="Toggle all-day event sync"
-                                                ></button>
-                                            </div>
-                                        </div>
                                         <div class="settings-row">
                                             <div class="backup-info">
                                                 <span class="pref-label">Re-sync all tasks</span>
@@ -1958,33 +1943,6 @@ async function toggleGcalSync(btn) {
             btn.disabled = false;
             if (statusEl) statusEl.textContent = 'One-way sync \u2014 changes in Whendoist appear in Google Calendar.';
         }
-    }
-}
-
-async function toggleGcalSyncAllDay(btn) {
-    const newValue = !btn.classList.contains('enabled');
-    try {
-        const res = await fetch('/api/v1/preferences', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            },
-            body: JSON.stringify({ gcal_sync_all_day: newValue })
-        });
-        if (res.ok) {
-            btn.classList.toggle('enabled', newValue);
-            // Trigger re-sync to apply the change (ignore errors — sync may be disabled)
-            fetch('/api/v1/gcal-sync/full-sync', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                }
-            }).catch(() => {});
-        }
-    } catch (e) {
-        console.error('Failed to update all-day preference:', e);
     }
 }
 

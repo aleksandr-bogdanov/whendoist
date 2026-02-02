@@ -35,7 +35,6 @@ class SyncStatusResponse(BaseModel):
     enabled: bool
     calendar_id: str | None = None
     synced_count: int = 0
-    sync_all_day: bool = True
     has_write_scope: bool = False
     reauth_url: str | None = None
     sync_error: str | None = None
@@ -192,7 +191,6 @@ async def get_sync_status(
         enabled=prefs.gcal_sync_enabled,
         calendar_id=prefs.gcal_sync_calendar_id,
         synced_count=synced_count,
-        sync_all_day=prefs.gcal_sync_all_day,
         has_write_scope=has_write_scope,
         sync_error=prefs.gcal_sync_error,
         syncing=syncing,

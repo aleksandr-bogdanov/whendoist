@@ -189,11 +189,6 @@ class GCalSyncService:
             await self._unsync_by_task_id(task.id, prefs.gcal_sync_calendar_id)
             return
 
-        # For date-only tasks (no scheduled_time), check all-day preference
-        if not task.scheduled_time and not prefs.gcal_sync_all_day:
-            await self._unsync_by_task_id(task.id, prefs.gcal_sync_calendar_id)
-            return
-
         timezone = await self._get_timezone(prefs)
         is_completed = task.status == "completed"
 
@@ -288,9 +283,10 @@ class GCalSyncService:
         if not prefs or not prefs.gcal_sync_enabled or not prefs.gcal_sync_calendar_id:
             return
 
-        # Use instance_date as the scheduled_date, task's time as scheduled_time
+        # Recurring tasks only sync when they have a specific time
         scheduled_time = task.scheduled_time
-        if not scheduled_time and not prefs.gcal_sync_all_day:
+        if not scheduled_time:
+            await self._unsync_instance(instance.id, prefs.gcal_sync_calendar_id)
             return
 
         timezone = await self._get_timezone(prefs)
@@ -405,6 +401,29 @@ class GCalSyncService:
         await self.db.delete(sync_record)
         await self.db.flush()
 
+    async def _unsync_instance(self, instance_id: int, calendar_id: str) -> None:
+        """Delete the synced event for a task instance and remove the sync record."""
+        result = await self.db.execute(
+            select(GoogleCalendarEventSync).where(
+                GoogleCalendarEventSync.user_id == self.user_id,
+                GoogleCalendarEventSync.task_instance_id == instance_id,
+            )
+        )
+        sync_record = result.scalar_one_or_none()
+        if not sync_record:
+            return
+
+        google_token = await self._get_google_token()
+        if google_token:
+            try:
+                async with GoogleCalendarClient(self.db, google_token) as client:
+                    await client.delete_event(calendar_id, sync_record.google_event_id)
+            except Exception:
+                logger.warning(f"Failed to delete event {sync_record.google_event_id} from Google Calendar")
+
+        await self.db.delete(sync_record)
+        await self.db.flush()
+
     # =========================================================================
     # Bulk Operations
     # =========================================================================
@@ -502,9 +521,6 @@ class GCalSyncService:
                     eff_date = _effective_date(task)
                     if not eff_date:
                         continue
-                    if not task.scheduled_time and not prefs.gcal_sync_all_day:
-                        continue
-
                     is_completed = task.status == "completed"
                     current_hash = compute_sync_hash(
                         title=task.title,
@@ -612,8 +628,9 @@ class GCalSyncService:
                     if not parent_task:
                         continue
 
+                    # Recurring tasks only sync when they have a specific time
                     scheduled_time = parent_task.scheduled_time
-                    if not scheduled_time and not prefs.gcal_sync_all_day:
+                    if not scheduled_time:
                         continue
 
                     is_completed = instance.status == "completed"

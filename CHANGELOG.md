@@ -6,6 +6,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.5] - 2026-02-02 — Recurring Tasks Don't Clutter GCal
+
+Recurring tasks (habits) only sync to Google Calendar when scheduled for a specific time. Unscheduled recurring tasks stay in Whendoist, keeping your calendar clean.
+
+### Changed
+- **Recurring tasks without a time slot no longer sync to GCal** — daily habits like "Sport machen" or "Чтение книги" stay in Whendoist unless time-blocked
+- **One-off tasks always sync** — with or without a time (all-day event if no time)
+- Removed "Include date-only tasks as all-day events" setting (replaced by the new rule)
+- Existing habit events in GCal are automatically cleaned up on next sync
+
+### Removed
+- `gcal_sync_all_day` preference — no longer needed
+
+See [docs/GCAL-HABITS-CLUTTER.md](docs/GCAL-HABITS-CLUTTER.md) for background.
+
+---
+
 ## [0.32.4] - 2026-02-02 — GCal Sync Hardening Round 2
 
 Second round of GCal sync reliability fixes. See [docs/GCAL-SYNC-HARDENING.md](docs/GCAL-SYNC-HARDENING.md) for full details.
