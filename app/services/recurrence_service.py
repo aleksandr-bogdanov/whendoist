@@ -133,8 +133,6 @@ class RecurrenceService:
         # Determine start date (use user's timezone for "today")
         today = get_user_today(self.timezone)
         start_date = task.recurrence_start or today
-        if start_date < today:
-            start_date = today
 
         # Determine end date
         end_date = today + timedelta(days=horizon_days)

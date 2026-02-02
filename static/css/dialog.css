@@ -659,6 +659,12 @@ body.modal-open {
     text-align: center !important;
 }
 
+#recurrence-bounds .field-controls input {
+    width: 110px !important;
+    border-radius: 6px !important;
+    border-right: 1px solid var(--border-default) !important;
+}
+
 .subrow .field-controls select {
     min-width: 90px;
     padding-right: 28px !important;
