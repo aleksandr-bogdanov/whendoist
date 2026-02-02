@@ -118,7 +118,7 @@ TOKEN_REFRESH_BACKOFF_BASE = 1  # Base seconds for exponential backoff (1s, 2s, 
 # Google Calendar Sync Constants
 GCAL_SYNC_CALENDAR_NAME = "Whendoist"
 GCAL_SYNC_DEFAULT_DURATION_MINUTES = 30  # Fallback for tasks without duration
-GCAL_SYNC_BATCH_DELAY_SECONDS = 1.0  # Delay between API calls in bulk sync (~1 QPS)
+GCAL_SYNC_BATCH_DELAY_SECONDS = 0.2  # Delay between API calls in bulk sync (~5 QPS)
 GCAL_SYNC_RATE_LIMIT_MAX_RETRIES = 3  # Max retries for rate-limited requests
 GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE = 5.0  # Base seconds for exponential backoff (5s, 10s, 20s)
 GCAL_SYNC_RATE_LIMIT_PENALTY_SECONDS = 3.0  # Extra delay added to all subsequent calls after rate limit
