@@ -9,6 +9,7 @@ import contextlib
 import logging
 from datetime import UTC, date, datetime
 
+import httpx
 from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,6 +30,15 @@ from app.services.gcal import (
 logger = logging.getLogger("whendoist.gcal_sync")
 
 
+class CalendarGoneError(Exception):
+    """Raised when the sync calendar is inaccessible (deleted or no access)."""
+
+    def __init__(self, status_code: int, message: str):
+        self.status_code = status_code
+        self.message = message
+        super().__init__(message)
+
+
 def _effective_date(task: Task) -> date | None:
     """
     Get the effective calendar date for a task.
@@ -41,6 +51,34 @@ def _effective_date(task: Task) -> date | None:
     if task.status == "completed" and task.completed_at:
         return task.completed_at.date()
     return None
+
+
+def _is_gone_error(e: Exception) -> bool:
+    """Check if an exception indicates a 404/410 (resource gone)."""
+    if isinstance(e, httpx.HTTPStatusError):
+        return e.response.status_code in (404, 410)
+    return False
+
+
+def _is_calendar_error(e: Exception) -> bool:
+    """Check if an exception indicates a calendar-level failure (403/404/410).
+
+    403 = no write access (token scope revoked or calendar ownership changed)
+    404/410 = calendar deleted externally
+    """
+    if isinstance(e, httpx.HTTPStatusError):
+        return e.response.status_code in (403, 404, 410)
+    return False
+
+
+def _calendar_error_message(e: Exception) -> str:
+    """Build a user-facing error message from a calendar-level error."""
+    if isinstance(e, httpx.HTTPStatusError):
+        if e.response.status_code == 403:
+            return "Calendar write access lost. Please re-enable sync in Settings."
+        if e.response.status_code in (404, 410):
+            return "Whendoist calendar was deleted. Please re-enable sync in Settings."
+    return f"Calendar sync error: {e}"
 
 
 class GCalSyncService:
@@ -61,12 +99,30 @@ class GCalSyncService:
     async def _get_timezone(self, prefs: UserPreferences | None) -> str:
         return prefs.timezone or DEFAULT_TIMEZONE if prefs else DEFAULT_TIMEZONE
 
+    async def _disable_sync_on_error(self, error_message: str) -> None:
+        """Disable sync and record the error for the user to see."""
+        prefs = await self._get_prefs()
+        if prefs:
+            prefs.gcal_sync_enabled = False
+            prefs.gcal_sync_calendar_id = None
+            prefs.gcal_sync_error = error_message
+            logger.warning(f"Auto-disabled sync for user {self.user_id}: {error_message}")
+
+    async def _clear_sync_error(self) -> None:
+        """Clear any previous sync error (called on successful sync operations)."""
+        prefs = await self._get_prefs()
+        if prefs and prefs.gcal_sync_error:
+            prefs.gcal_sync_error = None
+
     # =========================================================================
     # Core Sync Operations
     # =========================================================================
 
     async def sync_task(self, task: Task) -> None:
-        """Sync a single non-recurring task to Google Calendar."""
+        """Sync a single non-recurring task to Google Calendar.
+
+        Raises CalendarGoneError if the calendar is inaccessible (403/404/410).
+        """
         prefs = await self._get_prefs()
         if not prefs or not prefs.gcal_sync_enabled or not prefs.gcal_sync_calendar_id:
             return
@@ -128,6 +184,13 @@ class GCalSyncService:
                 try:
                     await client.update_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data)
                 except Exception as e:
+                    if _is_calendar_error(e):
+                        msg = _calendar_error_message(e)
+                        await self._disable_sync_on_error(msg)
+                        raise CalendarGoneError(
+                            status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
+                            message=msg,
+                        ) from e
                     if _is_gone_error(e):
                         # Event was deleted in Google Calendar, create a new one
                         event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
@@ -138,7 +201,17 @@ class GCalSyncService:
                 sync_record.last_synced_at = datetime.now(UTC)
             else:
                 # Create new event
-                event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                try:
+                    event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                except Exception as e:
+                    if _is_calendar_error(e):
+                        msg = _calendar_error_message(e)
+                        await self._disable_sync_on_error(msg)
+                        raise CalendarGoneError(
+                            status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
+                            message=msg,
+                        ) from e
+                    raise
                 sync_record = GoogleCalendarEventSync(
                     user_id=self.user_id,
                     task_id=task.id,
@@ -151,7 +224,10 @@ class GCalSyncService:
         await self.db.flush()
 
     async def sync_task_instance(self, instance: TaskInstance, task: Task) -> None:
-        """Sync a single task instance to Google Calendar."""
+        """Sync a single task instance to Google Calendar.
+
+        Raises CalendarGoneError if the calendar is inaccessible (403/404/410).
+        """
         prefs = await self._get_prefs()
         if not prefs or not prefs.gcal_sync_enabled or not prefs.gcal_sync_calendar_id:
             return
@@ -206,6 +282,13 @@ class GCalSyncService:
                 try:
                     await client.update_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data)
                 except Exception as e:
+                    if _is_calendar_error(e):
+                        msg = _calendar_error_message(e)
+                        await self._disable_sync_on_error(msg)
+                        raise CalendarGoneError(
+                            status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
+                            message=msg,
+                        ) from e
                     if _is_gone_error(e):
                         event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
                         sync_record.google_event_id = event_id
@@ -214,7 +297,17 @@ class GCalSyncService:
                 sync_record.sync_hash = current_hash
                 sync_record.last_synced_at = datetime.now(UTC)
             else:
-                event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                try:
+                    event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                except Exception as e:
+                    if _is_calendar_error(e):
+                        msg = _calendar_error_message(e)
+                        await self._disable_sync_on_error(msg)
+                        raise CalendarGoneError(
+                            status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
+                            message=msg,
+                        ) from e
+                    raise
                 sync_record = GoogleCalendarEventSync(
                     user_id=self.user_id,
                     task_instance_id=instance.id,
@@ -264,7 +357,8 @@ class GCalSyncService:
         """
         Full sync: create missing, update changed, delete orphaned.
 
-        Returns stats dict with counts.
+        Returns stats dict with counts. On calendar-level errors (403/404),
+        auto-disables sync and returns immediately with an error key.
         """
         prefs = await self._get_prefs()
         if not prefs or not prefs.gcal_sync_enabled or not prefs.gcal_sync_calendar_id:
@@ -275,7 +369,7 @@ class GCalSyncService:
             return {"created": 0, "updated": 0, "deleted": 0, "skipped": 0}
 
         timezone = await self._get_timezone(prefs)
-        stats = {"created": 0, "updated": 0, "deleted": 0, "skipped": 0}
+        stats: dict = {"created": 0, "updated": 0, "deleted": 0, "skipped": 0}
 
         # Get all syncable tasks: either has scheduled_date, or is completed with completed_at
         # (completed Todoist imports may lack scheduled_date but have completed_at)
@@ -323,179 +417,204 @@ class GCalSyncService:
         # Track which sync records are still valid
         valid_sync_ids: set[int] = set()
 
-        async with GoogleCalendarClient(self.db, google_token) as client:
-            # Sync non-recurring tasks
-            for task in tasks:
-                eff_date = _effective_date(task)
-                if not eff_date:
-                    continue
-                if not task.scheduled_time and not prefs.gcal_sync_all_day:
-                    continue
-
-                is_completed = task.status == "completed"
-                current_hash = compute_sync_hash(
-                    title=task.title,
-                    description=task.description,
-                    scheduled_date=eff_date,
-                    scheduled_time=task.scheduled_time,
-                    duration_minutes=task.duration_minutes,
-                    impact=task.impact,
-                    status=task.status,
-                )
-
-                sync_record = syncs_by_task.get(task.id)
-
-                if sync_record:
-                    valid_sync_ids.add(sync_record.id)
-                    if sync_record.sync_hash == current_hash:
-                        stats["skipped"] += 1
+        try:
+            async with GoogleCalendarClient(self.db, google_token) as client:
+                # Sync non-recurring tasks
+                for task in tasks:
+                    eff_date = _effective_date(task)
+                    if not eff_date:
                         continue
-                    # Update
-                    event_data = build_event_data(
+                    if not task.scheduled_time and not prefs.gcal_sync_all_day:
+                        continue
+
+                    is_completed = task.status == "completed"
+                    current_hash = compute_sync_hash(
                         title=task.title,
                         description=task.description,
                         scheduled_date=eff_date,
                         scheduled_time=task.scheduled_time,
                         duration_minutes=task.duration_minutes,
                         impact=task.impact,
-                        is_completed=is_completed,
-                        user_timezone=timezone,
+                        status=task.status,
                     )
-                    try:
-                        await client.update_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data)
-                        sync_record.sync_hash = current_hash
-                        sync_record.last_synced_at = datetime.now(UTC)
-                        stats["updated"] += 1
-                    except Exception as e:
-                        if _is_gone_error(e):
-                            event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
-                            sync_record.google_event_id = event_id
+
+                    sync_record = syncs_by_task.get(task.id)
+
+                    if sync_record:
+                        valid_sync_ids.add(sync_record.id)
+                        if sync_record.sync_hash == current_hash:
+                            stats["skipped"] += 1
+                            continue
+                        # Update
+                        event_data = build_event_data(
+                            title=task.title,
+                            description=task.description,
+                            scheduled_date=eff_date,
+                            scheduled_time=task.scheduled_time,
+                            duration_minutes=task.duration_minutes,
+                            impact=task.impact,
+                            is_completed=is_completed,
+                            user_timezone=timezone,
+                        )
+                        try:
+                            await client.update_event(
+                                prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data
+                            )
                             sync_record.sync_hash = current_hash
                             sync_record.last_synced_at = datetime.now(UTC)
-                            stats["created"] += 1
-                        else:
-                            logger.warning(f"Failed to update event for task {task.id}: {e}")
-                else:
-                    # Create
-                    event_data = build_event_data(
-                        title=task.title,
-                        description=task.description,
-                        scheduled_date=eff_date,
-                        scheduled_time=task.scheduled_time,
-                        duration_minutes=task.duration_minutes,
-                        impact=task.impact,
-                        is_completed=is_completed,
-                        user_timezone=timezone,
-                    )
-                    try:
-                        event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
-                        new_sync = GoogleCalendarEventSync(
-                            user_id=self.user_id,
-                            task_id=task.id,
-                            google_event_id=event_id,
-                            sync_hash=current_hash,
-                            last_synced_at=datetime.now(UTC),
+                            stats["updated"] += 1
+                        except Exception as e:
+                            if _is_calendar_error(e):
+                                raise  # Will be caught by outer try/except
+                            if _is_gone_error(e):
+                                event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                                sync_record.google_event_id = event_id
+                                sync_record.sync_hash = current_hash
+                                sync_record.last_synced_at = datetime.now(UTC)
+                                stats["created"] += 1
+                            else:
+                                logger.warning(f"Failed to update event for task {task.id}: {e}")
+                    else:
+                        # Create
+                        event_data = build_event_data(
+                            title=task.title,
+                            description=task.description,
+                            scheduled_date=eff_date,
+                            scheduled_time=task.scheduled_time,
+                            duration_minutes=task.duration_minutes,
+                            impact=task.impact,
+                            is_completed=is_completed,
+                            user_timezone=timezone,
                         )
-                        self.db.add(new_sync)
-                        stats["created"] += 1
-                    except Exception as e:
-                        logger.warning(f"Failed to create event for task {task.id}: {e}")
+                        try:
+                            event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                            new_sync = GoogleCalendarEventSync(
+                                user_id=self.user_id,
+                                task_id=task.id,
+                                google_event_id=event_id,
+                                sync_hash=current_hash,
+                                last_synced_at=datetime.now(UTC),
+                            )
+                            self.db.add(new_sync)
+                            stats["created"] += 1
+                        except Exception as e:
+                            if _is_calendar_error(e):
+                                raise  # Will be caught by outer try/except
+                            logger.warning(f"Failed to create event for task {task.id}: {e}")
 
-            # Sync task instances (need to load parent task for each)
-            # Build a lookup of tasks by ID
-            task_lookup: dict[int, Task] = {}
-            if instances:
-                task_ids = {inst.task_id for inst in instances}
-                tasks_for_instances_result = await self.db.execute(select(Task).where(Task.id.in_(task_ids)))
-                for t in tasks_for_instances_result.scalars().all():
-                    task_lookup[t.id] = t
+                # Sync task instances (need to load parent task for each)
+                # Build a lookup of tasks by ID
+                task_lookup: dict[int, Task] = {}
+                if instances:
+                    task_ids = {inst.task_id for inst in instances}
+                    tasks_for_instances_result = await self.db.execute(select(Task).where(Task.id.in_(task_ids)))
+                    for t in tasks_for_instances_result.scalars().all():
+                        task_lookup[t.id] = t
 
-            for instance in instances:
-                parent_task = task_lookup.get(instance.task_id)
-                if not parent_task:
-                    continue
-
-                scheduled_time = parent_task.scheduled_time
-                if not scheduled_time and not prefs.gcal_sync_all_day:
-                    continue
-
-                is_completed = instance.status == "completed"
-                current_hash = compute_sync_hash(
-                    title=parent_task.title,
-                    description=parent_task.description,
-                    scheduled_date=instance.instance_date,
-                    scheduled_time=scheduled_time,
-                    duration_minutes=parent_task.duration_minutes,
-                    impact=parent_task.impact,
-                    status=instance.status,
-                )
-
-                sync_record = syncs_by_instance.get(instance.id)
-
-                if sync_record:
-                    valid_sync_ids.add(sync_record.id)
-                    if sync_record.sync_hash == current_hash:
-                        stats["skipped"] += 1
+                for instance in instances:
+                    parent_task = task_lookup.get(instance.task_id)
+                    if not parent_task:
                         continue
-                    event_data = build_event_data(
+
+                    scheduled_time = parent_task.scheduled_time
+                    if not scheduled_time and not prefs.gcal_sync_all_day:
+                        continue
+
+                    is_completed = instance.status == "completed"
+                    current_hash = compute_sync_hash(
                         title=parent_task.title,
                         description=parent_task.description,
                         scheduled_date=instance.instance_date,
                         scheduled_time=scheduled_time,
                         duration_minutes=parent_task.duration_minutes,
                         impact=parent_task.impact,
-                        is_completed=is_completed,
-                        user_timezone=timezone,
+                        status=instance.status,
                     )
-                    try:
-                        await client.update_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data)
-                        sync_record.sync_hash = current_hash
-                        sync_record.last_synced_at = datetime.now(UTC)
-                        stats["updated"] += 1
-                    except Exception as e:
-                        if _is_gone_error(e):
-                            event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
-                            sync_record.google_event_id = event_id
+
+                    sync_record = syncs_by_instance.get(instance.id)
+
+                    if sync_record:
+                        valid_sync_ids.add(sync_record.id)
+                        if sync_record.sync_hash == current_hash:
+                            stats["skipped"] += 1
+                            continue
+                        event_data = build_event_data(
+                            title=parent_task.title,
+                            description=parent_task.description,
+                            scheduled_date=instance.instance_date,
+                            scheduled_time=scheduled_time,
+                            duration_minutes=parent_task.duration_minutes,
+                            impact=parent_task.impact,
+                            is_completed=is_completed,
+                            user_timezone=timezone,
+                        )
+                        try:
+                            await client.update_event(
+                                prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data
+                            )
                             sync_record.sync_hash = current_hash
                             sync_record.last_synced_at = datetime.now(UTC)
-                            stats["created"] += 1
-                        else:
-                            logger.warning(f"Failed to update event for instance {instance.id}: {e}")
-                else:
-                    event_data = build_event_data(
-                        title=parent_task.title,
-                        description=parent_task.description,
-                        scheduled_date=instance.instance_date,
-                        scheduled_time=scheduled_time,
-                        duration_minutes=parent_task.duration_minutes,
-                        impact=parent_task.impact,
-                        is_completed=is_completed,
-                        user_timezone=timezone,
-                    )
-                    try:
-                        event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
-                        new_sync = GoogleCalendarEventSync(
-                            user_id=self.user_id,
-                            task_instance_id=instance.id,
-                            google_event_id=event_id,
-                            sync_hash=current_hash,
-                            last_synced_at=datetime.now(UTC),
+                            stats["updated"] += 1
+                        except Exception as e:
+                            if _is_calendar_error(e):
+                                raise
+                            if _is_gone_error(e):
+                                event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                                sync_record.google_event_id = event_id
+                                sync_record.sync_hash = current_hash
+                                sync_record.last_synced_at = datetime.now(UTC)
+                                stats["created"] += 1
+                            else:
+                                logger.warning(f"Failed to update event for instance {instance.id}: {e}")
+                    else:
+                        event_data = build_event_data(
+                            title=parent_task.title,
+                            description=parent_task.description,
+                            scheduled_date=instance.instance_date,
+                            scheduled_time=scheduled_time,
+                            duration_minutes=parent_task.duration_minutes,
+                            impact=parent_task.impact,
+                            is_completed=is_completed,
+                            user_timezone=timezone,
                         )
-                        self.db.add(new_sync)
-                        stats["created"] += 1
-                    except Exception as e:
-                        logger.warning(f"Failed to create event for instance {instance.id}: {e}")
+                        try:
+                            event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                            new_sync = GoogleCalendarEventSync(
+                                user_id=self.user_id,
+                                task_instance_id=instance.id,
+                                google_event_id=event_id,
+                                sync_hash=current_hash,
+                                last_synced_at=datetime.now(UTC),
+                            )
+                            self.db.add(new_sync)
+                            stats["created"] += 1
+                        except Exception as e:
+                            if _is_calendar_error(e):
+                                raise
+                            logger.warning(f"Failed to create event for instance {instance.id}: {e}")
 
-            # Delete orphaned sync records (events for tasks that no longer exist or are unscheduled)
-            orphaned = [s for s in existing_syncs if s.id not in valid_sync_ids]
-            for sync_record in orphaned:
-                try:
-                    await client.delete_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id)
-                except Exception:
-                    logger.debug(f"Failed to delete orphaned event {sync_record.google_event_id}")
-                await self.db.delete(sync_record)
-                stats["deleted"] += 1
+                # Delete orphaned sync records (events for tasks that no longer exist or are unscheduled)
+                orphaned = [s for s in existing_syncs if s.id not in valid_sync_ids]
+                for sync_record in orphaned:
+                    try:
+                        await client.delete_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id)
+                    except Exception:
+                        logger.debug(f"Failed to delete orphaned event {sync_record.google_event_id}")
+                    await self.db.delete(sync_record)
+                    stats["deleted"] += 1
 
+        except httpx.HTTPStatusError as e:
+            if _is_calendar_error(e):
+                msg = _calendar_error_message(e)
+                await self._disable_sync_on_error(msg)
+                stats["error"] = msg
+                logger.error(f"Bulk sync aborted for user {self.user_id}: {msg}")
+                await self.db.flush()
+                return stats
+            raise
+
+        # Clear any previous error on successful sync
+        await self._clear_sync_error()
         await self.db.flush()
         return stats
 
@@ -533,12 +652,3 @@ class GCalSyncService:
             await self.db.flush()
 
         return deleted
-
-
-def _is_gone_error(e: Exception) -> bool:
-    """Check if an exception indicates a 404/410 (resource gone)."""
-    import httpx
-
-    if isinstance(e, httpx.HTTPStatusError):
-        return e.response.status_code in (404, 410)
-    return False

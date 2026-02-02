@@ -37,6 +37,7 @@ class SyncStatusResponse(BaseModel):
     sync_all_day: bool = True
     has_write_scope: bool = False
     reauth_url: str | None = None
+    sync_error: str | None = None
 
 
 class SyncEnableResponse(BaseModel):
@@ -63,6 +64,7 @@ class BulkSyncResponse(BaseModel):
     updated: int = 0
     deleted: int = 0
     skipped: int = 0
+    error: str | None = None
 
 
 # =============================================================================
@@ -98,6 +100,7 @@ async def get_sync_status(
         synced_count=synced_count,
         sync_all_day=prefs.gcal_sync_all_day,
         has_write_scope=has_write_scope,
+        sync_error=prefs.gcal_sync_error,
     )
 
 
@@ -137,15 +140,16 @@ async def enable_sync(
             reauth_url="/auth/google?write_scope=true",
         )
 
-    # Create "Whendoist" calendar if needed
-    calendar_id = prefs.gcal_sync_calendar_id
-    if not calendar_id:
-        try:
-            async with GoogleCalendarClient(db, google_token) as client:
-                calendar_id = await client.create_calendar(GCAL_SYNC_CALENDAR_NAME)
-        except Exception as e:
-            logger.error(f"Failed to create Whendoist calendar: {e}")
-            raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
+    # Clear any previous sync error
+    prefs.gcal_sync_error = None
+
+    # Create "Whendoist" calendar (always create fresh — old one may be deleted)
+    try:
+        async with GoogleCalendarClient(db, google_token) as client:
+            calendar_id = await client.create_calendar(GCAL_SYNC_CALENDAR_NAME)
+    except Exception as e:
+        logger.error(f"Failed to create Whendoist calendar: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
 
     # Enable sync
     prefs.gcal_sync_enabled = True
@@ -179,7 +183,7 @@ async def disable_sync(
     prefs_service = PreferencesService(db, user.id)
     prefs = await prefs_service.get_preferences()
 
-    if not prefs.gcal_sync_enabled:
+    if not prefs.gcal_sync_enabled and not prefs.gcal_sync_error:
         return SyncDisableResponse(success=True, message="Sync was already disabled.")
 
     deleted_count = 0
@@ -191,6 +195,7 @@ async def disable_sync(
             logger.error(f"Failed to delete synced events for user {user.id}: {e}")
 
     prefs.gcal_sync_enabled = False
+    prefs.gcal_sync_error = None
     await db.commit()
 
     msg = f"Sync disabled. {deleted_count} events deleted." if deleted_count else "Sync disabled."
@@ -213,10 +218,12 @@ async def full_sync(
     stats = await sync_service.bulk_sync()
     await db.commit()
 
+    error = stats.get("error")
     return BulkSyncResponse(
-        success=True,
+        success=error is None,
         created=stats["created"],
         updated=stats["updated"],
         deleted=stats["deleted"],
         skipped=stats["skipped"],
+        error=error,
     )

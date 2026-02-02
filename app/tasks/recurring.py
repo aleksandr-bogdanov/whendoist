@@ -88,10 +88,12 @@ async def materialize_all_instances() -> dict[str, Any]:
                     from app.services.gcal_sync import GCalSyncService
 
                     sync_service = GCalSyncService(db, user_id)
-                    await sync_service.bulk_sync()
+                    result = await sync_service.bulk_sync()
                     await db.commit()
+                    if "error" in result:
+                        logger.warning(f"GCal sync auto-disabled for user {user_id}: {result['error']}")
             except Exception as e:
-                logger.debug(f"GCal sync after materialization failed for user {user_id}: {e}")
+                logger.warning(f"GCal sync after materialization failed for user {user_id}: {e}")
 
     if stats["tasks_processed"] > 0:
         logger.info(f"Materialized: {stats['users_processed']} users, {stats['tasks_processed']} tasks updated")

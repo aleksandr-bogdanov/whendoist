@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.31.2] - 2026-02-02 — GCal Sync Circuit Breaker
+
+### Fixed
+- Bulk sync now aborts immediately on calendar-level errors (403/404) instead of retrying hundreds of tasks
+- Auto-disables sync and clears stale calendar ID when calendar is deleted externally or access is lost
+- Settings page shows error banner when sync is auto-disabled, with clear guidance to re-enable
+- Fire-and-forget background tasks log warnings (not debug) for calendar-level failures
+- Re-enable always creates a fresh calendar instead of reusing a potentially stale ID
+
+---
+
 ## [0.31.1] - 2026-02-02 — Sync Completed Todoist Imports
 
 ### Fixed
