@@ -814,6 +814,7 @@
                 body: JSON.stringify({
                     scheduled_date: scheduledDate,
                     scheduled_time: scheduledTime,
+                    duration_minutes: draggedDuration,
                 }),
             });
 
