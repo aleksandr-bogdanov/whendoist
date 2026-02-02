@@ -362,7 +362,7 @@
 
 .expand-section {
     display: none;
-    background: rgba(15, 23, 42, 0.02);
+    background: rgba(15, 23, 42, 0.03);
     border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -426,6 +426,69 @@
     color: var(--text-primary);
     padding: 0;
     margin-top: 12px;
+}
+
+/* Sub-sections inside expand areas (e.g. GCal: Visible Calendars + Task Sync) */
+.expand-subsection {
+    margin-bottom: 16px;
+}
+.expand-subsection:last-child {
+    margin-bottom: 0;
+}
+.expand-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 16px 0;
+}
+
+/* Sub-section header: label + inline hint */
+.expand-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+.expand-hint {
+    font-size: 0.55rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+/* Contained list inside expand — gives calendar/sync rows a card-like wrapper */
+.expand-list {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md, 8px);
+    overflow: hidden;
+    background: var(--bg-surface);
+}
+
+/* Calendar rows inside expand section — compact, contained */
+.expand-list .settings-row--calendar {
+    padding: 8px 12px;
+    min-height: 38px;
+    background: transparent;
+}
+.expand-list .settings-row--calendar:hover {
+    background: var(--interactive-hover);
+}
+.expand-list .settings-row--calendar:last-child {
+    border-bottom: none;
+}
+
+/* Sync rows inside expand section — compact, contained */
+.expand-list .settings-row {
+    padding: 10px 12px;
+    min-height: 40px;
+    background: transparent;
+}
+.expand-list .settings-row:hover {
+    background: var(--interactive-hover);
+}
+.expand-list .settings-row:last-child {
+    border-bottom: none;
 }
 
 /* Passkey List */
@@ -649,6 +712,22 @@
 
 .settings-row--calendar .calendar-badge {
     font-size: 0.5rem;
+}
+
+/* Sync target hint — colored dot + calendar name beside TASK SYNC label */
+.sync-target-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.55rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+}
+.sync-target-hint .calendar-dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
 }
 
 /* Toggle switch */
@@ -1547,6 +1626,11 @@ input.add-domain-input::placeholder {
 
 [data-theme="dark"] .expand-section.open {
     background: var(--bg-panel);
+}
+
+[data-theme="dark"] .expand-list {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: var(--border-default);
 }
 
 [data-theme="dark"] .toggle-switch {

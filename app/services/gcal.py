@@ -22,8 +22,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.google import TokenRefreshError, refresh_access_token
 from app.constants import (
-    GCAL_COMPLETED_COLOR_ID,
-    GCAL_IMPACT_COLOR_MAP,
     GCAL_MAX_EVENTS,
     GCAL_PAGE_SIZE,
     GCAL_SYNC_DEFAULT_DURATION_MINUTES,
@@ -507,11 +505,8 @@ def build_event_data(
         end_date = scheduled_date + timedelta(days=1)
         event["end"] = {"date": end_date.isoformat()}
 
-    # Color by impact (or Graphite if completed)
-    if is_completed:
-        event["colorId"] = GCAL_COMPLETED_COLOR_ID
-    else:
-        event["colorId"] = GCAL_IMPACT_COLOR_MAP.get(impact, GCAL_IMPACT_COLOR_MAP[4])
+    # No colorId — events inherit the Whendoist calendar's color
+    # (user can set this in Google Calendar settings)
 
     return event
 

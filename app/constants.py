@@ -118,13 +118,6 @@ TOKEN_REFRESH_BACKOFF_BASE = 1  # Base seconds for exponential backoff (1s, 2s, 
 # Google Calendar Sync Constants
 GCAL_SYNC_CALENDAR_NAME = "Whendoist"
 GCAL_SYNC_DEFAULT_DURATION_MINUTES = 30  # Fallback for tasks without duration
-GCAL_COMPLETED_COLOR_ID = "8"  # Graphite
-GCAL_IMPACT_COLOR_MAP: dict[int, str] = {
-    1: "11",  # P1 Critical -> Tomato
-    2: "6",  # P2 High -> Tangerine
-    3: "5",  # P3 Medium -> Banana
-    4: "2",  # P4 Low -> Sage
-}
 GCAL_SYNC_BATCH_DELAY_SECONDS = 1.0  # Delay between API calls in bulk sync (~1 QPS)
 GCAL_SYNC_RATE_LIMIT_MAX_RETRIES = 3  # Max retries for rate-limited requests
 GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE = 5.0  # Base seconds for exponential backoff (5s, 10s, 20s)

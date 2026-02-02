@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.31.9] - 2026-02-02 — Settings Redesign & Uniform GCal Event Color
+
+### Changed
+- **Settings: Consolidated Google Calendar into Integrations** — Google Calendars and Task Sync panels merged into an expandable section under the Google Calendar row in Integrations, matching the Todoist pattern. CONNECTIONS section went from 3 panels to 1
+- **Settings: Whendoist calendar hidden from toggle list** — the sync output calendar is no longer shown as a toggleable calendar; instead it appears as a status hint next to the Task Sync label
+- **Settings: Calendar toggles use fetch** — replaced HTMX-based calendar toggles with plain fetch calls for reliability inside expandable sections
+- **GCal events inherit calendar color** — events synced to Google Calendar no longer set per-event `colorId` based on impact level; they inherit the Whendoist calendar's color instead, which the user can configure in Google Calendar settings
+- Removed `GCAL_COMPLETED_COLOR_ID` and `GCAL_IMPACT_COLOR_MAP` constants (no longer needed)
+
+---
+
 ## [0.31.8] - 2026-02-02 — Drag-and-Drop Duration Fix
 
 ### Fixed
