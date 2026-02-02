@@ -23,7 +23,11 @@
                  data-completed="{{ '1' if is_completed else '0' }}"
                  data-completed-at="{{ completed_at.isoformat() if completed_at else '' }}"
                  data-duration="{{ task.duration_minutes or '' }}"
+                 {% if task.is_recurring and task_item.instance_completed_at %}
+                 data-scheduled-date="{{ today.isoformat() }}"
+                 {% else %}
                  data-scheduled-date="{{ (task_item.next_occurrence or task.scheduled_date).isoformat() if (task_item.next_occurrence or task.scheduled_date) else '' }}"
+                 {% endif %}
                  data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
                  {% if task_item.next_instance_id %}data-instance-id="{{ task_item.next_instance_id }}"{% endif %}
                  data-title="{{ task.title }}"
@@ -42,9 +46,19 @@
                     {% if task_item.subtask_count %}
                     <span class="subtask-badge">{{ task_item.subtask_count }} subtask{{ 's' if task_item.subtask_count > 1 else '' }}</span>
                     {% endif %}
-                    {% if task_item.next_occurrence or task.scheduled_date %}
+                    {% if task.is_recurring %}
                     <span class="task-due">
-                        {% if task.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}
+                        <span class="recurring-icon" title="Recurring task">↻</span>
+                        {% if task_item.instance_completed_at %}
+                            Today ✓
+                        {% elif task_item.next_occurrence %}
+                            {{ task_item.next_occurrence.strftime('%b %d') }}
+                        {% elif task.scheduled_date %}
+                            {{ task.scheduled_date.strftime('%b %d') }}
+                        {% endif %}
+                    </span>
+                    {% elif task_item.next_occurrence or task.scheduled_date %}
+                    <span class="task-due">
                         {{ (task_item.next_occurrence or task.scheduled_date).strftime('%b %d') }}
                     </span>
                     {% endif %}
