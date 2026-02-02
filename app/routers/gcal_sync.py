@@ -308,8 +308,8 @@ async def disable_sync(
                 # Count sync records for the response message
                 count_result = await db.execute(select(func.count()).where(GoogleCalendarEventSync.user_id == user.id))
                 deleted_count = count_result.scalar() or 0
-        except Exception as e:
-            logger.error(f"Failed to delete Whendoist calendar for user {user.id}: {e}")
+        except Exception:
+            logger.exception(f"Failed to delete Whendoist calendar for user {user.id}")
 
     # Always clean up sync records
     await db.execute(delete(GoogleCalendarEventSync).where(GoogleCalendarEventSync.user_id == user.id))

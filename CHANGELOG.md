@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.3] - 2026-02-02 — Better Error Logging for Calendar Deletion
+
+### Fixed
+- **Calendar deletion error has empty message** — use `logger.exception` for full traceback when calendar deletion fails on disable, instead of `logger.error` with `{e}` which produced empty output
+
+---
+
 ## [0.32.2] - 2026-02-02 — Cancel Running Sync on Disable
 
 ### Fixed
