@@ -88,10 +88,7 @@ async def _background_bulk_sync(user_id: int) -> None:
 
     Uses per-user lock to prevent concurrent syncs (e.g., user clicks enable twice).
     """
-    if user_id not in _bulk_sync_locks:
-        _bulk_sync_locks[user_id] = asyncio.Lock()
-
-    lock = _bulk_sync_locks[user_id]
+    lock = _bulk_sync_locks.setdefault(user_id, asyncio.Lock())
     if lock.locked():
         logger.info(f"Bulk sync already running for user {user_id}, skipping")
         return
@@ -190,18 +187,23 @@ async def enable_sync(
     try:
         async with GoogleCalendarClient(db, google_token) as client:
             calendar_id, created = await client.find_or_create_calendar(GCAL_SYNC_CALENDAR_NAME)
+
+            # If reusing an existing calendar, clear stale events so bulk_sync
+            # recreates everything from scratch (prevents orphan/duplicate events).
+            if not created:
+                cleared = await client.clear_all_events(calendar_id)
+                if cleared:
+                    logger.info(f"Cleared {cleared} stale events from reused calendar {calendar_id}")
     except Exception as e:
         logger.error(f"Failed to find/create Whendoist calendar: {e}")
         raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
 
-    # If reusing an existing calendar, keep sync records that match it.
-    # Only clear records if the calendar ID changed (new calendar).
-    if prefs.gcal_sync_calendar_id and prefs.gcal_sync_calendar_id != calendar_id:
-        await db.execute(
-            delete(GoogleCalendarEventSync).where(
-                GoogleCalendarEventSync.user_id == user.id,
-            )
+    # Always clear sync records — bulk_sync will recreate them from current task state.
+    await db.execute(
+        delete(GoogleCalendarEventSync).where(
+            GoogleCalendarEventSync.user_id == user.id,
         )
+    )
 
     # Enable sync
     prefs.gcal_sync_enabled = True
@@ -212,7 +214,9 @@ async def enable_sync(
     asyncio.create_task(_background_bulk_sync(user.id))
 
     msg = (
-        "Sync enabled. Syncing tasks in background..." if created else "Sync re-enabled. Syncing tasks in background..."
+        "Sync enabled. Syncing tasks in background (may take up to 10 min)..."
+        if created
+        else "Sync re-enabled. Syncing tasks in background (may take up to 10 min)..."
     )
     return SyncEnableResponse(
         success=True,

@@ -393,6 +393,40 @@ class GoogleCalendarClient:
             if e.response.status_code not in (404, 410):
                 raise
 
+    async def clear_all_events(self, calendar_id: str) -> int:
+        """Delete all events from a calendar. Returns count of deleted events.
+
+        Fetches all event IDs via pagination, then deletes each one.
+        Silently ignores 404/410 for individual events.
+        """
+        client = self._ensure_client()
+        event_ids: list[str] = []
+        page_token: str | None = None
+
+        # Collect all event IDs
+        while True:
+            params: dict[str, str | int] = {"maxResults": 250}
+            if page_token:
+                params["pageToken"] = page_token
+            response = await client.get(f"/calendars/{calendar_id}/events", params=params)
+            response.raise_for_status()
+            data = response.json()
+            for item in data.get("items", []):
+                if "id" in item:
+                    event_ids.append(item["id"])
+            page_token = data.get("nextPageToken")
+            if not page_token:
+                break
+
+        # Delete each event
+        for event_id in event_ids:
+            try:
+                await self.delete_event(calendar_id, event_id)
+            except Exception:
+                logger.debug(f"Failed to clear event {event_id} from calendar {calendar_id}")
+
+        return len(event_ids)
+
     async def create_event(self, calendar_id: str, event: dict) -> str:
         """Create an event in the specified calendar. Returns the event_id."""
         client = self._ensure_client()

@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.31.7] - 2026-02-02 — GCal Sync Hardening
+
+### Fixed
+- **Lock race condition** — per-user sync lock now uses `setdefault` to prevent TOCTOU on concurrent init
+- **Throttle orphan deletion** — orphan event cleanup in bulk_sync and delete_all_synced_events now uses adaptive throttle to avoid rate limits
+- **Calendar reuse clears stale events** — re-enabling sync on an existing "Whendoist" calendar now drops all events and sync records, then recreates from scratch to prevent orphans/duplicates
+- **Removed dead constant** — `GCAL_SYNC_BATCH_RATE_LIMIT` was defined but never used
+
+### Changed
+- UI clarifies that sync may take up to 10 minutes depending on number of tasks
+- Sync records are always cleared on enable (not just when calendar ID changes) since events are recreated
+
+---
+
 ## [0.31.6] - 2026-02-02 — Fully Async GCal Sync
 
 ### Changed

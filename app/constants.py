@@ -125,7 +125,6 @@ GCAL_IMPACT_COLOR_MAP: dict[int, str] = {
     3: "5",  # P3 Medium -> Banana
     4: "2",  # P4 Low -> Sage
 }
-GCAL_SYNC_BATCH_RATE_LIMIT = 100  # Max requests per 100 seconds per user
 GCAL_SYNC_BATCH_DELAY_SECONDS = 1.0  # Delay between API calls in bulk sync (~1 QPS)
 GCAL_SYNC_RATE_LIMIT_MAX_RETRIES = 3  # Max retries for rate-limited requests
 GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE = 5.0  # Base seconds for exponential backoff (5s, 10s, 20s)
