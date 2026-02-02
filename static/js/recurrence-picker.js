@@ -8,6 +8,7 @@
     'use strict';
 
     let containerEl = null;
+    let _originalRule = null;
 
     const PRESETS = [
         { label: 'None', value: null },
@@ -135,6 +136,15 @@
             if (timeInput && timeInput.value) {
                 rule.time = timeInput.value;
             }
+            // Merge preserved fields from original rule
+            if (_originalRule) {
+                if (_originalRule.week_of_month !== undefined && rule.freq === 'monthly') {
+                    rule.week_of_month = _originalRule.week_of_month;
+                }
+                if (_originalRule.month_of_year !== undefined && rule.freq === 'yearly') {
+                    rule.month_of_year = _originalRule.month_of_year;
+                }
+            }
             return rule;
         }
 
@@ -167,10 +177,22 @@
             rule.time = timeInput.value;
         }
 
+        // Merge preserved fields from original rule that the UI doesn't expose
+        if (_originalRule) {
+            if (_originalRule.week_of_month !== undefined && rule.freq === 'monthly' && !rule.day_of_month) {
+                rule.week_of_month = _originalRule.week_of_month;
+            }
+            if (_originalRule.month_of_year !== undefined && rule.freq === 'yearly') {
+                rule.month_of_year = _originalRule.month_of_year;
+            }
+        }
+
         return rule;
     }
 
     function setRule(rule) {
+        _originalRule = rule ? { ...rule } : null;
+
         if (!rule) {
             reset();
             return;
@@ -225,6 +247,7 @@
     }
 
     function reset() {
+        _originalRule = null;
         containerEl.querySelectorAll('.recurrence-preset').forEach(btn => btn.classList.remove('active'));
         containerEl.querySelector('.recurrence-preset').classList.add('active'); // "None"
         containerEl.querySelector('.recurrence-custom').style.display = 'none';
