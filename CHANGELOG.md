@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.8] - 2026-02-02 — GCal Sync Docs Consolidation
+
+### Changed
+- Consolidated three GCal sync docs into single [docs/GCAL-SYNC.md](docs/GCAL-SYNC.md) describing current architecture
+- Archived `GCAL-SYNC-PLAN.md`, `GCAL-SYNC-HARDENING.md`, `GCAL-HABITS-CLUTTER.md` (fully implemented)
+- Fixed stale doc links in CHANGELOG and archived cross-references
+
+---
+
 ## [0.32.7] - 2026-02-02 — Sync Recurring Task Instances on Create/Update
 
 ### Fixed
@@ -39,13 +48,13 @@ Recurring tasks (habits) only sync to Google Calendar when scheduled for a speci
 ### Removed
 - `gcal_sync_all_day` preference — no longer needed
 
-See [docs/GCAL-HABITS-CLUTTER.md](docs/GCAL-HABITS-CLUTTER.md) for background.
+See [docs/archive/2026-02-02-gcal-habits-clutter.md](docs/archive/2026-02-02-gcal-habits-clutter.md) for background.
 
 ---
 
 ## [0.32.4] - 2026-02-02 — GCal Sync Hardening Round 2
 
-Second round of GCal sync reliability fixes. See [docs/GCAL-SYNC-HARDENING.md](docs/GCAL-SYNC-HARDENING.md) for full details.
+Second round of GCal sync reliability fixes. See [docs/archive/2026-02-02-gcal-sync-hardening.md](docs/archive/2026-02-02-gcal-sync-hardening.md) for full details.
 
 ### Fixed
 - **Disable sync hangs / toggle stays on** — replaced per-event deletion loop (384 events x 1s throttle = 6+ min timeout) with single `delete_calendar` API call
