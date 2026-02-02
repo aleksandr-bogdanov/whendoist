@@ -6,34 +6,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [0.32.3] - 2026-02-02 — Better Error Logging for Calendar Deletion
+## [0.32.4] - 2026-02-02 — GCal Sync Hardening Round 2
+
+Second round of GCal sync reliability fixes. See [docs/GCAL-SYNC-HARDENING.md](docs/GCAL-SYNC-HARDENING.md) for full details.
 
 ### Fixed
-- **Calendar deletion error has empty message** — use `logger.exception` for full traceback when calendar deletion fails on disable, instead of `logger.error` with `{e}` which produced empty output
-
----
-
-## [0.32.2] - 2026-02-02 — Cancel Running Sync on Disable
-
-### Fixed
-- **Disable during sync doesn't stop it** — disabling sync while a bulk sync is running now signals the background task to stop immediately via in-memory cancellation flag, checked before each API call
-
----
-
-## [0.32.1] - 2026-02-02 — GCal Sync Progress & 5x Faster Sync
-
-### Fixed
-- **Disable sync hangs / toggle stays on** — disabling sync with "delete events" now deletes the entire Whendoist calendar (1 API call) instead of looping through hundreds of individual events with throttled delays, which caused request timeouts
-- **Enable sync blocks for minutes** — clearing stale events from a reused calendar now runs in the background task instead of blocking the enable response
-- **Progress stuck at "0 events"** — added in-memory progress tracking so the status endpoint reports real-time counts during bulk sync (DB session hasn't committed yet)
-- **Disable toggle has no error feedback** — added user-visible error alerts when the disable request fails, instead of silently doing nothing
+- **Disable sync hangs / toggle stays on** — replaced per-event deletion loop (384 events x 1s throttle = 6+ min timeout) with single `delete_calendar` API call
+- **Enable sync blocks for minutes** — moved `clear_all_events` from enable handler to background task
+- **Progress stuck at "0 events"** — added in-memory progress tracking (DB hasn't committed during sync)
+- **Disable during sync doesn't stop it** — added in-memory cancellation signal checked before each API call
+- Improved error logging with full tracebacks, added frontend error alerts for disable failures
 
 ### Changed
-- **5x faster bulk sync** — reduced API throttle from 1.0s to 0.2s per call (~5 QPS, well under Google's 10 QPS limit). 384 events now syncs in ~80s instead of ~6.5 min
-- **Snappier toggle UI** — optimistic state changes on enable/disable (toggle flips immediately, shows "Enabling..."/"Disabling...")
-- **Faster progress polling** — reduced poll interval from 3s to 1s for more responsive sync progress display
-- Removed dead `delete_all_synced_events()` method (replaced by calendar-level deletion)
-- Disable now clears `gcal_sync_calendar_id` and sync records for clean re-enable state
+- **5x faster bulk sync** — API throttle reduced from 1.0s to 0.2s per call (~5 QPS). 384 events: ~80s instead of ~6.5 min
+- **Snappier UI** — optimistic toggle state, "Enabling..."/"Disabling..." feedback, 1s poll interval (was 3s)
+- Removed dead `delete_all_synced_events()` method
 
 ---
 
