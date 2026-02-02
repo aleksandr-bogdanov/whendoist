@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.32.19] - 2026-02-02 — Fix Recurrence Bounds UI & Past Instance Materialization
+
+### Fixed
+- **Recurrence bounds date inputs too narrow** — widened Starts/Ends inputs from 44px to 110px so full dates are visible
+- **Past instances never materialized** — removed the clamp that forced `start_date` to today in `materialize_instances`, so recurring tasks with a past start date now generate instances for past days
+- **Pending-past banner never appeared** — with past instances now materialized, the dashboard banner and task dialog batch-complete button work as intended
+
+---
+
 ## [0.32.18] - 2026-02-02 — Fix Migration for JSON Column Type
 
 ### Fixed
