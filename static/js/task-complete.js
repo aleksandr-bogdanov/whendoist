@@ -14,6 +14,9 @@
         completed_move_to_bottom: true,  // Default
     };
 
+    // Active skip menu reference (for cleanup)
+    let activeSkipMenu = null;
+
     /**
      * Initialize task completion handlers.
      */
@@ -23,6 +26,12 @@
 
         // Use event delegation on document for all completion gutters
         document.addEventListener('click', handleGutterClick);
+
+        // Right-click context menu for recurring task gutters
+        document.addEventListener('contextmenu', handleGutterRightClick);
+
+        // Dismiss skip menu on click elsewhere
+        document.addEventListener('click', dismissSkipMenu);
     }
 
     /**
@@ -339,6 +348,120 @@
                 taskEl.removeEventListener('transitionend', cleanup);
             }
         });
+    }
+
+    // ==========================================================================
+    // SKIP INSTANCE (right-click context menu)
+    // ==========================================================================
+
+    /**
+     * Handle right-click on completion gutter for recurring tasks.
+     * Shows a context menu with "Skip" option.
+     * @param {Event} e - contextmenu event
+     */
+    function handleGutterRightClick(e) {
+        const gutter = e.target.closest('.complete-gutter');
+        if (!gutter) return;
+
+        const taskEl = gutter.closest('[data-task-id]');
+        if (!taskEl) return;
+
+        const instanceId = taskEl.dataset.instanceId;
+        if (!instanceId) return; // Only for recurring instances
+
+        e.preventDefault();
+        showSkipMenu(e.clientX, e.clientY, taskEl, instanceId);
+    }
+
+    /**
+     * Show skip context menu at given position.
+     * @param {number} x - clientX
+     * @param {number} y - clientY
+     * @param {HTMLElement} taskEl - The task element
+     * @param {string} instanceId - Instance ID
+     */
+    function showSkipMenu(x, y, taskEl, instanceId) {
+        dismissSkipMenu();
+
+        const menu = document.createElement('div');
+        menu.className = 'skip-menu';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'skip-menu-item';
+        skipBtn.innerHTML = '<span class="skip-icon">⏭</span> Skip this instance';
+        skipBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dismissSkipMenu();
+            skipInstance(taskEl, instanceId);
+        });
+
+        menu.appendChild(skipBtn);
+        document.body.appendChild(menu);
+        activeSkipMenu = menu;
+
+        // Adjust if overflowing viewport
+        const rect = menu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            menu.style.left = `${window.innerWidth - rect.width - 8}px`;
+        }
+        if (rect.bottom > window.innerHeight) {
+            menu.style.top = `${window.innerHeight - rect.height - 8}px`;
+        }
+    }
+
+    /**
+     * Dismiss the active skip menu.
+     */
+    function dismissSkipMenu() {
+        if (activeSkipMenu) {
+            activeSkipMenu.remove();
+            activeSkipMenu = null;
+        }
+    }
+
+    /**
+     * Skip a recurring task instance via API.
+     * @param {HTMLElement} taskEl - The task element
+     * @param {string} instanceId - Instance ID
+     */
+    async function skipInstance(taskEl, instanceId) {
+        // Optimistic UI update
+        taskEl.classList.add('skipped');
+        taskEl.dataset.completed = '1';
+
+        try {
+            const response = await fetch(`/api/v1/instances/${instanceId}/skip`, {
+                method: 'POST',
+                headers: window.getCSRFHeaders(),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to skip instance');
+            }
+
+            // Sync across all representations of this instance
+            document.querySelectorAll(`[data-instance-id="${instanceId}"]`).forEach(el => {
+                if (el === taskEl) return;
+                el.classList.add('skipped');
+                el.dataset.completed = '1';
+                applyCompletionClass(el, false); // Don't use completed style
+            });
+
+            // Move task to bottom if preference enabled
+            if (taskEl.classList.contains('task-item') && userPrefs.completed_move_to_bottom) {
+                moveToBottomOfDomain(taskEl);
+            }
+
+            showToast('Skipped for today');
+        } catch (error) {
+            console.error('Error skipping instance:', error);
+            // Revert optimistic update
+            taskEl.classList.remove('skipped');
+            taskEl.dataset.completed = '0';
+            showToast('Failed to skip instance');
+        }
     }
 
     /**

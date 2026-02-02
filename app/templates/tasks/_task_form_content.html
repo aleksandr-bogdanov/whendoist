@@ -143,6 +143,11 @@
 {% if mode == 'edit' and task %}
 <!-- Edit mode actions -->
 <div class="form-section form-actions-secondary">
+  {% if task.is_recurring %}
+  <button type="button" class="btn-action btn-skip" data-action="skip">
+    ⏭ Skip instance
+  </button>
+  {% endif %}
   {% if task.scheduled_date and task.scheduled_time %}
   <button type="button" class="btn-action btn-unschedule" data-action="unschedule">
     Unschedule
