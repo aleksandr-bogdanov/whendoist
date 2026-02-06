@@ -106,12 +106,23 @@
                             <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal — clear tasks">☕</button>
                             <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus — deep work too">🧠</button>
                         </div>
+                        <div class="clarity-dots" id="clarity-dots">
+                            <span class="cdot cdot-clear"></span>
+                            <span class="cdot cdot-defined"></span>
+                            <span class="cdot cdot-open"></span>
+                        </div>
                     </div>
                     <span class="header-row2-spacer"></span>
-                    <div class="view-chips">
-                        <button type="button" class="view-chip{% if user_prefs.show_scheduled_in_list %} active{% endif %}" id="chip-sched" aria-pressed="{{ 'true' if user_prefs.show_scheduled_in_list else 'false' }}">📅 Sched</button>
-                        <button type="button" class="view-chip{% if user_prefs.show_completed_in_list %} active{% endif %}" id="chip-done" aria-pressed="{{ 'true' if user_prefs.show_completed_in_list else 'false' }}">✓ Done</button>
-                        <button type="button" class="view-chip chip-delete" id="chip-deleted">🗑</button>
+                    <div class="view-toggle">
+                        <div class="view-seg-track">
+                            <button type="button" class="view-seg-btn{% if user_prefs.show_scheduled_in_list %} active{% endif %}" id="chip-sched" aria-pressed="{{ 'true' if user_prefs.show_scheduled_in_list else 'false' }}">
+                                <span class="view-seg-icon">📅</span> Scheduled
+                            </button>
+                            <button type="button" class="view-seg-btn{% if user_prefs.show_completed_in_list %} active{% endif %}" id="chip-done" aria-pressed="{{ 'true' if user_prefs.show_completed_in_list else 'false' }}">
+                                <span class="view-seg-icon">◆</span> Completed
+                            </button>
+                        </div>
+                        <button type="button" class="view-trash-btn" id="chip-deleted">🗑</button>
                     </div>
                 </div>
             </div>
