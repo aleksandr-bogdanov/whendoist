@@ -5,13 +5,13 @@
  * Uses CSS-based filtering via body[data-energy-level] attribute.
  *
  * Energy Levels:
- *   1 (Zombie):     Only @executable tasks visible
- *   2 (Normal):     @executable and @defined visible
+ *   1 (Zombie):     Only @clear tasks visible
+ *   2 (Normal):     @clear and @defined visible
  *   3 (Deep Focus): All tasks with clarity labels visible
  *
  * CSS filtering (in dashboard.css):
  *   body[data-energy-level="1"] .task-item[data-clarity="defined"] { display: none }
- *   body[data-energy-level="2"] .task-item[data-clarity="exploratory"] { display: none }
+ *   body[data-energy-level="2"] .task-item[data-clarity="open"] { display: none }
  *
  * Uses panel header energy selector (.header-energy) with compact pill buttons.
  *

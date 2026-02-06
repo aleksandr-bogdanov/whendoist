@@ -20,9 +20,9 @@
         { value: 4, label: 'P4', description: 'Maintenance' },
     ];
     const CLARITY_OPTIONS = [
-        { value: 'executable', label: 'Exec', description: 'Can do tired' },
+        { value: 'clear', label: 'Clear', description: 'No-brainer' },
         { value: 'defined', label: 'Def', description: 'Needs focus' },
-        { value: 'exploratory', label: 'Expl', description: 'Needs thinking' },
+        { value: 'open', label: 'Open', description: 'Needs thinking' },
     ];
     const RECURRENCE_PRESETS = [
         { value: null, label: 'None', freq: null },

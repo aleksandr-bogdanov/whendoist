@@ -1653,9 +1653,9 @@
     margin-right: 5px;
     flex-shrink: 0;
 }
-.meta-clarity.clarity-executable::before { background: var(--executable-color); }
+.meta-clarity.clarity-clear::before { background: var(--clear-color); }
 .meta-clarity.clarity-defined::before { background: var(--defined-color); }
-.meta-clarity.clarity-exploratory::before { background: var(--exploratory-color); }
+.meta-clarity.clarity-open::before { background: var(--open-color); }
 .meta-clarity.clarity-none::before { background: var(--text-muted); }
 
 /* =============================================================================
@@ -1671,14 +1671,14 @@ body:not([data-energy-level="0"]) .task-item:not(.deleted-item):not(.scheduled-i
     display: none !important;
 }
 
-/* Zombie mode: only executable tasks */
+/* Zombie mode: only clear tasks */
 body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="defined"],
-body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="exploratory"] {
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="open"] {
     display: none !important;
 }
 
-/* Normal mode: executable + defined */
-body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="exploratory"] {
+/* Normal mode: clear + defined */
+body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="open"] {
     display: none !important;
 }
 
@@ -1690,15 +1690,15 @@ body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[d
 }
 
 /* Hide projects where all tasks are hidden by energy filter */
-body[data-energy-level="1"] .project-group:not(:has(.task-item[data-clarity="executable"])) {
+body[data-energy-level="1"] .project-group:not(:has(.task-item[data-clarity="clear"])) {
     display: none;
 }
 
-body[data-energy-level="2"] .project-group:not(:has(.task-item[data-clarity="executable"], .task-item[data-clarity="defined"])) {
+body[data-energy-level="2"] .project-group:not(:has(.task-item[data-clarity="clear"], .task-item[data-clarity="defined"])) {
     display: none;
 }
 
-body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="executable"], .task-item[data-clarity="defined"], .task-item[data-clarity="exploratory"])) {
+body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="clear"], .task-item[data-clarity="defined"], .task-item[data-clarity="open"])) {
     display: none;
 }
 

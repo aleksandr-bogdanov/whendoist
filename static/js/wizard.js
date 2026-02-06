@@ -583,11 +583,11 @@ class WhenWizard {
 
                     <div class="wizard-section-title">Preview</div>
                     <div class="wizard-preview-tasks">
-                        <div class="wizard-preview-task clarity-executable" data-clarity="executable">
+                        <div class="wizard-preview-task clarity-clear" data-clarity="clear">
                             <span class="wizard-preview-task-title">Review pull requests</span>
                             <span class="wizard-preview-task-duration">30m</span>
                         </div>
-                        <div class="wizard-preview-task clarity-executable" data-clarity="executable">
+                        <div class="wizard-preview-task clarity-clear" data-clarity="clear">
                             <span class="wizard-preview-task-title">Reply to Sarah's email</span>
                             <span class="wizard-preview-task-duration">15m</span>
                         </div>
@@ -595,7 +595,7 @@ class WhenWizard {
                             <span class="wizard-preview-task-title">Update project documentation</span>
                             <span class="wizard-preview-task-duration">1h</span>
                         </div>
-                        <div class="wizard-preview-task clarity-exploratory hidden" data-clarity="exploratory">
+                        <div class="wizard-preview-task clarity-open hidden" data-clarity="open">
                             <span class="wizard-preview-task-title">Research competitor features</span>
                             <span class="wizard-preview-task-duration">2h</span>
                         </div>
@@ -624,9 +624,9 @@ class WhenWizard {
     updateTaskPreview(mode) {
         const tasks = this.panel.querySelectorAll('.wizard-preview-task');
         const visibility = {
-            zombie: ['executable'],
-            normal: ['executable', 'defined'],
-            focus: ['executable', 'defined', 'exploratory']
+            zombie: ['clear'],
+            normal: ['clear', 'defined'],
+            focus: ['clear', 'defined', 'open']
         };
 
         tasks.forEach(task => {

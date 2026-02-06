@@ -56,9 +56,9 @@
   <label class="section-label">CLARITY</label>
   <div class="clarity-pills">
     {% set current_clarity = task.clarity if task else 'defined' %}
-    <button type="button" class="clarity-pill{% if current_clarity == 'executable' %} active{% endif %}" data-clarity="executable" title="Can do tired">Executable</button>
+    <button type="button" class="clarity-pill{% if current_clarity == 'clear' %} active{% endif %}" data-clarity="clear" title="No-brainer">Clear</button>
     <button type="button" class="clarity-pill{% if current_clarity == 'defined' %} active{% endif %}" data-clarity="defined" title="Needs focus">Defined</button>
-    <button type="button" class="clarity-pill{% if current_clarity == 'exploratory' %} active{% endif %}" data-clarity="exploratory" title="Needs thinking">Exploratory</button>
+    <button type="button" class="clarity-pill{% if current_clarity == 'open' %} active{% endif %}" data-clarity="open" title="Needs thinking">Open</button>
   </div>
   <input type="hidden" name="clarity" value="{{ current_clarity }}">
 </div>

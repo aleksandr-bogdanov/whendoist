@@ -139,12 +139,12 @@
     --impact-p4-row: rgba(107, 115, 133, 0.018);
 
     /* ===== Clarity Colors ===== */
-    --clarity-executable: var(--blue-500);
-    --clarity-executable-tint: var(--blue-tint);
+    --clear-color: var(--blue-500);
+    --clear-tint: var(--blue-tint);
     --clarity-defined: var(--purple-500);
     --clarity-defined-tint: var(--purple-tint);
-    --clarity-exploratory: var(--magenta-500);
-    --clarity-exploratory-tint: var(--magenta-tint);
+    --open-color: var(--magenta-500);
+    --open-tint: var(--magenta-tint);
 
     /* ===== Layout ===== */
     --content-max-width: 1100px;
@@ -190,12 +190,12 @@
     --impact-min: var(--impact-p4);
 
     /* Legacy clarity aliases */
-    --executable-color: var(--clarity-executable);
-    --executable-tint: var(--clarity-executable-tint);
+    --executable-color: var(--clear-color);
+    --executable-tint: var(--clear-tint);
     --defined-color: var(--clarity-defined);
     --defined-tint: var(--clarity-defined-tint);
-    --exploratory-color: var(--clarity-exploratory);
-    --exploratory-tint: var(--clarity-exploratory-tint);
+    --exploratory-color: var(--open-color);
+    --exploratory-tint: var(--open-tint);
 
     /* Legacy interactive aliases */
     --row-active: var(--interactive-active);
@@ -237,9 +237,9 @@
     --glass-bg-strong: rgba(15, 23, 42, 0.88);
     --glass-border: rgba(248, 250, 252, 0.08);
 
-    --clarity-executable-tint: rgba(22, 123, 255, 0.15);
+    --clear-tint: rgba(22, 123, 255, 0.15);
     --clarity-defined-tint: rgba(109, 94, 246, 0.15);
-    --clarity-exploratory-tint: rgba(160, 32, 192, 0.15);
+    --open-tint: rgba(160, 32, 192, 0.15);
 
     /* Dark mode gradients */
     --gradient-bg-login: linear-gradient(135deg, #1E293B 0%, #0F172A 50%, #1E293B 100%);

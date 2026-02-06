@@ -106,36 +106,36 @@ class TestBuildNativeTaskItem:
         assert item["clarity_display"] == "Defined"
 
     async def test_clarity_display_for_executable(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
-        """Clarity display shows 'Executable' for executable tasks."""
+        """Clarity display shows 'Clear' for clear tasks."""
         task = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
             title="Test Task",
-            clarity="executable",
+            clarity="clear",
         )
         db_session.add(task)
         await db_session.flush()
 
         item = build_native_task_item(task)
 
-        assert item["clarity_display"] == "Executable"
+        assert item["clarity_display"] == "Clear"
 
     async def test_clarity_display_for_exploratory(
         self, db_session: AsyncSession, test_user: User, test_domain: Domain
     ):
-        """Clarity display shows 'Exploratory' for exploratory tasks."""
+        """Clarity display shows 'Open' for open tasks."""
         task = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
             title="Test Task",
-            clarity="exploratory",
+            clarity="open",
         )
         db_session.add(task)
         await db_session.flush()
 
         item = build_native_task_item(task)
 
-        assert item["clarity_display"] == "Exploratory"
+        assert item["clarity_display"] == "Open"
 
     async def test_clarity_display_for_no_clarity(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
         """Clarity display is empty for tasks without clarity."""

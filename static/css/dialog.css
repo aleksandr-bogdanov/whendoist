@@ -392,9 +392,9 @@ body.modal-open {
 }
 
 /* Clarity colors - text only, no filled background */
-.seg-btn[data-clarity="executable"] { color: var(--executable-color, #167BFF); }
+.seg-btn[data-clarity="clear"] { color: var(--clear-color, #167BFF); }
 .seg-btn[data-clarity="defined"] { color: var(--defined-color, #6D5EF6); }
-.seg-btn[data-clarity="exploratory"] { color: var(--exploratory-color, #A020C0); }
+.seg-btn[data-clarity="open"] { color: var(--open-color, #A020C0); }
 
 .seg-btn[data-clarity].is-active {
     background: var(--interactive-active);

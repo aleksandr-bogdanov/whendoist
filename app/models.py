@@ -291,7 +291,7 @@ class Task(Base):
     # Attributes
     duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     impact: Mapped[int] = mapped_column(Integer, default=4)  # P1=1 (highest), P4=4 (lowest)
-    clarity: Mapped[str | None] = mapped_column(String(20), nullable=True)  # executable/defined/exploratory
+    clarity: Mapped[str | None] = mapped_column(String(20), nullable=True)  # clear/defined/open
 
     # Scheduling (non-recurring)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
