@@ -308,7 +308,7 @@
 }
 
 .task-list-scroll {
-    padding-top: 0;
+    padding-top: 4px;
 }
 
 /* Task header - two-row command center */
@@ -344,10 +344,6 @@
     display: none;
 }
 
-.header-row2-spacer {
-    flex: 1;
-}
-
 /* Cover rounded corner gaps when scrolling */
 .task-list-header::before {
     content: "";
@@ -379,7 +375,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(15, 23, 42, 0.38);  /* Reduced contrast so ENERGY wins */
+    color: rgba(15, 23, 42, 0.50);  /* Reduced contrast so ENERGY wins */
     line-height: 22px;
 }
 
@@ -513,113 +509,9 @@
     color: var(--text-primary);
 }
 
-/* =============================================================================
-   View Toggle — segmented control for Scheduled/Completed + trash button
-   ============================================================================= */
-
-.view-toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.view-seg-track {
-    display: flex;
-    gap: 2px;
-    padding: 2px;
-    background: var(--border-subtle);
-    border: 1px solid var(--border-default);
-    border-radius: 7px;
-}
-
-.view-seg-btn {
-    height: 22px;
-    padding: 0 10px;
-    border: none;
-    border-radius: 5px;
-    background: transparent;
-    font-size: 0.6rem;
-    font-weight: 550;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-    margin: 0;
-}
-
-.view-seg-btn:hover {
-    background: rgba(15, 23, 42, 0.03);
-    color: var(--text-primary);
-}
-
-.view-seg-btn.active {
-    background: var(--interactive-active);
-    color: var(--purple-600, #5B4CF0);
-    font-weight: 600;
-}
-
-.view-seg-icon {
-    font-size: 0.55rem;
-    opacity: 0.7;
-}
-
-.view-seg-btn.active .view-seg-icon {
-    opacity: 1;
-}
-
-.view-trash-btn {
-    width: 24px;
-    height: 22px;
-    border: 1px solid var(--border-default);
-    border-radius: 5px;
-    background: transparent;
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s ease;
-    padding: 0;
-    margin: 0;
-}
-
-.view-trash-btn:hover {
-    border-color: rgba(220, 38, 38, 0.3);
-    color: #DC2626;
-    background: rgba(220, 38, 38, 0.04);
-}
-
-.view-trash-btn.active {
-    border-color: rgba(220, 38, 38, 0.4);
-    color: #DC2626;
-    background: rgba(220, 38, 38, 0.1);
-}
-
-/* Dark mode view toggle */
-[data-theme="dark"] .view-seg-track {
-    background: var(--border-default);
-    border-color: var(--border-strong);
-}
-
-[data-theme="dark"] .view-seg-btn:hover {
-    background: rgba(255, 255, 255, 0.04);
-}
-
-[data-theme="dark"] .view-seg-btn.active {
-    background: rgba(109, 94, 246, 0.15);
-    color: var(--purple-400, #A78BFA);
-}
-
-[data-theme="dark"] .view-trash-btn:hover {
-    background: rgba(220, 38, 38, 0.08);
-}
-
-[data-theme="dark"] .view-trash-btn.active {
-    background: rgba(220, 38, 38, 0.15);
+/* Settings panel danger action (for trash) */
+.sp-action--danger:hover {
+    color: var(--danger, #DC2626);
 }
 
 /* =============================================================================
@@ -999,15 +891,50 @@
    Section Separators (Scheduled / Completed flat sections)
    ============================================================================= */
 
+/* Collapsible section group */
+.section-group {
+    margin-top: 4px;
+}
+
+.section-group > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.section-group > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Disclosure triangle on section separator */
 .section-separator {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin: 12px 0 6px;
-    padding: 0 12px;
+    gap: 8px;
+    margin: 16px 0 0;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s ease;
 }
 
-.section-separator::before,
+.section-separator:hover {
+    background: var(--row-hover);
+}
+
+/* Left disclosure triangle (matches domain group pattern) */
+.section-separator::before {
+    content: "\25B6";
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+    opacity: 0.5;
+}
+
+.section-group[open] .section-separator::before {
+    transform: rotate(90deg);
+}
+
+/* Trailing line */
 .section-separator::after {
     content: "";
     flex: 1;
@@ -1016,12 +943,24 @@
 }
 
 .section-sep-label {
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     color: var(--text-muted);
     white-space: nowrap;
+}
+
+/* Task count badge */
+.section-count {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.section-tasks {
+    /* Tasks inside the collapsible section */
 }
 
 /* =============================================================================
@@ -1114,7 +1053,7 @@
 .task-item .meta-duration,
 .task-item .meta-impact,
 .task-item .meta-clarity {
-    opacity: 0.5;
+    opacity: 0.65;
     transition: opacity var(--duration-fast) var(--ease-default);
 }
 
@@ -1272,7 +1211,7 @@
 
 /* Completed task - muted dots */
 .task-item[data-completed="1"] .meta-impact::before,
-.task-item[data-completed="1"] .meta-clarity::before {
+.task-item[data-completed="1"] .meta-clarity .clarity-dot {
     opacity: 0.4;
 }
 
@@ -1306,9 +1245,9 @@
 
 /* Completed task - muted dots */
 .task-item.completed .meta-impact::before,
-.task-item.completed .meta-clarity::before,
+.task-item.completed .meta-clarity .clarity-dot,
 .task-item.completed.scheduled .meta-impact::before,
-.task-item.completed.scheduled .meta-clarity::before {
+.task-item.completed.scheduled .meta-clarity .clarity-dot {
     opacity: 0.4;
 }
 
@@ -1649,7 +1588,8 @@
     font-size: 0.6rem;
     font-weight: 500;
     color: var(--text-muted);
-    background: rgba(109, 94, 246, 0.1);
+    background: var(--bg-inset);
+    border: 1px solid var(--border-subtle);
     padding: 1px 6px;
     border-radius: 8px;
     white-space: nowrap;
@@ -1744,46 +1684,39 @@
     justify-content: center;
 }
 
-/* Impact tags - dot indicator */
+/* Impact labels - semantic text in color (no dot) */
 /* Patch 29: Width now handled by grid */
 .meta-impact {
-    color: var(--text-primary);
     justify-content: center;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 .meta-impact::before {
-    content: "";
+    display: none;  /* Remove dot */
+}
+.meta-impact.impact-1 { color: var(--impact-p1); }
+.meta-impact.impact-2 { color: var(--impact-p2); }
+.meta-impact.impact-3 { color: var(--impact-p3); }
+.meta-impact.impact-4 { color: var(--impact-p4); }
+
+/* Clarity indicator - single colored dot per task row */
+.meta-clarity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.meta-clarity .clarity-dot {
     width: 7px;
     height: 7px;
-    border-radius: 999px;
-    display: inline-block;
-    margin-right: 5px;
-    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--border-default);  /* fallback for clarity-none */
 }
-.meta-impact.impact-1::before { background: var(--impact-high); }
-.meta-impact.impact-2::before { background: var(--impact-medium); }
-.meta-impact.impact-3::before { background: var(--impact-low); }
-.meta-impact.impact-4::before { background: var(--impact-min); }
 
-/* Clarity tags - dot indicator */
-/* Patch 29: Width now handled by grid */
-.meta-clarity {
-    color: var(--text-primary);
-    justify-content: center;
-    font-size: 0;  /* Hide text - show only dot */
-}
-.meta-clarity::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    display: inline-block;
-    margin-right: 5px;
-    flex-shrink: 0;
-}
-.meta-clarity.clarity-clear::before { background: var(--clear-color); }
-.meta-clarity.clarity-defined::before { background: var(--defined-color); }
-.meta-clarity.clarity-open::before { background: var(--open-color); }
-.meta-clarity.clarity-none::before { background: var(--text-muted); }
+.meta-clarity.clarity-clear .clarity-dot { background: var(--clear-color); }
+.meta-clarity.clarity-defined .clarity-dot { background: var(--clarity-defined); }
+.meta-clarity.clarity-open .clarity-dot { background: var(--open-color); }
+.meta-clarity.clarity-none .clarity-dot { opacity: 0.35; }
 
 /* =============================================================================
    Energy/Mode-based Task Filtering
@@ -2863,27 +2796,6 @@ body[data-energy-level] .scheduled-group.project-group {
     .header-duration::after { content: 'DUR'; }
     .header-impact::after { content: 'IMPCT'; }
     .header-clarity::after { content: 'CLRT'; }
-
-    /* Impact: hide text, show abbreviations */
-    .task-meta > span.meta-impact {
-        font-size: 0;
-        position: relative;
-    }
-    .task-meta > span.meta-impact::after {
-        font-size: 0.6rem;
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .task-meta > span.meta-impact.impact-1::after { content: 'High'; color: var(--impact-high); }
-    .task-meta > span.meta-impact.impact-2::after { content: 'Mid'; color: var(--impact-medium); }
-    .task-meta > span.meta-impact.impact-3::after { content: 'Low'; color: #157A4E; }
-    .task-meta > span.meta-impact.impact-4::after { content: 'Min'; color: var(--impact-min); }
 }
 
 /* Plan Mode styles moved to components/plan-mode.css */

@@ -94,6 +94,7 @@
                             <div class="sp-divider"></div>
                             <button class="sp-action" id="show-scheduled-tasks-btn">📅 View all scheduled</button>
                             <button class="sp-action" id="show-completed-tasks-btn">✓ View all completed</button>
+                            <button class="sp-action sp-action--danger" id="show-deleted-tasks-btn">🗑 View deleted</button>
                         </div>
                     </div>
                 </div>
@@ -111,18 +112,6 @@
                             <span class="cdot cdot-defined"></span>
                             <span class="cdot cdot-open"></span>
                         </div>
-                    </div>
-                    <span class="header-row2-spacer"></span>
-                    <div class="view-toggle">
-                        <div class="view-seg-track">
-                            <button type="button" class="view-seg-btn{% if user_prefs.show_scheduled_in_list %} active{% endif %}" id="chip-sched" aria-pressed="{{ 'true' if user_prefs.show_scheduled_in_list else 'false' }}">
-                                <span class="view-seg-icon">📅</span> Scheduled
-                            </button>
-                            <button type="button" class="view-seg-btn{% if user_prefs.show_completed_in_list %} active{% endif %}" id="chip-done" aria-pressed="{{ 'true' if user_prefs.show_completed_in_list else 'false' }}">
-                                <span class="view-seg-icon">◆</span> Completed
-                            </button>
-                        </div>
-                        <button type="button" class="view-trash-btn" id="chip-deleted">🗑</button>
                     </div>
                 </div>
             </div>
