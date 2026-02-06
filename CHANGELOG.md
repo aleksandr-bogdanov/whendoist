@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.36.0] - 2026-02-06 — Task List Visual Refinements
+
+### Changed
+- **Subtask badges** — neutral grey background with subtle border replaces purple tint; badges no longer compete with task titles for attention
+- **Impact labels** — "P1/P2/P3/P4" (Todoist heritage) replaced with "High/Mid/Low/Min" in impact color; redundant dot indicator removed since left rail already encodes impact
+- **Meta column readability** — resting opacity raised from 0.5 to 0.65; metadata readable without hovering
+- **Single-dot clarity** — task row clarity column shows one colored dot instead of three (8 dots per screen instead of 24); column width reduced from 42px to 32px
+- **Collapsible sections** — Scheduled and Completed sections always render at bottom of task list; collapsible in-place via click (replaces header view toggle buttons)
+- **Section separators** — left-aligned label with trailing line replaces centered label between two rules; disclosure triangle indicates collapsible state
+- **TASKS label** — header label opacity increased from 0.38 to 0.50 for better readability
+- **Trash view** — moved from header icon button to settings panel action ("🗑 View deleted")
+
+---
+
 ## [0.35.0] - 2026-02-06 — Brand-Aligned Header Refresh
 
 ### Changed

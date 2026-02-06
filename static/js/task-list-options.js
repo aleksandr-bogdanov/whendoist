@@ -32,20 +32,26 @@
             document.addEventListener('click', handleOutsideClick);
         }
 
-        // View chip handlers
-        const chipSched = document.getElementById('chip-sched');
-        if (chipSched) {
-            chipSched.addEventListener('click', () => handleChipToggle(chipSched, 'show_scheduled_in_list', 'section-sched'));
+        // Section collapse/expand handlers (use event delegation for HTMX compatibility)
+        const taskListScroll = document.getElementById('task-list-scroll');
+        if (taskListScroll) {
+            taskListScroll.addEventListener('toggle', (e) => {
+                const sectionGroup = e.target.closest('.section-group');
+                if (sectionGroup) {
+                    const sectionId = sectionGroup.id;
+                    if (sectionId === 'section-sched') {
+                        savePreference('show_scheduled_in_list', sectionGroup.open);
+                    } else if (sectionId === 'section-done') {
+                        savePreference('show_completed_in_list', sectionGroup.open);
+                    }
+                }
+            }, true);
         }
 
-        const chipDone = document.getElementById('chip-done');
-        if (chipDone) {
-            chipDone.addEventListener('click', () => handleChipToggle(chipDone, 'show_completed_in_list', 'section-done'));
-        }
-
-        const chipDeleted = document.getElementById('chip-deleted');
-        if (chipDeleted) {
-            chipDeleted.addEventListener('click', showDeletedTasks);
+        // Trash button moved to settings panel
+        const showDeletedBtn = document.getElementById('show-deleted-tasks-btn');
+        if (showDeletedBtn) {
+            showDeletedBtn.addEventListener('click', showDeletedTasks);
         }
 
         // Settings panel: toggle handler for hide_recurring
@@ -118,35 +124,6 @@
     }
 
     // =========================================================================
-    // View Chips
-    // =========================================================================
-
-    /**
-     * Handle chip toggle — save preference, animate section, refresh list.
-     * @param {HTMLElement} chip - The chip button
-     * @param {string} prefKey - Preference key to toggle
-     * @param {string} sectionId - ID of the section to animate
-     */
-    async function handleChipToggle(chip, prefKey, sectionId) {
-        const newValue = !chip.classList.contains('active');
-
-        // Optimistic UI update
-        chip.classList.toggle('active', newValue);
-        chip.setAttribute('aria-pressed', newValue ? 'true' : 'false');
-
-        // Save preference
-        const success = await savePreference(prefKey, newValue);
-
-        if (success) {
-            refreshTaskList();
-        } else {
-            // Revert on failure
-            chip.classList.toggle('active', !newValue);
-            chip.setAttribute('aria-pressed', !newValue ? 'true' : 'false');
-        }
-    }
-
-    // =========================================================================
     // Settings Panel Controls
     // =========================================================================
 
@@ -209,10 +186,6 @@
         closePanel();
         currentView = 'deleted';
 
-        // Set chip active state
-        const chipDeleted = document.getElementById('chip-deleted');
-        if (chipDeleted) chipDeleted.classList.add('active');
-
         setSpecialViewHeader(true);
 
         const taskListScroll = document.getElementById('task-list-scroll');
@@ -265,10 +238,6 @@
      */
     function showNormalTasks() {
         currentView = 'normal';
-
-        // Clear chip active states
-        const chipDeleted = document.getElementById('chip-deleted');
-        if (chipDeleted) chipDeleted.classList.remove('active');
 
         setSpecialViewHeader(false);
         refreshTaskList();

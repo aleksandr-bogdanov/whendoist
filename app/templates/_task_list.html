@@ -63,15 +63,13 @@
             {% else %}—{% endif %}
         </span>
         <span class="meta-impact impact-{{ task.impact }}">
-            {% if task.impact == 1 %}P1
-            {% elif task.impact == 2 %}P2
-            {% elif task.impact == 3 %}P3
-            {% else %}P4{% endif %}
+            {% if task.impact == 1 %}High
+            {% elif task.impact == 2 %}Mid
+            {% elif task.impact == 3 %}Low
+            {% else %}Min{% endif %}
         </span>
         <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
-            {% if task.clarity %}
-                {{ task_item.clarity_display }}
-            {% else %}—{% endif %}
+            <span class="clarity-dot"></span>
         </span>
     </div>
     <span class="task-actions"></span>
@@ -109,22 +107,32 @@
 </div>
 {% endif %}
 
-{# ── Scheduled tasks — flat list with separator ── #}
+{# ── Scheduled tasks — collapsible section ── #}
 {% if scheduled_tasks %}
-<div class="section-separator" id="section-sched">
-    <span class="section-sep-label">Scheduled</span>
-</div>
-{% for task_item in scheduled_tasks %}
-{{ render_task_item(task_item, today, encryption_enabled) }}
-{% endfor %}
+<details class="section-group" id="section-sched"{% if user_prefs.show_scheduled_in_list %} open{% endif %}>
+    <summary class="section-separator">
+        <span class="section-sep-label">Scheduled</span>
+        <span class="section-count">{{ scheduled_tasks|length }}</span>
+    </summary>
+    <div class="section-tasks">
+        {% for task_item in scheduled_tasks %}
+        {{ render_task_item(task_item, today, encryption_enabled) }}
+        {% endfor %}
+    </div>
+</details>
 {% endif %}
 
-{# ── Completed tasks — flat list with separator ── #}
+{# ── Completed tasks — collapsible section ── #}
 {% if completed_tasks %}
-<div class="section-separator" id="section-done">
-    <span class="section-sep-label">Completed</span>
-</div>
-{% for task_item in completed_tasks %}
-{{ render_task_item(task_item, today, encryption_enabled) }}
-{% endfor %}
+<details class="section-group" id="section-done"{% if user_prefs.show_completed_in_list %} open{% endif %}>
+    <summary class="section-separator">
+        <span class="section-sep-label">Completed</span>
+        <span class="section-count">{{ completed_tasks|length }}</span>
+    </summary>
+    <div class="section-tasks">
+        {% for task_item in completed_tasks %}
+        {{ render_task_item(task_item, today, encryption_enabled) }}
+        {% endfor %}
+    </div>
+</details>
 {% endif %}

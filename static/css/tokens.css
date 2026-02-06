@@ -155,7 +155,7 @@
     /* ===== Task List Columns ===== */
     --col-duration: 68px;
     --col-impact: 56px;
-    --col-clarity: 42px;  /* Was 80px — dot-only needs less */
+    --col-clarity: 32px;  /* Was 80px — single dot needs less */
     --col-actions: 28px;
     --col-gap: 6px;
     --rail-width: 2px;
