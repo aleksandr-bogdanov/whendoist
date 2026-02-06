@@ -8,12 +8,8 @@ Test Category: Unit (async, uses in-memory SQLite)
 Related Code: app/services/task_sorting.py, app/services/task_grouping.py
 
 Coverage:
-- All 4 preference combinations for section ordering:
-  - completed_move_to_bottom (True/False)
-  - scheduled_move_to_bottom (True/False)
-- Date-based sorting within sections:
-  - completed_sort_by_date (True/False)
-  - scheduled_sort_by_date (True/False)
+- Three-bucket grouping: active (by domain), scheduled (flat), completed (flat)
+- Date-based sorting within scheduled/completed sections
 - Task visibility filtering (retention window, show/hide toggles)
 
 Note: These tests verify SERVER-SIDE sorting only. Client-side sorting
@@ -21,6 +17,8 @@ Note: These tests verify SERVER-SIDE sorting only. Client-side sorting
 e2e/test_task_sorting_e2e.py.
 
 See tests/README.md for full test architecture.
+
+v0.33.1: Updated for flattened scheduled/completed sections
 """
 
 from datetime import UTC, date, datetime, timedelta
@@ -222,29 +220,87 @@ class TestCompletedTaskSortKey:
 
 
 # =============================================================================
-# Group Tasks By Domain Tests
+# Group Tasks By Domain Tests — Three-Bucket Structure
 # =============================================================================
 
 
-class TestGroupTasksByDomainSections:
-    """Tests for task grouping into sections based on preferences."""
+class TestGroupTasksByDomainBuckets:
+    """Tests for the three-bucket return structure: domain_groups, scheduled_tasks, completed_tasks."""
 
-    async def test_completed_and_scheduled_both_at_bottom(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
-        """
-        With completed_move_to_bottom=True and scheduled_move_to_bottom=True:
-        Order should be: unscheduled -> scheduled -> completed
-        """
+    async def test_returns_dict_with_three_keys(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Return value is a dict with domain_groups, scheduled_tasks, completed_tasks."""
+        task = Task(user_id=test_user.id, domain_id=test_domain.id, title="Active", impact=2)
+        db_session.add(task)
+        await db_session.flush()
+
+        result = group_tasks_by_domain([task], [test_domain])
+
+        assert "domain_groups" in result
+        assert "scheduled_tasks" in result
+        assert "completed_tasks" in result
+
+    async def test_active_tasks_in_domain_groups(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Unscheduled pending tasks go into domain_groups."""
+        task = Task(user_id=test_user.id, domain_id=test_domain.id, title="Active", impact=2)
+        db_session.add(task)
+        await db_session.flush()
+
+        result = group_tasks_by_domain([task], [test_domain])
+
+        assert len(result["domain_groups"]) == 1
+        assert result["domain_groups"][0]["domain"] == test_domain
+        titles = [t["task"].title for t in result["domain_groups"][0]["tasks"]]
+        assert titles == ["Active"]
+        assert result["scheduled_tasks"] == []
+        assert result["completed_tasks"] == []
+
+    async def test_scheduled_tasks_in_flat_list(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Scheduled pending tasks go into the flat scheduled_tasks list."""
+        today = date.today()
+        task = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Scheduled",
+            scheduled_date=today,
+            impact=1,
+        )
+        db_session.add(task)
+        await db_session.flush()
+
+        result = group_tasks_by_domain([task], [test_domain])
+
+        assert len(result["domain_groups"]) == 0  # No active tasks
+        titles = [t["task"].title for t in result["scheduled_tasks"]]
+        assert titles == ["Scheduled"]
+        assert result["completed_tasks"] == []
+
+    async def test_completed_tasks_in_flat_list(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Completed tasks go into the flat completed_tasks list."""
+        now = datetime.now(tz=UTC)
+        task = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Done",
+            status="completed",
+            completed_at=now,
+            impact=1,
+        )
+        db_session.add(task)
+        await db_session.flush()
+
+        result = group_tasks_by_domain([task], [test_domain])
+
+        assert len(result["domain_groups"]) == 0
+        assert result["scheduled_tasks"] == []
+        titles = [t["task"].title for t in result["completed_tasks"]]
+        assert titles == ["Done"]
+
+    async def test_three_task_types_separated(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Active, scheduled, and completed tasks each go to their correct bucket."""
         today = date.today()
         now = datetime.now(tz=UTC)
 
-        task_unscheduled = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Unscheduled",
-            impact=2,
-        )
+        task_active = Task(user_id=test_user.id, domain_id=test_domain.id, title="Active", impact=2)
         task_scheduled = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
@@ -260,192 +316,95 @@ class TestGroupTasksByDomainSections:
             completed_at=now,
             impact=1,
         )
-        db_session.add_all([task_unscheduled, task_scheduled, task_completed])
-        await db_session.flush()
-
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            completed_move_to_bottom=True,
-            scheduled_move_to_bottom=True,
-        )
-        db_session.add(prefs)
+        db_session.add_all([task_active, task_scheduled, task_completed])
         await db_session.flush()
 
         result = group_tasks_by_domain(
-            [task_completed, task_scheduled, task_unscheduled],  # Random order
+            [task_completed, task_scheduled, task_active],
             [test_domain],
-            user_prefs=prefs,
         )
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        assert titles == ["Unscheduled", "Scheduled", "Completed"]
+        active_titles = [t["task"].title for t in result["domain_groups"][0]["tasks"]]
+        sched_titles = [t["task"].title for t in result["scheduled_tasks"]]
+        done_titles = [t["task"].title for t in result["completed_tasks"]]
+        assert active_titles == ["Active"]
+        assert sched_titles == ["Scheduled"]
+        assert done_titles == ["Completed"]
 
-    async def test_only_completed_at_bottom(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
-        """
-        With completed_move_to_bottom=True and scheduled_move_to_bottom=False:
-        Order should be: (unscheduled + scheduled interleaved by impact) -> completed
-        """
+    async def test_scheduled_across_domains_sorted_by_date(self, db_session: AsyncSession, test_user: User):
+        """Scheduled tasks from different domains are merged into one flat list sorted by date."""
+        domain_a = Domain(user_id=test_user.id, name="Alpha")
+        domain_b = Domain(user_id=test_user.id, name="Beta")
+        db_session.add_all([domain_a, domain_b])
+        await db_session.flush()
+
         today = date.today()
-        now = datetime.now(tz=UTC)
-
-        task_unscheduled_p2 = Task(
+        task_b_today = Task(
             user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Unscheduled P2",
-            impact=2,
-            position=0,
-        )
-        task_scheduled_p1 = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Scheduled P1",
+            domain_id=domain_b.id,
+            title="Beta Today",
             scheduled_date=today,
-            impact=1,
-            position=0,
+            impact=4,
         )
-        task_completed = Task(
+        task_a_tomorrow = Task(
             user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Completed",
+            domain_id=domain_a.id,
+            title="Alpha Tomorrow",
+            scheduled_date=today + timedelta(days=1),
+            impact=1,
+        )
+        db_session.add_all([task_a_tomorrow, task_b_today])
+        await db_session.flush()
+
+        result = group_tasks_by_domain(
+            [task_a_tomorrow, task_b_today],
+            [domain_a, domain_b],
+        )
+
+        sched_titles = [t["task"].title for t in result["scheduled_tasks"]]
+        assert sched_titles == ["Beta Today", "Alpha Tomorrow"]
+
+    async def test_completed_across_domains_sorted_by_date(self, db_session: AsyncSession, test_user: User):
+        """Completed tasks from different domains are merged into one flat list sorted by completion date."""
+        domain_a = Domain(user_id=test_user.id, name="Alpha")
+        domain_b = Domain(user_id=test_user.id, name="Beta")
+        db_session.add_all([domain_a, domain_b])
+        await db_session.flush()
+
+        now = datetime.now(tz=UTC)
+        task_b_recent = Task(
+            user_id=test_user.id,
+            domain_id=domain_b.id,
+            title="Beta Recent",
             status="completed",
             completed_at=now,
-            impact=1,
+            impact=4,
         )
-        db_session.add_all([task_unscheduled_p2, task_scheduled_p1, task_completed])
-        await db_session.flush()
-
-        prefs = UserPreferences(
+        task_a_older = Task(
             user_id=test_user.id,
-            completed_move_to_bottom=True,
-            scheduled_move_to_bottom=False,
-        )
-        db_session.add(prefs)
-        await db_session.flush()
-
-        result = group_tasks_by_domain(
-            [task_completed, task_unscheduled_p2, task_scheduled_p1],
-            [test_domain],
-            user_prefs=prefs,
-        )
-
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # P1 should come before P2, completed last
-        assert titles == ["Scheduled P1", "Unscheduled P2", "Completed"]
-
-    async def test_only_scheduled_at_bottom(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
-        """
-        With completed_move_to_bottom=False and scheduled_move_to_bottom=True:
-        Order should be: (unscheduled + completed_unscheduled) -> (scheduled + completed_scheduled)
-        """
-        today = date.today()
-        now = datetime.now(tz=UTC)
-
-        task_unscheduled = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Unscheduled",
-            impact=2,
-            position=0,
-        )
-        task_completed_unscheduled = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Completed Unscheduled",
+            domain_id=domain_a.id,
+            title="Alpha Older",
             status="completed",
-            completed_at=now,
+            completed_at=now - timedelta(hours=2),
             impact=1,
-            position=0,
         )
-        task_scheduled = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Scheduled",
-            scheduled_date=today,
-            impact=1,
-            position=0,
-        )
-        db_session.add_all([task_unscheduled, task_completed_unscheduled, task_scheduled])
-        await db_session.flush()
-
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            completed_move_to_bottom=False,
-            scheduled_move_to_bottom=True,
-        )
-        db_session.add(prefs)
+        db_session.add_all([task_a_older, task_b_recent])
         await db_session.flush()
 
         result = group_tasks_by_domain(
-            [task_scheduled, task_unscheduled, task_completed_unscheduled],
-            [test_domain],
-            user_prefs=prefs,
+            [task_a_older, task_b_recent],
+            [domain_a, domain_b],
         )
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # Completed unscheduled (P1) first, unscheduled (P2) second, scheduled last
-        assert titles == ["Completed Unscheduled", "Unscheduled", "Scheduled"]
-
-    async def test_neither_at_bottom(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
-        """
-        With completed_move_to_bottom=False and scheduled_move_to_bottom=False:
-        All tasks interleaved by impact.
-        """
-        today = date.today()
-        now = datetime.now(tz=UTC)
-
-        task_p3 = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Unscheduled P3",
-            impact=3,
-            position=0,
-        )
-        task_scheduled_p1 = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Scheduled P1",
-            scheduled_date=today,
-            impact=1,
-            position=0,
-        )
-        task_completed_p2 = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Completed P2",
-            status="completed",
-            completed_at=now,
-            impact=2,
-            position=0,
-        )
-        db_session.add_all([task_p3, task_scheduled_p1, task_completed_p2])
-        await db_session.flush()
-
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            completed_move_to_bottom=False,
-            scheduled_move_to_bottom=False,
-        )
-        db_session.add(prefs)
-        await db_session.flush()
-
-        result = group_tasks_by_domain(
-            [task_p3, task_completed_p2, task_scheduled_p1],
-            [test_domain],
-            user_prefs=prefs,
-        )
-
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # All sorted by impact: P1, P2, P3
-        assert titles == ["Scheduled P1", "Completed P2", "Unscheduled P3"]
+        done_titles = [t["task"].title for t in result["completed_tasks"]]
+        assert done_titles == ["Beta Recent", "Alpha Older"]
 
 
 class TestGroupTasksByDomainDateSorting:
-    """Tests for date-based sorting within sections."""
+    """Tests for date-based sorting within scheduled/completed sections."""
 
-    async def test_scheduled_sort_by_date_when_enabled(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
-        """Scheduled tasks sort by date when scheduled_sort_by_date=True."""
+    async def test_scheduled_sorted_by_date(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Scheduled tasks always sort by date (soonest first)."""
         today = date.today()
 
         task_tomorrow = Task(
@@ -467,71 +426,18 @@ class TestGroupTasksByDomainDateSorting:
         db_session.add_all([task_tomorrow, task_today])
         await db_session.flush()
 
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            scheduled_move_to_bottom=True,
-            scheduled_sort_by_date=True,
-        )
-        db_session.add(prefs)
-        await db_session.flush()
-
         result = group_tasks_by_domain(
             [task_tomorrow, task_today],
             [test_domain],
-            user_prefs=prefs,
         )
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # Today (soonest) comes first even with lower priority
+        titles = [t["task"].title for t in result["scheduled_tasks"]]
         assert titles == ["Today P4", "Tomorrow P1"]
 
-    async def test_scheduled_sort_by_impact_when_disabled(
+    async def test_completed_sorted_by_completion_date(
         self, db_session: AsyncSession, test_user: User, test_domain: Domain
     ):
-        """Scheduled tasks sort by impact when scheduled_sort_by_date=False."""
-        today = date.today()
-
-        task_tomorrow_p1 = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Tomorrow P1",
-            scheduled_date=today + timedelta(days=1),
-            impact=1,
-            position=0,
-        )
-        task_today_p4 = Task(
-            user_id=test_user.id,
-            domain_id=test_domain.id,
-            title="Today P4",
-            scheduled_date=today,
-            impact=4,
-            position=0,
-        )
-        db_session.add_all([task_tomorrow_p1, task_today_p4])
-        await db_session.flush()
-
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            scheduled_move_to_bottom=True,
-            scheduled_sort_by_date=False,
-        )
-        db_session.add(prefs)
-        await db_session.flush()
-
-        result = group_tasks_by_domain(
-            [task_today_p4, task_tomorrow_p1],
-            [test_domain],
-            user_prefs=prefs,
-        )
-
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # P1 comes first regardless of date
-        assert titles == ["Tomorrow P1", "Today P4"]
-
-    async def test_completed_sort_by_date_when_enabled(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
-        """Completed tasks sort by completion date when completed_sort_by_date=True."""
+        """Completed tasks always sort by completion date (most recent first)."""
         now = datetime.now(tz=UTC)
 
         task_older = Task(
@@ -555,68 +461,40 @@ class TestGroupTasksByDomainDateSorting:
         db_session.add_all([task_older, task_recent])
         await db_session.flush()
 
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            completed_move_to_bottom=True,
-            completed_sort_by_date=True,
-        )
-        db_session.add(prefs)
-        await db_session.flush()
-
         result = group_tasks_by_domain(
             [task_older, task_recent],
             [test_domain],
-            user_prefs=prefs,
         )
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # Most recent first
+        titles = [t["task"].title for t in result["completed_tasks"]]
         assert titles == ["Recent P4", "Older P1"]
 
-    async def test_completed_sort_by_impact_when_disabled(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
-        """Completed tasks sort by impact when completed_sort_by_date=False."""
-        now = datetime.now(tz=UTC)
-
-        task_recent_p4 = Task(
+    async def test_active_tasks_sorted_by_impact(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Active (unscheduled, pending) tasks sort by impact within their domain."""
+        task_p3 = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
-            title="Recent P4",
-            status="completed",
-            completed_at=now,
-            impact=4,
+            title="P3",
+            impact=3,
             position=0,
         )
-        task_older_p1 = Task(
+        task_p1 = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
-            title="Older P1",
-            status="completed",
-            completed_at=now - timedelta(hours=2),
+            title="P1",
             impact=1,
             position=0,
         )
-        db_session.add_all([task_recent_p4, task_older_p1])
-        await db_session.flush()
-
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            completed_move_to_bottom=True,
-            completed_sort_by_date=False,
-        )
-        db_session.add(prefs)
+        db_session.add_all([task_p3, task_p1])
         await db_session.flush()
 
         result = group_tasks_by_domain(
-            [task_recent_p4, task_older_p1],
+            [task_p3, task_p1],
             [test_domain],
-            user_prefs=prefs,
         )
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # P1 comes first regardless of completion time
-        assert titles == ["Older P1", "Recent P4"]
+        titles = [t["task"].title for t in result["domain_groups"][0]["tasks"]]
+        assert titles == ["P1", "P3"]
 
 
 class TestGroupTasksByDomainVisibility:
@@ -657,9 +535,9 @@ class TestGroupTasksByDomainVisibility:
             user_prefs=prefs,
         )
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # Only unscheduled task should be visible
-        assert titles == ["Unscheduled"]
+        active_titles = [t["task"].title for t in result["domain_groups"][0]["tasks"]]
+        assert active_titles == ["Unscheduled"]
+        assert result["scheduled_tasks"] == []
 
     async def test_hide_completed_when_show_completed_false(
         self, db_session: AsyncSession, test_user: User, test_domain: Domain
@@ -697,9 +575,9 @@ class TestGroupTasksByDomainVisibility:
             user_prefs=prefs,
         )
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # Only pending task should be visible
-        assert titles == ["Pending"]
+        active_titles = [t["task"].title for t in result["domain_groups"][0]["tasks"]]
+        assert active_titles == ["Pending"]
+        assert result["completed_tasks"] == []
 
     async def test_retention_window_filters_old_completed(
         self, db_session: AsyncSession, test_user: User, test_domain: Domain
@@ -739,26 +617,22 @@ class TestGroupTasksByDomainVisibility:
             user_prefs=prefs,
         )
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # Only recent task should be visible
+        titles = [t["task"].title for t in result["completed_tasks"]]
         assert titles == ["Recent"]
 
 
 class TestGroupTasksByDomainComplexScenarios:
-    """Tests for complex sorting scenarios with multiple preferences."""
+    """Tests for complex sorting scenarios."""
 
-    async def test_full_scenario_all_enabled(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+    async def test_full_scenario_all_task_types(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
         """
-        Full scenario with all bottom-grouping enabled:
-        - Unscheduled: P1, P2, P3
-        - Scheduled: sorted by date (soonest first)
-        - Completed: sorted by completion date (most recent first)
+        Full scenario: active sorted by impact, scheduled by date, completed by date.
         """
         today = date.today()
         now = datetime.now(tz=UTC)
 
         tasks = [
-            # Unscheduled
+            # Active (unscheduled pending)
             Task(
                 user_id=test_user.id,
                 domain_id=test_domain.id,
@@ -813,87 +687,44 @@ class TestGroupTasksByDomainComplexScenarios:
         db_session.add_all(tasks)
         await db_session.flush()
 
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            completed_move_to_bottom=True,
-            completed_sort_by_date=True,
-            scheduled_move_to_bottom=True,
-            scheduled_sort_by_date=True,
-        )
-        db_session.add(prefs)
-        await db_session.flush()
+        result = group_tasks_by_domain(tasks, [test_domain])
 
-        result = group_tasks_by_domain(
-            tasks,
-            [test_domain],
-            user_prefs=prefs,
-        )
+        active_titles = [t["task"].title for t in result["domain_groups"][0]["tasks"]]
+        sched_titles = [t["task"].title for t in result["scheduled_tasks"]]
+        done_titles = [t["task"].title for t in result["completed_tasks"]]
 
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        expected = [
-            "Unscheduled P1",
-            "Unscheduled P2",
-            "Scheduled Today",  # Soonest date
-            "Scheduled Tomorrow",
-            "Completed Recent",  # Most recent completion
-            "Completed Old",
-        ]
-        assert titles == expected
+        assert active_titles == ["Unscheduled P1", "Unscheduled P2"]
+        assert sched_titles == ["Scheduled Today", "Scheduled Tomorrow"]
+        assert done_titles == ["Completed Recent", "Completed Old"]
 
-    async def test_full_scenario_all_disabled(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
-        """
-        Full scenario with all bottom-grouping disabled:
-        All tasks interleaved by impact.
-        """
-        today = date.today()
+    async def test_empty_buckets_when_all_completed(
+        self, db_session: AsyncSession, test_user: User, test_domain: Domain
+    ):
+        """When all tasks are completed, domain_groups and scheduled_tasks are empty."""
         now = datetime.now(tz=UTC)
-
         tasks = [
             Task(
                 user_id=test_user.id,
                 domain_id=test_domain.id,
-                title="Unscheduled P3",
-                impact=3,
-                position=0,
-            ),
-            Task(
-                user_id=test_user.id,
-                domain_id=test_domain.id,
-                title="Scheduled P1",
-                scheduled_date=today,
-                impact=1,
-                position=0,
-            ),
-            Task(
-                user_id=test_user.id,
-                domain_id=test_domain.id,
-                title="Completed P2",
+                title="Done 1",
                 status="completed",
                 completed_at=now,
+                impact=1,
+            ),
+            Task(
+                user_id=test_user.id,
+                domain_id=test_domain.id,
+                title="Done 2",
+                status="completed",
+                completed_at=now - timedelta(hours=1),
                 impact=2,
-                position=0,
             ),
         ]
         db_session.add_all(tasks)
         await db_session.flush()
 
-        prefs = UserPreferences(
-            user_id=test_user.id,
-            completed_move_to_bottom=False,
-            completed_sort_by_date=False,
-            scheduled_move_to_bottom=False,
-            scheduled_sort_by_date=False,
-        )
-        db_session.add(prefs)
-        await db_session.flush()
+        result = group_tasks_by_domain(tasks, [test_domain])
 
-        result = group_tasks_by_domain(
-            tasks,
-            [test_domain],
-            user_prefs=prefs,
-        )
-
-        titles = [t["task"].title for t in result[0]["tasks"]]
-        # All by impact: P1, P2, P3
-        expected = ["Scheduled P1", "Completed P2", "Unscheduled P3"]
-        assert titles == expected
+        assert result["domain_groups"] == []
+        assert result["scheduled_tasks"] == []
+        assert len(result["completed_tasks"]) == 2

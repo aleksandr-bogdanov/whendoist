@@ -899,6 +899,35 @@
 }
 
 /* =============================================================================
+   Section Separators (Scheduled / Completed flat sections)
+   ============================================================================= */
+
+.section-separator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0 6px;
+    padding: 0 12px;
+}
+
+.section-separator::before,
+.section-separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-default);
+}
+
+.section-sep-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* =============================================================================
    Task List & Subtasks
    ============================================================================= */
 

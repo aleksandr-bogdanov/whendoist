@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.33.1] - 2026-02-06 — Flatten Scheduled/Completed Sections, Hardcode Group-at-Bottom
+
+### Changed
+- **Hardcoded section defaults** — `move_to_bottom` and `sort_by_date` preferences are now always `True`, removing 3 dead ordering branches from task grouping logic
+- **Flattened scheduled/completed sections** — scheduled and completed tasks are now collected across all domains into flat chronological lists instead of being nested within each domain group
+- **New return structure** — `group_tasks_by_domain()` returns a dict with `domain_groups`, `scheduled_tasks`, `completed_tasks` instead of a flat list
+- **Section separators** — task list template renders three distinct sections with "Scheduled" and "Completed" separator labels
+- **Reusable task macro** — task item rendering extracted into a Jinja2 macro to avoid duplication across sections
+
+---
+
 ## [0.33.0] - 2026-02-06 — Rename Clarity Levels: Executable → Clear, Exploratory → Open
 
 ### Changed
