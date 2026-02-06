@@ -188,7 +188,7 @@ async def dashboard(
             if inst.status == "completed" and inst.completed_at:
                 today_instance_completions[inst.task_id] = inst.completed_at
 
-    domains_with_tasks = group_tasks_by_domain(
+    grouped = group_tasks_by_domain(
         tasks, domains, next_instances, today_instance_completions, user_prefs, subtask_counts
     )
 
@@ -374,7 +374,9 @@ async def dashboard(
         {
             "user": user,
             "google_connected": google_token is not None,
-            "domains_with_tasks": domains_with_tasks,
+            "domain_groups": grouped["domain_groups"],
+            "scheduled_tasks": grouped["scheduled_tasks"],
+            "completed_tasks": grouped["completed_tasks"],
             "domains": domains,
             "calendar_days": calendar_days,
             "today": today,
@@ -439,7 +441,7 @@ async def task_list_partial(
             if inst.status == "completed" and inst.completed_at:
                 today_instance_completions[inst.task_id] = inst.completed_at
 
-    domains_with_tasks = group_tasks_by_domain(
+    grouped = group_tasks_by_domain(
         tasks, domains, next_instances, today_instance_completions, user_prefs, subtask_counts
     )
 
@@ -447,7 +449,9 @@ async def task_list_partial(
         request,
         "_task_list.html",
         {
-            "domains_with_tasks": domains_with_tasks,
+            "domain_groups": grouped["domain_groups"],
+            "scheduled_tasks": grouped["scheduled_tasks"],
+            "completed_tasks": grouped["completed_tasks"],
             "today": today,
         },
     )
