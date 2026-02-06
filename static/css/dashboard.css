@@ -54,10 +54,39 @@
     background: var(--bg-panel);
 }
 
-.energy-wrapper .energy-pill.active {
-    background: var(--primary);
-    box-shadow: 0 1px 2px rgba(109, 94, 246, 0.3);
+/* Clarity-tinted active states */
+.energy-pill.active[data-energy="1"] {
+    background: var(--clear-tint);
+    box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.25);
 }
+.energy-pill.active[data-energy="2"] {
+    background: var(--clarity-defined-tint);
+    box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.25);
+}
+.energy-pill.active[data-energy="3"] {
+    background: var(--open-tint);
+    box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.25);
+}
+
+/* Clarity indicator dots */
+.clarity-dots {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.cdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transition: opacity 0.2s ease;
+}
+
+.cdot-clear { background: var(--clear-color); }
+.cdot-defined { background: var(--clarity-defined); }
+.cdot-open { background: var(--open-color); }
+
+.cdot.off { opacity: 0.12; }
 
 /* Dark mode for energy selector */
 [data-theme="dark"] .header-energy__pills {
@@ -73,8 +102,23 @@
     background: var(--bg-panel);
 }
 
-[data-theme="dark"] .energy-wrapper .energy-pill.active {
-    background: var(--primary);
+/* Dark mode clarity-tinted active states */
+[data-theme="dark"] .energy-pill.active[data-energy="1"] {
+    background: var(--clear-tint);
+    box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.35);
+}
+[data-theme="dark"] .energy-pill.active[data-energy="2"] {
+    background: var(--clarity-defined-tint);
+    box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.35);
+}
+[data-theme="dark"] .energy-pill.active[data-energy="3"] {
+    background: var(--open-tint);
+    box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.35);
+}
+
+/* Dark mode for spectrum bar — higher opacity for visibility */
+[data-theme="dark"] .task-list-header::after {
+    opacity: 0.5;
 }
 
 /* =============================================================================
@@ -275,7 +319,6 @@
     display: flex;
     flex-direction: column;
     background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-default);
     will-change: transform;
 }
 
@@ -315,6 +358,19 @@
     bottom: 0;
     background: var(--bg-panel);
     z-index: -1;
+}
+
+/* Spectrum bar — gradient using clarity colors */
+.task-list-header::after {
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg,
+        var(--clear-color),
+        var(--clarity-defined),
+        var(--open-color)
+    );
+    opacity: 0.35;
 }
 
 .header-task-label {
@@ -458,68 +514,111 @@
 }
 
 /* =============================================================================
-   View Chips — always-visible filter toggles in Row 2
+   View Toggle — segmented control for Scheduled/Completed + trash button
    ============================================================================= */
 
-.view-chips {
+.view-toggle {
     display: flex;
-    gap: 4px;
     align-items: center;
+    gap: 6px;
 }
 
-.view-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 2px 8px;
-    margin: 0;
+.view-seg-track {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    background: var(--border-subtle);
     border: 1px solid var(--border-default);
-    border-radius: 12px;
+    border-radius: 7px;
+}
+
+.view-seg-btn {
+    height: 22px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 5px;
     background: transparent;
-    font-size: 0.625rem;
-    font-weight: 500;
+    font-size: 0.6rem;
+    font-weight: 550;
     color: var(--text-muted);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
     transition: all 0.15s ease;
     white-space: nowrap;
-    line-height: 1.4;
+    margin: 0;
 }
 
-.view-chip:hover {
-    border-color: var(--border-strong);
+.view-seg-btn:hover {
+    background: rgba(15, 23, 42, 0.03);
     color: var(--text-primary);
-    background: rgba(15, 23, 42, 0.02);
 }
 
-.view-chip.active {
-    background: rgba(109, 94, 246, 0.08);
-    border-color: rgba(109, 94, 246, 0.3);
-    color: var(--primary);
+.view-seg-btn.active {
+    background: var(--interactive-active);
+    color: var(--purple-600, #5B4CF0);
     font-weight: 600;
 }
 
-/* Delete chip — red tones when active */
-.view-chip.chip-delete.active {
-    background: rgba(220, 38, 38, 0.08);
-    border-color: rgba(220, 38, 38, 0.3);
-    color: var(--impact-critical, #dc2626);
+.view-seg-icon {
+    font-size: 0.55rem;
+    opacity: 0.7;
 }
 
-.view-chip.chip-delete:hover {
-    border-color: rgba(220, 38, 38, 0.3);
-    color: rgba(220, 38, 38, 0.7);
+.view-seg-btn.active .view-seg-icon {
+    opacity: 1;
 }
 
-/* Dark mode chips */
-[data-theme="dark"] .view-chip:hover {
+.view-trash-btn {
+    width: 24px;
+    height: 22px;
+    border: 1px solid var(--border-default);
+    border-radius: 5px;
+    background: transparent;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    padding: 0;
+    margin: 0;
+}
+
+.view-trash-btn:hover {
+    border-color: rgba(220, 38, 38, 0.3);
+    color: #DC2626;
+    background: rgba(220, 38, 38, 0.04);
+}
+
+.view-trash-btn.active {
+    border-color: rgba(220, 38, 38, 0.4);
+    color: #DC2626;
+    background: rgba(220, 38, 38, 0.1);
+}
+
+/* Dark mode view toggle */
+[data-theme="dark"] .view-seg-track {
+    background: var(--border-default);
+    border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .view-seg-btn:hover {
     background: rgba(255, 255, 255, 0.04);
 }
 
-[data-theme="dark"] .view-chip.active {
+[data-theme="dark"] .view-seg-btn.active {
     background: rgba(109, 94, 246, 0.15);
+    color: var(--purple-400, #A78BFA);
 }
 
-[data-theme="dark"] .view-chip.chip-delete.active {
+[data-theme="dark"] .view-trash-btn:hover {
+    background: rgba(220, 38, 38, 0.08);
+}
+
+[data-theme="dark"] .view-trash-btn.active {
     background: rgba(220, 38, 38, 0.15);
 }
 
@@ -1670,11 +1769,12 @@
 .meta-clarity {
     color: var(--text-primary);
     justify-content: center;
+    font-size: 0;  /* Hide text - show only dot */
 }
 .meta-clarity::before {
     content: "";
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 999px;
     display: inline-block;
     margin-right: 5px;
@@ -2784,25 +2884,6 @@ body[data-energy-level] .scheduled-group.project-group {
     .task-meta > span.meta-impact.impact-2::after { content: 'Mid'; color: var(--impact-medium); }
     .task-meta > span.meta-impact.impact-3::after { content: 'Low'; color: #157A4E; }
     .task-meta > span.meta-impact.impact-4::after { content: 'Min'; color: var(--impact-min); }
-
-    /* Clarity: show ONLY the colored dot, hide text */
-    .task-meta > span.meta-clarity {
-        font-size: 0;  /* Hide original text */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .task-meta > span.meta-clarity::before {
-        /* Keep the colored dot visible */
-        display: inline-block;
-        font-size: initial;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-    }
-    .task-meta > span.meta-clarity::after {
-        display: none;  /* Hide text abbreviations - show only dot */
-    }
 }
 
 /* Plan Mode styles moved to components/plan-mode.css */

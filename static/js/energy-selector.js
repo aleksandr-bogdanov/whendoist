@@ -39,6 +39,7 @@
 
         // Apply initial state
         applyEnergyFilter();
+        updateClarityDots(currentEnergy);
     }
 
     /**
@@ -59,6 +60,19 @@
     }
 
     /**
+     * Update clarity indicator dots based on energy level.
+     * @param {number} level - Energy level (1-3)
+     */
+    function updateClarityDots(level) {
+        const dots = document.getElementById('clarity-dots');
+        if (!dots) return;
+        const [blue, purple, magenta] = dots.children;
+        blue.classList.remove('off');
+        purple.classList.toggle('off', level < 2);
+        magenta.classList.toggle('off', level < 3);
+    }
+
+    /**
      * Set the current energy level and update UI.
      * @param {number} level - Energy level (1-3)
      */
@@ -75,6 +89,9 @@
                 pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
             });
         }
+
+        // Update clarity indicator dots
+        updateClarityDots(level);
 
         // Apply filter (CSS-based visibility only)
         applyEnergyFilter();

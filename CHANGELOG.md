@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.35.0] - 2026-02-06 — Brand-Aligned Header Refresh
+
+### Changed
+- **Spectrum bar** — gradient border (blue → purple → magenta) using clarity colors replaces flat grey border on task list header
+- **Clarity-tinted energy pills** — active energy pill background uses clarity color tints instead of flat purple; three indicator dots show which clarity levels are currently visible (level 1: blue dot only, level 2: blue + purple, level 3: all three)
+- **Segmented view toggle** — "Scheduled" / "Completed" buttons in a contained segmented control replace floating "Sched" / "Done" chips; trash icon separated as standalone button
+- **Dot-only clarity** — task row clarity column shows only the colored dot (no text label); column narrows from 80px to 42px, giving task titles more space
+
+---
+
 ## [0.34.0] - 2026-02-06 — Redesign Task List Header with Filter Chips and Minimal Settings
 
 ### Changed
