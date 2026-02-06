@@ -48,13 +48,9 @@ class PreferencesService:
         self,
         show_completed_in_planner: bool | None = None,
         completed_retention_days: int | None = None,
-        completed_move_to_bottom: bool | None = None,
-        completed_sort_by_date: bool | None = None,
         show_completed_in_list: bool | None = None,
         hide_recurring_after_completion: bool | None = None,
         show_scheduled_in_list: bool | None = None,
-        scheduled_move_to_bottom: bool | None = None,
-        scheduled_sort_by_date: bool | None = None,
         timezone: str | None = None,
     ) -> UserPreferences:
         """
@@ -74,12 +70,6 @@ class PreferencesService:
                 completed_retention_days = 3  # Default to 3 if invalid
             prefs.completed_retention_days = completed_retention_days
 
-        if completed_move_to_bottom is not None:
-            prefs.completed_move_to_bottom = completed_move_to_bottom
-
-        if completed_sort_by_date is not None:
-            prefs.completed_sort_by_date = completed_sort_by_date
-
         if show_completed_in_list is not None:
             prefs.show_completed_in_list = show_completed_in_list
 
@@ -88,12 +78,6 @@ class PreferencesService:
 
         if show_scheduled_in_list is not None:
             prefs.show_scheduled_in_list = show_scheduled_in_list
-
-        if scheduled_move_to_bottom is not None:
-            prefs.scheduled_move_to_bottom = scheduled_move_to_bottom
-
-        if scheduled_sort_by_date is not None:
-            prefs.scheduled_sort_by_date = scheduled_sort_by_date
 
         if timezone is not None:
             # Validate timezone string (empty string clears it)

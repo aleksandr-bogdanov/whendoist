@@ -4,19 +4,20 @@
  */
 
 /* =============================================================================
-   Energy Selector - In Panel Header (Option B)
+   Energy Selector — Row 2 of header
    ============================================================================= */
 
-.header-energy {
+.energy-wrapper {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-left: 16px;
-    padding-left: 16px;
-    border-left: 1px solid var(--border-subtle);
 }
 
-.header-energy__label {
+.energy-wrapper[hidden] {
+    display: none;
+}
+
+.energy-label {
     font-size: 0.5625rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -33,7 +34,7 @@
     padding: 1px;
 }
 
-.header-energy .energy-pill {
+.energy-wrapper .energy-pill {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -49,34 +50,30 @@
     transition: all 0.12s ease;
 }
 
-.header-energy .energy-pill:hover {
+.energy-wrapper .energy-pill:hover {
     background: var(--bg-panel);
 }
 
-.header-energy .energy-pill.active {
+.energy-wrapper .energy-pill.active {
     background: var(--primary);
     box-shadow: 0 1px 2px rgba(109, 94, 246, 0.3);
 }
 
 /* Dark mode for energy selector */
-[data-theme="dark"] .header-energy {
-    border-left-color: var(--border-default);
-}
-
 [data-theme="dark"] .header-energy__pills {
     background: var(--border-default);
     border-color: var(--border-strong);
 }
 
-[data-theme="dark"] .header-energy .energy-pill {
+[data-theme="dark"] .energy-wrapper .energy-pill {
     background: var(--bg-surface);
 }
 
-[data-theme="dark"] .header-energy .energy-pill:hover {
+[data-theme="dark"] .energy-wrapper .energy-pill:hover {
     background: var(--bg-panel);
 }
 
-[data-theme="dark"] .header-energy .energy-pill.active {
+[data-theme="dark"] .energy-wrapper .energy-pill.active {
     background: var(--primary);
 }
 
@@ -270,20 +267,42 @@
     padding-top: 0;
 }
 
-/* Patch 29+43: Task header - grid layout with stronger separation */
+/* Task header - two-row command center */
 .task-list-header {
     position: sticky;
     top: 0;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+    will-change: transform;
+}
+
+/* Row 1: Title + Sort Columns + Gear — matches task-item grid */
+.header-row1 {
     display: grid;
     grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
     column-gap: var(--col-gap);
     align-items: center;
-    padding: 8px 0 8px var(--rail-w);
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-default);
-    /* Force GPU layer for smooth sticky behavior */
-    will-change: transform;
+    padding: 8px 0 4px var(--rail-w);
+}
+
+/* Row 2: Energy + View Chips — flex layout */
+.header-row2 {
+    display: flex;
+    align-items: center;
+    padding: 2px var(--rail-w) 6px;
+    margin-left: 36px;
+    gap: 8px;
+}
+
+.header-row2[hidden] {
+    display: none;
+}
+
+.header-row2-spacer {
+    flex: 1;
 }
 
 /* Cover rounded corner gaps when scrolling */
@@ -298,15 +317,8 @@
     z-index: -1;
 }
 
-/* Patch 43: Calmer header typography */
-.header-task {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: 36px;  /* Align with task-content (38px - 2px rail) */
-}
-
 .header-task-label {
+    margin-left: 36px;  /* Align with task-content (38px - 2px rail) */
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
@@ -315,117 +327,59 @@
     line-height: 22px;
 }
 
-/* Inline Energy Selector - primary control in header */
-.header-energy-inline {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: absolute;
-    /* Dynamic centering formula */
-    right: calc(50% + (var(--col-duration) + var(--col-impact) + var(--col-clarity) + var(--col-actions) + 3 * var(--col-gap) - var(--rail-w) - 40px) / 2);
-    top: 50%;
-    transform: translate(50%, -50%);
-    /* Stronger separation from header */
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    background: rgba(15, 23, 42, 0.045);
-    padding: 4px 10px 4px 12px;
-    z-index: 5;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-}
+/* =============================================================================
+   Settings Anchor & Gear Button (replaces kebab menu)
+   ============================================================================= */
 
-.energy-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: rgba(15, 23, 42, 0.6);  /* Darker than helper text, matches header typography */
-}
-
-.energy-chips {
-    display: flex;
-    gap: 2px;
-}
-
-/* Fixed width chips for stable layout */
-.energy-pill-inline {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 22px;
-    padding: 0;
-    margin: 0;
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    background: transparent;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.12s ease;
-}
-
-.energy-pill-inline:hover {
-    background: rgba(15, 23, 42, 0.04);
-    border-color: var(--border-default);
-}
-
-.energy-pill-inline.active {
-    background: var(--primary-tint);
-    border-color: rgba(109, 94, 246, 0.35);
-}
-
-/* Header Actions Column */
-.header-actions {
+.settings-anchor {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Header Actions Button (kebab menu) - subtle but discoverable */
-.header-actions-btn {
+.gear-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 28px;
-    height: 22px;  /* Match energy chips height */
+    height: 22px;
     padding: 0;
     margin: 0 -10px 0 0;
     border: 1px solid var(--border-default);
-    background: rgba(109, 94, 246, 0.04);  /* Slight purple tint */
+    background: rgba(109, 94, 246, 0.04);
     border-radius: 4px;
     color: rgba(15, 23, 42, 0.45);
     cursor: pointer;
     transition: all 0.12s ease;
+    font-size: 0.75rem;
+    line-height: 1;
 }
 
-.header-actions-btn svg {
-    width: 12px;
-    height: 12px;
-}
-
-.header-actions-btn:hover {
+.gear-btn:hover {
     background: rgba(109, 94, 246, 0.08);
     border-color: var(--border-strong);
     color: rgba(15, 23, 42, 0.7);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-.header-actions-btn:focus {
+.gear-btn:focus {
     outline: none;
     border-color: rgba(109, 94, 246, 0.4);
     box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.1);
 }
 
-/* Active/open state - purple highlight with strong icon */
-.header-actions-btn[aria-expanded="true"] {
+.gear-btn[aria-expanded="true"] {
     background: var(--primary-tint);
     border-color: rgba(109, 94, 246, 0.4);
     color: var(--primary);
 }
 
-/* Task List Options Menu - compact popover */
-.task-list-options-menu {
+/* =============================================================================
+   Settings Panel — minimal dropdown (2 controls + 2 action links)
+   ============================================================================= */
+
+.settings-panel {
     position: absolute;
     top: calc(100% + 6px);
     right: -4px;
@@ -436,61 +390,25 @@
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
     padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.task-list-options-menu[hidden] {
+.settings-panel[hidden] {
     display: none;
 }
 
-.options-menu-content {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-/* Option section - groups related settings */
-.option-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.option-section + .option-section {
-    padding-top: 14px;
-    border-top: 1px solid var(--border-subtle);
-}
-
-/* Suboptions container - matches section gap */
-.option-suboptions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.option-section-header {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 4px;
-}
-
-.option-section-title {
+.sp-title {
     font-size: 0.5625rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(15, 23, 42, 0.45);  /* Caption style - lighter */
+    color: rgba(15, 23, 42, 0.45);
+    margin-bottom: 2px;
 }
 
-.option-section-desc {
-    font-size: 0.625rem;
-    color: rgba(15, 23, 42, 0.4);
-    line-height: 1.35;
-    margin-top: 1px;
-}
-
-/* Option row: two-column grid */
-.option-row {
+.sp-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -498,14 +416,117 @@
     min-height: 24px;
 }
 
-.option-label {
+.sp-label {
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-primary);
     white-space: nowrap;
 }
 
-/* Toggle Switch - compact */
+.sp-seg {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sp-divider {
+    height: 1px;
+    background: var(--border-default);
+    margin: 4px 0;
+}
+
+.sp-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    transition: all 0.12s ease;
+}
+
+.sp-action:hover {
+    color: var(--text-primary);
+}
+
+/* =============================================================================
+   View Chips — always-visible filter toggles in Row 2
+   ============================================================================= */
+
+.view-chips {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.view-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    margin: 0;
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    background: transparent;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.view-chip:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+    background: rgba(15, 23, 42, 0.02);
+}
+
+.view-chip.active {
+    background: rgba(109, 94, 246, 0.08);
+    border-color: rgba(109, 94, 246, 0.3);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Delete chip — red tones when active */
+.view-chip.chip-delete.active {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.3);
+    color: var(--impact-critical, #dc2626);
+}
+
+.view-chip.chip-delete:hover {
+    border-color: rgba(220, 38, 38, 0.3);
+    color: rgba(220, 38, 38, 0.7);
+}
+
+/* Dark mode chips */
+[data-theme="dark"] .view-chip:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .view-chip.active {
+    background: rgba(109, 94, 246, 0.15);
+}
+
+[data-theme="dark"] .view-chip.chip-delete.active {
+    background: rgba(220, 38, 38, 0.15);
+}
+
+/* =============================================================================
+   Toggle Switch — reused in settings panel
+   ============================================================================= */
+
 .option-toggle {
     position: relative;
     width: 32px;
@@ -547,16 +568,7 @@
     transform: translateX(14px);
 }
 
-/* Segmented Control - compact */
-.option-segmented {
-    display: flex;
-    gap: 0;
-    border: 1px solid var(--border-default);
-    border-radius: 4px;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
+/* Segmented Control — reused in settings panel */
 .seg-btn {
     padding: 4px 8px;
     border: none;
@@ -587,34 +599,20 @@
     font-weight: 600;
 }
 
-/* Option Menu Divider & Action Button */
-.option-divider {
-    height: 1px;
-    background: var(--border-default);
-    margin: 6px 0;
+/* =============================================================================
+   Animated Section Collapse/Expand
+   ============================================================================= */
+
+.animated-section {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    max-height: 2000px;
+    opacity: 1;
 }
 
-.option-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    padding: 6px 0;
-    margin: 0;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.6875rem;
-    color: var(--text-muted);
-    transition: all 0.12s ease;
-}
-
-.option-action-btn:hover {
-    color: var(--text-primary);
-}
-
-.option-action-icon {
-    font-size: 0.75rem;
+.animated-section.collapsed {
+    max-height: 0;
+    opacity: 0;
 }
 
 /* Deleted Tasks View - Header Elements */
@@ -661,10 +659,6 @@
 
 .header-task-label[hidden] {
     display: none;
-}
-
-.header-energy-inline[hidden] {
-    display: none !important;
 }
 
 .deleted-group.project-group {
@@ -753,9 +747,13 @@
     text-align: center;
 }
 
-/* Patch 29: Header meta - spans grid columns 2-4 */
+/* Header meta - spans grid columns 2-4 via display:contents */
 .header-meta {
-    display: contents;  /* Children become direct grid items */
+    display: contents;
+}
+
+.header-meta[hidden] {
+    display: none;
 }
 
 .header-label {
@@ -2632,15 +2630,14 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     /* Patch 29: Mobile grid - smaller columns */
-    .task-list-header,
+    .header-row1,
     .task-item {
         grid-template-columns: 1fr 44px 40px 56px 24px;
         column-gap: 6px;
     }
 
-    /* Hide inline energy selector on tablet */
-    .header-energy-inline {
-        display: none;
+    .header-row2 {
+        margin-left: 4px;
     }
 
     .task-list-scroll {
@@ -2731,15 +2728,10 @@ body[data-energy-level] .scheduled-group.project-group {
 /* Compact labels for narrow screens (< 580px) */
 @media (max-width: 580px) {
     /* Patch 29: Narrower grid columns for very small screens */
-    .task-list-header,
+    .header-row1,
     .task-item {
         grid-template-columns: 1fr 32px 28px 44px 20px;
         column-gap: 4px;
-    }
-
-    /* Smaller options button on phone */
-    .header-actions-btn {
-        font-size: 14px;
     }
 
     /* Hide column separators on narrow screens */
@@ -2906,52 +2898,29 @@ body[data-energy-level] .scheduled-group.project-group {
     color: var(--text-muted);
 }
 
-[data-theme="dark"] .header-energy-inline {
-    background: rgba(109, 94, 246, 0.08);
-    border-color: var(--border-strong);
-}
-
 [data-theme="dark"] .energy-label {
     color: var(--text-secondary);
 }
 
-[data-theme="dark"] .energy-pill-inline {
-    border-color: var(--border-subtle);
-}
-
-[data-theme="dark"] .energy-pill-inline:hover {
-    background: var(--interactive-hover);
-    border-color: var(--border-default);
-}
-
-[data-theme="dark"] .energy-pill-inline.active {
-    background: var(--primary-tint);
-    border-color: rgba(109, 94, 246, 0.4);
-}
-
-[data-theme="dark"] .header-actions-btn {
+[data-theme="dark"] .gear-btn {
     border-color: var(--border-default);
     background: rgba(109, 94, 246, 0.08);
     color: var(--text-secondary);
 }
 
-[data-theme="dark"] .header-actions-btn:hover {
+[data-theme="dark"] .gear-btn:hover {
     background: rgba(109, 94, 246, 0.12);
     border-color: var(--border-strong);
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .task-list-options-menu {
+[data-theme="dark"] .settings-panel {
     background: var(--bg-elevated);
     border-color: var(--border-default);
     box-shadow: var(--shadow-overlay);
 }
 
-[data-theme="dark"] .option-section + .option-section {
-    border-color: var(--border-subtle);
-}
-
-[data-theme="dark"] .option-section-title {
+[data-theme="dark"] .sp-title {
     color: var(--text-muted);
 }
 

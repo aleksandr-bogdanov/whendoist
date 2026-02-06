@@ -165,6 +165,7 @@ just fmt      # Format code
 | **Architecture** | |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
+| [Task List Header Redesign](docs/TASK-LIST-HEADER-REDESIGN.md) | Header restructure, clarity naming revamp, options panel simplification |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |

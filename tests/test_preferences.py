@@ -104,44 +104,6 @@ class TestPreferencesServiceUpdate:
         result = await service.update_preferences(completed_retention_days=5)
         assert result.completed_retention_days == 3
 
-    async def test_updates_completed_move_to_bottom(self, db_session: AsyncSession, test_user: User):
-        """Can update completed_move_to_bottom."""
-        service = PreferencesService(db_session, test_user.id)
-        await service.get_preferences()
-
-        result = await service.update_preferences(completed_move_to_bottom=False)
-        assert result.completed_move_to_bottom is False
-
-        result = await service.update_preferences(completed_move_to_bottom=True)
-        assert result.completed_move_to_bottom is True
-
-    async def test_updates_completed_sort_by_date(self, db_session: AsyncSession, test_user: User):
-        """Can update completed_sort_by_date."""
-        service = PreferencesService(db_session, test_user.id)
-        await service.get_preferences()
-
-        result = await service.update_preferences(completed_sort_by_date=False)
-        assert result.completed_sort_by_date is False
-
-        result = await service.update_preferences(completed_sort_by_date=True)
-        assert result.completed_sort_by_date is True
-
-    async def test_updates_scheduled_move_to_bottom(self, db_session: AsyncSession, test_user: User):
-        """Can update scheduled_move_to_bottom."""
-        service = PreferencesService(db_session, test_user.id)
-        await service.get_preferences()
-
-        result = await service.update_preferences(scheduled_move_to_bottom=False)
-        assert result.scheduled_move_to_bottom is False
-
-    async def test_updates_scheduled_sort_by_date(self, db_session: AsyncSession, test_user: User):
-        """Can update scheduled_sort_by_date."""
-        service = PreferencesService(db_session, test_user.id)
-        await service.get_preferences()
-
-        result = await service.update_preferences(scheduled_sort_by_date=False)
-        assert result.scheduled_sort_by_date is False
-
     async def test_updates_show_completed_in_list(self, db_session: AsyncSession, test_user: User):
         """Can update show_completed_in_list."""
         service = PreferencesService(db_session, test_user.id)
@@ -173,17 +135,13 @@ class TestPreferencesServiceUpdate:
 
         result = await service.update_preferences(
             completed_retention_days=7,
-            completed_move_to_bottom=False,
-            completed_sort_by_date=False,
-            scheduled_move_to_bottom=False,
-            scheduled_sort_by_date=False,
+            show_completed_in_list=False,
+            show_scheduled_in_list=False,
         )
 
         assert result.completed_retention_days == 7
-        assert result.completed_move_to_bottom is False
-        assert result.completed_sort_by_date is False
-        assert result.scheduled_move_to_bottom is False
-        assert result.scheduled_sort_by_date is False
+        assert result.show_completed_in_list is False
+        assert result.show_scheduled_in_list is False
 
     async def test_update_preserves_unspecified_fields(self, db_session: AsyncSession, test_user: User):
         """Updating one field doesn't change others."""

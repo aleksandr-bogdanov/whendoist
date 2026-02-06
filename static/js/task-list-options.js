@@ -1,13 +1,12 @@
 /**
  * Task List Options Module
  *
- * Handles the options menu for task list settings.
- * Settings include:
- *   - Show completed in list (toggle)
- *   - Keep visible for (1/3/7 days)
- *   - Position in list (move to bottom / keep in place)
- *   - Hide recurring after completing today (toggle)
- *   - Show deleted tasks (view switch)
+ * Handles the header controls for task list settings:
+ *   - View chips: 📅 Sched, ✓ Done (toggle preferences), 🗑 (deleted view)
+ *   - Gear panel: Keep visible for (1d/3d/7d), Hide recurring toggle
+ *   - Settings panel action links: View all scheduled, View all completed
+ *   - Back button: Return from special views to normal task list
+ *   - Restore task: Restore deleted tasks
  *
  * Changes are applied instantly via API and HTMX partial refresh.
  *
@@ -16,140 +15,143 @@
 (function() {
     'use strict';
 
-    let optionsBtn;
-    let optionsMenu;
-    let currentView = 'normal'; // 'normal', 'deleted', 'scheduled'
+    let gearBtn;
+    let settingsPanel;
+    let currentView = 'normal'; // 'normal', 'deleted', 'scheduled', 'completed'
 
     /**
-     * Initialize the options menu.
+     * Initialize the options module.
      */
     function init() {
-        optionsBtn = document.getElementById('header-actions-btn');
-        optionsMenu = document.getElementById('task-list-options-menu');
+        gearBtn = document.getElementById('gear-btn');
+        settingsPanel = document.getElementById('settings-panel');
 
-        if (!optionsBtn || !optionsMenu) return;
-
-        // Toggle menu on button click
-        optionsBtn.addEventListener('click', toggleMenu);
-
-        // Close menu when clicking outside
-        document.addEventListener('click', handleOutsideClick);
-
-        // Handle toggle switches
-        optionsMenu.querySelectorAll('.option-toggle').forEach(toggle => {
-            toggle.addEventListener('click', () => handleToggle(toggle));
-        });
-
-        // Handle segmented controls
-        optionsMenu.querySelectorAll('.seg-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleSegmentedClick(btn));
-        });
-
-        // Handle "Show deleted tasks" button
-        const showDeletedBtn = document.getElementById('show-deleted-tasks-btn');
-        if (showDeletedBtn) {
-            showDeletedBtn.addEventListener('click', showDeletedTasks);
+        // Gear panel toggle
+        if (gearBtn && settingsPanel) {
+            gearBtn.addEventListener('click', togglePanel);
+            document.addEventListener('click', handleOutsideClick);
         }
 
-        // Handle "Show scheduled tasks" button
+        // View chip handlers
+        const chipSched = document.getElementById('chip-sched');
+        if (chipSched) {
+            chipSched.addEventListener('click', () => handleChipToggle(chipSched, 'show_scheduled_in_list', 'section-sched'));
+        }
+
+        const chipDone = document.getElementById('chip-done');
+        if (chipDone) {
+            chipDone.addEventListener('click', () => handleChipToggle(chipDone, 'show_completed_in_list', 'section-done'));
+        }
+
+        const chipDeleted = document.getElementById('chip-deleted');
+        if (chipDeleted) {
+            chipDeleted.addEventListener('click', showDeletedTasks);
+        }
+
+        // Settings panel: toggle handler for hide_recurring
+        if (settingsPanel) {
+            settingsPanel.querySelectorAll('.option-toggle').forEach(toggle => {
+                toggle.addEventListener('click', () => handleToggle(toggle));
+            });
+        }
+
+        // Settings panel: segmented control handler for retention days
+        if (settingsPanel) {
+            settingsPanel.querySelectorAll('.seg-btn').forEach(btn => {
+                btn.addEventListener('click', () => handleSegmentedClick(btn));
+            });
+        }
+
+        // Settings panel action links
         const showScheduledBtn = document.getElementById('show-scheduled-tasks-btn');
         if (showScheduledBtn) {
             showScheduledBtn.addEventListener('click', showScheduledTasks);
         }
 
-        // Handle "Show completed tasks" button
         const showCompletedBtn = document.getElementById('show-completed-tasks-btn');
         if (showCompletedBtn) {
             showCompletedBtn.addEventListener('click', showCompletedTasks);
         }
 
-        // Use event delegation for restore/back buttons (since they're loaded via HTMX)
+        // Delegated click handlers for restore/back buttons (loaded via HTMX)
         document.addEventListener('click', handleDelegatedClick);
 
-        // Close on Escape key
+        // Close panel on Escape
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isMenuOpen()) {
-                closeMenu();
+            if (e.key === 'Escape' && isPanelOpen()) {
+                closePanel();
             }
         });
     }
 
-    /**
-     * Check if menu is open.
-     * @returns {boolean}
-     */
-    function isMenuOpen() {
-        return !optionsMenu.hidden;
+    // =========================================================================
+    // Gear Panel
+    // =========================================================================
+
+    function isPanelOpen() {
+        return settingsPanel && !settingsPanel.hidden;
     }
 
-    /**
-     * Toggle the options menu.
-     */
-    function toggleMenu() {
-        if (isMenuOpen()) {
-            closeMenu();
+    function togglePanel() {
+        if (isPanelOpen()) {
+            closePanel();
         } else {
-            openMenu();
+            openPanel();
         }
     }
 
-    /**
-     * Open the options menu.
-     */
-    function openMenu() {
-        optionsMenu.hidden = false;
-        optionsBtn.setAttribute('aria-expanded', 'true');
+    function openPanel() {
+        settingsPanel.hidden = false;
+        gearBtn.setAttribute('aria-expanded', 'true');
     }
 
-    /**
-     * Close the options menu.
-     */
-    function closeMenu() {
-        optionsMenu.hidden = true;
-        optionsBtn.setAttribute('aria-expanded', 'false');
+    function closePanel() {
+        settingsPanel.hidden = true;
+        gearBtn.setAttribute('aria-expanded', 'false');
     }
 
-    /**
-     * Handle clicks outside the menu to close it.
-     * @param {Event} e - Click event
-     */
     function handleOutsideClick(e) {
-        if (!isMenuOpen()) return;
-
-        // Check if click is outside both menu and button
-        if (!optionsMenu.contains(e.target) && !optionsBtn.contains(e.target)) {
-            closeMenu();
+        if (!isPanelOpen()) return;
+        if (!settingsPanel.contains(e.target) && !gearBtn.contains(e.target)) {
+            closePanel();
         }
     }
 
+    // =========================================================================
+    // View Chips
+    // =========================================================================
+
     /**
-     * Refresh the task list using HTMX.
+     * Handle chip toggle — save preference, animate section, refresh list.
+     * @param {HTMLElement} chip - The chip button
+     * @param {string} prefKey - Preference key to toggle
+     * @param {string} sectionId - ID of the section to animate
      */
-    function refreshTaskList() {
-        const taskListScroll = document.getElementById('task-list-scroll');
-        if (taskListScroll && window.htmx) {
-            htmx.ajax('GET', '/api/v1/task-list', {
-                target: '#task-list-scroll',
-                swap: 'innerHTML'
-            }).then(() => {
-                // Re-initialize drag-drop handlers after content swap
-                if (window.DragDrop && typeof window.DragDrop.init === 'function') {
-                    window.DragDrop.init();
-                }
-                // Re-initialize task completion handlers
-                if (window.TaskComplete && typeof window.TaskComplete.init === 'function') {
-                    window.TaskComplete.init();
-                }
-                // Re-initialize energy filter
-                if (window.EnergySelector && typeof window.EnergySelector.applyFilter === 'function') {
-                    window.EnergySelector.applyFilter();
-                }
-            });
+    async function handleChipToggle(chip, prefKey, sectionId) {
+        const newValue = !chip.classList.contains('active');
+
+        // Optimistic UI update
+        chip.classList.toggle('active', newValue);
+        chip.setAttribute('aria-pressed', newValue ? 'true' : 'false');
+
+        // Save preference
+        const success = await savePreference(prefKey, newValue);
+
+        if (success) {
+            refreshTaskList();
+        } else {
+            // Revert on failure
+            chip.classList.toggle('active', !newValue);
+            chip.setAttribute('aria-pressed', !newValue ? 'true' : 'false');
         }
     }
 
+    // =========================================================================
+    // Settings Panel Controls
+    // =========================================================================
+
     /**
-     * Handle toggle switch click.
+     * Handle toggle switch click in settings panel.
      * @param {HTMLElement} toggle - Toggle button element
      */
     async function handleToggle(toggle) {
@@ -160,41 +162,23 @@
         toggle.classList.toggle('active', newValue);
         toggle.setAttribute('aria-pressed', newValue ? 'true' : 'false');
 
-        // Handle conditional visibility (data-controls attribute)
-        const controlsId = toggle.dataset.controls;
-        if (controlsId) {
-            const controlledEl = document.getElementById(controlsId);
-            if (controlledEl) {
-                controlledEl.hidden = !newValue;
-            }
-        }
-
-        // Save preference
         const success = await savePreference(pref, newValue);
 
         if (success) {
-            // Refresh task list via HTMX
             refreshTaskList();
         } else {
             // Revert on failure
             toggle.classList.toggle('active', !newValue);
             toggle.setAttribute('aria-pressed', !newValue ? 'true' : 'false');
-            // Revert visibility
-            if (controlsId) {
-                const controlledEl = document.getElementById(controlsId);
-                if (controlledEl) {
-                    controlledEl.hidden = newValue;
-                }
-            }
         }
     }
 
     /**
-     * Handle segmented control click.
+     * Handle segmented control click in settings panel.
      * @param {HTMLElement} btn - Clicked segment button
      */
     async function handleSegmentedClick(btn) {
-        const container = btn.closest('.option-segmented');
+        const container = btn.closest('.sp-seg');
         const pref = container.dataset.pref;
         let value = btn.dataset.value;
 
@@ -207,12 +191,131 @@
         container.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
-        // Save preference
         const success = await savePreference(pref, value);
 
         if (success) {
-            // Refresh task list via HTMX
             refreshTaskList();
+        }
+    }
+
+    // =========================================================================
+    // Special Views
+    // =========================================================================
+
+    /**
+     * Show deleted tasks view.
+     */
+    function showDeletedTasks() {
+        closePanel();
+        currentView = 'deleted';
+
+        // Set chip active state
+        const chipDeleted = document.getElementById('chip-deleted');
+        if (chipDeleted) chipDeleted.classList.add('active');
+
+        setSpecialViewHeader(true);
+
+        const taskListScroll = document.getElementById('task-list-scroll');
+        if (taskListScroll && window.htmx) {
+            htmx.ajax('GET', '/api/v1/deleted-tasks', {
+                target: '#task-list-scroll',
+                swap: 'innerHTML'
+            });
+        }
+    }
+
+    /**
+     * Show scheduled tasks view (from settings panel action link).
+     */
+    function showScheduledTasks() {
+        closePanel();
+        currentView = 'scheduled';
+
+        setSpecialViewHeader(true);
+
+        const taskListScroll = document.getElementById('task-list-scroll');
+        if (taskListScroll && window.htmx) {
+            htmx.ajax('GET', '/api/v1/scheduled-tasks', {
+                target: '#task-list-scroll',
+                swap: 'innerHTML'
+            });
+        }
+    }
+
+    /**
+     * Show completed tasks view (from settings panel action link).
+     */
+    function showCompletedTasks() {
+        closePanel();
+        currentView = 'completed';
+
+        setSpecialViewHeader(true);
+
+        const taskListScroll = document.getElementById('task-list-scroll');
+        if (taskListScroll && window.htmx) {
+            htmx.ajax('GET', '/api/v1/completed-tasks', {
+                target: '#task-list-scroll',
+                swap: 'innerHTML'
+            });
+        }
+    }
+
+    /**
+     * Return to normal tasks view.
+     */
+    function showNormalTasks() {
+        currentView = 'normal';
+
+        // Clear chip active states
+        const chipDeleted = document.getElementById('chip-deleted');
+        if (chipDeleted) chipDeleted.classList.remove('active');
+
+        setSpecialViewHeader(false);
+        refreshTaskList();
+    }
+
+    /**
+     * Toggle header elements for special views (deleted/scheduled/completed).
+     * @param {boolean} isSpecialView - Whether showing a special view
+     */
+    function setSpecialViewHeader(isSpecialView) {
+        const taskLabel = document.getElementById('header-task-label');
+        const backBtn = document.getElementById('header-back-btn');
+        const viewCount = document.getElementById('header-view-count');
+        const row2 = document.getElementById('header-row2');
+        const sorts = document.getElementById('header-sorts');
+
+        if (taskLabel) taskLabel.hidden = isSpecialView;
+        if (backBtn) backBtn.hidden = !isSpecialView;
+        if (viewCount) viewCount.hidden = !isSpecialView;
+        if (row2) row2.hidden = isSpecialView;
+        if (sorts) sorts.hidden = isSpecialView;
+    }
+
+    // =========================================================================
+    // Shared Utilities
+    // =========================================================================
+
+    /**
+     * Refresh the task list using HTMX.
+     */
+    function refreshTaskList() {
+        const taskListScroll = document.getElementById('task-list-scroll');
+        if (taskListScroll && window.htmx) {
+            htmx.ajax('GET', '/api/v1/task-list', {
+                target: '#task-list-scroll',
+                swap: 'innerHTML'
+            }).then(() => {
+                if (window.DragDrop && typeof window.DragDrop.init === 'function') {
+                    window.DragDrop.init();
+                }
+                if (window.TaskComplete && typeof window.TaskComplete.init === 'function') {
+                    window.TaskComplete.init();
+                }
+                if (window.EnergySelector && typeof window.EnergySelector.applyFilter === 'function') {
+                    window.EnergySelector.applyFilter();
+                }
+            });
         }
     }
 
@@ -232,104 +335,11 @@
                 body: JSON.stringify({ [key]: value }),
             });
 
-            if (response.ok) {
-                // Keep TaskSort's preferences in sync
-                // This ensures column header clicks use the updated values
-                if (window.TaskSort && typeof window.TaskSort.updatePreference === 'function') {
-                    window.TaskSort.updatePreference(key, value);
-                }
-            }
-
             return response.ok;
         } catch (e) {
             console.error('Failed to save preference:', e);
             return false;
         }
-    }
-
-    /**
-     * Show deleted tasks view.
-     */
-    function showDeletedTasks() {
-        closeMenu();
-        currentView = 'deleted';
-
-        // Toggle header elements
-        setSpecialViewHeader(true);
-
-        const taskListScroll = document.getElementById('task-list-scroll');
-        if (taskListScroll && window.htmx) {
-            htmx.ajax('GET', '/api/v1/deleted-tasks', {
-                target: '#task-list-scroll',
-                swap: 'innerHTML'
-            });
-        }
-    }
-
-    /**
-     * Show scheduled tasks view.
-     */
-    function showScheduledTasks() {
-        closeMenu();
-        currentView = 'scheduled';
-
-        // Toggle header elements
-        setSpecialViewHeader(true);
-
-        const taskListScroll = document.getElementById('task-list-scroll');
-        if (taskListScroll && window.htmx) {
-            htmx.ajax('GET', '/api/v1/scheduled-tasks', {
-                target: '#task-list-scroll',
-                swap: 'innerHTML'
-            });
-        }
-    }
-
-    /**
-     * Show completed tasks view.
-     */
-    function showCompletedTasks() {
-        closeMenu();
-        currentView = 'completed';
-
-        // Toggle header elements
-        setSpecialViewHeader(true);
-
-        const taskListScroll = document.getElementById('task-list-scroll');
-        if (taskListScroll && window.htmx) {
-            htmx.ajax('GET', '/api/v1/completed-tasks', {
-                target: '#task-list-scroll',
-                swap: 'innerHTML'
-            });
-        }
-    }
-
-    /**
-     * Show normal tasks view.
-     */
-    function showNormalTasks() {
-        currentView = 'normal';
-
-        // Toggle header elements
-        setSpecialViewHeader(false);
-
-        refreshTaskList();
-    }
-
-    /**
-     * Toggle header elements for special views (deleted/scheduled).
-     * @param {boolean} isSpecialView - Whether showing a special view
-     */
-    function setSpecialViewHeader(isSpecialView) {
-        const taskLabel = document.getElementById('header-task-label');
-        const backBtn = document.getElementById('header-back-btn');
-        const viewCount = document.getElementById('header-view-count');
-        const energySelector = document.getElementById('header-energy');
-
-        if (taskLabel) taskLabel.hidden = isSpecialView;
-        if (backBtn) backBtn.hidden = !isSpecialView;
-        if (viewCount) viewCount.hidden = !isSpecialView;
-        if (energySelector) energySelector.hidden = isSpecialView;
     }
 
     /**
@@ -407,13 +417,11 @@
                     }
                 }
 
-                // Show toast
                 showToast('Task restored');
             }, 300);
 
         } catch (error) {
             console.error('Error restoring task:', error);
-            // Revert visual feedback
             taskEl.style.opacity = '';
             taskEl.style.pointerEvents = '';
             showToast('Failed to restore task');

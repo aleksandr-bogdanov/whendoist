@@ -43,9 +43,10 @@
     <section class="tasks-panel mobile-active">
         <!-- Task List -->
         <div class="task-list-container">
-            <!-- Column Headers (sticky, sortable) -->
+            <!-- Column Headers (sticky, sortable) — Two-row command center -->
             <div class="task-list-header">
-                <span class="header-task">
+                <!-- Row 1: Title + Sort Columns + Gear -->
+                <div class="header-row1">
                     <span class="header-task-label" id="header-task-label">Tasks</span>
                     <!-- Back button (shown in deleted/scheduled/completed views) -->
                     <button type="button" class="header-back-btn" id="header-back-btn" hidden>
@@ -55,149 +56,64 @@
                         <span class="back-text">Back to tasks</span>
                     </button>
                     <span class="header-view-count" id="header-view-count" hidden></span>
-                    <!-- Energy Selector (in panel header) -->
-                    <div class="header-energy" id="header-energy">
-                        <span class="header-energy__label">Energy</span>
+                    <span class="header-meta" id="header-sorts">
+                        <button type="button" class="header-sort" data-sort="duration" title="Sort by duration">
+                            <span class="label-full">Duration</span><span class="label-compact">DUR</span>
+                            <span class="sort-icon"></span>
+                        </button>
+                        <button type="button" class="header-sort" data-sort="impact" title="Sort by impact">
+                            <span class="label-full">Impact</span><span class="label-compact">IMP</span>
+                            <span class="sort-icon"></span>
+                        </button>
+                        <button type="button" class="header-sort active" data-sort="clarity" data-order="asc" title="Sort by clarity">
+                            <span class="label-full">Clarity</span><span class="label-compact">CLR</span>
+                            <span class="sort-icon">↑</span>
+                        </button>
+                    </span>
+                    <div class="settings-anchor">
+                        <button type="button" class="gear-btn" id="gear-btn" title="Settings" aria-haspopup="true" aria-expanded="false">⚙</button>
+                        <!-- Settings Panel (replaces old 12-control dropdown) -->
+                        <div class="settings-panel" id="settings-panel" hidden>
+                            <div class="sp-title">Completed tasks</div>
+                            <div class="sp-row">
+                                <span class="sp-label">Keep visible for</span>
+                                <div class="sp-seg" data-pref="completed_retention_days">
+                                    <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 1 %} active{% endif %}" data-value="1">1d</button>
+                                    <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 3 %} active{% endif %}" data-value="3">3d</button>
+                                    <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 7 %} active{% endif %}" data-value="7">7d</button>
+                                </div>
+                            </div>
+                            <div class="sp-row">
+                                <span class="sp-label">Hide recurring after done</span>
+                                <button type="button" class="option-toggle{% if user_prefs.hide_recurring_after_completion %} active{% endif %}"
+                                        data-pref="hide_recurring_after_completion"
+                                        aria-pressed="{{ 'true' if user_prefs.hide_recurring_after_completion else 'false' }}">
+                                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                                </button>
+                            </div>
+                            <div class="sp-divider"></div>
+                            <button class="sp-action" id="show-scheduled-tasks-btn">📅 View all scheduled</button>
+                            <button class="sp-action" id="show-completed-tasks-btn">✓ View all completed</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Row 2: Energy + View Chips -->
+                <div class="header-row2" id="header-row2">
+                    <div class="energy-wrapper" id="header-energy">
+                        <span class="energy-label">Energy</span>
                         <div class="header-energy__pills">
                             <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie — no-brainers">🧟</button>
                             <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal — clear tasks">☕</button>
                             <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus — deep work too">🧠</button>
                         </div>
                     </div>
-                </span>
-                <span class="header-meta">
-                    <button type="button" class="header-sort" data-sort="duration" title="Sort by duration">
-                        <span class="label-full">Duration</span><span class="label-compact">DUR</span>
-                        <span class="sort-icon"></span>
-                    </button>
-                    <button type="button" class="header-sort" data-sort="impact" title="Sort by impact">
-                        <span class="label-full">Impact</span><span class="label-compact">IMP</span>
-                        <span class="sort-icon"></span>
-                    </button>
-                    <button type="button" class="header-sort active" data-sort="clarity" data-order="asc" title="Sort by clarity">
-                        <span class="label-full">Clarity</span><span class="label-compact">CLR</span>
-                        <span class="sort-icon">↑</span>
-                    </button>
-                </span>
-                <span class="header-actions">
-                    <button type="button" class="header-actions-btn" id="header-actions-btn" title="Task list options" aria-haspopup="true" aria-expanded="false">
-                        <svg class="icon icon-fill" aria-hidden="true">
-                            <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#menu-dots"></use>
-                        </svg>
-                    </button>
-                    <!-- Task List Options Menu -->
-                    <div class="task-list-options-menu" id="task-list-options-menu" hidden>
-                        <div class="options-menu-content">
-                            <!-- Section: Scheduled Tasks -->
-                            <div class="option-section" id="scheduled-options-section">
-                                <div class="option-section-header">
-                                    <span class="option-section-title">Scheduled Tasks</span>
-                                </div>
-                                <div class="option-row">
-                                    <span class="option-label">Show in list</span>
-                                    <button type="button" class="option-toggle{% if user_prefs.show_scheduled_in_list %} active{% endif %}"
-                                            data-pref="show_scheduled_in_list"
-                                            data-controls="scheduled-suboptions"
-                                            aria-pressed="{{ 'true' if user_prefs.show_scheduled_in_list else 'false' }}">
-                                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                    </button>
-                                </div>
-                                <div class="option-suboptions" id="scheduled-suboptions"{% if not user_prefs.show_scheduled_in_list %} hidden{% endif %}>
-                                    <div class="option-row">
-                                        <span class="option-label">Group at bottom</span>
-                                        <button type="button" class="option-toggle{% if user_prefs.scheduled_move_to_bottom %} active{% endif %}"
-                                                data-pref="scheduled_move_to_bottom"
-                                                data-controls="scheduled-sort-options"
-                                                aria-pressed="{{ 'true' if user_prefs.scheduled_move_to_bottom else 'false' }}">
-                                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                        </button>
-                                    </div>
-                                    <div class="option-row" id="scheduled-sort-options"{% if not user_prefs.scheduled_move_to_bottom %} hidden{% endif %}>
-                                        <span class="option-label">Sort by scheduled date</span>
-                                        <button type="button" class="option-toggle{% if user_prefs.scheduled_sort_by_date %} active{% endif %}"
-                                                data-pref="scheduled_sort_by_date"
-                                                aria-pressed="{{ 'true' if user_prefs.scheduled_sort_by_date else 'false' }}">
-                                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <!-- View Scheduled Tasks -->
-                                <button type="button" class="option-action-btn" id="show-scheduled-tasks-btn">
-                                    <span class="option-action-icon">📅</span>
-                                    Show scheduled tasks
-                                </button>
-                            </div>
-                            <!-- Section: Completed Tasks -->
-                            <div class="option-section" id="completed-options-section">
-                                <div class="option-section-header">
-                                    <span class="option-section-title">Completed Tasks</span>
-                                </div>
-                                <div class="option-row">
-                                    <span class="option-label">Show in list</span>
-                                    <button type="button" class="option-toggle{% if user_prefs.show_completed_in_list %} active{% endif %}"
-                                            data-pref="show_completed_in_list"
-                                            data-controls="completed-suboptions"
-                                            aria-pressed="{{ 'true' if user_prefs.show_completed_in_list else 'false' }}">
-                                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                    </button>
-                                </div>
-                                <div class="option-suboptions" id="completed-suboptions"{% if not user_prefs.show_completed_in_list %} hidden{% endif %}>
-                                    <div class="option-row">
-                                        <span class="option-label">Keep visible for</span>
-                                        <div class="option-segmented" data-pref="completed_retention_days">
-                                            <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 1 %} active{% endif %}" data-value="1">1d</button>
-                                            <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 3 %} active{% endif %}" data-value="3">3d</button>
-                                            <button type="button" class="seg-btn{% if user_prefs.completed_retention_days == 7 %} active{% endif %}" data-value="7">7d</button>
-                                        </div>
-                                    </div>
-                                    <div class="option-row">
-                                        <span class="option-label">Group at bottom</span>
-                                        <button type="button" class="option-toggle{% if user_prefs.completed_move_to_bottom %} active{% endif %}"
-                                                data-pref="completed_move_to_bottom"
-                                                data-controls="completed-sort-options"
-                                                aria-pressed="{{ 'true' if user_prefs.completed_move_to_bottom else 'false' }}">
-                                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                        </button>
-                                    </div>
-                                    <div class="option-row" id="completed-sort-options"{% if not user_prefs.completed_move_to_bottom %} hidden{% endif %}>
-                                        <span class="option-label">Sort by completion date</span>
-                                        <button type="button" class="option-toggle{% if user_prefs.completed_sort_by_date %} active{% endif %}"
-                                                data-pref="completed_sort_by_date"
-                                                aria-pressed="{{ 'true' if user_prefs.completed_sort_by_date else 'false' }}">
-                                            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <!-- View Completed Tasks -->
-                                <button type="button" class="option-action-btn" id="show-completed-tasks-btn">
-                                    <span class="option-action-icon">✓</span>
-                                    Show completed tasks
-                                </button>
-                            </div>
-                            <!-- Section: Recurring Tasks -->
-                            <div class="option-section">
-                                <div class="option-section-header">
-                                    <span class="option-section-title">Recurring Tasks</span>
-                                </div>
-                                <div class="option-row">
-                                    <span class="option-label">Hide after completion</span>
-                                    <button type="button" class="option-toggle{% if user_prefs.hide_recurring_after_completion %} active{% endif %}"
-                                            data-pref="hide_recurring_after_completion"
-                                            aria-pressed="{{ 'true' if user_prefs.hide_recurring_after_completion else 'false' }}">
-                                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                                    </button>
-                                </div>
-                            </div>
-                            <!-- Divider -->
-                            <div class="option-divider"></div>
-                            <!-- View Deleted Tasks -->
-                            <button type="button" class="option-action-btn" id="show-deleted-tasks-btn">
-                                <span class="option-action-icon">🗑️</span>
-                                Show deleted tasks
-                            </button>
-                        </div>
+                    <span class="header-row2-spacer"></span>
+                    <div class="view-chips">
+                        <button type="button" class="view-chip{% if user_prefs.show_scheduled_in_list %} active{% endif %}" id="chip-sched" aria-pressed="{{ 'true' if user_prefs.show_scheduled_in_list else 'false' }}">📅 Sched</button>
+                        <button type="button" class="view-chip{% if user_prefs.show_completed_in_list %} active{% endif %}" id="chip-done" aria-pressed="{{ 'true' if user_prefs.show_completed_in_list else 'false' }}">✓ Done</button>
+                        <button type="button" class="view-chip chip-delete" id="chip-deleted">🗑</button>
                     </div>
-                </span>
+                </div>
             </div>
             <div class="task-list-scroll" id="task-list-scroll">
             {% include '_task_list.html' %}

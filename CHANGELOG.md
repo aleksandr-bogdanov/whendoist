@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.34.0] - 2026-02-06 — Redesign Task List Header with Filter Chips and Minimal Settings
+
+### Changed
+- **Two-row header layout** — restructured from single row with kebab menu into Row 1 (title + sort columns + gear) and Row 2 (energy selector + view chips)
+- **View chips** — `📅 Sched` and `✓ Done` are now always-visible one-click toggles for `show_scheduled_in_list` / `show_completed_in_list` preferences; `🗑` enters deleted tasks view
+- **Settings panel** — replaced 12-control dropdown with a minimal gear (⚙) panel containing only: "Keep visible for" (1d/3d/7d) segmented control, "Hide recurring after done" toggle, and two action links for full scheduled/completed views
+- **JS refactor** — removed old toggle handlers and cascading data-controls visibility logic; chip toggles now save preferences and refresh task list directly
+- **Hardcoded sort preferences** — `task-sort.js` no longer calls the preferences API at load time; section ordering is hardcoded as constants (always group-at-bottom, always sort-by-date)
+- **Preferences cleanup** — removed `completed_move_to_bottom`, `completed_sort_by_date`, `scheduled_move_to_bottom`, `scheduled_sort_by_date` from `PreferencesUpdate` schema and `update_preferences()` service method (kept in response model for backwards compat)
+
+---
+
 ## [0.33.1] - 2026-02-06 — Flatten Scheduled/Completed Sections, Hardcode Group-at-Bottom
 
 ### Changed

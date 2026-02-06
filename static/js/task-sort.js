@@ -6,7 +6,7 @@
  * Default sort: Clarity ASC (open→clear), Impact ASC (P1→P4), Duration ASC (short→long)
  *
  * Architecture:
- * - Preferences are the single source of truth for section ordering
+ * - Section ordering is hardcoded (always group-at-bottom, sort-by-date)
  * - Column headers control the sort field/order within sections
  * - Both server and client use the same sorting rules
  *
@@ -24,9 +24,8 @@
         order: 'asc'  // asc = open first, desc = clear first
     };
 
-    // User preferences - single source of truth for section ordering
-    // Updated via updatePreference() when Options menu changes settings
-    let userPrefs = {
+    // Hardcoded section preferences — always true (opinionated defaults)
+    const SECTION_PREFS = {
         completed_move_to_bottom: true,
         completed_sort_by_date: true,
         scheduled_move_to_bottom: true,
@@ -36,10 +35,7 @@
     /**
      * Initialize task sorting.
      */
-    async function init() {
-        // Load user preferences first
-        await loadUserPreferences();
-
+    function init() {
         const sortButtons = document.querySelectorAll('.header-sort');
         if (!sortButtons.length) return;
 
@@ -52,45 +48,6 @@
 
         // Apply default sort on page load
         applySort();
-    }
-
-    /**
-     * Load user preferences from API.
-     */
-    async function loadUserPreferences() {
-        try {
-            const response = await fetch('/api/v1/preferences');
-            if (response.ok) {
-                const prefs = await response.json();
-                // Only update the preferences we care about for sorting
-                userPrefs.completed_move_to_bottom = prefs.completed_move_to_bottom ?? true;
-                userPrefs.completed_sort_by_date = prefs.completed_sort_by_date ?? true;
-                userPrefs.scheduled_move_to_bottom = prefs.scheduled_move_to_bottom ?? true;
-                userPrefs.scheduled_sort_by_date = prefs.scheduled_sort_by_date ?? true;
-            }
-        } catch (e) {
-            console.warn('Failed to load user preferences, using defaults');
-        }
-    }
-
-    /**
-     * Update a single preference value.
-     * Called by task-list-options.js when user changes a setting.
-     * @param {string} key - Preference key
-     * @param {any} value - New value
-     */
-    function updatePreference(key, value) {
-        if (key in userPrefs) {
-            userPrefs[key] = value;
-        }
-    }
-
-    /**
-     * Get current preference values (for debugging/testing).
-     * @returns {object} Current preferences
-     */
-    function getPreferences() {
-        return { ...userPrefs };
     }
 
     /**
@@ -161,7 +118,6 @@
      * @returns {boolean} - True if completed
      */
     function isTaskCompleted(task) {
-        // Check data-completed attribute or completed class
         return task.dataset.completed === '1' ||
                task.classList.contains('completed');
     }
@@ -172,60 +128,31 @@
      * @returns {boolean} - True if scheduled
      */
     function isTaskScheduled(task) {
-        // Check data-scheduled-date attribute
         const scheduledDate = task.dataset.scheduledDate;
         return scheduledDate && scheduledDate !== '';
     }
 
     /**
-     * Get the section order for a task based on user preferences.
-     *
-     * Section order depends on preferences:
-     * - scheduled_move_to_bottom=true, completed_move_to_bottom=true: 0=unscheduled, 1=scheduled, 2=completed
-     * - scheduled_move_to_bottom=false, completed_move_to_bottom=true: 0=all pending (mixed), 1=completed
-     * - scheduled_move_to_bottom=true, completed_move_to_bottom=false: 0=unscheduled+completed_unscheduled, 1=scheduled+completed_scheduled
-     * - scheduled_move_to_bottom=false, completed_move_to_bottom=false: 0=all (fully interleaved)
+     * Get the section order for a task.
+     * Always: unscheduled(0) -> scheduled(1) -> completed(2)
      *
      * @param {HTMLElement} task - Task element
      * @returns {number} - Section order
      */
     function getTaskSection(task) {
-        const isCompleted = isTaskCompleted(task);
-        const isScheduled = isTaskScheduled(task);
-        const completedToBottom = userPrefs.completed_move_to_bottom;
-        const scheduledToBottom = userPrefs.scheduled_move_to_bottom;
-
-        if (completedToBottom && scheduledToBottom) {
-            // unscheduled(0) -> scheduled(1) -> completed(2)
-            if (isCompleted) return 2;
-            if (isScheduled) return 1;
-            return 0;
-        } else if (completedToBottom && !scheduledToBottom) {
-            // all pending interleaved(0) -> completed(1)
-            if (isCompleted) return 1;
-            return 0;
-        } else if (!completedToBottom && scheduledToBottom) {
-            // unscheduled+completed_unscheduled(0) -> scheduled+completed_scheduled(1)
-            if (isScheduled) return 1;
-            return 0;
-        } else {
-            // All tasks interleaved (no sections)
-            return 0;
-        }
+        if (isTaskCompleted(task)) return 2;
+        if (isTaskScheduled(task)) return 1;
+        return 0;
     }
 
     /**
      * Compare two task items for sorting.
-     * Respects user preferences for section ordering.
-     * Within each section, applies the selected sort criteria.
-     * When scheduled tasks are in their own section (Bottom), they sort by date first.
-     * When "In place", scheduled tasks sort like normal tasks by the selected field.
      * @param {HTMLElement} a - First task element
      * @param {HTMLElement} b - Second task element
      * @returns {number} - Comparison result
      */
     function compareTaskItems(a, b) {
-        // First, maintain section order based on user preferences
+        // First, maintain section order
         const sectionA = getTaskSection(a);
         const sectionB = getTaskSection(b);
 
@@ -233,30 +160,22 @@
             return sectionA - sectionB;
         }
 
-        // When scheduled tasks are grouped at bottom AND sort by date is enabled,
-        // sort by date first (soonest first), then by selected criteria
-        const scheduledToBottom = userPrefs.scheduled_move_to_bottom;
-        const scheduledSortByDate = userPrefs.scheduled_sort_by_date;
-        if (scheduledToBottom && scheduledSortByDate && isTaskScheduled(a) && isTaskScheduled(b)) {
+        // Scheduled section: sort by date first (soonest first)
+        if (isTaskScheduled(a) && isTaskScheduled(b)) {
             const dateA = a.dataset.scheduledDate || '9999-12-31';
             const dateB = b.dataset.scheduledDate || '9999-12-31';
             if (dateA !== dateB) {
-                return dateA.localeCompare(dateB);  // Ascending date order
+                return dateA.localeCompare(dateB);
             }
-            // Same date, fall through to normal sort
         }
 
-        // When completed tasks are grouped at bottom AND sort by date is enabled,
-        // sort by completion date first (most recent first), then by selected criteria
-        const completedToBottom = userPrefs.completed_move_to_bottom;
-        const completedSortByDate = userPrefs.completed_sort_by_date;
-        if (completedToBottom && completedSortByDate && isTaskCompleted(a) && isTaskCompleted(b)) {
+        // Completed section: sort by completion date first (most recent first)
+        if (isTaskCompleted(a) && isTaskCompleted(b)) {
             const dateA = a.dataset.completedAt || '0000-00-00T00:00:00';
             const dateB = b.dataset.completedAt || '0000-00-00T00:00:00';
             if (dateA !== dateB) {
-                return dateB.localeCompare(dateA);  // Descending (most recent first)
+                return dateB.localeCompare(dateA);
             }
-            // Same date, fall through to normal sort
         }
 
         // Within section, apply normal sort by selected field
@@ -266,8 +185,7 @@
             return currentSort.order === 'asc' ? result : -result;
         }
 
-        // Secondary sort: if primary field is equal, apply default cascade
-        // Clarity → Impact → Duration
+        // Secondary sort cascade: Clarity → Impact → Duration
         if (currentSort.field !== 'clarity') {
             const clarityResult = compareByField(a, b, 'clarity');
             if (clarityResult !== 0) return clarityResult;
@@ -301,7 +219,6 @@
                 return (CLARITY_ORDER[clarityA] || 4) - (CLARITY_ORDER[clarityB] || 4);
             }
             case 'impact': {
-                // Get impact from the meta-impact span text (P1, P2, P3, P4)
                 const impactA = getImpactValue(a);
                 const impactB = getImpactValue(b);
                 return impactA - impactB;
@@ -333,9 +250,6 @@
     // Expose API for other modules
     window.TaskSort = {
         applySort,
-        updatePreference,
-        getPreferences,
-        reloadPreferences: loadUserPreferences,
     };
 
     // Initialize when DOM is ready

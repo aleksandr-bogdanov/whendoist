@@ -27,13 +27,9 @@ class PreferencesUpdate(BaseModel):
 
     show_completed_in_planner: bool | None = None
     completed_retention_days: int | None = Field(None, ge=1, le=7)
-    completed_move_to_bottom: bool | None = None
-    completed_sort_by_date: bool | None = None
     show_completed_in_list: bool | None = None
     hide_recurring_after_completion: bool | None = None
     show_scheduled_in_list: bool | None = None
-    scheduled_move_to_bottom: bool | None = None
-    scheduled_sort_by_date: bool | None = None
     timezone: str | None = Field(None, max_length=50)  # IANA timezone (e.g., "America/New_York")
 
 
@@ -105,13 +101,9 @@ async def update_preferences(
     prefs = await service.update_preferences(
         show_completed_in_planner=data.show_completed_in_planner,
         completed_retention_days=data.completed_retention_days,
-        completed_move_to_bottom=data.completed_move_to_bottom,
-        completed_sort_by_date=data.completed_sort_by_date,
         show_completed_in_list=data.show_completed_in_list,
         hide_recurring_after_completion=data.hide_recurring_after_completion,
         show_scheduled_in_list=data.show_scheduled_in_list,
-        scheduled_move_to_bottom=data.scheduled_move_to_bottom,
-        scheduled_sort_by_date=data.scheduled_sort_by_date,
         timezone=data.timezone,
     )
     await db.commit()
