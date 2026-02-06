@@ -3,7 +3,7 @@
  *
  * Handles sorting of tasks within domain groups.
  *
- * Default sort: Clarity ASC (exploratory→executable), Impact ASC (P1→P4), Duration ASC (short→long)
+ * Default sort: Clarity ASC (open→clear), Impact ASC (P1→P4), Duration ASC (short→long)
  *
  * Architecture:
  * - Preferences are the single source of truth for section ordering
@@ -16,12 +16,12 @@
     'use strict';
 
     // Sort configuration
-    const CLARITY_ORDER = { exploratory: 1, defined: 2, executable: 3, none: 4 };
+    const CLARITY_ORDER = { open: 1, defined: 2, clear: 3, none: 4 };
 
     // Current sort state
     let currentSort = {
         field: 'clarity',
-        order: 'asc'  // asc = exploratory first, desc = executable first
+        order: 'asc'  // asc = open first, desc = clear first
     };
 
     // User preferences - single source of truth for section ordering

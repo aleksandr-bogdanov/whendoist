@@ -9,20 +9,20 @@ from app.services.labels import (
 class TestParseLabels:
     def test_parse_clarity_labels(self):
         """Test clarity labels."""
-        result = parse_labels(["executable"])
-        assert result.clarity == Clarity.EXECUTABLE
+        result = parse_labels(["clear"])
+        assert result.clarity == Clarity.CLEAR
 
         result = parse_labels(["defined"])
         assert result.clarity == Clarity.DEFINED
 
-        result = parse_labels(["exploratory"])
-        assert result.clarity == Clarity.EXPLORATORY
+        result = parse_labels(["open"])
+        assert result.clarity == Clarity.OPEN
 
     def test_parse_multiple_labels(self):
         """Test parsing multiple labels at once."""
-        result = parse_labels(["executable", "work", "urgent"])
+        result = parse_labels(["clear", "work", "urgent"])
 
-        assert result.clarity == Clarity.EXECUTABLE
+        assert result.clarity == Clarity.CLEAR
         assert result.other_labels == ["work", "urgent"]
 
     def test_parse_empty_labels(self):
@@ -41,8 +41,8 @@ class TestParseLabels:
 
     def test_case_insensitivity(self):
         """Test that label matching is case-insensitive."""
-        result = parse_labels(["Executable"])
-        assert result.clarity == Clarity.EXECUTABLE
+        result = parse_labels(["Clear"])
+        assert result.clarity == Clarity.CLEAR
 
         result = parse_labels(["DEFINED"])
         assert result.clarity == Clarity.DEFINED
@@ -54,7 +54,7 @@ class TestParseLabels:
 
     def test_is_unlabeled_clarity_present(self):
         """Test is_unlabeled returns False when clarity is present."""
-        result = parse_labels(["executable"])
+        result = parse_labels(["clear"])
         assert result.is_unlabeled() is False
 
 
@@ -88,15 +88,15 @@ class TestParseDuration:
 
     def test_duration_in_metadata(self):
         """Test that duration is parsed into TaskMetadata."""
-        result = parse_labels(["executable"], "Task with d:45m duration")
+        result = parse_labels(["clear"], "Task with d:45m duration")
         assert result.duration_minutes == 45
-        assert result.clarity == Clarity.EXECUTABLE
+        assert result.clarity == Clarity.CLEAR
 
 
 class TestDisplayFunctions:
     def test_clarity_display(self):
         """Test clarity display strings."""
-        assert clarity_display(Clarity.EXECUTABLE) == "Executable"
+        assert clarity_display(Clarity.CLEAR) == "Clear"
         assert clarity_display(Clarity.DEFINED) == "Defined"
-        assert clarity_display(Clarity.EXPLORATORY) == "Exploratory"
+        assert clarity_display(Clarity.OPEN) == "Open"
         assert clarity_display(None) == ""

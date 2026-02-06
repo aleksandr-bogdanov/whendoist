@@ -112,9 +112,9 @@
 .seg-btn[data-impact="4"] { color: var(--impact-p4); }
 
 /* Clarity Colored Segments */
-.seg-btn[data-clarity="executable"] { color: var(--clarity-executable); }
+.seg-btn[data-clarity="clear"] { color: var(--clear-color); }
 .seg-btn[data-clarity="defined"] { color: var(--clarity-defined); }
-.seg-btn[data-clarity="exploratory"] { color: var(--clarity-exploratory); }
+.seg-btn[data-clarity="open"] { color: var(--open-color); }
 
 /* Toggle Switch */
 .toggle {

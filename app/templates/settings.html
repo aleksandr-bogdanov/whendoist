@@ -1342,9 +1342,9 @@ async function showUnclearTasks() {
                     <div class="unclear-task-row" data-task-id="${task.id}">
                         <span class="unclear-task-title">${escapeHtml(task.title)}</span>
                         <div class="clarity-btns">
-                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'executable')" title="Clear next action, can do when tired">Exec</button>
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'clear')" title="Clear next action, can do when tired">Clear</button>
                             <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'defined')" title="Know what to do, needs some focus">Def</button>
-                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'exploratory')" title="Needs research or deep thinking">Expl</button>
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'open')" title="Needs research or deep thinking">Open</button>
                         </div>
                     </div>
                 `).join('')}

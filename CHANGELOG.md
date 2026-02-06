@@ -6,6 +6,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.33.0] - 2026-02-06 — Rename Clarity Levels: Executable → Clear, Exploratory → Open
+
+### Changed
+- **Clarity naming revamp** — replaced jargon with everyday language throughout the entire stack:
+  - Database values: `executable` → `clear`, `exploratory` → `open` (migration included)
+  - Python enums, labels, and display functions
+  - JavaScript sort order, dialog options, and wizard preview
+  - CSS selectors, custom properties, and energy filtering rules
+  - HTML templates: tooltips, pill labels, and form controls
+  - Energy tooltips: "Zombie — no-brainers" / "Normal — clear tasks" / "Focus — deep work too"
+  - All test files updated to match new values
+- **No functional changes** — this is purely a naming improvement; all task filtering and energy modes work exactly as before
+
+---
+
 ## [0.32.19] - 2026-02-02 — Fix Recurrence Bounds UI & Past Instance Materialization
 
 ### Fixed

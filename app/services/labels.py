@@ -6,15 +6,15 @@ from enum import Enum
 class Clarity(Enum):
     """Task clarity level - determines energy required to work on it."""
 
-    EXECUTABLE = "executable"  # Clear next action, can do when tired
+    CLEAR = "clear"  # Clear next action, can do when tired
     DEFINED = "defined"  # Defined but needs focus
-    EXPLORATORY = "exploratory"  # Needs research, requires deep focus
+    OPEN = "open"  # Needs research, requires deep focus
 
 
 CLARITY_LABELS = {
-    "executable": Clarity.EXECUTABLE,
+    "clear": Clarity.CLEAR,
     "defined": Clarity.DEFINED,
-    "exploratory": Clarity.EXPLORATORY,
+    "open": Clarity.OPEN,
 }
 
 # Pattern to match duration in description: d:30m, d:2h, d:1h30m
@@ -78,7 +78,7 @@ def clarity_display(clarity: Clarity | None) -> str:
     if clarity is None:
         return ""
     return {
-        Clarity.EXECUTABLE: "Executable",
+        Clarity.CLEAR: "Clear",
         Clarity.DEFINED: "Defined",
-        Clarity.EXPLORATORY: "Exploratory",
+        Clarity.OPEN: "Open",
     }[clarity]

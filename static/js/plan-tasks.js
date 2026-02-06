@@ -1177,12 +1177,12 @@
         }
 
         // Energy level filtering
-        if (energyLevel === 1 && clarity !== 'executable') {
-            log.debug(`Skip "${content.slice(0, 25)}": ${clarity} != executable`);
+        if (energyLevel === 1 && clarity !== 'clear') {
+            log.debug(`Skip "${content.slice(0, 25)}": ${clarity} != clear`);
             return null;
         }
-        if (energyLevel === 2 && clarity === 'exploratory') {
-            log.debug(`Skip "${content.slice(0, 25)}": exploratory in normal mode`);
+        if (energyLevel === 2 && clarity === 'open') {
+            log.debug(`Skip "${content.slice(0, 25)}": open in normal mode`);
             return null;
         }
 
@@ -1233,12 +1233,12 @@
         }
 
         // Energy level filtering
-        if (energyLevel === 1 && clarity !== 'executable') {
-            log.debug(`Skip anytime "${content.slice(0, 25)}": ${clarity} != executable`);
+        if (energyLevel === 1 && clarity !== 'clear') {
+            log.debug(`Skip anytime "${content.slice(0, 25)}": ${clarity} != clear`);
             return null;
         }
-        if (energyLevel === 2 && clarity === 'exploratory') {
-            log.debug(`Skip anytime "${content.slice(0, 25)}": exploratory in normal mode`);
+        if (energyLevel === 2 && clarity === 'open') {
+            log.debug(`Skip anytime "${content.slice(0, 25)}": open in normal mode`);
             return null;
         }
 
@@ -1403,7 +1403,7 @@
  * @property {string} content - Task content/title
  * @property {number} duration - Duration in minutes
  * @property {number} priority - Priority (1-4, 4=highest)
- * @property {string} clarity - Clarity level (executable|defined|exploratory)
+ * @property {string} clarity - Clarity level (clear|defined|open)
  * @property {string} scheduledDate - Scheduled date (YYYY-MM-DD) or empty
  * @property {boolean} isRecurring - Whether task is recurring
  * @property {boolean} hasMatchingDate - Whether scheduled date matches target day
