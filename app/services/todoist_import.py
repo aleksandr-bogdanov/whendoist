@@ -337,34 +337,38 @@ class TodoistImportService:
         clarity = None
         clean_title = content
 
-        # Check for clarity labels in content
+        # Check for clarity/mode labels in content (legacy and new names)
         content_lower = content.lower()
-        if "@executable" in content_lower:
-            clarity = "executable"
-            clean_title = re.sub(r"\s*@executable\s*", " ", content, flags=re.IGNORECASE).strip()
-        elif "@defined" in content_lower:
-            clarity = "defined"
-            clean_title = re.sub(r"\s*@defined\s*", " ", content, flags=re.IGNORECASE).strip()
-        elif "@exploratory" in content_lower:
-            clarity = "exploratory"
-            clean_title = re.sub(r"\s*@exploratory\s*", " ", content, flags=re.IGNORECASE).strip()
+        if "@executable" in content_lower or "@autopilot" in content_lower or "@clear" in content_lower:
+            clarity = "autopilot"
+            clean_title = re.sub(r"\s*@(?:executable|autopilot|clear)\s*", " ", content, flags=re.IGNORECASE).strip()
+        elif "@defined" in content_lower or "@normal" in content_lower:
+            clarity = "normal"
+            clean_title = re.sub(r"\s*@(?:defined|normal)\s*", " ", content, flags=re.IGNORECASE).strip()
+        elif "@exploratory" in content_lower or "@brainstorm" in content_lower or "@open" in content_lower:
+            clarity = "brainstorm"
+            clean_title = re.sub(r"\s*@(?:exploratory|brainstorm|open)\s*", " ", content, flags=re.IGNORECASE).strip()
 
         return clarity, clean_title
 
     def _parse_clarity_from_labels(self, labels: list[str]) -> str | None:
         """
-        Extract clarity level from Todoist labels.
+        Extract mode level from Todoist labels.
 
-        Looks for labels like @executable, @defined, @exploratory.
+        Looks for labels like @executable/@autopilot/@clear, @defined/@normal, @exploratory/@brainstorm/@open.
         """
         label_lower = [label.lower() for label in labels]
 
-        if "executable" in label_lower or "@executable" in label_lower:
-            return "executable"
-        if "defined" in label_lower or "@defined" in label_lower:
-            return "defined"
-        if "exploratory" in label_lower or "@exploratory" in label_lower:
-            return "exploratory"
+        autopilot_names = {"executable", "@executable", "autopilot", "@autopilot", "clear", "@clear"}
+        normal_names = {"defined", "@defined", "normal", "@normal"}
+        brainstorm_names = {"exploratory", "@exploratory", "brainstorm", "@brainstorm", "open", "@open"}
+
+        if autopilot_names & set(label_lower):
+            return "autopilot"
+        if normal_names & set(label_lower):
+            return "normal"
+        if brainstorm_names & set(label_lower):
+            return "brainstorm"
 
         return None
 
@@ -626,10 +630,10 @@ class TodoistImportService:
             # Parse clarity from content (completed tasks have labels embedded like "@executable")
             clarity, clean_title = self._parse_clarity_from_content(content)
 
-            # Parent tasks default to "executable", others to "defined"
+            # Parent tasks default to "autopilot", others to "normal"
             is_parent = task_id in tasks_with_children
             if not clarity:
-                clarity = "executable" if is_parent else "defined"
+                clarity = "autopilot" if is_parent else "normal"
 
             # Map priority: Todoist API returns priority 4 for P1 (highest), 1 for P4 (lowest)
             priority = item.get("priority", 1)

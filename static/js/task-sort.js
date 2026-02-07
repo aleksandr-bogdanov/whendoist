@@ -3,7 +3,7 @@
  *
  * Handles sorting of tasks within domain groups.
  *
- * Default sort: Clarity ASC (open→clear), Impact ASC (P1→P4), Duration ASC (short→long)
+ * Default sort: Mode ASC (brainstorm→autopilot), Impact ASC (P1→P4), Duration ASC (short→long)
  *
  * Architecture:
  * - Section ordering is hardcoded (always group-at-bottom, sort-by-date)
@@ -16,12 +16,12 @@
     'use strict';
 
     // Sort configuration
-    const CLARITY_ORDER = { open: 1, defined: 2, clear: 3, none: 4 };
+    const CLARITY_ORDER = { brainstorm: 1, normal: 2, autopilot: 3 };
 
     // Current sort state
     let currentSort = {
         field: 'clarity',
-        order: 'asc'  // asc = open first, desc = clear first
+        order: 'asc'  // asc = brainstorm first, desc = autopilot first
     };
 
     // Hardcoded section preferences — always true (opinionated defaults)
@@ -214,9 +214,9 @@
     function compareByField(a, b, field) {
         switch (field) {
             case 'clarity': {
-                const clarityA = a.dataset.clarity || 'none';
-                const clarityB = b.dataset.clarity || 'none';
-                return (CLARITY_ORDER[clarityA] || 4) - (CLARITY_ORDER[clarityB] || 4);
+                const clarityA = a.dataset.clarity || 'normal';
+                const clarityB = b.dataset.clarity || 'normal';
+                return (CLARITY_ORDER[clarityA] || 2) - (CLARITY_ORDER[clarityB] || 2);
             }
             case 'impact': {
                 const impactA = getImpactValue(a);

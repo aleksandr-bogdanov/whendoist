@@ -583,19 +583,19 @@ class WhenWizard {
 
                     <div class="wizard-section-title">Preview</div>
                     <div class="wizard-preview-tasks">
-                        <div class="wizard-preview-task clarity-clear" data-clarity="clear">
+                        <div class="wizard-preview-task clarity-autopilot" data-clarity="autopilot">
                             <span class="wizard-preview-task-title">Review pull requests</span>
                             <span class="wizard-preview-task-duration">30m</span>
                         </div>
-                        <div class="wizard-preview-task clarity-clear" data-clarity="clear">
+                        <div class="wizard-preview-task clarity-autopilot" data-clarity="autopilot">
                             <span class="wizard-preview-task-title">Reply to Sarah's email</span>
                             <span class="wizard-preview-task-duration">15m</span>
                         </div>
-                        <div class="wizard-preview-task clarity-defined" data-clarity="defined">
+                        <div class="wizard-preview-task clarity-normal" data-clarity="normal">
                             <span class="wizard-preview-task-title">Update project documentation</span>
                             <span class="wizard-preview-task-duration">1h</span>
                         </div>
-                        <div class="wizard-preview-task clarity-open hidden" data-clarity="open">
+                        <div class="wizard-preview-task clarity-brainstorm hidden" data-clarity="brainstorm">
                             <span class="wizard-preview-task-title">Research competitor features</span>
                             <span class="wizard-preview-task-duration">2h</span>
                         </div>
@@ -624,9 +624,9 @@ class WhenWizard {
     updateTaskPreview(mode) {
         const tasks = this.panel.querySelectorAll('.wizard-preview-task');
         const visibility = {
-            zombie: ['clear'],
-            normal: ['clear', 'defined'],
-            focus: ['clear', 'defined', 'open']
+            zombie: ['autopilot'],
+            normal: ['autopilot', 'normal'],
+            focus: ['autopilot', 'normal', 'brainstorm']
         };
 
         tasks.forEach(task => {

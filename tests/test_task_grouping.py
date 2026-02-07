@@ -58,7 +58,7 @@ class TestBuildNativeTaskItem:
             domain_id=test_domain.id,
             title="Test Task",
             impact=2,
-            clarity="defined",
+            clarity="normal",
         )
         db_session.add(task)
         await db_session.flush()
@@ -90,67 +90,64 @@ class TestBuildNativeTaskItem:
         assert item["task"] is task
         assert item["task"].title == "Test Task"
 
-    async def test_clarity_display_for_defined(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
-        """Clarity display shows 'Defined' for defined tasks."""
+    async def test_clarity_display_for_normal(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Mode display shows '—' for normal tasks."""
         task = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
             title="Test Task",
-            clarity="defined",
+            clarity="normal",
         )
         db_session.add(task)
         await db_session.flush()
 
         item = build_native_task_item(task)
 
-        assert item["clarity_display"] == "Defined"
+        assert item["clarity_display"] == "—"
 
-    async def test_clarity_display_for_executable(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
-        """Clarity display shows 'Clear' for clear tasks."""
+    async def test_clarity_display_for_autopilot(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Mode display shows 'Auto' for autopilot tasks."""
         task = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
             title="Test Task",
-            clarity="clear",
+            clarity="autopilot",
         )
         db_session.add(task)
         await db_session.flush()
 
         item = build_native_task_item(task)
 
-        assert item["clarity_display"] == "Clear"
+        assert item["clarity_display"] == "Auto"
 
-    async def test_clarity_display_for_exploratory(
-        self, db_session: AsyncSession, test_user: User, test_domain: Domain
-    ):
-        """Clarity display shows 'Open' for open tasks."""
+    async def test_clarity_display_for_brainstorm(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Mode display shows 'Brain' for brainstorm tasks."""
         task = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
             title="Test Task",
-            clarity="open",
+            clarity="brainstorm",
         )
         db_session.add(task)
         await db_session.flush()
 
         item = build_native_task_item(task)
 
-        assert item["clarity_display"] == "Open"
+        assert item["clarity_display"] == "Brain"
 
-    async def test_clarity_display_for_no_clarity(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
-        """Clarity display is empty for tasks without clarity."""
+    async def test_clarity_display_defaults_to_normal(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Tasks without explicit clarity default to 'normal' and display '—'."""
         task = Task(
             user_id=test_user.id,
             domain_id=test_domain.id,
             title="Test Task",
-            clarity=None,
         )
         db_session.add(task)
         await db_session.flush()
 
         item = build_native_task_item(task)
 
-        assert item["clarity_display"] == ""
+        assert item["clarity_display"] == "—"
 
     async def test_clarity_display_for_invalid_clarity(
         self, db_session: AsyncSession, test_user: User, test_domain: Domain

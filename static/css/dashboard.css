@@ -55,21 +55,21 @@
     background: var(--bg-panel);
 }
 
-/* Clarity-tinted active states */
+/* Mode-tinted active states */
 .energy-pill.active[data-energy="1"] {
-    background: var(--clear-tint);
+    background: var(--autopilot-tint);
     box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.25);
 }
 .energy-pill.active[data-energy="2"] {
-    background: var(--clarity-defined-tint);
+    background: var(--normal-tint);
     box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.25);
 }
 .energy-pill.active[data-energy="3"] {
-    background: var(--open-tint);
+    background: var(--brainstorm-tint);
     box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.25);
 }
 
-/* Clarity indicator dots */
+/* Mode indicator dots */
 .clarity-dots {
     display: flex;
     align-items: center;
@@ -83,9 +83,9 @@
     transition: opacity 0.2s ease;
 }
 
-.cdot-clear { background: var(--clear-color); }
-.cdot-defined { background: var(--clarity-defined); }
-.cdot-open { background: var(--open-color); }
+.cdot-autopilot { background: var(--autopilot-color); }
+.cdot-normal { background: var(--normal-color); }
+.cdot-brainstorm { background: var(--brainstorm-color); }
 
 .cdot.off { opacity: 0.12; }
 
@@ -103,17 +103,17 @@
     background: var(--bg-panel);
 }
 
-/* Dark mode clarity-tinted active states */
+/* Dark mode mode-tinted active states */
 [data-theme="dark"] .energy-pill.active[data-energy="1"] {
-    background: var(--clear-tint);
+    background: var(--autopilot-tint);
     box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.35);
 }
 [data-theme="dark"] .energy-pill.active[data-energy="2"] {
-    background: var(--clarity-defined-tint);
+    background: var(--normal-tint);
     box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.35);
 }
 [data-theme="dark"] .energy-pill.active[data-energy="3"] {
-    background: var(--open-tint);
+    background: var(--brainstorm-tint);
     box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.35);
 }
 
@@ -396,9 +396,9 @@
     display: block;
     height: 2px;
     background: linear-gradient(90deg,
-        var(--clear-color),
-        var(--clarity-defined),
-        var(--open-color)
+        var(--autopilot-color),
+        var(--normal-color),
+        var(--brainstorm-color)
     );
     opacity: 0.35;
 }
@@ -1971,36 +1971,26 @@
     letter-spacing: 0.02em;
 }
 
-.meta-clarity.clarity-clear { color: var(--clear-color); }
-.meta-clarity.clarity-defined { color: var(--clarity-defined); }
-.meta-clarity.clarity-open { color: var(--open-color); }
-.meta-clarity.clarity-none { color: var(--text-muted); opacity: 0.5; }
+.meta-clarity.clarity-autopilot { color: var(--autopilot-color); }
+.meta-clarity.clarity-normal { color: var(--normal-color); }
+.meta-clarity.clarity-brainstorm { color: var(--brainstorm-color); }
 
 /* =============================================================================
    Energy/Mode-based Task Filtering
    ============================================================================= */
 
-/* Hide tasks without clarity tag (except in Show All mode) */
-/* Using !important to override mobile.css flex display */
-/* :not(.deleted-item):not(.scheduled-item) bypasses filter for those items */
-body:not([data-energy-level="0"]) .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="none"],
-body:not([data-energy-level="0"]) .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity=""],
-body:not([data-energy-level="0"]) .task-item:not(.deleted-item):not(.scheduled-item):not([data-clarity]) {
+/* Zombie mode: only autopilot tasks */
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="normal"],
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] {
     display: none !important;
 }
 
-/* Zombie mode: only clear tasks */
-body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="defined"],
-body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="open"] {
+/* Normal mode: autopilot + normal (hide brainstorm) */
+body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] {
     display: none !important;
 }
 
-/* Normal mode: clear + defined */
-body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="open"] {
-    display: none !important;
-}
-
-/* Focus mode: all tasks available (except none) */
+/* Focus mode: all tasks visible */
 
 /* Hide projects with no visible tasks */
 .project-group:not(:has(.task-item:not([style*="display: none"]))) {
@@ -2008,15 +1998,15 @@ body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[d
 }
 
 /* Hide projects where all tasks are hidden by energy filter */
-body[data-energy-level="1"] .project-group:not(:has(.task-item[data-clarity="clear"])) {
+body[data-energy-level="1"] .project-group:not(:has(.task-item[data-clarity="autopilot"])) {
     display: none;
 }
 
-body[data-energy-level="2"] .project-group:not(:has(.task-item[data-clarity="clear"], .task-item[data-clarity="defined"])) {
+body[data-energy-level="2"] .project-group:not(:has(.task-item[data-clarity="autopilot"], .task-item[data-clarity="normal"])) {
     display: none;
 }
 
-body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="clear"], .task-item[data-clarity="defined"], .task-item[data-clarity="open"])) {
+body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="autopilot"], .task-item[data-clarity="normal"], .task-item[data-clarity="brainstorm"])) {
     display: none;
 }
 

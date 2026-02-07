@@ -16,7 +16,7 @@
             {% for task_item in domain_item.tasks %}
             {% set task = task_item.task %}
             <div class="task-item completed-item impact-{{ task.impact }} {{ task_item.completion_age_class or 'completed-older' }}"
-                 data-clarity="{{ task.clarity or 'none' }}"
+                 data-clarity="{{ task.clarity }}"
                  data-impact="{{ task.impact or 4 }}"
                  data-task-id="{{ task.id }}"
                  data-completed="1"
@@ -51,9 +51,9 @@
                         {% elif task.impact == 3 %}P3
                         {% else %}P4{% endif %}
                     </span>
-                    <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
-                        {% if task.clarity %}
-                            {{ task_item.clarity_display }}
+                    <span class="meta-clarity clarity-{{ task.clarity }}">
+                        {% if task.clarity == 'autopilot' %}Auto
+                        {% elif task.clarity == 'brainstorm' %}Brain
                         {% else %}—{% endif %}
                     </span>
                 </div>

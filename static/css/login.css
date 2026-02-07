@@ -265,17 +265,17 @@ body:has(.login-page) .site-header {
     background: var(--border-default);
 }
 
-/* Clarity colors - matching app design system */
-.login-hero-task.clarity-exploratory .login-hero-task-rail {
-    background: rgba(160, 32, 192, 0.7); /* Purple - deep work */
+/* Mode colors - matching app design system */
+.login-hero-task.clarity-brainstorm .login-hero-task-rail {
+    background: rgba(160, 32, 192, 0.7); /* Magenta - deep thinking */
 }
 
-.login-hero-task.clarity-defined .login-hero-task-rail {
-    background: rgba(109, 94, 246, 0.7); /* Primary - routine */
+.login-hero-task.clarity-normal .login-hero-task-rail {
+    background: rgba(109, 94, 246, 0.7); /* Purple - routine */
 }
 
-.login-hero-task.clarity-executable .login-hero-task-rail {
-    background: rgba(22, 123, 255, 0.8); /* Blue - actionable */
+.login-hero-task.clarity-autopilot .login-hero-task-rail {
+    background: rgba(22, 123, 255, 0.8); /* Blue - mindless */
 }
 
 .login-hero-task .login-hero-checkbox {

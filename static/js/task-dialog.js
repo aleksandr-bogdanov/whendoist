@@ -20,9 +20,8 @@
         { value: 4, label: 'P4', description: 'Maintenance' },
     ];
     const CLARITY_OPTIONS = [
-        { value: 'clear', label: 'Clear', description: 'No-brainer' },
-        { value: 'defined', label: 'Def', description: 'Needs focus' },
-        { value: 'open', label: 'Open', description: 'Needs thinking' },
+        { value: 'autopilot', label: '🧟 Auto', description: 'Mindless — can do when tired' },
+        { value: 'brainstorm', label: '🧠 Brain', description: 'Needs deep thinking' },
     ];
     const RECURRENCE_PRESETS = [
         { value: null, label: 'None', freq: null },
@@ -154,7 +153,7 @@
                             </div>
 
                             <div class="detail-row">
-                                <div class="detail-label">Clarity</div>
+                                <div class="detail-label">Mode</div>
                                 <div class="detail-control">
                                     <div class="segmented">
                                         ${CLARITY_OPTIONS.map(opt =>
@@ -268,7 +267,7 @@
                     <input type="hidden" name="task_status" value="pending">
 
                     <input type="hidden" name="impact" value="4">
-                    <input type="hidden" name="clarity" value="defined">
+                    <input type="hidden" name="clarity" value="normal">
                 </form>
             </div>
         `;
@@ -655,12 +654,13 @@
             });
         });
 
-        // Clarity buttons
+        // Mode buttons (toggle: click active → normal, click inactive → activate)
         backdropEl.querySelectorAll('.seg-btn[data-clarity]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const currentVal = backdropEl.querySelector('[name="clarity"]').value;
                 if (currentVal === btn.dataset.clarity) {
-                    backdropEl.querySelector('[name="clarity"]').value = '';
+                    // Deactivate → set to normal
+                    backdropEl.querySelector('[name="clarity"]').value = 'normal';
                     btn.classList.remove('is-active');
                 } else {
                     backdropEl.querySelector('[name="clarity"]').value = btn.dataset.clarity;
@@ -890,9 +890,8 @@
         backdropEl.querySelector('[name="impact"]').value = '4';
         backdropEl.querySelector('.seg-btn[data-impact="4"]').classList.add('is-active');
 
-        // Set default clarity to "defined" for new tasks
-        backdropEl.querySelector('[name="clarity"]').value = 'defined';
-        backdropEl.querySelector('.seg-btn[data-clarity="defined"]')?.classList.add('is-active');
+        // Set default mode to "normal" for new tasks (no chip active)
+        backdropEl.querySelector('[name="clarity"]').value = 'normal';
 
         // Set default recurrence to none
         setRecurrenceRule(null);
@@ -1443,7 +1442,7 @@
             due_date: dueDate,
             duration_minutes: formData.get('duration_minutes') ? parseInt(formData.get('duration_minutes'), 10) : null,
             impact: parseInt(formData.get('impact'), 10) || 4,
-            clarity: formData.get('clarity') || null,
+            clarity: formData.get('clarity') || 'normal',
             is_recurring: isRecurring,
             recurrence_rule: recurrenceRule,
             recurrence_start: isRecurring ? (backdropEl.querySelector('#recurrence-start').dataset.value || null) : null,

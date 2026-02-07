@@ -41,9 +41,9 @@
                         {% elif task.impact == 3 %}P3
                         {% else %}P4{% endif %}
                     </span>
-                    <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
-                        {% if task.clarity %}
-                            {{ task_item.clarity_display }}
+                    <span class="meta-clarity clarity-{{ task.clarity }}">
+                        {% if task.clarity == 'autopilot' %}Auto
+                        {% elif task.clarity == 'brainstorm' %}Brain
                         {% else %}—{% endif %}
                     </span>
                 </div>

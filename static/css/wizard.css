@@ -1177,17 +1177,17 @@ body.keyboard-open .wizard-nav {
     color: var(--text-muted);
 }
 
-/* Clarity colors for preview */
-.wizard-preview-task.clarity-executable::before {
-    background: #22c55e; /* Green - ready to execute */
+/* Mode colors for preview */
+.wizard-preview-task.clarity-autopilot::before {
+    background: #22c55e; /* Green - mindless work */
 }
 
-.wizard-preview-task.clarity-defined::before {
-    background: #3b82f6; /* Blue - defined, needs some thinking */
+.wizard-preview-task.clarity-normal::before {
+    background: #3b82f6; /* Blue - routine */
 }
 
-.wizard-preview-task.clarity-exploratory::before {
-    background: #f59e0b; /* Amber - needs exploration */
+.wizard-preview-task.clarity-brainstorm::before {
+    background: #f59e0b; /* Amber - deep thinking */
 }
 
 /* -----------------------------------------------------------------------------

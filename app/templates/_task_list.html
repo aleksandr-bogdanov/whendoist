@@ -6,7 +6,7 @@
 {% set is_completed = task.status == 'completed' or task_item.instance_completed_at %}
 {% set completed_at = task_item.instance_completed_at or task.completed_at %}
 <div class="task-item impact-{{ task.impact }}{% if task.scheduled_date %} scheduled{% endif %}{% if task_item.completion_age_class %} {{ task_item.completion_age_class }}{% endif %}"
-     data-clarity="{{ task.clarity or 'none' }}"
+     data-clarity="{{ task.clarity }}"
      data-impact="{{ task.impact or 4 }}"
      data-task-id="{{ task.id }}"
      data-completed="{{ '1' if is_completed else '0' }}"
@@ -70,10 +70,9 @@
             {% elif task.impact == 3 %}Low
             {% else %}Min{% endif %}
         </span>
-        <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
-            {% if task.clarity == 'clear' %}Clear
-            {% elif task.clarity == 'defined' %}Def
-            {% elif task.clarity == 'open' %}Open
+        <span class="meta-clarity clarity-{{ task.clarity }}">
+            {% if task.clarity == 'autopilot' %}Auto
+            {% elif task.clarity == 'brainstorm' %}Brain
             {% else %}—{% endif %}
         </span>
     </div>
@@ -137,7 +136,7 @@
             <span class="sep-col"><span class="sep-col-label">Date</span></span>
             <span class="sep-col"><span class="sep-col-label">Dur</span></span>
             <span class="sep-col"><span class="sep-col-label">Impact</span></span>
-            <span class="sep-col"><span class="sep-col-label">Clarity</span></span>
+            <span class="sep-col"><span class="sep-col-label">Mode</span></span>
             <span class="sep-col-end"></span>
         </span>
     </summary>

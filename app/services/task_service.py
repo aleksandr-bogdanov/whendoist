@@ -142,7 +142,7 @@ class TaskService:
             status: Filter by status (pending/completed/archived)
             scheduled_date: Filter by scheduled date
             is_recurring: Filter recurring/non-recurring
-            clarity: Filter by clarity (executable/defined/exploratory/none)
+            clarity: Filter by clarity (autopilot/normal/brainstorm)
             include_subtasks: Eager load subtasks
             top_level_only: Only return top-level tasks (parent_id is None)
             has_domain: True = only tasks WITH a domain, False = only tasks WITHOUT (inbox)
@@ -182,9 +182,7 @@ class TaskService:
             query = query.where(Task.is_recurring == is_recurring)
 
         # Filter by clarity
-        if clarity == "none":
-            query = query.where(Task.clarity.is_(None))
-        elif clarity is not None:
+        if clarity is not None:
             query = query.where(Task.clarity == clarity)
 
         # Eager load relationships
@@ -234,7 +232,7 @@ class TaskService:
         parent_id: int | None = None,
         duration_minutes: int | None = None,
         impact: int = 4,
-        clarity: str = "defined",  # Default to "defined" - all tasks must have clarity
+        clarity: str = "normal",  # Default to "normal" - autopilot/normal/brainstorm
         due_date: date | None = None,
         due_time: time | None = None,
         scheduled_date: date | None = None,

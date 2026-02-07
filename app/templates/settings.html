@@ -286,7 +286,7 @@
                             <div class="expand-content">
                                 <div class="expand-label">Todoist Integration</div>
                                 <p class="expand-desc">
-                                    Import projects and tasks from Todoist. Projects become domains; tasks keep due dates and priorities. After import, assign clarity levels to enable energy-based filtering.
+                                    Import projects and tasks from Todoist. Projects become domains; tasks keep due dates and priorities. After import, assign mode levels to enable energy-based filtering.
                                 </p>
                                 <div class="expand-actions">
                                     <div class="expand-actions__left">
@@ -294,7 +294,7 @@
                                             Import from Todoist
                                         </button>
                                         <button type="button" class="btn-sm btn-sm--ghost" id="btn-show-unclear" onclick="event.stopPropagation(); showUnclearTasks()">
-                                            Assign Clarity
+                                            Assign Mode
                                         </button>
                                     </div>
                                     <button type="button" class="btn-text-danger" onclick="event.stopPropagation(); disconnectTodoist()">
@@ -1096,9 +1096,9 @@ async function executeImport() {
                 lines.push(`⊘ ${dupes} already imported (skipped)`);
             }
 
-            // Tasks needing clarity assignment
+            // Tasks needing mode assignment
             if (data.tasks_need_clarity > 0) {
-                lines.push(`⚠ ${data.tasks_need_clarity} tasks need clarity — use "Assign Clarity" below`);
+                lines.push(`⚠ ${data.tasks_need_clarity} tasks need mode — use "Assign Mode" below`);
             }
 
             status.innerHTML = lines.join('<br>');
@@ -1311,7 +1311,7 @@ async function importBackup(input) {
     }
 }
 
-// Show tasks needing clarity assignment
+// Show tasks needing mode assignment
 async function showUnclearTasks() {
     const container = document.getElementById('unclear-tasks-container');
     const btn = document.getElementById('btn-show-unclear');
@@ -1319,7 +1319,7 @@ async function showUnclearTasks() {
     // Toggle visibility
     if (container.classList.contains('visible')) {
         container.classList.remove('visible');
-        btn.textContent = 'Assign Clarity';
+        btn.textContent = 'Assign Mode';
         return;
     }
 
@@ -1327,24 +1327,23 @@ async function showUnclearTasks() {
     btn.textContent = 'Loading...';
 
     try {
-        const response = await fetch('/api/v1/tasks?clarity=none');
+        const response = await fetch('/api/v1/tasks?clarity=normal');
         const tasks = await response.json();
 
         if (tasks.length === 0) {
-            container.innerHTML = '<div class="unclear-empty">All tasks have clarity assigned. Energy filtering is fully available.</div>';
+            container.innerHTML = '<div class="unclear-empty">All tasks have a specific mode assigned.</div>';
         } else {
             container.innerHTML = `
                 <div class="unclear-tasks__hd">
-                    ${tasks.length} task${tasks.length === 1 ? '' : 's'} need clarity
-                    <span class="unclear-hint">Assign clarity to enable energy-based filtering</span>
+                    ${tasks.length} task${tasks.length === 1 ? '' : 's'} with default mode
+                    <span class="unclear-hint">Assign autopilot or brainstorm to enable energy-based filtering</span>
                 </div>
                 ${tasks.map(task => `
                     <div class="unclear-task-row" data-task-id="${task.id}">
                         <span class="unclear-task-title">${escapeHtml(task.title)}</span>
                         <div class="clarity-btns">
-                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'clear')" title="Clear next action, can do when tired">Clear</button>
-                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'defined')" title="Know what to do, needs some focus">Def</button>
-                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'open')" title="Needs research or deep thinking">Open</button>
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'autopilot')" title="Mindless — can do when tired">🧟 Auto</button>
+                            <button type="button" class="clarity-btn" onclick="setTaskClarity(${task.id}, 'brainstorm')" title="Needs deep thinking">🧠 Brain</button>
                         </div>
                     </div>
                 `).join('')}
@@ -1375,17 +1374,17 @@ async function setTaskClarity(taskId, clarity) {
                 const container = document.getElementById('unclear-tasks-container');
                 const remaining = container.querySelectorAll('.unclear-task-row').length;
                 if (remaining === 0) {
-                    container.innerHTML = '<div class="unclear-empty">All tasks have clarity assigned.</div>';
+                    container.innerHTML = '<div class="unclear-empty">All tasks have a mode assigned.</div>';
                 } else {
                     const header = container.querySelector('.unclear-tasks__hd');
                     if (header) {
-                        header.textContent = `${remaining} task${remaining === 1 ? '' : 's'} without clarity`;
+                        header.textContent = `${remaining} task${remaining === 1 ? '' : 's'} with default mode`;
                     }
                 }
             }
         }
     } catch (e) {
-        console.error('Failed to update task clarity:', e);
+        console.error('Failed to update task mode:', e);
     }
 }
 

@@ -39,14 +39,14 @@
                     <div class="energy-wrapper" id="header-energy">
                         <span class="energy-label">Energy</span>
                         <div class="header-energy__pills">
-                            <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie — no-brainers">🧟</button>
-                            <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal — clear tasks">☕</button>
-                            <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus — deep work too">🧠</button>
+                            <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie — autopilot tasks only">🧟</button>
+                            <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal — all except brainstorm">☕</button>
+                            <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus — all tasks including brainstorm">🧠</button>
                         </div>
                         <div class="clarity-dots" id="clarity-dots">
-                            <span class="cdot cdot-clear"></span>
-                            <span class="cdot cdot-defined"></span>
-                            <span class="cdot cdot-open"></span>
+                            <span class="cdot cdot-autopilot"></span>
+                            <span class="cdot cdot-normal"></span>
+                            <span class="cdot cdot-brainstorm"></span>
                         </div>
                     </div>
                     <!-- Back button (shown in deleted/scheduled/completed views) -->
@@ -66,8 +66,8 @@
                             <span class="label-full">Impact</span><span class="label-compact">IMP</span>
                             <span class="sort-icon"></span>
                         </button>
-                        <button type="button" class="header-sort active" data-sort="clarity" data-order="asc" title="Sort by clarity">
-                            <span class="label-full">Clarity</span><span class="label-compact">CLR</span>
+                        <button type="button" class="header-sort active" data-sort="clarity" data-order="asc" title="Sort by mode">
+                            <span class="label-full">Mode</span><span class="label-compact">MOD</span>
                             <span class="sort-icon">↑</span>
                         </button>
                     </span>
