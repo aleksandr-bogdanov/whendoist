@@ -69,12 +69,24 @@
             {% else %}Min{% endif %}
         </span>
         <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
-            <span class="clarity-dot"></span>
+            {% if task.clarity == 'clear' %}Clear
+            {% elif task.clarity == 'defined' %}Def
+            {% elif task.clarity == 'open' %}Open
+            {% else %}—{% endif %}
         </span>
     </div>
     <span class="task-actions"></span>
 </div>
 {% endmacro %}
+
+{# ── Plan My Day contextual banner ── #}
+<div class="pmd-banner" id="pmd-banner" hidden>
+    <div class="pmd-banner-text">
+        <span class="pmd-banner-title" id="pmd-banner-title">Plan tomorrow?</span>
+        <span class="pmd-banner-sub" id="pmd-banner-sub"></span>
+    </div>
+    <button type="button" class="pmd-banner-btn" id="pmd-banner-btn">Plan</button>
+</div>
 
 {# ── Active tasks — grouped by domain ── #}
 {% if domain_groups %}
@@ -88,13 +100,16 @@
                     Inbox
                 {% endif %}
             </span>
+            <span class="task-count">{{ domain_item.tasks|length }}</span>
+            <button type="button" class="domain-add-btn" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}" aria-label="Add task">+</button>
         </summary>
         <div class="task-list">
             {% for task_item in domain_item.tasks %}
             {{ render_task_item(task_item, today, encryption_enabled) }}
             {% endfor %}
             <div class="add-task-row" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}">
-                <span class="add-task-text">+ Add task</span>
+                <span class="add-task-icon">+</span>
+                <span class="add-task-text">Add task</span>
             </div>
         </div>
     </details>

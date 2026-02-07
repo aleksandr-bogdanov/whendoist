@@ -248,16 +248,14 @@
      * @param {boolean} isSpecialView - Whether showing a special view
      */
     function setSpecialViewHeader(isSpecialView) {
-        const taskLabel = document.getElementById('header-task-label');
+        const energy = document.getElementById('header-energy');
         const backBtn = document.getElementById('header-back-btn');
         const viewCount = document.getElementById('header-view-count');
-        const row2 = document.getElementById('header-row2');
         const sorts = document.getElementById('header-sorts');
 
-        if (taskLabel) taskLabel.hidden = isSpecialView;
+        if (energy) energy.hidden = isSpecialView;
         if (backBtn) backBtn.hidden = !isSpecialView;
         if (viewCount) viewCount.hidden = !isSpecialView;
-        if (row2) row2.hidden = isSpecialView;
         if (sorts) sorts.hidden = isSpecialView;
     }
 

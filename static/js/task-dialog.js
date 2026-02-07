@@ -593,6 +593,14 @@
                 const domainId = addTaskRow.dataset.domainId;
                 openDialog(null, { domainId: domainId || null });
             }
+            // Click on "+" button in domain header
+            const domainAddBtn = e.target.closest('.domain-add-btn');
+            if (domainAddBtn) {
+                e.stopPropagation();
+                e.preventDefault();
+                const domainId = domainAddBtn.dataset.domainId;
+                openDialog(null, { domainId: domainId || null });
+            }
         });
 
         // Keyboard shortcut "q" for quick add

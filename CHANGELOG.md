@@ -6,6 +6,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.37.0] - 2026-02-07 — Design Audit
+
+### Changed
+- **Meta column readability** — resting opacity raised from 0.65 to 0.85; hover fade-in removed (always readable)
+- **Ghost checkbox** — completion circle always visible at 30% opacity; full opacity on hover; communicates completability without requiring hover discovery
+- **Clarity text labels** — single colored dot replaced with "Clear"/"Def"/"Open" in clarity colors; mirrors the impact column pattern; immediately readable without learning color codes
+- **Add task affordance** — dashed placeholder row replaces invisible text; "+" button appears in domain headers on hover for quick capture
+- **Domain task counts** — muted count shown on all domain headers (expanded and collapsed)
+- **Single-row header** — "TASKS" label removed (redundant with nav), energy pills merged into sort row; header ~30px shorter
+- **Plan My Day banner** — contextual banner at top of task list: "Plan tomorrow?" in evening, "Plan your day" in morning; shows unscheduled task count
+- **Calendar auto-advance** — after 8pm, calendar shows tomorrow instead of empty evening; hero planning card replaces dead timeline space
+- **Domain chevron** — removed redundant right chevron from domain headers; disclosure triangle alone is sufficient
+
+---
+
 ## [0.36.0] - 2026-02-06 — Task List Visual Refinements
 
 ### Changed

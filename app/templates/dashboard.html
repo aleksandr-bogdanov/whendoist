@@ -47,7 +47,19 @@
             <div class="task-list-header">
                 <!-- Row 1: Title + Sort Columns + Gear -->
                 <div class="header-row1">
-                    <span class="header-task-label" id="header-task-label">Tasks</span>
+                    <div class="energy-wrapper" id="header-energy">
+                        <span class="energy-label">Energy</span>
+                        <div class="header-energy__pills">
+                            <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie — no-brainers">🧟</button>
+                            <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal — clear tasks">☕</button>
+                            <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus — deep work too">🧠</button>
+                        </div>
+                        <div class="clarity-dots" id="clarity-dots">
+                            <span class="cdot cdot-clear"></span>
+                            <span class="cdot cdot-defined"></span>
+                            <span class="cdot cdot-open"></span>
+                        </div>
+                    </div>
                     <!-- Back button (shown in deleted/scheduled/completed views) -->
                     <button type="button" class="header-back-btn" id="header-back-btn" hidden>
                         <svg class="icon icon-sm back-arrow" aria-hidden="true">
@@ -98,22 +110,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Row 2: Energy + View Chips -->
-                <div class="header-row2" id="header-row2">
-                    <div class="energy-wrapper" id="header-energy">
-                        <span class="energy-label">Energy</span>
-                        <div class="header-energy__pills">
-                            <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie — no-brainers">🧟</button>
-                            <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal — clear tasks">☕</button>
-                            <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus — deep work too">🧠</button>
-                        </div>
-                        <div class="clarity-dots" id="clarity-dots">
-                            <span class="cdot cdot-clear"></span>
-                            <span class="cdot cdot-defined"></span>
-                            <span class="cdot cdot-open"></span>
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class="task-list-scroll" id="task-list-scroll">
             {% include '_task_list.html' %}
@@ -150,6 +146,13 @@
                         <span class="action-emoji">✨</span>
                         <span class="action-name">Plan My Day</span>
                     </button>
+                </div>
+
+                <div class="pmd-hero" data-pmd-hero hidden>
+                    <div class="pmd-hero-label">Plan this day</div>
+                    <div class="pmd-hero-stat" data-pmd-hero-stat></div>
+                    <div class="pmd-hero-sub" data-pmd-hero-sub></div>
+                    <button type="button" class="pmd-hero-btn plan-day-btn" title="Plan My Day">Plan My Day</button>
                 </div>
 
                 {% if day.events %}
@@ -392,10 +395,15 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Scroll carousel to today's calendar
+    // Scroll carousel to today's calendar (or tomorrow after 8pm)
     const todayCalendar = document.getElementById('today-calendar');
     if (todayCalendar) {
-        todayCalendar.scrollIntoView({ behavior: 'instant', inline: 'center' });
+        const initHour = new Date().getHours();
+        if (initHour >= 20 && todayCalendar.nextElementSibling) {
+            todayCalendar.nextElementSibling.scrollIntoView({ behavior: 'instant', inline: 'start' });
+        } else {
+            todayCalendar.scrollIntoView({ behavior: 'instant', inline: 'center' });
+        }
     }
 
     // Add "now" line to today's calendar and scroll to it
@@ -532,6 +540,73 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Plan My Day banner — show in evening (for tomorrow) or morning (for today)
+    (function() {
+        const banner = document.getElementById('pmd-banner');
+        if (!banner) return;
+
+        const hour = new Date().getHours();
+        const title = document.getElementById('pmd-banner-title');
+        const sub = document.getElementById('pmd-banner-sub');
+        const btn = document.getElementById('pmd-banner-btn');
+
+        // Count unscheduled active tasks
+        const taskItems = document.querySelectorAll('#task-list-scroll .task-item:not(.scheduled):not([data-completed="1"])');
+        const taskCount = taskItems.length;
+
+        if (taskCount === 0) return;
+
+        if (hour >= 18) {
+            title.textContent = 'Plan tomorrow?';
+            sub.textContent = taskCount + ' tasks ready to schedule';
+            banner.hidden = false;
+        } else if (hour < 11) {
+            title.textContent = 'Plan your day';
+            sub.textContent = taskCount + ' tasks ready to schedule';
+            banner.hidden = false;
+        }
+
+        btn.addEventListener('click', function() {
+            const todayCal = document.getElementById('today-calendar');
+            if (!todayCal) return;
+
+            if (hour >= 18 && todayCal.nextElementSibling) {
+                todayCal.nextElementSibling.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+                setTimeout(function() {
+                    const planBtn = todayCal.nextElementSibling.querySelector('.day-header .plan-day-btn');
+                    if (planBtn) planBtn.click();
+                }, 400);
+            } else {
+                const planBtn = todayCal.querySelector('.day-header .plan-day-btn');
+                if (planBtn) planBtn.click();
+            }
+        });
+    })();
+
+    // Hero card: show when visible calendar has no events in next few hours
+    (function() {
+        document.querySelectorAll('.day-calendar').forEach(function(cal) {
+            var hero = cal.querySelector('[data-pmd-hero]');
+            if (!hero) return;
+
+            var events = cal.querySelectorAll('.calendar-event, .scheduled-task');
+            var dateOnlyTasks = cal.querySelectorAll('.date-only-task');
+            var totalItems = events.length + dateOnlyTasks.length;
+
+            if (totalItems <= 1) {
+                var taskCount = document.querySelectorAll('#task-list-scroll .task-item:not([data-completed="1"])').length;
+                var stat = hero.querySelector('[data-pmd-hero-stat]');
+                var sub = hero.querySelector('[data-pmd-hero-sub]');
+                if (stat) stat.textContent = taskCount + ' tasks ready';
+                if (sub) sub.textContent = 'Fill your free time with what matters';
+                hero.hidden = false;
+
+                var headerPlanBtn = cal.querySelector('.day-header .plan-day-btn');
+                if (headerPlanBtn) headerPlanBtn.style.display = 'none';
+            }
+        });
+    })();
 });
 </script>
 
