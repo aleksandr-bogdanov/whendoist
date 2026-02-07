@@ -14,17 +14,6 @@
 </div>
 {% endif %}
 
-<div class="pending-past-banner" id="pending-past-banner" style="display: none;">
-    <span class="pending-past-text">
-        You have <strong id="pending-past-count">0</strong> pending recurring instance(s) from past days.
-    </span>
-    <span class="pending-past-actions">
-        <button type="button" class="btn btn-sm btn-primary" id="btn-complete-all-past">Complete all</button>
-        <button type="button" class="btn btn-sm btn-secondary" id="btn-skip-all-past">Skip all</button>
-        <button type="button" class="btn btn-sm btn-ghost" id="btn-dismiss-past">Dismiss</button>
-    </span>
-</div>
-
 <div class="tasks-layout">
     <!-- Mobile Tab Switcher (visible on mobile only) -->
     <div class="mobile-tabs">
@@ -112,6 +101,16 @@
                 </div>
             </div>
             <div class="task-list-scroll" id="task-list-scroll">
+            <div class="pending-past-banner" id="pending-past-banner" style="display: none;">
+                <span class="pending-past-text">
+                    You have <strong id="pending-past-count">0</strong> pending recurring instance(s) from past days.
+                </span>
+                <span class="pending-past-actions">
+                    <button type="button" class="btn btn-sm btn-primary" id="btn-complete-all-past">Complete all</button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="btn-skip-all-past">Skip all</button>
+                    <button type="button" class="btn btn-sm btn-ghost" id="btn-dismiss-past">Dismiss</button>
+                </span>
+            </div>
             {% include '_task_list.html' %}
             </div>
         </div>
@@ -571,16 +570,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const todayCal = document.getElementById('today-calendar');
             if (!todayCal) return;
 
-            if (hour >= 18 && todayCal.nextElementSibling) {
-                todayCal.nextElementSibling.scrollIntoView({ behavior: 'smooth', inline: 'start' });
-                setTimeout(function() {
-                    const planBtn = todayCal.nextElementSibling.querySelector('.day-header .plan-day-btn');
-                    if (planBtn) planBtn.click();
-                }, 400);
-            } else {
-                const planBtn = todayCal.querySelector('.day-header .plan-day-btn');
-                if (planBtn) planBtn.click();
-            }
+            // Determine target calendar: tomorrow if evening, today otherwise
+            var targetCal = (hour >= 18 && todayCal.nextElementSibling)
+                ? todayCal.nextElementSibling
+                : todayCal;
+
+            // Scroll to the target calendar, then enter plan mode directly
+            targetCal.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+            setTimeout(function() {
+                if (window.PlanTasks && typeof window.PlanTasks.enterPlanMode === 'function') {
+                    window.PlanTasks.enterPlanMode(targetCal);
+                }
+            }, 400);
         });
     })();
 

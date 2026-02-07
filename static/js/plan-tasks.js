@@ -1380,8 +1380,21 @@
     // PUBLIC API
     // ==========================================================================
 
+    /**
+     * Programmatically enter selection mode on a given day calendar element.
+     * Used by the Plan My Day banner to trigger planning without relying on DOM button clicks.
+     * @param {Element} dayCalendar - The .day-calendar element to plan
+     */
+    function enterPlanMode(dayCalendar) {
+        if (!dayCalendar) return;
+        // Find the plan button for this calendar to track state
+        planBtn = dayCalendar.querySelector('.plan-day-btn');
+        enterSelectionMode(dayCalendar);
+    }
+
     window.PlanTasks = {
         init,
+        enterPlanMode,
         registerStrategy,
         setStrategy,
         getStrategies: () => Array.from(strategies.keys()),

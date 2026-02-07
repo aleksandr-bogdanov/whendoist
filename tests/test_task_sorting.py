@@ -500,10 +500,10 @@ class TestGroupTasksByDomainDateSorting:
 class TestGroupTasksByDomainVisibility:
     """Tests for task visibility based on preferences."""
 
-    async def test_hide_scheduled_when_show_scheduled_false(
+    async def test_scheduled_always_included_regardless_of_pref(
         self, db_session: AsyncSession, test_user: User, test_domain: Domain
     ):
-        """Scheduled pending tasks are hidden when show_scheduled_in_list=False."""
+        """Scheduled tasks are always returned even when show_scheduled_in_list=False (UI-only collapse)."""
         today = date.today()
 
         task_unscheduled = Task(
@@ -537,12 +537,14 @@ class TestGroupTasksByDomainVisibility:
 
         active_titles = [t["task"].title for t in result["domain_groups"][0]["tasks"]]
         assert active_titles == ["Unscheduled"]
-        assert result["scheduled_tasks"] == []
+        # Scheduled tasks always included — preference only controls UI collapse state
+        scheduled_titles = [t["task"].title for t in result["scheduled_tasks"]]
+        assert scheduled_titles == ["Scheduled"]
 
-    async def test_hide_completed_when_show_completed_false(
+    async def test_completed_always_included_regardless_of_pref(
         self, db_session: AsyncSession, test_user: User, test_domain: Domain
     ):
-        """Completed tasks are hidden when show_completed_in_list=False."""
+        """Completed tasks are always returned even when show_completed_in_list=False (UI-only collapse)."""
         now = datetime.now(tz=UTC)
 
         task_pending = Task(
@@ -577,7 +579,9 @@ class TestGroupTasksByDomainVisibility:
 
         active_titles = [t["task"].title for t in result["domain_groups"][0]["tasks"]]
         assert active_titles == ["Pending"]
-        assert result["completed_tasks"] == []
+        # Completed tasks always included — preference only controls UI collapse state
+        completed_titles = [t["task"].title for t in result["completed_tasks"]]
+        assert completed_titles == ["Completed"]
 
     async def test_retention_window_filters_old_completed(
         self, db_session: AsyncSession, test_user: User, test_domain: Domain

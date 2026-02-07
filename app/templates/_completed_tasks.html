@@ -2,7 +2,7 @@
 {# Note: Header elements (back button, count) are in the main header, toggled by JS #}
 {% if domains_with_tasks %}
     {% for domain_item in domains_with_tasks %}
-    <details class="project-group completed-group" open data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
+    <details class="project-group completed-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
         <summary class="project-header">
             <span class="project-name">
                 {% if domain_item.domain %}

@@ -122,8 +122,6 @@ def group_tasks_by_domain(
 
     # User-controlled preferences
     retention_days = user_prefs.completed_retention_days if user_prefs else 3
-    show_completed_in_list = user_prefs.show_completed_in_list if user_prefs else True
-    show_scheduled_in_list = user_prefs.show_scheduled_in_list if user_prefs else True
     hide_recurring_after = user_prefs.hide_recurring_after_completion if user_prefs else False
 
     # Collect tasks into three buckets: active by domain, scheduled flat, completed flat
@@ -139,15 +137,9 @@ def group_tasks_by_domain(
         is_scheduled = task.scheduled_date is not None
         is_task_completed = _is_completed(task, instance_completed_at)
 
-        # Hide scheduled tasks if preference is off (they'll still show on calendar)
-        if is_scheduled and not show_scheduled_in_list and not is_task_completed:
-            continue
-
         if is_task_completed:
             completed_at = instance_completed_at if task.is_recurring else task.completed_at
             if not TaskService.is_within_retention_window(completed_at, retention_days):
-                continue
-            if not show_completed_in_list:
                 continue
             if task.is_recurring and hide_recurring_after and instance_completed_at:
                 continue
