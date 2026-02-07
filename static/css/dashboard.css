@@ -11,6 +11,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-left: 34px;  /* Align with task content */
 }
 
 .energy-wrapper[hidden] {
@@ -328,20 +329,7 @@
     grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
     column-gap: var(--col-gap);
     align-items: center;
-    padding: 8px 0 4px var(--rail-w);
-}
-
-/* Row 2: Energy + View Chips — flex layout */
-.header-row2 {
-    display: flex;
-    align-items: center;
-    padding: 2px var(--rail-w) 6px;
-    margin-left: 36px;
-    gap: 8px;
-}
-
-.header-row2[hidden] {
-    display: none;
+    padding: 6px 0 6px var(--rail-w);
 }
 
 /* Cover rounded corner gaps when scrolling */
@@ -367,16 +355,6 @@
         var(--open-color)
     );
     opacity: 0.35;
-}
-
-.header-task-label {
-    margin-left: 36px;  /* Align with task-content (38px - 2px rail) */
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(15, 23, 42, 0.50);  /* Reduced contrast so ENERGY wins */
-    line-height: 22px;
 }
 
 /* =============================================================================
@@ -648,10 +626,6 @@
     display: none;
 }
 
-.header-task-label[hidden] {
-    display: none;
-}
-
 .deleted-group.project-group {
     opacity: 0.85;
 }
@@ -835,6 +809,11 @@
     display: none;
 }
 
+.project-group > summary::marker {
+    display: none;
+    content: "";
+}
+
 /* Patch 46: Domain header - tighter density */
 .project-header {
     display: flex;
@@ -871,20 +850,47 @@
     color: var(--text-primary);
 }
 
-.task-count {
-    font-size: 0.65rem;
-    font-weight: 500;
-    background: var(--bg-surface);
+/* "+" button in domain header — hover-reveal */
+.domain-add-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1px solid var(--border-default);
+    background: transparent;
     color: var(--text-muted);
-    padding: 0.125rem 0.4rem;
-    border-radius: 8px;
-    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 300;
+    opacity: 0;
     transition: all 0.15s ease;
 }
 
+.project-header:hover .domain-add-btn {
+    opacity: 0.7;
+}
+
+.domain-add-btn:hover {
+    opacity: 1 !important;
+    border-color: rgba(109, 94, 246, 0.35);
+    color: var(--primary);
+    background: rgba(109, 94, 246, 0.06);
+}
+
+.task-count {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
 .task-count.filtered {
-    background: var(--primary-tint, #eef2ff);
     color: var(--primary, #6366f1);
+    opacity: 1;
 }
 
 /* =============================================================================
@@ -949,6 +955,7 @@
     letter-spacing: 0.08em;
     color: var(--text-muted);
     white-space: nowrap;
+    line-height: 1;
 }
 
 /* Task count badge */
@@ -957,10 +964,126 @@
     font-weight: 500;
     color: var(--text-muted);
     opacity: 0.7;
+    line-height: 1;
 }
 
 .section-tasks {
     /* Tasks inside the collapsible section */
+}
+
+/* Plan My Day contextual banner */
+.pmd-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    margin: 6px 8px 4px;
+    background: linear-gradient(135deg,
+        rgba(22, 123, 255, 0.04),
+        rgba(109, 94, 246, 0.05),
+        rgba(160, 32, 192, 0.03));
+    border: 1px solid rgba(109, 94, 246, 0.12);
+    border-radius: 10px;
+}
+
+.pmd-banner[hidden] { display: none; }
+
+.pmd-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pmd-banner-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pmd-banner-sub {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}
+
+.pmd-banner-btn {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.2);
+    transition: all 0.15s ease;
+}
+
+.pmd-banner-btn:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.3);
+}
+
+/* Plan My Day hero card — shown in empty calendars */
+.pmd-hero {
+    padding: 20px 16px;
+    margin: 8px;
+    background: linear-gradient(135deg,
+        rgba(22, 123, 255, 0.05),
+        rgba(109, 94, 246, 0.07),
+        rgba(160, 32, 192, 0.04));
+    border: 1px solid rgba(109, 94, 246, 0.1);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.pmd-hero[hidden] { display: none; }
+
+.pmd-hero-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.pmd-hero-stat {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.pmd-hero-sub {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.pmd-hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.2);
+    transition: all 0.15s ease;
+}
+
+.pmd-hero-btn:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.3);
 }
 
 /* =============================================================================
@@ -1049,18 +1172,11 @@
     box-shadow: var(--shadow-inner-glow);
 }
 
-/* Meta columns fade - visible only on hover */
+/* Meta columns - always readable */
 .task-item .meta-duration,
 .task-item .meta-impact,
 .task-item .meta-clarity {
-    opacity: 0.65;
-    transition: opacity var(--duration-fast) var(--ease-default);
-}
-
-.task-item:hover .meta-duration,
-.task-item:hover .meta-impact,
-.task-item:hover .meta-clarity {
-    opacity: 1;
+    opacity: 0.85;
 }
 
 /* Rail expands on hover */
@@ -1131,6 +1247,7 @@
     width: 16px;
     height: 16px;
     border-radius: 8px;
+    border: 1.5px solid var(--border-default);
     display: grid;
     place-items: center;
     font-size: 10px;
@@ -1138,8 +1255,8 @@
     opacity: 0;
     transform: scale(0.9);
     transition: opacity 120ms ease, transform 120ms ease;
-    background: rgba(15, 23, 42, 0.06);
-    color: var(--text-primary);
+    background: transparent;
+    color: transparent;
     position: relative;
     z-index: 1;
 }
@@ -1167,9 +1284,9 @@
 }
 
 .complete-gutter--hover .complete-check {
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+    opacity: 0.3;
+    transform: scale(1);
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .task-item:hover .complete-gutter--hover .complete-check,
@@ -1180,7 +1297,8 @@
 
 /* Purple hover effect like FAB */
 .complete-gutter--hover:hover .complete-check {
-    background: rgba(109, 94, 246, 0.12);
+    background: rgba(109, 94, 246, 0.08);
+    border-color: rgba(109, 94, 246, 0.35);
     color: var(--primary);
 }
 
@@ -1188,7 +1306,8 @@
 .task-item[data-completed="1"] .complete-check {
     opacity: 1;
     transform: scale(1);
-    background: rgba(109, 94, 246, 0.15);
+    background: rgba(109, 94, 246, 0.12);
+    border-color: rgba(109, 94, 246, 0.35);
     color: var(--primary);
 }
 
@@ -1210,8 +1329,7 @@
 }
 
 /* Completed task - muted dots */
-.task-item[data-completed="1"] .meta-impact::before,
-.task-item[data-completed="1"] .meta-clarity .clarity-dot {
+.task-item[data-completed="1"] .meta-impact::before {
     opacity: 0.4;
 }
 
@@ -1245,9 +1363,7 @@
 
 /* Completed task - muted dots */
 .task-item.completed .meta-impact::before,
-.task-item.completed .meta-clarity .clarity-dot,
-.task-item.completed.scheduled .meta-impact::before,
-.task-item.completed.scheduled .meta-clarity .clarity-dot {
+.task-item.completed.scheduled .meta-impact::before {
     opacity: 0.4;
 }
 
@@ -1527,32 +1643,45 @@
     text-decoration: line-through;
 }
 
-/* Add task row - always visible with subtle styling */
+/* Dashed add-task row */
 .add-task-row {
     display: flex;
     align-items: center;
-    padding: 4px 12px 4px 38px;  /* Aligns with task text */
+    gap: 8px;
+    padding: 6px 12px 6px 18px;
+    margin: 4px 8px 6px;
+    border: 1px dashed var(--border-default);
+    border-radius: 6px;
     cursor: pointer;
-    background: var(--bg-panel);
-    height: 28px;
-    transition: background 0.15s ease;
-}
-
-.add-task-text {
-    opacity: 0.5;  /* Always visible but subtle */
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    transition: opacity 0.15s ease, color 0.15s ease;
-}
-
-.add-task-row:hover .add-task-text {
-    opacity: 1;
-    color: var(--primary);
+    transition: all 0.15s ease;
 }
 
 .add-task-row:hover {
-    background: rgba(109, 94, 246, 0.08);
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.03);
+}
+
+.add-task-icon {
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    opacity: 0.6;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.add-task-text {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.6;
+    transition: all 0.15s ease;
+}
+
+.add-task-row:hover .add-task-icon,
+.add-task-row:hover .add-task-text {
+    opacity: 1;
+    color: var(--primary);
 }
 
 .task-content {
@@ -1699,24 +1828,20 @@
 .meta-impact.impact-3 { color: var(--impact-p3); }
 .meta-impact.impact-4 { color: var(--impact-p4); }
 
-/* Clarity indicator - single colored dot per task row */
+/* Clarity indicator - colored text label per task row */
 .meta-clarity {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
-.meta-clarity .clarity-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--border-default);  /* fallback for clarity-none */
-}
-
-.meta-clarity.clarity-clear .clarity-dot { background: var(--clear-color); }
-.meta-clarity.clarity-defined .clarity-dot { background: var(--clarity-defined); }
-.meta-clarity.clarity-open .clarity-dot { background: var(--open-color); }
-.meta-clarity.clarity-none .clarity-dot { opacity: 0.35; }
+.meta-clarity.clarity-clear { color: var(--clear-color); }
+.meta-clarity.clarity-defined { color: var(--clarity-defined); }
+.meta-clarity.clarity-open { color: var(--open-color); }
+.meta-clarity.clarity-none { color: var(--text-muted); opacity: 0.5; }
 
 /* =============================================================================
    Energy/Mode-based Task Filtering
@@ -2665,12 +2790,8 @@ body[data-energy-level] .scheduled-group.project-group {
     /* Patch 29: Mobile grid - smaller columns */
     .header-row1,
     .task-item {
-        grid-template-columns: 1fr 44px 40px 56px 24px;
+        grid-template-columns: 1fr 44px 40px 42px 24px;
         column-gap: 6px;
-    }
-
-    .header-row2 {
-        margin-left: 4px;
     }
 
     .task-list-scroll {
@@ -2887,10 +3008,6 @@ body[data-energy-level] .scheduled-group.project-group {
     border-color: var(--border-default);
 }
 
-[data-theme="dark"] .header-task-label {
-    color: var(--text-muted);
-}
-
 [data-theme="dark"] .energy-label {
     color: var(--text-secondary);
 }
@@ -2963,7 +3080,7 @@ body[data-energy-level] .scheduled-group.project-group {
 
 /* Sorting headers - match TASKS/ENERGY header label hierarchy in dark mode */
 [data-theme="dark"] .header-sort {
-    color: var(--text-muted);  /* Same as header-task-label */
+    color: var(--text-muted);
 }
 
 [data-theme="dark"] .header-sort:hover {
