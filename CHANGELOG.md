@@ -6,6 +6,43 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.39.6] - 2026-02-08 — Subview Header, Thoughts Rename, Checkmark Fixes
+
+### Fixed
+- **Subview header layout** — centered title (e.g. "Completed (162)") with absolute-positioned back arrow left and gear right; removes inconsistent gear button shift between main/sub views
+- **Back button** — simplified to arrow-only (removed "Back to tasks" text); centered title provides context
+- **Completed checkmarks** — fixed CSS specificity so `.completed-group` override (muted gray) beats `.task-item[data-completed="1"]` (purple); both light and dark mode
+
+### Changed
+- **Inbox → Thoughts** — renamed "Inbox" domain to "Thoughts" in all task list views (main, completed, scheduled, deleted)
+- **Domain picker** — removed Thoughts/Inbox option from task create/edit form; new tasks default to first real domain
+- **Thoughts styling** — domain header for unassigned tasks shown in italic with muted color
+
+---
+
+## [0.39.5] - 2026-02-07 — Subview Header & Styling Fixes
+
+### Fixed
+- **Domain name alignment** — changed `.project-header` from `align-items: baseline` to `center` so name, arrow, and pill are vertically centered
+- **Subview header height** — added `align-items: center` and compact padding to flex override when back button is visible, matching main view height
+- **Back button size** — shrunk from CTA-style (8px 16px padding, filled background) to compact ghost link (4px 10px, transparent); hover shows tint instead of solid fill
+- **Completed checkmarks** — muted purple filled checkmarks to subtle neutral in completed subview; added dark mode variant
+
+---
+
+## [0.39.4] - 2026-02-07 — Labels, Column Order & Styling
+
+### Changed
+- **Impact labels** — unified to High/Mid/Low/Min everywhere (constants, templates, task form, JS dialog); replaces mixed P1/P2/P3/P4 and Critical/High/Medium/Low
+- **Column order** — reordered task grid to Clarity | Dur | Impact (was Dur | Impact | Clarity), putting the mode-filtering column first
+- **Column label** — renamed "Mode" to "Clarity" in sort headers and scheduled section
+- **Column widths** — narrowed duration (68→48px) and impact (56→44px) columns; clarity stays 68px (was 80px in app.css override)
+- **Normal clarity** — shows blank instead of "—" dash for normal/default clarity
+- **Domain count** — restyled as gray micro pill with rounded background
+- **Strikethrough** — removed line-through on completed tasks (kept for skipped); state is already communicated by section header and muted color
+
+---
+
 ## [0.39.3] - 2026-02-07 — Domain Header & Special View Fixes
 
 ### Fixed

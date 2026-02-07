@@ -666,8 +666,8 @@ class AnalyticsService:
                     "title": task.title,
                     "completed_at": task.completed_at,  # Keep for sorting
                     "completed_at_display": task.completed_at.strftime("%b %d") if task.completed_at else "",
-                    "domain_name": domain.name if domain else "Inbox",
-                    "domain_icon": domain.icon if domain else "📥",
+                    "domain_name": domain.name if domain else "Thoughts",
+                    "domain_icon": domain.icon if domain else "💭",
                     "is_instance": False,
                 }
             )
@@ -681,8 +681,8 @@ class AnalyticsService:
                     "title": task.title,
                     "completed_at": instance.completed_at,  # Keep for sorting
                     "completed_at_display": instance.completed_at.strftime("%b %d") if instance.completed_at else "",
-                    "domain_name": domain.name if domain else "Inbox",
-                    "domain_icon": domain.icon if domain else "📥",
+                    "domain_name": domain.name if domain else "Thoughts",
+                    "domain_icon": domain.icon if domain else "💭",
                     "is_instance": True,
                 }
             )

@@ -8,7 +8,7 @@
                 {% if domain_item.domain %}
                     {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}<span class="domain-name-text">{% if encryption_enabled %}🔒{% else %}{{ domain_item.domain.name }}{% endif %}</span>
                 {% else %}
-                    Inbox
+                    Thoughts
                 {% endif %}
             </span>
         </summary>
@@ -39,6 +39,11 @@
                     {% endif %}
                 </div>
                 <div class="task-meta">
+                    <span class="meta-clarity clarity-{{ task.clarity }}">
+                        {% if task.clarity == 'autopilot' %}Autopilot
+                        {% elif task.clarity == 'brainstorm' %}Brainstorm
+                        {% endif %}
+                    </span>
                     <span class="meta-duration">
                         {% if task.duration_minutes %}
                             {% if task.duration_minutes >= 60 %}
@@ -49,15 +54,10 @@
                         {% else %}—{% endif %}
                     </span>
                     <span class="meta-impact impact-{{ task.impact }}">
-                        {% if task.impact == 1 %}P1
-                        {% elif task.impact == 2 %}P2
-                        {% elif task.impact == 3 %}P3
-                        {% else %}P4{% endif %}
-                    </span>
-                    <span class="meta-clarity clarity-{{ task.clarity }}">
-                        {% if task.clarity == 'autopilot' %}Autopilot
-                        {% elif task.clarity == 'brainstorm' %}Brainstorm
-                        {% else %}—{% endif %}
+                        {% if task.impact == 1 %}High
+                        {% elif task.impact == 2 %}Mid
+                        {% elif task.impact == 3 %}Low
+                        {% else %}Min{% endif %}
                     </span>
                 </div>
                 <span class="task-actions"></span>
@@ -79,7 +79,7 @@
         // Update header with scheduled count
         const countEl = document.getElementById('header-view-count');
         if (countEl) {
-            countEl.textContent = '{{ total_count }} scheduled';
+            countEl.textContent = 'Scheduled (' + {{ total_count }} + ')';
         }
         // Re-initialize task completion handlers
         if (window.TaskComplete && typeof window.TaskComplete.init === 'function') {

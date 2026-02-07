@@ -55,6 +55,11 @@
         {% endif %}
     </div>
     <div class="task-meta">
+        <span class="meta-clarity clarity-{{ task.clarity }}">
+            {% if task.clarity == 'autopilot' %}Autopilot
+            {% elif task.clarity == 'brainstorm' %}Brainstorm
+            {% endif %}
+        </span>
         <span class="meta-duration">
             {% if task.duration_minutes %}
                 {% if task.duration_minutes >= 60 %}
@@ -69,11 +74,6 @@
             {% elif task.impact == 2 %}Mid
             {% elif task.impact == 3 %}Low
             {% else %}Min{% endif %}
-        </span>
-        <span class="meta-clarity clarity-{{ task.clarity }}">
-            {% if task.clarity == 'autopilot' %}Autopilot
-            {% elif task.clarity == 'brainstorm' %}Brainstorm
-            {% else %}—{% endif %}
         </span>
     </div>
     <span class="task-actions"></span>
@@ -98,7 +98,7 @@
                 {% if domain_item.domain %}
                     {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}<span class="domain-name-text">{% if encryption_enabled %}🔒{% else %}{{ domain_item.domain.name }}{% endif %}</span>
                 {% else %}
-                    Inbox
+                    Thoughts
                 {% endif %}
             </span>
             <span class="task-count">{{ domain_item.tasks|length }}</span>
@@ -135,9 +135,9 @@
             <span class="sched-label-line"></span>
             <span class="sep-col-label">Date</span>
         </span>
+        <span class="sep-col-label">Clarity</span>
         <span class="sep-col-label">Dur</span>
         <span class="sep-col-label">Impact</span>
-        <span class="sep-col-label">Mode</span>
         <span class="sep-col-spacer"></span>
     </summary>
     <div class="section-tasks">

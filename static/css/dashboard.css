@@ -372,7 +372,7 @@
 /* Row 1: Title + Sort Columns + Gear — matches task-item grid */
 .header-row1 {
     display: grid;
-    grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    grid-template-columns: 1fr var(--col-clarity) var(--col-duration) var(--col-impact) var(--col-actions);
     column-gap: var(--col-gap);
     align-items: center;
     padding: 6px 0 6px var(--rail-w);
@@ -632,13 +632,26 @@
 
 /* Special Views - Header Elements */
 
-/* Switch header from grid to flex when in special view */
+/* Switch header from grid to flex when in special view (centered title layout) */
 .header-row1:has(> .header-back-btn:not([hidden])) {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 6px 0 6px var(--rail-w);
 }
 
+/* Back button — absolute left */
+.header-row1:has(> .header-back-btn:not([hidden])) .header-back-btn {
+    position: absolute;
+    left: var(--rail-w);
+}
+
+/* Gear — absolute right, aligned with grid-mode position */
 .header-row1:has(> .header-back-btn:not([hidden])) .settings-anchor {
-    margin-left: auto;
+    position: absolute;
+    right: 0;
+    margin-left: 0;
 }
 
 .header-back-btn {
@@ -647,23 +660,21 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 16px;
-    margin-left: 34px;  /* Align with task content */
-    border-radius: 8px;
-    background: var(--primary-tint);
+    padding: 4px 10px;
+    margin-left: 0;
+    border-radius: 6px;
+    background: transparent;
     color: var(--primary);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
     cursor: pointer;
     white-space: nowrap;
     transition: all 0.15s ease;
 }
 
 .header-back-btn:hover {
-    background: var(--primary);
-    color: white;
+    background: var(--primary-tint);
+    color: var(--primary);
 }
 
 .header-back-btn[hidden] {
@@ -675,16 +686,21 @@
 }
 
 .header-view-count {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--text-muted);
-    margin-left: auto;
+    color: var(--text-secondary);
 }
 
 .header-view-count[hidden] {
     display: none;
+}
+
+/* Thoughts domain (no domain_id) — italic, muted */
+.project-group[data-domain-id="inbox"] .project-name {
+    font-style: italic;
+    color: var(--text-muted);
 }
 
 .deleted-group.project-group {
@@ -766,6 +782,18 @@
 .completed-group .task-item .meta-impact,
 .completed-group .task-item .meta-clarity {
     color: var(--text-primary) !important;
+}
+
+.completed-group .task-item[data-completed="1"] .complete-check {
+    opacity: 1;
+    transform: scale(1);
+    background: rgba(15, 23, 42, 0.04);
+    border-color: rgba(15, 23, 42, 0.12);
+    color: var(--text-muted);
+}
+
+.completed-group .task-item[data-completed="1"] .complete-bar {
+    opacity: 0.2;
 }
 
 .completed-empty {
@@ -898,7 +926,7 @@
 /* Patch 46: Domain header - tighter density */
 .project-header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.5rem;
     padding: 6px 12px 6px 24px;  /* Reduced vertical padding for compact look */
     margin: 0 !important;
@@ -965,9 +993,13 @@
 }
 
 .task-count {
-    font-size: 0.7rem;
-    font-weight: 400;
+    font-size: 0.6rem;
+    font-weight: 500;
     color: var(--text-muted);
+    background: rgba(15, 23, 42, 0.05);
+    padding: 1px 6px;
+    border-radius: 9999px;
+    line-height: 1.4;
 }
 
 .task-count.filtered {
@@ -1076,7 +1108,7 @@
 /* SCHEDULED separator: grid layout matching task-item columns */
 .section-separator--sched {
     display: grid;
-    grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    grid-template-columns: 1fr var(--col-clarity) var(--col-duration) var(--col-impact) var(--col-actions);
     column-gap: var(--col-gap);
     align-items: center;
     padding: 6px 0 6px var(--rail-w);
@@ -1282,7 +1314,7 @@
 /* Patch 29+46: Task rows - grid layout, compact like Thoughts view */
 .task-item {
     display: grid;
-    grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    grid-template-columns: 1fr var(--col-clarity) var(--col-duration) var(--col-impact) var(--col-actions);
     column-gap: var(--col-gap);
     align-items: center;
     padding: 7px 0 7px var(--rail-w);  /* Compact ~36px row height */
@@ -1496,7 +1528,7 @@
 }
 
 .task-item[data-completed="1"] .task-text {
-    text-decoration: line-through;
+    text-decoration: none;
     color: rgba(15, 23, 42, 0.5);
 }
 
@@ -1526,7 +1558,7 @@
 .task-item.completed .task-text,
 .task-item.completed.scheduled .task-text {
     color: rgba(15, 23, 42, 0.5);
-    text-decoration: line-through;
+    text-decoration: none;
 }
 
 /* Completed task - consistent muted text (no strikethrough on meta) */
@@ -1852,7 +1884,7 @@
 /* Dim text only */
 .calendar-item[data-completed="1"] .scheduled-task-text,
 .calendar-item[data-completed="1"] .date-only-task-text {
-    text-decoration: line-through;
+    text-decoration: none;
     color: rgba(15, 23, 42, 0.5);
 }
 
@@ -1868,7 +1900,7 @@
 .calendar-item.completed .scheduled-task-text,
 .calendar-item.completed .date-only-task-text {
     color: rgba(15, 23, 42, 0.5);
-    text-decoration: line-through;
+    text-decoration: none;
 }
 
 /* Dashed add-task row */
@@ -3010,10 +3042,10 @@ body[data-energy-level] .scheduled-group.project-group {
         font-size: 0.5rem;
     }
 
-    /* Patch 29: Mobile grid - smaller columns */
+    /* Patch 29: Mobile grid - smaller columns (clarity, duration, impact, actions) */
     .header-row1,
     .task-item {
-        grid-template-columns: 1fr 44px 40px 42px 24px;
+        grid-template-columns: 1fr 42px 36px 34px 24px;
         column-gap: 6px;
     }
 
@@ -3104,10 +3136,10 @@ body[data-energy-level] .scheduled-group.project-group {
 
 /* Compact labels for narrow screens (< 580px) */
 @media (max-width: 580px) {
-    /* Patch 29: Narrower grid columns for very small screens */
+    /* Patch 29: Narrower grid columns for very small screens (clarity, duration, impact, actions) */
     .header-row1,
     .task-item {
-        grid-template-columns: 1fr 32px 28px 44px 20px;
+        grid-template-columns: 1fr 36px 28px 24px 20px;
         column-gap: 4px;
     }
 
@@ -3487,6 +3519,10 @@ body[data-energy-level] .scheduled-group.project-group {
     color: var(--text-primary);
 }
 
+[data-theme="dark"] .task-count {
+    background: rgba(248, 250, 252, 0.08);
+}
+
 /* Trash bin dark mode - moved to components/drag-drop.css */
 
 /* Completed tasks in main list - dark mode (override hardcoded rgba(15,23,42,0.5)) */
@@ -3529,6 +3565,12 @@ body[data-energy-level] .scheduled-group.project-group {
 [data-theme="dark"] .completed-group .task-item .meta-impact,
 [data-theme="dark"] .completed-group .task-item .meta-clarity {
     color: var(--text-secondary) !important;  /* 72% */
+}
+
+[data-theme="dark"] .completed-group .task-item[data-completed="1"] .complete-check {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.10);
+    color: var(--text-muted);
 }
 
 /* Calendar checkbox - override white background */

@@ -19,10 +19,10 @@ class Impact(IntEnum):
     Used for task sorting and display.
     """
 
-    P1 = 1  # Critical - must do today
-    P2 = 2  # High - important, do soon
-    P3 = 3  # Medium - normal priority
-    P4 = 4  # Low - nice to have (default)
+    P1 = 1  # High - must do today
+    P2 = 2  # Mid - important, do soon
+    P3 = 3  # Low - normal priority
+    P4 = 4  # Min - nice to have (default)
 
     @property
     def label(self) -> str:
@@ -37,19 +37,19 @@ class Impact(IntEnum):
 
 # Impact level labels (used by Impact.label property)
 IMPACT_LABELS: dict[int, str] = {
-    1: "Critical",
-    2: "High",
-    3: "Medium",
-    4: "Low",
+    1: "High",
+    2: "Mid",
+    3: "Low",
+    4: "Min",
 }
 
 # Impact level colors (Tailwind-inspired palette)
 # Used in analytics charts and UI elements
 IMPACT_COLORS: dict[int, str] = {
-    1: "#dc2626",  # red-600 (Critical)
-    2: "#f97316",  # orange-500 (High)
-    3: "#eab308",  # yellow-500 (Medium)
-    4: "#22c55e",  # green-500 (Low)
+    1: "#dc2626",  # red-600 (High)
+    2: "#f97316",  # orange-500 (Mid)
+    3: "#eab308",  # yellow-500 (Low)
+    4: "#22c55e",  # green-500 (Min)
 }
 
 

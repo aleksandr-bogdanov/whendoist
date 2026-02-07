@@ -99,7 +99,7 @@ body.is-dragging .calendar-event {
 
 .task-item.completed.scheduled .task-text {
     color: rgba(15, 23, 42, 0.5) !important;
-    text-decoration: line-through !important;
+    text-decoration: none !important;
 }
 
 /* Completed+scheduled - muted text (no strikethrough on meta) */

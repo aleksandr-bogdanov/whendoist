@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Domain Count Badge Options — Whendoist Design Review</title>
+<style>
+  :root {
+    --text-primary: #0f172a;
+    --text-secondary: rgba(15, 23, 42, 0.55);
+    --text-muted: rgba(15, 23, 42, 0.35);
+    --primary: #6366f1;
+    --primary-tint: rgba(99, 102, 241, 0.08);
+    --surface: #fff;
+    --border: rgba(15, 23, 42, 0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f0f7; padding: 32px; color: var(--text-primary); }
+
+  h1 { font-size: 1.1rem; margin-bottom: 8px; }
+  h2 { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin: 32px 0 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 24px; }
+  .option-desc { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 10px; }
+
+  .card { background: var(--surface); border-radius: 12px; padding: 16px 16px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+
+  /* Shared domain header structure */
+  .domain-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 0 8px 10px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    gap: 6px;
+  }
+  .domain-header:last-child { border-bottom: none; }
+
+  .chevron { font-size: 0.5rem; color: var(--text-muted); margin-right: 4px; }
+
+  .domain-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
+
+  /* ===== OPTION A: Current ===== */
+  .count-current {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+
+  /* ===== OPTION B: Parenthesized ===== */
+  .count-parens {
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+
+  /* ===== OPTION C: Dot separator ===== */
+  .count-dot-sep {
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+  .dot-sep { margin: 0 2px; }
+
+  /* ===== OPTION D: Micro pill ===== */
+  .count-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.06);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    line-height: 1;
+  }
+
+  /* ===== OPTION E: Primary tint pill ===== */
+  .count-pill-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 8px;
+    background: var(--primary-tint);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--primary);
+    line-height: 1;
+  }
+
+  /* ===== OPTION F: Superscript-style ===== */
+  .count-super {
+    font-size: 0.55rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    vertical-align: super;
+    line-height: 1;
+    margin-left: 1px;
+  }
+
+  /* ===== OPTION G: Slash separator ===== */
+  .count-slash {
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+  .slash { margin: 0 3px; color: rgba(15, 23, 42, 0.15); }
+</style>
+</head>
+<body>
+
+<h1>Domain Count Badge Options</h1>
+<p class="subtitle">The number next to domain names should be visually subordinate — clearly a count, not part of the name.<br>
+Showing a range of approaches from subtle to prominent.</p>
+
+<!-- OPTION A: Current -->
+<h2>Option A — Current (plain muted number)</h2>
+<p class="option-desc">Just a lighter, smaller number. Simple but can blur into the name.</p>
+<div class="card">
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Career</span> <span class="count-current">10</span></div>
+  <div class="domain-header"><span class="chevron">▾</span> <span class="domain-name">Leisure</span> <span class="count-current">5</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Music Hustle</span> <span class="count-current">14</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Вольер</span> <span class="count-current">23</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">ОН: Операционка</span> <span class="count-current">30</span></div>
+</div>
+
+<!-- OPTION B: Parenthesized -->
+<h2>Option B — Parenthesized</h2>
+<p class="option-desc">Wrapping in parens is a classic UI pattern for "metadata about the label". Clearly subordinate.</p>
+<div class="card">
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Career</span> <span class="count-parens">(10)</span></div>
+  <div class="domain-header"><span class="chevron">▾</span> <span class="domain-name">Leisure</span> <span class="count-parens">(5)</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Music Hustle</span> <span class="count-parens">(14)</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Вольер</span> <span class="count-parens">(23)</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">ОН: Операционка</span> <span class="count-parens">(30)</span></div>
+</div>
+
+<!-- OPTION C: Dot separator -->
+<h2>Option C — Middle Dot Separator</h2>
+<p class="option-desc">A subtle dot creates visual separation between name and count. Common in modern UIs.</p>
+<div class="card">
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Career</span> <span class="count-dot-sep"><span class="dot-sep">·</span> 10</span></div>
+  <div class="domain-header"><span class="chevron">▾</span> <span class="domain-name">Leisure</span> <span class="count-dot-sep"><span class="dot-sep">·</span> 5</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Music Hustle</span> <span class="count-dot-sep"><span class="dot-sep">·</span> 14</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Вольер</span> <span class="count-dot-sep"><span class="dot-sep">·</span> 23</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">ОН: Операционка</span> <span class="count-dot-sep"><span class="dot-sep">·</span> 30</span></div>
+</div>
+
+<!-- OPTION D: Micro pill (gray) -->
+<h2>Option D — Gray Micro Pill</h2>
+<p class="option-desc">A tiny rounded badge. Clearly "metadata", scannable in a list. Neutral gray keeps it subordinate.</p>
+<div class="card">
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Career</span> <span class="count-pill">10</span></div>
+  <div class="domain-header"><span class="chevron">▾</span> <span class="domain-name">Leisure</span> <span class="count-pill">5</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Music Hustle</span> <span class="count-pill">14</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Вольер</span> <span class="count-pill">23</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">ОН: Операционка</span> <span class="count-pill">30</span></div>
+</div>
+
+<!-- OPTION E: Primary tint pill -->
+<h2>Option E — Primary Tint Pill</h2>
+<p class="option-desc">Same pill but using the app's primary indigo tint. Adds a subtle branded touch. Might be too prominent.</p>
+<div class="card">
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Career</span> <span class="count-pill-primary">10</span></div>
+  <div class="domain-header"><span class="chevron">▾</span> <span class="domain-name">Leisure</span> <span class="count-pill-primary">5</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Music Hustle</span> <span class="count-pill-primary">14</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Вольер</span> <span class="count-pill-primary">23</span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">ОН: Операционка</span> <span class="count-pill-primary">30</span></div>
+</div>
+
+<!-- OPTION F: Superscript -->
+<h2>Option F — Superscript</h2>
+<p class="option-desc">Tiny superscript number. Very subtle, footnote-like. Might be too small on some screens.</p>
+<div class="card">
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Career<span class="count-super">10</span></span></div>
+  <div class="domain-header"><span class="chevron">▾</span> <span class="domain-name">Leisure<span class="count-super">5</span></span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Music Hustle<span class="count-super">14</span></span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">Вольер<span class="count-super">23</span></span></div>
+  <div class="domain-header"><span class="chevron">▸</span> <span class="domain-name">ОН: Операционка<span class="count-super">30</span></span></div>
+</div>
+
+</body>
+</html>
