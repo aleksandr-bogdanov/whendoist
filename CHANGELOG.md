@@ -6,6 +6,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.39.0] - 2026-02-07 — Rename Clarity to Mode (Autopilot/Normal/Brainstorm)
+
+### Changed
+- **Mode system** — renamed clarity levels from `clear`/`defined`/`open` to `autopilot`/`normal`/`brainstorm`; "normal" is the unnamed default (most tasks), while autopilot (mindless work) and brainstorm (deep thinking) are the two extremes
+- **Task form** — changed from 3 mandatory clarity pills to 2 optional mode toggle chips (`🧟 Autopilot` and `🧠 Brainstorm`); clicking an active chip deactivates it (sets to normal), clicking an inactive one activates it
+- **Display labels** — updated task list, scheduled, completed, and deleted views to show `Auto`/`—`/`Brain` instead of `Clear`/`Def`/`Open`
+- **Sort header** — renamed "Clarity" column to "Mode" with compact label "MOD"
+- **Energy pill tooltips** — updated to reference new mode names
+- **Settings** — "Assign Clarity" button now shows "Assign Mode" with autopilot/brainstorm options
+- **Login hero** — updated CSS classes and titles to use new mode names
+
+### Database
+- **Migration** — renames `clear`→`autopilot`, `defined`→`normal`, `open`→`brainstorm`; backfills NULLs to `normal`; makes `clarity` column NOT NULL with default `normal`
+- **Todoist import** — accepts both legacy (`clear`/`defined`/`open`/`executable`/`exploratory`) and new (`autopilot`/`normal`/`brainstorm`) label names
+
+---
+
 ## [0.38.0] - 2026-02-07 — Task List UI Refinements
 
 ### Changed

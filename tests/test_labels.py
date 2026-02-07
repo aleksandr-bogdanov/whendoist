@@ -8,21 +8,32 @@ from app.services.labels import (
 
 class TestParseLabels:
     def test_parse_clarity_labels(self):
-        """Test clarity labels."""
+        """Test mode labels (new names)."""
+        result = parse_labels(["autopilot"])
+        assert result.clarity == Clarity.AUTOPILOT
+
+        result = parse_labels(["normal"])
+        assert result.clarity == Clarity.NORMAL
+
+        result = parse_labels(["brainstorm"])
+        assert result.clarity == Clarity.BRAINSTORM
+
+    def test_parse_legacy_clarity_labels(self):
+        """Test legacy clarity labels map to new mode values."""
         result = parse_labels(["clear"])
-        assert result.clarity == Clarity.CLEAR
+        assert result.clarity == Clarity.AUTOPILOT
 
         result = parse_labels(["defined"])
-        assert result.clarity == Clarity.DEFINED
+        assert result.clarity == Clarity.NORMAL
 
         result = parse_labels(["open"])
-        assert result.clarity == Clarity.OPEN
+        assert result.clarity == Clarity.BRAINSTORM
 
     def test_parse_multiple_labels(self):
         """Test parsing multiple labels at once."""
-        result = parse_labels(["clear", "work", "urgent"])
+        result = parse_labels(["autopilot", "work", "urgent"])
 
-        assert result.clarity == Clarity.CLEAR
+        assert result.clarity == Clarity.AUTOPILOT
         assert result.other_labels == ["work", "urgent"]
 
     def test_parse_empty_labels(self):
@@ -42,10 +53,10 @@ class TestParseLabels:
     def test_case_insensitivity(self):
         """Test that label matching is case-insensitive."""
         result = parse_labels(["Clear"])
-        assert result.clarity == Clarity.CLEAR
+        assert result.clarity == Clarity.AUTOPILOT
 
         result = parse_labels(["DEFINED"])
-        assert result.clarity == Clarity.DEFINED
+        assert result.clarity == Clarity.NORMAL
 
     def test_is_unlabeled_missing_clarity(self):
         """Test is_unlabeled returns True when clarity is missing."""
@@ -54,7 +65,7 @@ class TestParseLabels:
 
     def test_is_unlabeled_clarity_present(self):
         """Test is_unlabeled returns False when clarity is present."""
-        result = parse_labels(["clear"])
+        result = parse_labels(["autopilot"])
         assert result.is_unlabeled() is False
 
 
@@ -88,15 +99,15 @@ class TestParseDuration:
 
     def test_duration_in_metadata(self):
         """Test that duration is parsed into TaskMetadata."""
-        result = parse_labels(["clear"], "Task with d:45m duration")
+        result = parse_labels(["autopilot"], "Task with d:45m duration")
         assert result.duration_minutes == 45
-        assert result.clarity == Clarity.CLEAR
+        assert result.clarity == Clarity.AUTOPILOT
 
 
 class TestDisplayFunctions:
     def test_clarity_display(self):
-        """Test clarity display strings."""
-        assert clarity_display(Clarity.CLEAR) == "Clear"
-        assert clarity_display(Clarity.DEFINED) == "Defined"
-        assert clarity_display(Clarity.OPEN) == "Open"
+        """Test mode display strings."""
+        assert clarity_display(Clarity.AUTOPILOT) == "Auto"
+        assert clarity_display(Clarity.NORMAL) == "—"
+        assert clarity_display(Clarity.BRAINSTORM) == "Brain"
         assert clarity_display(None) == ""

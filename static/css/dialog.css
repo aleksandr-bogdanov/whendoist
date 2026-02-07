@@ -391,13 +391,46 @@ body.modal-open {
     background: var(--interactive-active);
 }
 
-/* Clarity colors - text only, no filled background */
-.seg-btn[data-clarity="clear"] { color: var(--clear-color, #167BFF); }
-.seg-btn[data-clarity="defined"] { color: var(--defined-color, #6D5EF6); }
-.seg-btn[data-clarity="open"] { color: var(--open-color, #A020C0); }
+/* Mode colors - text only, no filled background */
+.seg-btn[data-clarity="autopilot"] { color: var(--autopilot-color, #167BFF); }
+.seg-btn[data-clarity="brainstorm"] { color: var(--brainstorm-color, #A020C0); }
 
 .seg-btn[data-clarity].is-active {
     background: var(--interactive-active);
+}
+
+/* Mode chips for task form (sheet) */
+.mode-chips {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mode-chip {
+    all: unset;
+    cursor: pointer;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-md, 6px);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.mode-chip:hover {
+    background: var(--interactive-hover);
+}
+
+.mode-chip.active[data-clarity="autopilot"] {
+    background: var(--autopilot-tint);
+    border-color: var(--autopilot-color);
+    color: var(--autopilot-color);
+}
+
+.mode-chip.active[data-clarity="brainstorm"] {
+    background: var(--brainstorm-tint);
+    border-color: var(--brainstorm-color);
+    color: var(--brainstorm-color);
 }
 
 /* =============================================================================

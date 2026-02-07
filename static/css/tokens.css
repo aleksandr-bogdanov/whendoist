@@ -138,13 +138,13 @@
     --impact-p4-border: #9CA3B0;
     --impact-p4-row: rgba(107, 115, 133, 0.018);
 
-    /* ===== Clarity Colors ===== */
-    --clear-color: var(--blue-500);
-    --clear-tint: var(--blue-tint);
-    --clarity-defined: var(--purple-500);
-    --clarity-defined-tint: var(--purple-tint);
-    --open-color: var(--magenta-500);
-    --open-tint: var(--magenta-tint);
+    /* ===== Mode Colors ===== */
+    --autopilot-color: var(--blue-500);
+    --autopilot-tint: var(--blue-tint);
+    --normal-color: var(--purple-500);
+    --normal-tint: var(--purple-tint);
+    --brainstorm-color: var(--magenta-500);
+    --brainstorm-tint: var(--magenta-tint);
 
     /* ===== Layout ===== */
     --content-max-width: 1100px;
@@ -156,7 +156,7 @@
     --col-date: 58px;
     --col-duration: 68px;
     --col-impact: 56px;
-    --col-clarity: 42px;  /* Text labels: Clear/Def/Open */
+    --col-clarity: 42px;  /* Text labels: Auto/—/Brain */
     --col-actions: 28px;
     --col-gap: 6px;
     --rail-width: 2px;
@@ -191,12 +191,18 @@
     --impact-min: var(--impact-p4);
 
     /* Legacy clarity aliases */
-    --executable-color: var(--clear-color);
-    --executable-tint: var(--clear-tint);
-    --defined-color: var(--clarity-defined);
-    --defined-tint: var(--clarity-defined-tint);
-    --exploratory-color: var(--open-color);
-    --exploratory-tint: var(--open-tint);
+    --clear-color: var(--autopilot-color);
+    --clear-tint: var(--autopilot-tint);
+    --clarity-defined: var(--normal-color);
+    --clarity-defined-tint: var(--normal-tint);
+    --open-color: var(--brainstorm-color);
+    --open-tint: var(--brainstorm-tint);
+    --executable-color: var(--autopilot-color);
+    --executable-tint: var(--autopilot-tint);
+    --defined-color: var(--normal-color);
+    --defined-tint: var(--normal-tint);
+    --exploratory-color: var(--brainstorm-color);
+    --exploratory-tint: var(--brainstorm-tint);
 
     /* Legacy interactive aliases */
     --row-active: var(--interactive-active);
@@ -238,9 +244,9 @@
     --glass-bg-strong: rgba(15, 23, 42, 0.88);
     --glass-border: rgba(248, 250, 252, 0.08);
 
-    --clear-tint: rgba(22, 123, 255, 0.15);
-    --clarity-defined-tint: rgba(109, 94, 246, 0.15);
-    --open-tint: rgba(160, 32, 192, 0.15);
+    --autopilot-tint: rgba(22, 123, 255, 0.15);
+    --normal-tint: rgba(109, 94, 246, 0.15);
+    --brainstorm-tint: rgba(160, 32, 192, 0.15);
 
     /* Dark mode gradients */
     --gradient-bg-login: linear-gradient(135deg, #1E293B 0%, #0F172A 50%, #1E293B 100%);

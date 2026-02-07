@@ -51,14 +51,13 @@
   <input type="hidden" name="impact" value="{{ current_impact }}">
 </div>
 
-<!-- Clarity -->
+<!-- Mode -->
 <div class="form-section">
-  <label class="section-label">CLARITY</label>
-  <div class="clarity-pills">
-    {% set current_clarity = task.clarity if task else 'defined' %}
-    <button type="button" class="clarity-pill{% if current_clarity == 'clear' %} active{% endif %}" data-clarity="clear" title="No-brainer">Clear</button>
-    <button type="button" class="clarity-pill{% if current_clarity == 'defined' %} active{% endif %}" data-clarity="defined" title="Needs focus">Defined</button>
-    <button type="button" class="clarity-pill{% if current_clarity == 'open' %} active{% endif %}" data-clarity="open" title="Needs thinking">Open</button>
+  <label class="section-label">MODE</label>
+  <div class="mode-chips">
+    {% set current_clarity = task.clarity if task else 'normal' %}
+    <button type="button" class="mode-chip{% if current_clarity == 'autopilot' %} active{% endif %}" data-clarity="autopilot" title="Mindless — can do when tired">🧟 Autopilot</button>
+    <button type="button" class="mode-chip{% if current_clarity == 'brainstorm' %} active{% endif %}" data-clarity="brainstorm" title="Needs deep thinking">🧠 Brainstorm</button>
   </div>
   <input type="hidden" name="clarity" value="{{ current_clarity }}">
 </div>

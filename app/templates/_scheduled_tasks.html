@@ -17,7 +17,7 @@
             {% set task = task_item.task %}
             {% set is_completed = task.status == 'completed' or task_item.instance_completed_at %}
             <div class="task-item scheduled-item impact-{{ task.impact }}{% if task_item.completion_age_class %} {{ task_item.completion_age_class }}{% endif %}"
-                 data-clarity="{{ task.clarity or 'none' }}"
+                 data-clarity="{{ task.clarity }}"
                  data-impact="{{ task.impact or 4 }}"
                  data-task-id="{{ task.id }}"
                  data-completed="{{ '1' if is_completed else '0' }}"
@@ -54,9 +54,9 @@
                         {% elif task.impact == 3 %}P3
                         {% else %}P4{% endif %}
                     </span>
-                    <span class="meta-clarity clarity-{{ task.clarity or 'none' }}">
-                        {% if task.clarity %}
-                            {{ task_item.clarity_display }}
+                    <span class="meta-clarity clarity-{{ task.clarity }}">
+                        {% if task.clarity == 'autopilot' %}Auto
+                        {% elif task.clarity == 'brainstorm' %}Brain
                         {% else %}—{% endif %}
                     </span>
                 </div>

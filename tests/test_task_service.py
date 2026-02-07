@@ -42,7 +42,7 @@ class TestTaskCRUD:
             title="Integration Test Task",
             description="Testing with PostgreSQL",
             impact=3,
-            clarity="defined",
+            clarity="normal",
         )
         await pg_session.commit()
 
@@ -50,7 +50,7 @@ class TestTaskCRUD:
         assert task.title == "Integration Test Task"
         assert task.description == "Testing with PostgreSQL"
         assert task.impact == 3
-        assert task.clarity == "defined"
+        assert task.clarity == "normal"
         assert task.status == "pending"
 
     async def test_get_task(self, pg_session: AsyncSession, task_service: TaskService):

@@ -9,7 +9,7 @@
  *
  * Algorithm (Smart Strategy):
  * 1. Collect visible unscheduled tasks matching energy filter
- * 2. Filter tasks: exclude those without clarity, with mismatched due dates
+ * 2. Filter tasks: exclude those with mismatched energy level or due dates
  * 3. Sort tasks: date-matched first, then smaller duration, then higher priority
  * 4. Find free slots within selection (gaps between calendar events)
  * 5. Greedy bin-packing: place tasks into slots, skip if doesn't fit
@@ -1166,23 +1166,17 @@
      * Extract task data from a task panel element.
      */
     function extractTaskFromElement(el, targetDay, energyLevel, source) {
-        const clarity = el.dataset.clarity || 'none';
+        const clarity = el.dataset.clarity || 'normal';
         const scheduledDate = el.dataset.scheduledDate || '';
         const content = el.querySelector('.task-text')?.textContent?.trim() || '';
 
-        // Skip tasks without clarity tag
-        if (clarity === 'none') {
-            log.debug(`Skip "${content.slice(0, 25)}": no clarity`);
-            return null;
-        }
-
         // Energy level filtering
-        if (energyLevel === 1 && clarity !== 'clear') {
-            log.debug(`Skip "${content.slice(0, 25)}": ${clarity} != clear`);
+        if (energyLevel === 1 && clarity !== 'autopilot') {
+            log.debug(`Skip "${content.slice(0, 25)}": ${clarity} != autopilot`);
             return null;
         }
-        if (energyLevel === 2 && clarity === 'open') {
-            log.debug(`Skip "${content.slice(0, 25)}": open in normal mode`);
+        if (energyLevel === 2 && clarity === 'brainstorm') {
+            log.debug(`Skip "${content.slice(0, 25)}": brainstorm in normal mode`);
             return null;
         }
 
@@ -1223,22 +1217,16 @@
      * Extract task data from an Anytime banner element.
      */
     function extractTaskFromAnytimeElement(el, targetDay, energyLevel) {
-        const clarity = el.dataset.clarity || 'none';
+        const clarity = el.dataset.clarity || 'normal';
         const content = el.querySelector('.date-only-task-text')?.textContent?.trim() || '';
 
-        // Skip tasks without clarity tag
-        if (clarity === 'none') {
-            log.debug(`Skip anytime "${content.slice(0, 25)}": no clarity`);
-            return null;
-        }
-
         // Energy level filtering
-        if (energyLevel === 1 && clarity !== 'clear') {
-            log.debug(`Skip anytime "${content.slice(0, 25)}": ${clarity} != clear`);
+        if (energyLevel === 1 && clarity !== 'autopilot') {
+            log.debug(`Skip anytime "${content.slice(0, 25)}": ${clarity} != autopilot`);
             return null;
         }
-        if (energyLevel === 2 && clarity === 'open') {
-            log.debug(`Skip anytime "${content.slice(0, 25)}": open in normal mode`);
+        if (energyLevel === 2 && clarity === 'brainstorm') {
+            log.debug(`Skip anytime "${content.slice(0, 25)}": brainstorm in normal mode`);
             return null;
         }
 
@@ -1416,7 +1404,7 @@
  * @property {string} content - Task content/title
  * @property {number} duration - Duration in minutes
  * @property {number} priority - Priority (1-4, 4=highest)
- * @property {string} clarity - Clarity level (clear|defined|open)
+ * @property {string} clarity - Mode level (autopilot|normal|brainstorm)
  * @property {string} scheduledDate - Scheduled date (YYYY-MM-DD) or empty
  * @property {boolean} isRecurring - Whether task is recurring
  * @property {boolean} hasMatchingDate - Whether scheduled date matches target day

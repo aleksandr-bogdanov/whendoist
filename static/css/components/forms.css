@@ -111,10 +111,9 @@
 .seg-btn[data-impact="3"] { color: var(--impact-p3); }
 .seg-btn[data-impact="4"] { color: var(--impact-p4); }
 
-/* Clarity Colored Segments */
-.seg-btn[data-clarity="clear"] { color: var(--clear-color); }
-.seg-btn[data-clarity="defined"] { color: var(--clarity-defined); }
-.seg-btn[data-clarity="open"] { color: var(--open-color); }
+/* Mode Colored Segments */
+.seg-btn[data-clarity="autopilot"] { color: var(--autopilot-color); }
+.seg-btn[data-clarity="brainstorm"] { color: var(--brainstorm-color); }
 
 /* Toggle Switch */
 .toggle {

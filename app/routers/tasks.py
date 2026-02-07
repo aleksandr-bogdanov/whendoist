@@ -132,7 +132,7 @@ class TaskCreate(BaseModel):
     parent_id: int | None = None
     duration_minutes: int | None = None
     impact: int = 4
-    clarity: str = "defined"  # Default to "defined" - all tasks must have clarity
+    clarity: str = "normal"  # Default to "normal" - autopilot/normal/brainstorm
     due_date: date | None = None
     due_time: time | None = None
     scheduled_date: date | None = None
@@ -160,6 +160,13 @@ class TaskCreate(BaseModel):
         v = _strip_control_chars(v)
         if len(v) > TASK_DESCRIPTION_MAX_LENGTH:
             raise ValueError(f"Description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
+        return v
+
+    @field_validator("clarity")
+    @classmethod
+    def validate_clarity(cls, v: str) -> str:
+        if v not in ("autopilot", "normal", "brainstorm"):
+            raise ValueError("Clarity must be autopilot, normal, or brainstorm")
         return v
 
     @model_validator(mode="after")

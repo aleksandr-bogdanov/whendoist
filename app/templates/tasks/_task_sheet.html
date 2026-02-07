@@ -55,12 +55,19 @@
     });
   });
 
-  // Clarity pill clicks
-  sheet.querySelectorAll('.clarity-pill').forEach(btn => {
+  // Mode chip clicks (toggle: click active → normal, click inactive → activate it)
+  sheet.querySelectorAll('.mode-chip').forEach(btn => {
     btn.addEventListener('click', () => {
-      sheet.querySelectorAll('.clarity-pill').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      sheet.querySelector('input[name="clarity"]').value = btn.dataset.clarity;
+      const isActive = btn.classList.contains('active');
+      sheet.querySelectorAll('.mode-chip').forEach(b => b.classList.remove('active'));
+      if (isActive) {
+        // Deactivate → set to normal
+        sheet.querySelector('input[name="clarity"]').value = 'normal';
+      } else {
+        // Activate this chip
+        btn.classList.add('active');
+        sheet.querySelector('input[name="clarity"]').value = btn.dataset.clarity;
+      }
     });
   });
 

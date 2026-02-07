@@ -4,17 +4,32 @@ from enum import Enum
 
 
 class Clarity(Enum):
-    """Task clarity level - determines energy required to work on it."""
+    """Task mode - determines energy required to work on it."""
 
-    CLEAR = "clear"  # Clear next action, can do when tired
-    DEFINED = "defined"  # Defined but needs focus
-    OPEN = "open"  # Needs research, requires deep focus
+    AUTOPILOT = "autopilot"  # Mindless, can do when tired
+    NORMAL = "normal"  # Default, needs some focus
+    BRAINSTORM = "brainstorm"  # Needs deep thinking
+
+    @classmethod
+    def from_legacy(cls, value: str) -> "Clarity | None":
+        """Map old clarity names to new mode names (for Todoist import)."""
+        return _LEGACY_MAP.get(value)
 
 
 CLARITY_LABELS = {
-    "clear": Clarity.CLEAR,
-    "defined": Clarity.DEFINED,
-    "open": Clarity.OPEN,
+    "autopilot": Clarity.AUTOPILOT,
+    "normal": Clarity.NORMAL,
+    "brainstorm": Clarity.BRAINSTORM,
+    # Legacy aliases for Todoist import compatibility
+    "clear": Clarity.AUTOPILOT,
+    "defined": Clarity.NORMAL,
+    "open": Clarity.BRAINSTORM,
+}
+
+_LEGACY_MAP = {
+    "clear": Clarity.AUTOPILOT,
+    "defined": Clarity.NORMAL,
+    "open": Clarity.BRAINSTORM,
 }
 
 # Pattern to match duration in description: d:30m, d:2h, d:1h30m
@@ -74,11 +89,11 @@ def parse_labels(labels: list[str], description: str = "") -> TaskMetadata:
 
 
 def clarity_display(clarity: Clarity | None) -> str:
-    """Human-readable clarity level."""
+    """Human-readable mode label."""
     if clarity is None:
         return ""
     return {
-        Clarity.CLEAR: "Clear",
-        Clarity.DEFINED: "Defined",
-        Clarity.OPEN: "Open",
-    }[clarity]
+        Clarity.AUTOPILOT: "Auto",
+        Clarity.NORMAL: "—",
+        Clarity.BRAINSTORM: "Brain",
+    }.get(clarity, "")
