@@ -107,7 +107,7 @@ class TestParseDuration:
 class TestDisplayFunctions:
     def test_clarity_display(self):
         """Test mode display strings."""
-        assert clarity_display(Clarity.AUTOPILOT) == "Auto"
+        assert clarity_display(Clarity.AUTOPILOT) == "Autopilot"
         assert clarity_display(Clarity.NORMAL) == "—"
-        assert clarity_display(Clarity.BRAINSTORM) == "Brain"
+        assert clarity_display(Clarity.BRAINSTORM) == "Brainstorm"
         assert clarity_display(None) == ""

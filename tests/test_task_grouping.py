@@ -118,7 +118,7 @@ class TestBuildNativeTaskItem:
 
         item = build_native_task_item(task)
 
-        assert item["clarity_display"] == "Auto"
+        assert item["clarity_display"] == "Autopilot"
 
     async def test_clarity_display_for_brainstorm(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
         """Mode display shows 'Brain' for brainstorm tasks."""
@@ -133,9 +133,11 @@ class TestBuildNativeTaskItem:
 
         item = build_native_task_item(task)
 
-        assert item["clarity_display"] == "Brain"
+        assert item["clarity_display"] == "Brainstorm"
 
-    async def test_clarity_display_defaults_to_normal(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+    async def test_clarity_display_defaults_to_normal(
+        self, db_session: AsyncSession, test_user: User, test_domain: Domain
+    ):
         """Tasks without explicit clarity default to 'normal' and display '—'."""
         task = Task(
             user_id=test_user.id,

@@ -20,8 +20,8 @@
         { value: 4, label: 'P4', description: 'Maintenance' },
     ];
     const CLARITY_OPTIONS = [
-        { value: 'autopilot', label: '🧟 Auto', description: 'Mindless — can do when tired' },
-        { value: 'brainstorm', label: '🧠 Brain', description: 'Needs deep thinking' },
+        { value: 'autopilot', label: '🧟 Autopilot', description: 'Mindless — can do when tired' },
+        { value: 'brainstorm', label: '🧠 Brainstorm', description: 'Needs deep thinking' },
     ];
     const RECURRENCE_PRESETS = [
         { value: null, label: 'None', freq: null },
