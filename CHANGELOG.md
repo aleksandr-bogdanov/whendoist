@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.37.1] - 2026-02-07 — Design Audit Bugfixes
+
+### Fixed
+- **Ghost checkbox centering** — added `box-sizing: border-box` so border doesn't push checkmark off-center
+- **Task completion movement** — completing/reopening a task now refreshes the full task list from server, correctly moving tasks between domain groups and Completed/Scheduled sections
+- **Section separator line** — constrained `::after` height to prevent vertical overflow when collapsing Completed section
+- **Back-to-tasks button** — added `justify-self: start` and margin alignment so the button doesn't stretch across the full grid column in Scheduled/Completed/Deleted views
+
+---
+
 ## [0.37.0] - 2026-02-07 — Design Audit
 
 ### Changed

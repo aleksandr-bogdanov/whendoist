@@ -584,13 +584,15 @@
     opacity: 0;
 }
 
-/* Deleted Tasks View - Header Elements */
+/* Special Views - Header Elements */
 .header-back-btn {
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
     margin: 0;
+    margin-left: 34px;  /* Align with task content */
+    justify-self: start;
     border: 1px solid var(--primary);
     background: var(--primary-tint);
     border-radius: 4px;
@@ -620,6 +622,8 @@
     text-transform: uppercase;
     letter-spacing: 0.02em;
     color: var(--text-muted);
+    margin-left: 34px;  /* Align with task content */
+    justify-self: start;
 }
 
 .header-view-count[hidden] {
@@ -945,6 +949,8 @@
     content: "";
     flex: 1;
     height: 1px;
+    min-height: 1px;
+    max-height: 1px;
     background: var(--border-default);
 }
 
@@ -1248,10 +1254,12 @@
     height: 16px;
     border-radius: 8px;
     border: 1.5px solid var(--border-default);
+    box-sizing: border-box;
     display: grid;
     place-items: center;
     font-size: 10px;
     font-weight: 800;
+    line-height: 1;
     opacity: 0;
     transform: scale(0.9);
     transition: opacity 120ms ease, transform 120ms ease;

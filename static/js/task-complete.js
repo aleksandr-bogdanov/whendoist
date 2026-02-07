@@ -154,20 +154,16 @@
             // (e.g., if task appears in both list and calendar)
             syncTaskCompletionState(taskId, instanceId, data.completed, taskEl);
 
-            // Move task in left panel based on completion state (if preference enabled)
-            if (taskEl.classList.contains('task-item') && userPrefs.completed_move_to_bottom) {
-                if (data.completed) {
-                    moveToBottomOfDomain(taskEl);
-                } else {
-                    moveToTopOfDomain(taskEl);
-                }
-            }
-
             // Show toast notification
             if (isRecurring) {
                 showToast(data.completed ? 'Done for today' : 'Reopened for today');
             } else {
                 showToast(data.completed ? 'Task completed' : 'Task reopened');
+            }
+
+            // Refresh task list so tasks move between sections (domain <-> completed)
+            if (taskEl.classList.contains('task-item')) {
+                setTimeout(function() { refreshTaskListFromServer(); }, 400);
             }
 
         } catch (error) {
@@ -214,15 +210,6 @@
 
             // Apply visual aging class
             applyCompletionClass(el, completed);
-
-            // Move task-items in left panel (if preference enabled)
-            if (el.classList.contains('task-item') && userPrefs.completed_move_to_bottom) {
-                if (completed) {
-                    moveToBottomOfDomain(el);
-                } else {
-                    moveToTopOfDomain(el);
-                }
-            }
         });
     }
 
@@ -449,18 +436,41 @@
                 applyCompletionClass(el, false); // Don't use completed style
             });
 
-            // Move task to bottom if preference enabled
-            if (taskEl.classList.contains('task-item') && userPrefs.completed_move_to_bottom) {
-                moveToBottomOfDomain(taskEl);
-            }
-
             showToast('Skipped for today');
+
+            // Refresh task list so task moves to correct section
+            if (taskEl.classList.contains('task-item')) {
+                setTimeout(function() { refreshTaskListFromServer(); }, 400);
+            }
         } catch (error) {
             console.error('Error skipping instance:', error);
             // Revert optimistic update
             taskEl.classList.remove('skipped');
             taskEl.dataset.completed = '0';
             showToast('Failed to skip instance');
+        }
+    }
+
+    /**
+     * Refresh the task list from the server so tasks move between sections.
+     */
+    function refreshTaskListFromServer() {
+        var taskListScroll = document.getElementById('task-list-scroll');
+        if (taskListScroll && window.htmx) {
+            window.htmx.ajax('GET', '/api/v1/task-list', {
+                target: '#task-list-scroll',
+                swap: 'innerHTML'
+            }).then(function() {
+                if (window.DragDrop && typeof window.DragDrop.init === 'function') {
+                    window.DragDrop.init();
+                }
+                if (window.TaskComplete && typeof window.TaskComplete.init === 'function') {
+                    window.TaskComplete.init();
+                }
+                if (window.EnergySelector && typeof window.EnergySelector.applyFilter === 'function') {
+                    window.EnergySelector.applyFilter();
+                }
+            });
         }
     }
 
