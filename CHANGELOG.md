@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.37.3] - 2026-02-07 — Ghost Checkbox Visibility
+
+### Fixed
+- **Ghost checkbox opacity** — bumped resting opacity from 0.30 to 0.65 so the completion affordance is visible without hover
+
+---
+
 ## [0.37.2] - 2026-02-07 — Banner Scroll, Missing Sections, Plan Button, Inbox Collapse
 
 ### Fixed
