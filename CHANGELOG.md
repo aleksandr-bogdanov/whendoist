@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.37.2] - 2026-02-07 — Banner Scroll, Missing Sections, Plan Button, Inbox Collapse
+
+### Fixed
+- **Recurring banner scroll** — moved `.pending-past-banner` inside `.task-list-scroll` so it scrolls with the task list instead of pushing the page beyond viewport height
+- **Completed/Scheduled sections disappearing** — decoupled `<details>` collapse state from backend filtering; sections now always render with tasks, preference only controls the `open` attribute
+- **Plan My Day banner button** — rewired to call `PlanTasks.enterPlanMode()` directly instead of fragile programmatic `.click()` on a potentially hidden calendar button
+- **Completed view Inbox collapse** — Inbox domain group in completed tasks view now starts collapsed by default to avoid overwhelming the view with many completed tasks
+
+---
+
 ## [0.37.1] - 2026-02-07 — Design Audit Bugfixes
 
 ### Fixed

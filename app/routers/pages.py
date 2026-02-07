@@ -453,6 +453,7 @@ async def task_list_partial(
             "scheduled_tasks": grouped["scheduled_tasks"],
             "completed_tasks": grouped["completed_tasks"],
             "today": today,
+            "user_prefs": user_prefs,
         },
     )
 
