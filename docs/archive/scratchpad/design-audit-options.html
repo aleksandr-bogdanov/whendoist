@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whendoist Design Audit — Option Comparison</title>
+<style>
+/* ═══ Tokens (matching app) ═══ */
+:root {
+    --bg-canvas: #F8FAFC;
+    --bg-panel: #F1F5F9;
+    --bg-surface: #FFFFFF;
+    --text-primary: #0B1220;
+    --text-secondary: rgba(15, 23, 42, 0.64);
+    --text-muted: rgba(15, 23, 42, 0.46);
+    --border-subtle: rgba(15, 23, 42, 0.055);
+    --border-default: rgba(15, 23, 42, 0.085);
+    --border-strong: rgba(15, 23, 42, 0.12);
+    --row-hover: rgba(15, 23, 42, 0.02);
+
+    --impact-high: #C9505A;
+    --impact-medium: #B8860B;
+    --impact-low: #1A9160;
+    --impact-min: #6B7385;
+
+    --clear-color: #167BFF;
+    --clarity-defined: #6D5EF6;
+    --open-color: #A020C0;
+
+    --clear-tint: rgba(22, 123, 255, 0.08);
+    --defined-tint: rgba(109, 94, 246, 0.07);
+    --open-tint: rgba(160, 32, 192, 0.06);
+
+    --primary: #6D5EF6;
+    --primary-hover: #5B4CF0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    padding: 40px 32px 80px;
+    line-height: 1.5;
+}
+
+/* ═══ Page layout ═══ */
+.page-header {
+    max-width: 960px;
+    margin: 0 auto 48px;
+}
+.page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+}
+.page-header p {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.audit-section {
+    max-width: 960px;
+    margin: 0 auto 64px;
+}
+.audit-section h2 {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.audit-section h3 {
+    font-size: 1.15rem;
+    font-weight: 650;
+    margin-bottom: 20px;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+@media (max-width: 860px) {
+    .options-grid { grid-template-columns: 1fr; }
+}
+.options-grid.three-col {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+@media (max-width: 960px) {
+    .options-grid.three-col { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+    .options-grid.three-col { grid-template-columns: 1fr; }
+}
+
+.option-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.option-card.current {
+    border-color: rgba(15, 23, 42, 0.15);
+}
+.option-card.recommended {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary), 0 4px 16px rgba(109, 94, 246, 0.1);
+}
+
+.option-label {
+    padding: 10px 14px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.option-label .badge {
+    font-size: 0.55rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.option-label .badge-current {
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--text-secondary);
+}
+.option-label .badge-rec {
+    background: rgba(109, 94, 246, 0.1);
+    color: var(--primary);
+}
+
+.option-body {
+    padding: 0;
+}
+
+.option-desc {
+    padding: 10px 14px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+    line-height: 1.5;
+}
+
+/* ═══ Task row component ═══ */
+.task-row {
+    display: grid;
+    grid-template-columns: 3px 1fr auto;
+    align-items: center;
+    min-height: 38px;
+    border-bottom: 1px solid var(--border-subtle);
+    position: relative;
+}
+.task-row:last-child { border-bottom: none; }
+
+.task-rail {
+    width: 3px;
+    height: 100%;
+    border-radius: 0 2px 2px 0;
+}
+.task-rail.impact-1 { background: var(--impact-high); }
+.task-rail.impact-2 { background: var(--impact-medium); }
+.task-rail.impact-3 { background: var(--impact-low); }
+.task-rail.impact-4 { background: var(--impact-min); }
+
+.task-title-area {
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.task-title {
+    font-size: 0.8rem;
+    font-weight: 450;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-meta-area {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding-right: 12px;
+}
+.meta-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 500;
+    min-width: 42px;
+    text-align: center;
+}
+.meta-duration {
+    color: var(--text-secondary);
+}
+.meta-impact {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+.meta-impact.impact-1 { color: var(--impact-high); }
+.meta-impact.impact-2 { color: var(--impact-medium); }
+.meta-impact.impact-3 { color: var(--impact-low); }
+.meta-impact.impact-4 { color: var(--impact-min); }
+
+/* ═══ Clarity indicators — each option variant ═══ */
+
+/* Current: 7px dot */
+.clarity-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.clarity-dot.clear { background: var(--clear-color); }
+.clarity-dot.defined { background: var(--clarity-defined); }
+.clarity-dot.open { background: var(--open-color); }
+
+/* Option A: Text label */
+.clarity-text {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    min-width: 38px;
+    text-align: center;
+}
+.clarity-text.clear { color: var(--clear-color); }
+.clarity-text.defined { color: var(--clarity-defined); }
+.clarity-text.open { color: var(--open-color); }
+
+/* Option B: Colored pill */
+.clarity-pill {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 99px;
+    white-space: nowrap;
+}
+.clarity-pill.clear {
+    background: var(--clear-tint);
+    color: var(--clear-color);
+}
+.clarity-pill.defined {
+    background: var(--defined-tint);
+    color: var(--clarity-defined);
+}
+.clarity-pill.open {
+    background: var(--open-tint);
+    color: var(--open-color);
+}
+
+/* Option C: Row tint (background wash) */
+.row-tint-clear { background: rgba(22, 123, 255, 0.035); }
+.row-tint-defined { background: rgba(109, 94, 246, 0.03); }
+.row-tint-open { background: rgba(160, 32, 192, 0.03); }
+
+/* Option D: Larger dot with ring */
+.clarity-ring {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.clarity-ring::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+.clarity-ring.clear {
+    background: var(--clear-tint);
+}
+.clarity-ring.clear::before { background: var(--clear-color); }
+.clarity-ring.defined {
+    background: var(--defined-tint);
+}
+.clarity-ring.defined::before { background: var(--clarity-defined); }
+.clarity-ring.open {
+    background: var(--open-tint);
+}
+.clarity-ring.open::before { background: var(--open-color); }
+
+/* Option E: Right-edge stripe */
+.task-row.has-right-stripe {
+    grid-template-columns: 3px 1fr auto 3px;
+}
+.right-stripe {
+    width: 3px;
+    height: 100%;
+    border-radius: 2px 0 0 2px;
+}
+.right-stripe.clear { background: var(--clear-color); }
+.right-stripe.defined { background: var(--clarity-defined); }
+.right-stripe.open { background: var(--open-color); }
+
+/* ═══ Domain group (for add-task section) ═══ */
+.domain-group {
+    border-bottom: 1px solid var(--border-subtle);
+}
+.domain-header {
+    display: flex;
+    align-items: center;
+    padding: 9px 12px;
+    gap: 6px;
+    cursor: pointer;
+}
+.domain-header:hover {
+    background: var(--row-hover);
+}
+.domain-triangle {
+    font-size: 0.45rem;
+    color: var(--text-muted);
+    transform: rotate(90deg);
+    width: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.domain-name {
+    font-size: 0.82rem;
+    font-weight: 550;
+    flex: 1;
+}
+.domain-count {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Current add-task row */
+.add-task-current {
+    padding: 8px 12px 8px 24px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+    cursor: pointer;
+}
+.add-task-current:hover {
+    opacity: 1;
+}
+
+/* Option A: Styled add-task row */
+.add-task-styled {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px 7px 18px;
+    margin: 4px 8px 8px;
+    border: 1px dashed var(--border-default);
+    border-radius: 6px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.add-task-styled:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(109, 94, 246, 0.03);
+}
+.add-task-styled .plus-icon {
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+.add-task-styled:hover .plus-icon {
+    color: var(--primary);
+    opacity: 1;
+}
+
+/* Option B: In domain header */
+.domain-add-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1px solid var(--border-default);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 300;
+    opacity: 0;
+    transition: all 0.15s ease;
+}
+.domain-header:hover .domain-add-btn {
+    opacity: 1;
+}
+.domain-add-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(109, 94, 246, 0.06);
+}
+
+/* Option C: Inline input */
+.add-task-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 6px 18px;
+    margin: 2px 0;
+}
+.add-task-input {
+    flex: 1;
+    height: 30px;
+    border: none;
+    border-bottom: 1px solid var(--border-subtle);
+    background: transparent;
+    font-size: 0.78rem;
+    font-weight: 450;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+.add-task-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+.add-task-input:focus {
+    border-color: var(--primary);
+}
+.add-task-plus {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    opacity: 0.4;
+    width: 18px;
+    text-align: center;
+}
+
+/* ═══ Plan My Day section ═══ */
+.pmd-context {
+    background: var(--bg-panel);
+    padding: 16px;
+}
+
+/* Current: small button */
+.pmd-current-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+}
+.pmd-date {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+.pmd-btn-small {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(109, 94, 246, 0.2);
+    background: rgba(109, 94, 246, 0.05);
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--primary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* Option A: Contextual banner */
+.pmd-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(22, 123, 255, 0.05), rgba(109, 94, 246, 0.06), rgba(160, 32, 192, 0.04));
+    border: 1px solid rgba(109, 94, 246, 0.12);
+    border-radius: 10px;
+    margin: 10px 10px 4px;
+}
+.pmd-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.pmd-banner-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.pmd-banner-sub {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}
+.pmd-banner-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.25);
+}
+
+/* Option B: Hero card in calendar */
+.pmd-hero {
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(22, 123, 255, 0.06), rgba(109, 94, 246, 0.08), rgba(160, 32, 192, 0.05));
+    border: 1px solid rgba(109, 94, 246, 0.12);
+    border-radius: 10px;
+    margin: 10px;
+    text-align: center;
+}
+.pmd-hero-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.pmd-hero-stat {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+.pmd-hero-sub {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+.pmd-hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.25);
+}
+
+/* Option C: Between sections */
+.pmd-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    margin: 8px 0;
+    background: linear-gradient(90deg, rgba(22, 123, 255, 0.04), rgba(109, 94, 246, 0.05), rgba(160, 32, 192, 0.03));
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+}
+.pmd-inline-text {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+.pmd-inline-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.pmd-inline-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* ═══ Completion gutter ═══ */
+.complete-gutter {
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Option: always visible check */
+.check-circle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-default);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5rem;
+    color: transparent;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+.check-circle.ghost {
+    opacity: 0.35;
+}
+.task-row:hover .check-circle.ghost {
+    opacity: 1;
+}
+.task-row:hover .check-circle {
+    border-color: var(--primary);
+    color: rgba(109, 94, 246, 0.3);
+}
+
+.task-row-with-check {
+    grid-template-columns: 3px 20px 1fr auto;
+}
+
+/* ═══ Section separator ═══ */
+.section-sep {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px 6px;
+}
+.section-sep-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+.section-sep-count {
+    font-size: 0.58rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+.section-sep-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-default);
+}
+
+/* ═══ Wide option cards ═══ */
+.option-card.wide {
+    grid-column: 1 / -1;
+}
+
+/* ═══ Comparison note ═══ */
+.comparison-note {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(109, 94, 246, 0.04);
+    border: 1px solid rgba(109, 94, 246, 0.1);
+    border-radius: 8px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+.comparison-note strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* ═══ Full-width options ═══ */
+.options-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Spectrum bar (for header context) */
+.spectrum-bar {
+    height: 2px;
+    background: linear-gradient(90deg, var(--clear-color), var(--clarity-defined), var(--open-color));
+    opacity: 0.35;
+}
+
+/* ═══ Completion option section ═══ */
+.task-row-completion {
+    display: grid;
+    grid-template-columns: 3px 24px 1fr auto;
+    align-items: center;
+    min-height: 38px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.task-row-completion:last-child { border-bottom: none; }
+
+.gutter-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>Whendoist — Design Audit Options</h1>
+    <p>Side-by-side comparison of proposed changes. Open in browser to view.</p>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- SECTION 1: CLARITY INDICATORS                       -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="audit-section">
+    <h2>Issue #5</h2>
+    <h3>Clarity Indicator — Too Subtle for the Core Dimension</h3>
+
+    <div class="options-grid three-col">
+
+        <!-- CURRENT -->
+        <div class="option-card current">
+            <div class="option-label">Current — 7px dot <span class="badge badge-current">Baseline</span></div>
+            <div class="option-desc">Single colored dot. Minimal but nearly invisible at scanning speed.</div>
+            <div class="option-body">
+                <div class="task-row">
+                    <div class="task-rail impact-4"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-4">Min</span>
+                        <span class="meta-col"><span class="clarity-dot open"></span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">1h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                        <span class="meta-col"><span class="clarity-dot clear"></span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить вкладки на телефоне</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                        <span class="meta-col"><span class="clarity-dot defined"></span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-2"></div>
+                    <div class="task-title-area"><span class="task-title">Сделать PoC по DE → Часть 1</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-2">Mid</span>
+                        <span class="meta-col"><span class="clarity-dot defined"></span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-1"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться с tribute</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">30m</span>
+                        <span class="meta-col meta-impact impact-1">High</span>
+                        <span class="meta-col"><span class="clarity-dot clear"></span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTION A: Text Label -->
+        <div class="option-card recommended">
+            <div class="option-label">A — Text label <span class="badge badge-rec">Recommended</span></div>
+            <div class="option-desc">Mirrors impact pattern. "Clear" / "Def" / "Open" in clarity colors. Immediately readable without learning color codes.</div>
+            <div class="option-body">
+                <div class="task-row">
+                    <div class="task-rail impact-4"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-4">Min</span>
+                        <span class="meta-col clarity-text open">Open</span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">1h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                        <span class="meta-col clarity-text clear">Clear</span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить вкладки на телефоне</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                        <span class="meta-col clarity-text defined">Def</span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-2"></div>
+                    <div class="task-title-area"><span class="task-title">Сделать PoC по DE → Часть 1</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-2">Mid</span>
+                        <span class="meta-col clarity-text defined">Def</span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-1"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться с tribute</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">30m</span>
+                        <span class="meta-col meta-impact impact-1">High</span>
+                        <span class="meta-col clarity-text clear">Clear</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTION B: Colored Pill -->
+        <div class="option-card">
+            <div class="option-label">B — Colored pill</div>
+            <div class="option-desc">Abbreviated text on tinted background. More visual weight than a dot, clearly a distinct dimension from impact.</div>
+            <div class="option-body">
+                <div class="task-row">
+                    <div class="task-rail impact-4"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-4">Min</span>
+                        <span class="meta-col"><span class="clarity-pill open">OPN</span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">1h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                        <span class="meta-col"><span class="clarity-pill clear">CLR</span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить вкладки на телефоне</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                        <span class="meta-col"><span class="clarity-pill defined">DEF</span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-2"></div>
+                    <div class="task-title-area"><span class="task-title">Сделать PoC по DE → Часть 1</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-2">Mid</span>
+                        <span class="meta-col"><span class="clarity-pill defined">DEF</span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-1"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться с tribute</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">30m</span>
+                        <span class="meta-col meta-impact impact-1">High</span>
+                        <span class="meta-col"><span class="clarity-pill clear">CLR</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTION C: Row Tint -->
+        <div class="option-card">
+            <div class="option-label">C — Row background tint</div>
+            <div class="option-desc">Entire row has a very subtle clarity-colored wash. Impossible to miss at scale — but removes the need for a column entirely.</div>
+            <div class="option-body">
+                <div class="task-row row-tint-open">
+                    <div class="task-rail impact-4"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-4">Min</span>
+                    </div>
+                </div>
+                <div class="task-row row-tint-clear">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">1h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                    </div>
+                </div>
+                <div class="task-row row-tint-defined">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить вкладки на телефоне</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                    </div>
+                </div>
+                <div class="task-row row-tint-defined">
+                    <div class="task-rail impact-2"></div>
+                    <div class="task-title-area"><span class="task-title">Сделать PoC по DE → Часть 1</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-2">Mid</span>
+                    </div>
+                </div>
+                <div class="task-row row-tint-clear">
+                    <div class="task-rail impact-1"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться с tribute</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">30m</span>
+                        <span class="meta-col meta-impact impact-1">High</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTION D: Dot + Ring -->
+        <div class="option-card">
+            <div class="option-label">D — Dot with tinted ring</div>
+            <div class="option-desc">Keeps the dot aesthetic but doubles the visual footprint with a concentric tinted circle. Minimal space, more presence.</div>
+            <div class="option-body">
+                <div class="task-row">
+                    <div class="task-rail impact-4"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-4">Min</span>
+                        <span class="meta-col"><span class="clarity-ring open"></span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">1h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                        <span class="meta-col"><span class="clarity-ring clear"></span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить вкладки на телефоне</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                        <span class="meta-col"><span class="clarity-ring defined"></span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-2"></div>
+                    <div class="task-title-area"><span class="task-title">Сделать PoC по DE → Часть 1</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-2">Mid</span>
+                        <span class="meta-col"><span class="clarity-ring defined"></span></span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-1"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться с tribute</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">30m</span>
+                        <span class="meta-col meta-impact impact-1">High</span>
+                        <span class="meta-col"><span class="clarity-ring clear"></span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTION E: Right stripe -->
+        <div class="option-card">
+            <div class="option-label">E — Right-edge stripe</div>
+            <div class="option-desc">Mirrors the impact rail on the left. Creates visual "bookends" — impact left, clarity right. No column width needed.</div>
+            <div class="option-body">
+                <div class="task-row has-right-stripe">
+                    <div class="task-rail impact-4"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-4">Min</span>
+                    </div>
+                    <div class="right-stripe open"></div>
+                </div>
+                <div class="task-row has-right-stripe">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">1h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                    </div>
+                    <div class="right-stripe clear"></div>
+                </div>
+                <div class="task-row has-right-stripe">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить вкладки на телефоне</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-3">Low</span>
+                    </div>
+                    <div class="right-stripe defined"></div>
+                </div>
+                <div class="task-row has-right-stripe">
+                    <div class="task-rail impact-2"></div>
+                    <div class="task-title-area"><span class="task-title">Сделать PoC по DE → Часть 1</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">2h</span>
+                        <span class="meta-col meta-impact impact-2">Mid</span>
+                    </div>
+                    <div class="right-stripe defined"></div>
+                </div>
+                <div class="task-row has-right-stripe">
+                    <div class="task-rail impact-1"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться с tribute</span></div>
+                    <div class="task-meta-area">
+                        <span class="meta-col meta-duration">30m</span>
+                        <span class="meta-col meta-impact impact-1">High</span>
+                    </div>
+                    <div class="right-stripe clear"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="comparison-note">
+        <strong>Recommendation:</strong> Option A (text label) best matches the existing impact pattern and is immediately readable without color-code knowledge.
+        Can be combined with Option C (row tint) for double-encoding — text for precision, tint for ambient scanning.
+        Option E (right stripe) is the most architecturally elegant but requires users to learn "left = impact, right = clarity" convention.
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- SECTION 2: ADD TASK AFFORDANCE                      -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="audit-section">
+    <h2>Issue #9</h2>
+    <h3>Add Task — Currently Buried and Nearly Invisible</h3>
+
+    <div class="options-grid">
+
+        <!-- CURRENT -->
+        <div class="option-card current">
+            <div class="option-label">Current <span class="badge badge-current">Baseline</span></div>
+            <div class="option-desc">Faint "+ Add task" text at bottom of domain. Low contrast, no visual hierarchy, easily missed.</div>
+            <div class="option-body">
+                <div class="domain-group">
+                    <div class="domain-header">
+                        <span class="domain-triangle">&#9654;</span>
+                        <span class="domain-name">Leisure</span>
+                        <span class="domain-count">5</span>
+                    </div>
+                    <div class="task-row">
+                        <div class="task-rail impact-4"></div>
+                        <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                        <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-4">Min</span><span class="meta-col"><span class="clarity-dot open"></span></span></div>
+                    </div>
+                    <div class="task-row">
+                        <div class="task-rail impact-3"></div>
+                        <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                        <div class="task-meta-area"><span class="meta-col meta-duration">1h</span><span class="meta-col meta-impact impact-3">Low</span><span class="meta-col"><span class="clarity-dot clear"></span></span></div>
+                    </div>
+                    <div class="add-task-current">+ Add task</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTION A: Styled row -->
+        <div class="option-card recommended">
+            <div class="option-label">A — Dashed placeholder row <span class="badge badge-rec">Recommended</span></div>
+            <div class="option-desc">Dashed border row with icon. Visible enough to find, subtle enough not to distract. Hover turns purple.</div>
+            <div class="option-body">
+                <div class="domain-group">
+                    <div class="domain-header">
+                        <span class="domain-triangle">&#9654;</span>
+                        <span class="domain-name">Leisure</span>
+                        <span class="domain-count">5</span>
+                    </div>
+                    <div class="task-row">
+                        <div class="task-rail impact-4"></div>
+                        <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                        <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-4">Min</span><span class="meta-col"><span class="clarity-dot open"></span></span></div>
+                    </div>
+                    <div class="task-row">
+                        <div class="task-rail impact-3"></div>
+                        <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                        <div class="task-meta-area"><span class="meta-col meta-duration">1h</span><span class="meta-col meta-impact impact-3">Low</span><span class="meta-col"><span class="clarity-dot clear"></span></span></div>
+                    </div>
+                    <div class="add-task-styled"><span class="plus-icon">+</span> Add task</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTION B: In domain header -->
+        <div class="option-card">
+            <div class="option-label">B — Button in domain header</div>
+            <div class="option-desc">Small "+" icon in the domain header row, appears on hover. Saves vertical space, directly associated with the domain.</div>
+            <div class="option-body">
+                <div class="domain-group">
+                    <div class="domain-header">
+                        <span class="domain-triangle">&#9654;</span>
+                        <span class="domain-name">Leisure</span>
+                        <span class="domain-count">5</span>
+                        <button class="domain-add-btn" style="opacity: 1;">+</button>
+                    </div>
+                    <div class="task-row">
+                        <div class="task-rail impact-4"></div>
+                        <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                        <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-4">Min</span><span class="meta-col"><span class="clarity-dot open"></span></span></div>
+                    </div>
+                    <div class="task-row">
+                        <div class="task-rail impact-3"></div>
+                        <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                        <div class="task-meta-area"><span class="meta-col meta-duration">1h</span><span class="meta-col meta-impact impact-3">Low</span><span class="meta-col"><span class="clarity-dot clear"></span></span></div>
+                    </div>
+                </div>
+                <div class="domain-group">
+                    <div class="domain-header">
+                        <span class="domain-triangle" style="transform: rotate(0deg);">&#9654;</span>
+                        <span class="domain-name">Music Hustle</span>
+                        <span class="domain-count">3</span>
+                        <button class="domain-add-btn" style="opacity: 1;">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPTION C: Persistent input -->
+        <div class="option-card">
+            <div class="option-label">C — Persistent inline input</div>
+            <div class="option-desc">Always-visible text field. Zero-click discovery — user just starts typing. Like Todoist's quick-add pattern.</div>
+            <div class="option-body">
+                <div class="domain-group">
+                    <div class="domain-header">
+                        <span class="domain-triangle">&#9654;</span>
+                        <span class="domain-name">Leisure</span>
+                        <span class="domain-count">5</span>
+                    </div>
+                    <div class="task-row">
+                        <div class="task-rail impact-4"></div>
+                        <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                        <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-4">Min</span><span class="meta-col"><span class="clarity-dot open"></span></span></div>
+                    </div>
+                    <div class="task-row">
+                        <div class="task-rail impact-3"></div>
+                        <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                        <div class="task-meta-area"><span class="meta-col meta-duration">1h</span><span class="meta-col meta-impact impact-3">Low</span><span class="meta-col"><span class="clarity-dot clear"></span></span></div>
+                    </div>
+                    <div class="add-task-input-row">
+                        <span class="add-task-plus">+</span>
+                        <input class="add-task-input" type="text" placeholder="Add a task…">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="comparison-note">
+        <strong>Recommendation:</strong> Option A (dashed row) provides the best balance — visible without dominating, clearly an affordance, and turns into an inline input on click.
+        Option B (header button) is good as a supplement but insufficient alone because collapsed domains hide the task list.
+        Option C (persistent input) is the most discoverable but adds visual noise per domain and encourages impulsive task creation over thoughtful capture.
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- SECTION 3: PLAN MY DAY POSITIONING                  -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="audit-section">
+    <h2>Issue #7</h2>
+    <h3>Plan My Day — Killer Feature Hidden as Secondary Action</h3>
+
+    <div class="options-stack">
+
+        <!-- CURRENT -->
+        <div class="option-card current">
+            <div class="option-label">Current — Small button in calendar header <span class="badge badge-current">Baseline</span></div>
+            <div class="option-desc">Tiny button sharing space with date navigation. The core feature competes with "previous day" and "next day" arrows.</div>
+            <div class="option-body">
+                <div class="pmd-current-header">
+                    <span class="pmd-date">← &nbsp; Friday, Feb 06 &nbsp; →</span>
+                    <span class="pmd-btn-small">✨ Plan My Day</span>
+                </div>
+                <div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.72rem;">
+                    <div style="margin: 20px 0; opacity: 0.4;">
+                        <div>19:00</div>
+                        <div style="height: 40px;"></div>
+                        <div>20:00</div>
+                        <div style="height: 40px;"></div>
+                        <div>21:00</div>
+                    </div>
+                    <em style="opacity: 0.4;">Empty evening timeline...</em>
+                </div>
+            </div>
+        </div>
+
+        <div class="options-grid" style="margin: 0;">
+
+            <!-- OPTION A: Contextual banner in task list -->
+            <div class="option-card recommended">
+                <div class="option-label">A — Contextual banner in task list <span class="badge badge-rec">Recommended</span></div>
+                <div class="option-desc">Shows at top of task list with context: how many unscheduled tasks, how much free time. Appears when relevant (evening for tomorrow, morning for today).</div>
+                <div class="option-body">
+                    <div class="pmd-banner">
+                        <div class="pmd-banner-text">
+                            <span class="pmd-banner-title">Plan tomorrow?</span>
+                            <span class="pmd-banner-sub">8 tasks ready &middot; 4h 30m free on Saturday</span>
+                        </div>
+                        <button class="pmd-banner-btn">✨ Plan</button>
+                    </div>
+                    <div style="padding: 4px 0;">
+                        <div class="domain-group">
+                            <div class="domain-header">
+                                <span class="domain-triangle">&#9654;</span>
+                                <span class="domain-name">Leisure</span>
+                                <span class="domain-count">5</span>
+                            </div>
+                        </div>
+                        <div class="domain-group">
+                            <div class="domain-header">
+                                <span class="domain-triangle" style="transform: none;">&#9654;</span>
+                                <span class="domain-name">Career</span>
+                                <span class="domain-count">3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTION B: Hero card in calendar -->
+            <div class="option-card">
+                <div class="option-label">B — Hero card in calendar panel</div>
+                <div class="option-desc">When the timeline is empty (evening/no events), replace it with a prominent planning card. Shows free time stats and a large CTA.</div>
+                <div class="option-body">
+                    <div class="pmd-current-header">
+                        <span class="pmd-date">← &nbsp; Saturday, Feb 07 &nbsp; →</span>
+                    </div>
+                    <div class="pmd-hero">
+                        <div class="pmd-hero-label">Tomorrow</div>
+                        <div class="pmd-hero-stat">4h 30m free</div>
+                        <div class="pmd-hero-sub">2 meetings &middot; 8 tasks ready</div>
+                        <button class="pmd-hero-btn">✨ Plan My Day</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTION C: Between sections -->
+            <div class="option-card">
+                <div class="option-label">C — Between sections in task list</div>
+                <div class="option-desc">Sits between active and scheduled tasks. Shows unscheduled task count as a natural bridge from "ready tasks" to "already planned" tasks.</div>
+                <div class="option-body">
+                    <div style="padding: 4px 0;">
+                        <div class="task-row">
+                            <div class="task-rail impact-3"></div>
+                            <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                            <div class="task-meta-area"><span class="meta-col meta-duration">1h</span><span class="meta-col meta-impact impact-3">Low</span><span class="meta-col"><span class="clarity-dot clear"></span></span></div>
+                        </div>
+                        <div class="task-row">
+                            <div class="task-rail impact-3"></div>
+                            <div class="task-title-area"><span class="task-title">Почистить вкладки на телефоне</span></div>
+                            <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-3">Low</span><span class="meta-col"><span class="clarity-dot defined"></span></span></div>
+                        </div>
+                    </div>
+                    <div class="pmd-inline">
+                        <span class="pmd-inline-text"><strong>8 tasks</strong> unscheduled &middot; 4h 30m free tomorrow</span>
+                        <button class="pmd-inline-btn">✨ Plan</button>
+                    </div>
+                    <div class="section-sep">
+                        <span style="font-size: 0.45rem; color: var(--text-muted);">&#9660;</span>
+                        <span class="section-sep-label">Scheduled</span>
+                        <span class="section-sep-count">14</span>
+                        <span class="section-sep-line"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="comparison-note">
+        <strong>Recommendation:</strong> Option A (contextual banner) is the strongest. It appears in the primary panel (where the user's eyes already are), provides context (task count + free time), and only shows when relevant. Combine with Option B for the calendar panel — when the timeline is empty, replace dead space with the planning card.
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- SECTION 4: COMPLETION CHECKBOX                      -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="audit-section">
+    <h2>Issue #8</h2>
+    <h3>Completion Affordance — Always-Visible Ghost Checkbox</h3>
+
+    <div class="options-grid">
+        <!-- CURRENT (no visible checkbox) -->
+        <div class="option-card current">
+            <div class="option-label">Current — Hidden until hover <span class="badge badge-current">Baseline</span></div>
+            <div class="option-desc">Completion gutter is invisible by default. Only the impact rail is shown. Users must hover to discover they can complete tasks.</div>
+            <div class="option-body">
+                <div class="task-row">
+                    <div class="task-rail impact-4"></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                    <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-4">Min</span><span class="meta-col"><span class="clarity-dot open"></span></span></div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-3"></div>
+                    <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span></div>
+                    <div class="task-meta-area"><span class="meta-col meta-duration">1h</span><span class="meta-col meta-impact impact-3">Low</span><span class="meta-col"><span class="clarity-dot clear"></span></span></div>
+                </div>
+                <div class="task-row">
+                    <div class="task-rail impact-2"></div>
+                    <div class="task-title-area"><span class="task-title">Сделать PoC по DE → Часть 1</span></div>
+                    <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-2">Mid</span><span class="meta-col"><span class="clarity-dot defined"></span></span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ghost checkbox -->
+        <div class="option-card recommended">
+            <div class="option-label">Ghost checkbox — always visible at 35% <span class="badge badge-rec">Recommended</span></div>
+            <div class="option-desc">Circle outline always visible at low opacity. Full opacity on row hover. Communicates "this is a task you can complete" without visual clutter.</div>
+            <div class="option-body">
+                <div class="task-row-completion">
+                    <div class="task-rail impact-4"></div>
+                    <div class="gutter-area"><span class="check-circle ghost">✓</span></div>
+                    <div class="task-title-area"><span class="task-title">Разобраться в типах корзин SWORKS</span></div>
+                    <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-4">Min</span><span class="meta-col"><span class="clarity-dot open"></span></span></div>
+                </div>
+                <div class="task-row-completion" style="background: var(--row-hover);">
+                    <div class="task-rail impact-3"></div>
+                    <div class="gutter-area"><span class="check-circle" style="border-color: var(--primary); color: rgba(109, 94, 246, 0.3);">✓</span></div>
+                    <div class="task-title-area"><span class="task-title">Почистить sublime тексты</span><span style="font-size: 0.6rem; color: var(--text-muted); margin-left: 4px;">← hovered</span></div>
+                    <div class="task-meta-area"><span class="meta-col meta-duration">1h</span><span class="meta-col meta-impact impact-3">Low</span><span class="meta-col"><span class="clarity-dot clear"></span></span></div>
+                </div>
+                <div class="task-row-completion">
+                    <div class="task-rail impact-2"></div>
+                    <div class="gutter-area"><span class="check-circle ghost">✓</span></div>
+                    <div class="task-title-area"><span class="task-title">Сделать PoC по DE → Часть 1</span></div>
+                    <div class="task-meta-area"><span class="meta-col meta-duration">2h</span><span class="meta-col meta-impact impact-2">Mid</span><span class="meta-col"><span class="clarity-dot defined"></span></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

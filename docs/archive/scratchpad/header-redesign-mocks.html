@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whendoist Header Redesign — Refined Mocks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== Brand Tokens ===== */
+        :root {
+            --slate-50: #F8FAFC;
+            --slate-100: #F1F5F9;
+            --slate-200: #E2E8F0;
+            --slate-400: #94A3B8;
+            --slate-500: #64748B;
+            --slate-800: #1E293B;
+
+            --blue-500: #167BFF;
+            --blue-tint: #EAF2FF;
+            --purple-500: #6D5EF6;
+            --purple-600: #5B4CF0;
+            --purple-tint: #EFEEFF;
+            --magenta-500: #A020C0;
+            --magenta-tint: #F3ECFA;
+
+            --text-primary: #0B1220;
+            --text-secondary: rgba(15, 23, 42, 0.64);
+            --text-muted: rgba(15, 23, 42, 0.46);
+            --border-subtle: rgba(15, 23, 42, 0.055);
+            --border-default: rgba(15, 23, 42, 0.085);
+            --border-strong: rgba(15, 23, 42, 0.12);
+
+            --impact-p1: #C9505A;
+            --impact-p2: #B8860B;
+            --impact-p3: #1A9160;
+            --impact-p4: #6B7385;
+            --impact-p1-border: #E8A0A6;
+            --impact-p1-row: rgba(201, 80, 90, 0.030);
+            --impact-p2-row: rgba(184, 134, 11, 0.022);
+            --impact-p3-row: rgba(26, 145, 96, 0.030);
+            --impact-p4-row: rgba(107, 115, 133, 0.018);
+
+            --primary: #6D5EF6;
+
+            --col-duration: 68px;
+            --col-impact: 56px;
+            --col-clarity: 80px;
+            --col-clarity-dot: 42px;  /* Narrower for dot-only */
+            --col-actions: 28px;
+            --col-gap: 6px;
+            --rail-width: 2px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #EDEEF1;
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 32px;
+        }
+
+        /* ===== Page Layout ===== */
+        .page-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--slate-800);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+            color: var(--slate-500);
+            margin-bottom: 40px;
+        }
+
+        /* ===== Mock Sections ===== */
+        .mock-section { margin-bottom: 56px; }
+
+        .mock-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .mock-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
+            background: linear-gradient(135deg, var(--purple-500), var(--magenta-500));
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .mock-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--slate-800);
+        }
+
+        .mock-desc {
+            font-size: 0.75rem;
+            color: var(--slate-500);
+            margin-bottom: 16px;
+            margin-left: 34px;
+            max-width: 640px;
+            line-height: 1.5;
+        }
+
+        .mock-desc strong { color: var(--slate-800); }
+        .mock-desc code {
+            background: var(--slate-100);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+        }
+
+        .compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .compare-col {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .compare-label {
+            font-size: 0.55rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--slate-400);
+            padding-left: 2px;
+        }
+
+        .compare-label.good { color: var(--purple-500); }
+
+        .annotation {
+            font-size: 0.6rem;
+            color: var(--purple-500);
+            font-weight: 500;
+            margin-top: 6px;
+            line-height: 1.5;
+            padding-left: 2px;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: var(--border-default);
+            margin: 40px 0 48px;
+        }
+
+        /* ===== Task Panel (shared chrome) ===== */
+        .task-panel {
+            background: var(--slate-100);
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* ===== CURRENT HEADER ===== */
+        .hdr {
+            background: var(--slate-100);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hdr.with-border { border-bottom: 1px solid var(--border-default); }
+
+        .hdr.with-spectrum {
+            position: relative;
+        }
+
+        .hdr.with-spectrum::after {
+            content: "";
+            display: block;
+            height: 2px;
+            background: linear-gradient(90deg, var(--blue-500), var(--purple-500), var(--magenta-500));
+            opacity: 0.35;
+        }
+
+        .row1 {
+            display: grid;
+            align-items: center;
+            padding: 8px 0 4px 38px;
+        }
+
+        .row1.cols-text {
+            grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+            column-gap: var(--col-gap);
+        }
+
+        .row1.cols-dot {
+            grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity-dot) var(--col-actions);
+            column-gap: var(--col-gap);
+        }
+
+        .tasks-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(15, 23, 42, 0.38);
+        }
+
+        .sort-btn {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(15, 23, 42, 0.38);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: color 0.15s ease;
+        }
+
+        .sort-btn:hover { color: var(--text-primary); }
+        .sort-btn.active { color: var(--text-primary); }
+        .sort-btn.active::after { content: " ↑"; font-size: 0.5rem; }
+
+        .gear {
+            width: 28px;
+            height: 22px;
+            border: 1px solid var(--border-default);
+            background: rgba(109, 94, 246, 0.04);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: rgba(15, 23, 42, 0.45);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .row2 {
+            display: flex;
+            align-items: center;
+            padding: 2px 0 6px;
+            margin-left: 38px;
+            gap: 8px;
+        }
+
+        .row2-spacer { flex: 1; }
+
+        /* ===== Energy — Current (reused) ===== */
+        .energy {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .energy-lbl {
+            font-size: 0.5625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        .pills {
+            display: flex;
+            gap: 1px;
+            background: var(--border-subtle);
+            border: 1px solid var(--border-default);
+            border-radius: 5px;
+            padding: 1px;
+        }
+
+        .pill {
+            width: 26px;
+            height: 20px;
+            border: none;
+            border-radius: 4px;
+            background: white;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .pill.active-purple {
+            background: var(--primary);
+            box-shadow: 0 1px 2px rgba(109, 94, 246, 0.3);
+        }
+
+        /* ===== Energy — Clarity Tinted (same compact size) ===== */
+        .pill.active-blue {
+            background: var(--blue-tint);
+            box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.25);
+        }
+
+        .pill.active-defined {
+            background: var(--purple-tint);
+            box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.25);
+        }
+
+        .pill.active-magenta {
+            background: var(--magenta-tint);
+            box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.25);
+        }
+
+        /* ===== Clarity Dots (next to pills) ===== */
+        .clarity-dots {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .cdot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            transition: opacity 0.2s ease;
+        }
+
+        .cdot.blue { background: var(--blue-500); }
+        .cdot.purple { background: var(--purple-500); }
+        .cdot.magenta { background: var(--magenta-500); }
+        .cdot.off { opacity: 0.12; }
+
+        /* ===== View Chips — Current ===== */
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 8px;
+            border: 1px solid var(--border-default);
+            border-radius: 12px;
+            background: transparent;
+            font-size: 0.625rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1.4;
+        }
+
+        .chip.active {
+            background: rgba(109, 94, 246, 0.08);
+            border-color: rgba(109, 94, 246, 0.3);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* ===== View Toggle — Segmented ===== */
+        .seg-track {
+            display: flex;
+            gap: 2px;
+            padding: 2px;
+            background: var(--border-subtle);
+            border: 1px solid var(--border-default);
+            border-radius: 7px;
+        }
+
+        .seg-item {
+            height: 22px;
+            padding: 0 10px;
+            border: none;
+            border-radius: 5px;
+            background: transparent;
+            font-size: 0.6rem;
+            font-weight: 550;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .seg-item:hover {
+            background: rgba(15, 23, 42, 0.03);
+            color: var(--text-primary);
+        }
+
+        .seg-item.active {
+            background: rgba(109, 94, 246, 0.10);
+            color: var(--purple-600);
+            font-weight: 600;
+        }
+
+        .seg-icon {
+            font-size: 0.55rem;
+            opacity: 0.7;
+        }
+
+        .seg-item.active .seg-icon { opacity: 1; }
+
+        .trash-btn {
+            width: 24px;
+            height: 22px;
+            border: 1px solid var(--border-default);
+            border-radius: 5px;
+            background: transparent;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .trash-btn:hover {
+            border-color: rgba(220, 38, 38, 0.3);
+            color: #DC2626;
+            background: rgba(220, 38, 38, 0.04);
+        }
+
+        .view-seg {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ===== Fake Task Rows ===== */
+        .fake-tasks { display: flex; flex-direction: column; }
+
+        .fake-domain {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px 6px 24px;
+            background: var(--slate-100);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .fake-domain::before {
+            content: "▶";
+            font-size: 0.5rem;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .fake-task {
+            display: grid;
+            align-items: center;
+            padding: 7px 0 7px 38px;
+            min-height: 36px;
+            position: relative;
+            background: white;
+        }
+
+        .fake-task.cols-text {
+            grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+            column-gap: var(--col-gap);
+        }
+
+        .fake-task.cols-dot {
+            grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity-dot) var(--col-actions);
+            column-gap: var(--col-gap);
+        }
+
+        .fake-task::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 2px;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .fake-task::after {
+            content: "";
+            position: absolute;
+            left: 2px; right: 0; bottom: 0;
+            height: 1px;
+            background: var(--border-subtle);
+        }
+
+        .fake-task.p1 { background: var(--impact-p1-row); }
+        .fake-task.p1::before { background: var(--impact-p1-border); }
+        .fake-task.p2 { background: var(--impact-p2-row); }
+        .fake-task.p2::before { background: var(--impact-p2); }
+        .fake-task.p3 { background: var(--impact-p3-row); }
+        .fake-task.p3::before { background: var(--impact-p3); }
+        .fake-task.p4 { background: var(--impact-p4-row); }
+        .fake-task.p4::before { background: var(--impact-p4); }
+
+        .ft-text {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .ft-meta {
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            opacity: 0.5;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot.blue { background: var(--blue-500); }
+        .dot.purple { background: var(--purple-500); }
+        .dot.magenta { background: var(--magenta-500); }
+        .dot.red { background: var(--impact-p1); }
+        .dot.amber { background: var(--impact-p2); }
+        .dot.green { background: var(--impact-p3); }
+        .dot.grey { background: var(--impact-p4); }
+
+        /* Dot-only clarity — just the dot, centered in column */
+        .ft-clarity-dot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.5;
+        }
+
+        .ft-clarity-dot .dot {
+            width: 8px;
+            height: 8px;
+        }
+
+        /* ===== Interactive mode switcher ===== */
+        .mode-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0 16px 2px;
+        }
+
+        .mode-label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--slate-400);
+        }
+
+        .mode-btn {
+            padding: 4px 10px;
+            border: 1px solid var(--border-default);
+            border-radius: 6px;
+            background: white;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .mode-btn.active {
+            background: var(--purple-tint);
+            border-color: rgba(109, 94, 246, 0.3);
+            color: var(--purple-600);
+            font-weight: 600;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 900px) {
+            .compare { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-title">
+        <svg viewBox="38 40 180 160" width="22" height="19" style="margin-bottom: 2px;">
+            <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+            <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+            <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+        </svg>
+        Header Redesign — Refined
+    </div>
+    <p class="page-subtitle">Four changes. "Tasks" label stays. Energy pills stay compact. Clarity in task rows becomes dot-only.</p>
+
+    <!-- =====================================================================
+         CHANGE A: Clarity Spectrum Bar
+         ===================================================================== -->
+    <div class="mock-section">
+        <div class="mock-label">
+            <span class="mock-number">A</span>
+            <span class="mock-title">Spectrum bar replaces flat border</span>
+        </div>
+        <p class="mock-desc">2px gradient <code>blue → purple → magenta</code> at 35% opacity. Everything else unchanged.</p>
+
+        <div class="compare">
+            <div class="compare-col">
+                <span class="compare-label">Current</span>
+                <div class="task-panel">
+                    <div class="hdr with-border">
+                        <div class="row1 cols-text">
+                            <span class="tasks-label">Tasks</span>
+                            <button class="sort-btn">Duration</button>
+                            <button class="sort-btn">Impact</button>
+                            <button class="sort-btn active">Clarity</button>
+                            <button class="gear">⚙</button>
+                        </div>
+                        <div class="row2">
+                            <div class="energy">
+                                <span class="energy-lbl">Energy</span>
+                                <div class="pills"><button class="pill">🧟</button><button class="pill active-purple">☕</button><button class="pill">🧠</button></div>
+                            </div>
+                            <span class="row2-spacer"></span>
+                            <button class="chip active">📅 Sched</button>
+                            <button class="chip">✓ Done</button>
+                            <button class="chip">🗑</button>
+                        </div>
+                    </div>
+                    <div class="fake-tasks">
+                        <div class="fake-domain">🎯 Work</div>
+                        <div class="fake-task cols-text p1"><span class="ft-text">Ship v2.0 release</span><span class="ft-meta">2h</span><span class="ft-meta"><span class="dot red"></span>P1</span><span class="ft-meta"><span class="dot blue"></span>Clear</span><span></span></div>
+                        <div class="fake-task cols-text p2"><span class="ft-text">Review PR #847</span><span class="ft-meta">30m</span><span class="ft-meta"><span class="dot amber"></span>P2</span><span class="ft-meta"><span class="dot purple"></span>Defined</span><span></span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="compare-col">
+                <span class="compare-label good">Proposed</span>
+                <div class="task-panel">
+                    <div class="hdr with-spectrum">
+                        <div class="row1 cols-text">
+                            <span class="tasks-label">Tasks</span>
+                            <button class="sort-btn">Duration</button>
+                            <button class="sort-btn">Impact</button>
+                            <button class="sort-btn active">Clarity</button>
+                            <button class="gear">⚙</button>
+                        </div>
+                        <div class="row2">
+                            <div class="energy">
+                                <span class="energy-lbl">Energy</span>
+                                <div class="pills"><button class="pill">🧟</button><button class="pill active-purple">☕</button><button class="pill">🧠</button></div>
+                            </div>
+                            <span class="row2-spacer"></span>
+                            <button class="chip active">📅 Sched</button>
+                            <button class="chip">✓ Done</button>
+                            <button class="chip">🗑</button>
+                        </div>
+                    </div>
+                    <div class="fake-tasks">
+                        <div class="fake-domain">🎯 Work</div>
+                        <div class="fake-task cols-text p1"><span class="ft-text">Ship v2.0 release</span><span class="ft-meta">2h</span><span class="ft-meta"><span class="dot red"></span>P1</span><span class="ft-meta"><span class="dot blue"></span>Clear</span><span></span></div>
+                        <div class="fake-task cols-text p2"><span class="ft-text">Review PR #847</span><span class="ft-meta">30m</span><span class="ft-meta"><span class="dot amber"></span>P2</span><span class="ft-meta"><span class="dot purple"></span>Defined</span><span></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- =====================================================================
+         CHANGE B: Clarity-tinted energy pills + dots
+         ===================================================================== -->
+    <div class="mock-section">
+        <div class="mock-label">
+            <span class="mock-number">B</span>
+            <span class="mock-title">Energy pills tinted by clarity + indicator dots</span>
+        </div>
+        <p class="mock-desc">Same 26×20px pills. Active pill background changes from flat purple to the <strong>appropriate clarity tint</strong>. Three dots next to pills show which levels are visible. No size increase.</p>
+
+        <div class="compare">
+            <div class="compare-col">
+                <span class="compare-label">Current — always purple</span>
+                <div style="display: flex; flex-direction: column; gap: 20px; padding: 12px 0;">
+                    <div class="energy">
+                        <span class="energy-lbl">Energy</span>
+                        <div class="pills"><button class="pill active-purple">🧟</button><button class="pill">☕</button><button class="pill">🧠</button></div>
+                        <span style="font-size: 0.5rem; color: var(--slate-400); margin-left: 8px;">Zombie</span>
+                    </div>
+                    <div class="energy">
+                        <span class="energy-lbl">Energy</span>
+                        <div class="pills"><button class="pill">🧟</button><button class="pill active-purple">☕</button><button class="pill">🧠</button></div>
+                        <span style="font-size: 0.5rem; color: var(--slate-400); margin-left: 8px;">Normal</span>
+                    </div>
+                    <div class="energy">
+                        <span class="energy-lbl">Energy</span>
+                        <div class="pills"><button class="pill">🧟</button><button class="pill">☕</button><button class="pill active-purple">🧠</button></div>
+                        <span style="font-size: 0.5rem; color: var(--slate-400); margin-left: 8px;">Focus</span>
+                    </div>
+                </div>
+            </div>
+            <div class="compare-col">
+                <span class="compare-label good">Proposed — clarity tint + dots</span>
+                <div style="display: flex; flex-direction: column; gap: 20px; padding: 12px 0;">
+                    <div class="energy">
+                        <span class="energy-lbl">Energy</span>
+                        <div class="pills"><button class="pill active-blue">🧟</button><button class="pill">☕</button><button class="pill">🧠</button></div>
+                        <div class="clarity-dots">
+                            <span class="cdot blue"></span>
+                            <span class="cdot purple off"></span>
+                            <span class="cdot magenta off"></span>
+                        </div>
+                        <span style="font-size: 0.5rem; color: var(--blue-500); font-weight: 600; margin-left: 4px;">Clear only</span>
+                    </div>
+                    <div class="energy">
+                        <span class="energy-lbl">Energy</span>
+                        <div class="pills"><button class="pill">🧟</button><button class="pill active-defined">☕</button><button class="pill">🧠</button></div>
+                        <div class="clarity-dots">
+                            <span class="cdot blue"></span>
+                            <span class="cdot purple"></span>
+                            <span class="cdot magenta off"></span>
+                        </div>
+                        <span style="font-size: 0.5rem; color: var(--purple-500); font-weight: 600; margin-left: 4px;">Clear + Defined</span>
+                    </div>
+                    <div class="energy">
+                        <span class="energy-lbl">Energy</span>
+                        <div class="pills"><button class="pill">🧟</button><button class="pill">☕</button><button class="pill active-magenta">🧠</button></div>
+                        <div class="clarity-dots">
+                            <span class="cdot blue"></span>
+                            <span class="cdot purple"></span>
+                            <span class="cdot magenta"></span>
+                        </div>
+                        <span style="font-size: 0.5rem; color: var(--magenta-500); font-weight: 600; margin-left: 4px;">All clarity levels</span>
+                    </div>
+                </div>
+                <div class="annotation">Pill stays 26×20. Blue tint for 🧟, purple tint for ☕, magenta tint for 🧠. <code>box-shadow: 0 0 0 1px</code> with matching color at 25% for the ring. Three dots reuse the same 7px vocabulary as task rows.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- =====================================================================
+         CHANGE C: Segmented view toggle
+         ===================================================================== -->
+    <div class="mock-section">
+        <div class="mock-label">
+            <span class="mock-number">C</span>
+            <span class="mock-title">Segmented view toggle</span>
+        </div>
+        <p class="mock-desc">Full words in a contained track. Trash is a separate danger icon button. All four toggle states shown.</p>
+
+        <div class="compare">
+            <div class="compare-col">
+                <span class="compare-label">Current — floating chips</span>
+                <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px 0;">
+                    <div style="display: flex; gap: 4px;">
+                        <button class="chip active">📅 Sched</button>
+                        <button class="chip">✓ Done</button>
+                        <button class="chip">🗑</button>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="chip">📅 Sched</button>
+                        <button class="chip active">✓ Done</button>
+                        <button class="chip">🗑</button>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="chip active">📅 Sched</button>
+                        <button class="chip active">✓ Done</button>
+                        <button class="chip">🗑</button>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="chip">📅 Sched</button>
+                        <button class="chip">✓ Done</button>
+                        <button class="chip">🗑</button>
+                    </div>
+                </div>
+            </div>
+            <div class="compare-col">
+                <span class="compare-label good">Proposed — segmented + trash</span>
+                <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px 0;">
+                    <div class="view-seg">
+                        <div class="seg-track">
+                            <button class="seg-item active"><span class="seg-icon">📅</span> Scheduled</button>
+                            <button class="seg-item"><span class="seg-icon">◆</span> Completed</button>
+                        </div>
+                        <button class="trash-btn">🗑</button>
+                    </div>
+                    <div class="view-seg">
+                        <div class="seg-track">
+                            <button class="seg-item"><span class="seg-icon">📅</span> Scheduled</button>
+                            <button class="seg-item active"><span class="seg-icon">◆</span> Completed</button>
+                        </div>
+                        <button class="trash-btn">🗑</button>
+                    </div>
+                    <div class="view-seg">
+                        <div class="seg-track">
+                            <button class="seg-item active"><span class="seg-icon">📅</span> Scheduled</button>
+                            <button class="seg-item active"><span class="seg-icon">◆</span> Completed</button>
+                        </div>
+                        <button class="trash-btn">🗑</button>
+                    </div>
+                    <div class="view-seg">
+                        <div class="seg-track">
+                            <button class="seg-item"><span class="seg-icon">📅</span> Scheduled</button>
+                            <button class="seg-item"><span class="seg-icon">◆</span> Completed</button>
+                        </div>
+                        <button class="trash-btn">🗑</button>
+                    </div>
+                </div>
+                <div class="annotation">Track groups the toggles visually. ◆ diamond replaces ✓ (avoids confusion with task completion). Full words — no "Sched" abbreviation.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- =====================================================================
+         CHANGE D: Dot-only clarity in task rows
+         ===================================================================== -->
+    <div class="mock-section">
+        <div class="mock-label">
+            <span class="mock-number">D</span>
+            <span class="mock-title">Dot-only clarity in task rows</span>
+        </div>
+        <p class="mock-desc">Remove "Clear"/"Defined"/"Open" text. Keep just the colored 8px dot. The header still says "Clarity" so context is clear. Column narrows from 80px to 42px — reclaimed space goes to task title.</p>
+
+        <div class="compare">
+            <div class="compare-col">
+                <span class="compare-label">Current — dot + word</span>
+                <div class="task-panel">
+                    <div class="hdr with-border">
+                        <div class="row1 cols-text">
+                            <span class="tasks-label">Tasks</span>
+                            <button class="sort-btn">Duration</button>
+                            <button class="sort-btn">Impact</button>
+                            <button class="sort-btn active">Clarity</button>
+                            <button class="gear">⚙</button>
+                        </div>
+                    </div>
+                    <div class="fake-tasks">
+                        <div class="fake-domain">🎯 Work</div>
+                        <div class="fake-task cols-text p1"><span class="ft-text">Ship v2.0 release</span><span class="ft-meta">2h</span><span class="ft-meta"><span class="dot red"></span>P1</span><span class="ft-meta"><span class="dot blue"></span>Clear</span><span></span></div>
+                        <div class="fake-task cols-text p2"><span class="ft-text">Review design proposal for onboarding</span><span class="ft-meta">30m</span><span class="ft-meta"><span class="dot amber"></span>P2</span><span class="ft-meta"><span class="dot purple"></span>Defined</span><span></span></div>
+                        <div class="fake-task cols-text p3"><span class="ft-text">Research auth approach</span><span class="ft-meta">1h</span><span class="ft-meta"><span class="dot green"></span>P3</span><span class="ft-meta"><span class="dot magenta"></span>Open</span><span></span></div>
+                        <div class="fake-task cols-text p4"><span class="ft-text">Read DDD chapter 5</span><span class="ft-meta">45m</span><span class="ft-meta"><span class="dot grey"></span>P4</span><span class="ft-meta"><span class="dot blue"></span>Clear</span><span></span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="compare-col">
+                <span class="compare-label good">Proposed — dot only, narrower column</span>
+                <div class="task-panel">
+                    <div class="hdr with-border">
+                        <div class="row1 cols-dot">
+                            <span class="tasks-label">Tasks</span>
+                            <button class="sort-btn">Duration</button>
+                            <button class="sort-btn">Impact</button>
+                            <button class="sort-btn active">Clarity</button>
+                            <button class="gear">⚙</button>
+                        </div>
+                    </div>
+                    <div class="fake-tasks">
+                        <div class="fake-domain">🎯 Work</div>
+                        <div class="fake-task cols-dot p1"><span class="ft-text">Ship v2.0 release</span><span class="ft-meta">2h</span><span class="ft-meta"><span class="dot red"></span>P1</span><span class="ft-clarity-dot"><span class="dot blue"></span></span><span></span></div>
+                        <div class="fake-task cols-dot p2"><span class="ft-text">Review design proposal for onboarding</span><span class="ft-meta">30m</span><span class="ft-meta"><span class="dot amber"></span>P2</span><span class="ft-clarity-dot"><span class="dot purple"></span></span><span></span></div>
+                        <div class="fake-task cols-dot p3"><span class="ft-text">Research auth approach</span><span class="ft-meta">1h</span><span class="ft-meta"><span class="dot green"></span>P3</span><span class="ft-clarity-dot"><span class="dot magenta"></span></span><span></span></div>
+                        <div class="fake-task cols-dot p4"><span class="ft-text">Read DDD chapter 5</span><span class="ft-meta">45m</span><span class="ft-meta"><span class="dot grey"></span>P4</span><span class="ft-clarity-dot"><span class="dot blue"></span></span><span></span></div>
+                    </div>
+                </div>
+                <div class="annotation">Dot bumps to 8px for standalone visibility. Column goes from 80px → 42px. "Review design proposal for onboarding" gets more breathing room on the left. The three clarity colors are now part of a consistent visual language: W icon → energy dots → task dots.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- =====================================================================
+         COMBINED: Everything together, interactive
+         ===================================================================== -->
+    <div class="mock-section">
+        <div class="mock-label">
+            <span class="mock-number" style="background: linear-gradient(135deg, var(--blue-500), var(--purple-500), var(--magenta-500)); width: 32px;">★</span>
+            <span class="mock-title">All four changes combined</span>
+        </div>
+        <p class="mock-desc">Interactive — click the energy mode buttons to see clarity tints, dots, and the spectrum bar work together.</p>
+
+        <div class="mode-bar">
+            <span class="mode-label">Energy mode:</span>
+            <button class="mode-btn" data-mode="1" onclick="setMode(1)">🧟 Zombie</button>
+            <button class="mode-btn active" data-mode="2" onclick="setMode(2)">☕ Normal</button>
+            <button class="mode-btn" data-mode="3" onclick="setMode(3)">🧠 Focus</button>
+        </div>
+
+        <div class="compare">
+            <!-- CURRENT -->
+            <div class="compare-col">
+                <span class="compare-label">Current</span>
+                <div class="task-panel">
+                    <div class="hdr with-border">
+                        <div class="row1 cols-text">
+                            <span class="tasks-label">Tasks</span>
+                            <button class="sort-btn">Duration</button>
+                            <button class="sort-btn">Impact</button>
+                            <button class="sort-btn active">Clarity</button>
+                            <button class="gear">⚙</button>
+                        </div>
+                        <div class="row2">
+                            <div class="energy">
+                                <span class="energy-lbl">Energy</span>
+                                <div class="pills" id="old-pills">
+                                    <button class="pill" id="old1">🧟</button>
+                                    <button class="pill active-purple" id="old2">☕</button>
+                                    <button class="pill" id="old3">🧠</button>
+                                </div>
+                            </div>
+                            <span class="row2-spacer"></span>
+                            <button class="chip active">📅 Sched</button>
+                            <button class="chip">✓ Done</button>
+                            <button class="chip">🗑</button>
+                        </div>
+                    </div>
+                    <div class="fake-tasks">
+                        <div class="fake-domain">🎯 Work</div>
+                        <div class="fake-task cols-text p1"><span class="ft-text">Ship v2.0 release</span><span class="ft-meta">2h</span><span class="ft-meta"><span class="dot red"></span>P1</span><span class="ft-meta"><span class="dot blue"></span>Clear</span><span></span></div>
+                        <div class="fake-task cols-text p2"><span class="ft-text">Review PR #847</span><span class="ft-meta">30m</span><span class="ft-meta"><span class="dot amber"></span>P2</span><span class="ft-meta"><span class="dot purple"></span>Defined</span><span></span></div>
+                        <div class="fake-task cols-text p3"><span class="ft-text">Research auth approach</span><span class="ft-meta">1h</span><span class="ft-meta"><span class="dot green"></span>P3</span><span class="ft-meta"><span class="dot magenta"></span>Open</span><span></span></div>
+                        <div class="fake-domain">📚 Learning</div>
+                        <div class="fake-task cols-text p4"><span class="ft-text">Read DDD chapter 5</span><span class="ft-meta">45m</span><span class="ft-meta"><span class="dot grey"></span>P4</span><span class="ft-meta"><span class="dot blue"></span>Clear</span><span></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROPOSED -->
+            <div class="compare-col">
+                <span class="compare-label good">Proposed</span>
+                <div class="task-panel">
+                    <div class="hdr with-spectrum">
+                        <div class="row1 cols-dot">
+                            <span class="tasks-label">Tasks</span>
+                            <button class="sort-btn">Duration</button>
+                            <button class="sort-btn">Impact</button>
+                            <button class="sort-btn active">Clarity</button>
+                            <button class="gear">⚙</button>
+                        </div>
+                        <div class="row2">
+                            <div class="energy">
+                                <span class="energy-lbl">Energy</span>
+                                <div class="pills" id="new-pills">
+                                    <button class="pill" id="new1">🧟</button>
+                                    <button class="pill active-defined" id="new2">☕</button>
+                                    <button class="pill" id="new3">🧠</button>
+                                </div>
+                                <div class="clarity-dots" id="cdots">
+                                    <span class="cdot blue" id="cd-b"></span>
+                                    <span class="cdot purple" id="cd-p"></span>
+                                    <span class="cdot magenta off" id="cd-m"></span>
+                                </div>
+                            </div>
+                            <span class="row2-spacer"></span>
+                            <div class="view-seg">
+                                <div class="seg-track">
+                                    <button class="seg-item active"><span class="seg-icon">📅</span> Scheduled</button>
+                                    <button class="seg-item"><span class="seg-icon">◆</span> Completed</button>
+                                </div>
+                                <button class="trash-btn">🗑</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fake-tasks">
+                        <div class="fake-domain">🎯 Work</div>
+                        <div class="fake-task cols-dot p1"><span class="ft-text">Ship v2.0 release</span><span class="ft-meta">2h</span><span class="ft-meta"><span class="dot red"></span>P1</span><span class="ft-clarity-dot"><span class="dot blue"></span></span><span></span></div>
+                        <div class="fake-task cols-dot p2"><span class="ft-text">Review PR #847</span><span class="ft-meta">30m</span><span class="ft-meta"><span class="dot amber"></span>P2</span><span class="ft-clarity-dot"><span class="dot purple"></span></span><span></span></div>
+                        <div class="fake-task cols-dot p3"><span class="ft-text">Research auth approach</span><span class="ft-meta">1h</span><span class="ft-meta"><span class="dot green"></span>P3</span><span class="ft-clarity-dot"><span class="dot magenta"></span></span><span></span></div>
+                        <div class="fake-domain">📚 Learning</div>
+                        <div class="fake-task cols-dot p4"><span class="ft-text">Read DDD chapter 5</span><span class="ft-meta">45m</span><span class="ft-meta"><span class="dot grey"></span>P4</span><span class="ft-clarity-dot"><span class="dot blue"></span></span><span></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TINT_CLASS = { 1: 'active-blue', 2: 'active-defined', 3: 'active-magenta' };
+
+        function setMode(level) {
+            // Mode buttons
+            document.querySelectorAll('.mode-btn').forEach(b =>
+                b.classList.toggle('active', +b.dataset.mode === level));
+
+            // Old pills — purple always
+            ['old1','old2','old3'].forEach(id => {
+                const el = document.getElementById(id);
+                el.classList.remove('active-purple');
+            });
+            document.getElementById('old' + level).classList.add('active-purple');
+
+            // New pills — clarity tint
+            ['new1','new2','new3'].forEach(id => {
+                const el = document.getElementById(id);
+                el.classList.remove('active-blue', 'active-defined', 'active-magenta');
+            });
+            document.getElementById('new' + level).classList.add(TINT_CLASS[level]);
+
+            // Clarity dots
+            document.getElementById('cd-b').classList.remove('off');
+            document.getElementById('cd-p').classList.toggle('off', level < 2);
+            document.getElementById('cd-m').classList.toggle('off', level < 3);
+        }
+    </script>
+
+</body>
+</html>

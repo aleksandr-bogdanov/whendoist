@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whendoist — Design Fixes Mock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===================================================================
+   DESIGN TOKENS (from tokens.css — unchanged)
+   =================================================================== */
+:root {
+    --slate-50: #F8FAFC;
+    --slate-100: #F1F5F9;
+    --slate-200: #E2E8F0;
+    --slate-300: #CBD5E1;
+    --slate-400: #94A3B8;
+    --slate-500: #64748B;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1E293B;
+    --slate-900: #0F172A;
+
+    --blue-500: #167BFF;
+    --blue-tint: #EAF2FF;
+    --purple-400: #8B7CF7;
+    --purple-500: #6D5EF6;
+    --purple-600: #5B4CF0;
+    --purple-tint: #EFEEFF;
+    --magenta-500: #A020C0;
+    --magenta-tint: #F3ECFA;
+
+    --bg-canvas: var(--slate-50);
+    --bg-panel: var(--slate-100);
+    --bg-surface: #FFFFFF;
+    --text-primary: #0B1220;
+    --text-secondary: rgba(15, 23, 42, 0.64);
+    --text-muted: rgba(15, 23, 42, 0.46);
+    --border-subtle: rgba(15, 23, 42, 0.055);
+    --border-default: rgba(15, 23, 42, 0.085);
+    --border-strong: rgba(15, 23, 42, 0.12);
+    --primary: var(--purple-500);
+    --interactive-active: rgba(109, 94, 246, 0.10);
+    --focus-ring: rgba(109, 94, 246, 0.22);
+    --shadow-inner-glow: inset 0 0 0 1px rgba(109, 94, 246, 0.15);
+    --row-hover: rgba(15, 23, 42, 0.02);
+    --bg-inset: rgba(15, 23, 42, 0.02);
+
+    --impact-p1: #C9505A;
+    --impact-p1-border: #E8A0A6;
+    --impact-p1-row: rgba(201, 80, 90, 0.030);
+    --impact-p2: #B8860B;
+    --impact-p2-border: #D4A84B;
+    --impact-p2-row: rgba(184, 134, 11, 0.022);
+    --impact-p3: #1A9160;
+    --impact-p3-border: #5AB88A;
+    --impact-p3-row: rgba(26, 145, 96, 0.030);
+    --impact-p4: #6B7385;
+    --impact-p4-border: #9CA3B0;
+    --impact-p4-row: rgba(107, 115, 133, 0.018);
+
+    --clear-color: var(--blue-500);
+    --clear-tint: var(--blue-tint);
+    --clarity-defined: var(--purple-500);
+    --clarity-defined-tint: var(--purple-tint);
+    --open-color: var(--magenta-500);
+    --open-tint: var(--magenta-tint);
+
+    /* Column widths */
+    --col-duration: 68px;
+    --col-impact: 56px;
+    --col-clarity: 32px;  /* FIX: Narrower — single dot needs less than 42px */
+    --col-actions: 28px;
+    --col-gap: 6px;
+    --rail-width: 2px;
+    --rail-w: var(--rail-width);
+}
+
+/* ===================================================================
+   RESET & BASE
+   =================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; cursor: pointer; }
+
+/* ===================================================================
+   PAGE LAYOUT (simplified — mock only)
+   =================================================================== */
+.mock-page {
+    max-width: 740px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+
+.mock-title {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    letter-spacing: 0.02em;
+}
+
+/* Annotation badges for design changes */
+.fix-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--purple-600);
+    background: rgba(109, 94, 246, 0.08);
+    border: 1px solid rgba(109, 94, 246, 0.2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* ===================================================================
+   TASKS PANEL
+   =================================================================== */
+.tasks-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+}
+
+/* ===================================================================
+   TASK LIST HEADER — Two-row command center
+   =================================================================== */
+.task-list-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+}
+
+/* Spectrum bar — unchanged (intentional brand element) */
+.task-list-header::after {
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg,
+        var(--clear-color),
+        var(--clarity-defined),
+        var(--open-color)
+    );
+    opacity: 0.35;
+}
+
+/* --- Row 1: Title + Sort Columns + Gear --- */
+.header-row1 {
+    display: grid;
+    grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 8px 0 4px var(--rail-w);
+}
+
+/* FIX #6: "TASKS" label — opacity 0.38 → 0.50 */
+.header-task-label {
+    margin-left: 36px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(15, 23, 42, 0.50); /* Was 0.38 */
+    line-height: 22px;
+}
+
+/* Sort buttons in header */
+.header-meta {
+    display: contents;
+}
+
+.header-sort {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.header-sort:hover {
+    color: var(--text-primary);
+    background: rgba(15, 23, 42, 0.04);
+}
+.header-sort.active {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+.sort-icon {
+    font-size: 0.5rem;
+    opacity: 0.6;
+}
+
+/* Gear button */
+.gear-btn {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid var(--border-default);
+    background: transparent;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.gear-btn:hover {
+    background: rgba(15, 23, 42, 0.04);
+    color: var(--text-primary);
+}
+
+/* --- Row 2: Energy + View Toggle --- */
+/* FIX #9: Tighter grouping, less dead space */
+.header-row2 {
+    display: flex;
+    align-items: center;
+    padding: 2px var(--rail-w) 6px;
+    margin-left: 36px;
+    gap: 8px;
+}
+
+/* Energy wrapper — groups pills + clarity dots tightly */
+.energy-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.energy-label {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.header-energy__pills {
+    display: flex;
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: 5px;
+    padding: 1px;
+}
+
+.energy-pill {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 20px;
+    border-radius: 4px;
+    background: var(--bg-surface);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+.energy-pill:hover {
+    background: var(--bg-panel);
+}
+
+/* Clarity-tinted active states (from V2) */
+.energy-pill.active[data-energy="1"] {
+    background: var(--clear-tint);
+    box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.25);
+}
+.energy-pill.active[data-energy="2"] {
+    background: var(--clarity-defined-tint);
+    box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.25);
+}
+.energy-pill.active[data-energy="3"] {
+    background: var(--open-tint);
+    box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.25);
+}
+
+/* Clarity indicator dots (header) */
+.clarity-dots {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.cdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transition: opacity 0.2s ease;
+}
+.cdot-clear { background: var(--clear-color); }
+.cdot-defined { background: var(--clarity-defined); }
+.cdot-open { background: var(--open-color); }
+.cdot.off { opacity: 0.12; }
+
+/* FIX #9: Reduced spacer — just enough gap, not full flex */
+.header-row2-spacer {
+    flex: 1;
+    min-width: 12px;
+}
+
+/* ===================================================================
+   FIX #4: View toggle — V2 segmented track with text labels
+   (Reverts from icon-only 24x22 buttons to planned design)
+   =================================================================== */
+.view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-seg-track {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: 7px;
+}
+
+.view-seg-btn {
+    all: unset;
+    box-sizing: border-box;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 5px;
+    background: transparent;
+    font-size: 0.6rem;
+    font-weight: 550;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.view-seg-btn:hover {
+    background: rgba(15, 23, 42, 0.03);
+    color: var(--text-primary);
+}
+.view-seg-btn.active {
+    background: var(--interactive-active);
+    color: var(--purple-600);
+    font-weight: 600;
+}
+.view-seg-icon {
+    font-size: 0.55rem;
+    opacity: 0.7;
+}
+.view-seg-btn.active .view-seg-icon {
+    opacity: 1;
+}
+
+/* Separate trash button */
+.view-trash-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 24px;
+    height: 22px;
+    border: 1px solid var(--border-default);
+    border-radius: 5px;
+    background: transparent;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    opacity: 0.6;
+}
+.view-trash-btn:hover {
+    opacity: 1;
+    border-color: rgba(220, 38, 38, 0.3);
+    color: #DC2626;
+    background: rgba(220, 38, 38, 0.04);
+}
+
+/* ===================================================================
+   TASK LIST SCROLL AREA
+   =================================================================== */
+.task-list-scroll {
+    padding: 4px 1rem 1rem;
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+/* ===================================================================
+   PROJECT GROUPS (domain grouping)
+   =================================================================== */
+.project-group {
+    margin-bottom: 0.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.project-group:last-child {
+    margin-bottom: 0;
+}
+.project-group > summary {
+    list-style: none;
+}
+.project-group > summary::-webkit-details-marker {
+    display: none;
+}
+
+.project-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 6px 12px 6px 24px;
+    margin: 0;
+    background: var(--bg-panel);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+.project-header:hover {
+    background: var(--bg-canvas);
+}
+
+/* Left disclosure triangle */
+.project-header::before {
+    content: "\25B6";
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+    opacity: 0.6;
+}
+.project-group[open] .project-header::before {
+    transform: rotate(90deg);
+}
+
+/* FIX #7: No right-side chevron — the left triangle is sufficient */
+/* (Removed any ::after chevron — only the left ▶/▾ triangle remains) */
+
+.project-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+}
+
+/* ===================================================================
+   TASK ITEMS
+   =================================================================== */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 0;
+}
+
+.task-item {
+    display: grid;
+    grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 7px 0 7px 38px;
+    min-height: 36px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    cursor: grab;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+/* Impact rail (left edge) */
+.task-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--rail-w);
+    background: transparent;
+    border-radius: 0 2px 2px 0;
+    transition: width 0.15s ease;
+}
+
+/* Inset row divider */
+.task-item::after {
+    content: "";
+    position: absolute;
+    left: var(--rail-w);
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--border-subtle);
+    pointer-events: none;
+}
+.task-item:last-of-type::after {
+    display: none;
+}
+
+/* Impact row tints */
+.task-item.impact-1 { background: var(--impact-p1-row); }
+.task-item.impact-2 { background: var(--impact-p2-row); }
+.task-item.impact-3 { background: var(--impact-p3-row); }
+.task-item.impact-4 { background: var(--impact-p4-row); }
+
+/* Impact rail colors */
+.task-item.impact-1::before { background: var(--impact-p1-border); }
+.task-item.impact-2::before { background: var(--impact-p2); }
+.task-item.impact-3::before { background: var(--impact-p3); }
+.task-item.impact-4::before { background: var(--impact-p4); }
+
+/* Hover */
+.task-item:hover {
+    background: rgba(15, 23, 42, 0.02) !important;
+    box-shadow: var(--shadow-inner-glow);
+}
+.task-item:hover::before {
+    width: 3px;
+}
+
+/* FIX #3: Meta column opacity — 0.5 → 0.65 */
+.task-item .meta-duration,
+.task-item .meta-impact,
+.task-item .meta-clarity {
+    opacity: 0.65; /* Was 0.5 — readable without hovering */
+    transition: opacity 0.15s ease;
+}
+.task-item:hover .meta-duration,
+.task-item:hover .meta-impact,
+.task-item:hover .meta-clarity {
+    opacity: 1;
+}
+
+/* ===================================================================
+   TASK CONTENT (title, breadcrumb, badges)
+   =================================================================== */
+.task-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.task-text {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.task-breadcrumb {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+/* FIX #1: Subtask badges — grey/muted instead of tinted purple */
+.subtask-badge {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg-inset); /* Was rgba(109, 94, 246, 0.1) — purple tint */
+    border: 1px solid var(--border-subtle);
+    padding: 1px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.task-due {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    height: 22px;
+    line-height: 22px;
+}
+
+.recurring-icon {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.125rem;
+    font-size: 0.65rem;
+    line-height: 1;
+}
+
+/* ===================================================================
+   TASK METADATA COLUMNS
+   =================================================================== */
+.task-meta {
+    display: contents;
+}
+
+.task-meta > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 999px;
+    line-height: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+    position: relative;
+    padding-left: 12px;
+}
+
+/* Duration column */
+.meta-duration {
+    font-variant-numeric: tabular-nums;
+    color: rgba(15, 23, 42, 0.60);
+    justify-content: center;
+}
+
+/* FIX #2: Impact column — remove redundant dot, color the P-text directly.
+   The left rail already encodes impact via color. The dot before "P2"
+   added no information. Now the text itself carries the color. */
+.meta-impact {
+    justify-content: center;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+/* NO ::before dot — removed. Color the text instead. */
+.meta-impact.impact-1 { color: var(--impact-p1); }
+.meta-impact.impact-2 { color: var(--impact-p2); }
+.meta-impact.impact-3 { color: var(--impact-p3); }
+.meta-impact.impact-4 { color: var(--impact-p4); }
+
+/* FIX #5: Clarity column — single colored dot per row (Stage D spec).
+   Was three dots with one lit. Now a single dot: simpler, faster to scan.
+   8 tasks = 8 dots to parse instead of 24. */
+.meta-clarity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.meta-clarity .clarity-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--impact-p4); /* fallback */
+}
+
+/* Single dot takes the clarity color */
+.meta-clarity.clarity-clear .clarity-dot { background: var(--clear-color); }
+.meta-clarity.clarity-defined .clarity-dot { background: var(--clarity-defined); }
+.meta-clarity.clarity-open .clarity-dot { background: var(--open-color); }
+.meta-clarity.clarity-none .clarity-dot { background: var(--border-default); opacity: 0.4; }
+
+/* Empty actions cell */
+.task-actions {
+    width: var(--col-actions);
+}
+
+/* ===================================================================
+   ADD TASK ROW
+   =================================================================== */
+.add-task-row {
+    display: flex;
+    align-items: center;
+    padding: 4px 12px 4px 38px;
+    cursor: pointer;
+    background: var(--bg-panel);
+    height: 28px;
+    transition: background 0.15s ease;
+}
+.add-task-text {
+    opacity: 0.5;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+.add-task-row:hover .add-task-text {
+    opacity: 1;
+    color: var(--primary);
+}
+.add-task-row:hover {
+    background: rgba(109, 94, 246, 0.08);
+}
+
+/* ===================================================================
+   FIX #8: Section separators — brand-aligned style
+   Old: centered text between two horizontal rules (dated)
+   New: left-aligned label with subtle left accent, no full-width rules
+   =================================================================== */
+.section-separator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 6px;
+    padding: 0 12px;
+}
+
+.section-sep-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Subtle line AFTER the label only */
+.section-separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-default);
+}
+
+/* ===================================================================
+   ANNOTATION BANNER (for the mock only)
+   =================================================================== */
+.annotation-bar {
+    background: rgba(109, 94, 246, 0.04);
+    border: 1px solid rgba(109, 94, 246, 0.12);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 1.5rem;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+.annotation-bar strong {
+    color: var(--text-primary);
+}
+.annotation-bar ul {
+    margin: 6px 0 0 16px;
+    padding: 0;
+}
+.annotation-bar li {
+    margin-bottom: 2px;
+}
+.annotation-bar code {
+    font-size: 0.7rem;
+    background: rgba(15, 23, 42, 0.05);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+/* ===================================================================
+   COMPARISON LAYOUT
+   =================================================================== */
+.comparison {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+.comparison-section {
+    padding: 1rem;
+    border: 1px dashed var(--border-default);
+    border-radius: 10px;
+    background: var(--bg-canvas);
+}
+.comparison-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.comparison-label.before { color: var(--impact-p1); }
+.comparison-label.after { color: var(--impact-p3); }
+
+/* Row for side-by-side comparisons */
+.side-by-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+.side-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+}
+.side-label.before { color: var(--impact-p1); }
+.side-label.after { color: var(--impact-p3); }
+
+/* Inline dot for comparison demos */
+.demo-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+.demo-dots {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+    vertical-align: middle;
+}
+.demo-dots .cdot {
+    width: 6px;
+    height: 6px;
+}
+.demo-dots .cdot.dim { opacity: 0.15; }
+
+/* Meta tag inline demo */
+.demo-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.demo-meta .impact-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+/* Subtask badge demo */
+.demo-badge-old {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: rgba(109, 94, 246, 0.1);
+    padding: 1px 6px;
+    border-radius: 8px;
+    display: inline-block;
+}
+.demo-badge-new {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg-inset);
+    border: 1px solid var(--border-subtle);
+    padding: 1px 6px;
+    border-radius: 8px;
+    display: inline-block;
+}
+</style>
+</head>
+<body>
+<div class="mock-page">
+
+<h1 class="mock-title">Design Fixes Mock — Task List View</h1>
+
+<div class="annotation-bar">
+    <strong>8 fixes applied</strong> (all changes annotated with <span class="fix-badge">fix #N</span> badges in CSS):
+    <ul>
+        <li><strong>#1</strong> Subtask badges — grey/muted, no longer purple-tinted</li>
+        <li><strong>#2</strong> Impact column — removed redundant dot, P-text colored directly</li>
+        <li><strong>#3</strong> Meta column opacity — <code>0.5 → 0.65</code> (readable without hovering)</li>
+        <li><strong>#4</strong> View toggle — V2 segmented track with text labels ("Scheduled" / "Completed")</li>
+        <li><strong>#5</strong> Clarity per row — single colored dot (Stage D spec), not three dots</li>
+        <li><strong>#6</strong> "TASKS" label — opacity <code>0.38 → 0.50</code></li>
+        <li><strong>#7</strong> Collapsed groups — left ▶ triangle only, no right-side chevron</li>
+        <li><strong>#8</strong> Section divider — left-aligned label + trailing line (no centered hr pattern)</li>
+    </ul>
+</div>
+
+<!-- ================================================================
+     MAIN MOCK: Full task list with all fixes
+     ================================================================ -->
+<div class="tasks-panel">
+    <!-- HEADER -->
+    <div class="task-list-header">
+        <!-- Row 1: Title + Sort + Gear -->
+        <div class="header-row1">
+            <span class="header-task-label">Tasks</span>
+            <span class="header-meta">
+                <button type="button" class="header-sort" data-sort="duration" title="Sort by duration">
+                    Duration <span class="sort-icon"></span>
+                </button>
+            </span>
+            <span class="header-meta">
+                <button type="button" class="header-sort" data-sort="impact" title="Sort by impact">
+                    Impact <span class="sort-icon"></span>
+                </button>
+            </span>
+            <span class="header-meta">
+                <button type="button" class="header-sort active" data-sort="clarity" title="Sort by clarity">
+                    Clarity <span class="sort-icon">↑</span>
+                </button>
+            </span>
+            <button type="button" class="gear-btn" title="Settings">⚙</button>
+        </div>
+
+        <!-- Row 2: Energy + View Toggle -->
+        <div class="header-row2">
+            <div class="energy-wrapper">
+                <span class="energy-label">Energy</span>
+                <div class="header-energy__pills">
+                    <button type="button" class="energy-pill" data-energy="1" title="Zombie — no-brainers">🧟</button>
+                    <button type="button" class="energy-pill active" data-energy="2" title="Normal — clear tasks">☕</button>
+                    <button type="button" class="energy-pill" data-energy="3" title="Focus — deep work too">🧠</button>
+                </div>
+                <div class="clarity-dots">
+                    <span class="cdot cdot-clear"></span>
+                    <span class="cdot cdot-defined"></span>
+                    <span class="cdot cdot-open off"></span>
+                </div>
+            </div>
+            <span class="header-row2-spacer"></span>
+            <!-- FIX #4: Segmented track with text labels -->
+            <div class="view-toggle">
+                <div class="view-seg-track">
+                    <button type="button" class="view-seg-btn active">
+                        <span class="view-seg-icon">📅</span> Scheduled
+                    </button>
+                    <button type="button" class="view-seg-btn active">
+                        <span class="view-seg-icon">◆</span> Completed
+                    </button>
+                </div>
+                <button type="button" class="view-trash-btn" title="Deleted tasks">🗑</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TASK LIST -->
+    <div class="task-list-scroll">
+        <!-- Career group (expanded) -->
+        <details class="project-group" open>
+            <summary class="project-header">
+                <span class="project-name">Career</span>
+            </summary>
+            <div class="task-list">
+                <!-- Task: Parent with subtasks, P2, defined -->
+                <div class="task-item impact-2">
+                    <div class="task-content">
+                        <span class="task-text">Сделать РоС по DE</span>
+                        <span class="subtask-badge">4 subtasks</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">—</span>
+                        <span class="meta-impact impact-2">P2</span>
+                        <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+                    </div>
+                    <span class="task-actions"></span>
+                </div>
+
+                <div class="task-item impact-2">
+                    <div class="task-content">
+                        <span class="task-text">Whendoist</span>
+                        <span class="subtask-badge">14 subtasks</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">—</span>
+                        <span class="meta-impact impact-2">P2</span>
+                        <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+                    </div>
+                    <span class="task-actions"></span>
+                </div>
+
+                <div class="task-item impact-2">
+                    <div class="task-content">
+                        <span class="task-text">LYCA</span>
+                        <span class="subtask-badge">7 subtasks</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">—</span>
+                        <span class="meta-impact impact-2">P2</span>
+                        <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+                    </div>
+                    <span class="task-actions"></span>
+                </div>
+
+                <div class="task-item impact-3">
+                    <div class="task-content">
+                        <span class="task-breadcrumb">Whendoist →</span>
+                        <span class="task-text">Fix the subtasks bug</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">30m</span>
+                        <span class="meta-impact impact-3">P3</span>
+                        <span class="meta-clarity clarity-clear"><span class="clarity-dot"></span></span>
+                    </div>
+                    <span class="task-actions"></span>
+                </div>
+
+                <div class="task-item impact-3">
+                    <div class="task-content">
+                        <span class="task-breadcrumb">Whendoist →</span>
+                        <span class="task-text">Create external calendar for scheduled tasks</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">2h</span>
+                        <span class="meta-impact impact-3">P3</span>
+                        <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+                    </div>
+                    <span class="task-actions"></span>
+                </div>
+
+                <div class="task-item impact-3">
+                    <div class="task-content">
+                        <span class="task-breadcrumb">Whendoist →</span>
+                        <span class="task-text">Parent tasks – do we support it or not? Again, lo...</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">30m</span>
+                        <span class="meta-impact impact-3">P3</span>
+                        <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+                    </div>
+                    <span class="task-actions"></span>
+                </div>
+
+                <div class="task-item impact-4">
+                    <div class="task-content">
+                        <span class="task-text">Decide what to do with Senren / Midori with Michael</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">4h</span>
+                        <span class="meta-impact impact-4">P4</span>
+                        <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+                    </div>
+                    <span class="task-actions"></span>
+                </div>
+
+                <div class="add-task-row">
+                    <span class="add-task-text">+ Add task</span>
+                </div>
+            </div>
+        </details>
+
+        <!-- Collapsed groups — FIX #7: left triangle only -->
+        <details class="project-group">
+            <summary class="project-header">
+                <span class="project-name">Leisure</span>
+            </summary>
+        </details>
+
+        <details class="project-group">
+            <summary class="project-header">
+                <span class="project-name">Music Hustle</span>
+            </summary>
+        </details>
+
+        <details class="project-group">
+            <summary class="project-header">
+                <span class="project-name">Вольер</span>
+            </summary>
+        </details>
+
+        <details class="project-group">
+            <summary class="project-header">
+                <span class="project-name">ОН: Операционка</span>
+            </summary>
+        </details>
+
+        <!-- FIX #8: Section separator — left-aligned label + trailing line -->
+        <div class="section-separator">
+            <span class="section-sep-label">Scheduled</span>
+        </div>
+
+        <!-- Scheduled tasks -->
+        <div class="task-item impact-1">
+            <div class="task-content">
+                <span class="task-text">Разобраться с tribute</span>
+                <span class="task-due">Feb 01</span>
+            </div>
+            <div class="task-meta">
+                <span class="meta-duration">30m</span>
+                <span class="meta-impact impact-1">P1</span>
+                <span class="meta-clarity clarity-clear"><span class="clarity-dot"></span></span>
+            </div>
+            <span class="task-actions"></span>
+        </div>
+
+        <div class="task-item impact-2">
+            <div class="task-content">
+                <span class="task-text">Пинговать Максима по правкам КЖЗК</span>
+                <span class="task-due">Feb 01</span>
+            </div>
+            <div class="task-meta">
+                <span class="meta-duration">30m</span>
+                <span class="meta-impact impact-2">P2</span>
+                <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+            </div>
+            <span class="task-actions"></span>
+        </div>
+
+        <div class="task-item impact-2">
+            <div class="task-content">
+                <span class="task-text">Отправить заявку на гражданство</span>
+                <span class="task-due">Feb 01</span>
+            </div>
+            <div class="task-meta">
+                <span class="meta-duration">2h</span>
+                <span class="meta-impact impact-2">P2</span>
+                <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+            </div>
+            <span class="task-actions"></span>
+        </div>
+
+        <div class="task-item impact-3">
+            <div class="task-content">
+                <span class="task-text">Anna: Call about briefkasten</span>
+                <span class="task-due">Feb 02</span>
+            </div>
+            <div class="task-meta">
+                <span class="meta-duration">30m</span>
+                <span class="meta-impact impact-3">P3</span>
+                <span class="meta-clarity clarity-clear"><span class="clarity-dot"></span></span>
+            </div>
+            <span class="task-actions"></span>
+        </div>
+
+        <div class="task-item impact-4">
+            <div class="task-content">
+                <span class="task-text">2025 Q2 ВК Рекордс – ждать ответа насчет отчужде...</span>
+                <span class="task-due">Feb 05</span>
+            </div>
+            <div class="task-meta">
+                <span class="meta-duration">30m</span>
+                <span class="meta-impact impact-4">P4</span>
+                <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+            </div>
+            <span class="task-actions"></span>
+        </div>
+
+        <div class="task-item impact-3">
+            <div class="task-content">
+                <span class="task-text">Чтение книги</span>
+                <span class="task-due"><span class="recurring-icon">↻</span> Feb 06</span>
+            </div>
+            <div class="task-meta">
+                <span class="meta-duration">1h</span>
+                <span class="meta-impact impact-3">P3</span>
+                <span class="meta-clarity clarity-defined"><span class="clarity-dot"></span></span>
+            </div>
+            <span class="task-actions"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     SIDE-BY-SIDE COMPARISONS
+     ================================================================ -->
+<div class="comparison">
+
+    <!-- Fix #1: Subtask badges -->
+    <div class="side-by-side">
+        <div>
+            <div class="side-label before">Before — Subtask badges</div>
+            <p style="font-size: 0.85rem; color: var(--text-primary); margin-top: 4px;">
+                Whendoist <span class="demo-badge-old">14 subtasks</span>
+            </p>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                Purple-tinted — visually dominant, competes with task title
+            </p>
+        </div>
+        <div>
+            <div class="side-label after">After — Subtask badges</div>
+            <p style="font-size: 0.85rem; color: var(--text-primary); margin-top: 4px;">
+                Whendoist <span class="demo-badge-new">14 subtasks</span>
+            </p>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                Grey/neutral — stays secondary, doesn't fight for attention
+            </p>
+        </div>
+    </div>
+
+    <!-- Fix #2: Impact column -->
+    <div class="side-by-side">
+        <div>
+            <div class="side-label before">Before — Impact column</div>
+            <div style="margin-top: 4px;">
+                <span class="demo-meta"><span class="impact-dot" style="background: var(--impact-p1)"></span> P1</span>&nbsp;&nbsp;
+                <span class="demo-meta"><span class="impact-dot" style="background: var(--impact-p2)"></span> P2</span>&nbsp;&nbsp;
+                <span class="demo-meta"><span class="impact-dot" style="background: var(--impact-p3)"></span> P3</span>
+            </div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                Dot + text — redundant with left rail (both encode same value)
+            </p>
+        </div>
+        <div>
+            <div class="side-label after">After — Impact column</div>
+            <div style="margin-top: 4px;">
+                <span class="demo-meta" style="color: var(--impact-p1); font-weight: 600;">P1</span>&nbsp;&nbsp;
+                <span class="demo-meta" style="color: var(--impact-p2); font-weight: 600;">P2</span>&nbsp;&nbsp;
+                <span class="demo-meta" style="color: var(--impact-p3); font-weight: 600;">P3</span>
+            </div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                Colored text only — rail provides visual scan, text provides precision
+            </p>
+        </div>
+    </div>
+
+    <!-- Fix #5: Clarity column -->
+    <div class="side-by-side">
+        <div>
+            <div class="side-label before">Before — Clarity column (per row)</div>
+            <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
+                <span class="demo-dots"><span class="cdot cdot-clear"></span><span class="cdot cdot-defined dim"></span><span class="cdot cdot-open dim"></span></span>
+                <span class="demo-dots"><span class="cdot cdot-clear dim"></span><span class="cdot cdot-defined"></span><span class="cdot cdot-open dim"></span></span>
+                <span class="demo-dots"><span class="cdot cdot-clear dim"></span><span class="cdot cdot-defined dim"></span><span class="cdot cdot-open"></span></span>
+            </div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                3 dots per row — 24+ dots for 8 tasks. "Which one is lit?"
+            </p>
+        </div>
+        <div>
+            <div class="side-label after">After — Clarity column (per row)</div>
+            <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
+                <span class="demo-dot" style="background: var(--clear-color)"></span>
+                <span class="demo-dot" style="background: var(--clarity-defined)"></span>
+                <span class="demo-dot" style="background: var(--open-color)"></span>
+            </div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                1 dot per row — 8 dots for 8 tasks. Color tells you everything.
+            </p>
+        </div>
+    </div>
+
+    <!-- Fix #4: View toggle -->
+    <div class="side-by-side">
+        <div>
+            <div class="side-label before">Before — View toggle</div>
+            <div style="margin-top: 4px; display: flex; gap: 4px;">
+                <button style="all: unset; box-sizing: border-box; width: 24px; height: 22px; border: 1px solid var(--border-default); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; opacity: 0.6; border-color: rgba(109,94,246,0.3); background: var(--interactive-active); opacity: 1;">📅</button>
+                <button style="all: unset; box-sizing: border-box; width: 24px; height: 22px; border: 1px solid var(--border-default); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; border-color: rgba(109,94,246,0.3); background: var(--interactive-active);">◆</button>
+                <button style="all: unset; box-sizing: border-box; width: 24px; height: 22px; border: 1px solid var(--border-default); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; opacity: 0.6;">🗑</button>
+            </div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                Icon-only 24×22px — what does ◆ mean?
+            </p>
+        </div>
+        <div>
+            <div class="side-label after">After — View toggle (V2 spec)</div>
+            <div style="margin-top: 4px;">
+                <div class="view-toggle">
+                    <div class="view-seg-track">
+                        <button type="button" class="view-seg-btn active">
+                            <span class="view-seg-icon">📅</span> Scheduled
+                        </button>
+                        <button type="button" class="view-seg-btn active">
+                            <span class="view-seg-icon">◆</span> Completed
+                        </button>
+                    </div>
+                    <button type="button" class="view-trash-btn" title="Deleted tasks">🗑</button>
+                </div>
+            </div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                Labeled buttons in segmented track — clear, discoverable
+            </p>
+        </div>
+    </div>
+
+    <!-- Fix #8: Section separator -->
+    <div class="side-by-side">
+        <div>
+            <div class="side-label before">Before — Section separator</div>
+            <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+                <span style="flex: 1; height: 1px; background: var(--border-default);"></span>
+                <span style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Scheduled</span>
+                <span style="flex: 1; height: 1px; background: var(--border-default);"></span>
+            </div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                Centered label between two rules — dated, breaks content flow
+            </p>
+        </div>
+        <div>
+            <div class="side-label after">After — Section separator</div>
+            <div style="margin-top: 8px;">
+                <div class="section-separator" style="margin: 0; padding: 0;">
+                    <span class="section-sep-label">Scheduled</span>
+                </div>
+            </div>
+            <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">
+                Left-aligned label + trailing line — content flows naturally
+            </p>
+        </div>
+    </div>
+
+</div>
+
+</div>
+</body>
+</html>

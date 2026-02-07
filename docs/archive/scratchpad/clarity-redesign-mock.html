@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clarity Redesign Mock — 2 Modes + Default</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   Design Tokens (from app.css / tokens.css)
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+    --bg-canvas: #F8FAFC;
+    --bg-surface: #FFFFFF;
+    --bg-panel: #F1F5F9;
+    --bg-inset: #F8FAFC;
+
+    --text-primary: #0F172A;
+    --text-secondary: rgba(15, 23, 42, 0.64);
+    --text-muted: rgba(15, 23, 42, 0.48);
+    --text-faint: rgba(15, 23, 42, 0.32);
+
+    --border-default: rgba(15, 23, 42, 0.10);
+    --border-subtle: rgba(15, 23, 42, 0.06);
+    --border-strong: rgba(15, 23, 42, 0.18);
+
+    --interactive-hover: rgba(15, 23, 42, 0.04);
+    --interactive-active: rgba(15, 23, 42, 0.06);
+
+    --primary: #6D5EF6;
+    --focus-ring: rgba(99, 102, 241, 0.4);
+
+    /* Clarity / Mode colors */
+    --clear-color: #167BFF;
+    --clear-tint: #EAF2FF;
+    --clarity-defined: #6D5EF6;
+    --clarity-defined-tint: #EFEEFF;
+    --open-color: #A020C0;
+    --open-tint: #F3ECFA;
+
+    /* Impact colors */
+    --impact-p1: #C9505A;
+    --impact-p2: #B8860B;
+    --impact-p3: #1A9160;
+    --impact-p4: #6B7385;
+
+    /* Impact row washes */
+    --impact-wash-1: rgba(201, 80, 90, 0.030);
+    --impact-wash-2: rgba(184, 134, 11, 0.022);
+    --impact-wash-3: rgba(26, 145, 96, 0.030);
+    --impact-wash-4: rgba(107, 115, 133, 0.018);
+
+    /* Layout */
+    --col-duration: 68px;
+    --col-impact: 56px;
+    --col-actions: 28px;
+    --col-gap: 6px;
+    --rail-w: 2px;
+
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Base Reset
+   ═══════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: var(--bg-canvas);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Page Shell
+   ═══════════════════════════════════════════════════════════════════ */
+.mock-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.mock-header {
+    display: flex;
+    align-items: flex-end;
+    padding: 20px 0 16px;
+    gap: 6px;
+}
+
+.mock-header svg { flex-shrink: 0; }
+.mock-header span {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 500;
+    font-size: 1.75rem;
+    color: #1E293B;
+    line-height: 1;
+}
+
+.mock-note {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 8px 12px;
+    background: var(--clarity-defined-tint);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Task List Header
+   ═══════════════════════════════════════════════════════════════════ */
+.task-list-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+    border-radius: 8px 8px 0 0;
+}
+
+/* Spectrum bar */
+.task-list-header::after {
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, var(--clear-color), var(--clarity-defined), var(--open-color));
+    opacity: 0.35;
+}
+
+.header-row1 {
+    display: grid;
+    grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 6px 0 6px var(--rail-w);
+}
+
+/* Energy selector */
+.energy-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 34px;
+}
+
+.energy-label {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.header-energy__pills {
+    display: flex;
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: 5px;
+    padding: 1px;
+}
+
+.energy-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: var(--bg-surface);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.energy-pill:hover { background: var(--bg-panel); }
+
+.energy-pill.active[data-energy="1"] {
+    background: var(--clear-tint);
+    box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.25);
+}
+.energy-pill.active[data-energy="2"] {
+    background: var(--clarity-defined-tint);
+    box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.25);
+}
+.energy-pill.active[data-energy="3"] {
+    background: var(--open-tint);
+    box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.25);
+}
+
+/* Sort buttons (display:contents makes children direct grid items) */
+.header-meta { display: contents; }
+
+.header-sort {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 22px;
+    font-size: 0.56rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 0 4px;
+    transition: all 0.12s ease;
+}
+
+.header-sort:hover {
+    color: var(--text-secondary);
+    background: var(--interactive-hover);
+}
+
+.header-sort.active {
+    color: var(--text-primary);
+}
+
+.sort-icon {
+    font-size: 0.6rem;
+    opacity: 0.6;
+}
+
+/* Gear button */
+.gear-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.12s ease;
+}
+
+.gear-btn:hover {
+    color: var(--text-secondary);
+    background: var(--interactive-hover);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Row 2: View Chips
+   ═══════════════════════════════════════════════════════════════════ */
+.header-row2 {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 0 6px 36px;
+}
+
+.view-chip {
+    all: unset;
+    box-sizing: border-box;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 0.56rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.view-chip:hover {
+    background: var(--interactive-hover);
+    color: var(--text-secondary);
+}
+
+.view-chip.active {
+    background: var(--interactive-active);
+    color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Domain Groups
+   ═══════════════════════════════════════════════════════════════════ */
+.task-list-body {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.project-group {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.project-group:last-child { border-bottom: none; }
+
+.project-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px 8px 36px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.project-header::-webkit-details-marker { display: none; }
+
+.project-header::before {
+    content: "▸";
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    margin-right: -2px;
+    transition: transform 0.15s ease;
+}
+
+details[open] > .project-header::before {
+    transform: rotate(90deg);
+}
+
+.project-name {
+    font-size: 0.72rem;
+    font-weight: 650;
+    color: var(--text-secondary);
+}
+
+.domain-name-text {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.task-count {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-faint);
+    background: var(--interactive-active);
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+
+.header-spacer { flex: 1; }
+
+.domain-add-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: var(--text-faint);
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.12s ease;
+}
+
+.project-group:hover .domain-add-btn { opacity: 1; }
+.domain-add-btn:hover {
+    background: var(--interactive-hover);
+    color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Task Rows (the redesigned grid — NO clarity column)
+   ═══════════════════════════════════════════════════════════════════ */
+.task-item {
+    display: grid;
+    grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 7px 0 7px var(--rail-w);
+    min-height: 36px;
+    background: transparent;
+    border-bottom: 1px solid var(--border-subtle);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.task-item:last-child { border-bottom: none; }
+
+.task-item:hover {
+    background: var(--interactive-hover);
+}
+
+/* Impact rail */
+.task-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--rail-w);
+    border-radius: 0 1px 1px 0;
+    transition: width 0.12s ease;
+}
+
+.task-item:hover::before { width: 3px; }
+
+.task-item.impact-1::before { background: var(--impact-p1); }
+.task-item.impact-2::before { background: var(--impact-p2); }
+.task-item.impact-3::before { background: var(--impact-p3); }
+.task-item.impact-4::before { background: var(--impact-p4); }
+
+/* Impact row wash */
+.task-item.impact-1 { background: var(--impact-wash-1); }
+.task-item.impact-2 { background: var(--impact-wash-2); }
+.task-item.impact-3 { background: var(--impact-wash-3); }
+.task-item.impact-4 { background: var(--impact-wash-4); }
+
+/* Complete gutter */
+.complete-gutter {
+    all: unset;
+    box-sizing: border-box;
+    width: 32px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.complete-check {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    color: transparent;
+    transition: all 0.12s ease;
+    opacity: 0.65;
+}
+
+.complete-gutter:hover .complete-check {
+    border-color: var(--primary);
+    color: var(--primary);
+    opacity: 1;
+}
+
+/* Task content area */
+.task-content {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-width: 0;
+    padding-right: 8px;
+}
+
+.task-text {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODE BADGE — the new inline indicator
+   ═══════════════════════════════════════════════════════════════════ */
+.mode-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    width: 18px;
+    height: 16px;
+    border-radius: var(--radius-xs);
+    margin-left: 5px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.mode-badge.mode-autopilot {
+    background: var(--clear-tint);
+}
+
+.mode-badge.mode-brainstorm {
+    background: var(--open-tint);
+}
+
+/* Task due date badge */
+.task-due {
+    font-size: 0.6rem;
+    font-weight: 550;
+    color: var(--text-muted);
+    margin-left: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.task-due.overdue { color: #DC2626; }
+.task-due.today { color: var(--primary); }
+
+.recurring-icon {
+    font-size: 0.65rem;
+    margin-right: 1px;
+}
+
+/* Meta columns (display:contents so children are grid items) */
+.task-meta { display: contents; }
+
+.task-meta > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    text-align: center;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 4px;
+    padding: 0 4px;
+    opacity: 0.85;
+}
+
+.meta-duration {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.meta-impact.impact-1 { color: var(--impact-p1); }
+.meta-impact.impact-2 { color: var(--impact-p2); }
+.meta-impact.impact-3 { color: var(--impact-p3); }
+.meta-impact.impact-4 { color: var(--impact-p4); }
+
+/* Task actions (edit button, appears on hover) */
+.task-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    cursor: pointer;
+    border-radius: 3px;
+    opacity: 0;
+    transition: all 0.1s ease;
+}
+
+.task-item:hover .edit-btn { opacity: 1; }
+.edit-btn:hover {
+    background: var(--interactive-active);
+    color: var(--text-secondary);
+}
+
+/* Add task row */
+.add-task-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px 6px 36px;
+    cursor: pointer;
+    color: var(--text-faint);
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: all 0.1s ease;
+}
+
+.add-task-row:hover {
+    color: var(--text-secondary);
+    background: var(--interactive-hover);
+}
+
+.add-task-icon { font-size: 0.8rem; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Section Separators (Scheduled / Completed)
+   ═══════════════════════════════════════════════════════════════════ */
+.section-group {
+    border-top: 1px solid var(--border-default);
+}
+
+.section-separator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.section-separator::-webkit-details-marker { display: none; }
+
+.section-sep-label {
+    font-size: 0.56rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.section-count {
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: var(--text-faint);
+    background: var(--interactive-active);
+    border-radius: 4px;
+    padding: 1px 5px;
+}
+
+/* Column labels in section separator */
+.sep-columns {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 56px var(--col-duration) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+}
+
+.sep-col-line {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.sep-col {
+    text-align: center;
+}
+
+.sep-col-label {
+    font-size: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+}
+
+.sep-col-end { width: var(--col-actions); }
+
+/* Scheduled task row (adds date column) */
+.section-tasks .task-item.scheduled-item {
+    grid-template-columns: 1fr 56px var(--col-duration) var(--col-impact) var(--col-actions);
+}
+
+.meta-date {
+    font-size: 0.6rem;
+    font-weight: 550;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Completed task styling */
+.task-item[data-completed="1"] .task-text {
+    text-decoration: line-through;
+    text-decoration-color: rgba(15, 23, 42, 0.25);
+    color: rgba(15, 23, 42, 0.45);
+}
+
+.task-item[data-completed="1"] .mode-badge { opacity: 0.4; }
+.task-item[data-completed="1"] .meta-duration,
+.task-item[data-completed="1"] .meta-impact { color: rgba(15, 23, 42, 0.35) !important; }
+.task-item[data-completed="1"] .complete-check {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+    opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Energy-based CSS Filtering (SIMPLIFIED)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Zombie mode: only autopilot tasks */
+body[data-energy-level="1"] .task-item:not(.scheduled-item):not([data-clarity="autopilot"]) {
+    display: none !important;
+}
+
+/* Normal mode: everything except brainstorm */
+body[data-energy-level="2"] .task-item:not(.scheduled-item)[data-clarity="brainstorm"] {
+    display: none !important;
+}
+
+/* Focus mode: all tasks visible — no rules needed */
+
+/* Hide empty domain groups */
+body[data-energy-level="1"] .project-group:not(:has(.task-item[data-clarity="autopilot"])) {
+    display: none;
+}
+body[data-energy-level="2"] .project-group:not(:has(.task-item:not([data-clarity="brainstorm"]))) {
+    display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Task Editor Mock (Mode Picker)
+   ═══════════════════════════════════════════════════════════════════ */
+.editor-demo {
+    margin-top: 28px;
+}
+
+.modal-backdrop-mock {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    max-width: 480px;
+    overflow: hidden;
+}
+
+.modal-hd {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.modal-close-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.modal-body {
+    padding: 16px;
+    background: var(--bg-panel);
+}
+
+.modal-section {
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    overflow: visible;
+    background: var(--bg-surface);
+    margin-bottom: 10px;
+}
+
+.section-title-bar {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.detail-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.detail-row:last-of-type { border-bottom: 0; }
+
+.detail-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+}
+
+.detail-control {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Impact segmented control */
+.segmented {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    height: 32px;
+    padding: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.seg-btn {
+    all: unset;
+    box-sizing: border-box;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 5px;
+    font-size: 0.68rem;
+    font-weight: 650;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+}
+
+.seg-btn:hover {
+    background: var(--interactive-hover);
+    color: var(--text-primary);
+}
+
+.seg-btn.is-active {
+    background: var(--interactive-active);
+    color: var(--text-primary);
+}
+
+.seg-btn[data-impact="1"] { color: var(--impact-p1); }
+.seg-btn[data-impact="2"] { color: var(--impact-p2); }
+.seg-btn[data-impact="3"] { color: var(--impact-p3); }
+.seg-btn[data-impact="4"] { color: var(--impact-p4); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODE CHIPS — the new picker (replaces clarity segmented control)
+   ═══════════════════════════════════════════════════════════════════ */
+.mode-chips {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.mode-chip {
+    all: unset;
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mode-chip:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+.mode-chip.active[data-mode="autopilot"] {
+    background: var(--clear-tint);
+    border-color: rgba(22, 123, 255, 0.35);
+    color: var(--clear-color);
+}
+
+.mode-chip.active[data-mode="brainstorm"] {
+    background: var(--open-tint);
+    border-color: rgba(160, 32, 192, 0.35);
+    color: var(--open-color);
+}
+
+/* Modal footer */
+.modal-ft {
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border-subtle);
+    padding: 12px 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.btn {
+    all: unset;
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+}
+
+.btn-primary {
+    background: var(--text-primary);
+    color: #fff;
+}
+
+/* Capture stack */
+.capture-stack {
+    border: 1px solid var(--border-default);
+    border-radius: 14px;
+    background: var(--bg-surface);
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.capture-field {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    padding: 16px 18px;
+    font-family: inherit;
+    color: var(--text-primary);
+    box-sizing: border-box;
+}
+
+.capture-title {
+    font-size: 1.05rem;
+    font-weight: 650;
+    height: 54px;
+}
+
+.capture-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 0 18px;
+}
+
+.capture-desc {
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-height: 36px;
+    padding: 10px 18px;
+    resize: none;
+    color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mock Labels & Annotations
+   ═══════════════════════════════════════════════════════════════════ */
+.mock-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+    margin: 32px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--border-subtle);
+}
+
+.mock-label:first-of-type { margin-top: 16px; }
+
+.callout {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--clarity-defined-tint);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Filter feedback */
+.filter-status {
+    font-size: 0.62rem;
+    color: var(--text-faint);
+    padding: 6px 12px;
+    text-align: center;
+    font-style: italic;
+}
+</style>
+</head>
+
+<body data-energy-level="3">
+
+<div class="mock-shell">
+
+    <!-- Wordmark -->
+    <div class="mock-header">
+        <svg viewBox="38 40 180 160" width="24" height="21" aria-hidden="true">
+            <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+            <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+            <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+        </svg>
+        <span>hendoist</span>
+    </div>
+
+    <div class="mock-note">
+        Interactive mock — click the energy pills (🧟 ☕ 🧠) to see filtering in action.
+        Click mode chips in the editor to toggle selection.
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         TASK LIST VIEW
+         ═══════════════════════════════════════════════════════════ -->
+
+    <div class="mock-label">Task List <span class="callout">no clarity column — badges inline</span></div>
+
+    <div class="task-list-header">
+        <div class="header-row1">
+            <div class="energy-wrapper" id="header-energy">
+                <span class="energy-label">Energy</span>
+                <div class="header-energy__pills">
+                    <button type="button" class="energy-pill" data-energy="1" title="Zombie — autopilot only">🧟</button>
+                    <button type="button" class="energy-pill" data-energy="2" title="Normal — hide brainstorm">☕</button>
+                    <button type="button" class="energy-pill active" data-energy="3" title="Focus — all tasks">🧠</button>
+                </div>
+                <!-- clarity dots REMOVED -->
+            </div>
+            <span class="header-meta">
+                <button type="button" class="header-sort" data-sort="duration" title="Sort by duration">
+                    Dur <span class="sort-icon"></span>
+                </button>
+                <button type="button" class="header-sort active" data-sort="impact" title="Sort by impact">
+                    Impact <span class="sort-icon">↑</span>
+                </button>
+                <!-- clarity sort REMOVED from header -->
+            </span>
+            <button type="button" class="gear-btn" title="Settings">⚙</button>
+        </div>
+        <div class="header-row2">
+            <button type="button" class="view-chip active">All</button>
+            <button type="button" class="view-chip">Today</button>
+            <button type="button" class="view-chip">This week</button>
+        </div>
+    </div>
+
+    <div class="task-list-body">
+
+        <!-- Domain: Work -->
+        <details class="project-group" open data-domain-id="1">
+            <summary class="project-header">
+                <span class="project-name">💼 <span class="domain-name-text">Work</span></span>
+                <span class="task-count" id="work-count">4</span>
+                <span class="header-spacer"></span>
+                <button type="button" class="domain-add-btn">+</button>
+            </summary>
+            <div class="task-list">
+
+                <div class="task-item impact-1" data-clarity="autopilot">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Deploy hotfix to production</span>
+                        <span class="mode-badge mode-autopilot" title="Autopilot">🧟</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">15m</span>
+                        <span class="meta-impact impact-1">High</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="task-item impact-2" data-clarity="">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Update project documentation</span>
+                        <!-- no badge — default task -->
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">1h</span>
+                        <span class="meta-impact impact-2">Mid</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="task-item impact-2" data-clarity="">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Prepare slide deck for Thursday standup</span>
+                        <!-- no badge — default task -->
+                        <span class="task-due">Feb 13</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">45m</span>
+                        <span class="meta-impact impact-2">Mid</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="task-item impact-2" data-clarity="brainstorm">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Research competitor pricing models</span>
+                        <span class="mode-badge mode-brainstorm" title="Brainstorm">🧠</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">2h</span>
+                        <span class="meta-impact impact-2">Mid</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="add-task-row">
+                    <span class="add-task-icon">+</span>
+                    <span>Add task</span>
+                </div>
+            </div>
+        </details>
+
+        <!-- Domain: Personal -->
+        <details class="project-group" open data-domain-id="2">
+            <summary class="project-header">
+                <span class="project-name">🏠 <span class="domain-name-text">Personal</span></span>
+                <span class="task-count" id="personal-count">3</span>
+                <span class="header-spacer"></span>
+                <button type="button" class="domain-add-btn">+</button>
+            </summary>
+            <div class="task-list">
+
+                <div class="task-item impact-4" data-clarity="autopilot">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Reply to Sarah's email</span>
+                        <span class="mode-badge mode-autopilot" title="Autopilot">🧟</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">10m</span>
+                        <span class="meta-impact impact-4">Min</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="task-item impact-3" data-clarity="">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Book dentist appointment</span>
+                        <span class="task-due overdue">Feb 5</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">5m</span>
+                        <span class="meta-impact impact-3">Low</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="task-item impact-3" data-clarity="brainstorm">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Plan weekend trip to Napa</span>
+                        <span class="mode-badge mode-brainstorm" title="Brainstorm">🧠</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">—</span>
+                        <span class="meta-impact impact-3">Low</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="add-task-row">
+                    <span class="add-task-icon">+</span>
+                    <span>Add task</span>
+                </div>
+            </div>
+        </details>
+
+        <!-- Domain: Learning -->
+        <details class="project-group" open data-domain-id="3">
+            <summary class="project-header">
+                <span class="project-name">📚 <span class="domain-name-text">Learning</span></span>
+                <span class="task-count" id="learning-count">2</span>
+                <span class="header-spacer"></span>
+                <button type="button" class="domain-add-btn">+</button>
+            </summary>
+            <div class="task-list">
+
+                <div class="task-item impact-3" data-clarity="">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Read chapter 4 of Designing Data-Intensive Applications</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">45m</span>
+                        <span class="meta-impact impact-3">Low</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="task-item impact-2" data-clarity="brainstorm">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Write blog post outline</span>
+                        <span class="mode-badge mode-brainstorm" title="Brainstorm">🧠</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">1h</span>
+                        <span class="meta-impact impact-2">Mid</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+
+                <div class="add-task-row">
+                    <span class="add-task-icon">+</span>
+                    <span>Add task</span>
+                </div>
+            </div>
+        </details>
+
+        <!-- Inbox (no domain) -->
+        <details class="project-group" data-domain-id="inbox">
+            <summary class="project-header">
+                <span class="project-name"><span class="domain-name-text">Inbox</span></span>
+                <span class="task-count">1</span>
+                <span class="header-spacer"></span>
+                <button type="button" class="domain-add-btn">+</button>
+            </summary>
+            <div class="task-list">
+                <div class="task-item impact-4" data-clarity="autopilot">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Pay electricity bill</span>
+                        <span class="mode-badge mode-autopilot" title="Autopilot">🧟</span>
+                        <span class="task-due today">Today</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">5m</span>
+                        <span class="meta-impact impact-4">Min</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+            </div>
+        </details>
+
+        <!-- Scheduled section -->
+        <details class="section-group">
+            <summary class="section-separator">
+                <span class="section-sep-label">Scheduled</span>
+                <span class="section-count">3</span>
+                <span class="sep-columns">
+                    <span class="sep-col-line"></span>
+                    <span class="sep-col"><span class="sep-col-label">Date</span></span>
+                    <span class="sep-col"><span class="sep-col-label">Dur</span></span>
+                    <span class="sep-col"><span class="sep-col-label">Impact</span></span>
+                    <span class="sep-col-end"></span>
+                </span>
+            </summary>
+            <div class="section-tasks">
+                <div class="task-item impact-2 scheduled-item" data-clarity="autopilot">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Review pull requests</span>
+                        <span class="mode-badge mode-autopilot" title="Autopilot">🧟</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-date">Feb 10</span>
+                        <span class="meta-duration">30m</span>
+                        <span class="meta-impact impact-2">Mid</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+                <div class="task-item impact-3 scheduled-item" data-clarity="">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Grocery run</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-date">Feb 11</span>
+                        <span class="meta-duration">45m</span>
+                        <span class="meta-impact impact-3">Low</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+                <div class="task-item impact-1 scheduled-item" data-clarity="brainstorm">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Q2 strategy brainstorm</span>
+                        <span class="mode-badge mode-brainstorm" title="Brainstorm">🧠</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-date">Feb 14</span>
+                        <span class="meta-duration">2h</span>
+                        <span class="meta-impact impact-1">High</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+            </div>
+        </details>
+
+        <!-- Completed section -->
+        <details class="section-group">
+            <summary class="section-separator">
+                <span class="section-sep-label">Completed</span>
+                <span class="section-count">2</span>
+            </summary>
+            <div class="section-tasks">
+                <div class="task-item impact-4" data-completed="1" data-clarity="autopilot">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Send invoice to client</span>
+                        <span class="mode-badge mode-autopilot" title="Autopilot">🧟</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">5m</span>
+                        <span class="meta-impact impact-4">Min</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+                <div class="task-item impact-2" data-completed="1" data-clarity="">
+                    <button class="complete-gutter"><span class="complete-check">✓</span></button>
+                    <div class="task-content">
+                        <span class="task-text">Fix login timeout bug</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="meta-duration">1h</span>
+                        <span class="meta-impact impact-2">Mid</span>
+                    </div>
+                    <span class="task-actions"><button class="edit-btn">✎</button></span>
+                </div>
+            </div>
+        </details>
+
+    </div>
+
+    <div class="filter-status" id="filter-status"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         TASK EDITOR — Mode Picker
+         ═══════════════════════════════════════════════════════════ -->
+
+    <div class="editor-demo">
+        <div class="mock-label">Task Editor <span class="callout">2 optional chips replace 3-way selector</span></div>
+
+        <div class="modal-backdrop-mock">
+            <div class="modal-hd">
+                <span class="modal-title">New Task</span>
+                <button class="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="capture-stack">
+                    <input type="text" class="capture-field capture-title" placeholder="Task name" value="Write architecture RFC">
+                    <div class="capture-divider"></div>
+                    <textarea class="capture-field capture-desc" placeholder="Description">Propose the new caching layer design for review</textarea>
+                </div>
+
+                <div class="modal-section">
+                    <div class="section-title-bar">Details</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Impact</span>
+                        <div class="detail-control">
+                            <div class="segmented">
+                                <button class="seg-btn" data-impact="1">P1</button>
+                                <button class="seg-btn is-active" data-impact="2">P2</button>
+                                <button class="seg-btn" data-impact="3">P3</button>
+                                <button class="seg-btn" data-impact="4">P4</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Mode</span>
+                        <div class="detail-control">
+                            <div class="mode-chips" id="mode-chips">
+                                <button type="button" class="mode-chip" data-mode="autopilot" title="Brain off — obvious next action">🧟 Autopilot</button>
+                                <button type="button" class="mode-chip" data-mode="brainstorm" title="Brain searching — needs exploration">🧠 Brainstorm</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-ft">
+                <button class="btn btn-secondary">Cancel</button>
+                <button class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div style="height: 60px"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     Interactive Behavior
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    'use strict';
+
+    // ── Energy pill switching ──
+    const pills = document.querySelectorAll('.energy-pill');
+    const filterStatus = document.getElementById('filter-status');
+
+    pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            const level = parseInt(pill.dataset.energy, 10);
+
+            // Update pill active states
+            pills.forEach(p => {
+                p.classList.toggle('active', parseInt(p.dataset.energy) === level);
+            });
+
+            // Apply filter via body attribute
+            document.body.dataset.energyLevel = level;
+
+            // Update visible task counts per domain
+            updateDomainCounts();
+
+            // Show filter status
+            const labels = { 1: '🧟 Zombie — autopilot tasks only', 2: '☕ Normal — brainstorm hidden', 3: '🧠 Focus — all tasks' };
+            filterStatus.textContent = labels[level];
+        });
+    });
+
+    function updateDomainCounts() {
+        document.querySelectorAll('.project-group').forEach(group => {
+            const visible = group.querySelectorAll('.task-item:not([style*="display: none"])').length;
+            // Count visible tasks using CSS computed style
+            let count = 0;
+            group.querySelectorAll('.task-item').forEach(item => {
+                if (getComputedStyle(item).display !== 'none') count++;
+            });
+            const badge = group.querySelector('.task-count');
+            if (badge) badge.textContent = count;
+        });
+    }
+
+    // Recount after CSS filter applies
+    const observer = new MutationObserver(() => {
+        requestAnimationFrame(updateDomainCounts);
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-energy-level'] });
+
+    // ── Mode chip toggling (task editor) ──
+    const modeChips = document.querySelectorAll('#mode-chips .mode-chip');
+
+    modeChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            const wasActive = chip.classList.contains('active');
+
+            // Deactivate all chips (mutually exclusive)
+            modeChips.forEach(c => c.classList.remove('active'));
+
+            // Toggle: if it was active, deactivate (back to default); otherwise activate
+            if (!wasActive) {
+                chip.classList.add('active');
+            }
+        });
+    });
+
+    // ── Impact segmented control ──
+    document.querySelectorAll('.segmented .seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.closest('.segmented').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+        });
+    });
+
+    // Initial count update
+    requestAnimationFrame(updateDomainCounts);
+
+})();
+</script>
+
+</body>
+</html>

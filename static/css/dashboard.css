@@ -874,6 +874,16 @@
     color: transparent;
 }
 
+/* Override Pico CSS accordion chevron (injects via details summary::after) */
+.project-group > summary::after {
+    display: none !important;
+}
+
+/* Override Pico CSS margin on open details (adds margin-bottom: var(--pico-spacing)) */
+.project-group[open] > summary {
+    margin-bottom: 0 !important;
+}
+
 /* Patch 46: Domain header - tighter density */
 .project-header {
     display: flex;

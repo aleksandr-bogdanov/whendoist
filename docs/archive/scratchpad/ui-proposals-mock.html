@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whendoist UI Proposals — v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-canvas: #F8FAFC;
+    --bg-panel: #F1F5F9;
+    --bg-surface: #FFFFFF;
+    --text-primary: #0B1220;
+    --text-secondary: rgba(15, 23, 42, 0.64);
+    --text-muted: rgba(15, 23, 42, 0.46);
+    --border-subtle: rgba(15, 23, 42, 0.055);
+    --border-default: rgba(15, 23, 42, 0.085);
+    --border-strong: rgba(15, 23, 42, 0.12);
+    --primary: #6D5EF6;
+    --row-hover: rgba(15, 23, 42, 0.02);
+    --bg-inset: rgba(15, 23, 42, 0.02);
+    --impact-p1: #C9505A;
+    --impact-p2: #B8860B;
+    --impact-p3: #1A9160;
+    --impact-p4: #6B7385;
+    --clear-color: #167BFF;
+    --clarity-defined: #6D5EF6;
+    --open-color: #A020C0;
+
+    /* Task grid columns — match real values */
+    --col-date: 58px;
+    --col-duration: 68px;
+    --col-impact: 56px;
+    --col-clarity: 56px;
+    --col-actions: 28px;
+    --col-gap: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Quicksand', sans-serif;
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    padding: 24px;
+    line-height: 1.5;
+}
+
+h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+h2 {
+    font-size: 1rem; font-weight: 700; margin: 40px 0 8px;
+    color: var(--primary);
+    border-bottom: 2px solid rgba(109,94,246,0.15);
+    padding-bottom: 4px;
+}
+h3 {
+    font-size: 0.8rem; font-weight: 700; margin: 20px 0 6px;
+    color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.06em;
+}
+p { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 8px; max-width: 680px; }
+.label-tag {
+    font-size: 0.6rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); margin-bottom: 4px;
+}
+.compare { display: flex; gap: 24px; flex-wrap: wrap; }
+.compare > div { flex: 1; min-width: 320px; }
+.verdict { font-size: 0.7rem; font-weight: 600; color: var(--primary); margin-top: 6px; }
+.highlight {
+    background: rgba(109, 94, 246, 0.04);
+    border-left: 3px solid var(--primary);
+    padding: 8px 12px; margin: 8px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.7rem; color: var(--text-secondary);
+}
+.note { font-size: 0.65rem; color: var(--text-muted); font-style: italic; margin: 4px 0; }
+
+/* ================================================ */
+/*  MOCK PANEL                                      */
+/* ================================================ */
+.mock-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    max-width: 680px;
+    overflow: hidden;
+    margin: 8px 0 16px;
+}
+
+/* ================================================ */
+/*  BUTTONS                                         */
+/* ================================================ */
+.btn-sm {
+    border: none; padding: 4px 12px; border-radius: 6px;
+    font-size: 0.65rem; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-secondary { background: var(--bg-inset); color: var(--text-primary); border: 1px solid var(--border-default); }
+.btn-ghost { background: transparent; color: var(--text-muted); }
+.btn-plan {
+    background: var(--primary); color: white; border: none;
+    padding: 5px 14px; border-radius: 8px;
+    font-size: 0.7rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; white-space: nowrap;
+}
+
+/* ================================================ */
+/*  PMD BANNER                                      */
+/* ================================================ */
+.pmd-banner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; margin: 6px 8px 4px;
+    background: linear-gradient(135deg, rgba(22,123,255,0.04), rgba(109,94,246,0.05), rgba(160,32,192,0.03));
+    border: 1px solid rgba(109,94,246,0.12); border-radius: 10px;
+}
+.pmd-inline { display: flex; align-items: center; }
+.pmd-title { font-size: 0.78rem; font-weight: 600; }
+.pmd-sub { font-size: 0.68rem; color: var(--text-secondary); margin-left: 8px; }
+
+/* ================================================ */
+/*  TASK ROWS — SCHEDULED with date column          */
+/* ================================================ */
+
+/* Domain tasks: no date column */
+.task-item {
+    display: grid;
+    grid-template-columns: 30px 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.75rem;
+    position: relative;
+}
+
+/* Scheduled tasks: has date column between title and duration */
+.task-item.sched {
+    grid-template-columns: 30px 1fr var(--col-date) var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+}
+
+.task-item:last-child { border-bottom: none; }
+.task-item:hover { background: var(--row-hover); }
+
+.task-check { display: grid; place-items: center; }
+.task-check .check {
+    width: 16px; height: 16px; border-radius: 8px;
+    border: 1.5px solid var(--border-default);
+    opacity: 0.65; display: grid; place-items: center;
+    font-size: 9px; color: transparent;
+}
+
+.task-content {
+    display: flex; align-items: center; gap: 6px;
+    min-width: 0; padding-left: 4px;
+}
+.task-text {
+    white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; font-weight: 500;
+}
+
+.meta-col {
+    font-size: 0.65rem; font-weight: 600;
+    text-align: center; opacity: 0.85;
+    letter-spacing: 0.02em;
+}
+.meta-duration { color: var(--text-secondary); }
+.meta-date {
+    font-size: 0.65rem; font-weight: 500;
+    text-align: center; opacity: 0.85;
+    color: var(--text-muted);
+}
+.meta-date.overdue { color: var(--impact-p1); }
+.meta-date.today { color: var(--primary); font-weight: 600; }
+.meta-date .ri { margin-right: 1px; }
+
+.impact-1 { color: var(--impact-p1); }
+.impact-2 { color: var(--impact-p2); }
+.impact-3 { color: var(--impact-p3); }
+.impact-4 { color: var(--impact-p4); }
+.clarity-clear { color: var(--clear-color); }
+.clarity-defined { color: var(--clarity-defined); }
+.clarity-open { color: var(--open-color); }
+
+/* Impact rail */
+.task-item::before {
+    content: ""; position: absolute; left: 0;
+    top: 4px; bottom: 4px; width: 2px; border-radius: 1px;
+}
+.task-item.rail-1::before { background: var(--impact-p1); }
+.task-item.rail-2::before { background: var(--impact-p2); }
+.task-item.rail-3::before { background: var(--impact-p3); }
+.task-item.rail-4::before { background: var(--impact-p4); }
+
+.task-actions { width: var(--col-actions); }
+
+/* ================================================ */
+/*  DOMAIN HEADERS — left-aligned count             */
+/* ================================================ */
+.domain-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px 6px 14px;
+    background: var(--bg-panel); cursor: pointer; user-select: none;
+}
+.domain-header:hover { background: var(--bg-canvas); }
+.domain-tri {
+    font-size: 0.55rem; color: var(--text-muted);
+    opacity: 0.6; transition: transform 0.15s ease;
+}
+.domain-tri.open { transform: rotate(90deg); }
+.domain-name { font-weight: 600; font-size: 0.8rem; }
+.domain-count {
+    font-size: 0.6rem; font-weight: 500;
+    color: var(--text-muted); opacity: 0.7;
+}
+.spacer { flex: 1; }
+
+/* ================================================ */
+/*  SECTION SEPARATOR — with inline column headers  */
+/* ================================================ */
+.section-sep {
+    display: flex; align-items: center; gap: 8px;
+    margin: 12px 0 0; padding: 6px 12px; cursor: pointer;
+}
+.section-sep:hover { background: var(--row-hover); border-radius: 6px; }
+.section-sep .tri {
+    font-size: 0.5rem; color: var(--text-muted); opacity: 0.5;
+}
+.section-sep-label {
+    font-size: 0.65rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+.section-count {
+    font-size: 0.6rem; font-weight: 500;
+    color: var(--text-muted); opacity: 0.7;
+}
+.section-line { flex: 1; height: 1px; background: var(--border-default); }
+
+/* Past badge on section header */
+.past-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.55rem; font-weight: 600;
+    color: var(--impact-p2);
+    background: rgba(184, 134, 11, 0.08);
+    border: 1px solid rgba(184, 134, 11, 0.15);
+    padding: 1px 6px; border-radius: 6px;
+    cursor: pointer;
+}
+
+/*
+ * SCHEDULED SECTION SEPARATOR — column labels in the line
+ *
+ * The trick: the trailing "line" area becomes a grid that
+ * matches the task row columns (date + duration + impact + clarity + actions).
+ * Each cell has a label centered on a horizontal rule.
+ */
+.section-sep-sched {
+    display: flex; align-items: center; gap: 8px;
+    margin: 12px 0 0; padding: 6px 12px; cursor: pointer;
+}
+.section-sep-sched:hover { background: var(--row-hover); border-radius: 6px; }
+.section-sep-sched .tri {
+    font-size: 0.5rem; color: var(--text-muted); opacity: 0.5;
+}
+
+/* The line area: replaces the simple ::after line */
+.sep-columns {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr var(--col-date) var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+}
+
+/* Each column cell in the separator */
+.sep-col {
+    position: relative;
+    text-align: center;
+    font-size: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    opacity: 0.55;
+    padding: 0 2px;
+}
+
+/* The line runs through each cell */
+.sep-col::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--border-default);
+    z-index: 0;
+}
+
+/* Label text sits above the line with bg knockout */
+.sep-col-label {
+    position: relative;
+    z-index: 1;
+    background: var(--bg-surface);
+    padding: 0 3px;
+}
+
+/* First column (leading line only, no label) */
+.sep-col-line {
+    position: relative;
+    height: 1px;
+}
+.sep-col-line::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 0;
+    height: 1px;
+    background: var(--border-default);
+}
+
+/* Last column (trailing line, no label) */
+.sep-col-end {
+    position: relative;
+    height: 1px;
+}
+.sep-col-end::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 0;
+    height: 1px;
+    background: var(--border-default);
+}
+
+/* Simple version: all-in-one line with labels */
+.sep-line-with-labels {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+}
+.sep-line-with-labels::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--border-default);
+}
+.sep-label-inline {
+    position: relative;
+    z-index: 1;
+    font-size: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    opacity: 0.5;
+    background: var(--bg-surface);
+    padding: 0 4px;
+    white-space: nowrap;
+}
+.sep-label-spacer { flex: 1; }
+</style>
+</head>
+<body>
+
+<h1>Whendoist UI Proposals — v3 (final)</h1>
+<p>Focused on: (1) past-tasks badge on SCHEDULED header, (9) column labels embedded in separator line, (7) left-aligned domain counts, (5) PMD copy.</p>
+
+
+<!-- ============================================================
+     1. PAST TASKS — BADGE ON SCHEDULED HEADER (Approach C)
+     ============================================================ -->
+<h2>1. Past Tasks — Badge on Scheduled Header</h2>
+<p>No banner. No jargon. A small "2 past" badge on the SCHEDULED section separator. Click to reveal past items inline with Done/Skip actions. Zero vertical overhead.</p>
+
+<div class="mock-panel">
+    <div class="pmd-banner">
+        <span class="pmd-inline">
+            <span class="pmd-title">Plan your day</span>
+            <span class="pmd-sub">82 tasks to fill your time</span>
+        </span>
+        <button class="btn-plan">Plan</button>
+    </div>
+
+    <!-- Career domain -->
+    <div class="domain-header">
+        <span class="domain-tri open">▶</span>
+        <span class="domain-name">Career</span>
+        <span class="domain-count">10</span>
+        <span class="spacer"></span>
+    </div>
+    <div class="task-item rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Fix the subtasks bug</span></span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item rail-4">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Decide what to do with Senren / Midori</span></span>
+        <span class="meta-col meta-duration">4h</span>
+        <span class="meta-col impact-4">Min</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+
+    <!-- Collapsed domains -->
+    <div class="domain-header">
+        <span class="domain-tri">▶</span>
+        <span class="domain-name">Leisure</span>
+        <span class="domain-count">5</span>
+        <span class="spacer"></span>
+    </div>
+    <div class="domain-header">
+        <span class="domain-tri">▶</span>
+        <span class="domain-name">Вольер</span>
+        <span class="domain-count">26</span>
+        <span class="spacer"></span>
+    </div>
+
+    <!-- SCHEDULED section with past badge -->
+    <div class="section-sep">
+        <span class="tri">▶</span>
+        <span class="section-sep-label">Scheduled</span>
+        <span class="section-count">14</span>
+        <span class="past-badge">2 past</span>
+        <span class="section-line"></span>
+    </div>
+</div>
+
+<div class="highlight">
+    <strong>How it works:</strong> The "2 past" badge appears only when there are unresolved past instances. Click → the section expands with past items at the top, each showing the task name, date, and inline Done/Skip buttons. Once resolved, the badge vanishes. No banner, no "recurring instances", no jargon.
+</div>
+
+
+<!-- ============================================================
+     9. SCHEDULED DATES — COLUMN LABELS IN SEPARATOR LINE
+     ============================================================ -->
+<h2>9. Scheduled Section — Column Labels in Separator</h2>
+<p>The dates sit in their own visual column (between title and duration). The problem: no header tells you what that column is. Solution: embed column labels INTO the section separator line.</p>
+
+<h3>The current separator</h3>
+<div class="mock-panel">
+    <div class="section-sep">
+        <span class="tri" style="transform: rotate(90deg);">▶</span>
+        <span class="section-sep-label">Scheduled</span>
+        <span class="section-count">14</span>
+        <span class="section-line"></span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Разобраться с tribute</span></span>
+        <span class="meta-col meta-date overdue">Feb 06</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Отправить промо DEKADANCE</span></span>
+        <span class="meta-col meta-date today">Feb 07</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div style="padding: 8px 14px; font-size: 0.68rem; color: var(--impact-p1);">
+        ↑ What is "Feb 06"? A due date? Scheduled date? Creation date? No header.
+    </div>
+</div>
+
+<h3>Proposed — labels embedded in the line</h3>
+<p>The separator's trailing line becomes a grid that mirrors the task columns. Column labels sit ON the line with a background knockout.</p>
+
+<div class="mock-panel">
+    <!-- Separator with embedded column headers -->
+    <div class="section-sep-sched">
+        <span class="tri" style="transform: rotate(90deg);">▶</span>
+        <span class="section-sep-label">Scheduled</span>
+        <span class="section-count">14</span>
+        <span class="sep-columns">
+            <span class="sep-col-line"></span>
+            <span class="sep-col"><span class="sep-col-label">Date</span></span>
+            <span class="sep-col"><span class="sep-col-label">Dur</span></span>
+            <span class="sep-col"><span class="sep-col-label">Impact</span></span>
+            <span class="sep-col"><span class="sep-col-label">Clarity</span></span>
+            <span class="sep-col-end"></span>
+        </span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Разобраться с tribute</span></span>
+        <span class="meta-col meta-date overdue">Feb 06</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-2">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Пинговать Максима по правкам КЖЗК</span></span>
+        <span class="meta-col meta-date overdue">Feb 06</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-2">Mid</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Отправить промо DEKADANCE</span></span>
+        <span class="meta-col meta-date today">Feb 07</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Разобрать дистру</span></span>
+        <span class="meta-col meta-date today"><span class="ri">↻</span>Feb 07</span>
+        <span class="meta-col meta-duration">1h</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Чтение книги</span></span>
+        <span class="meta-col meta-date today"><span class="ri">↻</span>Feb 07</span>
+        <span class="meta-col meta-duration">1h</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Anna: Call about briefkasten</span></span>
+        <span class="meta-col meta-date">Feb 09</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Ждать когда повторно снимут Rundfunk</span></span>
+        <span class="meta-col meta-date">Feb 25</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Оплатить сим карты тинькофф</span></span>
+        <span class="meta-col meta-date"><span class="ri">↻</span>Mar 01</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+</div>
+
+<div class="highlight">
+    <strong>How it works:</strong> The separator's trailing line becomes a grid matching the task columns below. Labels ("Date", "Dur", "Impact", "Clarity") sit ON the line with a white background knockout — they look like they're part of the separator, not a separate header row. The leading portion of the line (above the title area) stays empty. Column alignment is automatic because both separator and task rows share the same grid column widths.<br><br>
+    <strong>Date color:</strong>
+    <span style="color: var(--impact-p1); font-weight: 600;">Red = overdue</span> ·
+    <span style="color: var(--primary); font-weight: 600;">Purple = today</span> ·
+    <span style="color: var(--text-muted);">Muted = future</span>
+</div>
+
+
+<!-- ============================================================
+     COMBINED WITH PAST BADGE
+     ============================================================ -->
+<h3>With past-tasks badge (points 1 + 9 combined)</h3>
+<div class="mock-panel">
+    <div class="section-sep-sched">
+        <span class="tri" style="transform: rotate(90deg);">▶</span>
+        <span class="section-sep-label">Scheduled</span>
+        <span class="section-count">14</span>
+        <span class="past-badge" style="margin-right: 4px;">2 past</span>
+        <span class="sep-columns">
+            <span class="sep-col-line"></span>
+            <span class="sep-col"><span class="sep-col-label">Date</span></span>
+            <span class="sep-col"><span class="sep-col-label">Dur</span></span>
+            <span class="sep-col"><span class="sep-col-label">Impact</span></span>
+            <span class="sep-col"><span class="sep-col-label">Clarity</span></span>
+            <span class="sep-col-end"></span>
+        </span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Разобраться с tribute</span></span>
+        <span class="meta-col meta-date overdue">Feb 06</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Отправить промо DEKADANCE</span></span>
+        <span class="meta-col meta-date today">Feb 07</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Разобрать дистру</span></span>
+        <span class="meta-col meta-date today"><span class="ri">↻</span>Feb 07</span>
+        <span class="meta-col meta-duration">1h</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+</div>
+
+<div class="verdict">The "2 past" badge and column labels coexist naturally. Badge is contextual (only when needed). Labels are structural (always there).</div>
+
+
+<!-- ============================================================
+     FULL COMBINED VIEW
+     ============================================================ -->
+<h2>Full Combined View</h2>
+<p>All agreed changes together: PMD copy, left-aligned domain counts, past-tasks badge, separator column labels, temporal date colors.</p>
+
+<div class="mock-panel">
+    <!-- PMD banner -->
+    <div class="pmd-banner">
+        <span class="pmd-inline">
+            <span class="pmd-title">Plan your day</span>
+            <span class="pmd-sub">82 tasks to fill your time</span>
+        </span>
+        <button class="btn-plan">Plan</button>
+    </div>
+
+    <!-- Career (expanded, left-aligned count) -->
+    <div class="domain-header">
+        <span class="domain-tri open">▶</span>
+        <span class="domain-name">Career</span>
+        <span class="domain-count">10</span>
+        <span class="spacer"></span>
+    </div>
+    <div class="task-item rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Fix the subtasks bug</span></span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Create external calendar for scheduled tasks</span></span>
+        <span class="meta-col meta-duration">2h</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item rail-4">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Decide what to do with Senren / Midori</span></span>
+        <span class="meta-col meta-duration">4h</span>
+        <span class="meta-col impact-4">Min</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+
+    <!-- Collapsed domains -->
+    <div class="domain-header">
+        <span class="domain-tri">▶</span>
+        <span class="domain-name">Leisure</span>
+        <span class="domain-count">5</span>
+        <span class="spacer"></span>
+    </div>
+    <div class="domain-header">
+        <span class="domain-tri">▶</span>
+        <span class="domain-name">Music Hustle</span>
+        <span class="domain-count">12</span>
+        <span class="spacer"></span>
+    </div>
+    <div class="domain-header">
+        <span class="domain-tri">▶</span>
+        <span class="domain-name">Вольер</span>
+        <span class="domain-count">26</span>
+        <span class="spacer"></span>
+    </div>
+    <div class="domain-header">
+        <span class="domain-tri">▶</span>
+        <span class="domain-name">ОН: Операционка</span>
+        <span class="domain-count">29</span>
+        <span class="spacer"></span>
+    </div>
+
+    <!-- SCHEDULED with embedded column labels + past badge -->
+    <div class="section-sep-sched">
+        <span class="tri" style="transform: rotate(90deg);">▶</span>
+        <span class="section-sep-label">Scheduled</span>
+        <span class="section-count">14</span>
+        <span class="past-badge" style="margin-right: 4px;">2 past</span>
+        <span class="sep-columns">
+            <span class="sep-col-line"></span>
+            <span class="sep-col"><span class="sep-col-label">Date</span></span>
+            <span class="sep-col"><span class="sep-col-label">Dur</span></span>
+            <span class="sep-col"><span class="sep-col-label">Impact</span></span>
+            <span class="sep-col"><span class="sep-col-label">Clarity</span></span>
+            <span class="sep-col-end"></span>
+        </span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Разобраться с tribute</span></span>
+        <span class="meta-col meta-date overdue">Feb 06</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-2">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Пинговать Максима по правкам КЖЗК</span></span>
+        <span class="meta-col meta-date overdue">Feb 06</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-2">Mid</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Отправить промо DEKADANCE</span></span>
+        <span class="meta-col meta-date today">Feb 07</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Разобрать дистру</span></span>
+        <span class="meta-col meta-date today"><span class="ri">↻</span>Feb 07</span>
+        <span class="meta-col meta-duration">1h</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Чтение книги</span></span>
+        <span class="meta-col meta-date today"><span class="ri">↻</span>Feb 07</span>
+        <span class="meta-col meta-duration">1h</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-3">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Anna: Call about briefkasten</span></span>
+        <span class="meta-col meta-date">Feb 09</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-3">Low</span>
+        <span class="meta-col clarity-defined">Defined</span>
+        <span class="task-actions"></span>
+    </div>
+    <div class="task-item sched rail-1">
+        <span class="task-check"><span class="check">✓</span></span>
+        <span class="task-content"><span class="task-text">Оплатить сим карты тинькофф</span></span>
+        <span class="meta-col meta-date"><span class="ri">↻</span>Mar 01</span>
+        <span class="meta-col meta-duration">30m</span>
+        <span class="meta-col impact-1">High</span>
+        <span class="meta-col clarity-clear">Clear</span>
+        <span class="task-actions"></span>
+    </div>
+
+    <!-- COMPLETED section (plain separator, no extra columns) -->
+    <div class="section-sep">
+        <span class="tri" style="transform: rotate(90deg);">▶</span>
+        <span class="section-sep-label">Completed</span>
+        <span class="section-count">4</span>
+        <span class="section-line"></span>
+    </div>
+    <div style="padding: 6px 14px; font-size: 0.68rem; color: var(--text-muted); opacity: 0.6;">
+        ✓ Вокзал для двоих — Чары PROD &nbsp; · &nbsp; ✓ Summarise Jesse Cannon RSS ...
+    </div>
+</div>
+
+</body>
+</html>
