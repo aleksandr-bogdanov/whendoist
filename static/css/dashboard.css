@@ -1292,7 +1292,7 @@
 }
 
 .complete-gutter--hover .complete-check {
-    opacity: 0.3;
+    opacity: 0.65;
     transform: scale(1);
     transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
