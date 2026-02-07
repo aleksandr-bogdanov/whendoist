@@ -449,7 +449,7 @@ img, a {
     /* Match column widths exactly with task-meta spans */
     .header-sort[data-sort="duration"] { width: 32px; min-width: 32px; }
     .header-sort[data-sort="impact"] { width: 24px; min-width: 24px; }
-    .header-sort[data-sort="clarity"] { width: 32px; min-width: 32px; }
+    .header-sort[data-sort="clarity"] { width: 56px; min-width: 56px; }
 
     /* Compact energy selector on mobile */
     .header-energy {
@@ -533,7 +533,7 @@ img, a {
     /* Fixed widths to match header columns */
     .task-item .task-meta .meta-duration { width: 32px; min-width: 32px; }
     .task-item .task-meta .meta-impact { width: 24px; min-width: 24px; }
-    .task-item .task-meta .meta-clarity { width: 32px; min-width: 32px; display: inline-flex !important; }
+    .task-item .task-meta .meta-clarity { width: 56px; min-width: 56px; display: inline-flex !important; }
 
     /* Hide actions column on mobile (swipe replaces it) */
     .task-item .task-actions {

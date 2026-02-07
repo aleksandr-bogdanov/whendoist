@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.39.1] - 2026-02-07 — Full Mode Names in Display
+
+### Changed
+- **Display labels** — use full mode names (`Autopilot`/`Brainstorm`) instead of abbreviations (`Auto`/`Brain`) in task list, scheduled, completed, deleted views, settings, and task dialog
+- **Column width** — widened mode column from 42px to 68px (desktop) and 32px to 56px (mobile) to fit full names
+
+---
+
 ## [0.39.0] - 2026-02-07 — Rename Clarity to Mode (Autopilot/Normal/Brainstorm)
 
 ### Changed

@@ -93,7 +93,7 @@ def clarity_display(clarity: Clarity | None) -> str:
     if clarity is None:
         return ""
     return {
-        Clarity.AUTOPILOT: "Auto",
+        Clarity.AUTOPILOT: "Autopilot",
         Clarity.NORMAL: "—",
-        Clarity.BRAINSTORM: "Brain",
+        Clarity.BRAINSTORM: "Brainstorm",
     }.get(clarity, "")
