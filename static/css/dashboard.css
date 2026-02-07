@@ -631,22 +631,34 @@
 }
 
 /* Special Views - Header Elements */
-.header-back-btn {
+
+/* Switch header from grid to flex when in special view */
+.header-row1:has(> .header-back-btn:not([hidden])) {
     display: flex;
+}
+
+.header-row1:has(> .header-back-btn:not([hidden])) .settings-anchor {
+    margin-left: auto;
+}
+
+.header-back-btn {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    margin: 0;
+    padding: 8px 16px;
     margin-left: 34px;  /* Align with task content */
-    justify-self: start;
-    border: 1px solid var(--primary);
+    border-radius: 8px;
     background: var(--primary-tint);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.6875rem;
-    font-weight: 600;
     color: var(--primary);
-    transition: all 0.12s ease;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
 }
 
 .header-back-btn:hover {
@@ -663,13 +675,12 @@
 }
 
 .header-view-count {
-    font-size: 0.6rem;
-    font-weight: 500;
+    font-size: 0.65rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.06em;
     color: var(--text-muted);
-    margin-left: 34px;  /* Align with task content */
-    justify-self: start;
+    margin-left: auto;
 }
 
 .header-view-count[hidden] {
@@ -955,7 +966,7 @@
 
 .task-count {
     font-size: 0.7rem;
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-muted);
 }
 
@@ -1003,7 +1014,7 @@
     align-items: center;
     gap: 8px;
     margin: 16px 0 0;
-    padding: 6px 12px;
+    padding: 6px 0 6px var(--rail-w);
     cursor: pointer;
     border-radius: 6px;
     transition: background 0.15s ease;
@@ -1026,7 +1037,8 @@
     transform: rotate(90deg);
 }
 
-/* Trailing line */
+/* Trailing line — transform/background-image overrides prevent Pico from
+   rotating this line with its details[open]>summary::after chevron rule */
 .section-separator::after {
     content: "";
     flex: 1;
@@ -1034,6 +1046,8 @@
     min-height: 1px;
     max-height: 1px;
     background: var(--border-default);
+    background-image: none !important;
+    transform: none !important;
 }
 
 .section-sep-label {
