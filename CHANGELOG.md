@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.39.2] - 2026-02-07 — Section Task Styling & DATE Header Alignment
+
+### Changed
+- **Section task styling** — tasks in Completed/Scheduled sections use softer opacity (0.85 vs 0.65), no strikethrough, `text-secondary` color — settled but scannable since the section header already communicates state
+- **DATE header alignment** — added `min-width: var(--col-date)` to `.task-due` so date values center-align with the header label
+- **Scheduled separator** — rebuilt as grid layout matching task-item columns with disclosure triangle and label line
+- **Domain add button** — SVG icon replaces text `+`, borderless style
+- **Dark mode** — added section task overrides for consistent styling
+
+---
+
 ## [0.39.1] - 2026-02-07 — Full Mode Names in Display
 
 ### Changed

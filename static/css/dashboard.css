@@ -852,22 +852,32 @@
 }
 
 .project-group > summary {
-    list-style: none;
+    list-style: none !important;
+    list-style-type: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
 }
 
 .project-group > summary::-webkit-details-marker {
-    display: none;
+    display: none !important;
+    -webkit-appearance: none;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
 }
 
 .project-group > summary::marker {
-    display: none;
-    content: "";
+    content: none !important;
+    font-size: 0;
+    color: transparent;
 }
 
 /* Patch 46: Domain header - tighter density */
 .project-header {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 0.5rem;
     padding: 6px 12px 6px 24px;  /* Reduced vertical padding for compact look */
     margin: 0 !important;
@@ -887,6 +897,7 @@
     color: var(--text-muted);
     transition: transform 0.15s ease;
     opacity: 0.6;
+    align-self: center;
 }
 
 .project-group[open] .project-header::before {
@@ -904,42 +915,38 @@
     flex: 1;
 }
 
-/* "+" button in domain header — hover-reveal */
+/* "+" button in domain header — hover-reveal, borderless icon */
 .domain-add-btn {
     all: unset;
     box-sizing: border-box;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: 5px;
-    border: 1px solid var(--border-default);
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 300;
+    align-self: center;
     opacity: 0;
     transition: all 0.15s ease;
 }
 
 .project-header:hover .domain-add-btn {
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .domain-add-btn:hover {
     opacity: 1 !important;
-    border-color: rgba(109, 94, 246, 0.35);
     color: var(--primary);
-    background: rgba(109, 94, 246, 0.06);
+    background: rgba(109, 94, 246, 0.08);
 }
 
 .task-count {
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     font-weight: 500;
     color: var(--text-muted);
-    opacity: 0.7;
 }
 
 .task-count.filtered {
@@ -957,12 +964,27 @@
 }
 
 .section-group > summary {
-    list-style: none;
+    list-style: none !important;
+    list-style-type: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
     cursor: pointer;
 }
 
 .section-group > summary::-webkit-details-marker {
-    display: none;
+    display: none !important;
+    -webkit-appearance: none;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.section-group > summary::marker {
+    content: none !important;
+    font-size: 0;
+    color: transparent;
 }
 
 /* Disclosure triangle on section separator */
@@ -1027,19 +1049,61 @@
     /* Tasks inside the collapsible section */
 }
 
-/* SCHEDULED separator: suppress trailing ::after, use .sep-columns instead */
-.section-separator--sched::after { display: none; }
-
-.sep-columns {
-    flex: 1;
+/* SCHEDULED separator: grid layout matching task-item columns */
+.section-separator--sched {
     display: grid;
-    grid-template-columns: 1fr var(--col-date) var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    grid-template-columns: 1fr var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
     column-gap: var(--col-gap);
     align-items: center;
+    padding: 6px 0 6px var(--rail-w);
+    margin: 16px 0 0;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s ease;
 }
 
-.sep-col {
-    position: relative;
+/* Suppress flex-based ::before triangle and ::after line from base .section-separator */
+.section-separator--sched::before { display: none; }
+.section-separator--sched::after { display: none; }
+
+.sched-label-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Disclosure triangle inside sched label group */
+.sched-label-group::before {
+    content: "\25B6";
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+    opacity: 0.5;
+}
+
+.section-group[open] .sched-label-group::before {
+    transform: rotate(90deg);
+}
+
+.sched-label-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-default);
+}
+
+/* Date label at right edge of 1fr cell — fixed width to align with .task-due in rows */
+.sched-label-group > .sep-col-label {
+    min-width: var(--col-date);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Scheduled header column labels */
+.section-separator--sched .sep-col-label {
+    position: static;
+    z-index: auto;
+    background: none;
+    padding: 0;
     text-align: center;
     font-size: 0.5rem;
     font-weight: 600;
@@ -1049,45 +1113,8 @@
     opacity: 0.55;
 }
 
-.sep-col::before {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; top: 50%;
-    height: 1px;
-    background: var(--border-default);
-}
-
-.sep-col-label {
-    position: relative;
-    z-index: 1;
-    background: var(--bg-panel);
-    padding: 0 3px;
-}
-
-.sep-col-line {
-    position: relative;
-    height: 1px;
-}
-
-.sep-col-line::before {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; top: 0;
-    height: 1px;
-    background: var(--border-default);
-}
-
-.sep-col-end {
-    position: relative;
-    height: 1px;
-}
-
-.sep-col-end::before {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; top: 0;
-    height: 1px;
-    background: var(--border-default);
+.sep-col-spacer {
+    /* Occupies the --col-actions grid cell */
 }
 
 /* Plan My Day contextual banner */
@@ -1502,6 +1529,54 @@
 }
 
 /* =============================================================================
+   Section Tasks — Completed/Scheduled visibility overrides
+   ============================================================================= */
+
+/* No strikethrough — the section header already says "Completed" */
+#section-done .task-item[data-completed="1"] .task-text,
+#section-done .task-item.completed .task-text,
+#section-done .task-item.completed.scheduled .task-text {
+    text-decoration: none;
+    color: var(--text-secondary);
+}
+
+/* Softer but not ghostly — 0.85 instead of default 0.65 */
+#section-done .task-item[data-completed="1"],
+#section-done .task-item.completed,
+#section-sched .task-item.completed {
+    opacity: 0.85;
+}
+
+/* Completed tasks in scheduled section — also secondary text, no strikethrough */
+#section-sched .task-item.completed .task-text {
+    text-decoration: none;
+    color: var(--text-secondary);
+}
+
+/* Meta stays at standard muted level (not double-dimmed) */
+#section-done .task-item[data-completed="1"] .task-due,
+#section-done .task-item[data-completed="1"] .meta-duration,
+#section-done .task-item[data-completed="1"] .meta-impact,
+#section-done .task-item[data-completed="1"] .meta-clarity,
+#section-done .task-item.completed .task-due,
+#section-done .task-item.completed .meta-duration,
+#section-done .task-item.completed .meta-impact,
+#section-done .task-item.completed .meta-clarity,
+#section-sched .task-item.completed .task-due,
+#section-sched .task-item.completed .meta-duration,
+#section-sched .task-item.completed .meta-impact,
+#section-sched .task-item.completed .meta-clarity {
+    color: var(--text-muted);
+}
+
+/* Impact rail — present but softer */
+#section-done .task-item[data-completed="1"]::before,
+#section-done .task-item.completed::before,
+#section-sched .task-item.completed::before {
+    opacity: 0.7;
+}
+
+/* =============================================================================
    Calendar Checkbox + Flush-Left Domain Stripe
    Full-height stripe attached to card edge, checkbox sits just right of it
    ============================================================================= */
@@ -1858,6 +1933,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-width: var(--col-date);
     font-size: 0.65rem;
     font-weight: 500;
     color: var(--text-muted);
@@ -3475,6 +3551,20 @@ body[data-energy-level] .scheduled-group.project-group {
 
 [data-theme="dark"] .calendar-item[data-completed="1"] {
     opacity: 0.7 !important;  /* Match Tasks view */
+}
+
+/* Section tasks — dark mode */
+[data-theme="dark"] #section-done .task-item[data-completed="1"],
+[data-theme="dark"] #section-done .task-item.completed,
+[data-theme="dark"] #section-sched .task-item.completed {
+    opacity: 0.85 !important;
+}
+
+[data-theme="dark"] #section-done .task-item[data-completed="1"] .task-text,
+[data-theme="dark"] #section-done .task-item.completed .task-text,
+[data-theme="dark"] #section-sched .task-item.completed .task-text {
+    color: var(--text-secondary) !important;
+    text-decoration: none !important;
 }
 
 /* =============================================================================

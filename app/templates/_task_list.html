@@ -103,7 +103,7 @@
             </span>
             <span class="task-count">{{ domain_item.tasks|length }}</span>
             <span class="header-spacer"></span>
-            <button type="button" class="domain-add-btn" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}" aria-label="Add task">+</button>
+            <button type="button" class="domain-add-btn" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}" aria-label="Add task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#plus"/></svg></button>
         </summary>
         <div class="task-list">
             {% for task_item in domain_item.tasks %}
@@ -128,17 +128,17 @@
 {% if scheduled_tasks %}
 <details class="section-group" id="section-sched"{% if user_prefs.show_scheduled_in_list %} open{% endif %}>
     <summary class="section-separator section-separator--sched">
-        <span class="section-sep-label">Scheduled</span>
-        <span class="section-count">{{ scheduled_tasks|length }}</span>
-        <span class="past-badge" id="past-badge" hidden></span>
-        <span class="sep-columns" id="sched-sep-columns">
-            <span class="sep-col-line"></span>
-            <span class="sep-col"><span class="sep-col-label">Date</span></span>
-            <span class="sep-col"><span class="sep-col-label">Dur</span></span>
-            <span class="sep-col"><span class="sep-col-label">Impact</span></span>
-            <span class="sep-col"><span class="sep-col-label">Mode</span></span>
-            <span class="sep-col-end"></span>
+        <span class="sched-label-group">
+            <span class="section-sep-label">Scheduled</span>
+            <span class="section-count">{{ scheduled_tasks|length }}</span>
+            <span class="past-badge" id="past-badge" hidden></span>
+            <span class="sched-label-line"></span>
+            <span class="sep-col-label">Date</span>
         </span>
+        <span class="sep-col-label">Dur</span>
+        <span class="sep-col-label">Impact</span>
+        <span class="sep-col-label">Mode</span>
+        <span class="sep-col-spacer"></span>
     </summary>
     <div class="section-tasks">
         {% for task_item in scheduled_tasks %}
