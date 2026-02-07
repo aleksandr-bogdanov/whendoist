@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.39.3] - 2026-02-07 — Domain Header & Special View Fixes
+
+### Fixed
+- **Domain header alignment** — arrow, name, and task count now vertically centered with proper baseline alignment; count `font-weight` reduced to 400 for clearer hierarchy
+- **Completed section line rotation** — Pico CSS was rotating the `::after` trailing line via `details[open]>summary::after`; overridden with `transform: none !important`
+- **Section separator alignment** — Completed section left padding now matches Scheduled (`var(--rail-w)` instead of `12px`)
+- **Special view header layout** — header switches from grid to flex via `:has()` when back button is visible, preventing count from being squeezed into narrow grid columns
+- **Back to tasks button** — restyled with brand tint background, uppercase, proper breathing room; system font matching other header labels
+
+---
+
 ## [0.39.2] - 2026-02-07 — Section Task Styling & DATE Header Alignment
 
 ### Changed
