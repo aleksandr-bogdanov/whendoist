@@ -50,5 +50,8 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Worktrees
+.worktrees/
+
 # Build artifacts (generated during CI release)
 static/build-manifest.json
