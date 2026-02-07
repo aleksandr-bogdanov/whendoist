@@ -101,16 +101,6 @@
                 </div>
             </div>
             <div class="task-list-scroll" id="task-list-scroll">
-            <div class="pending-past-banner" id="pending-past-banner" style="display: none;">
-                <span class="pending-past-text">
-                    You have <strong id="pending-past-count">0</strong> pending recurring instance(s) from past days.
-                </span>
-                <span class="pending-past-actions">
-                    <button type="button" class="btn btn-sm btn-primary" id="btn-complete-all-past">Complete all</button>
-                    <button type="button" class="btn btn-sm btn-secondary" id="btn-skip-all-past">Skip all</button>
-                    <button type="button" class="btn btn-sm btn-ghost" id="btn-dismiss-past">Dismiss</button>
-                </span>
-            </div>
             {% include '_task_list.html' %}
             </div>
         </div>
@@ -557,12 +547,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (taskCount === 0) return;
 
         if (hour >= 18) {
-            title.textContent = 'Plan tomorrow?';
-            sub.textContent = taskCount + ' tasks ready to schedule';
+            title.textContent = 'Plan tomorrow';
+            sub.textContent = taskCount + ' tasks waiting to be scheduled';
             banner.hidden = false;
         } else if (hour < 11) {
             title.textContent = 'Plan your day';
-            sub.textContent = taskCount + ' tasks ready to schedule';
+            sub.textContent = taskCount + ' tasks to fill your time';
             banner.hidden = false;
         }
 
@@ -612,45 +602,88 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-// Pending past instances banner
+// Pending past instances — badge on SCHEDULED header
 (async function checkPendingPastInstances() {
     try {
         const resp = await fetch('/api/v1/instances/pending-past-count');
         if (!resp.ok) return;
         const data = await resp.json();
-        if (data.pending_count > 0) {
-            const banner = document.getElementById('pending-past-banner');
-            document.getElementById('pending-past-count').textContent = data.pending_count;
-            banner.style.display = '';
+        const count = data.pending_count;
+        if (count > 0) {
+            const badge = document.getElementById('past-badge');
+            if (!badge) return;
+            badge.textContent = count + ' past';
+            badge.hidden = false;
 
-            document.getElementById('btn-complete-all-past').addEventListener('click', async () => {
-                const r = await fetch('/api/v1/instances/batch-past', {
-                    method: 'POST',
-                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
-                    body: JSON.stringify({ action: 'complete' }),
-                });
-                if (r.ok) {
-                    banner.style.display = 'none';
-                    const result = await r.json();
-                    if (window.Toast) Toast.show(`Completed ${result.affected_count} past instance(s)`);
+            // Popover element (created on first click)
+            let popover = null;
+
+            badge.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Toggle existing popover
+                if (popover && !popover.hidden) {
+                    popover.hidden = true;
+                    return;
                 }
-            });
 
-            document.getElementById('btn-skip-all-past').addEventListener('click', async () => {
-                const r = await fetch('/api/v1/instances/batch-past', {
-                    method: 'POST',
-                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
-                    body: JSON.stringify({ action: 'skip' }),
-                });
-                if (r.ok) {
-                    banner.style.display = 'none';
-                    const result = await r.json();
-                    if (window.Toast) Toast.show(`Skipped ${result.affected_count} past instance(s)`);
+                // Create popover if needed
+                if (!popover) {
+                    popover = document.createElement('div');
+                    popover.className = 'past-badge-popover';
+                    popover.innerHTML =
+                        '<button type="button" class="btn-sm btn-complete">Complete all</button>' +
+                        '<button type="button" class="btn-sm">Skip all</button>';
+                    badge.style.position = 'relative';
+                    badge.appendChild(popover);
+
+                    const btnComplete = popover.querySelector('.btn-complete');
+                    const btnSkip = popover.querySelector('.btn-sm:not(.btn-complete)');
+
+                    btnComplete.addEventListener('click', async (ev) => {
+                        ev.stopPropagation();
+                        const r = await fetch('/api/v1/instances/batch-past', {
+                            method: 'POST',
+                            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                            body: JSON.stringify({ action: 'complete' }),
+                        });
+                        if (r.ok) {
+                            const result = await r.json();
+                            const n = result.affected_count;
+                            if (window.Toast) Toast.show(`Completed ${n} past instance${n !== 1 ? 's' : ''}`);
+                            badge.hidden = true;
+                            popover.hidden = true;
+                        }
+                    });
+
+                    btnSkip.addEventListener('click', async (ev) => {
+                        ev.stopPropagation();
+                        const r = await fetch('/api/v1/instances/batch-past', {
+                            method: 'POST',
+                            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                            body: JSON.stringify({ action: 'skip' }),
+                        });
+                        if (r.ok) {
+                            const result = await r.json();
+                            const n = result.affected_count;
+                            if (window.Toast) Toast.show(`Skipped ${n} past instance${n !== 1 ? 's' : ''}`);
+                            badge.hidden = true;
+                            popover.hidden = true;
+                        }
+                    });
                 }
-            });
 
-            document.getElementById('btn-dismiss-past').addEventListener('click', () => {
-                banner.style.display = 'none';
+                popover.hidden = false;
+
+                // Close popover on outside click
+                const closePopover = (ev) => {
+                    if (!badge.contains(ev.target)) {
+                        popover.hidden = true;
+                        document.removeEventListener('click', closePopover);
+                    }
+                };
+                setTimeout(() => document.addEventListener('click', closePopover), 0);
             });
         }
     } catch (e) {
