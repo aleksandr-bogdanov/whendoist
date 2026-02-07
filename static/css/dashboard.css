@@ -173,29 +173,75 @@
     color: var(--primary-hover);
 }
 
-.pending-past-banner {
-    background: var(--impact-high-tint, #fff3cd);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    font-size: 0.875rem;
-    border: 1px solid var(--impact-high, #ffc107);
-    color: var(--text-primary);
-    display: flex;
+/* Past-tasks badge on SCHEDULED section header */
+.past-badge {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+    padding: 1px 7px;
+    border-radius: 9px;
+    font-size: 0.58rem;
+    font-weight: 600;
+    background: rgba(184, 134, 11, 0.10);
+    color: var(--amber-600);
+    border: 1px solid rgba(184, 134, 11, 0.20);
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1.4;
+    transition: all 0.15s ease;
+    position: relative;
 }
 
-.pending-past-text {
-    flex: 1 1 auto;
+.past-badge:hover {
+    background: rgba(184, 134, 11, 0.16);
+    border-color: rgba(184, 134, 11, 0.30);
 }
 
-.pending-past-actions {
+.past-badge[hidden] { display: none; }
+
+/* Past-badge dropdown popover */
+.past-badge-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: var(--z-dropdown);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    padding: 8px;
     display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.past-badge-popover[hidden] { display: none; }
+
+.past-badge-popover .btn-sm {
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.12s ease;
+}
+
+.past-badge-popover .btn-sm:hover {
+    background: var(--interactive-hover);
+    border-color: var(--border-strong);
+}
+
+.past-badge-popover .btn-complete {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.past-badge-popover .btn-complete:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
 }
 
 /* =============================================================================
@@ -848,10 +894,14 @@
 }
 
 .project-name {
-    flex: 1;
     font-weight: 600;
     font-size: 0.8rem;
     color: var(--text-primary);
+}
+
+/* Spacer pushes + button to the right */
+.header-spacer {
+    flex: 1;
 }
 
 /* "+" button in domain header — hover-reveal */
@@ -977,6 +1027,69 @@
     /* Tasks inside the collapsible section */
 }
 
+/* SCHEDULED separator: suppress trailing ::after, use .sep-columns instead */
+.section-separator--sched::after { display: none; }
+
+.sep-columns {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr var(--col-date) var(--col-duration) var(--col-impact) var(--col-clarity) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+}
+
+.sep-col {
+    position: relative;
+    text-align: center;
+    font-size: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    opacity: 0.55;
+}
+
+.sep-col::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 1px;
+    background: var(--border-default);
+}
+
+.sep-col-label {
+    position: relative;
+    z-index: 1;
+    background: var(--bg-panel);
+    padding: 0 3px;
+}
+
+.sep-col-line {
+    position: relative;
+    height: 1px;
+}
+
+.sep-col-line::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: var(--border-default);
+}
+
+.sep-col-end {
+    position: relative;
+    height: 1px;
+}
+
+.sep-col-end::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: var(--border-default);
+}
+
 /* Plan My Day contextual banner */
 .pmd-banner {
     display: flex;
@@ -996,8 +1109,9 @@
 
 .pmd-banner-text {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
 }
 
 .pmd-banner-title {
@@ -1009,6 +1123,13 @@
 .pmd-banner-sub {
     font-size: 0.68rem;
     color: var(--text-secondary);
+}
+
+.pmd-banner-sub::before {
+    content: "\00B7";
+    margin-right: 8px;
+    color: var(--text-muted);
+    font-weight: 700;
 }
 
 .pmd-banner-btn {
@@ -1753,6 +1874,10 @@
     font-size: 0.65rem;
     line-height: 1;
 }
+
+/* Temporal date coloring */
+.task-due.overdue { color: var(--impact-p1); }
+.task-due.today { color: var(--primary); font-weight: 600; }
 
 /* =============================================================================
    Task Metadata Tags (quiet, color via dot only)

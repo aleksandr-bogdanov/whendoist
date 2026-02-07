@@ -36,7 +36,8 @@
         <span class="subtask-badge">{{ task_item.subtask_count }} subtask{{ 's' if task_item.subtask_count > 1 else '' }}</span>
         {% endif %}
         {% if task.is_recurring %}
-        <span class="task-due">
+        {% set sched_date = task_item.next_occurrence or task.scheduled_date %}
+        <span class="task-due{% if sched_date and sched_date < today %} overdue{% elif sched_date and sched_date == today %} today{% endif %}">
             <span class="recurring-icon" title="Recurring task">↻</span>
             {% if task_item.instance_completed_at %}
                 Today ✓
@@ -47,8 +48,9 @@
             {% endif %}
         </span>
         {% elif task_item.next_occurrence or task.scheduled_date %}
-        <span class="task-due">
-            {{ (task_item.next_occurrence or task.scheduled_date).strftime('%b %d') }}
+        {% set sched_date = task_item.next_occurrence or task.scheduled_date %}
+        <span class="task-due{% if sched_date < today %} overdue{% elif sched_date == today %} today{% endif %}">
+            {{ sched_date.strftime('%b %d') }}
         </span>
         {% endif %}
     </div>
@@ -101,6 +103,7 @@
                 {% endif %}
             </span>
             <span class="task-count">{{ domain_item.tasks|length }}</span>
+            <span class="header-spacer"></span>
             <button type="button" class="domain-add-btn" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}" aria-label="Add task">+</button>
         </summary>
         <div class="task-list">
@@ -125,9 +128,18 @@
 {# ── Scheduled tasks — collapsible section ── #}
 {% if scheduled_tasks %}
 <details class="section-group" id="section-sched"{% if user_prefs.show_scheduled_in_list %} open{% endif %}>
-    <summary class="section-separator">
+    <summary class="section-separator section-separator--sched">
         <span class="section-sep-label">Scheduled</span>
         <span class="section-count">{{ scheduled_tasks|length }}</span>
+        <span class="past-badge" id="past-badge" hidden></span>
+        <span class="sep-columns" id="sched-sep-columns">
+            <span class="sep-col-line"></span>
+            <span class="sep-col"><span class="sep-col-label">Date</span></span>
+            <span class="sep-col"><span class="sep-col-label">Dur</span></span>
+            <span class="sep-col"><span class="sep-col-label">Impact</span></span>
+            <span class="sep-col"><span class="sep-col-label">Clarity</span></span>
+            <span class="sep-col-end"></span>
+        </span>
     </summary>
     <div class="section-tasks">
         {% for task_item in scheduled_tasks %}

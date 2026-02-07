@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.38.0] - 2026-02-07 — Task List UI Refinements
+
+### Changed
+- **Past-tasks badge** — replaced full-width pending-past banner with an inline amber badge on the SCHEDULED section header; clicking shows a popover with Complete all / Skip all actions
+- **PMD banner copy** — evening shows "Plan tomorrow" + "N tasks waiting to be scheduled"; morning shows "Plan your day" + "N tasks to fill your time"; title and sub-text now sit on one line with a centered dot separator
+- **Domain header count** — task count now hugs the domain name (left-aligned) instead of being pushed to the right; spacer element pushes the + button to the far right
+- **Scheduled separator column labels** — the SCHEDULED section divider line now includes Date/Dur/Impact/Clarity column labels aligned with the task grid
+- **Temporal date coloring** — overdue dates show in red, today's dates show in purple with bold weight
+- **Grammar fix** — toast messages now properly pluralize "instance" / "instances"
+
+---
+
 ## [0.37.3] - 2026-02-07 — Ghost Checkbox Visibility
 
 ### Fixed

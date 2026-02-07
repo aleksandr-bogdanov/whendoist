@@ -153,6 +153,7 @@
     --header-height: 80px;
 
     /* ===== Task List Columns ===== */
+    --col-date: 58px;
     --col-duration: 68px;
     --col-impact: 56px;
     --col-clarity: 42px;  /* Text labels: Clear/Def/Open */
