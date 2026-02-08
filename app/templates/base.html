@@ -139,6 +139,9 @@
     </script>
 </head>
 <body>
+    <!-- Accessibility: Screen reader announcements -->
+    <div id="a11y-announcer" aria-live="polite" class="sr-only"></div>
+
     <!-- Inline SVG Sprite for iOS Safari compatibility (external <use> refs don't work) -->
     {% include '_svg_sprites.html' %}
     <script>

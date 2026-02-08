@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.5] - 2026-02-09 — Accessibility: Screen Reader Announcements
+
+### Added
+- **aria-live announcer** — Screen readers now announce online/offline status changes
+- **Swipe role description** — Task items have `aria-roledescription="swipeable task"` for assistive tech discovery
+- **`.sr-only` utility class** — Visually hidden but screen-reader accessible content
+
+---
+
 ## [0.42.4] - 2026-02-09 — Service Worker Cache TTL
 
 ### Fixed

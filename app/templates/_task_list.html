@@ -6,6 +6,7 @@
 {% set is_completed = task.status == 'completed' or task_item.instance_completed_at %}
 {% set completed_at = task_item.instance_completed_at or task.completed_at %}
 <div class="task-item impact-{{ task.impact }}{% if task.scheduled_date %} scheduled{% endif %}{% if task_item.completion_age_class %} {{ task_item.completion_age_class }}{% endif %}"
+     aria-roledescription="swipeable task"
      data-clarity="{{ task.clarity }}"
      data-impact="{{ task.impact or 4 }}"
      data-task-id="{{ task.id }}"
