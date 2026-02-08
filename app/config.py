@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     demo_login_enabled: bool = False
 
     # Database pool settings
-    db_pool_size: int = 5
-    db_max_overflow: int = 10
-    db_pool_recycle: int = 300
+    db_pool_size: int = 2
+    db_max_overflow: int = 3
+    db_pool_recycle: int = 1800  # 30 minutes
 
     # Passkey (WebAuthn) settings
     # If not explicitly set, derived from base_url

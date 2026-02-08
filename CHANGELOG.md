@@ -6,6 +6,28 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.40.0] - 2026-02-08 — Production Hardening
+
+### Changed
+- **Database pool sizing** — reduced defaults from 5+10 overflow to 2+3 overflow (sufficient for single-worker deployment at current scale)
+- **Pool recycle interval** — increased from 5 minutes to 30 minutes (reduces connection churn; `pool_pre_ping` handles stale connections)
+- **Healthcheck endpoint** — switched Railway healthcheck from `/health` to `/ready` (verifies database connectivity before routing traffic)
+- **Materialization architecture** — refactored to use per-user session scope instead of single session for all users (prevents ORM object accumulation, reduces memory pressure)
+
+### Added
+- **Statement timeout** — 30-second server-side timeout for all PostgreSQL queries (prevents runaway queries from holding connections)
+- **Materialization timeout** — 5-minute timeout for materialization cycle with automatic retry (protects against pathological user data or slow external APIs)
+- **Enhanced error logging** — all exception handlers now use `logger.exception()` with exception type for full tracebacks in production logs
+- **Graceful shutdown** — database engine pool disposal on shutdown (eliminates "Connection reset by peer" warnings on deploys)
+
+### Technical Details
+Implements [PROD-HARDENING-PLAN.md](docs/PROD-HARDENING-PLAN.md) in full:
+- Phase 1: Observability (traceback logging, readiness probe, graceful shutdown)
+- Phase 2: Stability (timeouts, per-user sessions)
+- Phase 3: Cost optimization (right-sized pool, reduced recycle frequency)
+
+---
+
 ## [0.39.8] - 2026-02-08 — Demo Account Overhaul
 
 ### Changed

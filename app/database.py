@@ -25,6 +25,9 @@ engine = create_async_engine(
     pool_size=_settings.db_pool_size,
     max_overflow=_settings.db_max_overflow,
     pool_recycle=_settings.db_pool_recycle,
+    connect_args={
+        "server_settings": {"statement_timeout": "30000"},  # 30 seconds
+    },
 )
 
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -35,7 +38,7 @@ async def get_db() -> AsyncGenerator[AsyncSession]:
         try:
             yield session
         except Exception as e:
-            logger.error(f"Database session error: {e}")
+            logger.exception(f"Database session error: {type(e).__name__}: {e}")
             await session.rollback()
             raise
 
