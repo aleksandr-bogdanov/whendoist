@@ -81,6 +81,16 @@
             <span>Continue with Google</span>
         </a>
 
+        {% if demo_login_enabled %}
+        <div class="login-demo-section">
+            <div class="login-demo-divider"><span>or</span></div>
+            <a href="{{ url_for('demo_login') }}" class="login-demo-button">
+                <span class="demo-icon">🧪</span>
+                <span>Try Demo Account</span>
+            </a>
+        </div>
+        {% endif %}
+
         <!-- Meta block: trust + features -->
         <div class="login-meta">
             <p class="login-meta-trust">Reads your calendar to find free time. Never edits events.</p>

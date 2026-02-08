@@ -34,6 +34,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 # Specific rate limits for sensitive endpoints
 AUTH_LIMIT = "10/minute"  # Auth and passkey endpoints
+DEMO_LIMIT = "3/minute"  # Demo login/reset (expensive seeding operations)
 ENCRYPTION_LIMIT = "5/minute"  # Encryption setup/disable endpoints
 BACKUP_LIMIT = "5/minute"  # Backup export/import (expensive operations)
 API_LIMIT = "60/minute"  # General API endpoints

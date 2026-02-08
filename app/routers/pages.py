@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.constants import get_user_today
 from app.database import get_db
 from app.middleware.csrf import get_csrf_token
@@ -28,6 +29,7 @@ from app.models import (
 from app.routers.auth import get_current_user
 from app.services.analytics_service import AnalyticsService
 from app.services.calendar_cache import get_calendar_cache
+from app.services.demo_service import DemoService
 from app.services.gcal import GoogleCalendarClient
 from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
@@ -109,7 +111,7 @@ async def index(
             return RedirectResponse(url="/dashboard", status_code=303)
         # Wizard done → normal flow to thoughts
         return RedirectResponse(url="/thoughts", status_code=303)
-    return render_template(request, "login.html", {})
+    return render_template(request, "login.html", {"demo_login_enabled": get_settings().demo_login_enabled})
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
@@ -388,6 +390,7 @@ async def dashboard(
             "todoist_connected": todoist_token is not None,
             "user_name": user.name or (user.email.split("@")[0] if user.email else ""),
             "user_email": user.email or "",
+            "is_demo_user": DemoService.is_demo_user(user.email),
             **encryption_ctx,
         },
     )
@@ -639,6 +642,7 @@ async def thoughts(
         {
             "user": user,
             "tasks": task_items,
+            "is_demo_user": DemoService.is_demo_user(user.email),
             **encryption_ctx,
         },
     )
@@ -730,6 +734,7 @@ async def settings(
             "calendars": calendars,
             "user_prefs": user_prefs,
             "user_passkeys": user_passkeys,
+            "is_demo_user": DemoService.is_demo_user(user.email),
             **encryption_ctx,
         },
     )
@@ -778,6 +783,7 @@ async def analytics(
             "end_date": end_date,
             "stats": stats,
             "recent_completions": recent_completions,
+            "is_demo_user": DemoService.is_demo_user(user.email),
             **encryption_ctx,
         },
     )

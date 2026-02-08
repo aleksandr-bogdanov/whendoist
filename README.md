@@ -162,6 +162,7 @@ just fmt      # Format code
 | **Security** | |
 | [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, headers |
 | [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption details |
+| [Demo Login](docs/DEMO-LOGIN.md) | Demo accounts for testing and previews |
 | **Architecture** | |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |

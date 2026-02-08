@@ -149,6 +149,14 @@ INSTANCE_RETENTION_DAYS = 90  # Days to keep completed/skipped instances
 DEFAULT_TIMEZONE = "UTC"  # Fallback when user hasn't set timezone
 
 
+# =============================================================================
+# Demo Login Constants
+# =============================================================================
+
+DEMO_EMAIL_SUFFIX = "@whendoist.local"
+DEMO_VALID_PROFILES = {"demo", "encrypted", "blank"}
+
+
 def get_user_today(timezone: str | None) -> date:
     """
     Get today's date in the user's timezone.
