@@ -39,11 +39,10 @@
      */
     async function loadUserPreferences() {
         try {
-            const response = await fetch('/api/v1/preferences');
-            if (response.ok) {
-                userPrefs = await response.json();
-            }
-        } catch (e) {
+            const response = await safeFetch('/api/v1/preferences');
+            userPrefs = await response.json();
+        } catch (error) {
+            // Silent failure - use defaults
             console.warn('Failed to load user preferences, using defaults');
         }
     }
@@ -113,17 +112,13 @@
                 }
             }
 
-            const response = await fetch(url, {
+            const response = await safeFetch(url, {
                 method: 'POST',
-                headers: window.getCSRFHeaders({
+                headers: {
                     'Content-Type': 'application/json',
-                }),
+                },
                 body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to toggle completion');
-            }
 
             const data = await response.json();
 
@@ -167,12 +162,14 @@
             }
 
         } catch (error) {
-            console.error('Error toggling completion:', error);
-
             // Revert optimistic update on error
             taskEl.dataset.completed = shouldComplete ? '0' : '1';
 
-            showToast('Failed to update task');
+            handleError(error, 'Failed to update task', {
+                component: 'task-complete',
+                action: 'toggleCompletion',
+                retry: () => toggleCompletion(taskEl, taskId, instanceId, shouldComplete, isRecurring)
+            });
         }
     }
 
@@ -419,14 +416,9 @@
         taskEl.dataset.completed = '1';
 
         try {
-            const response = await fetch(`/api/v1/instances/${instanceId}/skip`, {
-                method: 'POST',
-                headers: window.getCSRFHeaders(),
+            await safeFetch(`/api/v1/instances/${instanceId}/skip`, {
+                method: 'POST'
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to skip instance');
-            }
 
             // Sync across all representations of this instance
             document.querySelectorAll(`[data-instance-id="${instanceId}"]`).forEach(el => {
@@ -443,11 +435,14 @@
                 setTimeout(function() { refreshTaskListFromServer(); }, 400);
             }
         } catch (error) {
-            console.error('Error skipping instance:', error);
             // Revert optimistic update
             taskEl.classList.remove('skipped');
             taskEl.dataset.completed = '0';
-            showToast('Failed to skip instance');
+            handleError(error, 'Failed to skip instance', {
+                component: 'task-complete',
+                action: 'skipInstance',
+                retry: () => skipInstance(taskEl, instanceId)
+            });
         }
     }
 

@@ -179,6 +179,7 @@ just fmt      # Format code
 | [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, headers |
 | [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption details |
 | [Demo Login](docs/DEMO-LOGIN.md) | Demo accounts for testing and previews |
+| [Error Handling](docs/ERROR-HANDLING.md) | Production error recovery, safeFetch() usage, typed errors |
 | **Architecture** | |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
@@ -186,6 +187,8 @@ just fmt      # Format code
 | **Product & Roadmap** | |
 | [Product Vision](docs/PRODUCT-VISION.md) | Strategic positioning, user archetypes, mobile UX |
 | [v1.0 Roadmap](docs/V1-ROADMAP.md) | Path to production-ready release, Honeycomb profiling plan |
+| [v1.0 Roadmap Audit](docs/V1-ROADMAP-AUDIT.md) | Reality check on critical features (#2, #3, #4, #6) |
+| [v1.0 Blockers Implementation Plan](docs/V1-BLOCKERS-IMPLEMENTATION-PLAN.md) | Detailed implementation plan for error recovery + keyboard shortcuts |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |
