@@ -256,23 +256,29 @@ img, a {
 @media (max-width: 900px) {
     .mobile-tabs {
         display: flex;
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        background: var(--bg-panel, #f5f5f5);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: var(--bg-surface, #fff);
         padding: 8px 12px;
-        border-bottom: 1px solid var(--border-subtle, #eee);
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+        border-top: 1px solid var(--pico-muted-border-color, #e0e0e0);
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
         gap: 8px;
+        justify-content: space-around;
     }
 }
 
 .mobile-tab {
     flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    height: 40px;
+    gap: 4px;
+    height: 56px;
     border-radius: 10px;
     background: transparent;
     border: 1px solid transparent;
@@ -300,7 +306,7 @@ img, a {
 }
 
 .tab-icon {
-    font-size: 1rem;
+    font-size: 1.25rem;
 }
 
 .tab-label {
@@ -335,10 +341,7 @@ img, a {
         /* min-height: 60px is set in app.css mobile section */
     }
 
-    /* Bottom safe area for mobile tabs */
-    .mobile-tabs {
-        padding-bottom: env(safe-area-inset-bottom, 0);
-    }
+    /* Bottom safe area for mobile tabs - already handled in main mobile-tabs rule */
 }
 
 /* =============================================================================
@@ -367,33 +370,35 @@ img, a {
         display: none !important;
     }
 
-    /* Show active panel - full screen (60px header, 57px mobile tabs) */
+    /* Show active panel - full screen (60px header, 72px mobile tabs at bottom) */
     .tasks-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 60px - 57px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 60px);
+        height: calc(var(--app-height, 100vh) - 60px);
         overflow: hidden;
         border-radius: 0;
         border: none;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     }
 
     .calendar-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 60px - 57px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 60px);
+        height: calc(var(--app-height, 100vh) - 60px);
         overflow: hidden;
         border-radius: 0;
         border: none;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     }
 
     /* PWA mode - account for safe area in header */
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 60px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-            height: calc(var(--app-height, 100vh) - 60px - 57px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(100vh - 60px - env(safe-area-inset-top, 0px));
+            height: calc(var(--app-height, 100vh) - 60px - env(safe-area-inset-top, 0px));
         }
     }
 
@@ -874,23 +879,25 @@ img, a {
 @media (max-width: 580px) {
     .mobile-tabs {
         padding: 6px 8px;
+        padding-bottom: calc(6px + env(safe-area-inset-bottom, 0));
     }
 
     .mobile-tab {
-        height: 36px;
+        height: 52px;
     }
 
     /* Adjust panel height for smaller header (44px) */
     .tasks-panel.mobile-active,
     .calendar-panel.mobile-active {
-        height: calc(100vh - 44px - 49px - env(safe-area-inset-bottom, 0px));
-        height: calc(var(--app-height, 100vh) - 44px - 49px - env(safe-area-inset-bottom, 0px));
+        height: calc(100vh - 44px);
+        height: calc(var(--app-height, 100vh) - 44px);
+        padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
     }
 
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 44px - 49px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            height: calc(100vh - 44px - env(safe-area-inset-top, 0px));
         }
     }
 }
@@ -1013,8 +1020,9 @@ img, a {
    ============================================================================= */
 
 [data-theme="dark"] .mobile-tabs {
-    background: var(--bg-panel);
-    border-color: var(--border-subtle);
+    background: var(--bg-surface);
+    border-top-color: var(--border-default);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="dark"] .mobile-tab {

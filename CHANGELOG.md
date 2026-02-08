@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.7] - 2026-02-09 — Mobile Bottom Tab Bar
+
+### Changed
+- **Mobile tabs moved to bottom** — Tab bar now fixed to bottom of viewport (was top), matching standard mobile app patterns for better thumb reachability on large phones
+- **Safe area support** — Bottom tabs respect iPhone home indicator via `env(safe-area-inset-bottom)`
+- **Content padding** — Task list scroll area padded to prevent content from hiding behind fixed tabs
+
+### Technical Details
+- Desktop layout completely unchanged (tabs only appear on mobile < 900px)
+- Dark mode support for bottom tab bar
+- No JavaScript changes — only CSS position/layout updates
+
+---
+
 ## [0.42.6] - 2026-02-09 — Rate Limiting Scaling Documentation
 
 ### Added
