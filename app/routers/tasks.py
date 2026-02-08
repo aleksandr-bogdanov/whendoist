@@ -514,6 +514,7 @@ async def update_task(
         raise HTTPException(status_code=404, detail="Task not found")
 
     old_rule = current.recurrence_rule
+    old_is_recurring = current.is_recurring
 
     # Get only fields that were explicitly set in the request
     # This allows us to distinguish between "not provided" and "set to null"
@@ -530,6 +531,20 @@ async def update_task(
     if task.is_recurring and task.recurrence_rule != old_rule:
         recurrence = RecurrenceService(db, user.id, timezone=timezone)
         await recurrence.regenerate_instances(task)
+
+    # Clean up instances when disabling recurrence
+    if not task.is_recurring and old_is_recurring:
+        from sqlalchemy import delete as sa_delete
+
+        from app.models import TaskInstance
+
+        # Delete future pending instances (completed/skipped are preserved)
+        await db.execute(
+            sa_delete(TaskInstance).where(
+                TaskInstance.task_id == task.id,
+                TaskInstance.status == "pending",
+            )
+        )
 
     await db.commit()
 

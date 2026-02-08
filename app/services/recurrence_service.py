@@ -5,15 +5,19 @@ Uses dateutil.rrule to generate occurrence dates from recurrence rules.
 Instances are materialized for a rolling window (default 60 days ahead).
 """
 
+import logging
 from datetime import UTC, date, datetime, time, timedelta
 
 from dateutil.rrule import DAILY, FR, MO, MONTHLY, SA, SU, TH, TU, WE, WEEKLY, YEARLY, rrule
 from sqlalchemy import and_, delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.constants import get_user_today
 from app.models import Task, TaskInstance
+
+logger = logging.getLogger("whendoist.recurrence")
 
 # Day of week mapping for rrule
 DAY_MAP = {
@@ -171,9 +175,16 @@ class RecurrenceService:
                     scheduled_datetime=(datetime.combine(occ_date, default_time, tzinfo=UTC) if default_time else None),
                 )
                 self.db.add(instance)
-                instances.append(instance)
 
-        await self.db.flush()
+                try:
+                    await self.db.flush()
+                    instances.append(instance)
+                except IntegrityError:
+                    # Instance was created by a concurrent process, skip
+                    await self.db.rollback()
+                    logger.debug(f"Instance already exists for task {task.id} on {occ_date}, skipping")
+                    continue
+
         return instances
 
     async def regenerate_instances(self, task: Task) -> list[TaskInstance]:
@@ -473,7 +484,25 @@ class RecurrenceService:
             scheduled_datetime=(datetime.combine(target_date, default_time, tzinfo=UTC) if default_time else None),
         )
         self.db.add(instance)
-        await self.db.flush()
+
+        try:
+            await self.db.flush()
+        except IntegrityError:
+            # Race condition: instance was created by concurrent request
+            await self.db.rollback()
+            # Re-query the instance that was created by the concurrent request
+            result = await self.db.execute(
+                select(TaskInstance).where(
+                    TaskInstance.task_id == task.id,
+                    TaskInstance.instance_date == target_date,
+                    TaskInstance.user_id == self.user_id,
+                )
+            )
+            instance = result.scalar_one_or_none()
+            if instance is None:
+                raise  # Something else went wrong
+            logger.debug(f"Concurrent instance creation for task {task.id} on {target_date}, using existing")
+
         return instance
 
     async def ensure_instances_materialized(

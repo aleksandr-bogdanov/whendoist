@@ -6,6 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.8] - 2026-02-09 — Recurring Task Race Condition & Orphan Fixes
+
+### Fixed
+- **Instance creation race condition** — Double-click or concurrent requests no longer cause 500 errors; `IntegrityError` from the unique constraint is now caught and handled gracefully
+- **Orphaned instances on recurrence disable** — Turning off recurrence on a task now deletes future pending instances instead of leaving them orphaned in the database and calendar
+
+### Technical Details
+- `get_or_create_instance_for_date` catches `IntegrityError` and re-queries the existing instance
+- `materialize_instances` skips duplicates instead of failing the entire user's materialization
+- `update_task` adds cleanup branch for `is_recurring` transitioning from True to False
+
+---
+
 ## [0.42.7] - 2026-02-09 — Mobile Bottom Tab Bar
 
 ### Changed
