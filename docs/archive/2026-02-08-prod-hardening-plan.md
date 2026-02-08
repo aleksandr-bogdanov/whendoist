@@ -1,6 +1,8 @@
 # Production Hardening Plan
 
-> Implementation plan based on [PROD-HARDENING-REVIEW.md](PROD-HARDENING-REVIEW.md).
+> **ARCHIVED:** Fully implemented in v0.40.0 on 2026-02-08 via [PR #67](https://github.com/aleksandr-bogdanov/whendoist/pull/67)
+>
+> Implementation plan based on [2026-02-08-prod-hardening-review.md](2026-02-08-prod-hardening-review.md).
 > Three phases ordered by impact: observability first, then stability, then cost.
 
 ---
