@@ -6,6 +6,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.1] - 2026-02-08 — Keyboard Shortcuts: Task Navigation & Actions
+
+### Added
+- **Task navigation shortcuts** — `j`/`k` to move selection down/up through visible task list, with smooth scroll-into-view
+- **Task action shortcuts** — `c` complete, `e` edit, `x` delete selected task, `Enter` edit selected task
+- **Visual selection state** — Selected task highlighted with `.is-selected` class (purple accent)
+- **Smart selection management** — Selection clears on Escape, auto-advances after delete, resets on HTMX task list refresh
+
+### Changed
+- **Help modal now shows 11 shortcuts** — Previously 4 (?, q, n, Esc), now includes j, k, c, e, x for task navigation/actions
+- **Help modal skips internal shortcuts** — `showInHelp: false` flag hides Enter (duplicate of `e`) from reference
+- **Shortcuts suppressed when help modal is open** — Typing while viewing help no longer triggers actions
+- **Escape clears task selection** — Before closing dialogs, Escape now also deselects any selected task
+
+### Technical Details
+- Task selection uses existing `.is-selected` CSS class from dashboard.css
+- Completion triggers via `.complete-gutter` click simulation (reuses TaskComplete's event delegation)
+- Delete uses safeFetch with animation and error recovery
+- Selection state automatically cleared on HTMX `afterSwap` events
+- No new CSS needed — existing `.is-selected` styles provide the visual feedback
+
+---
+
 ## [0.42.0] - 2026-02-08 — Complete safeFetch Migration
 
 ### Changed
