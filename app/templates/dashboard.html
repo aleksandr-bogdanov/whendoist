@@ -55,7 +55,10 @@
                             <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-left"></use>
                         </svg>
                     </button>
-                    <span class="header-view-count" id="header-view-count" hidden></span>
+                    <div class="header-view-count" id="header-view-count" hidden>
+                        <span class="header-view-title" id="header-view-title"></span>
+                        <span class="header-date-label" id="header-date-label">Date</span>
+                    </div>
                     <span class="header-meta" id="header-sorts">
                         <button type="button" class="header-sort active" data-sort="clarity" data-order="asc" title="Sort by clarity">
                             <span class="label-full">Clarity</span><span class="label-compact">CLR</span>

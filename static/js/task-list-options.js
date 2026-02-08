@@ -251,12 +251,13 @@
         const energy = document.getElementById('header-energy');
         const backBtn = document.getElementById('header-back-btn');
         const viewCount = document.getElementById('header-view-count');
-        const sorts = document.getElementById('header-sorts');
+        const dateLabel = document.getElementById('header-date-label');
 
         if (energy) energy.hidden = isSpecialView;
         if (backBtn) backBtn.hidden = !isSpecialView;
         if (viewCount) viewCount.hidden = !isSpecialView;
-        if (sorts) sorts.hidden = isSpecialView;
+        // Show date label in subviews by default; _deleted_tasks.html overrides to hide
+        if (dateLabel) dateLabel.hidden = !isSpecialView;
     }
 
     // =========================================================================
@@ -366,12 +367,12 @@
                 taskEl.remove();
 
                 // Update count in header
-                const countEl = document.getElementById('header-view-count');
-                if (countEl) {
-                    const match = countEl.textContent.match(/(\d+)/);
+                const titleEl = document.getElementById('header-view-title');
+                if (titleEl) {
+                    const match = titleEl.textContent.match(/(\d+)/);
                     if (match) {
                         const newCount = parseInt(match[1], 10) - 1;
-                        countEl.textContent = `${newCount} deleted`;
+                        titleEl.textContent = `Deleted (${newCount})`;
                     }
                 }
 

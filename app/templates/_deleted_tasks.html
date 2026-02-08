@@ -64,10 +64,13 @@
 <script>
     (function() {
         // Update header with deleted count
-        const countEl = document.getElementById('header-view-count');
-        if (countEl) {
-            countEl.textContent = 'Deleted (' + {{ total_count }} + ')';
+        const titleEl = document.getElementById('header-view-title');
+        if (titleEl) {
+            titleEl.textContent = 'Deleted (' + {{ total_count }} + ')';
         }
+        // Hide date label — deleted tasks have no date column
+        const dateLabel = document.getElementById('header-date-label');
+        if (dateLabel) dateLabel.hidden = true;
     })();
 </script>
 

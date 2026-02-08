@@ -74,9 +74,9 @@
 <script>
     (function() {
         // Update header with completed count
-        const countEl = document.getElementById('header-view-count');
-        if (countEl) {
-            countEl.textContent = 'Completed (' + {{ total_count }} + ')';
+        const titleEl = document.getElementById('header-view-title');
+        if (titleEl) {
+            titleEl.textContent = 'Completed (' + {{ total_count }} + ')';
         }
         // Re-initialize task completion handlers
         if (window.TaskComplete && typeof window.TaskComplete.init === 'function') {

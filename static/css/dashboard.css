@@ -376,6 +376,7 @@
     column-gap: var(--col-gap);
     align-items: center;
     padding: 6px 0 6px var(--rail-w);
+    min-height: 36px;  /* Match energy-pill row height across all views */
 }
 
 /* Cover rounded corner gaps when scrolling */
@@ -633,25 +634,34 @@
 /* Special Views - Header Elements */
 
 /* Switch header from grid to flex when in special view (centered title layout) */
+/* Subview mode: keep grid layout, overlay back-btn absolutely */
 .header-row1:has(> .header-back-btn:not([hidden])) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     position: relative;
-    padding: 6px 0 6px var(--rail-w);
+    /* Grid stays from base rule — same columns, same gap, same height */
 }
 
-/* Back button — absolute left */
+/* Back button — absolute overlay, out of grid flow */
 .header-row1:has(> .header-back-btn:not([hidden])) .header-back-btn {
     position: absolute;
-    left: var(--rail-w);
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
 }
 
-/* Gear — absolute right, aligned with grid-mode position */
-.header-row1:has(> .header-back-btn:not([hidden])) .settings-anchor {
-    position: absolute;
-    right: 0;
-    margin-left: 0;
+/* Sort buttons: non-interactive labels in subview (columns stay visible) */
+.header-row1:has(> .header-back-btn:not([hidden])) .header-sort {
+    pointer-events: none;
+    cursor: default;
+}
+.header-row1:has(> .header-back-btn:not([hidden])) .header-sort .sort-icon {
+    display: none;
+}
+.header-row1:has(> .header-back-btn:not([hidden])) .header-sort.active {
+    color: rgba(15, 23, 42, 0.38);  /* Same as non-active — no highlight */
+}
+[data-theme="dark"] .header-row1:has(> .header-back-btn:not([hidden])) .header-sort.active {
+    color: var(--text-muted);  /* Same as dark non-active */
 }
 
 .header-back-btn {
@@ -686,6 +696,16 @@
 }
 
 .header-view-count {
+    display: flex;
+    align-items: center;
+    padding-left: 40px;  /* Clear absolute back arrow (btn is ~36px wide at left:4px) */
+}
+
+.header-view-count[hidden] {
+    display: none;
+}
+
+.header-view-title {
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -693,7 +713,18 @@
     color: var(--text-secondary);
 }
 
-.header-view-count[hidden] {
+.header-date-label {
+    margin-left: auto;  /* Push to right edge of 1fr column */
+    min-width: var(--col-date);
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(15, 23, 42, 0.38);  /* Same as .header-sort default */
+}
+
+.header-date-label[hidden] {
     display: none;
 }
 
@@ -703,9 +734,6 @@
     color: var(--text-muted);
 }
 
-.deleted-group.project-group {
-    opacity: 0.85;
-}
 
 .deleted-item.task-item {
     background: var(--bg-surface);
@@ -777,23 +805,28 @@
     color: var(--text-primary) !important;
 }
 
-.completed-group .task-item .task-due,
-.completed-group .task-item .meta-duration,
-.completed-group .task-item .meta-impact,
-.completed-group .task-item .meta-clarity {
-    color: var(--text-primary) !important;
+.completed-group .task-item::before {
+    opacity: 1 !important;  /* Impact rail at full opacity */
 }
 
-.completed-group .task-item[data-completed="1"] .complete-check {
-    opacity: 1;
-    transform: scale(1);
-    background: rgba(15, 23, 42, 0.04);
-    border-color: rgba(15, 23, 42, 0.12);
-    color: var(--text-muted);
+/* Override base completed dimming — subview tasks should look like active tasks */
+.completed-group .task-item .task-due {
+    color: var(--text-muted) !important;
 }
 
-.completed-group .task-item[data-completed="1"] .complete-bar {
-    opacity: 0.2;
+/* Re-apply impact colors (base [data-completed="1"] .meta-impact dims to 50%) */
+.completed-group .meta-impact.impact-1 { color: var(--impact-p1) !important; }
+.completed-group .meta-impact.impact-2 { color: var(--impact-p2) !important; }
+.completed-group .meta-impact.impact-3 { color: var(--impact-p3) !important; }
+.completed-group .meta-impact.impact-4 { color: var(--impact-p4) !important; }
+
+/* Re-apply clarity colors */
+.completed-group .meta-clarity.clarity-autopilot { color: var(--autopilot-color) !important; }
+.completed-group .meta-clarity.clarity-normal { color: var(--normal-color) !important; }
+.completed-group .meta-clarity.clarity-brainstorm { color: var(--brainstorm-color) !important; }
+
+.completed-group .task-item[data-completed="1"] {
+    opacity: 1 !important;
 }
 
 .completed-empty {
@@ -930,6 +963,7 @@
     gap: 0.5rem;
     padding: 6px 12px 6px 24px;  /* Reduced vertical padding for compact look */
     margin: 0 !important;
+    min-height: 32px;  /* Match main view height (add-btn is 20px + 6px*2 padding) */
     background: var(--bg-panel);
     cursor: pointer;
     user-select: none;
@@ -1986,6 +2020,7 @@
 }
 
 .task-due {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2000,11 +2035,13 @@
 }
 
 .recurring-icon {
-    display: inline-flex;
-    align-items: center;
-    margin-right: 0.125rem;
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 0.65rem;
     line-height: 1;
+    color: var(--text-muted);
 }
 
 /* Temporal date coloring */
@@ -3346,6 +3383,10 @@ body[data-energy-level] .scheduled-group.project-group {
     color: var(--text-secondary);  /* Slightly brighter than inactive */
 }
 
+[data-theme="dark"] .header-date-label {
+    color: var(--text-muted);  /* Match dark mode header-sort */
+}
+
 /* Task chips */
 [data-theme="dark"] .task-duration,
 [data-theme="dark"] .task-impact,
@@ -3553,24 +3594,18 @@ body[data-energy-level] .scheduled-group.project-group {
     opacity: 0.7 !important;  /* Toned down further */
 }
 
-/* Completed tasks view - dark mode overrides */
-[data-theme="dark"] .completed-group .task-item .task-text,
-[data-theme="dark"] .completed-group .task-item.completed-today .task-text,
-[data-theme="dark"] .completed-group .task-item.completed-older .task-text {
-    color: var(--text-secondary) !important;  /* 72% */
+
+/* Completed subview - dark mode: undo completed dimming */
+[data-theme="dark"] .completed-group .task-item .task-text {
+    color: var(--text-primary) !important;
 }
 
-[data-theme="dark"] .completed-group .task-item .task-due,
-[data-theme="dark"] .completed-group .task-item .meta-duration,
-[data-theme="dark"] .completed-group .task-item .meta-impact,
-[data-theme="dark"] .completed-group .task-item .meta-clarity {
-    color: var(--text-secondary) !important;  /* 72% */
+[data-theme="dark"] .completed-group .task-item .task-due {
+    color: var(--text-muted) !important;
 }
 
-[data-theme="dark"] .completed-group .task-item[data-completed="1"] .complete-check {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.10);
-    color: var(--text-muted);
+[data-theme="dark"] .completed-group .task-item[data-completed="1"] {
+    opacity: 1 !important;
 }
 
 /* Calendar checkbox - override white background */

@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.39.7] - 2026-02-08 — Subview Header Consistency & Styling
+
+### Fixed
+- **Subview header layout** — kept grid layout in subviews (scheduled, completed, deleted) instead of switching to flex; fixes header height mismatch, gear button position drift, and missing column legend labels
+- **Header height consistency** — added `min-height: 32px` to `.header-row1` so subview headers match main view height (energy-pill row)
+- **Column legend in subviews** — Clarity/Dur/Impact labels now stay visible as non-interactive column headers (pointer-events disabled, sort icons hidden)
+- **Date column label** — completed/scheduled subview headers now show a "Date" column label aligned with task dates
+- **Subview task styling** — removed extra greying/dimming from completed and deleted subviews; tasks now use same styling as main view active tasks
+- **Recurring icon centering** — positioned ↻ icon absolutely within `.task-due` so it no longer shifts date text off-center
+
+---
+
 ## [0.39.6] - 2026-02-08 — Subview Header, Thoughts Rename, Checkmark Fixes
 
 ### Fixed
