@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # Demo login (bypasses Google OAuth for testing/previews)
     demo_login_enabled: bool = False
 
+    # Sentry debug endpoint (only enable temporarily for testing)
+    sentry_debug_enabled: bool = False
+
     # Database pool settings
     db_pool_size: int = 2
     db_max_overflow: int = 3

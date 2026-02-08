@@ -7,11 +7,12 @@ Provides JSON API for tasks, projects, calendar events, and task scheduling.
 import logging
 from datetime import UTC, date, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.constants import get_user_today
 from app.database import get_db
 from app.models import GoogleCalendarSelection, GoogleToken, TodoistToken, User
@@ -466,4 +467,41 @@ async def commit_scheduled_tasks(
         results=results,
         success_count=success_count,
         failure_count=failure_count,
+    )
+
+
+# =============================================================================
+# Sentry Debug Endpoint (Protected)
+# =============================================================================
+
+
+@router.get("/sentry-test")
+async def sentry_test(
+    request: Request,
+    user: User = Depends(require_user),
+):
+    """
+    Test endpoint to verify Sentry error tracking is working.
+
+    Protected by:
+    - Authentication (must be logged in)
+    - Environment flag (SENTRY_DEBUG_ENABLED must be true)
+
+    Raises a test exception that should appear in Sentry dashboard.
+    """
+    settings = get_settings()
+
+    if not settings.sentry_debug_enabled:
+        raise HTTPException(
+            status_code=404,
+            detail="Sentry debug endpoint is disabled. Set SENTRY_DEBUG_ENABLED=true to enable.",
+        )
+
+    # Log who triggered the test for audit trail
+    logger.info(f"Sentry test triggered by user {user.id}")
+
+    # Raise a test exception that Sentry will capture
+    raise Exception(
+        f"Sentry test exception triggered by user {user.id} at {datetime.now(UTC).isoformat()}. "
+        "If you see this in Sentry, error tracking is working correctly!"
     )
