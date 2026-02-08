@@ -476,33 +476,7 @@
         pendingDeletion = null;
         deletionTimeout = null;
 
-        try {
-            const response = await fetch(`/api/v1/tasks/${taskId}`, {
-                method: 'DELETE',
-                headers: window.getCSRFHeaders(),
-            });
-
-            if (response.ok) {
-                log.info(`Deleted task ${taskId}`);
-            } else {
-                log.error(`Failed to delete task ${taskId}`);
-                // Restore elements on failure
-                removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
-                    if (parent) {
-                        if (nextSibling && nextSibling.parentNode === parent) {
-                            parent.insertBefore(el, nextSibling);
-                        } else {
-                            parent.appendChild(el);
-                        }
-                        if (dayCalendar) recalculateOverlaps(dayCalendar);
-                    }
-                });
-                if (window.Toast) {
-                    Toast.show('Failed to delete task', { showUndo: false });
-                }
-            }
-        } catch (err) {
-            log.error(`Failed to delete task ${taskId}:`, err);
+        const restoreElements = () => {
             removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                 if (parent) {
                     if (nextSibling && nextSibling.parentNode === parent) {
@@ -513,9 +487,21 @@
                     if (dayCalendar) recalculateOverlaps(dayCalendar);
                 }
             });
-            if (window.Toast) {
-                Toast.show('Failed to delete task', { showUndo: false });
-            }
+        };
+
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+            log.info(`Deleted task ${taskId}`);
+        } catch (error) {
+            log.error(`Failed to delete task ${taskId}:`, error);
+            restoreElements();
+            handleError(error, 'Failed to delete task', {
+                component: 'drag-drop',
+                action: 'executeDeleteNow',
+                retry: () => executeDeleteNow(taskId)
+            });
         }
     }
 
@@ -640,46 +626,40 @@
 
             // Unschedule via API
             try {
-                const response = await fetch(`/api/v1/tasks/${taskId}`, {
+                await safeFetch(`/api/v1/tasks/${taskId}`, {
                     method: 'PUT',
-                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         scheduled_date: null,
                         scheduled_time: null,
                     }),
                 });
 
-                if (response.ok) {
-                    // Recalculate overlaps after removal
-                    if (dayCalendar) recalculateOverlaps(dayCalendar);
-                    // Check if task exists in task list
-                    const taskInList = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-                    if (taskInList) {
-                        // Remove scheduled styling, date, and animate back to position
-                        taskInList.classList.remove('scheduled');
-                        updateTaskScheduledDate(taskInList, null);
-                        moveTaskToUnscheduledSection(taskInList);
-                    } else {
-                        // Task doesn't exist in task list (was DB-scheduled), need to reload
-                        window.location.reload();
-                    }
+                // Recalculate overlaps after removal
+                if (dayCalendar) recalculateOverlaps(dayCalendar);
+                // Check if task exists in task list
+                const taskInList = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+                if (taskInList) {
+                    // Remove scheduled styling, date, and animate back to position
+                    taskInList.classList.remove('scheduled');
+                    updateTaskScheduledDate(taskInList, null);
+                    moveTaskToUnscheduledSection(taskInList);
                 } else {
-                    log.error('Failed to unschedule task');
-                    // Restore element on failure
-                    if (parent) {
-                        parent.appendChild(element);
-                        element.style.visibility = '';
-                    }
-                    if (dayCalendar) recalculateOverlaps(dayCalendar);
+                    // Task doesn't exist in task list (was DB-scheduled), need to reload
+                    window.location.reload();
                 }
-            } catch (err) {
-                log.error('Failed to unschedule task:', err);
+            } catch (error) {
+                log.error('Failed to unschedule task:', error);
                 // Restore element on failure
                 if (parent) {
                     parent.appendChild(element);
                     element.style.visibility = '';
                 }
                 if (dayCalendar) recalculateOverlaps(dayCalendar);
+                handleError(error, 'Failed to unschedule task', {
+                    component: 'drag-drop',
+                    action: 'handleDragToTrash'
+                });
             }
         }
 
@@ -813,16 +793,16 @@
             if (effectiveInstanceId) {
                 // Recurring instance: reschedule via instance API (same-day time change)
                 const scheduledDatetime = `${day}T${scheduledTime}`;
-                response = await fetch(`/api/v1/instances/${effectiveInstanceId}/schedule`, {
+                response = await safeFetch(`/api/v1/instances/${effectiveInstanceId}/schedule`, {
                     method: 'PUT',
-                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ scheduled_datetime: scheduledDatetime }),
                 });
             } else {
                 // Regular task (or cross-day instance drop): update task directly
-                response = await fetch(`/api/v1/tasks/${taskId}`, {
+                response = await safeFetch(`/api/v1/tasks/${taskId}`, {
                     method: 'PUT',
-                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         scheduled_date: scheduledDate,
                         scheduled_time: scheduledTime,
@@ -831,29 +811,21 @@
                 });
             }
 
-            if (response.ok) {
-                log.info(`Scheduled ${effectiveInstanceId ? 'instance ' + effectiveInstanceId : 'task ' + taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
-                // No reload needed - optimistic update is sufficient
-            } else {
-                log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}`);
-                // Remove the optimistic element on failure
-                element.remove();
-                if (original) {
-                    original.classList.remove('scheduled');
-                    moveTaskToUnscheduledSection(original);
-                }
-                recalculateOverlaps(dayCalendar);
-                alert('Failed to schedule task. Please try again.');
-            }
+            log.info(`Scheduled ${effectiveInstanceId ? 'instance ' + effectiveInstanceId : 'task ' + taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
+            // No reload needed - optimistic update is sufficient
         } catch (error) {
             log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}:`, error);
+            // Remove the optimistic element on failure
             element.remove();
             if (original) {
                 original.classList.remove('scheduled');
                 moveTaskToUnscheduledSection(original);
             }
             recalculateOverlaps(dayCalendar);
-            alert('Failed to schedule task. Please try again.');
+            handleError(error, 'Failed to schedule task', {
+                component: 'drag-drop',
+                action: 'handleDropOnCalendarGrid'
+            });
         }
     }
 
@@ -1112,25 +1084,16 @@
 
         // Save to API - scheduled_date only, no scheduled_time
         try {
-            const response = await fetch(`/api/v1/tasks/${taskId}`, {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
                 method: 'PUT',
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     scheduled_date: day,
                     scheduled_time: null,
                 }),
             });
 
-            if (response.ok) {
-                log.info(`Scheduled ${taskId} for ${day} (anytime)`);
-            } else {
-                log.error(`Failed to schedule task ${taskId} to Anytime`);
-                el.remove();
-                if (original) {
-                    original.classList.remove('scheduled');
-                    moveTaskToUnscheduledSection(original);
-                }
-            }
+            log.info(`Scheduled ${taskId} for ${day} (anytime)`);
         } catch (error) {
             log.error(`Failed to schedule task ${taskId} to Anytime:`, error);
             el.remove();
@@ -1138,6 +1101,10 @@
                 original.classList.remove('scheduled');
                 moveTaskToUnscheduledSection(original);
             }
+            handleError(error, 'Failed to schedule task', {
+                component: 'drag-drop',
+                action: 'handleDropOnAnytimeBanner'
+            });
         }
     }
 

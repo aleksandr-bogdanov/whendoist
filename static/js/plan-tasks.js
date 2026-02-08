@@ -1052,37 +1052,37 @@
                     scheduled_time: state.scheduledTime,
                 };
 
-                const response = await fetch(`/api/v1/tasks/${state.taskId}`, {
+                await safeFetch(`/api/v1/tasks/${state.taskId}`, {
                     method: 'PUT',
-                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 });
 
-                if (response.ok) {
-                    // Update UI
-                    const taskEl = document.querySelector(`.task-item[data-task-id="${state.taskId}"]`);
-                    if (taskEl) {
-                        taskEl.classList.remove('scheduled');
-                        // Clear the scheduled date display and data attribute
-                        if (typeof updateTaskScheduledDate === 'function') {
-                            updateTaskScheduledDate(taskEl, state.wasAnytime ? state.scheduledDate : null);
-                        }
-                        // Move task back to unscheduled section with animation
-                        if (!state.wasAnytime && typeof moveTaskToUnscheduledSection === 'function') {
-                            moveTaskToUnscheduledSection(taskEl);
-                        }
+                // Update UI
+                const taskEl = document.querySelector(`.task-item[data-task-id="${state.taskId}"]`);
+                if (taskEl) {
+                    taskEl.classList.remove('scheduled');
+                    // Clear the scheduled date display and data attribute
+                    if (typeof updateTaskScheduledDate === 'function') {
+                        updateTaskScheduledDate(taskEl, state.wasAnytime ? state.scheduledDate : null);
                     }
+                    // Move task back to unscheduled section with animation
+                    if (!state.wasAnytime && typeof moveTaskToUnscheduledSection === 'function') {
+                        moveTaskToUnscheduledSection(taskEl);
+                    }
+                }
 
-                    // If was anytime, re-create anytime element
-                    if (state.wasAnytime && state.scheduledDate) {
-                        // Find the anytime banner for that day and add the task back
-                        // This requires a page refresh for simplicity
-                    }
-                } else {
-                    log.error(`Failed to restore task ${state.taskId}`);
+                // If was anytime, re-create anytime element
+                if (state.wasAnytime && state.scheduledDate) {
+                    // Find the anytime banner for that day and add the task back
+                    // This requires a page refresh for simplicity
                 }
             } catch (error) {
                 log.error(`Failed to undo task ${state.taskId}:`, error);
+                handleError(error, 'Failed to restore task', {
+                    component: 'plan-tasks',
+                    action: 'undoLastPlan'
+                });
             }
         }
 
@@ -1338,29 +1338,26 @@
         // Persist to API
         const scheduledTime = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
         try {
-            const response = await fetch(`/api/v1/tasks/${task.taskId}`, {
+            await safeFetch(`/api/v1/tasks/${task.taskId}`, {
                 method: 'PUT',
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     scheduled_date: day,
                     scheduled_time: scheduledTime,
                 }),
             });
 
-            if (response.ok) {
-                log.info(`Scheduled ${task.taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
-            } else {
-                log.error(`Failed to schedule task ${task.taskId}`);
-                // Remove the optimistic element on failure
-                element.remove();
-                if (originalTask) originalTask.classList.remove('scheduled');
-                if (typeof recalculateOverlaps === 'function') recalculateOverlaps(dayCalendar);
-            }
+            log.info(`Scheduled ${task.taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
         } catch (error) {
             log.error(`Failed to schedule task ${task.taskId}:`, error);
+            // Remove the optimistic element on failure
             element.remove();
             if (originalTask) originalTask.classList.remove('scheduled');
             if (typeof recalculateOverlaps === 'function') recalculateOverlaps(dayCalendar);
+            handleError(error, 'Failed to schedule task', {
+                component: 'plan-tasks',
+                action: 'assignTaskToCalendar'
+            });
         }
     }
 

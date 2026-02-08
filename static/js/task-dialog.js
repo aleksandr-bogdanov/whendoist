@@ -601,18 +601,6 @@
             }
         });
 
-        // Keyboard shortcut "q" for quick add
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'q' && !e.target.matches('input, textarea, select') && !isOpen()) {
-                e.preventDefault();
-                openDialog();
-            }
-            // Escape to close
-            if (e.key === 'Escape' && isOpen()) {
-                closeDialog();
-            }
-        });
-
         // Close button
         backdropEl.querySelector('.modal-close-btn').addEventListener('click', closeDialog);
 
@@ -813,21 +801,23 @@
 
     async function loadDomains() {
         try {
-            const response = await fetch('/api/v1/domains');
-            if (response.ok) {
-                domains = await response.json();
+            const response = await safeFetch('/api/v1/domains');
+            domains = await response.json();
 
-                // Decrypt domain names if encryption is enabled
-                if (Crypto.canCrypto()) {
-                    for (const domain of domains) {
-                        domain.name = await Crypto.decryptField(domain.name);
-                    }
+            // Decrypt domain names if encryption is enabled
+            if (Crypto.canCrypto()) {
+                for (const domain of domains) {
+                    domain.name = await Crypto.decryptField(domain.name);
                 }
-
-                updateDomainSelect();
             }
-        } catch (err) {
-            console.error('Failed to load domains:', err);
+
+            updateDomainSelect();
+        } catch (error) {
+            handleError(error, 'Failed to load domains', {
+                component: 'task-dialog',
+                action: 'loadDomains',
+                retry: loadDomains
+            });
         }
     }
 
@@ -965,10 +955,7 @@
 
     async function loadTask(taskId) {
         try {
-            const response = await fetch(`/api/v1/tasks/${taskId}`);
-            if (!response.ok) {
-                throw new Error('Task not found');
-            }
+            const response = await safeFetch(`/api/v1/tasks/${taskId}`);
             let task = await response.json();
 
             // E2E Encryption: Decrypt task data if needed
@@ -1121,8 +1108,11 @@
             if (task.is_recurring) {
                 fetchPendingPastCount(taskId, batchRow);
             }
-        } catch (err) {
-            console.error('Failed to load task:', err);
+        } catch (error) {
+            handleError(error, 'Failed to load task', {
+                component: 'task-dialog',
+                action: 'loadTask'
+            });
             closeDialog();
         }
     }
@@ -1165,19 +1155,17 @@
             pastDate.setDate(pastDate.getDate() - 365);
             const startDate = pastDate.toISOString().split('T')[0];
 
-            const response = await fetch(`/api/v1/instances?start_date=${startDate}&end_date=${today}&status=pending`);
-            if (response.ok) {
-                const instances = await response.json();
-                // Filter to this task and only dates before today
-                const pastPending = instances.filter(i => i.task_id === taskId && i.instance_date < today);
-                if (pastPending.length > 0) {
-                    const btn = batchRow.querySelector('#btn-batch-complete');
-                    btn.textContent = `Complete past instances (${pastPending.length} pending)`;
-                    batchRow.style.display = '';
-                }
+            const response = await safeFetch(`/api/v1/instances?start_date=${startDate}&end_date=${today}&status=pending`);
+            const instances = await response.json();
+            // Filter to this task and only dates before today
+            const pastPending = instances.filter(i => i.task_id === taskId && i.instance_date < today);
+            if (pastPending.length > 0) {
+                const btn = batchRow.querySelector('#btn-batch-complete');
+                btn.textContent = `Complete past instances (${pastPending.length} pending)`;
+                batchRow.style.display = '';
             }
-        } catch (err) {
-            // Non-critical, just don't show the button
+        } catch (error) {
+            // Non-critical, just don't show the button (silent failure)
         }
     }
 
@@ -1190,25 +1178,26 @@
 
         try {
             const today = new Date().toISOString().split('T')[0];
-            const response = await fetch('/api/v1/instances/batch-complete', {
+            const response = await safeFetch('/api/v1/instances/batch-complete', {
                 method: 'POST',
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     task_id: currentTaskId,
                     before_date: today,
                 }),
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (window.Toast) {
-                    Toast.show(`Completed ${data.completed_count} past instance${data.completed_count !== 1 ? 's' : ''}`, { showUndo: false });
-                }
-                backdropEl.querySelector('#batch-complete-row').style.display = 'none';
+            const data = await response.json();
+            if (window.Toast) {
+                Toast.show(`Completed ${data.completed_count} past instance${data.completed_count !== 1 ? 's' : ''}`, { showUndo: false });
             }
-        } catch (err) {
-            console.error('Failed to batch complete:', err);
-            if (window.Toast) Toast.show('Failed to complete past instances', { showUndo: false });
+            backdropEl.querySelector('#batch-complete-row').style.display = 'none';
+        } catch (error) {
+            handleError(error, 'Failed to complete past instances', {
+                component: 'task-dialog',
+                action: 'handleBatchComplete',
+                retry: handleBatchComplete
+            });
         } finally {
             btn.disabled = false;
         }
@@ -1297,31 +1286,7 @@
             deletionTimeout = null;
         }
 
-        try {
-            const response = await fetch(`/api/v1/tasks/${taskId}`, {
-                method: 'DELETE',
-                headers: window.getCSRFHeaders(),
-            });
-
-            if (!response.ok) {
-                removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
-                    if (parent) {
-                        if (nextSibling && nextSibling.parentNode === parent) {
-                            parent.insertBefore(el, nextSibling);
-                        } else {
-                            parent.appendChild(el);
-                        }
-                        if (dayCalendar && window.recalculateOverlaps) {
-                            window.recalculateOverlaps(dayCalendar);
-                        }
-                    }
-                });
-                if (window.Toast) {
-                    Toast.show('Failed to delete task', { showUndo: false });
-                }
-            }
-        } catch (err) {
-            console.error('Failed to delete task:', err);
+        const restoreElements = () => {
             removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                 if (parent) {
                     if (nextSibling && nextSibling.parentNode === parent) {
@@ -1334,9 +1299,19 @@
                     }
                 }
             });
-            if (window.Toast) {
-                Toast.show('Failed to delete task', { showUndo: false });
-            }
+        };
+
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+        } catch (error) {
+            restoreElements();
+            handleError(error, 'Failed to delete task', {
+                component: 'task-dialog',
+                action: 'executeDeleteNow',
+                retry: () => executeDeleteNow(taskId, removedElements)
+            });
         }
     }
 
@@ -1368,15 +1343,11 @@
                 requestBody.target_date = today.toISOString().split('T')[0];
             }
 
-            const response = await fetch(`/api/v1/tasks/${taskId}/toggle-complete`, {
+            const response = await safeFetch(`/api/v1/tasks/${taskId}/toggle-complete`, {
                 method: 'POST',
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody),
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to toggle completion');
-            }
 
             const data = await response.json();
             const newCompleted = data.completed;
@@ -1417,12 +1388,13 @@
 
             completeBtn.disabled = false;
 
-        } catch (err) {
-            console.error('Failed to toggle completion:', err);
+        } catch (error) {
             completeBtn.disabled = false;
-            if (window.Toast) {
-                Toast.show('Failed to update task', { showUndo: false });
-            }
+            handleError(error, 'Failed to update task', {
+                component: 'task-dialog',
+                action: 'handleComplete',
+                retry: handleComplete
+            });
         }
     }
 
@@ -1471,27 +1443,24 @@
                 data.description = await Crypto.encryptField(data.description);
             }
 
-            const response = await fetch(url, {
+            const response = await safeFetch(url, {
                 method,
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
 
-            if (response.ok) {
-                closeDialog();
-                window.location.reload();
-            } else {
-                const error = await response.json();
-                alert(error.detail || 'Failed to save task');
-                submitBtn.disabled = false;
-                submitBtn.textContent = currentTaskId ? 'Save' : 'Add task';
-            }
-        } catch (err) {
-            console.error('Failed to save task:', err);
-            alert('Failed to save task. Please try again.');
+            closeDialog();
+            window.location.reload();
+        } catch (error) {
             const submitBtn = backdropEl.querySelector('.btn-submit');
             submitBtn.disabled = false;
             submitBtn.textContent = currentTaskId ? 'Save' : 'Add task';
+
+            handleError(error, 'Failed to save task', {
+                component: 'task-dialog',
+                action: 'handleSubmit',
+                retry: () => handleSubmit(e)
+            });
         }
     }
 

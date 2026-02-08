@@ -6,6 +6,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.40.1] - 2026-02-08 — Error Recovery Foundation (WIP)
+
+### Added
+- **Enhanced error-handler.js** — Network status detection (online/offline events), typed error classes (NetworkError, ValidationError, CSRFError, RateLimitError, etc.), global error boundary
+- **safeFetch() enhancements** — Pre-flight network check, automatic CSRF injection, typed error throwing for all HTTP status codes
+- **handleError() improvements** — Recovery actions (retry, refresh), Sentry integration, user-friendly messages
+- **Migrated 17 fetch() calls** — task-dialog.js (7), drag-drop.js (5), task-complete.js (3), plan-tasks.js (2) now use safeFetch() + handleError()
+- **Error handling documentation** — docs/ERROR-HANDLING.md with developer guide, migration patterns, testing scenarios
+
+### Notes
+- **Incomplete** — Toast system needs architectural redesign before error recovery can be production-ready
+- **Known issues** — Offline operations (e.g., adding thoughts) don't show proper feedback; toast timing/stacking needs work
+- **Next steps** — Opus to investigate toast architecture redesign, then revisit error handling with stronger foundation
+
+---
+
 ## [0.40.0] - 2026-02-08 — Production Hardening
 
 ### Changed
