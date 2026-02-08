@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.3] - 2026-02-09 — README Terminology Update
+
+### Changed
+- **README.md** — Updated stale terminology to match app: Executable→Autopilot, Defined→Normal, Exploratory→Brainstorm; P1-P4→High/Mid/Low/Min; Clarity→Mode
+
+---
+
 ## [0.42.2] - 2026-02-08 — Docs cleanup and roadmap update
 
 ### Changed

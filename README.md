@@ -22,7 +22,7 @@ Calendar shows *when* you're busy. Task lists show *what* you need to do. But ne
 
 ## The Solution
 
-Whendoist brings tasks and calendar together. Create tasks with impact and clarity levels, see your Google Calendar events, drag tasks into free time slots, and track your completion progress.
+Whendoist brings tasks and calendar together. Create tasks with impact and mode settings, see your Google Calendar events, drag tasks into free time slots, and track your completion progress.
 
 ---
 
@@ -57,18 +57,18 @@ See the [Deployment Guide](docs/DEPLOYMENT.md) for production setup.
 
 Filter tasks by how much energy they require:
 
-| Clarity | Energy | Use When |
+| Mode | Energy | Use When |
 |---------|--------|----------|
-| Executable | 🧟 Zombie | Clear next action, can do when tired |
-| Defined | ☕ Normal | Know what to do, needs some focus |
-| Exploratory | 🧠 Focus | Needs research or deep thinking |
+| Autopilot | 🧟 Zombie | Mindless work, can do when tired |
+| Normal | ☕ Normal | Know what to do, needs some focus |
+| Brainstorm | 🧠 Focus | Needs research or deep thinking |
 
 ### Task Properties
 
 | Property | Purpose |
 |----------|---------|
-| **Impact** | Priority: P1 (high) → P4 (minimal) |
-| **Clarity** | Energy required: Executable, Defined, Exploratory |
+| **Impact** | Priority: High / Mid / Low / Min |
+| **Mode** | Task mode: Autopilot, Normal, Brainstorm |
 | **Duration** | Time estimate (30m, 2h, etc.) |
 | **Scheduled** | When you plan to work on it |
 | **Due** | Deadline (optional) |
@@ -96,7 +96,7 @@ Your task titles, descriptions, and project names can be encrypted so only you c
 | Encrypted | Not Encrypted |
 |-----------|---------------|
 | Task titles | Dates and times |
-| Task descriptions | Priority, clarity, status |
+| Task descriptions | Priority, mode, status |
 | Project/domain names | Recurrence, duration |
 
 When enabled, we store ciphertext — we cannot read your content. Dates stay unencrypted for calendar/filter functionality.
