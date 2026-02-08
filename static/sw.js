@@ -312,7 +312,7 @@ function createOfflinePage() {
     <div class="offline-container">
         <div class="offline-icon">📡</div>
         <h1>You're offline</h1>
-        <p>Check your connection and try again. Your changes will sync when you're back online.</p>
+        <p>You can view your tasks, but changes require a connection.</p>
         <button onclick="location.reload()">Try Again</button>
     </div>
 </body>

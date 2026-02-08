@@ -238,6 +238,14 @@ class TaskSwipeHandler {
     }
 
     async completeTask(task) {
+        // Check network status before any UI changes
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         const taskId = task.dataset.taskId;
         const isCompleted = task.classList.contains('completed-today') ||
                            task.classList.contains('completed-older');
@@ -280,6 +288,14 @@ class TaskSwipeHandler {
     }
 
     async deleteTask(task) {
+        // Check network status before any UI changes
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         const taskId = task.dataset.taskId;
         const taskTitle = task.querySelector('.task-text')?.textContent || 'Task';
 

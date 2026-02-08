@@ -364,7 +364,7 @@ class NetworkStatus {
         window.addEventListener('online', () => {
             this.isOnline = true;
             document.body.classList.remove('offline');
-            this.showToast('Back online', 'success');
+            // Toast is handled by error-handler.js to avoid duplicates
 
             // Clear API cache in service worker
             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -379,7 +379,7 @@ class NetworkStatus {
         window.addEventListener('offline', () => {
             this.isOnline = false;
             document.body.classList.add('offline');
-            this.showToast('You\'re offline', 'warning');
+            // Toast is handled by error-handler.js to avoid duplicates
 
             // Screen reader announcement
             var announcer = document.getElementById('a11y-announcer');
@@ -388,12 +388,6 @@ class NetworkStatus {
 
         // Set initial state
         document.body.classList.toggle('offline', !this.isOnline);
-    }
-
-    showToast(message, type) {
-        if (window.Toast) {
-            window.Toast.show(message, type, { duration: 3000 });
-        }
     }
 }
 
