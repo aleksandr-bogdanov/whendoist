@@ -122,14 +122,11 @@
         }
 
         // Show toast notification
-        if (window.Toast && typeof Toast.show === 'function') {
+        if (window.Toast && typeof Toast.error === 'function') {
             if (recoveryAction) {
-                Toast.show(message, {
-                    showUndo: true,
-                    onUndo: recoveryAction.callback
-                });
+                Toast.error(message, { action: recoveryAction });
             } else {
-                Toast.show(message, { showUndo: false });
+                Toast.error(message);
             }
         } else {
             // Fallback to console warning if Toast not available
@@ -222,8 +219,8 @@
             isOnline = true;
             offlineToastShown = false;
 
-            if (window.Toast) {
-                Toast.show('Back online', { showUndo: false });
+            if (window.Toast && typeof Toast.success === 'function') {
+                Toast.success('Back online');
             }
 
             // Trigger event for other modules to retry failed requests
@@ -233,8 +230,8 @@
         window.addEventListener('offline', () => {
             isOnline = false;
 
-            if (window.Toast && !offlineToastShown) {
-                Toast.show('No internet connection', { showUndo: false });
+            if (window.Toast && typeof Toast.warning === 'function' && !offlineToastShown) {
+                Toast.warning('No internet connection');
                 offlineToastShown = true;
             }
 
