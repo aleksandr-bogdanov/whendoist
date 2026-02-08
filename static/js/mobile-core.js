@@ -365,6 +365,11 @@ class NetworkStatus {
             this.isOnline = true;
             document.body.classList.remove('offline');
             this.showToast('Back online', 'success');
+
+            // Clear API cache in service worker
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
+            }
         });
 
         window.addEventListener('offline', () => {

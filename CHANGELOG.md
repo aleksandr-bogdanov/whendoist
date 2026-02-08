@@ -6,6 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.4] - 2026-02-09 — Service Worker Cache TTL
+
+### Fixed
+- **API cache staleness** — Cached API responses now expire after 5 minutes; going back online clears the API cache entirely, preventing stale task data after offline→online transitions
+
+### Technical Details
+- API responses stamped with `X-SW-Cached-At` header on cache write
+- Cache reads check TTL (5 min) before serving
+- Main thread sends `CLEAR_API_CACHE` message to SW on `online` event
+- Static asset cache unchanged (still cache-first with background update)
+
+---
+
 ## [0.42.3] - 2026-02-09 — README Terminology Update
 
 ### Changed

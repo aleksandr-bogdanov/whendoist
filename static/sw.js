@@ -159,21 +159,47 @@ async function cacheFirst(request, cacheName) {
 
 /**
  * Network First Strategy
- * Try network, fall back to cache
+ * Try network, fall back to cache (with TTL check)
  */
 async function networkFirst(request, cacheName) {
     try {
         const response = await fetch(request);
         if (response.ok) {
             const cache = await caches.open(cacheName);
-            cache.put(request, response.clone());
+            // Clone response and add timestamp header before caching
+            const responseToCache = response.clone();
+            const timestamp = Date.now().toString();
+            const headers = new Headers(responseToCache.headers);
+            headers.set('X-SW-Cached-At', timestamp);
+
+            const cachedResponse = new Response(responseToCache.body, {
+                status: responseToCache.status,
+                statusText: responseToCache.statusText,
+                headers: headers
+            });
+
+            cache.put(request, cachedResponse);
         }
         return response;
     } catch (err) {
         // Network failed, try cache
         const cached = await caches.match(request);
         if (cached) {
-            return cached;
+            // Check TTL: 5 minutes = 300000ms
+            const cachedAt = cached.headers.get('X-SW-Cached-At');
+            if (cachedAt) {
+                const age = Date.now() - parseInt(cachedAt, 10);
+                const maxAge = 300000; // 5 minutes
+
+                if (age < maxAge) {
+                    return cached;
+                }
+                // Cached response is too old, treat as cache miss
+                console.log('[SW] API cache expired for:', request.url);
+            } else {
+                // No timestamp header, return it anyway (legacy cache entry)
+                return cached;
+            }
         }
 
         // Return offline JSON for API
@@ -314,6 +340,13 @@ self.addEventListener('message', (event) => {
         case 'CLEAR_CACHE':
             caches.keys().then(names => {
                 names.forEach(name => caches.delete(name));
+            });
+            break;
+
+        case 'CLEAR_API_CACHE':
+            // Clear only API cache (for online->offline transitions)
+            caches.delete(API_CACHE).then(() => {
+                console.log('[SW] API cache cleared');
             });
             break;
 
