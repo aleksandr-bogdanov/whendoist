@@ -183,18 +183,6 @@
     hardClose();
   });
 
-  // Keyboard shortcut: N opens new task editor
-  document.addEventListener('keydown', (e) => {
-    const tag = document.activeElement?.tagName;
-    if (e.key.toLowerCase() === 'n' &&
-        !e.ctrlKey && !e.metaKey &&
-        !['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) &&
-        !isOpen()) {
-      const newTaskBtn = document.getElementById('new-task-btn');
-      if (newTaskBtn) newTaskBtn.click();
-    }
-  });
-
   // Handle taskSaved event - close sheet and refresh UI
   document.body.addEventListener('taskSaved', (e) => {
     const d = e.detail || {};

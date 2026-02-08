@@ -63,6 +63,7 @@
           onerror="document.documentElement.classList.add('css-error')">
     <!-- Component system -->
     <link rel="stylesheet" href="/static/css/components/index.css">
+    <link rel="stylesheet" href="/static/css/components/shortcuts.css">
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/css/brand.css">
     <link rel="stylesheet" href="/static/css/mobile.css">
@@ -95,6 +96,7 @@
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3/air-datepicker.js"></script>
     <script src="/static/js/toast.js"></script>
     <script src="/static/js/error-handler.js"></script>
+    <script src="/static/js/shortcuts.js"></script>
     <script src="/static/js/crypto.js"></script>
     <script src="/static/js/passkey.js"></script>
     <!-- Mobile utilities -->
@@ -540,6 +542,62 @@
         document.getElementById('demo-pill-dismiss').addEventListener('click', function() {
             localStorage.setItem('demo-pill-dismissed', '1');
             pill.style.display = 'none';
+        });
+    })();
+    </script>
+    {% endif %}
+
+    {% if user %}
+    <!-- Keyboard shortcuts hint (desktop only, dismissible) -->
+    <div class="shortcuts-hint" id="shortcuts-hint" role="complementary" aria-label="Keyboard shortcuts tip">
+        <span class="shortcuts-hint__text">
+            <kbd>?</kbd> Keyboard shortcuts
+        </span>
+        <button type="button"
+                class="shortcuts-hint__dismiss"
+                id="shortcuts-hint-dismiss"
+                aria-label="Dismiss keyboard shortcuts hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+    <script>
+    (function() {
+        var hint = document.getElementById('shortcuts-hint');
+        if (!hint) return;
+
+        // Don't show on mobile (no keyboard) or if already dismissed
+        var isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        if (isMobile || localStorage.getItem('shortcuts-hint-dismissed')) {
+            hint.remove();
+            return;
+        }
+
+        // Show with entrance animation
+        hint.classList.add('visible');
+
+        // Dismiss button
+        document.getElementById('shortcuts-hint-dismiss').addEventListener('click', function() {
+            hint.classList.add('hiding');
+            localStorage.setItem('shortcuts-hint-dismissed', '1');
+            hint.addEventListener('animationend', function() {
+                hint.remove();
+            });
+        });
+
+        // Also dismiss when user opens shortcuts help (they discovered it)
+        document.addEventListener('keydown', function onKey(e) {
+            if (e.key === '?' && hint.parentNode) {
+                localStorage.setItem('shortcuts-hint-dismissed', '1');
+                hint.classList.add('hiding');
+                hint.addEventListener('animationend', function() {
+                    hint.remove();
+                });
+                document.removeEventListener('keydown', onKey);
+            }
         });
     })();
     </script>
