@@ -241,6 +241,7 @@ See [Performance Guide](PERFORMANCE.md) for current optimizations.
 2. **Test coverage** — Add integration tests for critical workflows
 3. **Documentation** — Complete API docs, deployment runbook
 4. **Logging levels** — Review all INFO/DEBUG usage, reduce noise
+5. **Rate limiting + caching (in-memory)** — Both use in-memory stores; requires Redis before horizontal scaling (see [Deployment Guide](DEPLOYMENT.md#scaling))
 
 ---
 

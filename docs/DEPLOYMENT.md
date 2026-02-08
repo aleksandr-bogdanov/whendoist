@@ -144,15 +144,108 @@ Production logs are JSON-formatted for easy parsing:
 
 ## Scaling
 
-Railway supports horizontal scaling:
+### Current Limitations (Single-Process Deployment)
 
-1. Go to Settings → Scaling
-2. Adjust number of replicas
-3. Railway handles load balancing
+**Rate Limiting:** The application uses [slowapi](https://github.com/laurentS/slowapi) with in-memory storage for rate limiting (see `app/middleware/rate_limit.py`). This works perfectly for single-process deployments (one Railway dyno) but has a critical limitation when scaling horizontally.
+
+**The Problem:** When running multiple replicas/processes, each instance maintains its own in-memory rate limit counters. A user hitting different replicas gets N× the intended rate limit. For example:
+- Intended limit: 10 requests/minute
+- 2 replicas: User can make 20 requests/minute (10 per replica)
+- 3 replicas: User can make 30 requests/minute (10 per replica)
+
+This is a common pitfall with in-memory rate limiting and can undermine security controls on sensitive endpoints.
+
+**Calendar Cache:** Similarly, `app/services/calendar_cache.py` uses in-memory caching with a 5-minute TTL. With multiple processes, cache invalidation won't propagate across instances, leading to stale data and unnecessary Google Calendar API calls.
+
+### When to Migrate
+
+**Before enabling `replicas > 1` on Railway** or before adding a load balancer with multiple backends, you must migrate both rate limiting and caching to Redis.
+
+Current deployment is optimized for single-process operation. Scaling horizontally requires the Redis migration below.
+
+### Redis Migration Guide
+
+Railway offers Redis as an add-on service. Once added, Railway will provide a `REDIS_URL` environment variable.
+
+#### Rate Limiting Migration
+
+slowapi uses the `limits` library under the hood, which supports Redis via storage backends:
+
+```python
+# app/middleware/rate_limit.py
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+# Current (in-memory):
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+
+# Redis-backed (for multi-process):
+import os
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["100/minute"],
+    storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379"),
+)
+```
+
+The `storage_uri` parameter tells slowapi to use Redis instead of in-memory storage. All rate limit counters will be centralized in Redis and shared across all process replicas.
+
+#### Calendar Cache Migration
+
+Replace the in-memory dictionary with a Redis-backed cache:
+
+```python
+# app/services/calendar_cache.py
+
+import redis
+import json
+import os
+
+# Initialize Redis client
+redis_client = redis.from_url(
+    os.getenv("REDIS_URL", "redis://localhost:6379"),
+    decode_responses=True
+)
+
+class CalendarCache:
+    def get(self, user_id, calendar_ids, start_date, end_date):
+        key = self._make_key(user_id, calendar_ids, start_date, end_date)
+        cached = redis_client.get(key)
+        if cached:
+            return json.loads(cached)
+        return None
+
+    def set(self, user_id, calendar_ids, start_date, end_date, events):
+        key = self._make_key(user_id, calendar_ids, start_date, end_date)
+        redis_client.setex(
+            key,
+            300,  # 5 minutes TTL
+            json.dumps(events)
+        )
+```
+
+#### Adding Redis on Railway
+
+1. In your Railway project, click "+ New"
+2. Select "Database" → "Redis"
+3. Railway will automatically inject `REDIS_URL` environment variable
+4. Deploy the code changes above
+5. Verify in logs that Redis connection succeeds
+
+#### Testing
+
+After migration, test that rate limiting works across replicas:
+1. Scale to 2 replicas
+2. Make rapid requests to a rate-limited endpoint
+3. Verify you hit the limit at the intended threshold (not 2×)
+
+### Database Scaling
 
 For database scaling:
 - Upgrade PostgreSQL plan for more connections
 - Consider connection pooling with PgBouncer
+- Current pool settings (2+3) are tuned for single-worker deployment
 
 ## Backups
 

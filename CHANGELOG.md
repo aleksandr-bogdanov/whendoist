@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.6] - 2026-02-09 — Rate Limiting Scaling Documentation
+
+### Added
+- **Scaling section in Deployment Guide** — Documents in-memory rate limiting limitation, Redis migration path, and calendar cache considerations for horizontal scaling
+
+### Changed
+- **V1-ROADMAP.md** — Added rate limiting + caching to technical debt section
+
+---
+
 ## [0.42.5] - 2026-02-09 — Accessibility: Screen Reader Announcements
 
 ### Added
