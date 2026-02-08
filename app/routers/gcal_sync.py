@@ -147,7 +147,7 @@ async def _background_bulk_sync(user_id: int, *, clear_calendar: bool = False) -
                 if stats.get("error"):
                     logger.warning(f"Background bulk sync error for user {user_id}: {stats['error']}")
         except Exception as e:
-            logger.error(f"Background bulk sync failed for user {user_id}: {e}")
+            logger.exception(f"Background bulk sync failed for user {user_id}: {type(e).__name__}: {e}")
         finally:
             _bulk_sync_progress.pop(user_id, None)
             _bulk_sync_cancelled.discard(user_id)
@@ -241,7 +241,7 @@ async def enable_sync(
         async with GoogleCalendarClient(db, google_token) as client:
             calendar_id, created = await client.find_or_create_calendar(GCAL_SYNC_CALENDAR_NAME)
     except Exception as e:
-        logger.error(f"Failed to find/create Whendoist calendar: {e}")
+        logger.exception(f"Failed to find/create Whendoist calendar: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
 
     # If reusing an existing calendar, stale events will be cleared

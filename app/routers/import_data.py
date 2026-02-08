@@ -168,7 +168,7 @@ async def preview_todoist_import(
                 projects=sorted(project_list, key=lambda x: -x["task_count"]),
             )
     except Exception as e:
-        logger.error(f"Todoist preview failed: {e}")
+        logger.exception(f"Todoist preview failed: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 

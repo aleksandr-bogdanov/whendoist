@@ -88,7 +88,7 @@ async def lifespan(app: FastAPI):
             try:
                 deleted = await ChallengeService.cleanup_expired(db)
                 if deleted > 0:
-                    logger.info(f"Cleaned up {deleted} expired WebAuthn challenges")
+                    logger.debug(f"Cleaned up {deleted} expired WebAuthn challenges")
             except Exception as e:
                 if "webauthn_challenges" in str(e).lower():
                     logger.warning("WebAuthn challenges table not found")
@@ -101,7 +101,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"Startup complete ({time.monotonic() - boot_start:.1f}s)")
 
     except Exception as e:
-        logger.error(f"Startup failed: {e}")
+        logger.exception(f"Startup failed: {type(e).__name__}: {e}")
         raise
 
     yield
