@@ -14,10 +14,10 @@
 
     const DURATION_PRESETS = [15, 30, 60, 120, 240];
     const IMPACT_OPTIONS = [
-        { value: 1, label: 'P1', description: 'Life-changing' },
-        { value: 2, label: 'P2', description: 'Useful' },
-        { value: 3, label: 'P3', description: 'Nice to have' },
-        { value: 4, label: 'P4', description: 'Maintenance' },
+        { value: 1, label: 'High', description: 'Life-changing' },
+        { value: 2, label: 'Mid', description: 'Useful' },
+        { value: 3, label: 'Low', description: 'Nice to have' },
+        { value: 4, label: 'Min', description: 'Maintenance' },
     ];
     const CLARITY_OPTIONS = [
         { value: 'autopilot', label: '🧟 Autopilot', description: 'Mindless — can do when tired' },
@@ -241,13 +241,12 @@
                         <div class="ft-left">
                             <div class="domain-dropdown" id="domain-dropdown">
                                 <button type="button" class="domain-dropdown-btn" id="domain-dropdown-btn">
-                                    <span class="domain-dropdown-text">📥 Inbox</span>
+                                    <span class="domain-dropdown-text">Select domain</span>
                                     <svg class="domain-dropdown-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
                                         <path d="M1 5L5 1L9 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 </button>
                                 <div class="domain-dropdown-menu" id="domain-dropdown-menu">
-                                    <button type="button" class="domain-dropdown-item" data-value="">📥 Inbox</button>
                                 </div>
                             </div>
                             <input type="hidden" name="domain_id" value="">
@@ -834,13 +833,20 @@
 
     function updateDomainSelect() {
         const menu = backdropEl.querySelector('#domain-dropdown-menu');
-        menu.innerHTML = '<button type="button" class="domain-dropdown-item" data-value="">📥 Inbox</button>' +
-            domains.map(d => `<button type="button" class="domain-dropdown-item" data-value="${d.id}">${escapeHtml(d.icon) || '📁'} ${escapeHtml(d.name)}</button>`).join('');
+        menu.innerHTML = domains.map(d => `<button type="button" class="domain-dropdown-item" data-value="${d.id}">${escapeHtml(d.icon) || '📁'} ${escapeHtml(d.name)}</button>`).join('');
 
         // Re-attach click handlers
         menu.querySelectorAll('.domain-dropdown-item').forEach(item => {
             item.addEventListener('click', () => selectDomain(item.dataset.value, item.textContent));
         });
+    }
+
+    function getDefaultDomain() {
+        if (domains.length > 0) {
+            const d = domains[0];
+            return { value: String(d.id), text: `${d.icon || '📁'} ${d.name}` };
+        }
+        return { value: '', text: 'Select domain' };
     }
 
     function selectDomain(value, text) {
@@ -914,12 +920,14 @@
                 backdropEl.querySelector('.domain-dropdown-text').textContent =
                     `${domain.icon || '📁'} ${domain.name}`;
             } else {
-                backdropEl.querySelector('[name="domain_id"]').value = '';
-                backdropEl.querySelector('.domain-dropdown-text').textContent = '📥 Inbox';
+                const def = getDefaultDomain();
+                backdropEl.querySelector('[name="domain_id"]').value = def.value;
+                backdropEl.querySelector('.domain-dropdown-text').textContent = def.text;
             }
-        } else {
-            backdropEl.querySelector('[name="domain_id"]').value = '';
-            backdropEl.querySelector('.domain-dropdown-text').textContent = '📥 Inbox';
+        } else if (!taskId) {
+            const def = getDefaultDomain();
+            backdropEl.querySelector('[name="domain_id"]').value = def.value;
+            backdropEl.querySelector('.domain-dropdown-text').textContent = def.text;
         }
         closeDomainDropdown();
 
@@ -1002,7 +1010,7 @@
                     backdropEl.querySelector('.domain-dropdown-text').textContent = `${domain.icon || '📁'} ${domain.name}`;
                 }
             } else {
-                backdropEl.querySelector('.domain-dropdown-text').textContent = '📥 Inbox';
+                backdropEl.querySelector('.domain-dropdown-text').textContent = '💭 Thoughts';
             }
 
             // Update duration buttons

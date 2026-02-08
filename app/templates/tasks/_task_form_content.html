@@ -22,11 +22,10 @@
   <span class="field-error">{{ errors.title }}</span>
   {% endif %}
 
-  <select name="domain_id" class="domain-select">
-    <option value="">Inbox</option>
+  <select name="domain_id" class="domain-select" required>
     {% for domain in domains %}
     <option value="{{ domain.id }}"
-            {% if (task and task.domain_id == domain.id) or (not task and prefill_domain_id == domain.id) %}selected{% endif %}>
+            {% if (task and task.domain_id == domain.id) or (not task and prefill_domain_id == domain.id) %}selected{% elif not task and not prefill_domain_id and loop.first %}selected{% endif %}>
       {{ domain.icon or '' }} {{ domain.name }}
     </option>
     {% endfor %}
@@ -43,10 +42,10 @@
   <label class="section-label">IMPACT</label>
   <div class="impact-pills">
     {% set current_impact = task.impact if task else 4 %}
-    <button type="button" class="impact-pill{% if current_impact == 1 %} active{% endif %}" data-impact="1" title="Life-changing">P1</button>
-    <button type="button" class="impact-pill{% if current_impact == 2 %} active{% endif %}" data-impact="2" title="Useful">P2</button>
-    <button type="button" class="impact-pill{% if current_impact == 3 %} active{% endif %}" data-impact="3" title="Nice to have">P3</button>
-    <button type="button" class="impact-pill{% if current_impact == 4 %} active{% endif %}" data-impact="4" title="Maintenance">P4</button>
+    <button type="button" class="impact-pill{% if current_impact == 1 %} active{% endif %}" data-impact="1" title="Life-changing">High</button>
+    <button type="button" class="impact-pill{% if current_impact == 2 %} active{% endif %}" data-impact="2" title="Useful">Mid</button>
+    <button type="button" class="impact-pill{% if current_impact == 3 %} active{% endif %}" data-impact="3" title="Nice to have">Low</button>
+    <button type="button" class="impact-pill{% if current_impact == 4 %} active{% endif %}" data-impact="4" title="Maintenance">Min</button>
   </div>
   <input type="hidden" name="impact" value="{{ current_impact }}">
 </div>

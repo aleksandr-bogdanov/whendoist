@@ -20,9 +20,9 @@
     --content-padding: 3rem;
 
     /* Task row column layout */
-    --col-duration: 68px;
-    --col-impact: 56px;
-    --col-clarity: 80px;
+    --col-duration: 48px;
+    --col-impact: 44px;
+    --col-clarity: 68px;
     --col-actions: 28px;
     --col-gap: 6px;
     --rail-w: 2px;

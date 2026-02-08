@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mode Column V3 — First Meta Column, Blank for Normal</title>
+<style>
+  :root {
+    --autopilot-color: #5b7ee5;
+    --normal-color: #8b5cf6;
+    --brainstorm-color: #d946a8;
+    --text-primary: #0f172a;
+    --text-secondary: rgba(15, 23, 42, 0.55);
+    --text-muted: rgba(15, 23, 42, 0.35);
+    --impact-p1: #C9505A;
+    --impact-p2: #B8860B;
+    --impact-p3: #1A9160;
+    --impact-p4: #6B7385;
+    --surface: #fff;
+    --border: rgba(15, 23, 42, 0.08);
+    --rail-w: 2px;
+    --col-mode: 68px;
+    --col-dur: 48px;
+    --col-impact: 44px;
+    --col-actions: 24px;
+    --col-gap: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f0f7; padding: 32px; color: var(--text-primary); }
+
+  h1 { font-size: 1.1rem; margin-bottom: 4px; }
+  h2 { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin: 32px 0 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .subtitle { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+  .option-desc { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5; }
+
+  .card { background: var(--surface); border-radius: 12px; padding: 20px 16px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+
+  /* ===================================================================
+     Grid: [rail] [1fr content] [MODE] [DUR] [IMPACT] [actions]
+     MODE is first meta column. Blank when normal.
+     =================================================================== */
+
+  .task-row {
+    display: grid;
+    grid-template-columns: var(--rail-w) 1fr var(--col-mode) var(--col-dur) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+    min-height: 36px;
+  }
+  .task-row:last-child { border-bottom: none; }
+
+  .rail { width: var(--rail-w); height: 100%; border-radius: 1px; }
+  .rail-high { background: var(--impact-p1); }
+  .rail-mid { background: var(--impact-p2); }
+  .rail-low { background: var(--impact-p3); }
+  .rail-min { background: var(--impact-p4); }
+
+  .task-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    padding-left: 2px;
+  }
+
+  .checkbox { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(15,23,42,0.2); }
+  .check-done { flex-shrink: 0; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #1A9160; }
+
+  .task-name {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .task-name.done { color: var(--text-secondary); }
+
+  .task-date {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .recurring-icon { font-size: 0.6rem; margin-right: 1px; color: var(--text-muted); }
+
+  /* Mode: first meta column */
+  .meta-mode {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .meta-mode.autopilot { color: var(--autopilot-color); }
+  .meta-mode.brainstorm { color: var(--brainstorm-color); }
+
+  .meta-dur { color: var(--text-secondary); font-size: 0.7rem; text-align: center; }
+  .meta-impact { font-size: 0.65rem; font-weight: 600; text-align: center; }
+  .meta-impact.high { color: var(--impact-p1); }
+  .meta-impact.mid { color: var(--impact-p2); }
+  .meta-impact.low { color: var(--impact-p3); }
+  .meta-impact.min { color: var(--impact-p4); }
+
+  /* Column header row */
+  .col-header {
+    display: grid;
+    grid-template-columns: var(--rail-w) 1fr var(--col-mode) var(--col-dur) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .col-header span {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* Domain header with gray pill */
+  .domain-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 0 10px 10px;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .chevron { font-size: 0.5rem; color: var(--text-muted); }
+  .count-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.06);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    line-height: 1;
+  }
+
+  /* Section separator */
+  .section-sep {
+    display: grid;
+    grid-template-columns: var(--rail-w) 1fr var(--col-mode) var(--col-dur) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 8px 0;
+    margin-top: 8px;
+  }
+  .section-sep-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+  .section-count { font-size: 0.55rem; font-weight: 500; color: var(--text-muted); opacity: 0.7; }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+  .sep-col { font-size: 0.55rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; opacity: 0.7; }
+
+  .gradient-line {
+    height: 2px;
+    background: linear-gradient(90deg, var(--autopilot-color), var(--normal-color), var(--brainstorm-color));
+    opacity: 0.35;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Mode Column V3 — First Meta Column, Blank for Normal</h1>
+<p class="subtitle">
+  Column order: <code>[rail] [task name] [<strong>MODE</strong>] [DUR] [IMPACT] [actions]</code><br>
+  Mode is first. Normal = blank (no dash). Autopilot/Brainstorm show colored text. Columns tightened.
+</p>
+
+<!-- ======= MAIN TASKS ======= -->
+<h2>Main Task List</h2>
+<div class="card">
+  <div class="gradient-line"></div>
+  <div class="col-header">
+    <span></span>
+    <span></span>
+    <span>Mode</span>
+    <span>Dur</span>
+    <span>Impact</span>
+    <span></span>
+  </div>
+
+  <div class="domain-header"><span class="chevron">▾</span> Leisure <span class="count-pill">5</span></div>
+
+  <div class="task-row">
+    <span class="rail rail-low"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Поискать, где в РФ / Германии делают онкоскрининг, что э...</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">1h</span>
+    <span class="meta-impact low">Low</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-low"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Почистить sublime тексты на компе</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">1h</span>
+    <span class="meta-impact low">Low</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-low"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Почистить вкладки на телефоне</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">2h</span>
+    <span class="meta-impact low">Low</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-min"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Экспортнуть YAZIO в Claude и сделать анализ</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">2h</span>
+    <span class="meta-impact min">Min</span>
+    <span></span>
+  </div>
+
+  <div class="domain-header"><span class="chevron">▾</span> Music Hustle <span class="count-pill">14</span></div>
+
+  <div class="task-row">
+    <span class="rail rail-high"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Разобраться с tribute</span>
+    </div>
+    <span class="meta-mode autopilot">Autopilot</span>
+    <span class="meta-dur">30m</span>
+    <span class="meta-impact high">High</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-high"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Отправить промо DEKADANCE</span>
+    </div>
+    <span class="meta-mode autopilot">Autopilot</span>
+    <span class="meta-dur">30m</span>
+    <span class="meta-impact high">High</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-low"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Разобрать дистру</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">1h</span>
+    <span class="meta-impact low">Low</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-high"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Пинговать Максима по правкам КЖЗК</span>
+    </div>
+    <span class="meta-mode brainstorm">Brainstorm</span>
+    <span class="meta-dur">30m</span>
+    <span class="meta-impact high">High</span>
+    <span></span>
+  </div>
+</div>
+
+<!-- ======= SCHEDULED SECTION in main view ======= -->
+<h2>Scheduled Section (in Main View)</h2>
+<p class="option-desc">Date stays inside the 1fr content area (right of task name). Mode is a grid column.</p>
+<div class="card">
+  <div class="section-sep">
+    <span></span>
+    <div class="section-sep-inner">
+      <span class="section-label">Scheduled</span>
+      <span class="section-count">14</span>
+      <span class="section-line"></span>
+    </div>
+    <span class="sep-col">Mode</span>
+    <span class="sep-col">Dur</span>
+    <span class="sep-col">Impact</span>
+    <span></span>
+  </div>
+
+  <div class="domain-header"><span class="chevron">▾</span> Вольер <span class="count-pill">6</span></div>
+
+  <div class="task-row">
+    <span class="rail rail-high"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Оплатить сим карты тинькофф</span>
+      <span class="task-date"><span class="recurring-icon">↻</span> Mar 01</span>
+    </div>
+    <span class="meta-mode autopilot">Autopilot</span>
+    <span class="meta-dur">30m</span>
+    <span class="meta-impact high">High</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-high"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Отменить ChatGPT подписку и перенести важно...</span>
+      <span class="task-date">Mar 01</span>
+    </div>
+    <span class="meta-mode autopilot">Autopilot</span>
+    <span class="meta-dur">30m</span>
+    <span class="meta-impact high">High</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-low"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Переустановить Sideloadly приложения</span>
+      <span class="task-date"><span class="recurring-icon">↻</span> Feb 07</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">30m</span>
+    <span class="meta-impact low">Low</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail rail-low"></span>
+    <div class="task-content">
+      <span class="checkbox"></span>
+      <span class="task-name">Anna: Call about briefkasten</span>
+      <span class="task-date">Feb 09</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">30m</span>
+    <span class="meta-impact low">Low</span>
+    <span></span>
+  </div>
+</div>
+
+<!-- ======= COMPLETED SECTION ======= -->
+<h2>Completed Section</h2>
+<p class="option-desc">No strikethrough. Muted text + green check. Mode column blank for normal tasks.</p>
+<div class="card">
+  <div class="section-sep">
+    <span></span>
+    <div class="section-sep-inner">
+      <span class="section-label">Completed</span>
+      <span class="section-count">4</span>
+      <span class="section-line"></span>
+    </div>
+    <span></span>
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+
+  <div class="task-row">
+    <span class="rail" style="background: var(--impact-p2);"></span>
+    <div class="task-content">
+      <span class="check-done">&#10003;</span>
+      <span class="task-name done">Отсортировать рилзы на рабочем столе</span>
+    </div>
+    <span class="meta-mode autopilot">Autopilot</span>
+    <span class="meta-dur">3h</span>
+    <span class="meta-impact mid">Mid</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail" style="background: var(--impact-p3);"></span>
+    <div class="task-content">
+      <span class="check-done">&#10003;</span>
+      <span class="task-name done">Ждать когда повторно снимут Rundfunk</span>
+      <span class="task-date">Feb 25</span>
+    </div>
+    <span class="meta-mode autopilot">Autopilot</span>
+    <span class="meta-dur">30m</span>
+    <span class="meta-impact low">Low</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail" style="background: var(--impact-p2);"></span>
+    <div class="task-content">
+      <span class="check-done">&#10003;</span>
+      <span class="task-name done">Отправить заявку на гражданство</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">—</span>
+    <span class="meta-impact mid">Mid</span>
+    <span></span>
+  </div>
+  <div class="task-row">
+    <span class="rail" style="background: var(--impact-p1);"></span>
+    <div class="task-content">
+      <span class="check-done">&#10003;</span>
+      <span class="task-name done">План по изучению немецкого</span>
+    </div>
+    <span class="meta-mode"></span>
+    <span class="meta-dur">—</span>
+    <span class="meta-impact high">High</span>
+    <span></span>
+  </div>
+</div>
+
+<!-- ======= HEADER SORT BUTTONS ======= -->
+<h2>Header Sort Bar (how it looks)</h2>
+<p class="option-desc">Sort buttons match the new column order: MODE | DUR | IMPACT. "Mode" replaces where "Duration" used to be.</p>
+<div class="card" style="padding: 10px 16px;">
+  <div style="display:grid; grid-template-columns: var(--rail-w) 1fr var(--col-mode) var(--col-dur) var(--col-impact) var(--col-actions); column-gap: var(--col-gap); align-items: center;">
+    <span></span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:0.65rem;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Energy</span>
+      <span style="display:inline-flex;gap:4px;">
+        <span style="font-size:0.85rem;">🧟</span>
+        <span style="font-size:0.85rem;padding:2px 4px;border-radius:4px;background:rgba(99,102,241,0.1);">☕</span>
+        <span style="font-size:0.85rem;">🧠</span>
+      </span>
+      <span style="display:flex;gap:3px;margin-left:4px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--autopilot-color);"></span>
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--normal-color);"></span>
+      </span>
+    </div>
+    <span style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);text-align:center;cursor:pointer;">Mode ↑</span>
+    <span style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);text-align:center;cursor:pointer;">Dur</span>
+    <span style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);text-align:center;cursor:pointer;">Impact</span>
+    <span style="font-size:0.6rem;text-align:center;color:var(--text-muted);cursor:pointer;">⚙</span>
+  </div>
+</div>
+
+</body>
+</html>

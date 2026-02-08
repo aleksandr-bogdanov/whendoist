@@ -41,10 +41,10 @@ class TestImpact:
 
     def test_labels(self):
         """Impact has human-readable labels."""
-        assert Impact.P1.label == "Critical"
-        assert Impact.P2.label == "High"
-        assert Impact.P3.label == "Medium"
-        assert Impact.P4.label == "Low"
+        assert Impact.P1.label == "High"
+        assert Impact.P2.label == "Mid"
+        assert Impact.P3.label == "Low"
+        assert Impact.P4.label == "Min"
 
     def test_iteration_order(self):
         """Impact enum iterates in priority order."""
