@@ -115,6 +115,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Error stopping background tasks: {e}")
 
+    # Clean up database connections
+    from app.database import engine
+
+    await engine.dispose()
+
 
 # Determine if running in development (for conditional docs exposure)
 _is_dev = settings.base_url.startswith("http://localhost") or settings.base_url.startswith("http://127.0.0.1")

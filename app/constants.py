@@ -141,6 +141,9 @@ TITLE_TRUNCATE_LENGTH = 40  # Max chars for truncated task titles in stats
 
 INSTANCE_RETENTION_DAYS = 90  # Days to keep completed/skipped instances
 
+# Materialization timeout (5 minutes for runaway materialization cycles)
+MATERIALIZATION_TIMEOUT_SECONDS = 300
+
 
 # =============================================================================
 # Timezone Constants
