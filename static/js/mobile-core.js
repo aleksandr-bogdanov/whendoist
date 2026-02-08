@@ -370,12 +370,20 @@ class NetworkStatus {
             if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
             }
+
+            // Screen reader announcement
+            var announcer = document.getElementById('a11y-announcer');
+            if (announcer) announcer.textContent = 'Back online. Your connection has been restored.';
         });
 
         window.addEventListener('offline', () => {
             this.isOnline = false;
             document.body.classList.add('offline');
             this.showToast('You\'re offline', 'warning');
+
+            // Screen reader announcement
+            var announcer = document.getElementById('a11y-announcer');
+            if (announcer) announcer.textContent = 'You are offline. Changes will not be saved.';
         });
 
         // Set initial state
