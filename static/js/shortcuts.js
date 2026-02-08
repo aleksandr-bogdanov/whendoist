@@ -6,12 +6,146 @@
  * - Context-aware handlers (global vs page-specific)
  * - Help modal with shortcut reference
  * - Tooltip integration
+ * - Task navigation and actions (j/k/c/e/d)
  *
  * @module Shortcuts
- * @version 0.41.0
+ * @version 0.42.1
  */
 (function() {
     'use strict';
+
+    // ==========================================================================
+    // Task Selection State
+    // ==========================================================================
+
+    let selectedTaskEl = null;
+
+    function getVisibleTasks() {
+        const tasks = document.querySelectorAll('.task-item:not([hidden])');
+        // Filter out tasks hidden by energy filter (display: none)
+        return Array.from(tasks).filter(t => t.offsetParent !== null);
+    }
+
+    function selectTask(taskEl) {
+        // Clear previous selection
+        if (selectedTaskEl) {
+            selectedTaskEl.classList.remove('is-selected');
+        }
+
+        selectedTaskEl = taskEl;
+
+        if (taskEl) {
+            taskEl.classList.add('is-selected');
+            // Scroll into view if needed
+            taskEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }
+
+    function selectNextTask() {
+        const tasks = getVisibleTasks();
+        if (tasks.length === 0) return;
+
+        if (!selectedTaskEl || !document.body.contains(selectedTaskEl)) {
+            // Nothing selected — select first
+            selectTask(tasks[0]);
+            return;
+        }
+
+        const idx = tasks.indexOf(selectedTaskEl);
+        if (idx < tasks.length - 1) {
+            selectTask(tasks[idx + 1]);
+        }
+    }
+
+    function selectPreviousTask() {
+        const tasks = getVisibleTasks();
+        if (tasks.length === 0) return;
+
+        if (!selectedTaskEl || !document.body.contains(selectedTaskEl)) {
+            // Nothing selected — select last
+            selectTask(tasks[tasks.length - 1]);
+            return;
+        }
+
+        const idx = tasks.indexOf(selectedTaskEl);
+        if (idx > 0) {
+            selectTask(tasks[idx - 1]);
+        }
+    }
+
+    function completeSelectedTask() {
+        if (!selectedTaskEl) return;
+
+        // Simulate click on the completion gutter (TaskComplete handles the rest)
+        const gutter = selectedTaskEl.querySelector('.complete-gutter');
+        if (gutter) {
+            gutter.click();
+        }
+    }
+
+    function editSelectedTask() {
+        if (!selectedTaskEl) return;
+
+        const taskId = selectedTaskEl.dataset.taskId;
+        if (taskId && window.TaskDialog && typeof TaskDialog.open === 'function') {
+            TaskDialog.open(taskId);
+        }
+    }
+
+    function deleteSelectedTask() {
+        if (!selectedTaskEl) return;
+
+        const taskId = selectedTaskEl.dataset.taskId;
+        const taskTitle = selectedTaskEl.querySelector('.task-text')?.textContent || 'Task';
+        if (!taskId) return;
+
+        // Use safeFetch for the delete with undo toast
+        const taskEl = selectedTaskEl;
+
+        // Move selection to next task before removing
+        const tasks = getVisibleTasks();
+        const idx = tasks.indexOf(taskEl);
+        const nextTask = tasks[idx + 1] || tasks[idx - 1] || null;
+
+        // Animate out
+        taskEl.style.transition = 'opacity 0.2s, transform 0.2s';
+        taskEl.style.opacity = '0';
+        taskEl.style.transform = 'translateX(20px)';
+
+        selectTask(nextTask);
+
+        // Delete after animation
+        setTimeout(async () => {
+            try {
+                await safeFetch(`/api/v1/tasks/${taskId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                taskEl.remove();
+
+                if (window.Toast) {
+                    Toast.info(`Deleted "${taskTitle}"`, { duration: 5000 });
+                }
+            } catch (err) {
+                // Restore on failure
+                taskEl.style.opacity = '';
+                taskEl.style.transform = '';
+                selectTask(taskEl);
+                handleError(err, 'Failed to delete task', {
+                    component: 'shortcuts',
+                    action: 'deleteSelectedTask'
+                });
+            }
+        }, 200);
+    }
+
+    // Clear selection when task list refreshes (HTMX swap)
+    document.body.addEventListener('htmx:afterSwap', (e) => {
+        if (e.detail.target?.id === 'task-list-scroll') {
+            selectedTaskEl = null;
+        }
+    });
 
     // ==========================================================================
     // Shortcut Registry
@@ -53,16 +187,61 @@
                 description: 'Close dialog/panel',
                 category: 'Navigation',
                 handler: (e) => {
-                    // Let individual modules handle their own Escape logic
-                    // This is just for documentation
-                }
+                    // Clear task selection if no dialog is open
+                    if (selectedTaskEl) {
+                        selectTask(null);
+                    }
+                    // Let individual modules handle their own Escape logic too
+                },
+                preventDefault: false
             }
         ],
 
-        // Page-specific shortcuts (only on certain pages)
+        // Task list shortcuts (only on dashboard/tasks page)
         tasks: [
-            // Future: j/k for next/prev task
-            // Future: c for complete, d for delete, e for edit
+            {
+                key: 'j',
+                description: 'Next task',
+                category: 'Navigation',
+                excludeInputs: true,
+                handler: () => selectNextTask()
+            },
+            {
+                key: 'k',
+                description: 'Previous task',
+                category: 'Navigation',
+                excludeInputs: true,
+                handler: () => selectPreviousTask()
+            },
+            {
+                key: 'c',
+                description: 'Complete selected task',
+                category: 'Actions',
+                excludeInputs: true,
+                handler: () => completeSelectedTask()
+            },
+            {
+                key: 'e',
+                description: 'Edit selected task',
+                category: 'Actions',
+                excludeInputs: true,
+                handler: () => editSelectedTask()
+            },
+            {
+                key: 'x',
+                description: 'Delete selected task',
+                category: 'Actions',
+                excludeInputs: true,
+                handler: () => deleteSelectedTask()
+            },
+            {
+                key: 'Enter',
+                description: 'Edit selected task',
+                category: 'Actions',
+                excludeInputs: true,
+                handler: () => editSelectedTask(),
+                showInHelp: false
+            }
         ],
 
         calendar: [
@@ -83,6 +262,11 @@
     // ==========================================================================
 
     function handleKeyDown(event) {
+        // Don't handle shortcuts when help modal is open (except Escape)
+        if (helpModal && helpModal.classList.contains('visible') && event.key !== 'Escape') {
+            return;
+        }
+
         // Determine if we're in an input field
         const inInput = event.target.matches('input, textarea, select, [contenteditable="true"]');
 
@@ -177,7 +361,7 @@
         const allShortcuts = [
             ...(shortcuts.global || []),
             ...(shortcuts[currentContext] || [])
-        ];
+        ].filter(s => s.showInHelp !== false);
 
         // Group by category
         const categories = {};
