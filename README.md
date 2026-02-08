@@ -184,6 +184,7 @@ just fmt      # Format code
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
 | [Task List Header Redesign](docs/TASK-LIST-HEADER-REDESIGN.md) | Header restructure, clarity naming revamp, options panel simplification |
+| [Toast System](docs/TOAST-SYSTEM.md) | Typed notifications with queuing, actions, and backward compatibility |
 | **Product & Roadmap** | |
 | [Product Vision](docs/PRODUCT-VISION.md) | Strategic positioning, user archetypes, mobile UX |
 | [v1.0 Roadmap](docs/V1-ROADMAP.md) | Path to production-ready release, Honeycomb profiling plan |

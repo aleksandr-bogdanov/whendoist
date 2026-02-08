@@ -48,44 +48,45 @@
 /* Toast container (positioned fixed) */
 .toast-container {
     position: fixed;
-    bottom: var(--space-6);
-    left: var(--space-6);
-    z-index: var(--z-toast);
+    bottom: 18px;
+    left: 24px;
+    z-index: 1100;  /* Above wizard (z-index: 1000) */
+    pointer-events: none;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: 8px;
 }
 
 /* Toast base */
 .toast {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    background: var(--glass-bg-strong);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-elevated);
-    min-width: 280px;
-    max-width: 400px;
-    animation: toastIn var(--duration-slow) var(--ease-out);
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    max-width: 440px;
+    padding: 8px 10px !important;
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.90) !important;
+    color: var(--text, #0F1222) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
 }
 
-@keyframes toastIn {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .toast.is-exiting {
-    animation: toastOut var(--duration-normal) var(--ease-default);
+    animation: toastOut 0.2s ease;
 }
 
 @keyframes toastOut {
@@ -95,40 +96,119 @@
     }
 }
 
-/* Toast variants */
-.toast-success .toast-icon { color: var(--primary); }
-.toast-error .toast-icon { color: var(--red-500); }
-.toast-warning .toast-icon { color: var(--amber-600); }
-.toast-info .toast-icon { color: var(--blue-500); }
-
-/* Toast content */
-.toast-message {
-    flex: 1;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-/* Toast actions */
-.toast-action {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--primary);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    cursor: pointer;
-}
-
-.toast-dismiss {
-    width: 20px;
-    height: 20px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
+/* Toast icon */
+.toast-icon {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Toast type variants */
+.toast-success .toast-icon { color: var(--primary, #6D5EF6); }
+.toast-error .toast-icon { color: #EF4444; }
+.toast-warning .toast-icon { color: #F59E0B; }
+.toast-info .toast-icon { color: #3B82F6; }
+
+/* Toast message */
+.toast-message {
+    flex: 1;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: rgba(15, 23, 42, 0.78) !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Toast actions container */
+.toast-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+}
+
+/* Toast action button (generic, replaces toast-undo) */
+.toast-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 6px 9px !important;
+    background: rgba(109, 94, 246, 0.10) !important;
+    border: 1px solid rgba(109, 94, 246, 0.18) !important;
+    border-radius: 10px !important;
+    color: #4C3EF0 !important;
+    font-size: 0.6875rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.02em !important;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin: 0 !important;
+    line-height: 1 !important;
+}
+
+.toast-action:hover {
+    background: rgba(109, 94, 246, 0.16) !important;
+    border-color: rgba(109, 94, 246, 0.28) !important;
+}
+
+/* Toast dismiss button */
+.toast-dismiss {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    color: rgba(15, 23, 42, 0.45) !important;
+    font-size: 0.875rem !important;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.toast-dismiss:hover {
+    background: rgba(15, 23, 42, 0.04) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    color: rgba(15, 23, 42, 0.70) !important;
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] .toast {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border-color: rgba(148, 163, 184, 0.15) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .toast-message {
+    color: rgba(241, 245, 249, 0.85) !important;
+}
+
+[data-theme="dark"] .toast-dismiss {
+    color: rgba(148, 163, 184, 0.60) !important;
+}
+
+[data-theme="dark"] .toast-dismiss:hover {
+    background: rgba(148, 163, 184, 0.10) !important;
+    border-color: rgba(148, 163, 184, 0.20) !important;
+    color: rgba(241, 245, 249, 0.90) !important;
 }
 
 /* ===== Additional Animation Keyframes ===== */

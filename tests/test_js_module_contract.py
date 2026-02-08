@@ -282,9 +282,41 @@ class TestToastModuleExportsAPI:
         """Must export hide function."""
         assert re.search(r"return\s*\{[^}]*hide", toast_js, re.DOTALL)
 
+    def test_exports_clear_function(self, toast_js: str):
+        """Must export clear function for clearing all toasts."""
+        assert re.search(r"return\s*\{[^}]*clear", toast_js, re.DOTALL)
+
+    def test_exports_success_function(self, toast_js: str):
+        """Must export success convenience method."""
+        assert re.search(r"return\s*\{[^}]*success", toast_js, re.DOTALL)
+
+    def test_exports_error_function(self, toast_js: str):
+        """Must export error convenience method."""
+        assert re.search(r"return\s*\{[^}]*error", toast_js, re.DOTALL)
+
+    def test_exports_warning_function(self, toast_js: str):
+        """Must export warning convenience method."""
+        assert re.search(r"return\s*\{[^}]*warning", toast_js, re.DOTALL)
+
+    def test_exports_info_function(self, toast_js: str):
+        """Must export info convenience method."""
+        assert re.search(r"return\s*\{[^}]*info", toast_js, re.DOTALL)
+
     def test_supports_undo_callback(self, toast_js: str):
-        """Must support onUndo callback option."""
+        """Must support onUndo callback option for backward compatibility."""
         assert "onUndo" in toast_js
+
+    def test_supports_type_parameter(self, toast_js: str):
+        """Must support type parameter for toast variants."""
+        assert "type:" in toast_js or "toast.type" in toast_js
+
+    def test_has_toast_queue(self, toast_js: str):
+        """Must implement queue for multiple toasts."""
+        assert "queue" in toast_js.lower()
+
+    def test_has_type_icons(self, toast_js: str):
+        """Must define icons for each toast type."""
+        assert "ICONS" in toast_js or "icons" in toast_js
 
 
 class TestThemeModuleContract:
@@ -446,3 +478,48 @@ class TestTaskCompleteModule:
     def test_calls_api(self, complete_js: str):
         """Must call backend API to persist completion."""
         assert "fetch" in complete_js or "api" in complete_js.lower()
+
+
+class TestShortcutsModule:
+    """Verify shortcuts.js exports centralized keyboard shortcut API."""
+
+    @pytest.fixture
+    def shortcuts_js(self) -> str:
+        return (JS_DIR / "shortcuts.js").read_text()
+
+    def test_exports_window_shortcuts_object(self, shortcuts_js: str):
+        """Shortcuts must be exposed on window object."""
+        assert "window.Shortcuts" in shortcuts_js
+
+    def test_exports_register(self, shortcuts_js: str):
+        """Must export register for adding shortcuts dynamically."""
+        assert re.search(r"register:", shortcuts_js) or re.search(r"register\s*:", shortcuts_js)
+
+    def test_exports_set_context(self, shortcuts_js: str):
+        """Must export setContext for page-specific shortcuts."""
+        # Check for both object property syntax and shorthand
+        assert "setContext" in shortcuts_js and "window.Shortcuts" in shortcuts_js
+
+    def test_exports_open_help(self, shortcuts_js: str):
+        """Must export openHelp for help modal."""
+        assert re.search(r"openHelp:", shortcuts_js) or re.search(r"openHelp\s*:", shortcuts_js)
+
+    def test_exports_close_help(self, shortcuts_js: str):
+        """Must export closeHelp for closing help modal."""
+        assert re.search(r"closeHelp:", shortcuts_js) or re.search(r"closeHelp\s*:", shortcuts_js)
+
+    def test_exports_add_tooltip(self, shortcuts_js: str):
+        """Must export addTooltip for tooltip integration."""
+        assert re.search(r"addTooltip:", shortcuts_js) or re.search(r"addTooltip\s*:", shortcuts_js)
+
+    def test_has_shortcut_registry(self, shortcuts_js: str):
+        """Must have centralized shortcut registry."""
+        assert "shortcuts = {" in shortcuts_js or "const shortcuts" in shortcuts_js
+
+    def test_listens_to_keydown(self, shortcuts_js: str):
+        """Must listen to keydown events."""
+        assert "keydown" in shortcuts_js
+
+    def test_excludes_inputs(self, shortcuts_js: str):
+        """Must exclude shortcuts when typing in input fields."""
+        assert "excludeInputs" in shortcuts_js or "input" in shortcuts_js.lower()

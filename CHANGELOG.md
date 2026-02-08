@@ -6,6 +6,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.41.0] - 2026-02-08 — Toast System Redesign
+
+### Changed
+- **Complete toast.js rewrite** — Queue system prevents toast stomping, type variants (success, error, warning, info) with color-coded icons, generic action buttons with custom labels, deduplication by ID
+- **Consolidated CSS** — Removed duplicate toast styles from app.css, loading.css is now single source of truth
+- **Updated error-handler.js** — Uses new typed toast API (Toast.error, Toast.warning, Toast.success) with proper action labels ("Retry", "Refresh Page" instead of misused "Undo")
+
+### Added
+- **Typed toast API** — Toast.success(), Toast.error(), Toast.warning(), Toast.info() convenience methods
+- **Toast queue** — FIFO queue with priority (errors jump to front), max 5 toasts, one visible at a time
+- **Type-based durations** — Success: 3s, Info: 4s, Warning: 5s, Error: 6s (longer with actions, errors persistent with actions)
+- **Toast icons** — ✓ (success), ! (error), ⚠ (warning), i (info)
+- **In-place updates** — Same ID updates existing toast message/type without exit animation
+- **Documentation** — docs/TOAST-SYSTEM.md with API reference, examples, migration guide
+
+### Fixed
+- **Silent 3-arg API bug** — Toast.show(msg, 'error') and Toast.show(msg, 'info', { duration: 5000 }) now work correctly (previously type string was ignored)
+- **Misused "Undo" button** — Error recovery actions now show proper labels ("Retry", "Refresh") instead of confusing "Undo"
+- **Toast stomping** — Rapid operations no longer overwrite each other, toasts queue properly
+- **No visual types** — Toasts now have color-coded icons and styling based on type
+
+### Technical Details
+- Full backward compatibility maintained (all 30+ existing call sites work unchanged)
+- Legacy onUndo → action conversion automatic
+- Contract tests updated to verify new exports
+- Dark mode support for all toast types
+
+---
+
 ## [0.40.1] - 2026-02-08 — Error Recovery Foundation (WIP)
 
 ### Added
