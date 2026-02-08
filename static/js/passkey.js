@@ -358,15 +358,10 @@ const Passkey = (() => {
             }
 
             // 2. Get registration options from server
-            const optionsRes = await fetch('/api/v1/passkeys/register/options', {
+            const optionsRes = await safeFetch('/api/v1/passkeys/register/options', {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: window.getCSRFHeaders(),
             });
-
-            if (!optionsRes.ok) {
-                throw new Error('Failed to get registration options');
-            }
 
             const { options } = await optionsRes.json();
 
@@ -387,10 +382,10 @@ const Passkey = (() => {
             const wrappedKey = await wrapMasterKey(wrappingKey, masterKey);
 
             // 7. Send to server for verification
-            const verifyRes = await fetch('/api/v1/passkeys/register/verify', {
+            await safeFetch('/api/v1/passkeys/register/verify', {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     credential,
                     name,
@@ -398,11 +393,6 @@ const Passkey = (() => {
                     wrapped_key: wrappedKey,
                 }),
             });
-
-            if (!verifyRes.ok) {
-                const error = await verifyRes.json();
-                throw new Error(error.detail || 'Registration verification failed');
-            }
 
             return { success: true };
         } catch (error) {
@@ -467,15 +457,10 @@ const Passkey = (() => {
     async function unlockWithPasskey() {
         try {
             // 1. Get authentication options from server
-            const optionsRes = await fetch('/api/v1/passkeys/authenticate/options', {
+            const optionsRes = await safeFetch('/api/v1/passkeys/authenticate/options', {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: window.getCSRFHeaders(),
             });
-
-            if (!optionsRes.ok) {
-                throw new Error('Failed to get authentication options');
-            }
 
             const { options, prf_salt, wrapped_key, has_passkeys } = await optionsRes.json();
 
@@ -504,13 +489,9 @@ const Passkey = (() => {
                 // Look up the correct wrapped_key for this credential
                 console.log('Initial unwrap failed, looking up credential-specific data...');
 
-                const lookupRes = await fetch(`/api/v1/passkeys/by-credential/${encodeURIComponent(credentialId)}`, {
+                const lookupRes = await safeFetch(`/api/v1/passkeys/by-credential/${encodeURIComponent(credentialId)}`, {
                     credentials: 'same-origin',
                 });
-
-                if (!lookupRes.ok) {
-                    throw new Error('Failed to look up passkey data');
-                }
 
                 const lookupData = await lookupRes.json();
                 usedCredentialData = lookupData;
@@ -551,10 +532,10 @@ const Passkey = (() => {
             await Crypto.storeKey(masterKey);
 
             // 7. Notify server of successful authentication (updates sign count)
-            await fetch('/api/v1/passkeys/authenticate/verify', {
+            await safeFetch('/api/v1/passkeys/authenticate/verify', {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ credential }),
             });
 
