@@ -385,36 +385,27 @@ class TaskActionSheet {
         taskEl.dataset.completed = '1';
 
         try {
-            const response = await fetch(`/api/v1/instances/${instanceId}/skip`, {
+            await safeFetch(`/api/v1/instances/${instanceId}/skip`, {
                 method: 'POST',
-                headers: window.getCSRFHeaders(),
             });
 
-            if (response.ok) {
-                // Sync across all representations of this instance
-                document.querySelectorAll(`[data-instance-id="${instanceId}"]`).forEach(el => {
-                    el.classList.add('skipped');
-                    el.dataset.completed = '1';
-                });
+            // Sync across all representations of this instance
+            document.querySelectorAll(`[data-instance-id="${instanceId}"]`).forEach(el => {
+                el.classList.add('skipped');
+                el.dataset.completed = '1';
+            });
 
-                if (window.Toast) {
-                    window.Toast.show('Skipped for today');
-                }
-            } else {
-                // Revert
-                taskEl.classList.remove('skipped');
-                taskEl.dataset.completed = '0';
-                if (window.Toast) {
-                    window.Toast.show('Failed to skip instance');
-                }
+            if (window.Toast) {
+                Toast.success('Skipped for today');
             }
         } catch (err) {
-            console.error('Failed to skip instance:', err);
+            // Revert optimistic update
             taskEl.classList.remove('skipped');
             taskEl.dataset.completed = '0';
-            if (window.Toast) {
-                window.Toast.show('Failed to skip instance');
-            }
+            handleError(err, 'Failed to skip instance', {
+                component: 'mobile-sheet',
+                action: 'skipInstance'
+            });
         }
     }
 
@@ -436,25 +427,22 @@ class TaskActionSheet {
         }
 
         try {
-            const response = await fetch(`/api/v1/tasks/${taskId}`, {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
                 method: 'DELETE',
-                headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                headers: { 'Content-Type': 'application/json' },
             });
 
-            if (response.ok) {
-                // Remove from DOM
-                this.currentTask.remove();
+            // Remove from DOM
+            this.currentTask.remove();
 
-                // Show toast with undo
-                if (window.Toast) {
-                    window.Toast.show(`Deleted "${taskTitle}"`, 'info', { duration: 5000 });
-                }
+            if (window.Toast) {
+                Toast.info(`Deleted "${taskTitle}"`, { duration: 5000 });
             }
         } catch (err) {
-            console.error('Failed to delete task:', err);
-            if (window.Toast) {
-                window.Toast.show('Failed to delete task', 'error');
-            }
+            handleError(err, 'Failed to delete task', {
+                component: 'mobile-sheet',
+                action: 'deleteTask'
+            });
         }
     }
 }

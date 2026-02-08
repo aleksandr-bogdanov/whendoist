@@ -295,17 +295,18 @@
      */
     async function savePreference(key, value) {
         try {
-            const response = await fetch('/api/v1/preferences', {
+            const response = await safeFetch('/api/v1/preferences', {
                 method: 'PUT',
-                headers: window.getCSRFHeaders({
-                    'Content-Type': 'application/json',
-                }),
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ [key]: value }),
             });
 
             return response.ok;
         } catch (e) {
-            console.error('Failed to save preference:', e);
+            handleError(e, 'Failed to save preference', {
+                component: 'task-list-options',
+                action: 'savePreference'
+            });
             return false;
         }
     }
@@ -349,14 +350,9 @@
         taskEl.style.pointerEvents = 'none';
 
         try {
-            const response = await fetch(`/api/v1/tasks/${taskId}/restore`, {
+            await safeFetch(`/api/v1/tasks/${taskId}/restore`, {
                 method: 'POST',
-                headers: window.getCSRFHeaders(),
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to restore task');
-            }
 
             // Animate removal
             taskEl.style.transition = 'all 0.3s ease';
@@ -389,10 +385,12 @@
             }, 300);
 
         } catch (error) {
-            console.error('Error restoring task:', error);
+            handleError(error, 'Failed to restore task', {
+                component: 'task-list-options',
+                action: 'restoreTask'
+            });
             taskEl.style.opacity = '';
             taskEl.style.pointerEvents = '';
-            showToast('Failed to restore task');
         }
     }
 

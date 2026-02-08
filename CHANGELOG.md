@@ -6,6 +6,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.0] - 2026-02-08 — Complete safeFetch Migration
+
+### Changed
+- **Migrated all remaining fetch() calls to safeFetch()** — 18 calls across 5 files now use the centralized error handler with automatic CSRF injection, network status checks, and typed error throwing
+- **task-list-options.js** — Preference saves and task restore now use safeFetch + handleError with component tags
+- **mobile-sheet.js** — Skip instance and delete task actions use safeFetch with typed toast notifications
+- **passkey.js** — All 5 WebAuthn API calls use safeFetch for consistent network/CSRF handling
+- **task-swipe.js** — Swipe-to-complete fallback and swipe-to-delete use safeFetch + handleError
+- **wizard.js** — All 7 onboarding API calls (wizard complete, calendar selections, calendar/event prefetch, Todoist import, domain creation) use safeFetch
+
+### Added
+- **V1-ROADMAP-AUDIT-V2.md** — Updated roadmap assessment reflecting post-v0.41.1 implementation state
+
+### Technical Details
+- Zero plain `fetch()` calls remain in application code (only error-handler.js uses raw fetch internally)
+- Removed redundant `getCSRFHeaders()` calls — safeFetch handles CSRF injection automatically
+- Removed manual `!response.ok` checks — safeFetch throws typed errors (NetworkError, ValidationError, etc.)
+- Passkey module retains its own `{success, error}` return pattern while benefiting from safeFetch internals
+
+---
+
 ## [0.41.1] - 2026-02-08 — Keyboard Shortcuts Discoverability
 
 ### Added

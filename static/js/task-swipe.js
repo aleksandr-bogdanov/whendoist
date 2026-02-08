@@ -260,26 +260,22 @@ class TaskSwipeHandler {
                     ? `/api/v1/tasks/${taskId}/uncomplete`
                     : `/api/v1/tasks/${taskId}/complete`;
 
-                const response = await fetch(endpoint, {
+                await safeFetch(endpoint, {
                     method: 'POST',
-                    headers: window.getCSRFHeaders(),
                 });
 
-                if (response.ok) {
-                    // Reload task list
-                    const taskList = document.querySelector('[hx-get*="/dashboard"]');
-                    if (taskList && window.htmx) {
-                        window.htmx.trigger(taskList, 'refresh');
-                    }
+                // Reload task list
+                const taskList = document.querySelector('[hx-get*="/dashboard"]');
+                if (taskList && window.htmx) {
+                    window.htmx.trigger(taskList, 'refresh');
                 }
             }
         } catch (err) {
-            console.error('Failed to complete task:', err);
             task.classList.remove('completing');
-
-            if (window.Toast) {
-                window.Toast.show('Failed to complete task', 'error');
-            }
+            handleError(err, 'Failed to complete task', {
+                component: 'task-swipe',
+                action: 'completeTask'
+            });
         }
     }
 
@@ -340,23 +336,18 @@ class TaskSwipeHandler {
             if (undone) return;
 
             try {
-                const response = await fetch(`/api/v1/tasks/${taskId}`, {
+                await safeFetch(`/api/v1/tasks/${taskId}`, {
                     method: 'DELETE',
-                    headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+                    headers: { 'Content-Type': 'application/json' },
                 });
 
-                if (response.ok) {
-                    task.remove();
-                } else {
-                    // Restore on failure
-                    this.undoDelete(task, originalHTML, originalParent, originalNextSibling);
-                    if (window.Toast) {
-                        window.Toast.show('Failed to delete task', 'error');
-                    }
-                }
+                task.remove();
             } catch (err) {
-                console.error('Failed to delete task:', err);
                 this.undoDelete(task, originalHTML, originalParent, originalNextSibling);
+                handleError(err, 'Failed to delete task', {
+                    component: 'task-swipe',
+                    action: 'deleteTask'
+                });
             }
         }, 5000);
     }
