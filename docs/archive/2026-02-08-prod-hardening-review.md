@@ -1,5 +1,7 @@
 # Production Hardening Review
 
+> **ARCHIVED:** Issues addressed in v0.40.0 on 2026-02-08 via [PR #67](https://github.com/aleksandr-bogdanov/whendoist/pull/67)
+
 > Diagnostic review of production logs and Railway observability data from 2026-02-07/08.
 > Conducted at v0.39.8. Covers error patterns, resource usage, cost analysis, and architectural gaps.
 
