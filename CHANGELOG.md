@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.10] - 2026-02-09 — Offline: Block Mutations Before Optimistic Updates
+
+### Fixed
+- **Offline mutation flickering** — Task completion, deletion, creation, and scheduling now check network status before optimistic UI updates, showing a clear "You're offline" warning instead of animate-then-revert
+- **Duplicate offline toasts** — Consolidated network status toasts to error-handler.js only (removed duplicate from mobile-core.js)
+- **Misleading offline page** — Service worker offline page no longer claims changes will sync; honestly states changes require a connection
+
+### Technical Details
+- Network check added to: task-complete.js, task-swipe.js, task-dialog.js, drag-drop.js
+- mobile-core.js NetworkStatus class retains CSS class toggle but no longer shows toasts
+- Service worker offline page text updated for honesty
+
+---
+
 ## [0.42.9] - 2026-02-09 — GCal Sync: Token Revocation & Crash Safety
 
 ### Fixed

@@ -83,6 +83,14 @@
      * @param {boolean} shouldComplete - Whether to mark as completed
      */
     async function toggleCompletion(taskEl, taskId, instanceId, shouldComplete, isRecurring = false) {
+        // Check network status before optimistic update
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         // Optimistic UI update
         taskEl.dataset.completed = shouldComplete ? '1' : '0';
 
@@ -411,6 +419,14 @@
      * @param {string} instanceId - Instance ID
      */
     async function skipInstance(taskEl, instanceId) {
+        // Check network status before optimistic update
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         // Optimistic UI update
         taskEl.classList.add('skipped');
         taskEl.dataset.completed = '1';

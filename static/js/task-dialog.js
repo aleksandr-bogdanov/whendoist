@@ -1401,6 +1401,14 @@
     async function handleSubmit(e) {
         e.preventDefault();
 
+        // Check network status before any UI changes
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         const form = e.target;
         const formData = new FormData(form);
 

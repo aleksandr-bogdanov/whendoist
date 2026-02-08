@@ -708,6 +708,14 @@
     async function handleDrop(e) {
         e.preventDefault();
 
+        // Check network status before creating calendar elements
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         const slot = e.target.closest('.hour-slot');
         if (!slot) return;
 
