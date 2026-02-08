@@ -41,10 +41,8 @@ TODOIST_CLIENT_SECRET=<from-todoist-developer-console>
 GOOGLE_CLIENT_ID=<from-google-cloud-console>
 GOOGLE_CLIENT_SECRET=<from-google-cloud-console>
 
-# Optional: Error Tracking
+# Recommended: Error Tracking (5 min setup, free tier available)
 SENTRY_DSN=<from-sentry.io>
-
-# Optional: Environment name
 ENVIRONMENT=production
 ```
 
@@ -54,7 +52,35 @@ ENVIRONMENT=production
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-### 5. Custom Domain
+### 5. Set Up Error Tracking (Recommended)
+
+**Why Sentry?**
+- Exception tracking with full stack traces and local variables
+- Performance monitoring (10% transaction sampling)
+- User context (know which user hit the error)
+- Email/Slack alerts when errors occur
+- Search and filter errors by type, user, route
+
+**Setup (5 minutes):**
+
+1. Sign up at [sentry.io](https://sentry.io) (free tier: 5K errors/month, no credit card)
+2. Create a new **Python** or **FastAPI** project
+3. Copy your DSN (looks like `https://abc@o123.ingest.sentry.io/456`)
+4. Add to Railway variables:
+   ```bash
+   SENTRY_DSN=https://your-dsn-here
+   ENVIRONMENT=production
+   ```
+5. Deploy - Sentry activates automatically on next restart
+
+**Verify in logs:**
+```
+Sentry initialized for environment: production
+```
+
+Your app already includes full Sentry integration (privacy-safe, PII scrubbing enabled). Just needs the DSN to activate.
+
+### 6. Custom Domain
 
 1. Go to Settings → Domains
 2. Add custom domain
@@ -65,9 +91,11 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 Railway uses these endpoints for health monitoring:
 
-- **GET /health** - Liveness check (app is running)
-- **GET /ready** - Readiness check (includes DB connection)
+- **GET /health** - Liveness check (app is running, always returns 200)
+- **GET /ready** - Readiness check (includes DB connection, used by Railway healthcheck)
 - **GET /metrics** - Prometheus metrics (for monitoring)
+
+**Note:** Railway is configured to use `/ready` as the healthcheck endpoint (see `railway.toml`). This ensures traffic only routes to containers with verified database connectivity.
 
 ## Database Migrations
 
