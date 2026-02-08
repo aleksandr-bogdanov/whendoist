@@ -6,6 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.41.1] - 2026-02-08 — Keyboard Shortcuts Discoverability
+
+### Added
+- **Footer hint bar** — Fixed bottom bar showing "? Keyboard shortcuts" with dismiss button, slide-up/down animations, localStorage persistence, hidden on mobile
+- **One-time toast** — "Press ? to view keyboard shortcuts" with "Show" action button, fires once after 2s delay on first visit (desktop only)
+- **Tooltip enhancement** — Quick add FAB shows "(Q)" in native tooltip via `data-shortcut` attribute
+- **Settings panel** — "Keyboard Shortcuts" section with "View Shortcuts" button added to Settings > Appearance
+
+### Changed
+- **Centralized N shortcut** — Removed duplicate `N` key handler from task-sheet.js (now handled by shortcuts.js)
+
+---
+
 ## [0.41.0] - 2026-02-08 — Toast System Redesign
 
 ### Changed
