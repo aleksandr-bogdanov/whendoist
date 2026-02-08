@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.2] - 2026-02-08 — Docs cleanup and roadmap update
+
+### Changed
+- **V1-ROADMAP.md rewritten** — Reflects v0.42.1 reality: onboarding, error recovery, data export, and keyboard shortcuts moved to "Resolved" section; remaining gaps narrowed to mobile UX, PWA, undo/redo, and bulk operations
+- **README doc index cleaned up** — Removed dead link (TASK-LIST-HEADER-REDESIGN.md) and links to archived docs
+
+### Archived
+- 7 stale docs moved to `docs/archive/`: V1-ROADMAP-AUDIT.md, V1-ROADMAP-AUDIT-V2.md, V1-BLOCKERS-IMPLEMENTATION-PLAN.md, 3 keyboard shortcuts planning docs, UI-POLISH-PLAN.md
+
+---
+
 ## [0.42.1] - 2026-02-08 — Keyboard Shortcuts: Task Navigation & Actions
 
 ### Added

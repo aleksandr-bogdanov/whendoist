@@ -1,9 +1,8 @@
 # v1.0 Roadmap
 
-> Strategic plan for reaching production-ready v1.0 release.
+> Path to production-ready v1.0 release.
 >
-> Created: February 2026
-> Target: v1.0 launch when core features are stable and battle-tested
+> Created: February 2026 | Last updated: February 8, 2026 (v0.42.1)
 
 ---
 
@@ -12,38 +11,46 @@
 v1.0 represents **production maturity**, not feature completeness.
 
 **Criteria for v1.0:**
-- ✅ Core workflows are stable and tested in production
-- ✅ Performance is optimized and monitored
-- ✅ Error tracking and observability are production-grade
-- ✅ Security is hardened (auth, encryption, rate limiting)
-- ✅ Mobile experience is viable (doesn't have to be perfect)
+- Core workflows are stable and tested in production
+- Performance is optimized and monitored
+- Error tracking and observability are production-grade
+- Security is hardened (auth, encryption, rate limiting)
+- Mobile experience is viable (doesn't have to be perfect)
 
 **Not required for v1.0:**
-- ❌ Feature parity with competitors
-- ❌ Advanced AI/ML scheduling
-- ❌ Team/collaboration features
-- ❌ Native mobile apps
+- Feature parity with competitors
+- Advanced AI/ML scheduling
+- Team/collaboration features
+- Native mobile apps
 
 ---
 
-## Current State (v0.40.0)
+## Current State (v0.42.1)
 
-### ✅ Production-Ready Components
+### Production-Ready Components
 
 **Core Functionality:**
-- Task management with domains, impact, clarity, duration
-- Recurring tasks with flexible patterns
+- Task management with domains, impact, mode (autopilot/normal/brainstorm), duration
+- Recurring tasks with flexible patterns and instance materialization
 - Google Calendar bidirectional sync
 - Visual scheduling (drag-and-drop)
 - Analytics dashboard (heatmap, velocity, domain breakdown)
-- Thought Cabinet (inbox → task promotion)
+- Thought Cabinet (inbox -> task promotion)
+
+**User Experience:**
+- 7-step onboarding wizard (energy, calendar, Todoist import, domains)
+- One-click data export + restore (Settings > Backup)
+- 11 keyboard shortcuts with help modal, footer hint, tooltips
+- Toast notification system (typed, queued, deduplicated)
+- Centralized error handling with typed errors and recovery actions
+- Demo account with realistic seed data
 
 **Security:**
 - Google OAuth authentication
 - Passkey (WebAuthn) support
-- Optional end-to-end encryption
+- Optional end-to-end encryption (AES-256-GCM)
 - Rate limiting on sensitive endpoints
-- CSRF protection
+- CSRF protection (synchronizer token, auto-injected by safeFetch)
 - Security headers (CSP, HSTS, etc.)
 
 **Infrastructure:**
@@ -52,260 +59,90 @@ v1.0 represents **production maturity**, not feature completeness.
 - Database migrations (Alembic)
 - Health checks (`/health`, `/ready`)
 - Prometheus metrics (`/metrics`)
-- **Sentry error tracking** (active since v0.40.0)
+- Sentry error tracking (active since v0.40.0)
+- Graceful shutdown, statement timeouts (30s)
 
 **Performance:**
 - Query optimization (CTE, batch queries, N+1 fixes)
 - Calendar event caching (5min TTL)
-- Background instance materialization
 - Connection pool tuning (2+3 for single-worker deployment)
-- Statement timeouts (30s)
-- Graceful shutdown
+- Background instance materialization (non-blocking startup)
+
+**Frontend Error Handling (v0.40.1-v0.42.0):**
+- `safeFetch()` — all application fetch() calls migrated (zero raw fetch remaining)
+- Typed error classes: NetworkError, ValidationError, AuthError, CSRFError, RateLimitError, ServerError
+- `handleError()` with recovery actions, Sentry tags, user-friendly messages
+- Network status detection (online/offline events)
+- Global error boundary (unhandled rejections + uncaught exceptions)
+
+**Keyboard Shortcuts (v0.41.0-v0.42.1):**
+- Declarative shortcut registry with context-aware handlers
+- Task navigation: j/k (next/prev), c (complete), e/Enter (edit), x (delete)
+- Global: ? (help), q (quick add), n (new task), Esc (close/deselect)
+- Help modal, footer hint bar, tooltips, settings panel integration
+- Triple-layered discoverability (footer + one-time toast + tooltips)
 
 ---
 
-## Gaps to v1.0
+## Remaining Gaps to v1.0
 
-### 🔴 Critical (Blocking v1.0)
+### Important (Should Have)
 
 1. **Mobile UX Polish**
-   - Current: Tabs, basic responsiveness
+   - Current: Tabs, basic responsiveness, swipe gestures, bottom sheets
    - Need: Proactive gap surfacing, task-initiated scheduling
    - See [PRODUCT-VISION.md](PRODUCT-VISION.md) mobile insights section
 
-2. **User Onboarding**
-   - Current: No guided setup
-   - Need: First-run wizard, sample tasks, feature discovery
-   - Goal: 0→productive in < 5 minutes
-
-3. **Error Recovery UX**
-   - Current: Generic error pages, some inconsistent error handling
-   - Need: User-friendly error messages, retry mechanisms
-   - Sentry captures backend errors, but frontend needs polish
-
-4. **Data Export**
-   - Current: Manual backup endpoint exists
-   - Need: Scheduled exports, one-click download
-   - Users should be able to leave with their data
-
-### 🟡 Important (Should Have for v1.0)
-
-5. **Mobile App (PWA)**
-   - Current: Responsive web only
+2. **Mobile App (PWA)**
+   - Current: Responsive web with service worker
    - Need: Installable PWA with offline support
    - Goal: Home screen icon, works offline for viewing
 
-6. **Keyboard Shortcuts**
-   - Current: Limited (Ctrl+K for quick add)
-   - Need: Full shortcut reference, customizable bindings
-   - Power users expect this
-
-7. **Undo/Redo**
-   - Current: Destructive actions are permanent
+3. **Undo/Redo**
+   - Current: Destructive actions are permanent (delete has toast notification)
    - Need: Undo for delete, reschedule, complete
    - Reduces anxiety around mistakes
 
-8. **Bulk Operations**
+4. **Bulk Operations**
    - Current: One-at-a-time editing
    - Need: Multi-select, batch reschedule/complete/delete
    - Efficiency for managing many tasks
 
-### 🟢 Nice to Have (Post-v1.0)
+### Nice to Have (Post-v1.0)
 
-9. **Todoist Sync (Live)**
+5. **Todoist Sync (Live)**
    - Current: One-time import
-   - Future: Bidirectional sync, keep both in sync
-   - Allows gradual migration
+   - Future: Bidirectional sync
 
-10. **AI Suggestions**
-    - Current: Manual "Plan My Day"
-    - Future: "You usually do email at 9am, schedule it?"
-    - Pattern learning, not auto-scheduling
+6. **AI Suggestions**
+   - Current: Manual "Plan My Day"
+   - Future: Pattern learning, not auto-scheduling
 
-11. **Team/Sharing**
-    - Current: Single-user only
-    - Future: Share tasks, assign to others
-    - Big feature, needs careful design
+7. **Team/Sharing**
+   - Current: Single-user only
+   - Future: Share tasks, assign to others
 
-12. **Time Tracking**
-    - Current: Duration estimates only
-    - Future: Actual time spent, compare estimate vs actual
-    - Helps improve estimation over time
+8. **Time Tracking**
+   - Current: Duration estimates only
+   - Future: Actual time spent, compare estimate vs actual
 
 ---
 
-## Performance Profiling with Honeycomb (v1.0+)
+## Resolved Items
 
-**Goal:** Optimize for the sake of optimization and gain Honeycomb experience.
+These were previously listed as gaps but have been fully implemented:
 
-**When:** After v1.0 release, when core features are stable.
-
-**Why Honeycomb:**
-- High-cardinality queries (slice by any dimension)
-- Distributed tracing (see exactly where time is spent)
-- BubbleUp analysis (find what's different about slow requests)
-- Better performance insights than Sentry's basic APM
-
-**What to Profile:**
-
-### 1. Critical User Journeys
-
-```
-Dashboard Load
-├─ Auth check
-├─ Task query (domain filtering, subtasks)
-├─ Calendar events (cache hit/miss)
-├─ Instance materialization status
-└─ Render time
-```
-
-Target: < 500ms p95
-
-```
-Analytics Page
-├─ Comprehensive stats query
-├─ Heatmap data
-├─ Velocity calculations
-├─ Recurring task stats
-└─ Chart rendering
-```
-
-Target: < 1s p95
-
-```
-Task Creation
-├─ Validation
-├─ Database insert
-├─ Encryption (if enabled)
-├─ GCal sync (if enabled)
-└─ Response
-```
-
-Target: < 200ms p95
-
-### 2. Background Operations
-
-```
-Materialization Cycle
-├─ Per-user processing time
-├─ Database session overhead
-├─ Recurrence calculation complexity
-└─ GCal sync latency
-```
-
-Goal: Understand per-user cost, optimize outliers
-
-```
-GCal Sync
-├─ Token refresh timing
-├─ Calendar list fetching
-├─ Event diff calculation
-├─ Batch API calls
-└─ Rate limit impact
-```
-
-Goal: Reduce sync time, minimize API calls
-
-### 3. Database Query Analysis
-
-**Questions Honeycomb Can Answer:**
-- Which queries are slowest at p99?
-- Do queries slow down with more tasks/domains?
-- Are indexes being used correctly?
-- Which users have pathological data patterns?
-
-**Custom Events to Send:**
-
-```python
-# Task query event
-honeycomb.send({
-    "operation": "task_query",
-    "user_id": user.id,
-    "domain_count": len(domains),
-    "task_count": len(tasks),
-    "has_encryption": user.encryption_enabled,
-    "duration_ms": elapsed,
-    "cache_hit": False,
-})
-
-# Analytics page event
-honeycomb.send({
-    "operation": "analytics_stats",
-    "user_id": user.id,
-    "date_range_days": (end_date - start_date).days,
-    "completion_count": stats["completions"],
-    "query_count": query_counter.total,
-    "duration_ms": elapsed,
-})
-```
-
-### 4. Integration Steps
-
-**Phase 1: Basic Instrumentation**
-```bash
-pip install opentelemetry-api opentelemetry-sdk
-pip install opentelemetry-instrumentation-fastapi
-pip install opentelemetry-instrumentation-sqlalchemy
-```
-
-**Phase 2: Custom Spans**
-```python
-from opentelemetry import trace
-
-tracer = trace.get_tracer(__name__)
-
-@router.get("/analytics")
-async def analytics_page(user: User = Depends(require_user)):
-    with tracer.start_as_current_span("analytics.page_load") as span:
-        span.set_attribute("user.id", user.id)
-
-        with tracer.start_as_current_span("analytics.fetch_stats"):
-            stats = await analytics_service.get_comprehensive_stats()
-
-        with tracer.start_as_current_span("analytics.render"):
-            return templates.TemplateResponse(...)
-```
-
-**Phase 3: Query Analysis**
-- Add custom events for slow queries (> 100ms)
-- Track query complexity (JOIN count, result size)
-- Correlate performance with user data patterns
-
-**Phase 4: BubbleUp Exploration**
-Use Honeycomb's BubbleUp to answer:
-- "Why are some dashboard loads slow?"
-- "What's different about users with slow analytics?"
-- "Which calendar configurations cause sync delays?"
-
-### 5. Optimization Targets
-
-Based on Honeycomb insights, optimize:
-
-| Area | Current | Target (p95) | Strategy |
-|------|---------|--------------|----------|
-| Dashboard load | ~300ms | < 200ms | Cache domain counts, optimize JOIN |
-| Analytics load | ~800ms | < 500ms | Materialized view for stats |
-| Task creation | ~150ms | < 100ms | Async GCal sync |
-| Bulk operations | N/A | < 1s for 50 tasks | Batch DB commits |
-
-### 6. Cost Consideration
-
-**Honeycomb Pricing (as of 2026):**
-- Free: 20M events/month (trial only, 30 days)
-- Paid: Starts ~$200/month for 100M events
-
-**Strategy:**
-- Use free trial for intensive profiling sprint
-- Instrument selectively (critical paths only)
-- Downsample events (10% of requests, 100% of errors)
-- After optimization sprint, can downgrade or remove
-
-**ROI Calculation:**
-If optimization reduces server costs (e.g., smaller Railway plan) or improves conversion (faster = better UX), the $200/month pays for itself.
+| Item | Resolved In | Details |
+|------|-------------|---------|
+| User Onboarding | v0.9.0 | 7-step wizard with OAuth, mobile support, state persistence |
+| Error Recovery UX | v0.40.1-v0.42.0 | safeFetch + handleError + typed errors + toast redesign |
+| Data Export | v0.7.0 | One-click JSON export/import in Settings |
+| Keyboard Shortcuts | v0.41.0-v0.42.1 | 11 shortcuts, help modal, discoverability |
+| Error handling consistency | v0.40.1-v0.42.0 | All fetch calls use safeFetch, standardized error responses |
 
 ---
 
-## Mobile-First Improvements (v1.0)
+## Mobile-First Improvements
 
 See [PRODUCT-VISION.md](PRODUCT-VISION.md) for detailed mobile UX insights.
 
@@ -318,43 +155,53 @@ See [PRODUCT-VISION.md](PRODUCT-VISION.md) for detailed mobile UX insights.
 2. **Task-Initiated Scheduling**
    - From task detail: "When can you do this?"
    - Show available slots in context
-   - Schedule in one tap
 
-3. **Anti-Calendar View**
-   - Show gaps, not events
-   - Visual timeline of free time
-   - Tap gap → plan it
-
-4. **Decision Interface**
+3. **Decision Interface**
    - "What's your situation?" home screen
-   - Select time + energy → task suggestion
-   - Optimize for speed-to-action
+   - Select time + energy -> task suggestion
+
+---
+
+## Performance Profiling with Honeycomb (Post-v1.0)
+
+**Goal:** Deep performance optimization with distributed tracing.
+
+**What to Profile:**
+- Dashboard load (target: < 500ms p95)
+- Analytics page (target: < 1s p95)
+- Task creation (target: < 200ms p95)
+- Background materialization and GCal sync
+
+**Integration:** OpenTelemetry instrumentation with custom spans for critical paths.
+
+See [Performance Guide](PERFORMANCE.md) for current optimizations.
 
 ---
 
 ## Release Plan
 
-### v0.x → v1.0 Milestones
+### v0.x -> v1.0 Milestones
 
-| Milestone | Version | Focus | Target |
-|-----------|---------|-------|--------|
-| **Honeycomb Profiling** | v0.41.0 | Performance deep dive with Honeycomb | Mar 2026 |
-| **Mobile UX Overhaul** | v0.45.0 | Implement mobile-first improvements | Apr 2026 |
-| **Onboarding Wizard** | v0.50.0 | First-run experience | May 2026 |
-| **PWA + Offline** | v0.60.0 | Installable app, offline viewing | Jun 2026 |
-| **Polish & Testing** | v0.70-0.99 | Bug fixes, edge cases, stress testing | Jul 2026 |
-| **v1.0 Launch** | v1.0.0 | Production-ready release | Aug 2026 |
+| Milestone | Focus | Status |
+|-----------|-------|--------|
+| Production Hardening | Pool tuning, timeouts, Sentry, graceful shutdown | Done (v0.40.0) |
+| Error Recovery | safeFetch, typed errors, toast redesign | Done (v0.40.1-v0.42.0) |
+| Keyboard Shortcuts | Navigation, actions, discoverability | Done (v0.41.0-v0.42.1) |
+| Mobile UX Overhaul | Proactive gap surfacing, task-initiated scheduling | Planned |
+| PWA + Offline | Installable app, offline viewing | Planned |
+| Polish & Testing | Bug fixes, edge cases, stress testing | Planned |
+| **v1.0 Launch** | Production-ready release | Target |
 
-### Post-v1.0 Roadmap
+### Post-v1.0
 
-**v1.1 - v1.5: Stability & Refinement**
-- Keyboard shortcuts
+**v1.1-v1.5: Stability & Refinement**
 - Undo/Redo
 - Bulk operations
-- Export automation
+- Scheduled export automation
+- Honeycomb performance profiling
 
 **v2.0: Intelligent Features**
-- Pattern learning (suggest based on history)
+- Pattern learning
 - Smart scheduling (AI-assisted, user-controlled)
 - Advanced analytics (time tracking, estimation accuracy)
 
@@ -374,33 +221,26 @@ See [PRODUCT-VISION.md](PRODUCT-VISION.md) for detailed mobile UX insights.
 | **Errors** | < 10 errors/day in Sentry (excluding 404s) |
 | **Mobile UX** | 80%+ of core workflows usable on mobile |
 | **Onboarding** | 90%+ of new users complete first task |
-| **Retention** | 70%+ of users return within 7 days |
 
 ---
 
 ## Not in Scope for v1.0
 
-These are explicitly **deferred to post-v1.0:**
-
-- ❌ Native iOS/Android apps
-- ❌ Team/collaboration features
-- ❌ Advanced AI scheduling (pattern learning)
-- ❌ Integrations beyond Google Calendar (Outlook, Apple Calendar, etc.)
-- ❌ Time tracking (actual vs estimated)
-- ❌ Recurring task templates library
-- ❌ Premium/paid tiers
-
-**Rationale:** v1.0 is about **nailing the core solo user experience**. Expansion comes after validation.
+- Native iOS/Android apps
+- Team/collaboration features
+- Advanced AI scheduling (pattern learning)
+- Integrations beyond Google Calendar
+- Time tracking (actual vs estimated)
+- Premium/paid tiers
 
 ---
 
-## Technical Debt to Address Before v1.0
+## Technical Debt to Address
 
-1. **Frontend state management** — Currently scattered; consider lightweight state lib
+1. **Frontend state management** — Currently scattered across modules; consider lightweight state lib
 2. **Test coverage** — Add integration tests for critical workflows
-3. **Error handling consistency** — Standardize error responses across API
-4. **Documentation** — Complete API docs, deployment runbook
-5. **Logging levels** — Review all INFO/DEBUG usage, reduce noise
+3. **Documentation** — Complete API docs, deployment runbook
+4. **Logging levels** — Review all INFO/DEBUG usage, reduce noise
 
 ---
 
@@ -410,7 +250,6 @@ These are explicitly **deferred to post-v1.0:**
 - [Performance Guide](PERFORMANCE.md) — Current optimizations, monitoring
 - [Deployment Guide](DEPLOYMENT.md) — Production setup, Sentry integration
 - [Security Guide](SECURITY.md) — Authentication, encryption, rate limiting
-
----
-
-*Last updated: February 2026*
+- [Error Handling](ERROR-HANDLING.md) — safeFetch, handleError, typed errors
+- [Toast System](TOAST-SYSTEM.md) — Typed notifications with queuing
+- [GCal Sync](GCAL-SYNC.md) — Google Calendar sync architecture
