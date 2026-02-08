@@ -6,6 +6,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.39.8] - 2026-02-08 — Demo Account Overhaul
+
+### Changed
+- Demo banner replaced with floating pill (bottom-right, dismissible via localStorage)
+- Demo seed data rewritten with realistic PM persona, 4 domains, ~50 tasks
+
+### Added
+- Completed task history (~28 tasks) for populated analytics charts
+- Recurring task instances (14 days backfill) for recurring completion rates
+- Demo login feature documentation (`docs/DEMO-LOGIN.md`)
+
+### Security
+- Tighter rate limits on demo endpoints: `DEMO_LIMIT` (3/minute) replaces `AUTH_LIMIT` (10/minute) for both login and reset — demo operations are expensive (bulk DELETEs + ~80 INSERTs)
+- Documented shared-state limitation and encryption testing guidance in `docs/DEMO-LOGIN.md`
+
+---
+
 ## [0.39.7] - 2026-02-08 — Subview Header Consistency & Styling
 
 ### Fixed

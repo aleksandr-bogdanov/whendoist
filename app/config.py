@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
 
+    # Demo login (bypasses Google OAuth for testing/previews)
+    demo_login_enabled: bool = False
+
     # Database pool settings
     db_pool_size: int = 5
     db_max_overflow: int = 10

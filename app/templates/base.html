@@ -118,7 +118,9 @@
         userName: {{ user_name|default('')|tojson }},
         userEmail: {{ user_email|default('')|tojson }},
         // Timezone
-        userTimezone: {{ user_timezone|default('')|tojson }}
+        userTimezone: {{ user_timezone|default('')|tojson }},
+        // Demo mode
+        isDemoUser: {{ is_demo_user|default(false)|tojson }}
     };
 
     // Auto-detect timezone on first visit (silent, no toast)
@@ -509,5 +511,38 @@
         });
     }
     </script>
+
+    {% if is_demo_user is defined and is_demo_user %}
+    <!-- Demo mode floating pill -->
+    <div class="demo-pill" id="demo-pill">
+        <span class="demo-pill__label">Demo</span>
+        <div class="demo-pill__actions" id="demo-pill-actions" hidden>
+            <form action="/auth/demo/reset" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="demo-pill__btn demo-pill__btn--reset">Reset data</button>
+            </form>
+            <button type="button" class="demo-pill__btn demo-pill__btn--dismiss" id="demo-pill-dismiss">Dismiss</button>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var pill = document.getElementById('demo-pill');
+        if (!pill) return;
+        if (localStorage.getItem('demo-pill-dismissed')) {
+            pill.style.display = 'none';
+            return;
+        }
+        var actions = document.getElementById('demo-pill-actions');
+        pill.addEventListener('click', function(e) {
+            if (e.target.closest('.demo-pill__btn')) return;
+            actions.hidden = !actions.hidden;
+        });
+        document.getElementById('demo-pill-dismiss').addEventListener('click', function() {
+            localStorage.setItem('demo-pill-dismissed', '1');
+            pill.style.display = 'none';
+        });
+    })();
+    </script>
+    {% endif %}
 </body>
 </html>

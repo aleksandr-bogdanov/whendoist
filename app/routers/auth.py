@@ -8,9 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import google, todoist
 from app.config import get_settings
+from app.constants import DEMO_VALID_PROFILES
 from app.database import get_db
-from app.middleware.rate_limit import AUTH_LIMIT, limiter
+from app.middleware.rate_limit import AUTH_LIMIT, DEMO_LIMIT, limiter
 from app.models import GoogleToken, TodoistToken, User
+from app.services.demo_service import DemoService
 
 logger = logging.getLogger("whendoist.auth")
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -293,3 +295,52 @@ async def disconnect_todoist(
         await db.commit()
 
     return {"success": True}
+
+
+# --- Demo Login ---
+
+
+@router.get("/demo")
+@limiter.limit(DEMO_LIMIT)
+async def demo_login(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    profile: str = "demo",
+) -> Response:
+    """Demo login - bypasses Google OAuth for testing/previews."""
+    if not _settings.demo_login_enabled:
+        raise HTTPException(status_code=404)
+
+    if profile not in DEMO_VALID_PROFILES:
+        raise HTTPException(status_code=400, detail=f"Invalid profile. Valid: {', '.join(sorted(DEMO_VALID_PROFILES))}")
+
+    demo_service = DemoService(db)
+    user = await demo_service.get_or_create_demo_user(profile)
+
+    request.session["user_id"] = str(user.id)
+    return RedirectResponse(url="/thoughts", status_code=303)
+
+
+@router.post("/demo/reset")
+@limiter.limit(DEMO_LIMIT)
+async def demo_reset(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Reset demo user data back to initial seed state."""
+    if not _settings.demo_login_enabled:
+        raise HTTPException(status_code=404)
+
+    user_id = get_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Verify this is actually a demo user
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user or not DemoService.is_demo_user(user.email):
+        raise HTTPException(status_code=403, detail="Only demo accounts can be reset")
+
+    demo_service = DemoService(db)
+    await demo_service.reset_demo_user(user_id)
+    return RedirectResponse(url="/thoughts", status_code=303)
