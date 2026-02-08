@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.42.9] - 2026-02-09 — GCal Sync: Token Revocation & Crash Safety
+
+### Fixed
+- **Token revocation zombie state** — When Google revokes OAuth access, sync now auto-disables with a clear error message instead of silently failing forever
+- **Orphan events on sync crash** — Bulk sync now flushes sync records every 50 events, preventing duplicate events if the sync is interrupted by rate limiting or timeout
+
+### Technical Details
+- `TokenRefreshError` now caught alongside `httpx.HTTPStatusError` in bulk_sync, sync_task, and sync_task_instance
+- `_disable_sync_on_error()` called with user-friendly message on token revocation
+- Periodic `db.flush()` every 50 events preserves sync records even if the session is never committed
+- Fire-and-forget sync wrappers also handle TokenRefreshError gracefully
+
+---
+
 ## [0.42.8] - 2026-02-09 — Recurring Task Race Condition & Orphan Fixes
 
 ### Fixed

@@ -15,6 +15,7 @@ import httpx
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.google import TokenRefreshError
 from app.constants import (
     DEFAULT_TIMEZONE,
     GCAL_SYNC_BATCH_DELAY_SECONDS,
@@ -229,48 +230,54 @@ class GCalSyncService:
         if not google_token:
             return
 
-        async with GoogleCalendarClient(self.db, google_token) as client:
-            if sync_record:
-                # Update existing event
-                try:
-                    await client.update_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data)
-                except Exception as e:
-                    if _is_calendar_error(e):
-                        msg = _calendar_error_message(e)
-                        await self._disable_sync_on_error(msg)
-                        raise CalendarGoneError(
-                            status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
-                            message=msg,
-                        ) from e
-                    if _is_gone_error(e):
-                        # Event was deleted in Google Calendar, create a new one
+        try:
+            async with GoogleCalendarClient(self.db, google_token) as client:
+                if sync_record:
+                    # Update existing event
+                    try:
+                        await client.update_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data)
+                    except Exception as e:
+                        if _is_calendar_error(e):
+                            msg = _calendar_error_message(e)
+                            await self._disable_sync_on_error(msg)
+                            raise CalendarGoneError(
+                                status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
+                                message=msg,
+                            ) from e
+                        if _is_gone_error(e):
+                            # Event was deleted in Google Calendar, create a new one
+                            event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                            sync_record.google_event_id = event_id
+                        else:
+                            raise
+                    sync_record.sync_hash = current_hash
+                    sync_record.last_synced_at = datetime.now(UTC)
+                else:
+                    # Create new event
+                    try:
                         event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
-                        sync_record.google_event_id = event_id
-                    else:
+                    except Exception as e:
+                        if _is_calendar_error(e):
+                            msg = _calendar_error_message(e)
+                            await self._disable_sync_on_error(msg)
+                            raise CalendarGoneError(
+                                status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
+                                message=msg,
+                            ) from e
                         raise
-                sync_record.sync_hash = current_hash
-                sync_record.last_synced_at = datetime.now(UTC)
-            else:
-                # Create new event
-                try:
-                    event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
-                except Exception as e:
-                    if _is_calendar_error(e):
-                        msg = _calendar_error_message(e)
-                        await self._disable_sync_on_error(msg)
-                        raise CalendarGoneError(
-                            status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
-                            message=msg,
-                        ) from e
-                    raise
-                sync_record = GoogleCalendarEventSync(
-                    user_id=self.user_id,
-                    task_id=task.id,
-                    google_event_id=event_id,
-                    sync_hash=current_hash,
-                    last_synced_at=datetime.now(UTC),
-                )
-                self.db.add(sync_record)
+                    sync_record = GoogleCalendarEventSync(
+                        user_id=self.user_id,
+                        task_id=task.id,
+                        google_event_id=event_id,
+                        sync_hash=current_hash,
+                        last_synced_at=datetime.now(UTC),
+                    )
+                    self.db.add(sync_record)
+        except TokenRefreshError as e:
+            msg = "Google authorization expired. Please reconnect Google Calendar in Settings."
+            await self._disable_sync_on_error(msg)
+            logger.warning(f"Token refresh failed for user {self.user_id} during sync_task")
+            raise CalendarGoneError(status_code=401, message=msg) from e
 
         await self.db.flush()
 
@@ -329,45 +336,51 @@ class GCalSyncService:
         if not google_token:
             return
 
-        async with GoogleCalendarClient(self.db, google_token) as client:
-            if sync_record:
-                try:
-                    await client.update_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data)
-                except Exception as e:
-                    if _is_calendar_error(e):
-                        msg = _calendar_error_message(e)
-                        await self._disable_sync_on_error(msg)
-                        raise CalendarGoneError(
-                            status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
-                            message=msg,
-                        ) from e
-                    if _is_gone_error(e):
+        try:
+            async with GoogleCalendarClient(self.db, google_token) as client:
+                if sync_record:
+                    try:
+                        await client.update_event(prefs.gcal_sync_calendar_id, sync_record.google_event_id, event_data)
+                    except Exception as e:
+                        if _is_calendar_error(e):
+                            msg = _calendar_error_message(e)
+                            await self._disable_sync_on_error(msg)
+                            raise CalendarGoneError(
+                                status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
+                                message=msg,
+                            ) from e
+                        if _is_gone_error(e):
+                            event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
+                            sync_record.google_event_id = event_id
+                        else:
+                            raise
+                    sync_record.sync_hash = current_hash
+                    sync_record.last_synced_at = datetime.now(UTC)
+                else:
+                    try:
                         event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
-                        sync_record.google_event_id = event_id
-                    else:
+                    except Exception as e:
+                        if _is_calendar_error(e):
+                            msg = _calendar_error_message(e)
+                            await self._disable_sync_on_error(msg)
+                            raise CalendarGoneError(
+                                status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
+                                message=msg,
+                            ) from e
                         raise
-                sync_record.sync_hash = current_hash
-                sync_record.last_synced_at = datetime.now(UTC)
-            else:
-                try:
-                    event_id = await client.create_event(prefs.gcal_sync_calendar_id, event_data)
-                except Exception as e:
-                    if _is_calendar_error(e):
-                        msg = _calendar_error_message(e)
-                        await self._disable_sync_on_error(msg)
-                        raise CalendarGoneError(
-                            status_code=e.response.status_code if isinstance(e, httpx.HTTPStatusError) else 0,
-                            message=msg,
-                        ) from e
-                    raise
-                sync_record = GoogleCalendarEventSync(
-                    user_id=self.user_id,
-                    task_instance_id=instance.id,
-                    google_event_id=event_id,
-                    sync_hash=current_hash,
-                    last_synced_at=datetime.now(UTC),
-                )
-                self.db.add(sync_record)
+                    sync_record = GoogleCalendarEventSync(
+                        user_id=self.user_id,
+                        task_instance_id=instance.id,
+                        google_event_id=event_id,
+                        sync_hash=current_hash,
+                        last_synced_at=datetime.now(UTC),
+                    )
+                    self.db.add(sync_record)
+        except TokenRefreshError as e:
+            msg = "Google authorization expired. Please reconnect Google Calendar in Settings."
+            await self._disable_sync_on_error(msg)
+            logger.warning(f"Token refresh failed for user {self.user_id} during sync_task_instance")
+            raise CalendarGoneError(status_code=401, message=msg) from e
 
         await self.db.flush()
 
@@ -562,6 +575,9 @@ class GCalSyncService:
                             sync_record.last_synced_at = datetime.now(UTC)
                             stats["updated"] += 1
                             _report()
+                            # Periodic flush to prevent orphan events on crash
+                            if (stats["created"] + stats["updated"]) % 50 == 0:
+                                await self.db.flush()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise  # Will be caught by outer try/except
@@ -606,6 +622,9 @@ class GCalSyncService:
                             self.db.add(new_sync)
                             stats["created"] += 1
                             _report()
+                            # Periodic flush to prevent orphan events on crash
+                            if (stats["created"] + stats["updated"]) % 50 == 0:
+                                await self.db.flush()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise  # Will be caught by outer try/except
@@ -673,6 +692,9 @@ class GCalSyncService:
                             sync_record.last_synced_at = datetime.now(UTC)
                             stats["updated"] += 1
                             _report()
+                            # Periodic flush to prevent orphan events on crash
+                            if (stats["created"] + stats["updated"]) % 50 == 0:
+                                await self.db.flush()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise
@@ -716,6 +738,9 @@ class GCalSyncService:
                             self.db.add(new_sync)
                             stats["created"] += 1
                             _report()
+                            # Periodic flush to prevent orphan events on crash
+                            if (stats["created"] + stats["updated"]) % 50 == 0:
+                                await self.db.flush()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise
@@ -739,7 +764,14 @@ class GCalSyncService:
                     stats["deleted"] += 1
                     _report()
 
-        except httpx.HTTPStatusError as e:
+        except (httpx.HTTPStatusError, TokenRefreshError) as e:
+            if isinstance(e, TokenRefreshError):
+                msg = "Google authorization expired. Please reconnect Google Calendar in Settings."
+                await self._disable_sync_on_error(msg)
+                stats["error"] = msg
+                logger.error(f"Bulk sync aborted for user {self.user_id}: {msg}")
+                await self.db.flush()
+                return stats
             if _is_calendar_error(e):
                 msg = _calendar_error_message(e)
                 await self._disable_sync_on_error(msg)
