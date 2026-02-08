@@ -23,6 +23,7 @@ dependencies = [
     "slowapi>=0.1.9",
     "alembic>=1.14.0",
     "prometheus-client>=0.21.0",
+    "sentry-sdk>=2.19.0",
 ]
 
 [project.optional-dependencies]
@@ -36,9 +37,6 @@ dev = [
     "httpx>=0.28.0",
     "testcontainers[postgres]>=4.0.0",
     "psycopg2-binary>=2.9.0",
-]
-sentry = [
-    "sentry-sdk>=2.19.0",
 ]
 
 [tool.ruff]
