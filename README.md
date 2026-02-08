@@ -127,8 +127,24 @@ See the [Deployment Guide](docs/DEPLOYMENT.md) for detailed instructions.
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /health` | Liveness check |
-| `GET /ready` | Readiness check (DB + services) |
+| `GET /health` | Liveness check (always returns 200) |
+| `GET /ready` | Readiness check (verifies DB connectivity) |
+| `GET /metrics` | Prometheus metrics (request counts, latency, pool stats) |
+
+### Monitoring & Observability
+
+**Error Tracking:**
+- **Sentry** — Automatic exception capture with full stack traces, user context, and performance monitoring
+- Configured via `SENTRY_DSN` environment variable (see [Deployment Guide](docs/DEPLOYMENT.md))
+- Free tier: 5K errors/month
+
+**Performance Monitoring:**
+- Query timing logs (`whendoist.timing` logger)
+- Database connection pool metrics
+- Calendar cache hit/miss rates
+- Background task execution tracking
+
+See [Performance Guide](docs/PERFORMANCE.md) for optimization details.
 
 ---
 
@@ -157,16 +173,19 @@ just fmt      # Format code
 | Document | Description |
 |----------|-------------|
 | **Getting Started** | |
-| [Deployment Guide](docs/DEPLOYMENT.md) | Railway deployment, environment variables |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Railway deployment, environment variables, Sentry setup |
 | [Database Migrations](docs/MIGRATIONS.md) | Schema changes with Alembic |
 | **Security** | |
 | [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, headers |
 | [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption details |
 | [Demo Login](docs/DEMO-LOGIN.md) | Demo accounts for testing and previews |
 | **Architecture** | |
-| [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching |
+| [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
 | [Task List Header Redesign](docs/TASK-LIST-HEADER-REDESIGN.md) | Header restructure, clarity naming revamp, options panel simplification |
+| **Product & Roadmap** | |
+| [Product Vision](docs/PRODUCT-VISION.md) | Strategic positioning, user archetypes, mobile UX |
+| [v1.0 Roadmap](docs/V1-ROADMAP.md) | Path to production-ready release, Honeycomb profiling plan |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |

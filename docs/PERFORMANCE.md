@@ -598,12 +598,64 @@ For high-traffic deployments, consider:
 
 ## Monitoring
 
+### Production Observability
+
+**Error Tracking: Sentry**
+
+Whendoist uses [Sentry](https://sentry.io) for production error tracking and performance monitoring:
+
+- **Automatic exception capture** — All unhandled exceptions sent to Sentry with full stack traces
+- **User context** — Errors tagged with user ID for impact analysis
+- **Performance tracing** — 10% sample rate for transaction monitoring
+- **Release tracking** — Errors grouped by deployment version
+
+**Setup:**
+```bash
+# In Railway environment variables
+SENTRY_DSN=https://your-dsn@sentry.io/project-id
+ENVIRONMENT=production
+```
+
+See [Deployment Guide](DEPLOYMENT.md#5-set-up-error-tracking-recommended) for detailed setup.
+
+**What Sentry Captures:**
+- Startup failures (`app/main.py`)
+- Database session errors (`app/database.py`)
+- Background materialization failures (`app/tasks/recurring.py`)
+- GCal sync errors (`app/services/gcal_sync.py`)
+- API endpoint exceptions (all routers)
+
+**What Sentry Doesn't Capture:**
+- 404 errors (normal user behavior)
+- Rate limit violations (expected for abuse prevention)
+- Handled validation errors (user input issues)
+
+---
+
 ### Key Metrics to Watch
 
-1. **Analytics page load time** — Target: < 500ms
+1. **Analytics page load time** — Target: < 500ms (p95)
 2. **Cache hit rate** — Higher is better (check logs for "cache hit" vs "cache miss")
 3. **Background task execution time** — Should complete within minutes
-4. **Query timing logs** — Watch for slow queries
+4. **Query timing logs** — Watch for slow queries (> 100ms)
+5. **Sentry error rate** — Target: < 10 errors/day (excluding expected errors)
+
+### Metrics Endpoints
+
+**Prometheus Metrics** (`GET /metrics`):
+```
+# Request metrics
+http_requests_total{method="GET",endpoint="/",status="200"} 1234
+http_request_duration_seconds{method="GET",endpoint="/"} 0.045
+
+# Database pool
+whendoist_db_pool_size 2
+whendoist_db_pool_checkedout 1
+
+# Task operations
+whendoist_task_operations_total{operation="create"} 567
+whendoist_scheduled_tasks_total 89
+```
 
 ### Log Messages
 
@@ -615,19 +667,37 @@ Calendar cache expired: user=1
 Invalidated 3 cache entries for user 1
 
 # Background materialization
-Running initial instance materialization...
-Materialized instances for 5 users
-Started background instance materialization (1 hour interval)
+Running initial instance materialization (background)...
+Materialized: 2 users, 1 tasks updated
+Periodic materialization: 1 tasks updated, 0 old instances cleaned
 
 # Query timing
 analytics.comprehensive_stats: 45.2ms
+
+# Sentry integration
+Sentry initialized for environment: production
 ```
 
 ---
 
 ## Future Improvements
 
-### Planned
+### Planned for v1.0+
+
+See [v1.0 Roadmap](V1-ROADMAP.md#performance-profiling-with-honeycomb-v10) for detailed profiling plan.
+
+**Honeycomb Integration (Post-v1.0):**
+- High-cardinality query analysis (slice by any dimension)
+- Distributed tracing (see exactly where time is spent)
+- BubbleUp analysis (find what's different about slow requests)
+- Per-user performance profiling
+
+**Optimization Targets:**
+- Dashboard load: < 200ms (p95)
+- Analytics load: < 500ms (p95)
+- Task creation: < 100ms (p95)
+
+### Also Planned
 
 1. **Redis caching** — For multi-worker deployments
 2. **Query result caching** — Cache analytics results with short TTL
