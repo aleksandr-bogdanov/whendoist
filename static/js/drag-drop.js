@@ -40,7 +40,7 @@
     const ZOOM_STEPS = [30, 40, 50, 60, 70, 80, 90, 100];
     const ZOOM_MIN = 30;
     const ZOOM_MAX = 100;
-    const ZOOM_WHEEL_SCALE = 0.05;
+    const ZOOM_WHEEL_SCALE = 0.10;
     let currentHourHeight = 60;
     let targetZoomHeight = 60;
     let pendingZoomDelta = 0;
@@ -1182,8 +1182,8 @@
         }
 
         const quickAction = instanceId
-            ? '<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip">⏭</button>'
-            : '<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule">📤</button>';
+            ? '<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#skip-forward"/></svg></button>'
+            : '<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#upload"/></svg></button>';
 
         el.innerHTML = `
             <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="${isCompleted}">
@@ -1406,7 +1406,7 @@
             </button>
             ${durationHtml}
             <span class="date-only-task-text">${escapeHtml(content)}</span>
-            <button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule">📤</button>
+            <button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#upload"/></svg></button>
         `;
 
         el.addEventListener('dragstart', handleDragStart);
