@@ -7,12 +7,13 @@ and wiping user data for testing.
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import Domain, Task, TaskInstance, TodoistToken, User
 from app.routers.auth import get_current_user
 from app.services.todoist import TodoistClient
@@ -65,7 +66,9 @@ class ImportResponse(BaseModel):
 
 
 @router.post("/wipe", response_model=WipeResponse)
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
 async def wipe_user_data(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: User | None = Depends(get_current_user),
 ):
@@ -111,7 +114,9 @@ async def wipe_user_data(
 
 
 @router.get("/todoist/preview", response_model=ImportPreviewResponse)
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
 async def preview_todoist_import(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: User | None = Depends(get_current_user),
 ):
@@ -173,7 +178,9 @@ async def preview_todoist_import(
 
 
 @router.post("/todoist", response_model=ImportResponse)
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
 async def import_from_todoist(
+    request: Request,
     options: ImportOptions | None = None,
     db: AsyncSession = Depends(get_db),
     user: User | None = Depends(get_current_user),
