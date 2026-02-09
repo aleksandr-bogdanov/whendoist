@@ -55,6 +55,13 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.18] - 2026-02-09 — Clean Up GCal Events on Data Wipe
+
+### Fixed
+- **Orphaned GCal events after data wipe** — Import wipe now deletes the Whendoist calendar from Google Calendar before removing tasks, preventing orphaned events that were invisible to subsequent syncs
+
+---
+
 ## [0.42.17] - 2026-02-09 — Self-Host Vendor Scripts, Tighten CSP
 
 ### Security
