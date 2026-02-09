@@ -248,6 +248,14 @@ class TaskService:
             parent = await self.get_task(parent_id)
             if parent:
                 domain_id = parent.domain_id
+            else:
+                parent_id = None  # Silently ignore unowned parent_id
+
+        # Check domain ownership (silently ignore unowned domain_id)
+        if domain_id:
+            domain = await self.get_domain(domain_id)
+            if not domain:
+                domain_id = None
 
         # Get max position for ordering within domain
         result = await self.db.execute(
@@ -319,6 +327,10 @@ class TaskService:
         # Update only whitelisted fields that were explicitly provided
         for field, value in kwargs.items():
             if field in UPDATABLE_FIELDS:
+                if field == "domain_id" and value is not None:
+                    domain = await self.get_domain(value)
+                    if not domain:
+                        continue  # Skip unowned domain_id silently
                 setattr(task, field, value)
 
         await self.db.flush()
@@ -370,8 +382,14 @@ class TaskService:
         await self.db.flush()
         return task
 
-    async def _archive_subtasks(self, parent_id: int) -> None:
+    async def _archive_subtasks(self, parent_id: int, _visited: set[int] | None = None) -> None:
         """Recursively archive all subtasks of a task."""
+        if _visited is None:
+            _visited = set()
+        if parent_id in _visited:
+            return
+        _visited.add(parent_id)
+
         result = await self.db.execute(
             select(Task).where(
                 Task.parent_id == parent_id,
@@ -383,7 +401,7 @@ class TaskService:
 
         for subtask in subtasks:
             # Recursively archive children first
-            await self._archive_subtasks(subtask.id)
+            await self._archive_subtasks(subtask.id, _visited)
             subtask.status = "archived"
 
     async def restore_task(self, task_id: int) -> Task | None:
@@ -400,8 +418,14 @@ class TaskService:
         await self.db.flush()
         return task
 
-    async def _restore_subtasks(self, parent_id: int) -> None:
+    async def _restore_subtasks(self, parent_id: int, _visited: set[int] | None = None) -> None:
         """Recursively restore all subtasks of a task."""
+        if _visited is None:
+            _visited = set()
+        if parent_id in _visited:
+            return
+        _visited.add(parent_id)
+
         result = await self.db.execute(
             select(Task).where(
                 Task.parent_id == parent_id,
@@ -413,7 +437,7 @@ class TaskService:
 
         for subtask in subtasks:
             # Recursively restore children first
-            await self._restore_subtasks(subtask.id)
+            await self._restore_subtasks(subtask.id, _visited)
             subtask.status = "pending"
             subtask.completed_at = None
 

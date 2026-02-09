@@ -43,6 +43,13 @@ class BackupInstanceSchema(BaseModel):
     scheduled_datetime: str | None = None
     completed_at: str | None = None
 
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        if v not in ("pending", "completed", "skipped"):
+            raise ValueError("Instance status must be pending, completed, or skipped")
+        return v
+
 
 class BackupTaskSchema(BaseModel):
     """Schema for task in backup."""
@@ -85,6 +92,27 @@ class BackupTaskSchema(BaseModel):
         v = _strip_control_chars(v)
         if len(v) > TASK_DESCRIPTION_MAX_LENGTH:
             raise ValueError(f"Task description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        if v not in ("pending", "completed", "archived"):
+            raise ValueError("Task status must be pending, completed, or archived")
+        return v
+
+    @field_validator("clarity")
+    @classmethod
+    def validate_clarity(cls, v: str | None) -> str | None:
+        if v is not None and v not in ("autopilot", "normal", "brainstorm"):
+            raise ValueError("Task clarity must be autopilot, normal, or brainstorm")
+        return v
+
+    @field_validator("impact")
+    @classmethod
+    def validate_impact(cls, v: int | None) -> int | None:
+        if v is not None and (v < 1 or v > 4):
+            raise ValueError("Task impact must be between 1 and 4")
         return v
 
 
@@ -298,6 +326,30 @@ class BackupService:
                     task = result.scalar_one_or_none()
                     if task:
                         task.parent_id = new_parent_id
+
+            # Validate no circular parent references
+            for old_id, old_parent_id in tasks_with_parents:
+                new_id = task_id_map.get(old_id)
+                new_parent_id = task_id_map.get(old_parent_id)
+                if new_id is not None and new_parent_id is not None:
+                    # Check for cycles by walking parent chain
+                    visited = {new_id}
+                    current = new_parent_id
+                    while current is not None:
+                        if current in visited:
+                            # Cycle detected — break it by nullifying this parent
+                            result = await self.db.execute(
+                                select(Task).where(Task.id == new_id, Task.user_id == self.user_id)
+                            )
+                            task = result.scalar_one_or_none()
+                            if task:
+                                task.parent_id = None
+                            break
+                        visited.add(current)
+                        parent_result = await self.db.execute(
+                            select(Task.parent_id).where(Task.id == current, Task.user_id == self.user_id)
+                        )
+                        current = parent_result.scalar_one_or_none()
 
             await self.db.flush()
 

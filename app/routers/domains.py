@@ -218,8 +218,8 @@ async def batch_update_domains(
             updated_count += 1
             await db.commit()
         except Exception as e:
-            # Log but continue - don't fail entire batch for one item
-            errors.append({"id": item.id, "error": str(e)})
+            await db.rollback()
+            errors.append({"id": item.id, "error": "Update failed"})
             logger.warning(f"Failed to update domain {item.id}: {e}")
 
     result: dict[str, int | list[dict[str, str]]] = {
