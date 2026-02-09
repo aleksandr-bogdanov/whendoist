@@ -397,6 +397,23 @@
     }
 
     // ==========================================================================
+    // HTMX CSRF Integration
+    // ==========================================================================
+
+    // Inject CSRF token into all HTMX requests that modify state
+    if (typeof document !== 'undefined') {
+        document.body.addEventListener('htmx:configRequest', (e) => {
+            const method = (e.detail.verb || '').toUpperCase();
+            if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+                const token = getCSRFToken();
+                if (token) {
+                    e.detail.headers['X-CSRF-Token'] = token;
+                }
+            }
+        });
+    }
+
+    // ==========================================================================
     // Exports
     // ==========================================================================
 
