@@ -56,6 +56,13 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.19] - 2026-02-09 — Tighten Input Validation
+
+### Fixed
+- **Pydantic field constraints** — Added range validation to `impact` (1-4), `duration_minutes` (1-1440), `completed_limit` (0-1000); max_length on passkey and encryption string fields; size limits on batch update lists; `BatchAction.action` now uses `Literal` instead of raw `str`
+
+---
+
 ## [0.42.18] - 2026-02-09 — Clean Up GCal Events on Data Wipe
 
 ### Fixed

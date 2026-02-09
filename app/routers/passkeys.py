@@ -7,7 +7,7 @@ Provides REST endpoints for managing WebAuthn passkeys used for E2E encryption u
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from webauthn.helpers import base64url_to_bytes
 
@@ -37,9 +37,9 @@ class RegistrationVerifyRequest(BaseModel):
     """Request to verify and store a new passkey."""
 
     credential: dict  # WebAuthn credential from navigator.credentials.create()
-    name: str  # User-provided name for this passkey
-    prf_salt: str  # Salt used in PRF evaluation
-    wrapped_key: str  # Master encryption key wrapped with PRF-derived key
+    name: str = Field(max_length=100)  # User-provided name for this passkey
+    prf_salt: str = Field(max_length=64)  # Salt used in PRF evaluation
+    wrapped_key: str = Field(max_length=10000)  # Master encryption key wrapped with PRF-derived key
 
 
 class RegistrationVerifyResponse(BaseModel):

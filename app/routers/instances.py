@@ -5,6 +5,7 @@ Provides REST endpoints for managing recurring task instances.
 """
 
 from datetime import date, datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
@@ -181,7 +182,7 @@ class BatchCompleteRequest(BaseModel):
 class BatchAction(BaseModel):
     """Request body for batch actions on all past instances."""
 
-    action: str  # "complete" or "skip"
+    action: Literal["complete", "skip"]
 
 
 @router.post("/batch-complete", status_code=200)

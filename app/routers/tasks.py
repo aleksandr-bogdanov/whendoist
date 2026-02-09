@@ -10,7 +10,7 @@ import re
 from datetime import date, datetime, time
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import (
@@ -132,8 +132,8 @@ class TaskCreate(BaseModel):
     description: str | None = None
     domain_id: int | None = None
     parent_id: int | None = None
-    duration_minutes: int | None = None
-    impact: int = 4
+    duration_minutes: int | None = Field(None, ge=1, le=1440)
+    impact: int = Field(default=4, ge=1, le=4)
     clarity: str = "normal"  # Default to "normal" - autopilot/normal/brainstorm
     due_date: date | None = None
     due_time: time | None = None
@@ -185,8 +185,8 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     domain_id: int | None = None
-    duration_minutes: int | None = None
-    impact: int | None = None
+    duration_minutes: int | None = Field(None, ge=1, le=1440)
+    impact: int | None = Field(None, ge=1, le=4)
     clarity: str | None = None
     due_date: date | None = None
     due_time: time | None = None
@@ -724,7 +724,7 @@ async def toggle_task_complete(
 class BatchUpdateTasksRequest(BaseModel):
     """Request body for batch updating task content."""
 
-    tasks: list[TaskContentData]
+    tasks: list[TaskContentData] = Field(max_length=5000)
 
 
 @router.post("/batch-update", status_code=200)
