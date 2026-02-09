@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.36 — 2026-02-09
+
+### Fixed
+- **Calendar quick-action buttons visible** — The `.scheduled-task.calendar-item > *` rule (specificity 0,2,0) was overriding `.calendar-quick-action`'s `position: absolute` (specificity 0,1,0) with `position: relative`, putting the button in the normal flow where `overflow: hidden` clipped it. Added higher-specificity override.
+- **Faster zoom** — Wheel scale 0.15 → 0.20.
+
 ## v0.42.35 — 2026-02-09
 
 ### Fixed

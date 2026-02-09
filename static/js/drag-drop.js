@@ -40,7 +40,7 @@
     const ZOOM_STEPS = [30, 40, 50, 60, 70, 80, 90, 100];
     const ZOOM_MIN = 30;
     const ZOOM_MAX = 100;
-    const ZOOM_WHEEL_SCALE = 0.15;
+    const ZOOM_WHEEL_SCALE = 0.20;
     let currentHourHeight = 60;
     let targetZoomHeight = 60;
     let pendingZoomDelta = 0;

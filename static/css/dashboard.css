@@ -1796,6 +1796,13 @@
     z-index: 1;
 }
 
+/* Quick-action must be absolutely positioned on scheduled cards
+   (overrides > * rule which forces position: relative) */
+.scheduled-task.calendar-item > .calendar-quick-action {
+    position: absolute;
+    z-index: 2;
+}
+
 /* -----------------------------------------------------------------------------
    Domain Color Mappings (fallback via impact classes)
    ----------------------------------------------------------------------------- */
