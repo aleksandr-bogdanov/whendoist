@@ -500,7 +500,7 @@
             handleError(error, 'Failed to delete task', {
                 component: 'drag-drop',
                 action: 'executeDeleteNow',
-                retry: () => executeDeleteNow(taskId)
+                retry: () => executeDelete(taskId)
             });
         }
     }

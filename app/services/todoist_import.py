@@ -144,9 +144,9 @@ class TodoistImportService:
 
             await self.db.commit()
 
-        except Exception as e:
+        except Exception:
             logger.exception("Todoist import failed")
-            result.errors.append(str(e))
+            result.errors.append("Import failed due to an unexpected error")
             await self.db.rollback()
 
         return result
