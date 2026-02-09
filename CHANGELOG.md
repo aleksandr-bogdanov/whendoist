@@ -55,6 +55,15 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.14] - 2026-02-09 — Offline Checks for Secondary Mutation Paths
+
+### Fixed
+- **Offline flickering on Plan My Day** — Batch scheduling now checks network before optimistic updates
+- **Offline flickering on dialog complete/delete** — Task dialog complete and delete buttons now check network status
+- **Offline flickering on mobile skip** — Mobile sheet skip instance checks network before optimistic update
+
+---
+
 ## [0.42.13] - 2026-02-09 — Session Fixation Defense-in-Depth
 
 ### Fixed

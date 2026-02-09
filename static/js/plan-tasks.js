@@ -924,6 +924,14 @@
      * Supports cross-day planning (e.g., 23:00 today to 02:00 tomorrow).
      */
     async function executePlan() {
+        // Check network status before optimistic update
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         if (!selectionDayCalendar || selectionStart === null || selectionEnd === null) {
             log.error('Invalid selection state');
             return;

@@ -1209,6 +1209,14 @@
     const DELETION_DELAY = 5000;
 
     async function handleDelete() {
+        // Check network status before optimistic update
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         if (!currentTaskId || isNaN(currentTaskId)) {
             console.error('Cannot delete: invalid task ID', currentTaskId);
             return;
@@ -1321,6 +1329,14 @@
      * For recurring tasks, toggles today's instance.
      */
     async function handleComplete() {
+        // Check network status before optimistic update
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         if (!currentTaskId || isNaN(currentTaskId)) {
             console.error('Cannot toggle completion: invalid task ID', currentTaskId);
             return;
