@@ -36,8 +36,11 @@
         // Use event delegation on document for all completion gutters
         document.addEventListener('click', handleGutterClick);
 
-        // Kebab button for task actions
+        // Kebab button for task actions (task list items)
         document.addEventListener('click', handleKebabClick);
+
+        // Quick-action buttons on calendar cards (skip / unschedule)
+        document.addEventListener('click', handleQuickActionClick);
 
         // Right-click context menu for tasks
         document.addEventListener('contextmenu', handleGutterRightClick);
@@ -415,6 +418,28 @@
 
         const rect = kebab.getBoundingClientRect();
         showActionsMenu(rect.left, rect.bottom + 4, taskEl, buildMenuOpts(taskEl));
+    }
+
+    /**
+     * Handle click on calendar quick-action button (skip / unschedule).
+     * @param {Event} e - Click event
+     */
+    function handleQuickActionClick(e) {
+        var btn = e.target.closest('.calendar-quick-action');
+        if (!btn) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        var taskEl = btn.closest('[data-task-id]');
+        if (!taskEl) return;
+
+        var action = btn.dataset.action;
+        if (action === 'skip' && taskEl.dataset.instanceId) {
+            skipInstance(taskEl, taskEl.dataset.instanceId);
+        } else if (action === 'unschedule') {
+            unscheduleTask(taskEl, taskEl.dataset.taskId);
+        }
     }
 
     /**
