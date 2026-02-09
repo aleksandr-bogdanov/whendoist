@@ -212,6 +212,9 @@ class UserPreferences(Base):
     # Timezone preference (IANA format: "America/New_York", "Europe/London", etc.)
     timezone: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
+    # Calendar hour height in pixels (zoom level)
+    calendar_hour_height: Mapped[int] = mapped_column(Integer, default=60)
+
     # Google Calendar Sync preferences
     gcal_sync_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     gcal_sync_calendar_id: Mapped[str | None] = mapped_column(String(255), nullable=True)

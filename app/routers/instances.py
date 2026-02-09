@@ -49,7 +49,11 @@ class InstanceResponse(BaseModel):
 
 
 def _instance_to_response(instance: TaskInstance) -> InstanceResponse:
-    """Convert a TaskInstance model to InstanceResponse."""
+    """Convert a TaskInstance model to InstanceResponse.
+
+    Requires instance.task and instance.task.domain to be eagerly loaded
+    (e.g. via selectinload) to avoid MissingGreenlet in async context.
+    """
     return InstanceResponse(
         id=instance.id,
         task_id=instance.task_id,

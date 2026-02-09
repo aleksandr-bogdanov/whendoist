@@ -35,19 +35,29 @@
     // CONSTANTS
     // ==========================================================================
 
-    const HOUR_HEIGHT_PX_DESKTOP = 60;
-    const HOUR_HEIGHT_PX_MOBILE = 40;
     const DEFAULT_DURATION = 30;
     const MAX_OVERLAP_COLUMNS = 3;
+    const ZOOM_STEPS = [30, 40, 50, 60, 70, 80, 90, 100];
+    let currentHourHeight = 60;
 
     /**
-     * Get the current hour height based on screen size.
-     * Matches CSS media query: (max-width: 900px), (orientation: portrait)
+     * Get the current hour height from module state.
      * @returns {number} Height in pixels
      */
     function getHourHeight() {
-        const isMobile = window.matchMedia('(max-width: 900px), (orientation: portrait)').matches;
-        return isMobile ? HOUR_HEIGHT_PX_MOBILE : HOUR_HEIGHT_PX_DESKTOP;
+        return currentHourHeight;
+    }
+
+    /**
+     * Set the hour height and update CSS variable.
+     * @param {number} height - Height in pixels
+     */
+    function setHourHeight(height) {
+        currentHourHeight = height;
+        const panel = document.querySelector('.calendar-panel');
+        if (panel) {
+            panel.style.setProperty('--cal-hour-height', height + 'px');
+        }
     }
 
     // ==========================================================================
@@ -314,6 +324,124 @@
 
         // Create trash bin
         createTrashBin();
+
+        // Initialize zoom
+        initZoom();
+    }
+
+    // ==========================================================================
+    // ZOOM CONTROLS
+    // ==========================================================================
+
+    let zoomSaveTimeout = null;
+
+    /**
+     * Initialize zoom controls: read saved height, set up buttons and Ctrl+scroll.
+     */
+    function initZoom() {
+        const panel = document.querySelector('.calendar-panel');
+        if (!panel) return;
+
+        // Read initial hour height from data attribute (server-rendered)
+        const savedHeight = parseInt(panel.dataset.hourHeight, 10);
+        if (savedHeight && ZOOM_STEPS.includes(savedHeight)) {
+            setHourHeight(savedHeight);
+        } else {
+            setHourHeight(60);
+        }
+
+        // Recalculate positions for server-rendered events
+        recalcAllScheduledPositions();
+
+        // Zoom button click handlers
+        document.querySelectorAll('.zoom-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const direction = btn.dataset.zoom;
+                const currentIdx = ZOOM_STEPS.indexOf(currentHourHeight);
+                let newIdx = currentIdx;
+
+                if (direction === 'in' && currentIdx < ZOOM_STEPS.length - 1) {
+                    newIdx = currentIdx + 1;
+                } else if (direction === 'out' && currentIdx > 0) {
+                    newIdx = currentIdx - 1;
+                }
+
+                if (newIdx !== currentIdx) {
+                    applyZoom(ZOOM_STEPS[newIdx]);
+                }
+            });
+        });
+
+        // Ctrl+scroll (also handles trackpad pinch on macOS)
+        panel.addEventListener('wheel', (e) => {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+
+            const currentIdx = ZOOM_STEPS.indexOf(currentHourHeight);
+            let newIdx = currentIdx;
+
+            if (e.deltaY < 0 && currentIdx < ZOOM_STEPS.length - 1) {
+                newIdx = currentIdx + 1;
+            } else if (e.deltaY > 0 && currentIdx > 0) {
+                newIdx = currentIdx - 1;
+            }
+
+            if (newIdx !== currentIdx) {
+                applyZoom(ZOOM_STEPS[newIdx]);
+            }
+        }, { passive: false });
+    }
+
+    /**
+     * Apply a new zoom level: update CSS, recalculate positions, persist.
+     * @param {number} newHeight - New hour height in pixels
+     */
+    function applyZoom(newHeight) {
+        setHourHeight(newHeight);
+        recalcAllScheduledPositions();
+
+        // Debounced save to server
+        if (zoomSaveTimeout) clearTimeout(zoomSaveTimeout);
+        zoomSaveTimeout = setTimeout(() => {
+            safeFetch('/api/v1/preferences', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ calendar_hour_height: newHeight }),
+            }).catch(err => log.warn('Failed to save zoom preference:', err));
+        }, 500);
+    }
+
+    /**
+     * Recalculate top and height for all positioned calendar items.
+     */
+    function recalcAllScheduledPositions() {
+        const hourHeight = getHourHeight();
+        document.querySelectorAll('.scheduled-task[data-start-mins], .calendar-event[data-start-mins]').forEach(el => {
+            const startMins = parseInt(el.dataset.startMins, 10);
+            const endMins = parseInt(el.dataset.endMins, 10);
+            if (isNaN(startMins) || isNaN(endMins)) return;
+
+            const durationMins = endMins - startMins;
+            const hourInSlot = startMins % 60;
+            el.style.top = (hourInSlot / 60) * hourHeight + 'px';
+            el.style.height = (durationMins / 60) * hourHeight + 'px';
+        });
+
+        // Also update the now-line position
+        const nowLine = document.querySelector('.now-line');
+        if (nowLine) {
+            const todayGrid = document.querySelector('#today-calendar .hour-grid');
+            if (todayGrid) {
+                const now = new Date();
+                const h = now.getHours();
+                const m = now.getMinutes();
+                const hourRow = todayGrid.querySelector(`.hour-row[data-hour="${h}"]:not(.adjacent-day)`);
+                if (hourRow) {
+                    nowLine.style.top = `${hourRow.offsetTop + (m / 60 * hourHeight)}px`;
+                }
+            }
+        }
     }
 
     // ==========================================================================
@@ -375,7 +503,7 @@
     // Track pending deletion for undo
     let pendingDeletion = null;
     let deletionTimeout = null;
-    const DELETION_DELAY = 5000; // 5 seconds to undo
+    const DELETION_DELAY = 2000; // 2 seconds to undo
 
     async function handleTrashDrop(e) {
         e.preventDefault();
@@ -679,6 +807,7 @@
         isDraggingDateOnlyTask = false;
         wasDroppedSuccessfully = false;
         removeDropIndicator();
+        removeDragHighlight();
         hideTrashBin();
 
         // Remove body drag class
@@ -698,18 +827,19 @@
 
         const { quarterIndex, minutes, hour } = calculateDropPosition(e, slot);
         updateDropIndicator(slot, hour, minutes);
+        highlightDurationSlots(slot, minutes);
     }
 
     function handleDragEnter(e) {
         e.preventDefault();
-        e.target.closest('.hour-slot')?.classList.add('drag-over');
+        // Duration highlight is handled by handleDragOver
     }
 
     function handleDragLeave(e) {
         const slot = e.target.closest('.hour-slot');
         const relatedSlot = e.relatedTarget?.closest('.hour-slot');
         if (slot && slot !== relatedSlot) {
-            slot.classList.remove('drag-over');
+            removeDragHighlight();
             removeDropIndicator();
         }
     }
@@ -730,6 +860,7 @@
 
         slot.classList.remove('drag-over');
         removeDropIndicator();
+        removeDragHighlight();
 
         let taskData;
         try {
@@ -843,6 +974,45 @@
                 component: 'drag-drop',
                 action: 'handleDropOnCalendarGrid'
             });
+        }
+    }
+
+    // ==========================================================================
+    // DURATION-AWARE DRAG HIGHLIGHT
+    // ==========================================================================
+
+    let dragHighlightOverlay = null;
+
+    /**
+     * Show a duration-aware highlight overlay at the current drop position.
+     * @param {HTMLElement} slot - Current hour slot
+     * @param {number} dropMinutes - Minutes offset within the slot (0, 15, 30, 45)
+     */
+    function highlightDurationSlots(slot, dropMinutes) {
+        const hourHeight = getHourHeight();
+        const topPx = (dropMinutes / 60) * hourHeight;
+        const heightPx = (draggedDuration / 60) * hourHeight;
+
+        if (!dragHighlightOverlay) {
+            dragHighlightOverlay = document.createElement('div');
+            dragHighlightOverlay.className = 'drag-highlight-overlay';
+        }
+
+        dragHighlightOverlay.style.top = `${topPx}px`;
+        dragHighlightOverlay.style.height = `${heightPx}px`;
+
+        if (dragHighlightOverlay.parentElement !== slot) {
+            removeDragHighlight();
+            slot.appendChild(dragHighlightOverlay);
+        }
+    }
+
+    /**
+     * Remove the drag highlight overlay.
+     */
+    function removeDragHighlight() {
+        if (dragHighlightOverlay && dragHighlightOverlay.parentElement) {
+            dragHighlightOverlay.remove();
         }
     }
 
@@ -1194,6 +1364,11 @@
     window.moveTaskToScheduledSection = moveTaskToScheduledSection;
     window.moveTaskToUnscheduledSection = moveTaskToUnscheduledSection;
     window.updateTaskScheduledDate = updateTaskScheduledDate;
+
+    window.DragDrop = {
+        init,
+        getHourHeight,
+    };
 
     document.addEventListener('DOMContentLoaded', init);
 

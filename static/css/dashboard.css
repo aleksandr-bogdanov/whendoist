@@ -2288,6 +2288,56 @@ body[data-energy-level] .scheduled-group.project-group {
     pointer-events: none;
 }
 
+/* Calendar toolbar (Today + zoom) */
+.calendar-toolbar {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.calendar-toolbar .go-to-today-btn {
+    position: static;
+    transform: none;
+}
+
+/* Zoom controls */
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 20px;
+    padding: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.zoom-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s ease;
+}
+
+.zoom-btn:hover {
+    background: var(--bg-hover);
+}
+
 /* Horizontal carousel container */
 .calendar-carousel {
     display: flex;
@@ -2811,7 +2861,7 @@ body[data-energy-level] .scheduled-group.project-group {
 .hour-row {
     display: flex;
     border-bottom: 1px solid rgba(15, 23, 42, 0.05);
-    min-height: 60px;
+    min-height: var(--cal-hour-height, 60px);
     background: transparent;
     overflow: visible; /* Allow tasks to extend beyond row */
 }
@@ -2855,7 +2905,7 @@ body[data-energy-level] .scheduled-group.project-group {
     flex: 1;
     min-width: 0;
     padding: 0.25rem 0.5rem 0.25rem 6px;
-    min-height: 60px;
+    min-height: var(--cal-hour-height, 60px);
     position: relative;
     overflow: visible;
 }
@@ -3108,8 +3158,12 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     /* Smaller hour rows for mobile */
+    .calendar-panel {
+        --cal-hour-height: 40px;
+    }
+
     .hour-row {
-        min-height: 40px;
+        min-height: var(--cal-hour-height, 40px);
     }
 
     .hour-label {
@@ -3119,7 +3173,7 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     .hour-slot {
-        min-height: 40px;
+        min-height: var(--cal-hour-height, 40px);
         padding: 0.125rem 0.25rem;
     }
 
@@ -3821,4 +3875,42 @@ body[data-energy-level] .scheduled-group.project-group {
 .skip-menu-item .skip-icon {
     font-size: 0.875rem;
     opacity: 0.7;
+}
+
+/* Kebab button for recurring task actions */
+.kebab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.1s ease;
+}
+
+.task-item:hover .kebab-btn {
+    opacity: 0.6;
+}
+
+.kebab-btn:hover {
+    opacity: 1 !important;
+    background: var(--bg-hover);
+}
+
+/* Task completion fade-out + collapse animation */
+.task-item.completing {
+    opacity: 0;
+    max-height: 0 !important;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
+    overflow: hidden;
+    transition: all 0.35s ease;
 }

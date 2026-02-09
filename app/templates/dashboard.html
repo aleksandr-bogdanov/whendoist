@@ -109,8 +109,14 @@
     </section>
 
     <!-- RIGHT PANEL: Day Calendar Carousel -->
-    <aside class="calendar-panel">
-        <button type="button" id="go-to-today-btn" class="go-to-today-btn">Today</button>
+    <aside class="calendar-panel" data-hour-height="{{ user_prefs.calendar_hour_height or 60 }}">
+        <div class="calendar-toolbar">
+            <button type="button" id="go-to-today-btn" class="go-to-today-btn">Today</button>
+            <div class="zoom-controls">
+                <button class="zoom-btn" data-zoom="out" title="Zoom out">−</button>
+                <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+            </div>
+        </div>
         <div class="calendar-carousel" id="calendar-carousel">
             {% for day in calendar_days %}
             <div class="day-calendar{% if day.is_today %} today{% elif day.offset < 0 %} past{% else %} future{% endif %}"
@@ -203,10 +209,11 @@
                     <div class="hour-row" data-hour="{{ hour }}">
                         <span class="hour-label">{{ '%02d' % hour }}:00</span>
                         <div class="hour-slot" data-droppable="true">
+                            {% set cal_hh = user_prefs.calendar_hour_height or 60 %}
                             {% for event in day.events if not event.all_day and event.start.hour == hour %}
                             {% set duration_mins = ((event.end - event.start).total_seconds() / 60)|int %}
-                            {% set height_px = (duration_mins / 60 * 60)|int %}
-                            {% set top_px = (event.start.minute / 60 * 60)|int %}
+                            {% set height_px = (duration_mins / 60 * cal_hh)|int %}
+                            {% set top_px = (event.start.minute / 60 * cal_hh)|int %}
                             {% set duration_class = 'duration-short' if duration_mins < 30 else ('duration-medium' if duration_mins < 60 else 'duration-long') %}
                             {% set start_mins = event.start.hour * 60 + event.start.minute %}
                             {% set end_mins = start_mins + duration_mins %}
@@ -223,8 +230,8 @@
                             {# Scheduled native tasks #}
                             {% for scheduled in day.scheduled_tasks if scheduled.start.hour == hour %}
                             {% set duration_mins = scheduled.duration_minutes %}
-                            {% set height_px = (duration_mins / 60 * 60)|int %}
-                            {% set top_px = (scheduled.start.minute / 60 * 60)|int %}
+                            {% set height_px = (duration_mins / 60 * cal_hh)|int %}
+                            {% set top_px = (scheduled.start.minute / 60 * cal_hh)|int %}
                             {% set duration_class = 'duration-short' if duration_mins < 30 else ('duration-medium' if duration_mins < 60 else 'duration-long') %}
                             {% set start_mins = scheduled.start.hour * 60 + scheduled.start.minute %}
                             {% set end_mins = start_mins + duration_mins %}
@@ -403,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
-        const hourHeight = 60; // px per hour (matches CSS min-height)
+        const hourHeight = parseInt(document.querySelector('.calendar-panel')?.dataset.hourHeight, 10) || 60;
 
         // Find the current hour's row (not adjacent-day) and calculate position
         const currentHourRow = todayHourGrid.querySelector(`.hour-row[data-hour="${currentHour}"]:not(.adjacent-day)`);
