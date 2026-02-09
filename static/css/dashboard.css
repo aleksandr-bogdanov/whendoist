@@ -3936,7 +3936,8 @@ body[data-energy-level] .scheduled-group.project-group {
 /* Quick-action button on calendar cards (skip / unschedule) */
 .calendar-quick-action {
     position: absolute;
-    top: 1px;
+    top: 50%;
+    transform: translateY(-50%);
     right: 2px;
     width: 20px;
     height: 20px;
@@ -3945,15 +3946,19 @@ body[data-energy-level] .scheduled-group.project-group {
     border: none;
     border-radius: 4px;
     background: none;
-    font-size: 0.65rem;
-    line-height: 1;
     cursor: pointer;
     opacity: 0;
     z-index: 2;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     justify-content: center;
     transition: opacity 0.15s ease, background 0.1s ease;
+}
+
+.calendar-quick-action svg {
+    width: 14px;
+    height: 14px;
 }
 
 .calendar-item:hover .calendar-quick-action {
@@ -3973,6 +3978,7 @@ body[data-energy-level] .scheduled-group.project-group {
 /* Date-only: static position in flex row */
 .date-only-task .calendar-quick-action {
     position: static;
+    transform: none;
     flex-shrink: 0;
     margin-left: auto;
 }

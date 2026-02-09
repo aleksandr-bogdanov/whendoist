@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.34 — 2026-02-09
+
+### Fixed
+- **Zoom tuning** — Changed zoom wheel scale from 0.05 to 0.10 for a better middle ground (~2-3s to traverse full range with gentle pinch).
+- **SVG quick-action icons** — Replaced emoji characters (⏭, 📤) on calendar cards with clean SVG icons (`skip-forward`, `upload`) from the `ui-icons.svg` sprite. Vertically centered on scheduled cards.
+- **SVG kebab icon** — Replaced plain text `⋮` on task-list items with SVG `#menu-dots-stroke` icon for consistent styling.
+
+### Added
+- **Unschedule from task list** — Scheduled non-recurring tasks now show "Unschedule" in the kebab menu, providing a way to unschedule without dragging the calendar card.
+
 ## v0.42.33 — 2026-02-09
 
 ### Fixed

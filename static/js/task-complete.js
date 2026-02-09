@@ -498,8 +498,8 @@
             menu.appendChild(skipBtn);
         }
 
-        // Unschedule (non-recurring calendar cards only)
-        if (opts.isCalendarCard && !opts.isRecurring) {
+        // Unschedule (non-recurring scheduled tasks — calendar cards or task-list items)
+        if (!opts.isRecurring && (opts.isCalendarCard || opts.isScheduled)) {
             var unschedBtn = createMenuItem('📤', 'Unschedule');
             unschedBtn.addEventListener('click', function(e) {
                 e.stopPropagation();

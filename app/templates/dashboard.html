@@ -187,7 +187,7 @@
                             </span>
                             {% endif %}
                             <span class="date-only-task-text">{% if encryption_enabled %}🔒{% else %}{{ item.task.title }}{% endif %}</span>
-                            {% if item.is_instance %}<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip">⏭</button>{% else %}<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule">📤</button>{% endif %}
+                            {% if item.is_instance %}<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#skip-forward"/></svg></button>{% else %}<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#upload"/></svg></button>{% endif %}
                         </div>
                         {% endfor %}
                     </div>
@@ -263,7 +263,7 @@
                                     {% endif %}
                                 </div>
                                 <span class="scheduled-task-text">{% if encryption_enabled %}🔒{% else %}{{ scheduled.task.title }}{% endif %}{% if scheduled.is_instance %}<span class="occurrence-day" title="Occurrence: {{ scheduled.instance.instance_date.strftime('%A, %b %d') }}">{{ scheduled.instance.instance_date.strftime('%a') }}</span>{% endif %}</span>
-                                {% if scheduled.is_instance %}<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip">⏭</button>{% else %}<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule">📤</button>{% endif %}
+                                {% if scheduled.is_instance %}<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#skip-forward"/></svg></button>{% else %}<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#upload"/></svg></button>{% endif %}
                             </div>
                             {% endfor %}
                         </div>
