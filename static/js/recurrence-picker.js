@@ -108,6 +108,12 @@
                     boundsSection.style.display = 'block';
                 }
 
+                // Show/hide timezone notice based on recurrence state
+                const timezoneNotice = document.querySelector('.timezone-notice');
+                if (timezoneNotice) {
+                    timezoneNotice.style.display = preset.value === null ? 'none' : 'block';
+                }
+
                 updatePreview();
             });
         });
@@ -208,6 +214,10 @@
         const boundsSection = containerEl.querySelector('.recurrence-bounds');
         if (boundsSection) boundsSection.style.display = 'block';
 
+        // Show timezone notice for recurring tasks
+        const timezoneNotice = document.querySelector('.timezone-notice');
+        if (timezoneNotice) timezoneNotice.style.display = 'block';
+
         // Try to match a preset
         let matchedIndex = -1;
         for (let i = 0; i < PRESETS.length - 1; i++) {
@@ -280,6 +290,8 @@
         containerEl.querySelector('.recurrence-preset').classList.add('active'); // "None"
         containerEl.querySelector('.recurrence-custom').style.display = 'none';
         containerEl.querySelector('.recurrence-bounds').style.display = 'none';
+        const timezoneNotice = document.querySelector('.timezone-notice');
+        if (timezoneNotice) timezoneNotice.style.display = 'none';
         containerEl.querySelector('.freq-select').value = 'daily';
         containerEl.querySelector('.interval-input').value = 1;
         containerEl.querySelectorAll('[name="days_of_week"]').forEach(cb => cb.checked = false);

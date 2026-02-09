@@ -55,6 +55,13 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.15] - 2026-02-09 — Document Recurring Task Timezone Limitation
+
+### Changed
+- **Recurring task time input** — Added UTC timezone notice near scheduled time for recurring tasks, clarifying that times are stored and materialized in UTC
+
+---
+
 ## [0.42.14] - 2026-02-09 — Offline Checks for Secondary Mutation Paths
 
 ### Fixed

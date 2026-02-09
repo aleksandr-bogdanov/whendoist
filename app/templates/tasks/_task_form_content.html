@@ -98,6 +98,9 @@
            name="scheduled_time"
            class="inline-input"
            value="{{ task.scheduled_time.strftime('%H:%M') if task and task.scheduled_time else '' }}">
+    <small class="timezone-notice" style="display: none; color: var(--pico-muted-color); font-size: 0.85rem; margin-top: 0.25rem;">
+      Times are in UTC. If you're not in the UTC timezone, recurring task times may appear offset.
+    </small>
   </div>
 
   <!-- Due expand -->
