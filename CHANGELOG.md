@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.23 — 2026-02-09
+
+### Fixed
+- **domain_id IDOR** — Added ownership validation in `create_task()` and `update_task()` to prevent IDOR via unowned domain_id
+- **Batch update dirty session** — Added rollback and sanitized error messages in task/domain batch updates (security hardening)
+- **/ready info leakage** — Sanitized database error messages and removed user count from health check endpoint
+- **Backup validation** — Added Pydantic validators for task/instance status, clarity, and impact fields to reject invalid backup imports
+- **Circular parent_id protection** — Added cycle detection in backup import and recursion guards in archive/restore subtasks
+
 ## v0.42.22 — 2026-02-09
 
 ### Fixed

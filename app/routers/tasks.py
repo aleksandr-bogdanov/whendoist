@@ -779,8 +779,8 @@ async def batch_update_tasks(
                 await db.commit()
                 logger.debug(f"Batch update: committed {i + 1}/{len(data.tasks)} tasks")
         except Exception as e:
-            # Log but continue - don't fail entire batch for one item
-            errors.append({"id": item.id, "error": str(e)})
+            await db.rollback()
+            errors.append({"id": item.id, "error": "Update failed"})
             logger.warning(f"Failed to update task {item.id}: {e}")
 
     # Final commit for remaining items

@@ -224,7 +224,7 @@ async def readiness_check():
         checks["database"] = "connected"
     except Exception as e:
         logger.error(f"Database check failed: {e}")
-        checks["database"] = f"error: {e}"
+        checks["database"] = "error"
         is_ready = False
 
     # Check Google Calendar API (optional - only if user has connected)
@@ -235,7 +235,7 @@ async def readiness_check():
             result = await db.execute(text("SELECT COUNT(*) FROM google_tokens WHERE access_token IS NOT NULL"))
             token_count = result.scalar() or 0
             if token_count > 0:
-                checks["google_calendar"] = f"configured ({token_count} users)"
+                checks["google_calendar"] = "configured"
             else:
                 checks["google_calendar"] = "no users connected"
     except Exception as e:
