@@ -55,6 +55,13 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.13] - 2026-02-09 — Session Fixation Defense-in-Depth
+
+### Fixed
+- **Session not cleared before login** — OAuth and demo login now explicitly clear the session before setting user_id, preventing theoretical session fixation
+
+---
+
 ## [0.42.12] - 2026-02-09 — Backup Import Size Limit
 
 ### Fixed

@@ -258,6 +258,7 @@ async def google_callback(
 
     await db.commit()
 
+    request.session.clear()
     request.session["user_id"] = str(user.id)
     # Redirect to settings if returning from write scope upgrade
     redirect_url = "/settings" if has_write_scope else "/dashboard"
@@ -317,6 +318,7 @@ async def demo_login(
     demo_service = DemoService(db)
     user = await demo_service.get_or_create_demo_user(profile)
 
+    request.session.clear()
     request.session["user_id"] = str(user.id)
     return RedirectResponse(url="/thoughts", status_code=303)
 
