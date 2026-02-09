@@ -3837,6 +3837,10 @@ body[data-energy-level] .scheduled-group.project-group {
     opacity: 0.35 !important;
 }
 
+[data-theme="dark"] .calendar-item .calendar-kebab {
+    color: var(--text-secondary);
+}
+
 /* =============================================================================
    Actions Context Menu
    ============================================================================= */
@@ -3927,6 +3931,46 @@ body[data-energy-level] .scheduled-group.project-group {
 .kebab-btn:hover {
     opacity: 1 !important;
     background: var(--bg-hover);
+}
+
+/* Kebab on calendar cards */
+.calendar-item .calendar-kebab {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    font-size: 0.8rem;
+    opacity: 0;
+    z-index: 2;
+}
+
+.calendar-item:hover .calendar-kebab {
+    opacity: 0.6;
+}
+
+/* Hide kebab on short tasks (too cramped) */
+.duration-short .calendar-kebab {
+    display: none;
+}
+
+/* Date-only kebab: adjust position to not overlap checkbox */
+.date-only-task .calendar-kebab {
+    position: static;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* Actions menu hint row (non-interactive) */
+.actions-menu-hint {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: default;
+    opacity: 0.7;
+}
+
+.actions-menu-hint:hover {
+    background: none;
 }
 
 /* Universal "task leaving list" animation (completion, scheduling, deletion) */

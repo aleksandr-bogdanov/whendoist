@@ -191,7 +191,8 @@
 
             // Show toast notification
             if (isRecurring) {
-                showToast(data.completed ? 'Done for today' : 'Reopened for today', undoCallback);
+                var dateLabel = getDateLabel(taskEl);
+                showToast(data.completed ? 'Done for ' + dateLabel : 'Reopened for ' + dateLabel, undoCallback);
             } else {
                 showToast(data.completed ? 'Task completed' : 'Task reopened', undoCallback);
             }
@@ -392,7 +393,8 @@
             taskId: taskEl.dataset.taskId,
             instanceId: taskEl.dataset.instanceId || null,
             isRecurring: taskEl.dataset.isRecurring === 'true' || !!taskEl.dataset.instanceId,
-            isScheduled: !!taskEl.dataset.scheduledDate,
+            isScheduled: !!taskEl.dataset.scheduledDate || taskEl.classList.contains('calendar-item'),
+            isCalendarCard: taskEl.classList.contains('calendar-item'),
             subtaskCount: parseInt(taskEl.dataset.subtaskCount || '0', 10),
         };
     }
@@ -424,8 +426,8 @@
         const taskEl = e.target.closest('[data-task-id]');
         if (!taskEl) return;
 
-        // Only show for task-item elements (not calendar cards, etc.)
-        if (!taskEl.classList.contains('task-item')) return;
+        // Only show for task items and calendar cards
+        if (!taskEl.classList.contains('task-item') && !taskEl.classList.contains('calendar-item')) return;
 
         e.preventDefault();
         showActionsMenu(e.clientX, e.clientY, taskEl, buildMenuOpts(taskEl));
@@ -471,6 +473,17 @@
             menu.appendChild(skipBtn);
         }
 
+        // Unschedule (non-recurring calendar cards only)
+        if (opts.isCalendarCard && !opts.isRecurring) {
+            var unschedBtn = createMenuItem('📤', 'Unschedule');
+            unschedBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dismissActionsMenu();
+                unscheduleTask(taskEl, opts.taskId);
+            });
+            menu.appendChild(unschedBtn);
+        }
+
         // Edit task / Edit series
         var editLabel = opts.isRecurring ? 'Edit series' : 'Edit task';
         var editBtn = createMenuItem('✏️', editLabel);
@@ -497,6 +510,18 @@
             deleteTaskFromMenu(taskEl, opts.taskId, opts.subtaskCount);
         });
         menu.appendChild(deleteBtn);
+
+        // Hint row for recurring calendar instances
+        if (opts.isCalendarCard && opts.isRecurring) {
+            var hintSep = document.createElement('div');
+            hintSep.className = 'actions-menu-separator';
+            menu.appendChild(hintSep);
+
+            var hintRow = document.createElement('div');
+            hintRow.className = 'actions-menu-item actions-menu-hint';
+            hintRow.innerHTML = '<span class="actions-menu-icon">💡</span> Drag to reschedule';
+            menu.appendChild(hintRow);
+        }
 
         document.body.appendChild(menu);
         activeActionsMenu = menu;
@@ -715,7 +740,7 @@
                 applyCompletionClass(el, false);
             });
 
-            showToast('Skipped for today');
+            showToast('Skipped for ' + getDateLabel(taskEl));
 
             // Animate out then refresh
             if (taskEl.classList.contains('task-item')) {
@@ -732,6 +757,74 @@
                 component: 'task-complete',
                 action: 'skipInstance',
                 retry: function() { skipInstance(taskEl, instanceId); }
+            });
+        }
+    }
+
+    // ==========================================================================
+    // UNSCHEDULE TASK (calendar card → back to task list)
+    // ==========================================================================
+
+    /**
+     * Unschedule a task from the calendar.
+     * Removes scheduled_date and scheduled_time via API.
+     * @param {HTMLElement} taskEl - The calendar card element
+     * @param {string} taskId - Task ID
+     */
+    async function unscheduleTask(taskEl, taskId) {
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
+        // Optimistic: remove from calendar
+        var parent = taskEl.parentElement;
+        var nextSibling = taskEl.nextSibling;
+        var dayCalendar = taskEl.closest('.day-calendar');
+        taskEl.remove();
+        if (dayCalendar && typeof recalculateOverlaps === 'function') {
+            recalculateOverlaps(dayCalendar);
+        }
+
+        try {
+            await safeFetch('/api/v1/tasks/' + taskId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
+            });
+
+            showToast('Task unscheduled');
+
+            // Update task list item if present
+            var taskInList = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+            if (taskInList) {
+                taskInList.classList.remove('scheduled');
+                if (typeof updateTaskScheduledDate === 'function') {
+                    updateTaskScheduledDate(taskInList, null);
+                }
+                if (typeof moveTaskToUnscheduledSection === 'function') {
+                    moveTaskToUnscheduledSection(taskInList);
+                }
+            } else {
+                refreshTaskListFromServer();
+            }
+        } catch (error) {
+            // Revert: restore element
+            if (parent) {
+                if (nextSibling && nextSibling.parentNode === parent) {
+                    parent.insertBefore(taskEl, nextSibling);
+                } else {
+                    parent.appendChild(taskEl);
+                }
+                if (dayCalendar && typeof recalculateOverlaps === 'function') {
+                    recalculateOverlaps(dayCalendar);
+                }
+            }
+            handleError(error, 'Failed to unschedule task', {
+                component: 'task-complete',
+                action: 'unscheduleTask'
             });
         }
     }
@@ -757,6 +850,33 @@
                 }
             });
         }
+    }
+
+    /**
+     * Get a human-readable date label for a task element.
+     * Returns "today" if the date matches today, otherwise "Mon, Feb 10" format.
+     * @param {HTMLElement} taskEl - The task element
+     * @returns {string} Date label
+     */
+    function getDateLabel(taskEl) {
+        // Priority chain for finding the date
+        var dateStr = taskEl.dataset.instanceDate
+            || taskEl.closest('.hour-row')?.dataset.actualDate
+            || taskEl.closest('.day-calendar')?.dataset.day
+            || taskEl.dataset.scheduledDate
+            || '';
+
+        if (!dateStr) return 'today';
+
+        var today = new Date();
+        var todayStr = today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0');
+
+        if (dateStr === todayStr) return 'today';
+
+        var d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
     /**
