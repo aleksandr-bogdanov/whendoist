@@ -50,6 +50,7 @@ class BackupTaskSchema(BaseModel):
     title: str
     id: int | None = None
     domain_id: int | None = None
+    parent_id: int | None = None
     description: str | None = None
     status: str = "pending"
     clarity: str | None = None
@@ -239,7 +240,10 @@ class BackupService:
                 if old_id:
                     domain_id_map[old_id] = domain.id
 
-            # Import tasks
+            # Import tasks (pass 1: create all tasks, build ID map)
+            task_id_map: dict[int, int] = {}
+            tasks_with_parents: list[tuple[int, int]] = []  # (old_id, old_parent_id)
+
             for task_data in validated.tasks:
                 old_domain_id = task_data.domain_id
                 new_domain_id = domain_id_map.get(old_domain_id) if old_domain_id else None
@@ -266,6 +270,13 @@ class BackupService:
                 self.db.add(task)
                 await self.db.flush()
 
+                # Track old→new ID mapping for parent assignment
+                old_id = task_data.id
+                if old_id is not None:
+                    task_id_map[old_id] = task.id
+                if old_id is not None and task_data.parent_id is not None:
+                    tasks_with_parents.append((old_id, task_data.parent_id))
+
                 # Import task instances
                 for instance_data in task_data.instances:
                     instance = TaskInstance(
@@ -277,6 +288,18 @@ class BackupService:
                         completed_at=self._parse_datetime(instance_data.completed_at),
                     )
                     self.db.add(instance)
+
+            # Import tasks (pass 2: assign parent_id using ID map)
+            for old_id, old_parent_id in tasks_with_parents:
+                new_id = task_id_map.get(old_id)
+                new_parent_id = task_id_map.get(old_parent_id)
+                if new_id is not None and new_parent_id is not None:
+                    result = await self.db.execute(select(Task).where(Task.id == new_id, Task.user_id == self.user_id))
+                    task = result.scalar_one_or_none()
+                    if task:
+                        task.parent_id = new_parent_id
+
+            await self.db.flush()
 
             # Import preferences
             if validated.preferences:
@@ -323,6 +346,7 @@ class BackupService:
         return {
             "id": task.id,
             "domain_id": task.domain_id,
+            "parent_id": task.parent_id,
             "title": task.title,
             "description": task.description,
             "status": task.status,
