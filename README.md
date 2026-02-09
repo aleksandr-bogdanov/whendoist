@@ -184,15 +184,12 @@ just fmt      # Format code
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
 | [Toast System](docs/TOAST-SYSTEM.md) | Typed notifications with queuing, actions, and backward compatibility |
-| **Product & Roadmap** | |
-| [Product Vision](docs/PRODUCT-VISION.md) | Strategic positioning, user archetypes, mobile UX |
-| [v1.0 Roadmap](docs/V1-ROADMAP.md) | Path to production-ready release, remaining gaps, success metrics |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |
 | [UI Components](docs/brand/UI-KIT.md) | Button, form, panel specs |
 | **Reference** | |
-| [Changelog](CHANGELOG.md) | Version history |
+| [Changelog](CHANGELOG.md) | Version history + post-v1.0 backlog |
 | [Test Architecture](tests/README.md) | Testing patterns |
 | [Archived Docs](docs/archive/) | Historical audits, reviews, and plans |
 

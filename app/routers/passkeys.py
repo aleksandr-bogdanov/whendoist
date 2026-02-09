@@ -174,7 +174,7 @@ async def verify_registration(
         )
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=400, detail=f"Registration verification failed: {e}") from e
+        raise HTTPException(status_code=400, detail="Registration verification failed") from e
 
 
 # =============================================================================
@@ -261,7 +261,7 @@ async def verify_authentication(
         )
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=400, detail=f"Authentication verification failed: {e}") from e
+        raise HTTPException(status_code=400, detail="Authentication verification failed") from e
 
 
 # =============================================================================
