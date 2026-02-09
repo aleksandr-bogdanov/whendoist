@@ -220,6 +220,13 @@ class TaskUpdate(BaseModel):
             raise ValueError(f"Description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
         return v
 
+    @field_validator("clarity")
+    @classmethod
+    def validate_clarity(cls, v: str | None) -> str | None:
+        if v is not None and v not in ("autopilot", "normal", "brainstorm"):
+            raise ValueError("Clarity must be autopilot, normal, or brainstorm")
+        return v
+
     @model_validator(mode="after")
     def ensure_duration_with_time(self) -> "TaskUpdate":
         """If scheduled_time is being set, ensure duration_minutes has a value."""

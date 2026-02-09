@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.22 — 2026-02-09
+
+### Fixed
+- **TaskUpdate.clarity validation** — Added enum validator matching TaskCreate; rejects arbitrary strings via API
+- **Todoist import error leakage** — Replaced raw `str(e)` with generic message; full exception already logged
+- **Drag-drop delete retry** — Fixed `executeDeleteNow` → `executeDelete` reference in error retry callback
+
 ## Post-v1.0 Backlog
 
 Known issues and deferred work from v1.0 gate audits (February 9, 2026).
