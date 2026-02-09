@@ -141,7 +141,7 @@
     }
 
     // Clear selection when task list refreshes (HTMX swap)
-    document.body.addEventListener('htmx:afterSwap', (e) => {
+    document.addEventListener('htmx:afterSwap', (e) => {
         if (e.detail.target?.id === 'task-list-scroll') {
             selectedTaskEl = null;
         }

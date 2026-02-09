@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.24 — 2026-02-09
+
+### Fixed
+- **Head-loaded JS crash** — `error-handler.js` and `shortcuts.js` used `document.body.addEventListener` but load in `<head>` where `document.body` is null; changed to `document.addEventListener` (events bubble to document). This also fixes `handleError is not defined` in `task-dialog.js` since the error-handler crash prevented `window.handleError` from being exported.
+
 ## v0.42.23 — 2026-02-09
 
 ### Fixed
