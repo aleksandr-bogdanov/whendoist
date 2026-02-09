@@ -56,6 +56,13 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.21] - 2026-02-09 — Preserve Subtask Hierarchy in Backup
+
+### Fixed
+- **Backup export/import loses subtask hierarchy** — `parent_id` is now included in backup exports and restored on import via a two-pass ID mapping strategy, preserving parent-child task relationships across backup/restore cycles
+
+---
+
 ## [0.42.20] - 2026-02-09 — HTMX CSRF Protection
 
 ### Security
