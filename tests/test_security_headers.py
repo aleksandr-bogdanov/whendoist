@@ -116,10 +116,10 @@ class TestAllowedDomainsInCSP:
         security_content = Path("app/middleware/security.py").read_text()
         assert "accounts.google.com" in security_content
 
-    def test_cdn_allowed_for_scripts(self):
-        """jsdelivr CDN should be allowed for ApexCharts and libraries."""
+    def test_cdn_removed_from_csp(self):
+        """jsdelivr CDN should NOT be in CSP (self-hosted vendor scripts)."""
         security_content = Path("app/middleware/security.py").read_text()
-        assert "cdn.jsdelivr.net" in security_content
+        assert "cdn.jsdelivr.net" not in security_content
 
     def test_google_fonts_allowed_for_fonts(self):
         """Google Fonts should be allowed for font-src."""

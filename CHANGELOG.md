@@ -55,6 +55,17 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.17] - 2026-02-09 — Self-Host Vendor Scripts, Tighten CSP
+
+### Security
+- **CSP hardening** — Removed `https://cdn.jsdelivr.net` from Content-Security-Policy; all vendor scripts (htmx, air-datepicker, ApexCharts) and stylesheets (Pico CSS) now self-hosted from `/static/vendor/`, eliminating CDN-based CSP bypass vector
+
+### Technical Details
+- `'unsafe-inline'` remains in `script-src` — ~45 inline `onclick` handlers in templates require it; nonce-based CSP is a Post-v1.0 Backlog item
+- Google Fonts remains in `style-src` and `font-src` (external CSS, not scripts)
+
+---
+
 ## [0.42.16] - 2026-02-09 — Sanitize Error Responses
 
 ### Fixed
