@@ -395,11 +395,28 @@
 
     /**
      * Apply a new zoom level: update CSS, recalculate positions, persist.
+     * Preserves scroll center point so the same time stays in view.
      * @param {number} newHeight - New hour height in pixels
      */
     function applyZoom(newHeight) {
+        var oldHeight = currentHourHeight;
+
+        // Capture center time for each hour-grid before zoom
+        var grids = document.querySelectorAll('.hour-grid');
+        var centerTimes = [];
+        grids.forEach(function(grid) {
+            var viewportH = grid.clientHeight;
+            var centerTimeMins = (grid.scrollTop + viewportH / 2) / oldHeight * 60;
+            centerTimes.push({ grid: grid, centerTimeMins: centerTimeMins, viewportH: viewportH });
+        });
+
         setHourHeight(newHeight);
         recalcAllScheduledPositions();
+
+        // Restore scroll so the same time stays centered
+        centerTimes.forEach(function(entry) {
+            entry.grid.scrollTop = (entry.centerTimeMins / 60 * newHeight) - entry.viewportH / 2;
+        });
 
         // Debounced save to server
         if (zoomSaveTimeout) clearTimeout(zoomSaveTimeout);
@@ -535,20 +552,23 @@
         // Cancel any pending deletion
         cancelPendingDeletion();
 
-        // Remove all task elements from UI immediately
+        // Animate task elements out, then remove from DOM
         const taskElements = document.querySelectorAll(`[data-task-id="${taskId}"]`);
         const removedElements = [];
+
+        // Capture parent/sibling info and start animation
         taskElements.forEach(el => {
             const parent = el.parentElement;
             const nextSibling = el.nextSibling;
             const dayCalendar = el.closest('.day-calendar');
             removedElements.push({ el, parent, nextSibling, dayCalendar });
-            el.remove();
-            if (dayCalendar) recalculateOverlaps(dayCalendar);
+            if (el.classList.contains('task-item')) {
+                el.classList.add('departing');
+            }
         });
 
         // Store for undo
-        pendingDeletion = { taskId, removedElements };
+        pendingDeletion = { taskId, removedElements, removed: false };
 
         // Show toast with undo
         const taskTitle = content || 'Task';
@@ -560,6 +580,17 @@
             });
         }
 
+        // Remove from DOM after animation completes, then schedule API deletion
+        setTimeout(() => {
+            if (!pendingDeletion || pendingDeletion.taskId !== taskId) return;
+            pendingDeletion.removed = true;
+            taskElements.forEach(el => {
+                const dayCalendar = el.closest('.day-calendar');
+                el.remove();
+                if (dayCalendar) recalculateOverlaps(dayCalendar);
+            });
+        }, 350);
+
         // Schedule actual deletion after delay
         deletionTimeout = setTimeout(() => executeDelete(taskId), DELETION_DELAY);
     }
@@ -570,7 +601,7 @@
     function undoDelete() {
         if (!pendingDeletion) return;
 
-        const { removedElements } = pendingDeletion;
+        const { removedElements, removed } = pendingDeletion;
 
         // Cancel the scheduled deletion
         if (deletionTimeout) {
@@ -578,17 +609,25 @@
             deletionTimeout = null;
         }
 
-        // Restore elements
-        removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
-            if (parent) {
-                if (nextSibling && nextSibling.parentNode === parent) {
-                    parent.insertBefore(el, nextSibling);
-                } else {
-                    parent.appendChild(el);
+        if (removed) {
+            // Elements already removed from DOM — re-insert them
+            removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
+                if (parent) {
+                    el.classList.remove('departing');
+                    if (nextSibling && nextSibling.parentNode === parent) {
+                        parent.insertBefore(el, nextSibling);
+                    } else {
+                        parent.appendChild(el);
+                    }
+                    if (dayCalendar) recalculateOverlaps(dayCalendar);
                 }
-                if (dayCalendar) recalculateOverlaps(dayCalendar);
-            }
-        });
+            });
+        } else {
+            // Still animating — just remove the departing class
+            removedElements.forEach(({ el }) => {
+                el.classList.remove('departing');
+            });
+        }
 
         pendingDeletion = null;
         log.info('Deletion undone');
@@ -921,12 +960,19 @@
         slot.appendChild(element);
         wasDroppedSuccessfully = true; // Mark successful drop
 
-        // Mark original task in task list, show date, and animate to scheduled section
+        // Mark original task in task list and animate out, then refresh
         const original = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
         if (original) {
             original.classList.add('scheduled');
             updateTaskScheduledDate(original, day);
-            moveTaskToScheduledSection(original);
+            setTimeout(function() {
+                original.classList.add('departing');
+                setTimeout(function() {
+                    if (window.TaskComplete && typeof window.TaskComplete.refreshTaskList === 'function') {
+                        window.TaskComplete.refreshTaskList();
+                    }
+                }, 350);
+            }, 150);
         }
 
         recalculateOverlaps(dayCalendar);
@@ -1261,12 +1307,19 @@
         const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed);
         tasksContainer.appendChild(el);
 
-        // Mark original task in task list, show date, and animate to scheduled section
+        // Mark original task in task list and animate out, then refresh
         const original = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
         if (original) {
             original.classList.add('scheduled');
             updateTaskScheduledDate(original, day);
-            moveTaskToScheduledSection(original);
+            setTimeout(function() {
+                original.classList.add('departing');
+                setTimeout(function() {
+                    if (window.TaskComplete && typeof window.TaskComplete.refreshTaskList === 'function') {
+                        window.TaskComplete.refreshTaskList();
+                    }
+                }, 350);
+            }, 150);
         }
 
         // Save to API - scheduled_date only, no scheduled_time

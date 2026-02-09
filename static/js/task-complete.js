@@ -17,6 +17,10 @@
     // Active skip menu reference (for cleanup)
     let activeSkipMenu = null;
 
+    // Pending completion animation timeouts (for undo cancellation)
+    let pendingCompletionTimeout = null;
+    let pendingRefreshTimeout = null;
+
     /**
      * Initialize task completion handlers.
      */
@@ -160,19 +164,39 @@
             // (e.g., if task appears in both list and calendar)
             syncTaskCompletionState(taskId, instanceId, data.completed, taskEl);
 
+            // Build undo callback for completions (not reopenings)
+            var undoCallback = null;
+            if (data.completed && taskEl.classList.contains('task-item')) {
+                undoCallback = function() {
+                    // Cancel pending animation/refresh
+                    if (pendingCompletionTimeout) {
+                        clearTimeout(pendingCompletionTimeout);
+                        pendingCompletionTimeout = null;
+                    }
+                    if (pendingRefreshTimeout) {
+                        clearTimeout(pendingRefreshTimeout);
+                        pendingRefreshTimeout = null;
+                    }
+                    // Restore task visually
+                    taskEl.classList.remove('departing');
+                    // Re-toggle via API to reverse
+                    toggleCompletion(taskEl, taskId, instanceId, false, isRecurring);
+                };
+            }
+
             // Show toast notification
             if (isRecurring) {
-                showToast(data.completed ? 'Done for today' : 'Reopened for today');
+                showToast(data.completed ? 'Done for today' : 'Reopened for today', undoCallback);
             } else {
-                showToast(data.completed ? 'Task completed' : 'Task reopened');
+                showToast(data.completed ? 'Task completed' : 'Task reopened', undoCallback);
             }
 
             // Animate out then refresh task list (domain <-> completed)
             if (taskEl.classList.contains('task-item')) {
-                // Wait for pop animation (250ms), then fade+collapse, then refresh
-                setTimeout(function() {
-                    taskEl.classList.add('completing');
-                    setTimeout(function() { refreshTaskListFromServer(); }, 350);
+                // Wait for pop animation (250ms), then slide-out, then refresh
+                pendingCompletionTimeout = setTimeout(function() {
+                    taskEl.classList.add('departing');
+                    pendingRefreshTimeout = setTimeout(function() { refreshTaskListFromServer(); }, 350);
                 }, 250);
             }
 
@@ -407,7 +431,7 @@
 
         const skipBtn = document.createElement('button');
         skipBtn.className = 'skip-menu-item';
-        skipBtn.innerHTML = '<span class="skip-icon">⏭</span> Skip this instance';
+        skipBtn.innerHTML = '<span class="skip-icon">⏭</span> Skip this one';
         skipBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             dismissSkipMenu();
@@ -474,7 +498,7 @@
             // Animate out then refresh
             if (taskEl.classList.contains('task-item')) {
                 setTimeout(function() {
-                    taskEl.classList.add('completing');
+                    taskEl.classList.add('departing');
                     setTimeout(function() { refreshTaskListFromServer(); }, 350);
                 }, 250);
             }
@@ -516,13 +540,23 @@
     /**
      * Show a toast notification.
      * @param {string} message - Message to display
+     * @param {Function|null} onUndo - Optional undo callback
      */
-    function showToast(message) {
-        // Use existing Toast module
+    function showToast(message, onUndo) {
         if (typeof window.Toast !== 'undefined' && typeof window.Toast.show === 'function') {
-            window.Toast.show(message, { showUndo: false });
+            if (onUndo) {
+                window.Toast.show(message, { onUndo: onUndo });
+            } else {
+                window.Toast.show(message, { showUndo: false });
+            }
         }
     }
+
+    // Expose public API
+    window.TaskComplete = {
+        init: init,
+        refreshTaskList: refreshTaskListFromServer,
+    };
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
