@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.31 — 2026-02-09
+
+### Fixed
+- **Kebab button clickability** — `.task-actions` now has `display:flex`, `position:relative`, `z-index:3` and `.kebab-btn` gets `position:relative`, `z-index:1` so the button is no longer occluded by the `::after` divider pseudo-element.
+
+### Changed
+- **Actions menu for all tasks** — Kebab (⋮) button now appears on every task, not just recurring ones. Menu items are contextual: non-recurring tasks get "Edit task" and "Delete"; recurring tasks additionally get "Skip this one" and show "Edit series" / "Delete series".
+- **Undo-based delete** — Deleting from the actions menu uses the undo-toast pattern (2s window) matching the existing drag-to-trash flow. Subtask cascade shows a confirm dialog first.
+- **Renamed skip-menu → actions-menu** — CSS classes and JS internals renamed from `skip-menu` to `actions-menu` to reflect the expanded scope.
+
 ## v0.42.30 — 2026-02-09
 
 ### Fixed

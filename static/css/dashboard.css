@@ -1419,9 +1419,14 @@
     position: relative;
 }
 
-/* Empty actions cell in task rows - maintains grid alignment */
+/* Actions cell in task rows - maintains grid alignment */
 .task-actions {
     width: var(--col-actions);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 3;
 }
 
 /* Patch 58: Inset row dividers - starts after rail */
@@ -3833,10 +3838,10 @@ body[data-energy-level] .scheduled-group.project-group {
 }
 
 /* =============================================================================
-   Skip Context Menu
+   Actions Context Menu
    ============================================================================= */
 
-.skip-menu {
+.actions-menu {
     position: fixed;
     z-index: 9999;
     background: var(--bg-surface);
@@ -3844,16 +3849,16 @@ body[data-energy-level] .scheduled-group.project-group {
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     padding: 4px;
-    min-width: 140px;
-    animation: skip-menu-in 0.12s ease-out;
+    min-width: 160px;
+    animation: actions-menu-in 0.12s ease-out;
 }
 
-@keyframes skip-menu-in {
+@keyframes actions-menu-in {
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
 }
 
-.skip-menu-item {
+.actions-menu-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -3868,16 +3873,32 @@ body[data-energy-level] .scheduled-group.project-group {
     transition: background 0.1s ease;
 }
 
-.skip-menu-item:hover {
+.actions-menu-item:hover {
     background: var(--bg-hover);
 }
 
-.skip-menu-item .skip-icon {
+.actions-menu-item .actions-menu-icon {
     font-size: 0.875rem;
     opacity: 0.7;
+    width: 1em;
+    text-align: center;
 }
 
-/* Kebab button for recurring task actions */
+.actions-menu-separator {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--border-subtle);
+}
+
+.actions-menu-item--danger {
+    color: var(--color-danger, #e53e3e);
+}
+
+.actions-menu-item--danger:hover {
+    background: rgba(229, 62, 62, 0.08);
+}
+
+/* Kebab button for task actions */
 .kebab-btn {
     display: flex;
     align-items: center;
@@ -3894,6 +3915,8 @@ body[data-energy-level] .scheduled-group.project-group {
     font-size: 1rem;
     line-height: 1;
     opacity: 0;
+    position: relative;
+    z-index: 1;
     transition: opacity 0.15s ease, background 0.1s ease;
 }
 
