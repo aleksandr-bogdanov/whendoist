@@ -8,7 +8,7 @@ import logging
 from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -95,13 +95,13 @@ class ScheduledTaskUpdate(BaseModel):
 
     task_id: str
     due_datetime: datetime
-    duration_minutes: int
+    duration_minutes: int = Field(ge=1, le=1440)
 
 
 class CommitTasksRequest(BaseModel):
     """Request to commit scheduled tasks to Todoist."""
 
-    tasks: list[ScheduledTaskUpdate]
+    tasks: list[ScheduledTaskUpdate] = Field(max_length=500)
 
 
 class CommitTaskResult(BaseModel):
@@ -350,7 +350,7 @@ async def toggle_calendar(
 class CalendarSelectionsRequest(BaseModel):
     """Request body for bulk calendar selections."""
 
-    calendar_ids: list[str]
+    calendar_ids: list[str] = Field(max_length=100)
 
 
 @router.post("/calendars/selections")

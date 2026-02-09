@@ -62,8 +62,8 @@ class EncryptionStatusResponse(BaseModel):
 class EncryptionSetupRequest(BaseModel):
     """Request to set up E2E encryption."""
 
-    salt: str  # Base64-encoded 32-byte salt (generated client-side)
-    test_value: str  # Encrypted test value for passphrase verification
+    salt: str = Field(max_length=64)  # Base64-encoded 32-byte salt (generated client-side)
+    test_value: str = Field(max_length=1000)  # Encrypted test value for passphrase verification
 
 
 class EncryptionSetupResponse(BaseModel):

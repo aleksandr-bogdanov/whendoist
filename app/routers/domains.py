@@ -8,7 +8,7 @@ import logging
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import DOMAIN_NAME_MAX_LENGTH
@@ -186,7 +186,7 @@ class DomainContentData(BaseModel):
 class BatchUpdateDomainsRequest(BaseModel):
     """Request body for batch updating domain names."""
 
-    domains: list[DomainContentData]
+    domains: list[DomainContentData] = Field(max_length=500)
 
 
 @router.post("/batch-update", status_code=200)

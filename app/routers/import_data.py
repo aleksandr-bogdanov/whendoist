@@ -8,7 +8,7 @@ and wiping user data for testing.
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -57,7 +57,7 @@ class ImportOptions(BaseModel):
     """Options for Todoist import."""
 
     include_completed: bool = True
-    completed_limit: int = 200
+    completed_limit: int = Field(default=200, ge=0, le=1000)
     skip_existing: bool = True
 
 
