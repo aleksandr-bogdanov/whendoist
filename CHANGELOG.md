@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.25 — 2026-02-09
+
+### Added
+- **Archive docs** — Added v1 gate audit and final review documentation to `docs/archive/`
+
 ## v0.42.24 — 2026-02-09
 
 ### Fixed
