@@ -533,6 +533,15 @@
             return;
         }
 
+        // Prevent dragging parent tasks (schedule subtasks instead)
+        if (draggedElement.classList.contains('task-item')) {
+            const subtaskCount = parseInt(draggedElement.dataset.subtaskCount || '0', 10);
+            if (subtaskCount > 0) {
+                e.preventDefault();
+                return;
+            }
+        }
+
         isDraggingScheduledTask = draggedElement.classList.contains('scheduled-task');
         isDraggingDateOnlyTask = draggedElement.classList.contains('date-only-task');
         draggedTaskId = draggedElement.dataset.taskId;

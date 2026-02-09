@@ -23,7 +23,7 @@
      data-title="{{ task.title }}"
      data-subtask-count="{{ task_item.subtask_count or 0 }}"
      {% if task.parent_id %}data-parent-id="{{ task.parent_id }}"{% endif %}
-     {% if not task.scheduled_date %}draggable="true"{% endif %}>
+     {% if not task.scheduled_date and not task_item.subtask_count %}draggable="true"{% endif %}>
     <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if is_completed else 'false' }}">
         <span class="complete-bar"></span>
         <span class="complete-check" aria-hidden="true">✓</span>

@@ -1178,6 +1178,13 @@
         const scheduledDate = el.dataset.scheduledDate || '';
         const content = el.querySelector('.task-text')?.textContent?.trim() || '';
 
+        // Skip parent tasks — schedule subtasks instead
+        const subtaskCount = parseInt(el.dataset.subtaskCount || '0', 10);
+        if (subtaskCount > 0) {
+            log.debug(`Skip "${content.slice(0, 25)}": parent with ${subtaskCount} subtasks`);
+            return null;
+        }
+
         // Energy level filtering
         if (energyLevel === 1 && clarity !== 'autopilot') {
             log.debug(`Skip "${content.slice(0, 25)}": ${clarity} != autopilot`);

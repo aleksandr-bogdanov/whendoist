@@ -426,6 +426,12 @@ class TestPlanTasksModule:
         """Must avoid conflicts with existing events."""
         assert "event" in plan_js.lower() or "conflict" in plan_js.lower() or "overlap" in plan_js.lower()
 
+    def test_excludes_parent_tasks_from_scheduling(self, plan_js: str):
+        """Plan My Day must check subtask count to exclude parent tasks."""
+        assert "subtaskCount" in plan_js, (
+            "plan-tasks.js must check subtaskCount to exclude parent tasks from scheduling"
+        )
+
 
 class TestEnergySelectorModule:
     """Verify energy-selector.js handles energy mode filtering."""
