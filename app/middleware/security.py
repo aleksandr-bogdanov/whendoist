@@ -20,26 +20,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Content Security Policy
-        # Note: 'unsafe-inline' is required for Pico CSS and some inline styles
-        # We use strict sources for scripts to prevent XSS
+        # Note: 'unsafe-inline' required for ~45 onclick handlers in templates.
+        # Tracked for nonce-based CSP refactor in Post-v1.0 Backlog.
         csp = (
             "default-src 'self'; "
-            # Scripts: self + CDN for ApexCharts and external libraries
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            # Styles: self + CDN + unsafe-inline (required for Pico CSS and inline styles)
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-            # Images: self + data URIs (for inline SVGs) + HTTPS sources
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "img-src 'self' data: https:; "
-            # Fonts: self + Google Fonts + CDN
-            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
-            # Connect: self + Google APIs for OAuth/Calendar + Google Fonts
+            "font-src 'self' https://fonts.gstatic.com; "
             "connect-src 'self' https://accounts.google.com https://www.googleapis.com "
             "https://fonts.googleapis.com https://fonts.gstatic.com; "
-            # Prevent embedding in frames (clickjacking protection)
             "frame-ancestors 'none'; "
-            # Restrict base URI to prevent base tag injection
             "base-uri 'self'; "
-            # Form actions: self + Google for OAuth
             "form-action 'self' https://accounts.google.com https://todoist.com;"
         )
 
