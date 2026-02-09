@@ -120,23 +120,19 @@ body.is-dragging .calendar-event {
     opacity: 0.5 !important;
 }
 
-/* Drop target underlay via pseudo-element (no inner dashed lines) */
-.hour-slot.drag-over {
-    border: 0 !important;
-    outline: 0 !important;
-    background: transparent !important;
-}
-
-.hour-slot.drag-over::before {
-    content: "";
+/* Duration-aware drag highlight overlay */
+.drag-highlight-overlay {
     position: absolute;
-    inset: 6px;
+    left: 6px;
+    right: 6px;
     border-radius: 10px;
-    background: rgba(109, 94, 246, 0.04);
-    outline: 2px solid rgba(109, 94, 246, 0.14);
+    background: rgba(109, 94, 246, 0.06);
+    outline: 2px solid rgba(109, 94, 246, 0.16);
     outline-offset: -2px;
     z-index: 1;
     pointer-events: none;
+    overflow: visible;
+    transition: top 0.08s ease;
 }
 
 /* Events always above slot highlight and subsequent hour rows */

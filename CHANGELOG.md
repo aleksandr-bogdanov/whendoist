@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.29 — 2026-02-09
+
+### Added
+- **Calendar zoom** — +/- buttons and Ctrl+scroll (pinch on macOS) adjust hour height from 30px to 100px, persisted per user. New `calendar_hour_height` preference with DB migration.
+- **Recurring task kebab menu** — Three-dot (⋮) button on recurring task items opens skip context menu without right-click.
+
+### Fixed
+- **Skip right-click target** — Right-click skip now works on the entire task card and calendar cards, not just the completion gutter.
+- **Drag highlight shows task duration** — Dragging a task over calendar slots now highlights the correct number of slots based on task duration (e.g., 2h task highlights 2 hours).
+- **Completion animation** — Completed tasks fade out and collapse smoothly before HTMX refreshes the list, eliminating the visual jump.
+
+### Changed
+- **Undo timeout reduced** — Deletion undo window shortened from 5s to 2s for faster workflow. Toast duration for undo actions adjusted to match.
+
 ## v0.42.28 — 2026-02-09
 
 ### Fixed

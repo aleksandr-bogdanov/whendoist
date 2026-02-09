@@ -52,6 +52,7 @@ class PreferencesService:
         hide_recurring_after_completion: bool | None = None,
         show_scheduled_in_list: bool | None = None,
         timezone: str | None = None,
+        calendar_hour_height: int | None = None,
     ) -> UserPreferences:
         """
         Update user preferences.
@@ -92,6 +93,10 @@ class PreferencesService:
                     prefs.timezone = timezone
                 except (KeyError, TypeError):
                     pass  # Silently ignore invalid timezones
+
+        if calendar_hour_height is not None:
+            # Clamp to valid zoom range
+            prefs.calendar_hour_height = max(30, min(100, calendar_hour_height))
 
         await self.db.flush()
         return prefs

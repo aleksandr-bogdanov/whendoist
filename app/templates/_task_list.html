@@ -77,7 +77,11 @@
             {% else %}Min{% endif %}
         </span>
     </div>
-    <span class="task-actions"></span>
+    <span class="task-actions">
+        {% if task.is_recurring and task_item.next_instance_id %}
+        <button class="kebab-btn" type="button" aria-label="Task actions">⋮</button>
+        {% endif %}
+    </span>
 </div>
 {% endmacro %}
 

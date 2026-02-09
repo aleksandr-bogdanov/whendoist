@@ -27,7 +27,10 @@
         // Use event delegation on document for all completion gutters
         document.addEventListener('click', handleGutterClick);
 
-        // Right-click context menu for recurring task gutters
+        // Kebab button for recurring tasks
+        document.addEventListener('click', handleKebabClick);
+
+        // Right-click context menu for recurring tasks (whole card)
         document.addEventListener('contextmenu', handleGutterRightClick);
 
         // Dismiss skip menu on click elsewhere
@@ -164,9 +167,13 @@
                 showToast(data.completed ? 'Task completed' : 'Task reopened');
             }
 
-            // Refresh task list so tasks move between sections (domain <-> completed)
+            // Animate out then refresh task list (domain <-> completed)
             if (taskEl.classList.contains('task-item')) {
-                setTimeout(function() { refreshTaskListFromServer(); }, 400);
+                // Wait for pop animation (250ms), then fade+collapse, then refresh
+                setTimeout(function() {
+                    taskEl.classList.add('completing');
+                    setTimeout(function() { refreshTaskListFromServer(); }, 350);
+                }, 250);
             }
 
         } catch (error) {
@@ -347,15 +354,33 @@
     // ==========================================================================
 
     /**
-     * Handle right-click on completion gutter for recurring tasks.
+     * Handle kebab button click for recurring tasks.
+     * @param {Event} e - Click event
+     */
+    function handleKebabClick(e) {
+        const kebab = e.target.closest('.kebab-btn');
+        if (!kebab) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const taskEl = kebab.closest('[data-task-id]');
+        if (!taskEl) return;
+
+        const instanceId = taskEl.dataset.instanceId;
+        if (!instanceId) return;
+
+        const rect = kebab.getBoundingClientRect();
+        showSkipMenu(rect.left, rect.bottom + 4, taskEl, instanceId);
+    }
+
+    /**
+     * Handle right-click on task card or calendar card for recurring tasks.
      * Shows a context menu with "Skip" option.
      * @param {Event} e - contextmenu event
      */
     function handleGutterRightClick(e) {
-        const gutter = e.target.closest('.complete-gutter');
-        if (!gutter) return;
-
-        const taskEl = gutter.closest('[data-task-id]');
+        const taskEl = e.target.closest('[data-task-id]');
         if (!taskEl) return;
 
         const instanceId = taskEl.dataset.instanceId;
@@ -446,9 +471,12 @@
 
             showToast('Skipped for today');
 
-            // Refresh task list so task moves to correct section
+            // Animate out then refresh
             if (taskEl.classList.contains('task-item')) {
-                setTimeout(function() { refreshTaskListFromServer(); }, 400);
+                setTimeout(function() {
+                    taskEl.classList.add('completing');
+                    setTimeout(function() { refreshTaskListFromServer(); }, 350);
+                }, 250);
             }
         } catch (error) {
             // Revert optimistic update
