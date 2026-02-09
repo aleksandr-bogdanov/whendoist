@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.26 — 2026-02-09
+
+### Fixed
+- **Backup import 500 error** — Validation errors (e.g. legacy `"executable"` clarity) now return 400 instead of 500; added explicit `BackupValidationError` handler
+- **Todoist import clarity** — Parent tasks now default to `"autopilot"` instead of invalid `"executable"` clarity value
+- **Legacy backup compatibility** — Old backups with `"executable"` clarity are auto-mapped to `"autopilot"` during import
+- **Export/import schema drift** — Added missing fields to backup round-trip: `due_time`, `recurrence_start/end`, `position` (tasks); `position`, `is_archived` (domains); `completed_sort_by_date`, `show_scheduled_in_list`, `scheduled_move_to_bottom`, `scheduled_sort_by_date`, `timezone` (preferences)
+- **Defensive import defaults** — NOT NULL fields (`clarity`, `impact`) now fall back to defaults when null in backup data
+
 ## v0.42.25 — 2026-02-09
 
 ### Added
