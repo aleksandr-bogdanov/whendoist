@@ -15,6 +15,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import BACKUP_MAX_SIZE_BYTES
 from app.database import get_db
 from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import User
@@ -77,6 +78,14 @@ async def import_backup(
     try:
         # Read and parse the uploaded file
         content = await file.read()
+
+        # Check file size before parsing to prevent memory exhaustion
+        if len(content) > BACKUP_MAX_SIZE_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="Backup file too large (max 10 MB)",
+            )
+
         data = json.loads(content.decode("utf-8"))
 
         service = BackupService(db, user.id)

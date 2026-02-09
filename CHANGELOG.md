@@ -55,6 +55,13 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.12] - 2026-02-09 — Backup Import Size Limit
+
+### Fixed
+- **No upload size limit on backup import** — Files larger than 10 MB now rejected with 413 before parsing, preventing memory exhaustion
+
+---
+
 ## [0.42.11] - 2026-02-09 — Rate Limit Destructive Endpoints
 
 ### Fixed
