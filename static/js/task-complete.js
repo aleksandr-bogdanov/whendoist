@@ -14,12 +14,17 @@
         completed_move_to_bottom: true,  // Default
     };
 
-    // Active skip menu reference (for cleanup)
-    let activeSkipMenu = null;
+    // Active actions menu reference (for cleanup)
+    let activeActionsMenu = null;
 
     // Pending completion animation timeouts (for undo cancellation)
     let pendingCompletionTimeout = null;
     let pendingRefreshTimeout = null;
+
+    // Pending deletion for undo support
+    let pendingDeletion = null;
+    let deletionTimeout = null;
+    const DELETION_DELAY = 2000;
 
     /**
      * Initialize task completion handlers.
@@ -31,14 +36,14 @@
         // Use event delegation on document for all completion gutters
         document.addEventListener('click', handleGutterClick);
 
-        // Kebab button for recurring tasks
+        // Kebab button for task actions
         document.addEventListener('click', handleKebabClick);
 
-        // Right-click context menu for recurring tasks (whole card)
+        // Right-click context menu for tasks
         document.addEventListener('contextmenu', handleGutterRightClick);
 
-        // Dismiss skip menu on click elsewhere
-        document.addEventListener('click', dismissSkipMenu);
+        // Dismiss actions menu on click elsewhere
+        document.addEventListener('click', dismissActionsMenu);
     }
 
     /**
@@ -374,11 +379,26 @@
     }
 
     // ==========================================================================
-    // SKIP INSTANCE (right-click context menu)
+    // TASK ACTIONS MENU (kebab + right-click context menu)
     // ==========================================================================
 
     /**
-     * Handle kebab button click for recurring tasks.
+     * Build options object from a task element's dataset.
+     * @param {HTMLElement} taskEl - The task element
+     * @returns {Object} opts
+     */
+    function buildMenuOpts(taskEl) {
+        return {
+            taskId: taskEl.dataset.taskId,
+            instanceId: taskEl.dataset.instanceId || null,
+            isRecurring: taskEl.dataset.isRecurring === 'true' || !!taskEl.dataset.instanceId,
+            isScheduled: !!taskEl.dataset.scheduledDate,
+            subtaskCount: parseInt(taskEl.dataset.subtaskCount || '0', 10),
+        };
+    }
+
+    /**
+     * Handle kebab button click for task actions.
      * @param {Event} e - Click event
      */
     function handleKebabClick(e) {
@@ -391,76 +411,278 @@
         const taskEl = kebab.closest('[data-task-id]');
         if (!taskEl) return;
 
-        const instanceId = taskEl.dataset.instanceId;
-        if (!instanceId) return;
-
         const rect = kebab.getBoundingClientRect();
-        showSkipMenu(rect.left, rect.bottom + 4, taskEl, instanceId);
+        showActionsMenu(rect.left, rect.bottom + 4, taskEl, buildMenuOpts(taskEl));
     }
 
     /**
-     * Handle right-click on task card or calendar card for recurring tasks.
-     * Shows a context menu with "Skip" option.
+     * Handle right-click on task card.
+     * Shows a context menu with actions.
      * @param {Event} e - contextmenu event
      */
     function handleGutterRightClick(e) {
         const taskEl = e.target.closest('[data-task-id]');
         if (!taskEl) return;
 
-        const instanceId = taskEl.dataset.instanceId;
-        if (!instanceId) return; // Only for recurring instances
+        // Only show for task-item elements (not calendar cards, etc.)
+        if (!taskEl.classList.contains('task-item')) return;
 
         e.preventDefault();
-        showSkipMenu(e.clientX, e.clientY, taskEl, instanceId);
+        showActionsMenu(e.clientX, e.clientY, taskEl, buildMenuOpts(taskEl));
     }
 
     /**
-     * Show skip context menu at given position.
+     * Create a menu item button.
+     * @param {string} icon - Emoji icon
+     * @param {string} label - Button label
+     * @param {string} [extraClass] - Additional CSS class
+     * @returns {HTMLButtonElement}
+     */
+    function createMenuItem(icon, label, extraClass) {
+        var btn = document.createElement('button');
+        btn.className = 'actions-menu-item' + (extraClass ? ' ' + extraClass : '');
+        btn.innerHTML = '<span class="actions-menu-icon">' + icon + '</span> ' + label;
+        return btn;
+    }
+
+    /**
+     * Show actions context menu at given position.
      * @param {number} x - clientX
      * @param {number} y - clientY
      * @param {HTMLElement} taskEl - The task element
-     * @param {string} instanceId - Instance ID
+     * @param {Object} opts - Menu options
      */
-    function showSkipMenu(x, y, taskEl, instanceId) {
-        dismissSkipMenu();
+    function showActionsMenu(x, y, taskEl, opts) {
+        dismissActionsMenu();
 
-        const menu = document.createElement('div');
-        menu.className = 'skip-menu';
-        menu.style.left = `${x}px`;
-        menu.style.top = `${y}px`;
+        var menu = document.createElement('div');
+        menu.className = 'actions-menu';
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
 
-        const skipBtn = document.createElement('button');
-        skipBtn.className = 'skip-menu-item';
-        skipBtn.innerHTML = '<span class="skip-icon">⏭</span> Skip this one';
-        skipBtn.addEventListener('click', (e) => {
+        // Skip this one (recurring with instance only)
+        if (opts.instanceId) {
+            var skipBtn = createMenuItem('⏭', 'Skip this one');
+            skipBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dismissActionsMenu();
+                skipInstance(taskEl, opts.instanceId);
+            });
+            menu.appendChild(skipBtn);
+        }
+
+        // Edit task / Edit series
+        var editLabel = opts.isRecurring ? 'Edit series' : 'Edit task';
+        var editBtn = createMenuItem('✏️', editLabel);
+        editBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            dismissSkipMenu();
-            skipInstance(taskEl, instanceId);
+            dismissActionsMenu();
+            if (window.TaskDialog && typeof TaskDialog.open === 'function') {
+                TaskDialog.open(parseInt(opts.taskId, 10));
+            }
         });
+        menu.appendChild(editBtn);
 
-        menu.appendChild(skipBtn);
+        // Separator before danger zone
+        var sep = document.createElement('div');
+        sep.className = 'actions-menu-separator';
+        menu.appendChild(sep);
+
+        // Delete / Delete series
+        var deleteLabel = opts.isRecurring ? 'Delete series' : 'Delete';
+        var deleteBtn = createMenuItem('🗑', deleteLabel, 'actions-menu-item--danger');
+        deleteBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dismissActionsMenu();
+            deleteTaskFromMenu(taskEl, opts.taskId, opts.subtaskCount);
+        });
+        menu.appendChild(deleteBtn);
+
         document.body.appendChild(menu);
-        activeSkipMenu = menu;
+        activeActionsMenu = menu;
 
         // Adjust if overflowing viewport
-        const rect = menu.getBoundingClientRect();
+        var rect = menu.getBoundingClientRect();
         if (rect.right > window.innerWidth) {
-            menu.style.left = `${window.innerWidth - rect.width - 8}px`;
+            menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
         }
         if (rect.bottom > window.innerHeight) {
-            menu.style.top = `${window.innerHeight - rect.height - 8}px`;
+            menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
         }
     }
 
     /**
-     * Dismiss the active skip menu.
+     * Dismiss the active actions menu.
      */
-    function dismissSkipMenu() {
-        if (activeSkipMenu) {
-            activeSkipMenu.remove();
-            activeSkipMenu = null;
+    function dismissActionsMenu() {
+        if (activeActionsMenu) {
+            activeActionsMenu.remove();
+            activeActionsMenu = null;
         }
     }
+
+    // ==========================================================================
+    // DELETE TASK (with undo toast)
+    // ==========================================================================
+
+    /**
+     * Delete a task from the actions menu with undo support.
+     * @param {HTMLElement} taskEl - The task element
+     * @param {string} taskId - Task ID
+     * @param {number} subtaskCount - Number of subtasks
+     */
+    function deleteTaskFromMenu(taskEl, taskId, subtaskCount) {
+        // Check network status
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
+        // Subtask cascade warning
+        if (subtaskCount > 0) {
+            var confirmed = confirm(
+                'This task has ' + subtaskCount + ' subtask' + (subtaskCount > 1 ? 's' : '') +
+                '. Deleting it will also delete all subtasks. Continue?'
+            );
+            if (!confirmed) return;
+        }
+
+        // Cancel any existing pending deletion
+        cancelPendingDeletion();
+
+        // Gather all elements for this task (task-item + calendar cards + subtasks)
+        var taskElements = document.querySelectorAll('[data-task-id="' + taskId + '"]');
+        var subtaskElements = document.querySelectorAll('[data-parent-id="' + taskId + '"]');
+        var removedElements = [];
+
+        // Capture position info and start departing animation
+        taskElements.forEach(function(el) {
+            var parent = el.parentElement;
+            var nextSibling = el.nextSibling;
+            removedElements.push({ el: el, parent: parent, nextSibling: nextSibling });
+            if (el.classList.contains('task-item')) {
+                el.classList.add('departing');
+            }
+        });
+        subtaskElements.forEach(function(el) {
+            var parent = el.parentElement;
+            var nextSibling = el.nextSibling;
+            removedElements.push({ el: el, parent: parent, nextSibling: nextSibling });
+            if (el.classList.contains('task-item')) {
+                el.classList.add('departing');
+            }
+        });
+
+        // Store for undo
+        pendingDeletion = { taskId: taskId, removedElements: removedElements, removed: false };
+
+        // Show toast with undo
+        var taskTitle = taskEl.querySelector('.task-text')?.textContent || 'Task';
+        var displayTitle = taskTitle.length > 30 ? taskTitle.substring(0, 30) + '...' : taskTitle;
+
+        showToast('"' + displayTitle + '" deleted', function() { undoDeleteFromMenu(); });
+
+        // Remove elements from DOM after animation
+        setTimeout(function() {
+            if (!pendingDeletion || pendingDeletion.taskId !== taskId) return;
+            pendingDeletion.removed = true;
+            removedElements.forEach(function(item) {
+                item.el.remove();
+            });
+        }, 350);
+
+        // Schedule actual API deletion
+        deletionTimeout = setTimeout(function() { executeDeleteFromMenu(taskId); }, DELETION_DELAY);
+    }
+
+    /**
+     * Undo the pending deletion — restore UI elements.
+     */
+    function undoDeleteFromMenu() {
+        if (!pendingDeletion) return;
+
+        var removedElements = pendingDeletion.removedElements;
+        var removed = pendingDeletion.removed;
+
+        // Cancel the scheduled API deletion
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
+
+        if (removed) {
+            // Elements already removed — re-insert them
+            removedElements.forEach(function(item) {
+                if (item.parent) {
+                    item.el.classList.remove('departing');
+                    if (item.nextSibling && item.nextSibling.parentNode === item.parent) {
+                        item.parent.insertBefore(item.el, item.nextSibling);
+                    } else {
+                        item.parent.appendChild(item.el);
+                    }
+                }
+            });
+        } else {
+            // Still animating — just remove departing class
+            removedElements.forEach(function(item) {
+                item.el.classList.remove('departing');
+            });
+        }
+
+        pendingDeletion = null;
+    }
+
+    /**
+     * Execute the actual deletion via API.
+     * @param {string} taskId - Task ID
+     */
+    async function executeDeleteFromMenu(taskId) {
+        if (!pendingDeletion || pendingDeletion.taskId !== taskId) return;
+
+        var removedElements = pendingDeletion.removedElements;
+        pendingDeletion = null;
+        deletionTimeout = null;
+
+        try {
+            await safeFetch('/api/v1/tasks/' + taskId, {
+                method: 'DELETE'
+            });
+            refreshTaskListFromServer();
+        } catch (error) {
+            // Restore elements on failure
+            removedElements.forEach(function(item) {
+                if (item.parent) {
+                    item.el.classList.remove('departing');
+                    if (item.nextSibling && item.nextSibling.parentNode === item.parent) {
+                        item.parent.insertBefore(item.el, item.nextSibling);
+                    } else {
+                        item.parent.appendChild(item.el);
+                    }
+                }
+            });
+            handleError(error, 'Failed to delete task', {
+                component: 'task-complete',
+                action: 'deleteTaskFromMenu'
+            });
+        }
+    }
+
+    /**
+     * Cancel any pending deletion.
+     */
+    function cancelPendingDeletion() {
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
+        pendingDeletion = null;
+    }
+
+    // ==========================================================================
+    // SKIP INSTANCE
+    // ==========================================================================
 
     /**
      * Skip a recurring task instance via API.
@@ -481,16 +703,16 @@
         taskEl.dataset.completed = '1';
 
         try {
-            await safeFetch(`/api/v1/instances/${instanceId}/skip`, {
+            await safeFetch('/api/v1/instances/' + instanceId + '/skip', {
                 method: 'POST'
             });
 
             // Sync across all representations of this instance
-            document.querySelectorAll(`[data-instance-id="${instanceId}"]`).forEach(el => {
+            document.querySelectorAll('[data-instance-id="' + instanceId + '"]').forEach(function(el) {
                 if (el === taskEl) return;
                 el.classList.add('skipped');
                 el.dataset.completed = '1';
-                applyCompletionClass(el, false); // Don't use completed style
+                applyCompletionClass(el, false);
             });
 
             showToast('Skipped for today');
@@ -509,7 +731,7 @@
             handleError(error, 'Failed to skip instance', {
                 component: 'task-complete',
                 action: 'skipInstance',
-                retry: () => skipInstance(taskEl, instanceId)
+                retry: function() { skipInstance(taskEl, instanceId); }
             });
         }
     }
