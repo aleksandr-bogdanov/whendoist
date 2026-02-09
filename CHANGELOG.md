@@ -55,6 +55,13 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.16] - 2026-02-09 — Sanitize Error Responses
+
+### Fixed
+- **Exception details in HTTP responses** — Error endpoints no longer expose raw exception messages (DB errors, library internals) to clients; details are logged server-side only
+
+---
+
 ## [0.42.15] - 2026-02-09 — Document Recurring Task Timezone Limitation
 
 ### Changed

@@ -99,8 +99,8 @@ async def import_backup(
         )
     except json.JSONDecodeError as e:
         logger.error(f"Backup import failed - invalid JSON: {e}")
-        raise HTTPException(status_code=400, detail=f"Invalid JSON file: {e}") from e
+        raise HTTPException(status_code=400, detail="Invalid JSON file") from e
     except Exception as e:
         logger.error(f"Backup import failed: {e}", exc_info=True)
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}") from e
+        raise HTTPException(status_code=500, detail="Import failed") from e

@@ -174,7 +174,7 @@ async def preview_todoist_import(
             )
     except Exception as e:
         logger.exception(f"Todoist preview failed: {type(e).__name__}: {e}")
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail="Todoist preview failed") from e
 
 
 @router.post("/todoist", response_model=ImportResponse)
