@@ -563,9 +563,12 @@
 
     /**
      * Dismiss the active actions menu.
+     * When called as an event handler, skips dismiss if click was on a kebab
+     * button or inside the menu itself (those have their own handlers).
      */
-    function dismissActionsMenu() {
+    function dismissActionsMenu(e) {
         if (activeActionsMenu) {
+            if (e && e.type === 'click' && e.target.closest && (e.target.closest('.kebab-btn') || e.target.closest('.actions-menu'))) return;
             activeActionsMenu.remove();
             activeActionsMenu = null;
         }

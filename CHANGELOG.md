@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.35 — 2026-02-09
+
+### Fixed
+- **Kebab menu actually clickable** — Root cause was a JS event ordering bug, not CSS z-index. `dismissActionsMenu` was registered as a document-level click handler that fired on the same click as `handleKebabClick`, immediately removing the menu after creation. Fixed by guarding `dismissActionsMenu` to skip when the click target is inside `.kebab-btn` or `.actions-menu`.
+- **Faster zoom** — Increased wheel scale from 0.10 to 0.15 for quicker trackpad pinch response.
+
 ## v0.42.34 — 2026-02-09
 
 ### Fixed
