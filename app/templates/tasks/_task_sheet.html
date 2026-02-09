@@ -142,7 +142,7 @@
       if (action === 'unschedule' && taskId) {
         if (!confirm('Remove schedule from this task?')) return;
         try {
-          const resp = await fetch(`/api/v1/tasks/${taskId}`, {
+          const resp = await safeFetch(`/api/v1/tasks/${taskId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scheduled_date: null, scheduled_time: null })
@@ -166,9 +166,8 @@
           return;
         }
         try {
-          const resp = await fetch(`/api/v1/instances/${instanceId}/skip`, {
+          const resp = await safeFetch(`/api/v1/instances/${instanceId}/skip`, {
             method: 'POST',
-            headers: window.getCSRFHeaders(),
           });
           if (resp.ok) {
             // Update all UI representations
@@ -194,7 +193,7 @@
       if (action === 'delete' && taskId) {
         if (!confirm('Delete this task?')) return;
         try {
-          const resp = await fetch(`/api/v1/tasks/${taskId}`, { method: 'DELETE' });
+          const resp = await safeFetch(`/api/v1/tasks/${taskId}`, { method: 'DELETE' });
           if (resp.ok || resp.status === 204) {
             document.body.dispatchEvent(new CustomEvent('taskSaved', {
               detail: { task_id: taskId, action: 'delete' }

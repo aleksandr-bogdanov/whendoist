@@ -56,6 +56,14 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 
 ---
 
+## [0.42.20] - 2026-02-09 — HTMX CSRF Protection
+
+### Security
+- **HTMX CSRF token injection** — All HTMX state-changing requests (POST/PUT/DELETE/PATCH) now automatically include the `X-CSRF-Token` header via a global `htmx:configRequest` listener
+- **safeFetch coverage** — Replaced 3 raw `fetch()` calls in task sheet template with `safeFetch()`, restoring automatic CSRF injection and error handling
+
+---
+
 ## [0.42.19] - 2026-02-09 — Tighten Input Validation
 
 ### Fixed
