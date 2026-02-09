@@ -3916,12 +3916,14 @@ body[data-energy-level] .scheduled-group.project-group {
     background: none;
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
     opacity: 0;
     position: relative;
     z-index: 1;
     transition: opacity 0.15s ease, background 0.1s ease;
+}
+
+.kebab-btn svg {
+    pointer-events: none;
 }
 
 .task-item:hover .kebab-btn {
