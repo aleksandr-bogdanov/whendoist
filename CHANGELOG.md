@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.27 — 2026-02-09
+
+### Fixed
+- **Parent tasks excluded from Plan My Day** — Parent tasks (those with subtasks) are no longer scheduled as calendar blocks; only their subtasks are plannable. Adds template-level draggable guard, JS safety nets in both plan-tasks.js and drag-drop.js, and a contract test.
+
 ## v0.42.26 — 2026-02-09
 
 ### Fixed
