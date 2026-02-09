@@ -375,6 +375,14 @@ class TaskActionSheet {
     }
 
     async _skipInstance(taskId) {
+        // Check network status before optimistic update
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
         const instanceId = this.currentTask?.dataset.instanceId;
         if (!instanceId) return;
 
