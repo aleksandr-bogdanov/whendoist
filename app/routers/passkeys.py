@@ -323,8 +323,10 @@ async def list_passkeys(
 
 
 @router.delete("/{passkey_id}", response_model=DeletePasskeyResponse)
+@limiter.limit(ENCRYPTION_LIMIT)
 async def delete_passkey(
     passkey_id: int,
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):

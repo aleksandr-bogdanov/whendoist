@@ -129,6 +129,55 @@ class TestRateLimitedEndpoints:
         assert "get_user_or_ip" in backup_content
         assert "key_func=get_user_or_ip" in backup_content
 
+    def test_import_wipe_has_rate_limit(self):
+        """import_data.py wipe should have rate limiting."""
+        import_data_content = Path("app/routers/import_data.py").read_text()
+
+        assert "@limiter.limit(BACKUP_LIMIT" in import_data_content
+        assert "async def wipe_user_data" in import_data_content
+
+    def test_import_todoist_preview_has_rate_limit(self):
+        """import_data.py todoist/preview should have rate limiting."""
+        import_data_content = Path("app/routers/import_data.py").read_text()
+
+        assert "@limiter.limit(BACKUP_LIMIT" in import_data_content
+        assert "async def preview_todoist_import" in import_data_content
+
+    def test_import_todoist_has_rate_limit(self):
+        """import_data.py todoist import should have rate limiting."""
+        import_data_content = Path("app/routers/import_data.py").read_text()
+
+        assert "@limiter.limit(BACKUP_LIMIT" in import_data_content
+        assert "async def import_from_todoist" in import_data_content
+
+    def test_gcal_sync_enable_has_rate_limit(self):
+        """gcal_sync.py enable should have rate limiting."""
+        gcal_sync_content = Path("app/routers/gcal_sync.py").read_text()
+
+        assert "@limiter.limit(BACKUP_LIMIT" in gcal_sync_content
+        assert "async def enable_sync" in gcal_sync_content
+
+    def test_gcal_sync_disable_has_rate_limit(self):
+        """gcal_sync.py disable should have rate limiting."""
+        gcal_sync_content = Path("app/routers/gcal_sync.py").read_text()
+
+        assert "@limiter.limit(BACKUP_LIMIT" in gcal_sync_content
+        assert "async def disable_sync" in gcal_sync_content
+
+    def test_gcal_sync_full_sync_has_rate_limit(self):
+        """gcal_sync.py full-sync should have rate limiting."""
+        gcal_sync_content = Path("app/routers/gcal_sync.py").read_text()
+
+        assert "@limiter.limit(BACKUP_LIMIT" in gcal_sync_content
+        assert "async def full_sync" in gcal_sync_content
+
+    def test_passkey_delete_has_rate_limit(self):
+        """passkeys.py delete should have rate limiting."""
+        passkeys_content = Path("app/routers/passkeys.py").read_text()
+
+        assert "@limiter.limit(ENCRYPTION_LIMIT)" in passkeys_content
+        assert "async def delete_passkey" in passkeys_content
+
 
 class TestMainAppIntegration:
     """Tests verifying rate limiter is integrated into main app."""

@@ -8,13 +8,14 @@ trigger manual re-syncs, and check sync status.
 import asyncio
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import GCAL_SYNC_CALENDAR_NAME
 from app.database import async_session_factory, get_db
+from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import GoogleCalendarEventSync, GoogleToken, User
 from app.routers.auth import require_user
 from app.services.gcal import GoogleCalendarClient
@@ -198,7 +199,9 @@ async def get_sync_status(
 
 
 @router.post("/enable", response_model=SyncEnableResponse)
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
 async def enable_sync(
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -277,7 +280,9 @@ async def enable_sync(
 
 
 @router.post("/disable", response_model=SyncDisableResponse)
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
 async def disable_sync(
+    request: Request,
     data: SyncDisableRequest | None = None,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
@@ -322,7 +327,9 @@ async def disable_sync(
 
 
 @router.post("/full-sync", response_model=BulkSyncResponse)
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
 async def full_sync(
+    request: Request,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):

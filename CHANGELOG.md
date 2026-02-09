@@ -6,6 +6,62 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## Post-v1.0 Backlog
+
+Known issues and deferred work from v1.0 gate audits (February 9, 2026).
+Full audit reports: `docs/archive/2026-02-09-*.md`
+
+### Product Features
+
+- **Mobile UX overhaul** — Proactive gap surfacing ("2h free until 14:00"), task-initiated scheduling. Current mobile is functional but basic.
+- **Undo/Redo** — Delete has toast undo. Full undo for complete/reschedule/edit is v1.1.
+- **Bulk operations** — Multi-select, batch reschedule/complete/delete. One-at-a-time works.
+- **Offline write queue** — Full IndexedDB queue deferred (~14 days, high risk). Warn-only for v1.0. Revisit when JS test infra exists.
+- **Honeycomb profiling** — OpenTelemetry distributed tracing for performance optimization.
+- **Encryption passphrase change** — No way to change passphrase without disable→re-enable (loses passkeys). Need a re-encryption flow.
+
+### Recurring Tasks
+
+- **Timezone on scheduled_time** — `scheduled_time` stored as bare Time (no TZ); materialized as UTC in `recurrence_service.py:175`. A user in EST with a 9 AM task gets instances at 9 AM UTC = 4 AM EST. Needs user timezone preference + TZ-aware materialization.
+- **recurrence_rule validation** — Any dict accepted as `recurrence_rule` on create/update. Malformed input (e.g. `freq: "bogus"`, `interval: 0`) silently produces zero instances. UI always sends valid JSON so risk is API-only.
+- **list_instances timezone** — Endpoint missing timezone parameter (consistency issue, not causing wrong behavior).
+- **Monthly 31st skips short months** — `dateutil.rrule` with `bymonthday=31` skips Feb/Apr/Jun/Sep/Nov. Needs UI tooltip when `day_of_month > 28`.
+- **regenerate_instances cleanup** — Changing a recurrence rule doesn't clean up completed/skipped instances from the old rule.
+- **Skip→toggle state machine** — Toggling a skipped instance marks it completed (not pending). May surprise users expecting skip→pending→completed.
+- **cleanup_old_instances uses server time** — Uses `date.today()` instead of `get_user_today()`. Only affects cleanup timing, not user-visible scheduling.
+
+### GCal Sync
+
+- **Rapid toggle drops second sync** — Enable→Disable→Enable quickly: second sync skips because lock is held by first. User sees "enabled" with 0 events. Workaround: wait 1-2 min, then Full Re-sync.
+- **Fire-and-forget bypasses per-user lock** — `_fire_and_forget_bulk_sync` in tasks.py doesn't acquire the sync lock, allowing concurrent syncs with the protected path.
+- **Bulk sync timeout** — 1000+ tasks with rate limiting can exceed 5-min materialization timeout. User-triggered syncs have no timeout at all. Consider `asyncio.wait_for()` with 15-min ceiling.
+- **Orphan event scenarios** — Fire-and-forget sync→unsync race (task archived right after sync started); disable without `delete_events` leaves calendar events.
+- **Background bulk_sync has no timeout** — Unlike materialization loop (5-min timeout via `asyncio.wait_for`), background GCal sync can run indefinitely.
+
+### Security & Hardening
+
+- **Offline checks on secondary mutation paths** — 11 of 18 JS mutation paths still lack `isNetworkOnline()` checks (plan-tasks, mobile-sheet, task-dialog complete/delete, drag-drop unschedule, task-list-options). Primary 7 paths are protected.
+- **Analytics aging stats unbounded** — `_get_aging_stats()` loads ALL completed tasks with no date range. 10k+ tasks = 1-2s delay + 5-10MB memory spike. Add date range parameter.
+- **Passkey deletion rate limit** — `DELETE /api/v1/passkeys/{id}` has no rate limit. Attacker could delete all passkeys.
+- **Encryption timing oracle** — Client-side passphrase verification in `crypto.js` uses non-constant-time string comparison. Theoretical risk only (client-side).
+- **Session clear before login** — OAuth callbacks don't call `session.clear()` before setting user_id. Starlette auto-regenerates, so implicitly safe, but explicit clear is better.
+- **Instance cleanup audit trail** — `cleanup_old_instances` permanently deletes 90+ day instances with no log of what was deleted.
+
+### Infrastructure (Trigger-Based)
+
+- **Redis rate limiting** — Required before `replicas > 1` on Railway (in-memory counters are per-process).
+- **Redis calendar cache** — Required before multi-worker deployment.
+- **JS test infrastructure** — Prerequisite for offline queue, frontend complexity, and encryption testing.
+
+---
+
+## [0.42.11] - 2026-02-09 — Rate Limit Destructive Endpoints
+
+### Fixed
+- **Unprotected destructive endpoints** — Added rate limits (5/min) to: import wipe, Todoist preview, Todoist import, GCal enable/disable/sync, passkey deletion
+
+---
+
 ## [0.42.10] - 2026-02-09 — Offline: Block Mutations Before Optimistic Updates
 
 ### Fixed
