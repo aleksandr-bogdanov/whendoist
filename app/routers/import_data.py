@@ -14,8 +14,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
-from app.models import Domain, Task, TaskInstance, TodoistToken, User
+from app.models import (
+    Domain,
+    GoogleCalendarEventSync,
+    GoogleToken,
+    Task,
+    TaskInstance,
+    TodoistToken,
+    User,
+    UserPreferences,
+)
 from app.routers.auth import get_current_user
+from app.services.gcal import GoogleCalendarClient
 from app.services.todoist import TodoistClient
 from app.services.todoist_import import TodoistImportService
 
@@ -80,6 +90,30 @@ async def wipe_user_data(
     """
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Clean up GCal sync if enabled — delete calendar and sync records
+    # before wiping tasks (otherwise sync records cascade-delete but
+    # Google Calendar events orphan)
+    prefs_result = await db.execute(select(UserPreferences).where(UserPreferences.user_id == user.id))
+    prefs = prefs_result.scalar_one_or_none()
+    if prefs and prefs.gcal_sync_enabled and prefs.gcal_sync_calendar_id:
+        calendar_id = prefs.gcal_sync_calendar_id
+        try:
+            token_result = await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))
+            google_token = token_result.scalar_one_or_none()
+            if google_token:
+                async with GoogleCalendarClient(db, google_token) as client:
+                    await client.delete_calendar(calendar_id)
+        except Exception:
+            logger.warning(
+                f"Failed to delete GCal calendar during wipe for user {user.id}, events may remain in Google Calendar"
+            )
+
+        # Clean up sync state regardless of API success
+        await db.execute(delete(GoogleCalendarEventSync).where(GoogleCalendarEventSync.user_id == user.id))
+        prefs.gcal_sync_enabled = False
+        prefs.gcal_sync_calendar_id = None
+        prefs.gcal_sync_error = None
 
     # Get task IDs for this user to delete instances
     task_ids_result = await db.execute(select(Task.id).where(Task.user_id == user.id))
