@@ -256,7 +256,7 @@ class TaskSwipeHandler {
         }
 
         // Optimistic UI update
-        task.classList.add('completing');
+        task.classList.add('departing');
 
         try {
             // Toggle completion
@@ -279,7 +279,7 @@ class TaskSwipeHandler {
                 }
             }
         } catch (err) {
-            task.classList.remove('completing');
+            task.classList.remove('departing');
             handleError(err, 'Failed to complete task', {
                 component: 'task-swipe',
                 action: 'completeTask'

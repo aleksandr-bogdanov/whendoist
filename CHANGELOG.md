@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.30 — 2026-02-09
+
+### Fixed
+- **Skip menu jargon** — "Skip this instance" renamed to "Skip this one" to remove tech jargon.
+- **Kebab button margin** — Added `margin: 0; padding: 0` to `.kebab-btn` to fix Pico CSS injecting extra `margin-bottom` on buttons.
+- **Zoom scroll preservation** — Zooming in/out now keeps the same time centered in the viewport instead of jumping to the top.
+- **Completion toast undo** — Completing a task now shows an "Undo" button in the toast; clicking it cancels the animation and reverses the completion.
+
+### Changed
+- **Universal departing animation** — Completing, scheduling (drag to calendar), and deleting (drag to trash) all use one consistent `.departing` slide-down + fade-out + collapse animation, replacing the old `.completing` fade.
+- **Exposed `window.TaskComplete` API** — `{ init, refreshTaskList }` so other modules (drag-drop) can trigger task list refreshes after scheduling animations.
+
 ## v0.42.29 — 2026-02-09
 
 ### Added
