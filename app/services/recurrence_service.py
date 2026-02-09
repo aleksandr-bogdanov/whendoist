@@ -324,6 +324,7 @@ class RecurrenceService:
                 TaskInstance.id == instance_id,
                 Task.user_id == self.user_id,
             )
+            .options(selectinload(TaskInstance.task).selectinload(Task.domain))
         )
         instance = result.scalar_one_or_none()
 

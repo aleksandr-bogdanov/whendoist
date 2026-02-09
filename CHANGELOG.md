@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.28 — 2026-02-09
+
+### Fixed
+- **Instance schedule endpoint crash** — `PUT /api/v1/instances/{id}/schedule` crashed with `MissingGreenlet` because `schedule_instance()` query lacked eager loading for `task` and `task.domain` relationships needed by the response serializer. Added `selectinload` to match other instance queries.
+
 ## v0.42.27 — 2026-02-09
 
 ### Fixed
