@@ -46,6 +46,7 @@ Full audit reports: `docs/archive/2026-02-09-*.md`
 - **Encryption timing oracle** — Client-side passphrase verification in `crypto.js` uses non-constant-time string comparison. Theoretical risk only (client-side).
 - **Session clear before login** — OAuth callbacks don't call `session.clear()` before setting user_id. Starlette auto-regenerates, so implicitly safe, but explicit clear is better.
 - **Instance cleanup audit trail** — `cleanup_old_instances` permanently deletes 90+ day instances with no log of what was deleted.
+- **Nonce-based CSP** — `script-src` still uses `'unsafe-inline'` because ~45 `onclick` handlers in templates need it. Full fix: refactor all inline event handlers to `addEventListener`, generate per-request nonce in middleware, update CSP to `script-src 'self' 'nonce-{value}'`.
 
 ### Infrastructure (Trigger-Based)
 
