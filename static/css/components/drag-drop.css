@@ -161,7 +161,14 @@ body.is-dragging .calendar-event {
     overflow: hidden;
     box-sizing: border-box;
     transition: transform var(--duration-fast) var(--ease-default),
-                box-shadow var(--duration-fast) var(--ease-default);
+                box-shadow var(--duration-fast) var(--ease-default),
+                top 0.15s ease-out,
+                height 0.15s ease-out;
+}
+
+/* Disable position transitions during drag to prevent lag */
+body.is-dragging .scheduled-task {
+    transition: none !important;
 }
 
 /* Impact rail as pseudo-element */

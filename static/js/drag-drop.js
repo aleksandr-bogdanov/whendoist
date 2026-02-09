@@ -38,7 +38,11 @@
     const DEFAULT_DURATION = 30;
     const MAX_OVERLAP_COLUMNS = 3;
     const ZOOM_STEPS = [30, 40, 50, 60, 70, 80, 90, 100];
+    const ZOOM_MIN = 30;
+    const ZOOM_MAX = 100;
+    const ZOOM_ACCUMULATOR_THRESHOLD = 30;
     let currentHourHeight = 60;
+    let zoomAccumulator = 0;
 
     /**
      * Get the current hour height from module state.
@@ -344,7 +348,7 @@
 
         // Read initial hour height from data attribute (server-rendered)
         const savedHeight = parseInt(panel.dataset.hourHeight, 10);
-        if (savedHeight && ZOOM_STEPS.includes(savedHeight)) {
+        if (savedHeight && savedHeight >= ZOOM_MIN && savedHeight <= ZOOM_MAX) {
             setHourHeight(savedHeight);
         } else {
             setHourHeight(60);
@@ -357,6 +361,7 @@
         document.querySelectorAll('.zoom-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                zoomAccumulator = 0;
                 const direction = btn.dataset.zoom;
                 const currentIdx = ZOOM_STEPS.indexOf(currentHourHeight);
                 let newIdx = currentIdx;
@@ -374,21 +379,20 @@
         });
 
         // Ctrl+scroll (also handles trackpad pinch on macOS)
+        // Uses accumulator so trackpad pinch (many small deltaY events) feels smooth
         panel.addEventListener('wheel', (e) => {
             if (!e.ctrlKey) return;
             e.preventDefault();
 
-            const currentIdx = ZOOM_STEPS.indexOf(currentHourHeight);
-            let newIdx = currentIdx;
+            zoomAccumulator += e.deltaY;
 
-            if (e.deltaY < 0 && currentIdx < ZOOM_STEPS.length - 1) {
-                newIdx = currentIdx + 1;
-            } else if (e.deltaY > 0 && currentIdx > 0) {
-                newIdx = currentIdx - 1;
-            }
-
-            if (newIdx !== currentIdx) {
-                applyZoom(ZOOM_STEPS[newIdx]);
+            while (Math.abs(zoomAccumulator) >= ZOOM_ACCUMULATOR_THRESHOLD) {
+                var step = zoomAccumulator > 0 ? -10 : 10;
+                zoomAccumulator -= zoomAccumulator > 0 ? ZOOM_ACCUMULATOR_THRESHOLD : -ZOOM_ACCUMULATOR_THRESHOLD;
+                var newHeight = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, currentHourHeight + step));
+                if (newHeight !== currentHourHeight) {
+                    applyZoom(newHeight);
+                }
             }
         }, { passive: false });
     }
@@ -418,13 +422,16 @@
             entry.grid.scrollTop = (entry.centerTimeMins / 60 * newHeight) - entry.viewportH / 2;
         });
 
-        // Debounced save to server
+        // Debounced save to server (snap to nearest ZOOM_STEP for clean persistence)
         if (zoomSaveTimeout) clearTimeout(zoomSaveTimeout);
         zoomSaveTimeout = setTimeout(() => {
+            var snapped = ZOOM_STEPS.reduce(function(prev, curr) {
+                return Math.abs(curr - currentHourHeight) < Math.abs(prev - currentHourHeight) ? curr : prev;
+            });
             safeFetch('/api/v1/preferences', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ calendar_hour_height: newHeight }),
+                body: JSON.stringify({ calendar_hour_height: snapped }),
             }).catch(err => log.warn('Failed to save zoom preference:', err));
         }, 500);
     }

@@ -170,6 +170,8 @@
                              data-task-id="{{ item.task.id }}"
                              data-completed="{{ '1' if item_status == 'completed' else '0' }}"
                              {% if item.is_instance %}data-instance-id="{{ item.instance.id }}" data-instance-date="{{ item.instance.instance_date.isoformat() }}"{% endif %}
+                             data-is-recurring="{{ 'true' if item.task.recurrence_rule else 'false' }}"
+                             data-scheduled-date="{{ day.date.isoformat() }}"
                              data-duration="{{ item.duration_minutes }}"
                              data-clarity="{{ item.clarity }}"
                              data-impact="{{ item.task.impact or 4 }}"
@@ -185,6 +187,7 @@
                             </span>
                             {% endif %}
                             <span class="date-only-task-text">{% if encryption_enabled %}🔒{% else %}{{ item.task.title }}{% endif %}</span>
+                            <button class="kebab-btn calendar-kebab" type="button" aria-label="Task actions" title="Actions">⋮</button>
                         </div>
                         {% endfor %}
                     </div>
@@ -241,6 +244,8 @@
                                  data-task-id="{{ scheduled.task.id }}"
                                  data-completed="{{ '1' if task_status == 'completed' else '0' }}"
                                  {% if scheduled.is_instance %}data-instance-id="{{ scheduled.instance.id }}" data-instance-date="{{ scheduled.instance.instance_date.isoformat() }}"{% endif %}
+                                 data-is-recurring="{{ 'true' if scheduled.task.recurrence_rule else 'false' }}"
+                                 data-scheduled-date="{{ day.date.isoformat() }}"
                                  data-start-mins="{{ start_mins }}"
                                  data-end-mins="{{ end_mins }}"
                                  data-duration="{{ duration_mins }}"
@@ -258,6 +263,7 @@
                                     {% endif %}
                                 </div>
                                 <span class="scheduled-task-text">{% if encryption_enabled %}🔒{% else %}{{ scheduled.task.title }}{% endif %}{% if scheduled.is_instance %}<span class="occurrence-day" title="Occurrence: {{ scheduled.instance.instance_date.strftime('%A, %b %d') }}">{{ scheduled.instance.instance_date.strftime('%a') }}</span>{% endif %}</span>
+                                <button class="kebab-btn calendar-kebab" type="button" aria-label="Task actions" title="Actions">⋮</button>
                             </div>
                             {% endfor %}
                         </div>
