@@ -20,7 +20,7 @@ from app.database import get_db
 from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import User
 from app.routers.auth import require_user
-from app.services.backup_service import BackupService
+from app.services.backup_service import BackupService, BackupValidationError
 
 logger = logging.getLogger("whendoist")
 router = APIRouter(prefix="/backup", tags=["backup"])
@@ -100,6 +100,9 @@ async def import_backup(
     except json.JSONDecodeError as e:
         logger.error(f"Backup import failed - invalid JSON: {e}")
         raise HTTPException(status_code=400, detail="Invalid JSON file") from e
+    except BackupValidationError as e:
+        logger.warning(f"Backup import failed - validation error: {e}")
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Backup import failed: {e}", exc_info=True)
         await db.rollback()

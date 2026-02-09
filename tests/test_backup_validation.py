@@ -9,9 +9,10 @@ import io
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 
 from app.main import app
-from app.models import Domain, Task, User
+from app.models import Domain, Task, User, UserPreferences
 from app.services.backup_service import BackupService, BackupValidationError
 
 
@@ -134,8 +135,6 @@ class TestImportPreservesDataOnValidationFailure:
             await service.import_all({"garbage": "data"}, clear_existing=True)
 
         # Verify existing data still present
-        from sqlalchemy import select
-
         domains = (await db_session.execute(select(Domain).where(Domain.user_id == test_user.id))).scalars().all()
         tasks = (await db_session.execute(select(Task).where(Task.user_id == test_user.id))).scalars().all()
 
@@ -156,8 +155,6 @@ class TestImportPreservesDataOnValidationFailure:
             await service.import_all(data, clear_existing=True)
 
         # Verify existing data still present
-        from sqlalchemy import select
-
         domains = (await db_session.execute(select(Domain).where(Domain.user_id == test_user.id))).scalars().all()
         assert len(domains) == 1
 
@@ -181,8 +178,6 @@ class TestSuccessfulImport:
         assert result["tasks"] == 1
 
         # Verify old data gone, new data present
-        from sqlalchemy import select
-
         domains = (await db_session.execute(select(Domain).where(Domain.user_id == test_user.id))).scalars().all()
         assert len(domains) == 1
         assert domains[0].name == "New Domain"
@@ -203,8 +198,6 @@ class TestSuccessfulImport:
         assert result["tasks"] == 1
 
         # Verify both old and new data present
-        from sqlalchemy import select
-
         domains = (await db_session.execute(select(Domain).where(Domain.user_id == test_user.id))).scalars().all()
         assert len(domains) == 2  # Old + new
 
@@ -225,8 +218,6 @@ class TestDomainIdMapping:
         await service.import_all(data, clear_existing=True)
 
         # Verify task is linked to the new domain
-        from sqlalchemy import select
-
         tasks = (await db_session.execute(select(Task).where(Task.user_id == test_user.id))).scalars().all()
         domains = (await db_session.execute(select(Domain).where(Domain.user_id == test_user.id))).scalars().all()
 
@@ -256,3 +247,170 @@ class TestBackupImportEndpoint:
             # Note: In practice, authentication would fail first since we're not authenticated,
             # but if we were authenticated, the size check would trigger 413
             assert response.status_code in (401, 413)  # Either auth fails or size check fails
+
+
+class TestLegacyClarityMapping:
+    """Test that legacy clarity values are mapped correctly."""
+
+    @pytest.mark.asyncio
+    async def test_executable_clarity_mapped_to_autopilot(self, db_session, test_user):
+        """Legacy 'executable' clarity should be accepted and mapped to 'autopilot'."""
+        service = BackupService(db_session, test_user.id)
+        data = make_valid_backup(
+            tasks=[{"title": "Parent Task", "clarity": "executable"}],
+        )
+
+        validated = service.validate_backup(data)
+        assert validated.tasks[0].clarity == "autopilot"
+
+    @pytest.mark.asyncio
+    async def test_executable_clarity_imports_as_autopilot(self, db_session, test_user):
+        """Legacy 'executable' clarity should import as 'autopilot' in the database."""
+        service = BackupService(db_session, test_user.id)
+        data = make_valid_backup(
+            tasks=[{"title": "Parent Task", "clarity": "executable"}],
+        )
+
+        await service.import_all(data, clear_existing=True)
+
+        tasks = (await db_session.execute(select(Task).where(Task.user_id == test_user.id))).scalars().all()
+        assert len(tasks) == 1
+        assert tasks[0].clarity == "autopilot"
+
+    @pytest.mark.asyncio
+    async def test_validation_error_is_backup_validation_error(self, db_session, test_user):
+        """Invalid clarity should raise BackupValidationError, not generic error."""
+        service = BackupService(db_session, test_user.id)
+        data = make_valid_backup(
+            tasks=[{"title": "Task", "clarity": "invalid_value"}],
+        )
+
+        with pytest.raises(BackupValidationError, match="clarity"):
+            service.validate_backup(data)
+
+
+class TestExportImportRoundTrip:
+    """Test that export → import preserves all fields."""
+
+    @pytest.mark.asyncio
+    async def test_round_trip_preserves_all_fields(self, db_session, test_user):
+        """Export then import should preserve all task, domain, and preference fields."""
+        # Create domain with all fields
+        domain = Domain(
+            user_id=test_user.id,
+            name="Work",
+            icon="briefcase",
+            color="#ff0000",
+            position=2,
+            is_archived=True,
+        )
+        db_session.add(domain)
+        await db_session.flush()
+
+        # Create task with all fields
+        from datetime import date, time
+
+        task = Task(
+            user_id=test_user.id,
+            domain_id=domain.id,
+            title="Important Task",
+            description="Do the thing",
+            status="pending",
+            clarity="brainstorm",
+            impact=2,
+            duration_minutes=45,
+            scheduled_date=date(2025, 6, 15),
+            scheduled_time=time(10, 30),
+            due_date=date(2025, 6, 20),
+            due_time=time(17, 0),
+            is_recurring=True,
+            recurrence_rule={"type": "weekly", "interval": 1},
+            recurrence_start=date(2025, 6, 1),
+            recurrence_end=date(2025, 12, 31),
+            position=5,
+        )
+        db_session.add(task)
+
+        # Create preferences with all fields
+        prefs = UserPreferences(
+            user_id=test_user.id,
+            show_completed_in_planner=False,
+            completed_retention_days=7,
+            completed_move_to_bottom=False,
+            completed_sort_by_date=False,
+            show_completed_in_list=False,
+            hide_recurring_after_completion=True,
+            show_scheduled_in_list=False,
+            scheduled_move_to_bottom=False,
+            scheduled_sort_by_date=False,
+            timezone="America/New_York",
+        )
+        db_session.add(prefs)
+        await db_session.commit()
+
+        # Export
+        service = BackupService(db_session, test_user.id)
+        exported = await service.export_all()
+
+        # Import into same user (clears and re-creates)
+        await service.import_all(exported, clear_existing=True)
+
+        # Verify domain fields
+        domains = (await db_session.execute(select(Domain).where(Domain.user_id == test_user.id))).scalars().all()
+        assert len(domains) == 1
+        d = domains[0]
+        assert d.name == "Work"
+        assert d.icon == "briefcase"
+        assert d.color == "#ff0000"
+        assert d.position == 2
+        assert d.is_archived is True
+
+        # Verify task fields
+        tasks = (await db_session.execute(select(Task).where(Task.user_id == test_user.id))).scalars().all()
+        assert len(tasks) == 1
+        t = tasks[0]
+        assert t.title == "Important Task"
+        assert t.description == "Do the thing"
+        assert t.status == "pending"
+        assert t.clarity == "brainstorm"
+        assert t.impact == 2
+        assert t.duration_minutes == 45
+        assert t.scheduled_date == date(2025, 6, 15)
+        assert t.scheduled_time == time(10, 30)
+        assert t.due_date == date(2025, 6, 20)
+        assert t.due_time == time(17, 0)
+        assert t.is_recurring is True
+        assert t.recurrence_rule == {"type": "weekly", "interval": 1}
+        assert t.recurrence_start == date(2025, 6, 1)
+        assert t.recurrence_end == date(2025, 12, 31)
+        assert t.position == 5
+
+        # Verify preference fields
+        prefs_result = (
+            await db_session.execute(select(UserPreferences).where(UserPreferences.user_id == test_user.id))
+        ).scalar_one()
+        assert prefs_result.show_completed_in_planner is False
+        assert prefs_result.completed_retention_days == 7
+        assert prefs_result.completed_move_to_bottom is False
+        assert prefs_result.completed_sort_by_date is False
+        assert prefs_result.show_completed_in_list is False
+        assert prefs_result.hide_recurring_after_completion is True
+        assert prefs_result.show_scheduled_in_list is False
+        assert prefs_result.scheduled_move_to_bottom is False
+        assert prefs_result.scheduled_sort_by_date is False
+        assert prefs_result.timezone == "America/New_York"
+
+    @pytest.mark.asyncio
+    async def test_import_with_null_not_null_fields(self, db_session, test_user):
+        """Import should handle None for NOT NULL fields with defaults."""
+        service = BackupService(db_session, test_user.id)
+        data = make_valid_backup(
+            tasks=[{"title": "Task with nulls", "clarity": None, "impact": None}],
+        )
+
+        await service.import_all(data, clear_existing=True)
+
+        tasks = (await db_session.execute(select(Task).where(Task.user_id == test_user.id))).scalars().all()
+        assert len(tasks) == 1
+        assert tasks[0].clarity == "normal"
+        assert tasks[0].impact == 4

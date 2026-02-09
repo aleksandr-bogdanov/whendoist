@@ -66,8 +66,12 @@ class BackupTaskSchema(BaseModel):
     scheduled_date: str | None = None
     scheduled_time: str | None = None
     due_date: str | None = None
+    due_time: str | None = None
     is_recurring: bool = False
     recurrence_rule: dict | None = None
+    recurrence_start: str | None = None
+    recurrence_end: str | None = None
+    position: int = 0
     completed_at: str | None = None
     external_id: str | None = None
     external_source: str | None = None
@@ -104,8 +108,12 @@ class BackupTaskSchema(BaseModel):
     @field_validator("clarity")
     @classmethod
     def validate_clarity(cls, v: str | None) -> str | None:
-        if v is not None and v not in ("autopilot", "normal", "brainstorm"):
-            raise ValueError("Task clarity must be autopilot, normal, or brainstorm")
+        if v is not None:
+            # Map legacy values from older backups
+            legacy_map = {"executable": "autopilot"}
+            v = legacy_map.get(v, v)
+            if v not in ("autopilot", "normal", "brainstorm"):
+                raise ValueError("Task clarity must be autopilot, normal, or brainstorm")
         return v
 
     @field_validator("impact")
@@ -123,6 +131,8 @@ class BackupDomainSchema(BaseModel):
     id: int | None = None
     icon: str | None = None
     color: str | None = None
+    position: int = 0
+    is_archived: bool = False
     external_id: str | None = None
     external_source: str | None = None
 
@@ -143,8 +153,13 @@ class BackupPreferencesSchema(BaseModel):
     show_completed_in_planner: bool = True
     completed_retention_days: int = 3
     completed_move_to_bottom: bool = True
+    completed_sort_by_date: bool = True
     show_completed_in_list: bool = True
     hide_recurring_after_completion: bool = False
+    show_scheduled_in_list: bool = True
+    scheduled_move_to_bottom: bool = True
+    scheduled_sort_by_date: bool = True
+    timezone: str | None = None
 
 
 class BackupSchema(BaseModel):
@@ -260,6 +275,8 @@ class BackupService:
                     name=domain_data.name,
                     icon=domain_data.icon,
                     color=domain_data.color,
+                    position=domain_data.position,
+                    is_archived=domain_data.is_archived,
                     external_id=domain_data.external_id,
                     external_source=domain_data.external_source,
                 )
@@ -282,14 +299,18 @@ class BackupService:
                     title=task_data.title,
                     description=task_data.description,
                     status=task_data.status,
-                    clarity=task_data.clarity,
-                    impact=task_data.impact,
+                    clarity=task_data.clarity or "normal",
+                    impact=task_data.impact if task_data.impact is not None else 4,
                     duration_minutes=task_data.duration_minutes,
                     scheduled_date=self._parse_date(task_data.scheduled_date),
                     scheduled_time=self._parse_time(task_data.scheduled_time),
                     due_date=self._parse_date(task_data.due_date),
+                    due_time=self._parse_time(task_data.due_time),
                     is_recurring=task_data.is_recurring,
                     recurrence_rule=task_data.recurrence_rule,
+                    recurrence_start=self._parse_date(task_data.recurrence_start),
+                    recurrence_end=self._parse_date(task_data.recurrence_end),
+                    position=task_data.position,
                     completed_at=self._parse_datetime(task_data.completed_at),
                     external_id=task_data.external_id,
                     external_source=task_data.external_source,
@@ -361,8 +382,13 @@ class BackupService:
                     show_completed_in_planner=prefs_data.show_completed_in_planner,
                     completed_retention_days=prefs_data.completed_retention_days,
                     completed_move_to_bottom=prefs_data.completed_move_to_bottom,
+                    completed_sort_by_date=prefs_data.completed_sort_by_date,
                     show_completed_in_list=prefs_data.show_completed_in_list,
                     hide_recurring_after_completion=prefs_data.hide_recurring_after_completion,
+                    show_scheduled_in_list=prefs_data.show_scheduled_in_list,
+                    scheduled_move_to_bottom=prefs_data.scheduled_move_to_bottom,
+                    scheduled_sort_by_date=prefs_data.scheduled_sort_by_date,
+                    timezone=prefs_data.timezone,
                 )
                 self.db.add(preferences)
 
@@ -390,6 +416,8 @@ class BackupService:
             "name": domain.name,
             "icon": domain.icon,
             "color": domain.color,
+            "position": domain.position,
+            "is_archived": domain.is_archived,
             "external_id": domain.external_id,
             "external_source": domain.external_source,
         }
@@ -408,8 +436,12 @@ class BackupService:
             "scheduled_date": task.scheduled_date.isoformat() if task.scheduled_date else None,
             "scheduled_time": task.scheduled_time.isoformat() if task.scheduled_time else None,
             "due_date": task.due_date.isoformat() if task.due_date else None,
+            "due_time": task.due_time.isoformat() if task.due_time else None,
             "is_recurring": task.is_recurring,
             "recurrence_rule": task.recurrence_rule,
+            "recurrence_start": task.recurrence_start.isoformat() if task.recurrence_start else None,
+            "recurrence_end": task.recurrence_end.isoformat() if task.recurrence_end else None,
+            "position": task.position,
             "completed_at": task.completed_at.isoformat() if task.completed_at else None,
             "external_id": task.external_id,
             "external_source": task.external_source,
@@ -430,8 +462,13 @@ class BackupService:
             "show_completed_in_planner": prefs.show_completed_in_planner,
             "completed_retention_days": prefs.completed_retention_days,
             "completed_move_to_bottom": prefs.completed_move_to_bottom,
+            "completed_sort_by_date": prefs.completed_sort_by_date,
             "show_completed_in_list": prefs.show_completed_in_list,
             "hide_recurring_after_completion": prefs.hide_recurring_after_completion,
+            "show_scheduled_in_list": prefs.show_scheduled_in_list,
+            "scheduled_move_to_bottom": prefs.scheduled_move_to_bottom,
+            "scheduled_sort_by_date": prefs.scheduled_sort_by_date,
+            "timezone": prefs.timezone,
         }
 
     def _parse_date(self, value: str | None) -> date | None:

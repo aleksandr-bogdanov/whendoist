@@ -282,10 +282,10 @@ class TodoistImportService:
                     # Also use time as scheduled if specific time provided
                     scheduled_time = due_time
 
-            # Determine clarity from labels; parent tasks default to "executable"
+            # Determine clarity from labels; parent tasks default to "autopilot"
             clarity = self._parse_clarity_from_labels(task.labels)
             if not clarity and task.id in tasks_with_children:
-                clarity = "executable"
+                clarity = "autopilot"
 
             # Parse duration from description (d:30m format)
             # Prefer description duration over Todoist's native duration
