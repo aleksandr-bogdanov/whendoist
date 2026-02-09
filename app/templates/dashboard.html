@@ -187,7 +187,7 @@
                             </span>
                             {% endif %}
                             <span class="date-only-task-text">{% if encryption_enabled %}🔒{% else %}{{ item.task.title }}{% endif %}</span>
-                            <button class="kebab-btn calendar-kebab" type="button" aria-label="Task actions" title="Actions">⋮</button>
+                            {% if item.is_instance %}<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip">⏭</button>{% else %}<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule">📤</button>{% endif %}
                         </div>
                         {% endfor %}
                     </div>
@@ -263,7 +263,7 @@
                                     {% endif %}
                                 </div>
                                 <span class="scheduled-task-text">{% if encryption_enabled %}🔒{% else %}{{ scheduled.task.title }}{% endif %}{% if scheduled.is_instance %}<span class="occurrence-day" title="Occurrence: {{ scheduled.instance.instance_date.strftime('%A, %b %d') }}">{{ scheduled.instance.instance_date.strftime('%a') }}</span>{% endif %}</span>
-                                <button class="kebab-btn calendar-kebab" type="button" aria-label="Task actions" title="Actions">⋮</button>
+                                {% if scheduled.is_instance %}<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip">⏭</button>{% else %}<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule">📤</button>{% endif %}
                             </div>
                             {% endfor %}
                         </div>

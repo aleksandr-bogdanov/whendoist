@@ -40,9 +40,11 @@
     const ZOOM_STEPS = [30, 40, 50, 60, 70, 80, 90, 100];
     const ZOOM_MIN = 30;
     const ZOOM_MAX = 100;
-    const ZOOM_ACCUMULATOR_THRESHOLD = 30;
+    const ZOOM_WHEEL_SCALE = 0.05;
     let currentHourHeight = 60;
-    let zoomAccumulator = 0;
+    let targetZoomHeight = 60;
+    let pendingZoomDelta = 0;
+    let zoomRAF = null;
 
     /**
      * Get the current hour height from module state.
@@ -350,49 +352,61 @@
         const savedHeight = parseInt(panel.dataset.hourHeight, 10);
         if (savedHeight && savedHeight >= ZOOM_MIN && savedHeight <= ZOOM_MAX) {
             setHourHeight(savedHeight);
+            targetZoomHeight = savedHeight;
         } else {
             setHourHeight(60);
+            targetZoomHeight = 60;
         }
 
         // Recalculate positions for server-rendered events
         recalcAllScheduledPositions();
 
-        // Zoom button click handlers
+        // Zoom button click handlers (discrete steps)
         document.querySelectorAll('.zoom-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                zoomAccumulator = 0;
-                const direction = btn.dataset.zoom;
-                const currentIdx = ZOOM_STEPS.indexOf(currentHourHeight);
-                let newIdx = currentIdx;
+                // Cancel any pending wheel zoom
+                pendingZoomDelta = 0;
+                if (zoomRAF) { cancelAnimationFrame(zoomRAF); zoomRAF = null; }
 
-                if (direction === 'in' && currentIdx < ZOOM_STEPS.length - 1) {
-                    newIdx = currentIdx + 1;
-                } else if (direction === 'out' && currentIdx > 0) {
-                    newIdx = currentIdx - 1;
+                const direction = btn.dataset.zoom;
+                var newHeight;
+
+                if (direction === 'in') {
+                    newHeight = ZOOM_STEPS.find(function(s) { return s > currentHourHeight; });
+                } else {
+                    for (var i = ZOOM_STEPS.length - 1; i >= 0; i--) {
+                        if (ZOOM_STEPS[i] < currentHourHeight) { newHeight = ZOOM_STEPS[i]; break; }
+                    }
                 }
 
-                if (newIdx !== currentIdx) {
-                    applyZoom(ZOOM_STEPS[newIdx]);
+                if (newHeight && newHeight !== currentHourHeight) {
+                    targetZoomHeight = newHeight;
+                    applyZoom(newHeight);
                 }
             });
         });
 
         // Ctrl+scroll (also handles trackpad pinch on macOS)
-        // Uses accumulator so trackpad pinch (many small deltaY events) feels smooth
+        // Continuous zoom: accumulate deltaY between frames, apply once per rAF
         panel.addEventListener('wheel', (e) => {
             if (!e.ctrlKey) return;
             e.preventDefault();
 
-            zoomAccumulator += e.deltaY;
+            pendingZoomDelta += e.deltaY;
 
-            while (Math.abs(zoomAccumulator) >= ZOOM_ACCUMULATOR_THRESHOLD) {
-                var step = zoomAccumulator > 0 ? -10 : 10;
-                zoomAccumulator -= zoomAccumulator > 0 ? ZOOM_ACCUMULATOR_THRESHOLD : -ZOOM_ACCUMULATOR_THRESHOLD;
-                var newHeight = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, currentHourHeight + step));
-                if (newHeight !== currentHourHeight) {
-                    applyZoom(newHeight);
-                }
+            if (!zoomRAF) {
+                zoomRAF = requestAnimationFrame(function() {
+                    targetZoomHeight = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX,
+                        targetZoomHeight - pendingZoomDelta * ZOOM_WHEEL_SCALE));
+                    pendingZoomDelta = 0;
+                    zoomRAF = null;
+
+                    var rounded = Math.round(targetZoomHeight);
+                    if (rounded !== currentHourHeight) {
+                        applyZoom(rounded);
+                    }
+                });
             }
         }, { passive: false });
     }
@@ -1167,6 +1181,10 @@
             occurrenceBadge = `<span class="occurrence-day">${dayName}</span>`;
         }
 
+        const quickAction = instanceId
+            ? '<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip">⏭</button>'
+            : '<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule">📤</button>';
+
         el.innerHTML = `
             <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="${isCompleted}">
                 <span class="complete-bar"></span>
@@ -1177,6 +1195,7 @@
                 ${durationStr ? `<span class="scheduled-task-duration">${durationStr}</span>` : ''}
             </div>
             <span class="scheduled-task-text">${escapeHtml(content)}${occurrenceBadge}</span>
+            ${quickAction}
         `;
 
         el.addEventListener('dragstart', handleDragStart);
@@ -1387,6 +1406,7 @@
             </button>
             ${durationHtml}
             <span class="date-only-task-text">${escapeHtml(content)}</span>
+            <button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule">📤</button>
         `;
 
         el.addEventListener('dragstart', handleDragStart);

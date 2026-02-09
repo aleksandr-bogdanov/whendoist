@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.33 — 2026-02-09
+
+### Fixed
+- **Truly smooth calendar zoom** — Replaced discrete step accumulator with continuous `requestAnimationFrame`-based zoom (scale factor 0.05). Trackpad pinch now feels gradual; mouse wheel still responsive. Buttons still snap to discrete steps.
+
+### Changed
+- **Calendar quick-action buttons** — Replaced generic kebab (⋮) on calendar cards with contextual quick-action buttons: ⏭ skip (recurring instances) or 📤 unschedule (non-recurring). One click to act, no menu needed. Right-click still opens full context menu.
+
 ## v0.42.32 — 2026-02-09
 
 ### Fixed
@@ -13,7 +21,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Date-aware completion toasts** — Recurring task toasts now say "Done for Mon, Feb 10" instead of always "Done for today". Same for "Reopened for" and "Skipped for" toasts.
 
 ### Added
-- **Calendar card actions menu** — Kebab button (⋮) and right-click context menu on scheduled and date-only calendar cards. Menu includes Skip (recurring), Unschedule (non-recurring), Edit, and Delete. Recurring instances show a "Drag to reschedule" hint.
+- **Calendar card actions menu** — Right-click context menu on scheduled and date-only calendar cards. Menu includes Skip (recurring), Unschedule (non-recurring), Edit, and Delete. Recurring instances show a "Drag to reschedule" hint.
 - **Unschedule from menu** — Non-recurring calendar cards can be unscheduled via the actions menu, removing them from the calendar and returning them to the task list.
 
 ## v0.42.31 — 2026-02-09
