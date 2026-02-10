@@ -447,6 +447,11 @@ img, a {
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        /* Override dashboard.css translateZ(0) — transforms on scroll containers
+           break position:sticky on mobile WebKit/Blink */
+        transform: none;
+        /* Prevent vertical scroll chaining to body */
+        overscroll-behavior: contain;
     }
 
     /* Task list header - sticky with flex layout to match task rows */
@@ -459,6 +464,8 @@ img, a {
         display: flex !important;
         align-items: center;
         gap: 8px;
+        /* Override dashboard.css will-change:transform — breaks sticky on mobile */
+        will-change: auto;
     }
 
     /* Gradient spectrum bar — absolute position since parent is flex */
