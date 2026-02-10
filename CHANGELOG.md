@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.38 — 2026-02-10
+
+### Fixed
+- **Mobile touch visibility actually works** — The `@media (hover: none)` block was placed before the base `.kebab-btn` and `.calendar-quick-action` rules in the CSS file, so the base `opacity: 0` won the cascade (same specificity, later source order). Moved the media query to the end of the file.
+
 ## v0.42.37 — 2026-02-10
 
 ### Fixed
