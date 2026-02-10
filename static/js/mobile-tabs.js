@@ -67,6 +67,15 @@ class MobileTabs {
     }
 
     switchTo(view) {
+        // Save scroll position of outgoing panel
+        if (this.activeTab === 'tasks') {
+            var scrollEl = this.tasksPanel?.querySelector('.task-list-container');
+            if (scrollEl) this._tasksScrollTop = scrollEl.scrollTop;
+        } else if (this.activeTab === 'schedule') {
+            var scrollEl = this.calendarPanel?.querySelector('.calendar-scroll');
+            if (scrollEl) this._calendarScrollTop = scrollEl.scrollTop;
+        }
+
         this.activeTab = view;
 
         // Update tab states
@@ -84,6 +93,17 @@ class MobileTabs {
             this.tasksPanel?.classList.remove('mobile-active');
             this.calendarPanel?.classList.add('mobile-active');
         }
+
+        // Restore scroll position of incoming panel
+        requestAnimationFrame(() => {
+            if (view === 'tasks') {
+                var scrollEl = this.tasksPanel?.querySelector('.task-list-container');
+                if (scrollEl) scrollEl.scrollTop = this._tasksScrollTop || 0;
+            } else if (view === 'schedule') {
+                var scrollEl = this.calendarPanel?.querySelector('.calendar-scroll');
+                if (scrollEl) scrollEl.scrollTop = this._calendarScrollTop || 0;
+            }
+        });
 
         // Haptic feedback
         if (window.HapticEngine) {

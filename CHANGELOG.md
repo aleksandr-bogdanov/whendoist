@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.54 — 2026-02-10
+
+### Fixed
+- **Swipe gestures + long press broken** — Fix `\!` syntax error in `task-swipe.js` and `mobile-sheet.js` that prevented both files from parsing, killing all swipe and long-press handlers (regression from v0.42.53)
+- **Swipe-left tab switch** — Use `getMobileTabs()` instance instead of `MobileTabs` class for `switchTo()` call in `task-swipe.js`
+- **Tab switch scroll position** — Save/restore `scrollTop` in `mobile-tabs.js` when switching between Tasks and Schedule tabs so sticky headers don't end up half-visible
+
 ## v0.42.53 — 2026-02-10
 
 ### Fixed

@@ -351,7 +351,7 @@ class TaskActionSheet {
                     var instanceId = this.currentTask.dataset.instanceId || null;
                     var isCompleted = this.currentTask.dataset.completed === '1';
                     var isRecurring = this.currentTask.dataset.isRecurring === 'true';
-                    window.TaskComplete.toggle(this.currentTask, taskId, instanceId, \!isCompleted, isRecurring);
+                    window.TaskComplete.toggle(this.currentTask, taskId, instanceId, !isCompleted, isRecurring);
                 }
                 break;
 

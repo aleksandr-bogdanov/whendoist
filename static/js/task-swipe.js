@@ -267,7 +267,7 @@ class TaskSwipeHandler {
                 var instanceId = task.dataset.instanceId || null;
                 var isCompleted = task.dataset.completed === '1';
                 var isRecurring = task.dataset.isRecurring === 'true';
-                await window.TaskComplete.toggle(task, taskId, instanceId, \!isCompleted, isRecurring);
+                await window.TaskComplete.toggle(task, taskId, instanceId, !isCompleted, isRecurring);
             } else {
                 // Fallback to direct API call
                 const endpoint = isCompleted
@@ -307,9 +307,10 @@ class TaskSwipeHandler {
         task.style.transform = '';
         task.classList.remove('swiping-left', 'swipe-almost', 'swipe-schedule');
 
-        // Switch to calendar tab
-        if (window.MobileTabs && typeof window.MobileTabs.switchTo === 'function') {
-            window.MobileTabs.switchTo('schedule');
+        // Switch to calendar tab (use getInstance, not the class)
+        var tabs = typeof window.getMobileTabs === 'function' ? window.getMobileTabs() : null;
+        if (tabs && typeof tabs.switchTo === 'function') {
+            tabs.switchTo('schedule');
         }
 
         // After tab switch animation settles, enter plan mode
