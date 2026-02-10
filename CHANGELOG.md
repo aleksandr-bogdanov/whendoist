@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.68 — 2026-02-10
+
+### Fixed
+- **Service worker caching old CSS** — The real reason glass updates never reached the phone. `sw.js` precaches `mobile.css` with Cache First strategy; bumping `?v=` query strings doesn't help because the SW matches by pathname. Bumped `CACHE_VERSION` from `v6` to `v7` to force full cache invalidation
+- **Glass had nothing to blur** — `padding-bottom: 106px` on `.tasks-panel` created empty space under the last task, so the glass floated over a solid background with no content to blur. Reduced to `60px` (tab bar only) so tasks extend behind the glass like Telegram's chat list behind its tab bar
+- **Telegram-style glass tuning (over-the-top)** — Light: `rgba(240,240,245,0.65)` + `blur(40px)`, pill radius 18px, active segment `rgba(255,255,255,0.85)`. Dark: `rgba(30,30,35,0.65)` + `blur(40px)`, active `rgba(255,255,255,0.18)`. Verified with Playwright: `backdrop-filter: blur(40px) saturate(1.8)` computes correctly
+
 ## v0.42.67 — 2026-02-10
 
 ### Fixed
