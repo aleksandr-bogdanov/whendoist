@@ -261,11 +261,15 @@ img, a {
         left: 0;
         right: 0;
         z-index: 100;
-        background: var(--bg-surface, #fff);
+        /* Glass tab bar — heavy blur, low opacity so content shows through */
+        background: rgba(245, 245, 250, 0.45);
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         padding: 8px 12px;
         padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
-        border-top: 1px solid var(--pico-muted-border-color, #e0e0e0);
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+        border-top: 0.5px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.5);
         gap: 8px;
         justify-content: space-around;
     }
@@ -300,10 +304,10 @@ img, a {
 }
 
 .mobile-tab.active {
-    background: var(--bg-surface, #fff);
-    border-color: var(--border-default, #ddd);
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(255, 255, 255, 0.3);
     color: var(--text-primary, #111);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .tab-icon {
@@ -409,8 +413,9 @@ img, a {
         display: none !important;
     }
 
-    /* Show active panel - full screen. Padding only for tab bar (60px) —
-       tasks extend behind the floating energy pill so glass blur is visible. */
+    /* Show active panel — NO padding-bottom. Content scrolls fully behind
+       both glass elements (energy pill + tab bar) for visible blur. The
+       task-list-scroll gets a bottom spacer via CSS instead. */
     .tasks-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
@@ -419,7 +424,15 @@ img, a {
         overflow: hidden;
         border-radius: 0;
         border: none;
-        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: 0;
+    }
+
+    /* Spacer at the bottom of the scroll area so the last task can be
+       scrolled above the glass elements (energy pill + tab bar). */
+    .task-list-scroll::after {
+        content: '';
+        display: block;
+        height: calc(120px + env(safe-area-inset-bottom, 0px));
     }
 
     .calendar-panel.mobile-active {
@@ -568,8 +581,8 @@ img, a {
     .header-sort[data-sort="clarity"] { width: 56px !important; min-width: 56px !important; }
 
     /* Floating glass energy selector — Telegram-style frosted glass.
-       Over-the-top version: heavy blur, visible tint, strong shadow.
-       Content scrolls behind it (reduced padding-bottom below). */
+       Heavy blur with low opacity so content is clearly visible through it.
+       Content scrolls behind it (padding-bottom: 0 + scroll spacer below). */
     .energy-wrapper {
         position: fixed !important;
         bottom: calc(72px + env(safe-area-inset-bottom, 0px));
@@ -578,13 +591,14 @@ img, a {
         z-index: 99;
         margin: 0 !important;
         padding: 4px !important;
-        background: rgba(240, 240, 245, 0.65) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
-        border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+        background: rgba(245, 245, 250, 0.45) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        border: 0.5px solid rgba(255, 255, 255, 0.5) !important;
         border-radius: 18px;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12),
-                    0 1px 4px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18),
+                    0 2px 8px rgba(0, 0, 0, 0.08),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.6);
         gap: 2px;
     }
 
@@ -1285,7 +1299,7 @@ img, a {
     .tasks-panel.mobile-active {
         height: calc(100vh - 44px);
         height: calc(var(--app-height, 100vh) - 44px);
-        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: 0;
     }
 
     .calendar-panel.mobile-active {
@@ -1470,22 +1484,29 @@ img, a {
    13. Dark Mode Support
    ============================================================================= */
 
-[data-theme="dark"] .mobile-tabs {
-    background: var(--bg-surface);
-    border-top-color: var(--border-default);
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+/* Dark mode glass tab bar — match energy pill dark glass */
+@media (max-width: 900px) {
+    [data-theme="dark"] .mobile-tabs {
+        background: rgba(20, 20, 28, 0.5);
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        border-top-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+    }
 }
 
 [data-theme="dark"] .mobile-tab {
     color: var(--text-muted);
 }
 
-/* Active mobile tab - softer white for dark mode (avoid pure white) */
+/* Active mobile tab - frosted pill for dark glass */
 [data-theme="dark"] .mobile-tab.active {
-    background: var(--bg-surface);
-    border-color: var(--border-default);
-    color: rgba(248, 250, 252, 0.85);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.06);
+    color: rgba(248, 250, 252, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2),
+                inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
 }
 
 [data-theme="dark"] .mobile-tab-add {
@@ -1496,19 +1517,21 @@ img, a {
    Warm dark tint with visible blur, matching Telegram's dark tab bar. */
 @media (max-width: 900px) {
     [data-theme="dark"] .energy-wrapper {
-        background: rgba(30, 30, 35, 0.65) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
-        backdrop-filter: blur(40px) saturate(180%) !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4),
-                    0 1px 4px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(20, 20, 28, 0.5) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9) !important;
+        backdrop-filter: blur(50px) saturate(200%) brightness(0.9) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                    0 2px 8px rgba(0, 0, 0, 0.3),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.1) !important;
     }
 
     [data-theme="dark"] .energy-wrapper .energy-pill.active,
     [data-theme="dark"] .energy-pill.active[data-energy="1"],
     [data-theme="dark"] .energy-pill.active[data-energy="2"],
     [data-theme="dark"] .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.18) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.1) !important;
     }
 }
