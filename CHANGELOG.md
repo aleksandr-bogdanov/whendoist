@@ -12,6 +12,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Swipe-left schedules instead of deletes** — On mobile, swiping a task left now schedules it for tomorrow (via `PUT /api/v1/tasks/{id}`) with an undo toast, instead of deleting. Delete is now exclusively in the long-press context menu where it has proper danger signaling.
 - **Higher swipe threshold** — Increased from 100px to 130px (max 150px) to reduce accidental triggers. Velocity threshold lowered slightly (0.5 → 0.4).
 - **Visual feedback phases** — Swipe indicators now show a peek zone (0–40px), full opacity (40–100px), "almost there" scale-up (100–130px), and trigger at 130px+. Calendar icon replaces trash icon for swipe-left.
+- **Tab bar: embedded FAB + badge fix** — Center "+" button replaces the floating FAB on mobile; badge overlays the tab icon instead of pushing layout; tab bar reduced from 56px to 44px height.
 
 ## v0.42.41 — 2026-02-10
 
