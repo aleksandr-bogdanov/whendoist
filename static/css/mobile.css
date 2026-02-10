@@ -540,17 +540,9 @@ img, a {
     .task-item .task-meta .meta-impact { width: 24px; min-width: 24px; }
     .task-item .task-meta .meta-clarity { width: 56px; min-width: 56px; display: inline-flex !important; }
 
-    /* Show kebab on mobile — swipe only covers complete/delete, not skip/unschedule */
+    /* Hide actions column on mobile (long-press context menu replaces it) */
     .task-item .task-actions {
-        display: flex !important;
-        align-items: center;
-        flex-shrink: 0;
-    }
-
-    .task-item .kebab-btn {
-        opacity: 0.4;
-        width: 20px;
-        height: 20px;
+        display: none !important;
     }
 
     /* Show impact as colored rail on left - FULL HEIGHT */
