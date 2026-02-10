@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.69 — 2026-02-10
+
+### Changed
+- **Glass tab bar** — Bottom tab bar now uses the same frosted glass as the energy selector: 45% opacity, `blur(50px) saturate(200%) brightness(1.05)`, inset highlight. Content scrolls behind it and is visible through the frost. Active tab pill is semi-transparent white instead of solid. Dark mode: `rgba(20,20,28,0.5)` with `brightness(0.9)` for rich dark glass
+- **More dramatic energy pill glass** — Opacity lowered from 65% to 45%, blur bumped from 40px to 50px, saturate 200%, added brightness boost and inset white highlight. Shadow deepened. Dark mode glass matched to tab bar
+- **Zero padding scroll** — Tasks panel padding-bottom set to 0 at both breakpoints; scroll spacer `::after` (120px) on `.task-list-scroll` lets content extend fully behind both glass elements
+- **SW cache v7→v8** — Force phones to pick up new CSS
+
 ## v0.42.68 — 2026-02-10
 
 ### Fixed
