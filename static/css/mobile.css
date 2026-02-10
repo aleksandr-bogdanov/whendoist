@@ -261,8 +261,8 @@ img, a {
         left: 0;
         right: 0;
         z-index: 100;
-        /* Glass tab bar — heavy blur, low opacity so content shows through */
-        background: rgba(245, 245, 250, 0.45);
+        /* Glass tab bar — maximum transparency, pure blur */
+        background: rgba(255, 255, 255, 0.01);
         -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         padding: 8px 12px;
@@ -591,10 +591,10 @@ img, a {
         z-index: 99;
         margin: 0 !important;
         padding: 4px !important;
-        background: rgba(245, 245, 250, 0.45) !important;
+        background: rgba(255, 255, 255, 0.01) !important;
         -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
-        border: 0.5px solid rgba(255, 255, 255, 0.5) !important;
+        border: 0.5px solid rgba(255, 255, 255, 0.3) !important;
         border-radius: 18px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18),
                     0 2px 8px rgba(0, 0, 0, 0.08),
@@ -1487,7 +1487,7 @@ img, a {
 /* Dark mode glass tab bar — match energy pill dark glass */
 @media (max-width: 900px) {
     [data-theme="dark"] .mobile-tabs {
-        background: rgba(20, 20, 28, 0.5);
+        background: rgba(0, 0, 0, 0.01);
         -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
         backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
         border-top-color: rgba(255, 255, 255, 0.08);
@@ -1517,7 +1517,7 @@ img, a {
    Warm dark tint with visible blur, matching Telegram's dark tab bar. */
 @media (max-width: 900px) {
     [data-theme="dark"] .energy-wrapper {
-        background: rgba(20, 20, 28, 0.5) !important;
+        background: rgba(0, 0, 0, 0.01) !important;
         -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9) !important;
         backdrop-filter: blur(50px) saturate(200%) brightness(0.9) !important;
         border-color: rgba(255, 255, 255, 0.12) !important;
