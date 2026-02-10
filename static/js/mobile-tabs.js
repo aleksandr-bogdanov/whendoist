@@ -37,6 +37,16 @@ class MobileTabs {
             });
         });
 
+        // Embedded FAB — triggers same add-task dialog as the standalone FAB
+        const fabBtn = this.container.querySelector('.mobile-tab-add');
+        if (fabBtn) {
+            fabBtn.addEventListener('click', () => {
+                if (window.TaskDialog && typeof window.TaskDialog.open === 'function') {
+                    window.TaskDialog.open();
+                }
+            });
+        }
+
         // Always listen for badge updates
         document.body.addEventListener('htmx:afterSwap', () => {
             this.updateBadge();
@@ -95,7 +105,7 @@ class MobileTabs {
 
         // Count unscheduled tasks
         const unscheduledCount = document.querySelectorAll('.task-item:not(.scheduled):not(.completed-today):not(.completed-older)').length;
-        badge.textContent = unscheduledCount.toString();
+        badge.textContent = unscheduledCount > 99 ? '99+' : unscheduledCount.toString();
         badge.hidden = unscheduledCount === 0;
     }
 
