@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.71 — 2026-02-10
+
+### Changed
+- **Telegram-style tab bar** — Active tab no longer has a background pill/card. Matches Telegram: inactive tabs are grey, active tab is accent-colored (icon + label). Removed box-shadow and border from active state. Top border changed to subtle grey hairline
+- **Energy pill active states half-transparent** — Light mode active pill opacity halved from 85% to 42%. Dark mode from 15% to 8%
+- **SW cache v9→v10**
+
 ## v0.42.70 — 2026-02-10
 
 ### Changed

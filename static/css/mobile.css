@@ -267,9 +267,8 @@ img, a {
         backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         padding: 8px 12px;
         padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
-        border-top: 0.5px solid rgba(255, 255, 255, 0.4);
-        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08),
-                    inset 0 0.5px 0 rgba(255, 255, 255, 0.5);
+        border-top: 0.5px solid rgba(0, 0, 0, 0.12);
+        box-shadow: none;
         gap: 8px;
         justify-content: space-around;
     }
@@ -303,11 +302,12 @@ img, a {
     transform: scale(0.97);
 }
 
+/* Telegram-style: no pill, just accent color on active tab */
 .mobile-tab.active {
-    background: rgba(255, 255, 255, 0.55);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: var(--text-primary, #111);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    background: transparent;
+    border-color: transparent;
+    color: var(--primary, #6D5EF6);
+    box-shadow: none;
 }
 
 .tab-icon {
@@ -643,11 +643,11 @@ img, a {
         color: var(--text-secondary);
     }
 
-    /* Active segment — Telegram-style: white pill with shadow */
+    /* Active segment — half-transparent pill */
     .energy-wrapper .energy-pill.active {
-        background: rgba(255, 255, 255, 0.85) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12),
-                    0 0.5px 1px rgba(0, 0, 0, 0.06) !important;
+        background: rgba(255, 255, 255, 0.42) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
+                    0 0.5px 1px rgba(0, 0, 0, 0.04) !important;
     }
 
     .energy-wrapper .energy-pill.active::after {
@@ -658,9 +658,9 @@ img, a {
     .energy-pill.active[data-energy="1"],
     .energy-pill.active[data-energy="2"],
     .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.85) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12),
-                    0 0.5px 1px rgba(0, 0, 0, 0.06) !important;
+        background: rgba(255, 255, 255, 0.42) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
+                    0 0.5px 1px rgba(0, 0, 0, 0.04) !important;
     }
 
     /* Task item - compact row with flex layout, matching Thoughts view.
@@ -1490,9 +1490,8 @@ img, a {
         background: rgba(0, 0, 0, 0.01);
         -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
         backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
-        border-top-color: rgba(255, 255, 255, 0.08);
-        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3),
-                    inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+        border-top-color: rgba(255, 255, 255, 0.06);
+        box-shadow: none;
     }
 }
 
@@ -1500,13 +1499,12 @@ img, a {
     color: var(--text-muted);
 }
 
-/* Active mobile tab - frosted pill for dark glass */
+/* Telegram-style dark: just accent color, no pill */
 [data-theme="dark"] .mobile-tab.active {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.06);
-    color: rgba(248, 250, 252, 0.9);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2),
-                inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+    background: transparent;
+    border-color: transparent;
+    color: var(--primary, #6D5EF6);
+    box-shadow: none;
 }
 
 [data-theme="dark"] .mobile-tab-add {
@@ -1530,8 +1528,7 @@ img, a {
     [data-theme="dark"] .energy-pill.active[data-energy="1"],
     [data-theme="dark"] .energy-pill.active[data-energy="2"],
     [data-theme="dark"] .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.15) !important;
-        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4),
-                    inset 0 0.5px 0 rgba(255, 255, 255, 0.1) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
     }
 }
