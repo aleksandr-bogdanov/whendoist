@@ -1,23 +1,23 @@
 /**
  * Task Swipe Handler
- * Enables swipe-to-complete and swipe-to-delete gestures on task items.
+ * Enables swipe-to-complete and swipe-to-schedule gestures on task items.
  *
  * Gestures:
  * - Swipe right: Complete task
- * - Swipe left: Delete task (with undo)
+ * - Swipe left: Schedule task to tomorrow
  *
  * Features:
  * - Conflict resolution with scroll
- * - Visual feedback during swipe
+ * - Visual feedback during swipe (peek → commit phases)
  * - Haptic feedback
- * - Undo for destructive actions
+ * - Undo for schedule action
  */
 
 class SwipeGestureHandler {
     constructor(options = {}) {
-        this.threshold = options.threshold || 100;
-        this.velocityThreshold = options.velocityThreshold || 0.5;
-        this.maxSwipe = options.maxSwipe || 120;
+        this.threshold = options.threshold || 130;
+        this.velocityThreshold = options.velocityThreshold || 0.4;
+        this.maxSwipe = options.maxSwipe || 150;
         this.swipeDisabled = false;
         this.isVerticalScroll = false;
         this.startX = 0;
@@ -115,9 +115,9 @@ class SwipeGestureHandler {
 class TaskSwipeHandler {
     constructor() {
         this.gestureHandler = new SwipeGestureHandler({
-            threshold: 100,
-            maxSwipe: 120,
-            velocityThreshold: 0.5
+            threshold: 130,
+            maxSwipe: 150,
+            velocityThreshold: 0.4
         });
         this.init();
     }
@@ -167,10 +167,10 @@ class TaskSwipeHandler {
         if (!task.querySelector('.swipe-indicator')) {
             const completeIndicator = document.createElement('div');
             completeIndicator.className = 'swipe-indicator swipe-indicator--complete';
-            const deleteIndicator = document.createElement('div');
-            deleteIndicator.className = 'swipe-indicator swipe-indicator--delete';
+            const scheduleIndicator = document.createElement('div');
+            scheduleIndicator.className = 'swipe-indicator swipe-indicator--schedule';
             task.appendChild(completeIndicator);
-            task.appendChild(deleteIndicator);
+            task.appendChild(scheduleIndicator);
         }
 
         task.addEventListener('touchstart', (e) => {
@@ -189,18 +189,22 @@ class TaskSwipeHandler {
                 deltaX = result.deltaX;
                 task.style.transform = `translateX(${deltaX}px)`;
 
-                // Update visual feedback classes
-                task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-delete');
+                // Update visual feedback classes based on phases
+                task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-schedule', 'swipe-almost');
 
-                if (deltaX > 50) {
+                if (deltaX > 40) {
                     task.classList.add('swiping-right');
                     if (result.progress >= 1) {
                         task.classList.add('swipe-complete');
+                    } else if (Math.abs(deltaX) > 100) {
+                        task.classList.add('swipe-almost');
                     }
-                } else if (deltaX < -50) {
+                } else if (deltaX < -40) {
                     task.classList.add('swiping-left');
                     if (result.progress >= 1) {
-                        task.classList.add('swipe-delete');
+                        task.classList.add('swipe-schedule');
+                    } else if (Math.abs(deltaX) > 100) {
+                        task.classList.add('swipe-almost');
                     }
                 }
             }
@@ -217,12 +221,12 @@ class TaskSwipeHandler {
             if (result.action === 'swipe-right') {
                 await this.completeTask(task);
             } else if (result.action === 'swipe-left') {
-                await this.deleteTask(task);
+                await this.scheduleTask(task);
             }
 
             // Reset
             task.style.transform = '';
-            task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-delete');
+            task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-schedule', 'swipe-almost');
             deltaX = 0;
         }, { passive: true });
 
@@ -231,7 +235,7 @@ class TaskSwipeHandler {
             isActive = false;
             task.style.transition = 'transform 0.2s ease';
             task.style.transform = '';
-            task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-delete');
+            task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-schedule', 'swipe-almost');
             document.body.classList.remove('is-swiping');
             deltaX = 0;
         }, { passive: true });
@@ -287,7 +291,11 @@ class TaskSwipeHandler {
         }
     }
 
-    async deleteTask(task) {
+    /**
+     * Schedule task to tomorrow via swipe-left.
+     * Uses PUT /api/v1/tasks/{id} with scheduled_date set to tomorrow.
+     */
+    async scheduleTask(task) {
         // Check network status before any UI changes
         if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
             if (window.Toast && typeof Toast.warning === 'function') {
@@ -299,103 +307,85 @@ class TaskSwipeHandler {
         const taskId = task.dataset.taskId;
         const taskTitle = task.querySelector('.task-text')?.textContent || 'Task';
 
-        // Check for subtasks and confirm cascade delete
-        const subtaskCount = parseInt(task.dataset.subtaskCount || '0', 10);
-        if (subtaskCount > 0) {
-            const confirmed = confirm(
-                `This task has ${subtaskCount} subtask${subtaskCount > 1 ? 's' : ''}. Deleting it will also delete all subtasks. Continue?`
-            );
-            if (!confirmed) return;
-        }
-
-        // Haptic feedback - warning for destructive action
+        // Haptic feedback - light for non-destructive action
         if (window.HapticEngine) {
-            window.HapticEngine.trigger('warning');
+            window.HapticEngine.trigger('light');
         }
 
-        // Store original state for undo
-        const originalHTML = task.outerHTML;
-        const originalParent = task.parentElement;
-        const originalNextSibling = task.nextSibling;
+        // Calculate tomorrow's date in local timezone
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const scheduledDate = tomorrow.toISOString().split('T')[0];
 
-        // Optimistic UI update
-        task.classList.add('deleting');
-        const originalHeight = task.offsetHeight;
-        task.style.height = originalHeight + 'px';
+        // Store original scheduled_date for undo
+        const originalDate = task.dataset.scheduledDate || null;
 
-        // Animate out
-        requestAnimationFrame(() => {
-            task.style.height = '0';
-            task.style.opacity = '0';
-            task.style.marginBottom = '0';
-            task.style.paddingTop = '0';
-            task.style.paddingBottom = '0';
-        });
+        // Optimistic UI: briefly highlight then slide out
+        task.classList.add('scheduling');
 
-        // Show undo toast
-        let undone = false;
-        if (window.Toast) {
-            window.Toast.show(`Deleted "${taskTitle}"`, 'info', {
-                duration: 5000,
-                action: {
-                    label: 'Undo',
-                    callback: () => {
-                        undone = true;
-                        this.undoDelete(task, originalHTML, originalParent, originalNextSibling);
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scheduled_date: scheduledDate }),
+            });
+
+            // Format date for display
+            const displayDate = tomorrow.toLocaleDateString(undefined, {
+                weekday: 'short', month: 'short', day: 'numeric'
+            });
+
+            task.classList.remove('scheduling');
+            task.classList.add('departing');
+
+            if (window.Toast) {
+                window.Toast.show(`Scheduled for ${displayDate}`, 'info', {
+                    duration: 5000,
+                    action: {
+                        label: 'Undo',
+                        callback: () => {
+                            this.undoSchedule(task, taskId, originalDate);
+                        }
                     }
-                }
+                });
+            }
+
+            // Remove from current list after animation
+            setTimeout(() => {
+                task.remove();
+            }, 300);
+
+        } catch (err) {
+            task.classList.remove('scheduling', 'departing');
+            handleError(err, 'Failed to schedule task', {
+                component: 'task-swipe',
+                action: 'scheduleTask'
             });
         }
-
-        // Actually delete after delay (for undo opportunity)
-        setTimeout(async () => {
-            if (undone) return;
-
-            try {
-                await safeFetch(`/api/v1/tasks/${taskId}`, {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                });
-
-                task.remove();
-            } catch (err) {
-                this.undoDelete(task, originalHTML, originalParent, originalNextSibling);
-                handleError(err, 'Failed to delete task', {
-                    component: 'task-swipe',
-                    action: 'deleteTask'
-                });
-            }
-        }, 5000);
     }
 
-    undoDelete(task, originalHTML, originalParent, originalNextSibling) {
-        // Restore the task
-        task.classList.remove('deleting');
-        task.style.height = '';
-        task.style.opacity = '';
-        task.style.marginBottom = '';
-        task.style.paddingTop = '';
-        task.style.paddingBottom = '';
+    async undoSchedule(task, taskId, originalDate) {
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scheduled_date: originalDate }),
+            });
 
-        // If task was removed, re-insert it
-        if (!document.body.contains(task) && originalParent) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = originalHTML;
-            const restoredTask = tempDiv.firstElementChild;
-
-            if (originalNextSibling) {
-                originalParent.insertBefore(restoredTask, originalNextSibling);
-            } else {
-                originalParent.appendChild(restoredTask);
+            // Refresh the task list to restore the task
+            const taskList = document.querySelector('[hx-get*="/dashboard"]');
+            if (taskList && window.htmx) {
+                window.htmx.trigger(taskList, 'refresh');
             }
 
-            // Re-attach swipe handlers
-            this.attachSwipe(restoredTask);
-            restoredTask.dataset.swipeAttached = 'true';
-        }
-
-        if (window.Toast) {
-            window.Toast.show('Task restored', 'success');
+            if (window.Toast) {
+                window.Toast.success('Schedule reverted');
+            }
+        } catch (err) {
+            handleError(err, 'Failed to undo schedule', {
+                component: 'task-swipe',
+                action: 'undoSchedule'
+            });
         }
     }
 }
