@@ -30,25 +30,26 @@
 
     <!-- LEFT PANEL: Task List -->
     <section class="tasks-panel mobile-active">
+        <!-- Energy selector — outside scroll container so position:fixed works on mobile -->
+        <div class="energy-wrapper" id="header-energy">
+            <span class="energy-label">Energy</span>
+            <div class="header-energy__pills">
+                <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie — autopilot tasks only">🧟</button>
+                <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal — all except brainstorm">☕</button>
+                <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus — all tasks including brainstorm">🧠</button>
+            </div>
+            <div class="clarity-dots" id="clarity-dots">
+                <span class="cdot cdot-autopilot"></span>
+                <span class="cdot cdot-normal"></span>
+                <span class="cdot cdot-brainstorm"></span>
+            </div>
+        </div>
         <!-- Task List -->
         <div class="task-list-container">
             <!-- Column Headers (sticky, sortable) — Two-row command center -->
             <div class="task-list-header">
                 <!-- Row 1: Title + Sort Columns + Gear -->
                 <div class="header-row1">
-                    <div class="energy-wrapper" id="header-energy">
-                        <span class="energy-label">Energy</span>
-                        <div class="header-energy__pills">
-                            <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie — autopilot tasks only">🧟</button>
-                            <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal — all except brainstorm">☕</button>
-                            <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus — all tasks including brainstorm">🧠</button>
-                        </div>
-                        <div class="clarity-dots" id="clarity-dots">
-                            <span class="cdot cdot-autopilot"></span>
-                            <span class="cdot cdot-normal"></span>
-                            <span class="cdot cdot-brainstorm"></span>
-                        </div>
-                    </div>
                     <!-- Back button (shown in deleted/scheduled/completed views) -->
                     <button type="button" class="header-back-btn" id="header-back-btn" hidden>
                         <svg class="icon icon-sm back-arrow" aria-hidden="true">
