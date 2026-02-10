@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.58 — 2026-02-10
+
+### Fixed
+- **Desktop header token conflict** — `app.css` re-declared `--col-duration: 48px` after `tokens.css`, silently overriding the design token. Removed duplicate declarations from `app.css` so `tokens.css` is the single source of truth
+- **Calendar controls hidden behind tab bar** — Added `!important` to toolbar `bottom` override so it beats `dashboard.css` (which loads after `mobile.css`)
+- **Long press triggering iOS text selection** — Reduced long-press duration from 400ms to 300ms (beats iOS Siri Intelligence ~400ms threshold) and added `user-select: none` + `-webkit-touch-callout: none` on task items
+- **Mobile sort labels** — Show full labels for Clarity and Impact, compact "DUR" only for Duration (which overflows 32px at 0.5rem)
+- **Reverted mobile column widths** — Restored header and task-meta columns to pre-round-4 values (32/24/56px) for consistency with yesterday's layout
+- **Removed `display: flex` from `.task-list-header`** — Was not present in the working v0.42.53 state; unnecessary since header-row1 handles its own flex layout
+
 ## v0.42.57 — 2026-02-10
 
 ### Fixed

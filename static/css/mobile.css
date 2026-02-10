@@ -427,9 +427,10 @@ img, a {
 
     /* Calendar toolbar (Today + zoom) — lift above mobile tab bar.
        Desktop rule is bottom: 1rem (in dashboard.css), which sits behind
-       the fixed tab bar on mobile. */
+       the fixed tab bar on mobile.  !important needed because dashboard.css
+       loads AFTER mobile.css and would win at equal specificity. */
     .calendar-toolbar {
-        bottom: calc(1rem + 60px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(1rem + 60px + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     /* PWA mode - account for safe area in header */
@@ -454,16 +455,13 @@ img, a {
         overscroll-behavior: contain;
     }
 
-    /* Task list header - sticky with flex layout to match task rows */
+    /* Task list header - sticky */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
         padding: 2px 8px 0 12px !important;
         background: var(--bg-panel);
-        display: flex !important;
-        align-items: center;
-        gap: 8px;
         /* Override dashboard.css will-change:transform — breaks sticky on mobile */
         will-change: auto;
     }
@@ -506,10 +504,12 @@ img, a {
         margin-left: auto;
     }
 
-    /* Use compact sort labels on mobile — full labels like "DURATION" overflow
-       the 40px fixed columns at 0.5rem uppercase. */
-    .header-sort .label-compact { display: inline !important; }
-    .header-sort .label-full { display: none !important; }
+    /* Show full sort labels by default.  Only Duration needs compact ("DUR")
+       because "DURATION" overflows 32px at 0.5rem uppercase. */
+    .header-sort .label-full { display: inline !important; }
+    .header-sort .label-compact { display: none !important; }
+    .header-sort[data-sort="duration"] .label-full { display: none !important; }
+    .header-sort[data-sort="duration"] .label-compact { display: inline !important; }
 
     /* Sort arrow — absolutely positioned inside button so it never affects
        the button's flow width.  No layout shift when sort changes.
@@ -541,7 +541,6 @@ img, a {
         align-items: center;
         justify-content: center;
         position: relative;
-        overflow: hidden;
     }
 
     .header-meta .header-sort::before {
@@ -553,10 +552,9 @@ img, a {
         right: -4px;
     }
 
-    /* Match column widths exactly with task-meta spans.
-       Duration/Impact widened to fit full labels at 0.5rem. */
-    .header-sort[data-sort="duration"] { width: 40px; min-width: 40px; }
-    .header-sort[data-sort="impact"] { width: 32px; min-width: 32px; }
+    /* Match column widths to task-meta spans */
+    .header-sort[data-sort="duration"] { width: 32px; min-width: 32px; }
+    .header-sort[data-sort="impact"] { width: 24px; min-width: 24px; }
     .header-sort[data-sort="clarity"] { width: 56px; min-width: 56px; }
 
     /* Compact energy selector on mobile — override desktop margin-left: 34px */
@@ -582,7 +580,9 @@ img, a {
         right: -4px;
     }
 
-    /* Task item - compact row with flex layout, matching Thoughts view */
+    /* Task item - compact row with flex layout, matching Thoughts view.
+       user-select: none prevents iOS text-selection / Siri Intelligence
+       from racing with our long-press handler. */
     .task-item {
         display: flex !important;
         grid-template-columns: unset !important;
@@ -592,6 +592,9 @@ img, a {
         min-height: 44px;
         overflow: hidden;
         position: relative;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
     }
 
     /* Hide complete gutter on mobile (swipe replaces it) */
@@ -677,8 +680,8 @@ img, a {
     }
 
     /* Fixed widths to match header columns */
-    .task-item .task-meta .meta-duration { width: 40px; min-width: 40px; }
-    .task-item .task-meta .meta-impact { width: 32px; min-width: 32px; }
+    .task-item .task-meta .meta-duration { width: 32px; min-width: 32px; }
+    .task-item .task-meta .meta-impact { width: 24px; min-width: 24px; }
     .task-item .task-meta .meta-clarity { width: 56px; min-width: 56px; display: inline-flex !important; }
 
     /* Hide actions column on mobile (long-press context menu replaces it) */
@@ -1184,7 +1187,7 @@ img, a {
     }
 
     .calendar-toolbar {
-        bottom: calc(1rem + 56px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(1rem + 56px + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     @media (display-mode: standalone) {
