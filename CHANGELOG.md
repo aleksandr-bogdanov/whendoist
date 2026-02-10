@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.65 — 2026-02-10
+
+### Fixed
+- **Energy selector glass effect invisible** — Background was 85% opaque white (`--glass-bg`), too solid for blur to show through. Replaced with 55% opacity, stronger 24px blur, higher saturation, and layered shadow for true frosted glass appearance. Dark mode uses matching translucent dark glass
+
 ## v0.42.64 — 2026-02-10
 
 ### Fixed
