@@ -347,8 +347,11 @@ class TaskActionSheet {
 
             case 'complete':
                 // Toggle completion
-                if (window.TaskComplete) {
-                    window.TaskComplete.toggle(taskId, this.currentTask);
+                if (window.TaskComplete && window.TaskComplete.toggle) {
+                    var instanceId = this.currentTask.dataset.instanceId || null;
+                    var isCompleted = this.currentTask.dataset.completed === '1';
+                    var isRecurring = this.currentTask.dataset.isRecurring === 'true';
+                    window.TaskComplete.toggle(this.currentTask, taskId, instanceId, \!isCompleted, isRecurring);
                 }
                 break;
 

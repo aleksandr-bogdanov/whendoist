@@ -485,6 +485,10 @@ class TestTaskCompleteModule:
         """Must call backend API to persist completion."""
         assert "fetch" in complete_js or "api" in complete_js.lower()
 
+    def test_exports_toggle(self, complete_js: str):
+        """Must export toggle method for programmatic completion."""
+        assert re.search(r"toggle\s*:", complete_js) and "window.TaskComplete" in complete_js
+
 
 class TestShortcutsModule:
     """Verify shortcuts.js exports centralized keyboard shortcut API."""

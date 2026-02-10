@@ -263,8 +263,11 @@ class TaskSwipeHandler {
 
         try {
             // Toggle completion
-            if (window.TaskComplete) {
-                await window.TaskComplete.toggle(taskId, task);
+            if (window.TaskComplete && window.TaskComplete.toggle) {
+                var instanceId = task.dataset.instanceId || null;
+                var isCompleted = task.dataset.completed === '1';
+                var isRecurring = task.dataset.isRecurring === 'true';
+                await window.TaskComplete.toggle(task, taskId, instanceId, \!isCompleted, isRecurring);
             } else {
                 // Fallback to direct API call
                 const endpoint = isCompleted
@@ -315,7 +318,7 @@ class TaskSwipeHandler {
             if (todayCal && window.PlanTasks && typeof window.PlanTasks.enterPlanMode === 'function') {
                 window.PlanTasks.enterPlanMode(todayCal);
             }
-        }, 400);
+        }, 600);
     }
 
     async undoSchedule(task, taskId, originalDate) {

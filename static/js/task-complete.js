@@ -914,6 +914,7 @@
     window.TaskComplete = {
         init: init,
         refreshTaskList: refreshTaskListFromServer,
+        toggle: toggleCompletion,
     };
 
     // Initialize when DOM is ready
