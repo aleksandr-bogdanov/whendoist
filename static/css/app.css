@@ -8,6 +8,11 @@
    Note: Color tokens are in tokens.css with legacy aliases for backwards compatibility
    ============================================================================= */
 
+/* Override Pico font with Nunito (brand wordmark stays Quicksand via --font-brand) */
+body {
+    font-family: var(--font-app, 'Nunito', sans-serif);
+}
+
 :root {
     /* Pico CSS overrides */
     --pico-font-size: 15px;

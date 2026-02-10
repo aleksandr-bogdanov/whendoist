@@ -1046,8 +1046,8 @@
 }
 
 .project-name {
-    font-weight: 600;
-    font-size: 0.8rem;
+    font-weight: 700;
+    font-size: 0.9rem;
     color: var(--text-primary);
 }
 
@@ -1441,7 +1441,7 @@
     grid-template-columns: 1fr var(--col-clarity) var(--col-duration) var(--col-impact) var(--col-actions);
     column-gap: var(--col-gap);
     align-items: center;
-    padding: 7px 0 7px var(--rail-w);  /* Compact ~36px row height */
+    padding: 11px 0 11px var(--rail-w);  /* Relaxed padding for breathing room */
     min-height: 36px;
     background: transparent;
     border: 0;
@@ -1483,6 +1483,7 @@
     width: var(--rail-w);
     background: transparent;
     border-radius: 0 2px 2px 0;
+    opacity: 0.6;
 }
 
 /* Last task row has no divider (before add-task-row) */
@@ -1494,11 +1495,11 @@
     cursor: grabbing;
 }
 
-/* Impact: rail color via pseudo-element, wash is secondary */
-.task-item.impact-1 { background: var(--impact-p1-row); }
-.task-item.impact-2 { background: var(--impact-p2-row); }
-.task-item.impact-3 { background: var(--impact-p3-row); }
-.task-item.impact-4 { background: var(--impact-p4-row); }
+/* Impact: rail color via pseudo-element, no row wash */
+.task-item.impact-1 { background: transparent; }
+.task-item.impact-2 { background: transparent; }
+.task-item.impact-3 { background: transparent; }
+.task-item.impact-4 { background: transparent; }
 
 .task-item.impact-1::before { background: var(--impact-high-border); }
 .task-item.impact-2::before { background: var(--impact-medium); }
@@ -1518,13 +1519,13 @@
     opacity: 0.85;
 }
 
-/* Rail expands on hover */
+/* Rail opacity on hover (stays 2px, just brightens) */
 .task-item::before {
-    transition: width var(--duration-fast) var(--ease-default);
+    transition: opacity var(--duration-fast) var(--ease-default);
 }
 
 .task-item:hover::before {
-    width: 3px;
+    opacity: 1;
 }
 
 /* Selection stays purple */
@@ -2039,14 +2040,14 @@
     text-decoration: none;
 }
 
-/* Dashed add-task row */
+/* Clean add-task row (no dashed border) */
 .add-task-row {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 6px 12px 6px 18px;
     margin: 4px 8px 6px;
-    border: 1px dashed var(--border-default);
+    border: none;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s ease;

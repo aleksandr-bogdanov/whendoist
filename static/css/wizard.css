@@ -830,7 +830,7 @@ body.keyboard-open .wizard-nav {
 
 .wizard-welcome-hero .wm.lg > span:first-of-type {
     font-size: 3rem;
-    font-family: 'Quicksand', sans-serif;  /* Explicit to prevent fallback font flash */
+    font-family: 'Quicksand', sans-serif;  /* Wordmark stays Quicksand */
     display: inline-block;
     min-width: 170px;  /* Fixed width to prevent horizontal shift on font load */
 }
