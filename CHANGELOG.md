@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.43 — 2026-02-10
+
+### Added
+- **Gesture discovery** — Three-layer progressive disclosure for mobile swipe/long-press gestures:
+  - First-visit animated swipe hint: the first task row slides right then left (2.4s) to reveal both complete and schedule actions, followed by a tooltip explaining all gestures.
+  - Permanent subtle 2px purple edge on the right side of task rows (touch devices only) hinting that swipe-left is available.
+  - One-time long-press tooltip: after closing the first task edit dialog, a toast reminds the user about the long-press context menu.
+
 ## v0.42.42 — 2026-02-10
 
 ### Changed
