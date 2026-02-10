@@ -708,7 +708,7 @@ img, a {
         display: flex !important;
         grid-template-columns: unset !important;
         align-items: center;  /* Center content vertically */
-        padding: 7px 8px !important;
+        padding: 11px 8px !important;
         gap: 8px;
         min-height: 44px;
         overflow: hidden;
@@ -822,8 +822,9 @@ img, a {
         left: 0;
         top: 0;
         bottom: 0;
-        width: 4px;
+        width: 2px;
         border-radius: 2px 0 0 2px;
+        opacity: 0.6;
     }
 
     .task-item.impact-1::before { background: var(--impact-critical); }
@@ -864,13 +865,18 @@ img, a {
         display: none !important;
     }
 
+    /* Telegram-style hairline separators between tasks */
+    .task-item + .task-item {
+        border-top: 0.5px solid rgba(15, 23, 42, 0.06);
+    }
+
     /* Project groups - cleaner on mobile */
     .project-group {
         margin-bottom: 0 !important;
     }
 
     .project-header {
-        padding: 10px 12px;
+        padding: 12px 12px;
     }
 
     /* Project header z-index for sticky (below task-list-header z-index: 10) */
@@ -1345,7 +1351,6 @@ img, a {
     .add-task-row {
         margin: 2px 0 !important;
         border: none !important;
-        border-top: 1px dashed var(--border-subtle) !important;
         border-radius: 0 !important;
     }
 

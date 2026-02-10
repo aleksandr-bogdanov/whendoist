@@ -206,7 +206,7 @@ class WhenWizard {
         if (!wordmark) return;
 
         // Wait for font, force layout, then reveal after display sync
-        document.fonts.load('500 3rem Quicksand').then(() => {
+        document.fonts.load('500 3rem Nunito').then(() => {
             // Force layout calculation
             wordmark.offsetHeight;
             // Wait for compositor to sync across displays

@@ -212,6 +212,9 @@
 
     /* Legacy layout aliases */
     --rail-w: var(--rail-width);
+
+    /* ===== Typography ===== */
+    --font-app: 'Nunito', sans-serif;
 }
 
 /* ===== Dark Mode ===== */

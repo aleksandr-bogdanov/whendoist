@@ -6,6 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.78 — 2026-02-10
+
+### Changed
+- **Nunito font** — Switched body/UI text from system font to Nunito (rounded, excellent Cyrillic). Wordmark stays Quicksand
+- **Relaxed task padding** — Task item vertical padding increased from 7px to 11px for more breathing room
+- **Removed impact row wash** — Task backgrounds are now transparent; impact conveyed solely via left rail
+- **Thinner impact rail** — 60% opacity, brightens to 100% on hover instead of expanding width
+- **Telegram-style hairline separators** — Subtle 0.5px dividers between task items on mobile
+- **Bolder domain headers** — Font-size 0.8rem → 0.9rem, weight 600 → 700
+- **Clean add-task row** — Removed dashed border for a cleaner look
+
+---
+
 ## v0.42.77 — 2026-02-10
 
 ### Changed
