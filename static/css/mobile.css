@@ -409,7 +409,7 @@ img, a {
         display: none !important;
     }
 
-    /* Show active panel - full screen (60px header, ~60px mobile tabs at bottom) */
+    /* Show active panel - full screen (60px header, ~106px for tab bar + floating energy pill) */
     .tasks-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
@@ -418,7 +418,7 @@ img, a {
         overflow: hidden;
         border-radius: 0;
         border: none;
-        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(106px + env(safe-area-inset-bottom, 0px));
     }
 
     .calendar-panel.mobile-active {
@@ -566,27 +566,79 @@ img, a {
     .header-sort[data-sort="impact"] { width: 24px !important; min-width: 24px !important; }
     .header-sort[data-sort="clarity"] { width: 56px !important; min-width: 56px !important; }
 
-    /* Compact energy selector on mobile — override desktop margin-left: 34px */
+    /* Floating glass energy selector — fixed above tab bar */
     .energy-wrapper {
-        margin-left: 0 !important;
-        padding-left: 0;
-        border-left: none;
-        flex-shrink: 0;
+        position: fixed !important;
+        bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 99;
+        margin: 0 !important;
+        padding: 3px !important;
+        background: var(--glass-bg) !important;
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+        backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        gap: 2px;
     }
 
-    .energy-wrapper .energy-pill {
-        font-size: 0.55rem !important;
-        padding: 2px 6px !important;
-        height: 20px !important;
-        position: relative;
+    /* Hide label and dots — the pills carry text labels now */
+    .energy-wrapper .energy-label,
+    .energy-wrapper .clarity-dots {
+        display: none !important;
     }
-    .energy-wrapper .energy-pill::before {
-        content: '';
-        position: absolute;
-        top: -12px;
-        bottom: -12px;
-        left: -4px;
-        right: -4px;
+
+    /* Strip chrome from inner pill container */
+    .header-energy__pills {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        gap: 2px;
+    }
+
+    /* Segment pills — taller with room for emoji + label */
+    .energy-wrapper .energy-pill {
+        height: 32px !important;
+        padding: 0 14px !important;
+        border-radius: 9px !important;
+        font-size: 0.8rem !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        transition: background 0.15s ease, box-shadow 0.15s ease;
+        gap: 4px;
+        white-space: nowrap;
+    }
+
+    /* Text labels via ::after */
+    .energy-wrapper .energy-pill[data-energy="1"]::after { content: "Zombie"; }
+    .energy-wrapper .energy-pill[data-energy="2"]::after { content: "Normal"; }
+    .energy-wrapper .energy-pill[data-energy="3"]::after { content: "Focus"; }
+
+    .energy-wrapper .energy-pill::after {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: var(--text-secondary);
+    }
+
+    /* Active segment — white/surface bg with subtle shadow */
+    .energy-wrapper .energy-pill.active {
+        background: var(--bg-surface) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .energy-wrapper .energy-pill.active::after {
+        color: var(--text-primary);
+    }
+
+    /* Override dashboard.css mode-tinted active states on mobile */
+    .energy-pill.active[data-energy="1"],
+    .energy-pill.active[data-energy="2"],
+    .energy-pill.active[data-energy="3"] {
+        background: var(--bg-surface) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
     }
 
     /* Task item - compact row with flex layout, matching Thoughts view.
@@ -1222,7 +1274,12 @@ img, a {
     }
 
     /* Adjust panel height for smaller header (44px) */
-    .tasks-panel.mobile-active,
+    .tasks-panel.mobile-active {
+        height: calc(100vh - 44px);
+        height: calc(var(--app-height, 100vh) - 44px);
+        padding-bottom: calc(102px + env(safe-area-inset-bottom, 0px));
+    }
+
     .calendar-panel.mobile-active {
         height: calc(100vh - 44px);
         height: calc(var(--app-height, 100vh) - 44px);
@@ -1231,6 +1288,11 @@ img, a {
 
     .calendar-toolbar {
         bottom: calc(1rem + 56px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Floating energy pill — smaller tab bar at 580px */
+    .energy-wrapper {
+        bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     @media (display-mode: standalone) {
@@ -1266,6 +1328,43 @@ img, a {
     .mobile-tabs {
         display: none;
     }
+
+    /* Revert floating energy pill — inline header position */
+    .energy-wrapper {
+        position: static !important;
+        transform: none !important;
+        background: transparent !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    .energy-wrapper .energy-label,
+    .energy-wrapper .clarity-dots {
+        display: flex !important;
+    }
+
+    .energy-wrapper .energy-pill::after {
+        content: none !important;
+    }
+
+    .energy-wrapper .energy-pill {
+        height: 20px !important;
+        padding: 0 !important;
+        width: 26px !important;
+        border-radius: 4px !important;
+        font-size: 0.75rem !important;
+    }
+
+    .header-energy__pills {
+        background: var(--border-subtle) !important;
+        border: 1px solid var(--border-default) !important;
+        border-radius: 5px !important;
+        padding: 1px !important;
+    }
 }
 
 /* =============================================================================
@@ -1294,7 +1393,9 @@ img, a {
     .gesture-hint-active,
     .gesture-hint-tooltip,
     .pull-to-refresh,
-    .task-item {
+    .task-item,
+    .energy-wrapper,
+    .energy-wrapper .energy-pill {
         transition: none !important;
         animation: none !important;
     }
@@ -1381,4 +1482,16 @@ img, a {
 
 [data-theme="dark"] .mobile-tab-add {
     box-shadow: 0 2px 8px rgba(109, 94, 246, 0.4);
+}
+
+/* Dark mode floating energy pill — glass adapts via --glass-bg token,
+   active segment uses subtle light wash instead of white */
+@media (max-width: 900px) {
+    [data-theme="dark"] .energy-wrapper .energy-pill.active,
+    [data-theme="dark"] .energy-pill.active[data-energy="1"],
+    [data-theme="dark"] .energy-pill.active[data-energy="2"],
+    [data-theme="dark"] .energy-pill.active[data-energy="3"] {
+        background: rgba(248, 250, 252, 0.12) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+    }
 }
