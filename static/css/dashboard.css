@@ -3407,20 +3407,6 @@ body[data-energy-level] .scheduled-group.project-group {
 /* Trash Bin styles moved to components/drag-drop.css */
 
 /* =============================================================================
-   Touch Device Support
-   ============================================================================= */
-
-/* Hover-revealed controls are invisible on touch — show at reduced opacity */
-@media (hover: none) {
-    .kebab-btn {
-        opacity: 0.4;
-    }
-    .calendar-quick-action {
-        opacity: 0.4;
-    }
-}
-
-/* =============================================================================
    Dark Mode Support
    ============================================================================= */
 
@@ -4030,4 +4016,18 @@ body[data-energy-level] .scheduled-group.project-group {
         max-height 0.35s ease 0.05s,
         padding 0.35s ease 0.05s,
         margin 0.35s ease 0.05s;
+}
+
+/* =============================================================================
+   Touch Device Support (must be after base rules to win cascade)
+   ============================================================================= */
+
+/* Hover-revealed controls are invisible on touch — show at reduced opacity */
+@media (hover: none) {
+    .kebab-btn {
+        opacity: 0.4;
+    }
+    .calendar-quick-action {
+        opacity: 0.4;
+    }
 }
