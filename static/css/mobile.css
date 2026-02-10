@@ -1125,25 +1125,30 @@ img, a {
         display: none !important;
     }
 
-    /* Nav items - 44px touch target */
+    /* Nav items - 44px touch target, reserve border space to prevent shift */
     .nav-item {
         min-height: 44px;
         display: inline-flex;
         align-items: center;
+        border-bottom: 2px solid transparent !important;
+        border-radius: 0 !important;
     }
 
-    /* Clear persistent focus/active background on nav links after tap (iOS) */
+    /* Active nav — underline indicator instead of grey background pill */
+    .nav-item.active {
+        background: transparent !important;
+        box-shadow: none !important;
+        color: var(--primary) !important;
+        border-bottom-color: var(--primary) !important;
+    }
+
+    /* Clear persistent focus/active states after tap (iOS) */
     .nav-item:focus,
     .nav-item:active,
     .nav-item:focus-visible {
         outline: none !important;
         background: transparent !important;
         box-shadow: none !important;
-    }
-    .nav-item.active:focus,
-    .nav-item.active:active,
-    .nav-item.active:focus-visible {
-        background: rgba(15, 23, 42, 0.06) !important;
     }
 }
 
