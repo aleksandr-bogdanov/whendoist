@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.42 — 2026-02-10
+
+### Changed
+- **Tab bar: embedded FAB + badge fix** — Center "+" button replaces the floating FAB on mobile; badge overlays the tab icon instead of pushing layout; tab bar reduced from 56px to 44px height.
+
 ## v0.42.41 — 2026-02-10
 
 ### Changed
