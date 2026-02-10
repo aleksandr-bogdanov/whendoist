@@ -484,15 +484,22 @@ img, a {
         overscroll-behavior: contain;
     }
 
-    /* Task list header - sticky */
+    /* Task list header - sticky glass (Telegram-style translucent bar) */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
         padding: 2px 8px 0 12px !important;
-        background: var(--bg-panel);
+        background: rgba(249, 249, 249, 0.88) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
         /* Override dashboard.css will-change:transform — breaks sticky on mobile */
         will-change: auto;
+    }
+
+    /* Remove solid background cover pseudo-element — glass doesn't need it */
+    .task-list-header::before {
+        display: none !important;
     }
 
     /* Gradient spectrum bar — absolute position since parent is flex */
@@ -1199,7 +1206,18 @@ img, a {
    ============================================================================= */
 
 @media (max-width: 900px) {
-    /* Don't override header height - app.css handles it (40px at 900px) */
+    /* Glass site header — Telegram-style translucent nav bar.
+       Content scrolls behind with frosted blur visible. */
+    .site-header {
+        background: rgba(249, 249, 249, 0.88) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
+    }
+
+    /* Nav pill background must be transparent on glass header */
+    .header-nav {
+        background: rgba(0, 0, 0, 0.04) !important;
+    }
 
     /* Hide desktop-only elements */
     .desktop-only {
@@ -1281,8 +1299,10 @@ img, a {
         position: sticky;
         top: 36px; /* below filter bar */
         z-index: 5;
-        background: var(--bg-surface) !important;
-        border-bottom: 1px solid var(--border-subtle);
+        background: rgba(249, 249, 249, 0.85) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
+        border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
         border-radius: 0 !important;
         padding: 8px 12px 8px 16px !important;
         min-height: 36px !important;
@@ -1537,5 +1557,29 @@ img, a {
     [data-theme="dark"] .energy-pill.active[data-energy="3"] {
         background: rgba(255, 255, 255, 0.12) !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+    }
+
+    /* Dark glass: site header, task-list-header, domain headers */
+    [data-theme="dark"] .site-header {
+        background: rgba(30, 30, 30, 0.82) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
+    }
+
+    [data-theme="dark"] .header-nav {
+        background: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    [data-theme="dark"] .task-list-header {
+        background: rgba(30, 30, 30, 0.82) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
+    }
+
+    [data-theme="dark"] .project-header {
+        background: rgba(30, 30, 30, 0.80) !important;
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
     }
 }

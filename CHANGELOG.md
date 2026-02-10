@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.73 — 2026-02-10
+
+### Changed
+- **Glass site header** — Mobile header now uses Telegram-style frosted glass (~88% white light / ~82% dark) instead of solid background. Content scrolls behind it with blur visible
+- **Glass task-list header** — Sort bar uses matching frosted glass treatment. Removed solid background pseudo-element
+- **Glass domain headers** — Project/domain sticky headers use frosted glass so task items are visible through them when scrolling
+- **SW cache v11→v12**
+
 ## v0.42.72 — 2026-02-10
 
 ### Changed
