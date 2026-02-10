@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.51 — 2026-02-10
+
+### TODO (pre-1.0)
+- **Gesture discovery redesign** — Current swipe hint animation works but needs polished, branded onboarding flow
+- **Settings/gear redesign** — Hidden on mobile since v0.42.x; needs a mobile-friendly settings surface before 1.0
+
 ## v0.42.50 — 2026-02-10
 
 ### Fixed
