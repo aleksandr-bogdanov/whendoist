@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.77 — 2026-02-10
+
+### Changed
+- **Seamless header block (mobile)** — Site header and task-list-header are now one continuous block: zero bottom padding on site-header, 44px compact height, identical glass treatment. No visible seam between nav and sort row
+- **Floating tab pills** — Tab bar container is now invisible (no glass, no border). Tasks and Schedule pills float freely with their own individual glass backgrounds, matching the energy pill treatment
+- **Equal-width tab pills** — Both pills have `min-width: 80px` so Tasks matches Schedule width
+- **Dark mode floating pills** — Each pill gets its own dark glass (`rgba(30,30,30,0.75)`) with blur
+- **SW cache v15→v16**
+
+---
+
 ## v0.42.76 — 2026-02-10
 
 ### Changed
