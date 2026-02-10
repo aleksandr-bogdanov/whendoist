@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.53 — 2026-02-10
+
+### Fixed
+- **Swipe-right completion** — Export `toggle` from `TaskComplete` and fix call signature in `task-swipe.js` and `mobile-sheet.js` so swipe-right and action sheet completion pass correct parameters (`taskEl, taskId, instanceId, shouldComplete, isRecurring`)
+- **Swipe-left timing** — Increase plan-mode entry delay from 400ms to 600ms so the calendar panel is fully visible before `PlanTasks.enterPlanMode` fires
+
 ## v0.42.52 — 2026-02-10
 
 ### Fixed
