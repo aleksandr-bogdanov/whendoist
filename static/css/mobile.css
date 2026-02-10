@@ -598,8 +598,10 @@ img, a {
         gap: 2px;
     }
 
-    /* Segment pills — taller with room for emoji + label */
+    /* Segment pills — taller with room for emoji + label.
+       width: auto overrides dashboard.css fixed 26px width. */
     .energy-wrapper .energy-pill {
+        width: auto !important;
         height: 32px !important;
         padding: 0 14px !important;
         border-radius: 9px !important;

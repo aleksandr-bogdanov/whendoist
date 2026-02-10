@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.64 — 2026-02-10
+
+### Fixed
+- **Energy pills cramped on mobile** — Dashboard.css sets `width: 26px` on `.energy-pill` for the compact desktop view. Mobile override was missing `width: auto !important`, so pills couldn't expand to fit emoji + text labels
+
 ## v0.42.63 — 2026-02-10
 
 ### Fixed
