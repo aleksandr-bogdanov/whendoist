@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.72 — 2026-02-10
+
+### Changed
+- **Telegram-matched frosted glass** — Tab bar and energy pill now use Telegram's actual opacity levels: ~88% white (light) and ~82% dark (dark mode) instead of near-transparent. Content barely peeks through, matching Telegram iOS exactly
+- **Tab bar dimensions** — Height reduced to 49px (iOS standard), labels shrunk to 10px, tighter icon-to-label gap. No border-radius on tabs, pure color-only active state
+- **Energy pill polish** — Active segment now nearly-solid white with subtle shadow (like iOS segmented controls). Container shadow softened from dramatic to subtle
+- **Search button in header** — Magnifying glass icon in mobile header bar, styled like Telegram's search affordance. Non-functional placeholder
+- **SW cache v10→v11**
+
 ## v0.42.71 — 2026-02-10
 
 ### Changed

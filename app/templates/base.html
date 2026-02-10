@@ -196,6 +196,12 @@
                 <a href="/analytics" class="nav-item{% if request.url.path == '/analytics' %} active{% endif %}">Analytics</a>
                 <a href="/settings" class="nav-item{% if request.url.path == '/settings' %} active{% endif %}">Settings</a>
             </nav>
+            <!-- Mobile search button (Telegram-style, non-functional) -->
+            <button type="button" class="header-search-btn" aria-label="Search">
+                <svg class="icon" width="18" height="18" aria-hidden="true">
+                    <use href="#search"></use>
+                </svg>
+            </button>
             <a href="/auth/logout" class="btn-logout" title="Logout">
                 <svg class="icon" width="18" height="18" aria-hidden="true">
                     <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#logout"></use>
