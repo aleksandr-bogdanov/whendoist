@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.45 — 2026-02-10
+
+### Added
+- **BRAND.md v1.8: Mobile & Touch section** — Documents gesture model (swipe right/left, long-press, tap), touch target requirements (44×44px minimum with `::before` expansion pattern), mobile layout principles (edge-to-edge, flat groups, two-line rows), breakpoints (desktop/tablet/phone), bottom sheet spec, and tab bar design.
+
 ## v0.42.44 — 2026-02-10
 
 ### Fixed
