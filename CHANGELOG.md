@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.55 — 2026-02-10
+
+### Fixed
+- **Gradient spectrum bar missing on mobile** — Position `::after` absolutely inside flex container so it renders as a full-width bar below the filter header
+- **Sort arrow shift on tap** — Add `!important` to opacity rules to override desktop `:hover` specificity; also override `overflow: hidden`
+- **Sort header ↔ column misalignment** — Widen Duration (32→40px) and Impact (24→32px) columns in both header and task rows to fit full labels
+- **Energy label alignment** — Add `!important` to `margin-left: 0` to ensure desktop 34px margin is overridden
+- **Child task date stacking** — Change breadcrumb layout from `flex-direction: column` to `flex-wrap: wrap` so `.task-due` stays inline with task text instead of appearing as a third row
+
 ## v0.42.54 — 2026-02-10
 
 ### Fixed
