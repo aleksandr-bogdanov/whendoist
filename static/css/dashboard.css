@@ -1330,6 +1330,38 @@
     box-shadow: 0 4px 12px rgba(109, 94, 246, 0.3);
 }
 
+.pmd-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.pmd-banner-dismiss {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.pmd-banner-dismiss:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .pmd-banner-dismiss:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
 /* Plan My Day hero card — shown in empty calendars */
 .pmd-hero {
     padding: 20px 16px;

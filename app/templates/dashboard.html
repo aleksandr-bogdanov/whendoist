@@ -563,6 +563,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (taskCount === 0) return;
 
+        // Skip if already dismissed today
+        var todayKey = 'pmd-dismissed-' + new Date().toISOString().slice(0, 10);
+        if (localStorage.getItem(todayKey)) return;
+
         if (hour >= 18) {
             title.textContent = 'Plan tomorrow';
             sub.textContent = taskCount + ' tasks waiting to be scheduled';
@@ -590,6 +594,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 400);
         });
+
+        var dismissBtn = document.getElementById('pmd-banner-dismiss');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', function() {
+                banner.hidden = true;
+                localStorage.setItem(todayKey, '1');
+            });
+        }
     })();
 
     // Hero card: show when visible calendar has no events in next few hours

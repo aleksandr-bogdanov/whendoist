@@ -465,11 +465,21 @@ img, a {
         position: sticky;
         top: 0;
         z-index: 10;
-        padding: 6px 8px !important;
+        padding: 4px 8px !important;
         background: var(--bg-panel);
         display: flex !important;
         align-items: center;
         gap: 8px;
+    }
+
+    /* Filter bar row - flex override for mobile */
+    .header-row1 {
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+        min-height: auto;
+        padding: 0 !important;
+        width: 100%;
     }
 
     /* Hide kebab menu on mobile - not needed */
@@ -489,12 +499,13 @@ img, a {
         display: flex !important;
         gap: 4px !important;
         flex-shrink: 0;
+        margin-left: auto;
     }
 
     .header-meta .header-sort {
         font-size: 0.5rem !important;
         padding: 2px 4px !important;
-        min-height: 16px;
+        min-height: 44px;
         text-align: center;
         display: flex;
         align-items: center;
@@ -507,16 +518,26 @@ img, a {
     .header-sort[data-sort="clarity"] { width: 56px; min-width: 56px; }
 
     /* Compact energy selector on mobile */
-    .header-energy {
-        margin-left: 6px;
-        padding-left: 6px;
+    .energy-wrapper {
+        margin-left: 0;
+        padding-left: 0;
         border-left: none;
+        flex-shrink: 0;
     }
 
-    .header-energy .energy-pill {
+    .energy-wrapper .energy-pill {
         font-size: 0.55rem !important;
         padding: 2px 6px !important;
         height: 20px !important;
+        position: relative;
+    }
+    .energy-wrapper .energy-pill::before {
+        content: '';
+        position: absolute;
+        top: -12px;
+        bottom: -12px;
+        left: -4px;
+        right: -4px;
     }
 
     /* Task item - compact row with flex layout, matching Thoughts view */
@@ -526,8 +547,7 @@ img, a {
         align-items: center;  /* Center content vertically */
         padding: 7px 8px !important;
         gap: 8px;
-        height: 36px;  /* Compact height like Thoughts view */
-        min-height: 36px;
+        min-height: 44px;
         overflow: hidden;
         position: relative;
     }
@@ -555,6 +575,29 @@ img, a {
         font-size: 0.8rem;
         flex: 1;
         min-width: 0;
+    }
+
+    /* Two-line layout for child tasks (show parent breadcrumb above task name) */
+    .task-item:has(.task-breadcrumb) .task-content {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1px !important;
+    }
+
+    .task-item:has(.task-breadcrumb) .task-breadcrumb {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 1 !important;
+        max-width: 100%;
+        opacity: 0.6;
+        line-height: 1.2;
+    }
+
+    .task-item:has(.task-breadcrumb) .task-text {
+        line-height: 1.2;
     }
 
     /* Due date inline and smaller */
@@ -640,6 +683,16 @@ img, a {
     .project-header {
         z-index: 5;
     }
+
+    /* Plan My Day banner — compact on mobile */
+    .pmd-banner {
+        padding: 8px 10px !important;
+        margin: 4px 4px 2px !important;
+        border-radius: 8px;
+    }
+    .pmd-banner-title { font-size: 0.72rem !important; }
+    .pmd-banner-sub { font-size: 0.62rem !important; }
+    .pmd-banner-btn { font-size: 0.65rem !important; padding: 4px 10px !important; }
 }
 
 /* =============================================================================
@@ -989,6 +1042,13 @@ img, a {
     .desktop-only {
         display: none !important;
     }
+
+    /* Nav items - 44px touch target */
+    .nav-item {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
 }
 
 @media (max-width: 580px) {
@@ -1001,22 +1061,39 @@ img, a {
         height: 44px;
     }
 
+    /* Edge-to-edge container — reclaim horizontal padding */
+    .container-fluid {
+        padding-left: env(safe-area-inset-left, 0px) !important;
+        padding-right: env(safe-area-inset-right, 0px) !important;
+    }
+
+    .tasks-layout {
+        padding: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    .task-list-container {
+        padding: 0 !important;
+    }
+
     /* Flatten domain cards - borderless sections with sticky headers */
     .project-group {
-        border: none;
-        border-radius: 0;
-        background: transparent;
-        margin-bottom: 0;
-        overflow: visible; /* Required for sticky headers */
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        margin-bottom: 0 !important;
+        overflow: visible !important;
     }
 
     .project-header {
         position: sticky;
         top: 36px; /* below filter bar */
-        background: var(--bg-surface);
+        z-index: 5;
+        background: var(--bg-surface) !important;
         border-bottom: 1px solid var(--border-subtle);
-        border-radius: 0;
-        padding: 8px 12px;
+        border-radius: 0 !important;
+        padding: 8px 12px !important;
+        min-height: 44px !important;
     }
 
     /* Thin divider between groups instead of card borders */

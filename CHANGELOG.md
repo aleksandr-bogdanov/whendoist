@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.44 — 2026-02-10
+
+### Fixed
+- **Mobile layout overhaul** — Five CSS-dominant fixes for iPhone Pro Max readability:
+  - Filter bar: `.header-row1` flex override fixes grid-in-flex conflict; `.header-energy` selector corrected to `.energy-wrapper`
+  - Touch targets: sort buttons, energy pills, nav items, and task rows expanded to 44px minimum
+  - Two-line child tasks: `:has(.task-breadcrumb)` shows parent name above task name on mobile
+  - Edge-to-edge: container padding removed at 580px with `env(safe-area-inset-*)` for notch safety
+  - Plan banner: dismiss button with per-day localStorage, compact mobile sizing
+
 ## v0.42.43 — 2026-02-10
 
 ### Added
