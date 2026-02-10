@@ -274,11 +274,11 @@ img, a {
 .mobile-tab {
     flex: 1;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    height: 44px;
+    gap: 2px;
+    height: 56px;
     border-radius: 10px;
     background: transparent;
     border: 1px solid transparent;
@@ -324,8 +324,8 @@ img, a {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 48px;
-        height: 48px;
+        width: 52px;
+        height: 52px;
         border-radius: 50%;
         background: var(--primary, #6D5EF6);
         color: white;
@@ -334,7 +334,7 @@ img, a {
         line-height: 1;
         border: none;
         box-shadow: 0 2px 8px rgba(109, 94, 246, 0.3);
-        margin-top: -8px;
+        margin-top: -4px;
         flex-shrink: 0;
         cursor: pointer;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -381,6 +381,13 @@ img, a {
    ============================================================================= */
 
 @media (max-width: 900px) {
+    /* Prevent body scroll — only .task-list-container should scroll */
+    html, body {
+        overflow: hidden !important;
+        height: 100% !important;
+        overscroll-behavior: none !important;
+    }
+
     /* Override dashboard grid - single column, full height */
     .tasks-layout {
         display: flex !important;
@@ -541,6 +548,8 @@ img, a {
         align-items: center;
         justify-content: center;
         position: relative;
+        border: none !important;
+        border-radius: 0 !important;
     }
 
     .header-meta .header-sort::before {
@@ -552,10 +561,10 @@ img, a {
         right: -4px;
     }
 
-    /* Match column widths to task-meta spans */
-    .header-sort[data-sort="duration"] { width: 32px; min-width: 32px; }
-    .header-sort[data-sort="impact"] { width: 24px; min-width: 24px; }
-    .header-sort[data-sort="clarity"] { width: 56px; min-width: 56px; }
+    /* Match column widths to task-meta spans — !important to beat dashboard.css */
+    .header-sort[data-sort="duration"] { width: 32px !important; min-width: 32px !important; }
+    .header-sort[data-sort="impact"] { width: 24px !important; min-width: 24px !important; }
+    .header-sort[data-sort="clarity"] { width: 56px !important; min-width: 56px !important; }
 
     /* Compact energy selector on mobile — override desktop margin-left: 34px */
     .energy-wrapper {
@@ -659,30 +668,35 @@ img, a {
         flex-shrink: 0;
     }
 
-    /* Task metadata - compact inline on mobile - show all columns */
+    /* Task metadata - compact inline on mobile - show all columns.
+       !important on gap/margin to beat dashboard.css which loads after mobile.css. */
     .task-item .task-meta {
         display: flex !important;
         align-items: center;
-        gap: 4px;
+        gap: 4px !important;
         flex-shrink: 0;
+        margin-left: auto;
     }
 
-    /* Compact metadata chips - smaller on mobile with fixed widths */
+    /* Compact metadata chips - smaller on mobile with fixed widths.
+       !important to beat dashboard.css base styles (border, padding-left). */
     .task-item .task-meta > span {
-        font-size: 0.55rem;
-        padding: 2px 4px;
-        height: auto;
+        font-size: 0.55rem !important;
+        padding: 2px 4px !important;
+        height: auto !important;
         min-height: 16px;
         text-align: center;
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
+        border: none !important;
+        border-radius: 0 !important;
     }
 
-    /* Fixed widths to match header columns */
-    .task-item .task-meta .meta-duration { width: 32px; min-width: 32px; }
-    .task-item .task-meta .meta-impact { width: 24px; min-width: 24px; }
-    .task-item .task-meta .meta-clarity { width: 56px; min-width: 56px; display: inline-flex !important; }
+    /* Fixed widths to match header columns — !important to beat dashboard.css */
+    .task-item .task-meta .meta-duration { width: 32px !important; min-width: 32px !important; }
+    .task-item .task-meta .meta-impact { width: 24px !important; min-width: 24px !important; }
+    .task-item .task-meta .meta-clarity { width: 56px !important; min-width: 56px !important; display: inline-flex !important; }
 
     /* Hide actions column on mobile (long-press context menu replaces it) */
     .task-item .task-actions {
@@ -1117,6 +1131,20 @@ img, a {
         display: inline-flex;
         align-items: center;
     }
+
+    /* Clear persistent focus/active background on nav links after tap (iOS) */
+    .nav-item:focus,
+    .nav-item:active,
+    .nav-item:focus-visible {
+        outline: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    .nav-item.active:focus,
+    .nav-item.active:active,
+    .nav-item.active:focus-visible {
+        background: rgba(15, 23, 42, 0.06) !important;
+    }
 }
 
 @media (max-width: 580px) {
@@ -1126,7 +1154,7 @@ img, a {
     }
 
     .mobile-tab {
-        height: 44px;
+        height: 52px;
     }
 
     /* Edge-to-edge container — reclaim horizontal padding */
