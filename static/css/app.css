@@ -248,6 +248,14 @@ img.brand-logo {
 }
 
 /* =============================================================================
+   Search Button (mobile only, Telegram-style)
+   ============================================================================= */
+
+.header-search-btn {
+    display: none; /* Hidden on desktop */
+}
+
+/* =============================================================================
    Mobile Responsive Header
    ============================================================================= */
 
@@ -308,6 +316,37 @@ img.brand-logo {
         width: 14px;
         height: 14px;
         stroke: var(--text-muted);
+    }
+
+    /* Telegram-style search button in header — clean icon, same size as logout */
+    .header-search-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+        margin: 0 !important;
+        flex-shrink: 0;
+        transition: color 0.15s ease;
+    }
+
+    .header-search-btn svg {
+        width: 16px;
+        height: 16px;
+        stroke: var(--text-muted);
+        stroke-width: 2;
+    }
+
+    .header-search-btn:active {
+        color: var(--text-secondary);
+        transform: scale(0.92);
     }
 
     /* Hide hamburger menu - keep uniform topbar nav */
