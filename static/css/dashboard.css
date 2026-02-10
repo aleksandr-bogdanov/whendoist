@@ -1035,16 +1035,20 @@
 }
 
 .project-header::before {
-    content: "\25B6";
-    font-size: 0.55rem;
-    color: var(--text-muted);
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    transform: rotate(-45deg);
     transition: transform 0.15s ease;
-    opacity: 0.6;
-    align-self: center;
+    opacity: 0.5;
+    flex-shrink: 0;
 }
 
 .project-group[open] .project-header::before {
-    transform: rotate(90deg);
+    transform: rotate(45deg);
 }
 
 .project-name {
