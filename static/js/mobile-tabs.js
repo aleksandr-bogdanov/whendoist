@@ -4,7 +4,6 @@
  *
  * Features:
  * - Tab switching between task list and calendar views
- * - Badge updates for unscheduled task count
  * - State persistence
  * - Swipe navigation between tabs
  */
@@ -47,17 +46,11 @@ class MobileTabs {
             });
         }
 
-        // Always listen for badge updates
-        document.body.addEventListener('htmx:afterSwap', () => {
-            this.updateBadge();
-        });
-
         // Handle viewport changes - always listen
         window.matchMedia('(max-width: 900px)').addEventListener('change', (e) => {
             if (e.matches) {
                 // Switched to mobile - activate current tab
                 this.switchTo(this.activeTab);
-                this.updateBadge();
             } else {
                 // Desktop: show both panels
                 this.tasksPanel?.classList.remove('mobile-active');
@@ -68,7 +61,6 @@ class MobileTabs {
         // Initialize mobile state if currently on mobile
         if (window.matchMedia('(max-width: 900px)').matches) {
             this.switchTo(this.activeTab);
-            this.updateBadge();
         }
 
         this.initialized = true;
@@ -97,16 +89,6 @@ class MobileTabs {
         if (window.HapticEngine) {
             window.HapticEngine.trigger('light');
         }
-    }
-
-    updateBadge() {
-        const badge = this.container?.querySelector('.tab-badge');
-        if (!badge) return;
-
-        // Count unscheduled tasks
-        const unscheduledCount = document.querySelectorAll('.task-item:not(.scheduled):not(.completed-today):not(.completed-older)').length;
-        badge.textContent = unscheduledCount > 99 ? '99+' : unscheduledCount.toString();
-        badge.hidden = unscheduledCount === 0;
     }
 
     getActiveTab() {

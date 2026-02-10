@@ -14,22 +14,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Two-liner truncation: `align-items: stretch` on breadcrumb task-content fixes text-overflow ellipsis in column layout
   - Domain card spacing: tighter group margins, compact add-task rows, smaller project headers at 580px, dashed separator style for add-task at phone breakpoint
 
-## v0.42.49 — 2026-02-10
-
 ### Changed
 - **Remove Tasks tab badge** — Removed unscheduled task count badge from mobile tab bar and all associated JS (`updateBadge` method, htmx/viewport listeners)
 - **SVG FAB icon** — Replaced text "+" in the embedded tab-bar FAB with an SVG `<use>` referencing `ui-icons.svg#plus` for crisp rendering at all sizes
 
 ### TODO (pre-1.0)
 - **Gesture discovery redesign** — Current swipe hint animation works but needs a polished, branded onboarding flow before v1.0
-
-## v0.42.48 — 2026-02-10
-
-### Fixed
-- **Mobile CSS polish** — Three targeted fixes for mobile layout refinement:
-  - Filter bar: compact padding aligned with task rail, hidden spectrum gradient, invisible 44px tap targets on sort buttons via `::before` pseudo-elements
-  - Two-liner truncation: `align-items: stretch` on breadcrumb task-content fixes text-overflow ellipsis in column layout
-  - Domain card spacing: tighter group margins, compact add-task rows, smaller project headers at 580px, dashed separator style for add-task at phone breakpoint
 
 ## v0.42.47 — 2026-02-10
 
