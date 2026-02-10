@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.74 — 2026-02-10
+
+### Changed
+- **Ultra-transparent glass everywhere** — All glass elements (site header, task-list header, energy pill, domain headers, tab bar) dropped to ~2% background opacity with heavy blur. Content is clearly visible through all floating/sticky elements
+- **Seamless header stack** — Site header and task-list header are now one continuous glass surface: no border, no spectrum bar, no separator line between them
+- **Domain headers seamless** — No border-bottom, same ultra-transparent glass treatment
+- **SW cache v12→v13**
+
 ## v0.42.73 — 2026-02-10
 
 ### Changed
