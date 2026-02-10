@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.66 — 2026-02-10
+
+### Fixed
+- **Glass effect barely visible on dark mode / WebKit** — Dark mode was `rgba(15,23,42,0.5)` (dark-on-dark = invisible). Replaced with light-tinted glass `rgba(180,190,210,0.18)` + `brightness(1.1)` so frost reads against dark backgrounds. Light mode also bumped: blur 24px→32px, opacity 55%→45%, added `brightness(1.05)` and inset highlight for proper iOS-style frosted glass on WebKit
+
 ## v0.42.65 — 2026-02-10
 
 ### Fixed
