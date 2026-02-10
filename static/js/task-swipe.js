@@ -4,13 +4,12 @@
  *
  * Gestures:
  * - Swipe right: Complete task
- * - Swipe left: Schedule task to tomorrow
+ * - Swipe left: Switch to calendar tab and enter manual plan mode
  *
  * Features:
  * - Conflict resolution with scroll
  * - Visual feedback during swipe (peek → commit phases)
  * - Haptic feedback
- * - Undo for schedule action
  */
 
 class SwipeGestureHandler {
@@ -292,76 +291,31 @@ class TaskSwipeHandler {
     }
 
     /**
-     * Schedule task to tomorrow via swipe-left.
-     * Uses PUT /api/v1/tasks/{id} with scheduled_date set to tomorrow.
+     * Swipe-left: switch to calendar tab and enter manual plan mode.
+     * No auto-scheduling — user picks the slot themselves.
      */
     async scheduleTask(task) {
-        // Check network status before any UI changes
-        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
-            if (window.Toast && typeof Toast.warning === 'function') {
-                Toast.warning("You're offline — changes won't be saved until you reconnect.");
-            }
-            return;
-        }
-
-        const taskId = task.dataset.taskId;
-        const taskTitle = task.querySelector('.task-text')?.textContent || 'Task';
-
         // Haptic feedback - light for non-destructive action
         if (window.HapticEngine) {
             window.HapticEngine.trigger('light');
         }
 
-        // Calculate tomorrow's date in local timezone
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const scheduledDate = tomorrow.toISOString().split('T')[0];
+        // Reset swipe animation immediately
+        task.style.transform = '';
+        task.classList.remove('swiping-left', 'swipe-almost', 'swipe-schedule');
 
-        // Store original scheduled_date for undo
-        const originalDate = task.dataset.scheduledDate || null;
-
-        // Optimistic UI: briefly highlight then slide out
-        task.classList.add('scheduling');
-
-        try {
-            await safeFetch(`/api/v1/tasks/${taskId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ scheduled_date: scheduledDate }),
-            });
-
-            // Format date for display
-            const displayDate = tomorrow.toLocaleDateString(undefined, {
-                weekday: 'short', month: 'short', day: 'numeric'
-            });
-
-            task.classList.remove('scheduling');
-            task.classList.add('departing');
-
-            if (window.Toast) {
-                window.Toast.show(`Scheduled for ${displayDate}`, 'info', {
-                    duration: 5000,
-                    action: {
-                        label: 'Undo',
-                        callback: () => {
-                            this.undoSchedule(task, taskId, originalDate);
-                        }
-                    }
-                });
-            }
-
-            // Remove from current list after animation
-            setTimeout(() => {
-                task.remove();
-            }, 300);
-
-        } catch (err) {
-            task.classList.remove('scheduling', 'departing');
-            handleError(err, 'Failed to schedule task', {
-                component: 'task-swipe',
-                action: 'scheduleTask'
-            });
+        // Switch to calendar tab
+        if (window.MobileTabs && typeof window.MobileTabs.switchTo === 'function') {
+            window.MobileTabs.switchTo('schedule');
         }
+
+        // After tab switch animation settles, enter plan mode
+        setTimeout(function() {
+            var todayCal = document.getElementById('today-calendar');
+            if (todayCal && window.PlanTasks && typeof window.PlanTasks.enterPlanMode === 'function') {
+                window.PlanTasks.enterPlanMode(todayCal);
+            }
+        }, 400);
     }
 
     async undoSchedule(task, taskId, originalDate) {

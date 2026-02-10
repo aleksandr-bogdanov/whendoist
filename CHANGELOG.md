@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.47 — 2026-02-10
+
+### Fixed
+- **Swipe-left opens manual scheduling instead of auto-tomorrow** — Swipe-left on a task no longer auto-schedules to tomorrow and shows an undo toast. Instead, it switches to the calendar tab and enters plan mode so the user can manually pick a time slot.
+
 ## v0.42.45 — 2026-02-10
 
 ### Added
