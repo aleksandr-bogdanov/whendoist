@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.60 — 2026-02-10
+
+### Fixed
+- **Nav active state — underline instead of grey square** — Replaced the grey background pill on the active `.nav-item` with a 2px bottom border in brand purple. Cleaner at mobile sizes and eliminates the floating grey rectangle artifact on iOS
+
 ## v0.42.59 — 2026-02-10
 
 ### Fixed
