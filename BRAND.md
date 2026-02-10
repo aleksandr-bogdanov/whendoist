@@ -2,8 +2,8 @@
 
 > Complete brand specification for Whendoist. This document serves as the single source of truth for all brand elements, design decisions, and implementation guidelines.
 
-**Version:** 1.7
-**Last Updated:** January 2026
+**Version:** 1.8
+**Last Updated:** February 2026
 
 **Related:** [UI Kit](docs/brand/UI-KIT.md) • [Color System](docs/brand/COLOR-SYSTEM.md) • [Press Kit](docs/brand/PRESS-KIT.md)
 
@@ -22,6 +22,8 @@
 9. [Voice & Tone](#voice--tone)
 10. [Applications](#applications)
 11. [Asset Files](#asset-files)
+12. [UI Icon System](#ui-icon-system)
+13. [Mobile & Touch](#mobile--touch)
 
 ---
 
@@ -1134,6 +1136,93 @@ For larger contexts (32px+), these icons include background tints matching the i
 | `static/img/icons/ui-icons.svg` | SVG sprite with all icons as symbols |
 | `static/img/icons/README.md` | Usage documentation |
 | `docs/brand/icon-reference.html` | Interactive reference with copy-to-clipboard |
+
+---
+
+## Mobile & Touch
+
+### Principles
+
+Whendoist mobile follows the same four brand values with mobile-specific interpretations:
+
+- **Clarity**: One action per gesture. No hidden multi-gesture combos.
+- **Intentionality**: Every tap area ≥ 44×44px (Apple HIG). Swipe thresholds require deliberate motion (130px).
+- **Calm**: Animations at `--duration-fast` or less for gestures. No bounce or overshoot.
+- **Trust**: Destructive actions (delete) require explicit confirmation via long-press menu. Non-destructive actions (complete, schedule) use swipe with undo toast.
+
+### Gesture Model
+
+| Gesture | Action | Reversibility |
+|---------|--------|---------------|
+| Tap | Open edit dialog | N/A (read action) |
+| Swipe right | Complete task | Undo toast (5s) |
+| Swipe left | Schedule task to tomorrow | Undo toast (5s) |
+| Long press | Context menu (edit, complete, schedule, skip, delete) | Varies by action |
+
+Gestures are progressive-disclosed via three layers:
+1. **First visit**: Animated swipe hint — first task row slides right then left (2.4s) with tooltip.
+2. **Permanent affordance**: Subtle 2px purple edge on the right side of task rows (touch devices only).
+3. **Long-press tooltip**: One-time toast after first edit dialog close.
+
+### Touch Targets
+
+All interactive elements on mobile must have a **minimum 44×44px tap area**. If the visual element is smaller (e.g., 20px energy pill), use invisible padding expansion via `::before` pseudo-elements:
+
+```css
+.energy-wrapper .energy-pill {
+    position: relative;
+}
+.energy-wrapper .energy-pill::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    bottom: -12px;
+    left: -4px;
+    right: -4px;
+}
+```
+
+### Layout
+
+- **Edge-to-edge content** below 580px — no container padding (uses `env(safe-area-inset-*)` for notch safety)
+- **Flat domain groups** below 580px — no card borders, sticky headers with `1px` bottom border
+- **Two-line task rows** for child tasks: parent breadcrumb on line 1 (muted, 0.65rem), task name on line 2
+- **Single-line task rows** for root tasks
+- **Impact color rail** — 4px left-edge bar on every task row, colored by impact level
+
+### Breakpoints
+
+| Width | Name | Layout |
+|-------|------|--------|
+| >900px | Desktop | Grid layout, hover states, keyboard shortcuts |
+| 580–900px | Tablet | Flex layout, touch targets, tab navigation |
+| <580px | Phone | Edge-to-edge, flat groups, compact chrome |
+
+### Bottom Sheet
+
+Long-press context menu uses a bottom sheet (not native context menu):
+
+- Rounded top corners (`16px`)
+- Sheet handle bar (36×4px, `--border-default`)
+- Action grid: 4 columns of icon + label buttons
+- Cancel button: full width, 48px height
+- Backdrop: black at 40% opacity with 2px blur
+- Safe area padding at bottom (`env(safe-area-inset-bottom)`)
+
+### Tab Bar
+
+Fixed bottom navigation with embedded FAB:
+
+```
+┌───────────────────────────────────────────┐
+│  📋 Tasks      [ + ]       📅 Schedule    │
+└───────────────────────────────────────────┘
+```
+
+- Two tabs + center 48px circular FAB (raised 8px above bar)
+- Tab height: 44px (meets touch minimum)
+- Badge: absolute-positioned overlay on icon, `0.55rem`, max "99+"
+- Safe area: `padding-bottom: calc(8px + env(safe-area-inset-bottom))`
 
 ---
 
