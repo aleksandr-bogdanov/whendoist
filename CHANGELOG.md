@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.70 — 2026-02-10
+
+### Changed
+- **Maximum transparency glass** — Both tab bar and energy pill background opacity dropped from 45% to ~0% (`rgba(..., 0.01)`). Pure backdrop-filter blur with virtually no tint — content is as visible as possible through the frost. Dark mode same treatment. SW cache v8→v9
+
 ## v0.42.69 — 2026-02-10
 
 ### Changed
