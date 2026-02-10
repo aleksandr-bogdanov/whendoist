@@ -261,11 +261,10 @@ img, a {
         left: 0;
         right: 0;
         z-index: 100;
-        /* Telegram-style frosted glass: mostly opaque white with subtle blur.
-           Telegram iOS uses ~85-90% white opacity — content barely peeks through. */
-        background: rgba(249, 249, 249, 0.88);
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
+        /* Ultra-transparent glass — pure blur, content clearly visible */
+        background: rgba(255, 255, 255, 0.02);
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         padding: 4px 0 0;
         padding-bottom: env(safe-area-inset-bottom, 0);
         /* Telegram uses a thin hairline separator — no shadow */
@@ -484,17 +483,19 @@ img, a {
         overscroll-behavior: contain;
     }
 
-    /* Task list header - sticky glass (Telegram-style translucent bar) */
+    /* Task list header - ultra-transparent glass, seamless with site header */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
         padding: 2px 8px 0 12px !important;
-        background: rgba(249, 249, 249, 0.88) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
+        background: rgba(255, 255, 255, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         /* Override dashboard.css will-change:transform — breaks sticky on mobile */
         will-change: auto;
+        /* No border — seamless with site header above */
+        border: none !important;
     }
 
     /* Remove solid background cover pseudo-element — glass doesn't need it */
@@ -502,12 +503,9 @@ img, a {
         display: none !important;
     }
 
-    /* Gradient spectrum bar — absolute position since parent is flex */
+    /* Hide spectrum bar on mobile — seamless glass, no divider lines */
     .task-list-header::after {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        display: none !important;
     }
 
     /* Filter bar row - flex override for mobile */
@@ -606,13 +604,13 @@ img, a {
         z-index: 99;
         margin: 0 !important;
         padding: 4px !important;
-        background: rgba(249, 249, 249, 0.85) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
-        border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        border: 0.5px solid rgba(255, 255, 255, 0.25) !important;
         border-radius: 18px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1),
-                    0 1px 4px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.5);
         gap: 2px;
     }
 
@@ -657,11 +655,11 @@ img, a {
         color: var(--text-secondary);
     }
 
-    /* Active segment — solid white pill with subtle shadow (Telegram segment style) */
+    /* Active segment — half-transparent pill */
     .energy-wrapper .energy-pill.active {
-        background: rgba(255, 255, 255, 0.95) !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1),
-                    0 0.5px 1px rgba(0, 0, 0, 0.06) !important;
+        background: rgba(255, 255, 255, 0.35) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
+                    0 0.5px 1px rgba(0, 0, 0, 0.04) !important;
     }
 
     .energy-wrapper .energy-pill.active::after {
@@ -672,9 +670,9 @@ img, a {
     .energy-pill.active[data-energy="1"],
     .energy-pill.active[data-energy="2"],
     .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.95) !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1),
-                    0 0.5px 1px rgba(0, 0, 0, 0.06) !important;
+        background: rgba(255, 255, 255, 0.35) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
+                    0 0.5px 1px rgba(0, 0, 0, 0.04) !important;
     }
 
     /* Task item - compact row with flex layout, matching Thoughts view.
@@ -1206,17 +1204,18 @@ img, a {
    ============================================================================= */
 
 @media (max-width: 900px) {
-    /* Glass site header — Telegram-style translucent nav bar.
-       Content scrolls behind with frosted blur visible. */
+    /* Ultra-transparent glass site header — seamless with task-list-header below */
     .site-header {
-        background: rgba(249, 249, 249, 0.88) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
+        background: rgba(255, 255, 255, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        border-bottom: none !important;
+        box-shadow: none !important;
     }
 
-    /* Nav pill background must be transparent on glass header */
+    /* Nav pill — nearly invisible on glass header */
     .header-nav {
-        background: rgba(0, 0, 0, 0.04) !important;
+        background: rgba(0, 0, 0, 0.03) !important;
     }
 
     /* Hide desktop-only elements */
@@ -1299,10 +1298,10 @@ img, a {
         position: sticky;
         top: 36px; /* below filter bar */
         z-index: 5;
-        background: rgba(249, 249, 249, 0.85) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
-        border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+        background: rgba(255, 255, 255, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        border-bottom: none !important;
         border-radius: 0 !important;
         padding: 8px 12px 8px 16px !important;
         min-height: 36px !important;
@@ -1511,14 +1510,13 @@ img, a {
    13. Dark Mode Support
    ============================================================================= */
 
-/* Dark mode glass tab bar — Telegram dark: mostly opaque dark with subtle blur.
-   Telegram iOS dark mode uses ~75-80% opaque dark gray background. */
+/* Dark mode glass — ultra-transparent, pure blur */
 @media (max-width: 900px) {
     [data-theme="dark"] .mobile-tabs {
-        background: rgba(30, 30, 30, 0.82);
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
-        border-top-color: rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.02);
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        border-top-color: rgba(255, 255, 255, 0.06);
         box-shadow: none;
     }
 }
@@ -1539,47 +1537,46 @@ img, a {
     box-shadow: 0 2px 8px rgba(109, 94, 246, 0.35);
 }
 
-/* Dark mode floating energy pill — Telegram-style dark glass.
-   Mostly opaque dark with visible blur, matching the tab bar. */
+/* Dark mode — ultra-transparent glass everywhere */
 @media (max-width: 900px) {
     [data-theme="dark"] .energy-wrapper {
-        background: rgba(30, 30, 30, 0.80) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
-        backdrop-filter: blur(40px) saturate(180%) !important;
-        border-color: rgba(255, 255, 255, 0.10) !important;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3),
-                    0 1px 4px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(0, 0, 0, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9) !important;
+        backdrop-filter: blur(50px) saturate(200%) brightness(0.9) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.1) !important;
     }
 
     [data-theme="dark"] .energy-wrapper .energy-pill.active,
     [data-theme="dark"] .energy-pill.active[data-energy="1"],
     [data-theme="dark"] .energy-pill.active[data-energy="2"],
     [data-theme="dark"] .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
     }
 
-    /* Dark glass: site header, task-list-header, domain headers */
+    /* Dark glass: site header, task-list-header, domain headers — all seamless */
     [data-theme="dark"] .site-header {
-        background: rgba(30, 30, 30, 0.82) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
+        background: rgba(0, 0, 0, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
     }
 
     [data-theme="dark"] .header-nav {
-        background: rgba(255, 255, 255, 0.06) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
     }
 
     [data-theme="dark"] .task-list-header {
-        background: rgba(30, 30, 30, 0.82) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
+        background: rgba(0, 0, 0, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
     }
 
     [data-theme="dark"] .project-header {
-        background: rgba(30, 30, 30, 0.80) !important;
-        -webkit-backdrop-filter: blur(40px) saturate(180%);
-        backdrop-filter: blur(40px) saturate(180%);
-        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+        background: rgba(0, 0, 0, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        border-bottom-color: transparent !important;
     }
 }
