@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.41 — 2026-02-10
+
+### Changed
+- **Flatten domain cards on mobile** — On phones (<580px), domain groups lose their card borders and become flat sections with sticky headers. Recovers ~24px of horizontal space for task names. Desktop layout unchanged.
+
 ## v0.42.40 — 2026-02-10
 
 ### Fixed
