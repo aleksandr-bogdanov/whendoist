@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.56 — 2026-02-10
+
+### Fixed
+- **Swipe gestures still broken** — `const isCompleted` (outer scope) conflicted with `var isCompleted` (inner scope) causing a SyntaxError that prevented `task-swipe.js` from parsing; both long press and all swipe gestures were dead. Fixed by removing outer declaration and using block-scoped `const` in each branch
+- **Desktop header text overflow** — "DURATION" at 11px uppercase overflowed 48px column width; increased `--col-duration` from 48px to 60px in tokens.css
+- **Sort arrow layout shift** — Changed sort-icon from `display: inline` (zero width when empty) to `position: absolute` so it never affects the button's flow width
+- **Mobile sort labels overflow** — Full labels ("DURATION", "IMPACT") overflow 40/32px columns at 0.5rem; switched to compact labels ("DUR", "IMP", "CLR") on mobile
+- **Calendar controls hidden behind tab bar** — Toolbar (Today + zoom) at `bottom: 1rem` was obscured by the fixed mobile tab bar; increased `bottom` to clear the tab bar height
+- **SCHEDULED section header misaligned** — Override grid layout to flex on mobile and hide column labels that don't align with flex-based task rows
+
 ## v0.42.55 — 2026-02-10
 
 ### Fixed

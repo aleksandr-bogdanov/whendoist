@@ -250,8 +250,6 @@ class TaskSwipeHandler {
         }
 
         const taskId = task.dataset.taskId;
-        const isCompleted = task.classList.contains('completed-today') ||
-                           task.classList.contains('completed-older');
 
         // Haptic feedback
         if (window.HapticEngine) {
@@ -262,14 +260,15 @@ class TaskSwipeHandler {
         task.classList.add('departing');
 
         try {
-            // Toggle completion
+            // Toggle completion via TaskComplete module
             if (window.TaskComplete && window.TaskComplete.toggle) {
-                var instanceId = task.dataset.instanceId || null;
-                var isCompleted = task.dataset.completed === '1';
-                var isRecurring = task.dataset.isRecurring === 'true';
+                const instanceId = task.dataset.instanceId || null;
+                const isCompleted = task.dataset.completed === '1';
+                const isRecurring = task.dataset.isRecurring === 'true';
                 await window.TaskComplete.toggle(task, taskId, instanceId, !isCompleted, isRecurring);
             } else {
                 // Fallback to direct API call
+                const isCompleted = task.dataset.completed === '1';
                 const endpoint = isCompleted
                     ? `/api/v1/tasks/${taskId}/uncomplete`
                     : `/api/v1/tasks/${taskId}/complete`;

@@ -154,7 +154,7 @@
 
     /* ===== Task List Columns ===== */
     --col-date: 58px;
-    --col-duration: 48px;
+    --col-duration: 60px;  /* Fits "DURATION" at 11px uppercase */
     --col-impact: 44px;
     --col-clarity: 68px;  /* Text labels: Autopilot/—/Brainstorm */
     --col-actions: 28px;
