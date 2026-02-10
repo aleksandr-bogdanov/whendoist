@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.39 — 2026-02-10
+
+### Fixed
+- **Kebab actually visible on mobile** — `mobile.css` had `.task-item .task-actions { display: none !important; }` which completely hid the kebab container. The `@media (hover: none)` opacity fix in `dashboard.css` couldn't override `display: none`. Replaced with visible flex layout and 40% opacity kebab.
+
 ## v0.42.38 — 2026-02-10
 
 ### Fixed
