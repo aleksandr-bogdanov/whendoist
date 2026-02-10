@@ -274,10 +274,10 @@ img, a {
 .mobile-tab {
     flex: 1;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 6px;
     height: 44px;
     border-radius: 10px;
     background: transparent;
@@ -307,7 +307,7 @@ img, a {
 }
 
 .tab-icon {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
 }
 
 .tab-label {
@@ -454,10 +454,6 @@ img, a {
         gap: 8px;
     }
 
-    .task-list-header::after {
-        display: none;
-    }
-
     /* Filter bar row - flex override for mobile */
     .header-row1 {
         display: flex !important;
@@ -487,6 +483,25 @@ img, a {
         flex-shrink: 0;
         margin-left: auto;
     }
+
+    /* Show full sort labels on mobile */
+    .header-sort .label-compact { display: none !important; }
+    .header-sort .label-full { display: inline !important; }
+
+    /* Sort arrow — always occupies space, fades in/out (no reflow) */
+    .header-sort .sort-icon {
+        width: auto !important;
+        display: inline;
+        margin-left: 2px;
+        opacity: 0;
+        transition: opacity 0.15s ease !important;
+    }
+    .header-sort.active .sort-icon {
+        opacity: 1;
+    }
+
+    /* Hide gear on mobile */
+    .settings-anchor { display: none !important; }
 
     .header-meta .header-sort {
         font-size: 0.5rem !important;
@@ -564,13 +579,16 @@ img, a {
     }
 
     .task-item .task-text {
-        display: block;
+        white-space: normal !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
         font-size: 0.8rem;
         flex: 1;
         min-width: 0;
+        line-height: 1.3;
     }
 
     /* Two-line layout for child tasks (show parent breadcrumb above task name) */
@@ -1089,7 +1107,7 @@ img, a {
         background: var(--bg-surface) !important;
         border-bottom: 1px solid var(--border-subtle);
         border-radius: 0 !important;
-        padding: 8px 12px !important;
+        padding: 8px 12px 8px 16px !important;
         min-height: 36px !important;
     }
 

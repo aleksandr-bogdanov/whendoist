@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.52 — 2026-02-10
+
+### Fixed
+- **Mobile filter bar full names, 2-line wrap, horizontal tabs** — Group A mobile UX round 3:
+  - Filter bar: show full sort labels (Clarity/Duration/Impact), hide gear icon, restore gradient spectrum bar, fix sort arrow fade (no reflow)
+  - Task names: 2-line wrap with `-webkit-line-clamp: 2` instead of single-line truncation
+  - Tab bar: horizontal layout (icon + label side by side)
+  - Domain headers: left padding aligned with task text at 580px breakpoint
+  - HTML: "Dur" → "Duration" in sort button label
+
 ## v0.42.51 — 2026-02-10
 
 ### TODO (pre-1.0)
