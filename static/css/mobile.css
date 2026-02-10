@@ -314,24 +314,6 @@ img, a {
     font-size: 0.75rem;
 }
 
-.tab-badge {
-    position: absolute;
-    top: 2px;
-    right: calc(50% - 26px);
-    background: var(--primary, #6D5EF6);
-    color: white;
-    font-size: 0.55rem;
-    font-weight: 700;
-    padding: 1px 5px;
-    border-radius: 10px;
-    min-width: 16px;
-    max-width: 32px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: center;
-    line-height: 1.2;
-}
-
 /* Embedded FAB in tab bar center */
 .mobile-tab-add {
     display: none;
@@ -465,11 +447,15 @@ img, a {
         position: sticky;
         top: 0;
         z-index: 10;
-        padding: 4px 8px !important;
+        padding: 2px 8px 0 12px !important;
         background: var(--bg-panel);
         display: flex !important;
         align-items: center;
         gap: 8px;
+    }
+
+    .task-list-header::after {
+        display: none;
     }
 
     /* Filter bar row - flex override for mobile */
@@ -505,11 +491,21 @@ img, a {
     .header-meta .header-sort {
         font-size: 0.5rem !important;
         padding: 2px 4px !important;
-        min-height: 44px;
+        min-height: auto;
         text-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
+    }
+
+    .header-meta .header-sort::before {
+        content: '';
+        position: absolute;
+        top: -16px;
+        bottom: -16px;
+        left: -4px;
+        right: -4px;
     }
 
     /* Match column widths exactly with task-meta spans */
@@ -580,7 +576,7 @@ img, a {
     /* Two-line layout for child tasks (show parent breadcrumb above task name) */
     .task-item:has(.task-breadcrumb) .task-content {
         flex-direction: column !important;
-        align-items: flex-start !important;
+        align-items: stretch !important;
         gap: 1px !important;
     }
 
@@ -667,12 +663,13 @@ img, a {
 
     /* Add task row - full width */
     .add-task-row {
-        padding: 12px !important;
+        padding: 6px 8px !important;
+        margin: 2px 4px !important;
     }
 
     /* Project groups - cleaner on mobile */
     .project-group {
-        margin-bottom: 0;
+        margin-bottom: 0 !important;
     }
 
     .project-header {
@@ -1093,14 +1090,21 @@ img, a {
         border-bottom: 1px solid var(--border-subtle);
         border-radius: 0 !important;
         padding: 8px 12px !important;
-        min-height: 44px !important;
+        min-height: 36px !important;
     }
 
     /* Thin divider between groups instead of card borders */
     .project-group + .project-group {
         border-top: 1px solid var(--border-default);
-        margin-top: 4px;
-        padding-top: 4px;
+        margin-top: 2px;
+        padding-top: 0;
+    }
+
+    .add-task-row {
+        margin: 2px 0 !important;
+        border: none !important;
+        border-top: 1px dashed var(--border-subtle) !important;
+        border-radius: 0 !important;
     }
 
     /* Adjust panel height for smaller header (44px) */
