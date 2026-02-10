@@ -813,6 +813,59 @@ img, a {
     cursor: pointer;
 }
 
+/* 7a. Swipe hint animation — plays once on first visit */
+@keyframes gesture-hint-swipe {
+    0%   { transform: translateX(0); }
+    25%  { transform: translateX(60px); }
+    55%  { transform: translateX(60px); }
+    80%  { transform: translateX(-40px); }
+    95%  { transform: translateX(-40px); }
+    100% { transform: translateX(0); }
+}
+
+.gesture-hint-active {
+    animation: gesture-hint-swipe 2.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    z-index: 2;
+}
+
+/* 7b. Swipe hint tooltip */
+.gesture-hint-tooltip {
+    position: fixed;
+    z-index: 1200;
+    background: var(--bg-elevated, #fff);
+    color: var(--text-secondary, #666);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 10px 14px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+}
+
+.gesture-hint-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 7c. Permanent swipe peek affordance — subtle right edge on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .task-item::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--primary, #6D5EF6);
+        opacity: 0.15;
+        border-radius: 0 4px 4px 0;
+        pointer-events: none;
+    }
+}
+
 /* =============================================================================
    8. Pull to Refresh
    ============================================================================= */
@@ -982,6 +1035,8 @@ img, a {
     .sheet-backdrop,
     .gesture-coachmark,
     .gesture-arrow,
+    .gesture-hint-active,
+    .gesture-hint-tooltip,
     .pull-to-refresh,
     .task-item {
         transition: none !important;
