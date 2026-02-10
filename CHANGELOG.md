@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.40 — 2026-02-10
+
+### Fixed
+- **Revert mobile kebab visibility** — The original `display: none` on `.task-actions` was intentional: long-press context menu is the correct mobile interaction pattern. The kebab was redundant visual noise.
+
 ## v0.42.39 — 2026-02-10
 
 ### Fixed
