@@ -536,18 +536,6 @@
         });
         menu.appendChild(deleteBtn);
 
-        // Hint row for recurring calendar instances
-        if (opts.isCalendarCard && opts.isRecurring) {
-            var hintSep = document.createElement('div');
-            hintSep.className = 'actions-menu-separator';
-            menu.appendChild(hintSep);
-
-            var hintRow = document.createElement('div');
-            hintRow.className = 'actions-menu-item actions-menu-hint';
-            hintRow.innerHTML = '<span class="actions-menu-icon">💡</span> Drag to reschedule';
-            menu.appendChild(hintRow);
-        }
-
         document.body.appendChild(menu);
         activeActionsMenu = menu;
 

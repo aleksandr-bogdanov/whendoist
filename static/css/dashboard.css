@@ -3407,6 +3407,20 @@ body[data-energy-level] .scheduled-group.project-group {
 /* Trash Bin styles moved to components/drag-drop.css */
 
 /* =============================================================================
+   Touch Device Support
+   ============================================================================= */
+
+/* Hover-revealed controls are invisible on touch — show at reduced opacity */
+@media (hover: none) {
+    .kebab-btn {
+        opacity: 0.4;
+    }
+    .calendar-quick-action {
+        opacity: 0.4;
+    }
+}
+
+/* =============================================================================
    Dark Mode Support
    ============================================================================= */
 
@@ -3979,9 +3993,18 @@ body[data-energy-level] .scheduled-group.project-group {
     background: var(--bg-hover);
 }
 
-/* Hide on short tasks (too cramped) */
+/* Short tasks: compact quick-action instead of hiding entirely */
 .duration-short .calendar-quick-action {
-    display: none;
+    width: 16px;
+    height: 16px;
+    top: 2px;
+    right: 2px;
+    transform: none;
+}
+
+.duration-short .calendar-quick-action svg {
+    width: 11px;
+    height: 11px;
 }
 
 /* Date-only: static position in flex row */
@@ -3990,18 +4013,6 @@ body[data-energy-level] .scheduled-group.project-group {
     transform: none;
     flex-shrink: 0;
     margin-left: auto;
-}
-
-/* Actions menu hint row (non-interactive) */
-.actions-menu-hint {
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    cursor: default;
-    opacity: 0.7;
-}
-
-.actions-menu-hint:hover {
-    background: none;
 }
 
 /* Universal "task leaving list" animation (completion, scheduling, deletion) */

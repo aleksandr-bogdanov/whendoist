@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.37 — 2026-02-10
+
+### Fixed
+- **Mobile touch visibility** — Kebab menu and calendar quick-action buttons were invisible on touch devices (opacity: 0 with no `@media (hover: none)` override). Now shown at 40% opacity on touch devices.
+- **Short calendar cards** — Quick-action button was completely hidden (`display: none`) on sub-30-minute cards. Now shows a compact 16px version instead.
+
+### Removed
+- **"Drag to reschedule" context menu hint** — Removed the non-interactive hint row from recurring calendar card context menus. Reduces menu clutter.
+
 ## v0.42.36 — 2026-02-09
 
 ### Fixed
