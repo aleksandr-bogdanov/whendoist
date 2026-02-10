@@ -39,7 +39,7 @@
     --orange-500: #F97316;     /* Warning */
 
     /* ===== Theme Tokens (Light Mode Default) ===== */
-    --bg-canvas: var(--slate-50);
+    --bg-canvas: #FFFFFF;
     --bg-panel: var(--slate-100);
     --bg-surface: #FFFFFF;
     --bg-elevated: #FFFFFF;

@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.80 — 2026-02-10
+
+### Changed
+- **White canvas background** — `--bg-canvas` changed from slate-50 to pure white, making glass navbar truly transparent
+- **CSS chevrons** — Replaced `▶` emoji arrows on domain collapse headers with clean CSS-drawn chevrons
+- **Chevron animation** — Right-pointing when collapsed, rotates down when expanded
+
+---
+
 ## v0.42.79 — 2026-02-10
 
 ### Changed
