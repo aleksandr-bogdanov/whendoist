@@ -425,6 +425,13 @@ img, a {
         padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
     }
 
+    /* Calendar toolbar (Today + zoom) — lift above mobile tab bar.
+       Desktop rule is bottom: 1rem (in dashboard.css), which sits behind
+       the fixed tab bar on mobile. */
+    .calendar-toolbar {
+        bottom: calc(1rem + 60px + env(safe-area-inset-bottom, 0px));
+    }
+
     /* PWA mode - account for safe area in header */
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
@@ -492,16 +499,21 @@ img, a {
         margin-left: auto;
     }
 
-    /* Show full sort labels on mobile */
-    .header-sort .label-compact { display: none !important; }
-    .header-sort .label-full { display: inline !important; }
+    /* Use compact sort labels on mobile — full labels like "DURATION" overflow
+       the 40px fixed columns at 0.5rem uppercase. */
+    .header-sort .label-compact { display: inline !important; }
+    .header-sort .label-full { display: none !important; }
 
-    /* Sort arrow — always occupies space, fades in/out (no reflow).
-       !important needed to override dashboard.css :hover rule which has higher specificity. */
+    /* Sort arrow — absolutely positioned inside button so it never affects
+       the button's flow width.  No layout shift when sort changes.
+       !important overrides dashboard.css :hover rule (higher specificity). */
     .header-sort .sort-icon {
+        position: absolute !important;
+        right: 1px;
+        top: 50%;
+        transform: translateY(-50%);
         width: auto !important;
-        display: inline;
-        margin-left: 2px;
+        margin: 0 !important;
         opacity: 0 !important;
         overflow: visible !important;
         transition: opacity 0.15s ease !important;
@@ -522,6 +534,7 @@ img, a {
         align-items: center;
         justify-content: center;
         position: relative;
+        overflow: hidden;
     }
 
     .header-meta .header-sort::before {
@@ -697,6 +710,22 @@ img, a {
     .add-task-row {
         padding: 6px 8px !important;
         margin: 2px 4px !important;
+    }
+
+    /* Scheduled section separator — override grid to flex on mobile.
+       Hide column labels (DATE/CLARITY/DUR/IMPACT) since task rows use
+       flex layout that doesn't align with grid columns. */
+    .section-separator--sched {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 4px 8px;
+    }
+    .section-separator--sched .sep-col-label,
+    .section-separator--sched .sep-col-spacer {
+        display: none !important;
+    }
+    .section-separator--sched .sched-label-group .sep-col-label {
+        display: none !important;
     }
 
     /* Project groups - cleaner on mobile */
@@ -1145,6 +1174,10 @@ img, a {
         height: calc(100vh - 44px);
         height: calc(var(--app-height, 100vh) - 44px);
         padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .calendar-toolbar {
+        bottom: calc(1rem + 56px + env(safe-area-inset-bottom, 0px));
     }
 
     @media (display-mode: standalone) {
