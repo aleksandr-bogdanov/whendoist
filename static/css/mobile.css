@@ -265,33 +265,35 @@ img, a {
         background: rgba(255, 255, 255, 0.02);
         -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
-        padding: 4px 0 0;
-        padding-bottom: env(safe-area-inset-bottom, 0);
+        padding: 6px 16px;
+        padding-bottom: calc(6px + env(safe-area-inset-bottom, 0));
         /* Telegram uses a thin hairline separator — no shadow */
-        border-top: 0.5px solid rgba(0, 0, 0, 0.15);
+        border-top: 0.5px solid rgba(0, 0, 0, 0.1);
         box-shadow: none;
-        gap: 0;
-        justify-content: space-around;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
     }
 }
 
 .mobile-tab {
-    flex: 1;
+    flex: none; /* Compact pill — don't stretch */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 1px;
-    height: 49px; /* Telegram: standard iOS tab bar height */
-    border-radius: 0;
-    background: transparent;
+    height: auto;
+    min-height: 44px;
+    padding: 6px 20px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.04); /* Subtle pill background */
     border: none;
-    /* Telegram inactive: medium gray, not too light */
     color: #999;
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.15s ease;
+    transition: color 0.15s ease, background 0.15s ease;
     -webkit-appearance: none;
     appearance: none;
     position: relative; /* anchor for badge */
@@ -304,9 +306,9 @@ img, a {
     transform: scale(0.95);
 }
 
-/* Telegram-style: accent color only, no pill/bg/border */
+/* Active tab — accent pill highlight */
 .mobile-tab.active {
-    background: transparent;
+    background: rgba(109, 94, 246, 0.1);
     border: none;
     color: var(--primary, #6D5EF6);
     box-shadow: none;
@@ -619,7 +621,7 @@ img, a {
        Content scrolls behind it (padding-bottom: 0 + scroll spacer below). */
     .energy-wrapper {
         position: fixed !important;
-        bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(62px + env(safe-area-inset-bottom, 0px));
         left: 50%;
         transform: translateX(-50%);
         z-index: 99;
@@ -1234,9 +1236,9 @@ img, a {
         box-shadow: none !important;
     }
 
-    /* Nav pill — nearly invisible on glass header */
+    /* Nav pill — fully transparent on glass header (matches task-list-header) */
     .header-nav {
-        background: rgba(0, 0, 0, 0.03) !important;
+        background: transparent !important;
     }
 
     /* Hide desktop-only elements */
@@ -1283,12 +1285,13 @@ img, a {
 
 @media (max-width: 580px) {
     .mobile-tabs {
-        padding: 4px 0 0;
-        padding-bottom: env(safe-area-inset-bottom, 0);
+        padding: 6px 12px;
+        padding-bottom: calc(6px + env(safe-area-inset-bottom, 0));
     }
 
     .mobile-tab {
-        height: 46px;
+        padding: 6px 16px;
+        min-height: 40px;
     }
 
     /* Edge-to-edge container — reclaim horizontal padding */
@@ -1541,11 +1544,12 @@ img, a {
 
 [data-theme="dark"] .mobile-tab {
     color: #777;
+    background: rgba(255, 255, 255, 0.06);
 }
 
-/* Telegram-style dark: just accent color, no pill */
+/* Active tab — accent pill in dark mode */
 [data-theme="dark"] .mobile-tab.active {
-    background: transparent;
+    background: rgba(109, 94, 246, 0.15);
     border: none;
     color: var(--primary, #6D5EF6);
     box-shadow: none;
@@ -1582,7 +1586,7 @@ img, a {
     }
 
     [data-theme="dark"] .header-nav {
-        background: rgba(255, 255, 255, 0.04) !important;
+        background: transparent !important;
     }
 
     [data-theme="dark"] .task-list-header {

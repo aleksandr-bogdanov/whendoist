@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.76 — 2026-02-10
+
+### Changed
+- **Pill-shaped tab bar (mobile)** — Tasks and Schedule tabs are now compact pills with rounded backgrounds, centered in the bar with breathing room on sides. Active tab gets accent-colored pill highlight
+- **Transparent top navbar (mobile)** — Header nav background is now fully transparent on mobile, matching the task-list-header glass treatment exactly
+- **Dark mode tab pills** — Subtle white-tinted pill backgrounds for inactive tabs, accent-tinted for active
+- **SW cache v14→v15**
+
+---
+
 ## v0.42.75 — 2026-02-10
 
 ### Added
