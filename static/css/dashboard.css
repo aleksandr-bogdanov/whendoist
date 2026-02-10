@@ -11,7 +11,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-left: 34px;  /* Align with task content */
+    padding: 4px 0 4px 34px;  /* Align with task content (was margin-left inside header-row1) */
 }
 
 .energy-wrapper[hidden] {
