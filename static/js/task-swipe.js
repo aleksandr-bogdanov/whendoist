@@ -415,8 +415,10 @@ function initTaskSwipe() {
     if (taskSwipeHandler) return;
     taskSwipeHandler = new TaskSwipeHandler();
 
-    // Also attach long-press handlers for action sheet
+    // Also attach long-press handlers for action sheet.
+    // 300ms beats iOS text-selection / Siri Intelligence (~400ms threshold).
     const longPress = new LongPressHandler({
+        duration: 300,
         onLongPress: (element) => {
             const actionSheet = window.getTaskActionSheet?.();
             if (actionSheet) {

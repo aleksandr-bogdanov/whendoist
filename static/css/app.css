@@ -19,13 +19,7 @@
     --layout-gap: 1.5rem;
     --content-padding: 3rem;
 
-    /* Task row column layout */
-    --col-duration: 48px;
-    --col-impact: 44px;
-    --col-clarity: 68px;
-    --col-actions: 28px;
-    --col-gap: 6px;
-    --rail-w: 2px;
+    /* Task row column layout — defined in tokens.css (single source of truth) */
 
     /* Calendar specific */
     --calendar-header-bg: var(--primary);
