@@ -3,8 +3,8 @@
 {% block title %}Analytics - Whendoist{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="/static/css/dialog.css">
-<link rel="stylesheet" href="/static/css/pages/analytics.css">
+<link rel="stylesheet" href="/static/css/dialog.css?v={{ app_version|default('') }}">
+<link rel="stylesheet" href="/static/css/pages/analytics.css?v={{ app_version|default('') }}">
 {% endblock %}
 
 {% block content %}

@@ -3,9 +3,9 @@
 {% block title %}Thoughts - Whendoist{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="/static/css/dashboard.css">
-<link rel="stylesheet" href="/static/css/dialog.css">
-<link rel="stylesheet" href="/static/css/pages/thoughts.css">
+<link rel="stylesheet" href="/static/css/dashboard.css?v={{ app_version|default('') }}">
+<link rel="stylesheet" href="/static/css/dialog.css?v={{ app_version|default('') }}">
+<link rel="stylesheet" href="/static/css/pages/thoughts.css?v={{ app_version|default('') }}">
 {% endblock %}
 
 {% block content %}

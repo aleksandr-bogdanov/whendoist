@@ -3,7 +3,7 @@
 {% block title %}Settings - Whendoist{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="/static/css/pages/settings.css">
+<link rel="stylesheet" href="/static/css/pages/settings.css?v={{ app_version|default('') }}">
 {% endblock %}
 {% block content %}
 <div class="settings-page">

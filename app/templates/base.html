@@ -59,14 +59,14 @@
     <link rel="stylesheet" href="/static/vendor/pico.min.css">
     <link rel="stylesheet" href="/static/vendor/air-datepicker.css">
     <!-- Design tokens (single source of truth) -->
-    <link rel="stylesheet" href="/static/css/tokens.css"
+    <link rel="stylesheet" href="/static/css/tokens.css?v={{ app_version|default('') }}"
           onerror="document.documentElement.classList.add('css-error')">
     <!-- Component system -->
-    <link rel="stylesheet" href="/static/css/components/index.css">
-    <link rel="stylesheet" href="/static/css/components/shortcuts.css">
-    <link rel="stylesheet" href="/static/css/app.css">
-    <link rel="stylesheet" href="/static/css/brand.css">
-    <link rel="stylesheet" href="/static/css/mobile.css">
+    <link rel="stylesheet" href="/static/css/components/index.css?v={{ app_version|default('') }}">
+    <link rel="stylesheet" href="/static/css/components/shortcuts.css?v={{ app_version|default('') }}">
+    <link rel="stylesheet" href="/static/css/app.css?v={{ app_version|default('') }}">
+    <link rel="stylesheet" href="/static/css/brand.css?v={{ app_version|default('') }}">
+    <link rel="stylesheet" href="/static/css/mobile.css?v={{ app_version|default('') }}">
     <!-- CSS Error Boundary - fallback styles if tokens.css fails -->
     <style>
         .css-error {
@@ -89,7 +89,7 @@
         }
     </style>
     {% if show_wizard %}
-    <link rel="stylesheet" href="/static/css/wizard.css">
+    <link rel="stylesheet" href="/static/css/wizard.css?v={{ app_version|default('') }}">
     {% endif %}
     {% block extra_css %}{% endblock %}
     <script src="/static/vendor/htmx.min.js"></script>
