@@ -503,9 +503,9 @@ img, a {
         display: none !important;
     }
 
-    /* Hide spectrum bar on mobile — seamless glass, no divider lines */
+    /* Spectrum bar — visible on mobile as separator below domain label */
     .task-list-header::after {
-        display: none !important;
+        display: block !important;
     }
 
     /* Filter bar row - flex override for mobile */
@@ -516,6 +516,27 @@ img, a {
         min-height: auto;
         padding: 0 !important;
         width: 100%;
+    }
+
+    /* Header domain label — shows current domain name merged into sort header.
+       Hidden by default; JS adds .active when a domain scrolls to top. */
+    .header-domain-label {
+        display: none;
+        flex: 1;
+        min-width: 0;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1;
+        opacity: 0.85;
+    }
+
+    .header-domain-label.active {
+        display: inline-flex;
+        align-items: center;
     }
 
     /* Hide kebab menu on mobile - not needed */
@@ -1294,13 +1315,10 @@ img, a {
         overflow: visible !important;
     }
 
+    /* Domain header — non-sticky; domain name merges into task-list-header via JS */
     .project-header {
-        position: sticky;
-        top: 36px; /* below filter bar */
-        z-index: 5;
-        background: rgba(255, 255, 255, 0.02) !important;
-        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
-        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        position: relative;
+        z-index: auto;
         border-bottom: none !important;
         border-radius: 0 !important;
         padding: 8px 12px 8px 16px !important;
@@ -1573,10 +1591,11 @@ img, a {
         backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
     }
 
+    [data-theme="dark"] .header-domain-label {
+        color: var(--text-primary);
+    }
+
     [data-theme="dark"] .project-header {
-        background: rgba(0, 0, 0, 0.02) !important;
-        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
-        backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
         border-bottom-color: transparent !important;
     }
 }

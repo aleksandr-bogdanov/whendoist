@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.75 — 2026-02-10
+
+### Added
+- **Sticky domain label in header (mobile)** — When scrolling through a domain's tasks, the domain name (emoji + name + count) appears left-aligned in the task-list-header row, merged with the sort buttons. Replaces the separate sticky domain headers
+- **Spectrum bar re-enabled on mobile** — The gradient clarity bar below the header acts as a visual separator between the header and task content
+- **SW cache v13→v14**
+
+---
+
 ## v0.42.74 — 2026-02-10
 
 ### Changed
