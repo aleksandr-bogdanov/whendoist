@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import __version__
 from app.config import get_settings
 from app.constants import get_user_today
 from app.database import get_db
@@ -87,8 +88,9 @@ def render_template(request: Request, template_name: str, context: dict) -> HTML
 
     This wrapper ensures all templates have access to the csrf_token variable.
     """
-    # Add CSRF token to context (from middleware-populated session)
+    # Add CSRF token and version to context
     context["csrf_token"] = get_csrf_token(request)
+    context["app_version"] = __version__
     context["request"] = request
     return templates.TemplateResponse(template_name, context)
 
