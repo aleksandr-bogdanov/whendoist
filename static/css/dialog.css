@@ -164,7 +164,7 @@ body.modal-open {
 
 .capture-title {
     font-size: 1.05rem;
-    font-weight: 650;
+    font-weight: 600;
     height: 54px;
 }
 
@@ -361,7 +361,7 @@ body.modal-open {
     border: 0;
     background: transparent;
     font-size: 0.68rem;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1;
     color: var(--text-secondary);
     cursor: pointer;
@@ -720,7 +720,7 @@ body.modal-open {
     border: 1px solid var(--border-default);
     background: var(--bg-surface);
     font-size: 0.6rem;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1;
     color: var(--text-secondary);
     cursor: pointer;

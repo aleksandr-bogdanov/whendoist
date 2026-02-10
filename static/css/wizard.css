@@ -1668,7 +1668,7 @@ body.keyboard-open .wizard-nav {
 
 .wizard-stat-value {
     font-size: 2.25rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--primary);
     line-height: 1;
 }
@@ -1882,7 +1882,7 @@ body.keyboard-open .wizard-nav {
 
 .wizard-domain-add-icon {
     font-size: 1.5rem;
-    font-weight: 300;
+    font-weight: 400;
     color: var(--text-muted);
     line-height: 1;
 }

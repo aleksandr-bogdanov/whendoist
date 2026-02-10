@@ -595,7 +595,7 @@ body:has(.login-page) .site-header {
 .login-value-punchline em {
     color: var(--primary);
     font-style: normal;
-    font-weight: 650;
+    font-weight: 600;
 }
 
 /* =============================================================================

@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.79 — 2026-02-10
+
+### Changed
+- **SVG tab icons** — Replaced emoji tab icons (📋/📅) with SVG sprite references for consistent rendering
+- **Font-weight fixes** — Remapped 13 invalid font-weight values to Nunito's loaded range (400-700)
+- **Pico form font** — Override `--pico-form-element-font-family` so form inputs use Nunito
+- **Unified glass navbar** — Desktop site header and task-list header now share the same glass treatment (`--glass-bg-strong` + backdrop blur)
+- **Dark mode hairline separator** — Mobile task separators now use light rgba on dark backgrounds
+- **Dark mode tab text** — Fixed hardcoded `#777` to `var(--text-muted)` in mobile tab bar
+
+---
+
 ## v0.42.78 — 2026-02-10
 
 ### Changed

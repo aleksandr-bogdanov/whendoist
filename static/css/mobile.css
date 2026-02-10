@@ -319,7 +319,9 @@ img, a {
 
 /* Telegram: icons ~24px, clean line style */
 .tab-icon {
-    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
 }
 
@@ -346,7 +348,7 @@ img, a {
         background: var(--primary, #6D5EF6);
         color: white;
         font-size: 1.4rem;
-        font-weight: 300;
+        font-weight: 400;
         line-height: 1;
         border: none;
         box-shadow: 0 2px 8px rgba(109, 94, 246, 0.25);
@@ -868,6 +870,10 @@ img, a {
     /* Telegram-style hairline separators between tasks */
     .task-item + .task-item {
         border-top: 0.5px solid rgba(15, 23, 42, 0.06);
+    }
+
+    [data-theme="dark"] .task-item + .task-item {
+        border-top-color: rgba(248, 250, 252, 0.06);
     }
 
     /* Project groups - cleaner on mobile */
@@ -1555,7 +1561,7 @@ img, a {
 }
 
 [data-theme="dark"] .mobile-tab {
-    color: #777;
+    color: var(--text-muted);
     background: rgba(30, 30, 30, 0.75);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     backdrop-filter: blur(40px) saturate(180%);

@@ -18,6 +18,7 @@ body {
     --pico-font-size: 15px;
     --pico-container-max-width: 1800px;
     --pico-block-spacing-horizontal: 1rem;
+    --pico-form-element-font-family: var(--font-app, 'Nunito', sans-serif);
 
     /* Layout dimensions */
     --calendar-width: 420px;
@@ -100,7 +101,9 @@ html, body {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: var(--bg-canvas);  /* Blend with page background */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     min-height: 80px;  /* Use min-height so safe-area padding can expand it */
     padding: 15px var(--content-padding);  /* Match container-fluid padding */
     display: flex;
