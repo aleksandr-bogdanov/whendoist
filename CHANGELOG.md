@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.62 — 2026-02-10
+
+### Changed
+- **Floating glass energy selector on mobile** — Moved the energy mode selector from the task list header to a floating iOS-style glass segmented control above the bottom tab bar. Uses `position: fixed` with backdrop-filter blur, text labels ("Zombie" / "Normal" / "Focus") via CSS `::after` pseudo-elements. CSS-only change — no HTML or JS modifications. Reverts to inline header position on landscape tablets
+
 ## v0.42.61 — 2026-02-10
 
 ### Fixed
