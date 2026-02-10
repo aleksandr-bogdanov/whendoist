@@ -63,7 +63,14 @@
                 : (projectName ? projectName.textContent.trim() : '');
             var count = countEl ? countEl.textContent.trim() : '';
 
-            label.textContent = (emoji ? emoji + ' ' : '') + name + (count ? '  ' + count : '');
+            label.textContent = '';
+            label.appendChild(document.createTextNode((emoji ? emoji + ' ' : '') + name));
+            if (count) {
+                var countSpan = document.createElement('span');
+                countSpan.className = 'header-domain-count';
+                countSpan.textContent = count;
+                label.appendChild(countSpan);
+            }
             label.classList.add('active');
         } else {
             if (currentDomainId !== null) {

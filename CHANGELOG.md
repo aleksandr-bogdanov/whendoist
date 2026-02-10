@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.81 — 2026-02-10
+
+### Changed
+- **Transparent site header (mobile)** — Light mode site header now uses ultra-transparent glass (`rgba(255,255,255,0.02)` + 50px blur) matching the task-list-header
+- **Smaller CSS chevrons** — Domain collapse chevrons reduced from 7px to 5px for a subtler look
+- **Larger domain names** — `.project-name` font bumped from 0.9rem to 0.95rem
+- **Sticky domain count pill** — Task count in sticky header now renders as a pill badge (matching actual domain headers) instead of plain text
+
+---
+
 ## v0.42.80 — 2026-02-10
 
 ### Changed
