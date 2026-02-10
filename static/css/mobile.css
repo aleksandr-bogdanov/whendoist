@@ -585,6 +585,11 @@ img, a {
     .project-header {
         padding: 10px 12px;
     }
+
+    /* Project header z-index for sticky (below task-list-header z-index: 10) */
+    .project-header {
+        z-index: 5;
+    }
 }
 
 /* =============================================================================
@@ -884,6 +889,31 @@ img, a {
 
     .mobile-tab {
         height: 52px;
+    }
+
+    /* Flatten domain cards - borderless sections with sticky headers */
+    .project-group {
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        margin-bottom: 0;
+        overflow: visible; /* Required for sticky headers */
+    }
+
+    .project-header {
+        position: sticky;
+        top: 36px; /* below filter bar */
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-subtle);
+        border-radius: 0;
+        padding: 8px 12px;
+    }
+
+    /* Thin divider between groups instead of card borders */
+    .project-group + .project-group {
+        border-top: 1px solid var(--border-default);
+        margin-top: 4px;
+        padding-top: 4px;
     }
 
     /* Adjust panel height for smaller header (44px) */
