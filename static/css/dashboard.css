@@ -1037,8 +1037,8 @@
 .project-header::before {
     content: "";
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 5px;
+    height: 5px;
     border-right: 1.5px solid var(--text-muted);
     border-bottom: 1.5px solid var(--text-muted);
     transform: rotate(-45deg);
@@ -1053,7 +1053,7 @@
 
 .project-name {
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: var(--text-primary);
 }
 

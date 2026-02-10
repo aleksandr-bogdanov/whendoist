@@ -490,6 +490,13 @@ img, a {
         overscroll-behavior: contain;
     }
 
+    /* Site header - ultra-transparent glass on mobile (light mode) */
+    .site-header {
+        background: rgba(255, 255, 255, 0.02) !important;
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
+    }
+
     /* Task list header - ultra-transparent glass, seamless with site header */
     .task-list-header {
         position: sticky;
@@ -544,6 +551,19 @@ img, a {
     .header-domain-label.active {
         display: inline-flex;
         align-items: center;
+    }
+
+    /* Task count pill inside sticky domain label — matches .task-count in domain headers */
+    .header-domain-count {
+        font-size: 0.55rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        background: rgba(15, 23, 42, 0.05);
+        padding: 1px 5px;
+        border-radius: 9999px;
+        margin-left: 4px;
+        line-height: 1.4;
+        flex-shrink: 0;
     }
 
     /* Hide kebab menu on mobile - not needed */
