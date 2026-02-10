@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.59 — 2026-02-10
+
+### Fixed
+- **Mobile tab bar too short** — Restored vertical layout (`flex-direction: column`) with icon stacked above label, increased height from 44px to 56px matching typical iOS tab bar buttons
+- **Sort headers misaligned with task metadata** — Added `!important` to task-meta gap, widths, and padding to beat dashboard.css overrides (which loads after mobile.css); added `margin-left: auto` and `border: none` for pixel-perfect alignment with header-meta columns
+- **Grey square on navbar button** — Cleared persistent `:focus`/`:focus-visible` background on `.nav-item` that lingered after tap on iOS; added transparent background override in mobile media query
+- **Page body scrolling from bottom bar** — Added `overflow: hidden`, `height: 100%`, and `overscroll-behavior: none` on `html, body` inside the 900px mobile query so only `.task-list-container` scrolls
+
 ## v0.42.58 — 2026-02-10
 
 ### Fixed
