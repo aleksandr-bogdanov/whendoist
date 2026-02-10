@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.57 — 2026-02-10
+
+### Fixed
+- **Sticky task-list header broken on mobile** — `transform: translateZ(0)` on `.task-list-container` (GPU hint from dashboard.css) and `will-change: transform` on `.task-list-header` broke `position: sticky` on mobile WebKit/Blink. Override both to `none`/`auto` in mobile.css. Also added `overscroll-behavior: contain` to prevent vertical scroll chaining to body.
+
 ## v0.42.56 — 2026-02-10
 
 ### Fixed
