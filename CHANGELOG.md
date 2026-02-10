@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.61 — 2026-02-10
+
+### Fixed
+- **Nav underline position** — Underline was rendering below the nav bar because `min-height: 44px` made items overflow the 28px container. Replaced with `::before` pseudo-element for invisible 44px touch target while keeping visual height at 24px so underline sits at the container's bottom edge
+
 ## v0.42.60 — 2026-02-10
 
 ### Fixed

@@ -1125,13 +1125,23 @@ img, a {
         display: none !important;
     }
 
-    /* Nav items - 44px touch target, reserve border space to prevent shift */
+    /* Nav items — keep visual 24px height, expand touch target via ::before */
     .nav-item {
-        min-height: 44px;
         display: inline-flex;
         align-items: center;
+        position: relative;
         border-bottom: 2px solid transparent !important;
         border-radius: 0 !important;
+    }
+
+    /* Invisible 44px touch target (same pattern as .header-sort) */
+    .nav-item::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        bottom: -10px;
+        left: -4px;
+        right: -4px;
     }
 
     /* Active nav — underline indicator instead of grey background pill */
