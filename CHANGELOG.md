@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.93 — 2026-02-11
+
+### Fixed
+- **Calendar fade gradient matches tasks panel** — Removed `overflow: hidden` from `.calendar-panel.mobile-active` (the `.hour-grid` already contains its own scrolling) and changed the `::after` gradient back to `position: fixed`, matching the tasks panel. The previous `overflow: hidden` was trapping `position: fixed` children on iOS Safari, causing the gradient to render on a different compositing path.
+
+---
+
 ## v0.42.92 — 2026-02-11
 
 ### Fixed
