@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.3 — 2026-02-11
+
+### Fixed
+- **Thoughts rows give more space to text** — Hidden decorative dot on mobile (saves ~18px), zeroed gap between action buttons (saves 6px). On iPhone SE (375px), thought text now gets ~24px more horizontal space.
+- **Submit button less loud** — Changed from solid purple circle with white icon to subtle grey-fill circle with purple icon, matching the input bar aesthetic. Dark mode uses dark fill with same purple icon.
+
+---
+
 ## v0.44.2 — 2026-02-11
 
 ### Fixed
