@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.87 — 2026-02-11
+
+### Changed
+- **Domain label animation (mobile)** — Header domain label now fades in/expands smoothly via `opacity` + `flex-grow` transition instead of jarring `display: none` toggle
+- **Full-height panels (mobile)** — Task and calendar panels extend full viewport height; content scrolls behind the glass tab bar instead of leaving a white gap at the bottom
+- **Glass tab bar active state** — Active tab uses white glass + subtle shadow (matching energy selector) instead of flat purple tint
+
+---
+
 ## v0.42.86 — 2026-02-11
 
 ### Fixed
