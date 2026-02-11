@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.95 — 2026-02-11
+
+### Fixed
+- **Calendar fade gradient visible on mobile (mask-image)** — Replaced `position: fixed` gradient overlay with `mask-image` on `.calendar-carousel`. Previous approaches (v0.42.91–v0.42.94) all used overlay elements (`::after` pseudo-elements or real divs with `position: fixed`), but iOS Safari's `-webkit-overflow-scrolling: touch` on the carousel creates a compositing layer that paints **above** fixed-position elements — making the overlay invisible. The new approach uses CSS `mask-image` directly on the carousel element, which modifies the element's own rendering output rather than fighting compositing layers. The content itself fades to transparent, revealing the page background. This auto-adapts to dark mode (no separate dark-mode gradient rule needed) and works identically across Chromium, WebKit, and iOS Safari. Also clears `.day-calendar` backgrounds on mobile to transparent so the mask fade reveals the page background cleanly.
+
+---
+
 ## v0.42.94 — 2026-02-11
 
 ### Fixed
