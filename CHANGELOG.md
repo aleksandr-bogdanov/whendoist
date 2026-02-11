@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.84 — 2026-02-10
+
+### Fixed
+- **Unified glass layer (mobile)** — Replaced two separate `backdrop-filter` panels (site-header + task-list-header) with a single `::before` pseudo on `.task-list-container`. Both headers are now transparent; the glass comes from one element — no seam, no boundary artifact. Hidden spectrum bar between headers.
+
+---
+
 ## v0.42.83 — 2026-02-10
 
 ### Changed
