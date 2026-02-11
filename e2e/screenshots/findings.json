@@ -1,0 +1,527 @@
+[
+  {
+    "category": "touch-targets",
+    "severity": "warning",
+    "description": "Energy pill (.energy-pill) is 84x34px, below 44px min",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".tab-label font-size 9px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".nav-item font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-clarity font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-duration font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-impact font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".task-due font-size 9.75px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".section-sep-label font-size 9.75px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".hour-label font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".event-title font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".day-header-date font-size 9px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".header-sort font-size 7.5px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "webkit"
+  },
+  {
+    "category": "touch-targets",
+    "severity": "warning",
+    "description": "Energy pill (.energy-pill) is 84x34px, below 44px min",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".tab-label font-size 9px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".nav-item font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-clarity font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-duration font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-impact font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".task-due font-size 9.75px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".section-sep-label font-size 9.75px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".hour-label font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".event-title font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".day-header-date font-size 9px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".header-sort font-size 7.5px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "webkit"
+  },
+  {
+    "category": "touch-targets",
+    "severity": "warning",
+    "description": "Energy pill (.energy-pill) is 84x34px, below 44px min",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".tab-label font-size 9px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".nav-item font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-clarity font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-duration font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-impact font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".task-due font-size 9.75px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".section-sep-label font-size 9.75px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".hour-label font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".event-title font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".day-header-date font-size 9px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".header-sort font-size 7.5px is very small",
+    "viewport": "iPhone14",
+    "engine": "webkit"
+  },
+  {
+    "category": "bottom-chrome",
+    "severity": "bug",
+    "description": "Energy selector overlaps tab bar by 0px",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "touch-targets",
+    "severity": "warning",
+    "description": "Energy pill (.energy-pill) is 83x34px, below 44px min",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".tab-label font-size 9px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".nav-item font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-clarity font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-duration font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-impact font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".task-due font-size 9.75px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".section-sep-label font-size 9.75px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".hour-label font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".event-title font-size 8.25px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".day-header-date font-size 9px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".header-sort font-size 7.5px is very small",
+    "viewport": "iPhone15ProMax",
+    "engine": "chromium"
+  },
+  {
+    "category": "bottom-chrome",
+    "severity": "bug",
+    "description": "Energy selector overlaps tab bar by 0px",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "touch-targets",
+    "severity": "warning",
+    "description": "Energy pill (.energy-pill) is 83x34px, below 44px min",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".tab-label font-size 9px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".nav-item font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-clarity font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-duration font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-impact font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".task-due font-size 9.75px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".section-sep-label font-size 9.75px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".hour-label font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".event-title font-size 8.25px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".day-header-date font-size 9px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".header-sort font-size 7.5px is very small",
+    "viewport": "iPhoneSE",
+    "engine": "chromium"
+  },
+  {
+    "category": "bottom-chrome",
+    "severity": "bug",
+    "description": "Energy selector overlaps tab bar by 0px",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "touch-targets",
+    "severity": "warning",
+    "description": "Energy pill (.energy-pill) is 83x34px, below 44px min",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".tab-label font-size 9px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".nav-item font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-clarity font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-duration font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".meta-impact font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".task-due font-size 9.75px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".section-sep-label font-size 9.75px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".hour-label font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".event-title font-size 8.25px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".day-header-date font-size 9px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  },
+  {
+    "category": "typography",
+    "severity": "warning",
+    "description": ".header-sort font-size 7.5px is very small",
+    "viewport": "iPhone14",
+    "engine": "chromium"
+  }
+]

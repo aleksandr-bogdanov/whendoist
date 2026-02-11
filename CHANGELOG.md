@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.98 — 2026-02-11
+
+### Added
+- **Playwright mobile UX audit infrastructure** — Audit script (`e2e/mobile-audit.mjs`), static HTML reproduction, Playwright config, and `.gitignore` patterns. Design docs from previous mobile UX sessions.
+
+---
+
 ## v0.42.97 — 2026-02-11
 
 ### Fixed
