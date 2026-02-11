@@ -69,7 +69,7 @@ class MobileTabs {
     switchTo(view) {
         // Save scroll position of outgoing panel
         if (this.activeTab === 'tasks') {
-            var scrollEl = this.tasksPanel?.querySelector('.task-list-container');
+            var scrollEl = this.tasksPanel;
             if (scrollEl) this._tasksScrollTop = scrollEl.scrollTop;
         } else if (this.activeTab === 'schedule') {
             var scrollEl = this.calendarPanel?.querySelector('.calendar-scroll');
@@ -97,7 +97,7 @@ class MobileTabs {
         // Restore scroll position of incoming panel
         requestAnimationFrame(() => {
             if (view === 'tasks') {
-                var scrollEl = this.tasksPanel?.querySelector('.task-list-container');
+                var scrollEl = this.tasksPanel;
                 if (scrollEl) scrollEl.scrollTop = this._tasksScrollTop || 0;
             } else if (view === 'schedule') {
                 var scrollEl = this.calendarPanel?.querySelector('.calendar-scroll');
