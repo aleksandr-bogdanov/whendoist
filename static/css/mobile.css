@@ -456,7 +456,7 @@ img, a {
         bottom: 0;
         left: 0;
         right: 0;
-        height: calc(84px + env(safe-area-inset-bottom, 0px));
+        height: calc(120px + env(safe-area-inset-bottom, 0px));
         background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
         z-index: 98;
         pointer-events: none;
@@ -1424,11 +1424,6 @@ img, a {
 
     .calendar-toolbar {
         bottom: calc(1rem + 56px + env(safe-area-inset-bottom, 0px)) !important;
-    }
-
-    /* Bottom fade gradient — taller at 580px (energy pill sits 2px higher) */
-    .tasks-panel.mobile-active::after {
-        height: calc(86px + env(safe-area-inset-bottom, 0px));
     }
 
     /* Floating energy pill — smaller tab bar at 580px */

@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.89 — 2026-02-11
+
+### Changed
+- **Progressive domain label (mobile)** — Label now starts appearing one row earlier (when domain header top touches sticky header, not when fully behind). Smooth crossfade in both scroll directions via exit-fade from next group's header proximity.
+- **Bottom fade gradient (mobile)** — Taller gradient (120px) now starts at the top of the energy bar, fading from fully transparent to solid at the viewport bottom.
+
+---
+
 ## v0.42.88 — 2026-02-11
 
 ### Added
