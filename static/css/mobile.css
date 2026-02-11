@@ -475,7 +475,7 @@ img, a {
         flex-direction: column;
         height: 100vh;
         height: var(--app-height, 100vh);
-        overflow: visible;
+        overflow: visible !important;
         border-radius: 0;
         border: none;
         background: transparent;
@@ -483,10 +483,11 @@ img, a {
         padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Bottom fade gradient for calendar — identical to tasks panel gradient.
-       position: fixed works now that the panel has overflow: visible. */
-    .calendar-panel.mobile-active::after {
-        content: '';
+    /* Bottom fade gradient for calendar — real DOM element instead of ::after
+       pseudo-element. The carousel uses -webkit-overflow-scrolling: touch which
+       promotes it to a compositing layer on iOS, trapping ::after pseudo-elements.
+       A real div with position: fixed renders in its own compositing layer. */
+    .calendar-panel.mobile-active .calendar-fade-gradient {
         position: fixed;
         bottom: 0;
         left: 0;
@@ -1697,7 +1698,7 @@ img, a {
 
     /* Dark mode: bottom fade gradient — fade to dark canvas */
     [data-theme="dark"] .tasks-panel.mobile-active::after,
-    [data-theme="dark"] .calendar-panel.mobile-active::after {
+    [data-theme="dark"] .calendar-panel.mobile-active .calendar-fade-gradient {
         background: linear-gradient(to bottom, rgba(15,23,42,0), rgba(15,23,42,1));
     }
 

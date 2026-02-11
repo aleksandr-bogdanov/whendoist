@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.94 — 2026-02-11
+
+### Fixed
+- **Calendar fade gradient visible on mobile** — Replaced `::after` pseudo-element with a real `<div class="calendar-fade-gradient">` DOM element placed outside the `.calendar-carousel` scroll container. The carousel's `-webkit-overflow-scrolling: touch` promotes it to a compositing layer on iOS Safari, trapping pseudo-elements. A real div with `position: fixed` renders independently. Also added `!important` to `overflow: visible` on the calendar panel.
+
+---
+
 ## v0.42.93 — 2026-02-11
 
 ### Fixed
