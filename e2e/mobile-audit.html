@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mobile UX Audit - Whendoist</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/vendor/pico.min.css">
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <link rel="stylesheet" href="/static/css/components/index.css">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/brand.css">
+    <link rel="stylesheet" href="/static/css/mobile.css">
+    <!-- dashboard.css loads AFTER mobile.css (via {% block extra_css %} in production) -->
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/dialog.css">
+    <script>
+    // Theme initialization
+    (function() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+    })();
+    // Dynamic viewport height
+    function setVh() {
+        var vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
+        document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+    }
+    setVh();
+    window.addEventListener('resize', setVh);
+    </script>
+</head>
+<body>
+    <div id="a11y-announcer" aria-live="polite" class="sr-only"></div>
+
+    <!-- SVG sprites inline -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <symbol id="task-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </symbol>
+        <symbol id="calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </symbol>
+        <symbol id="plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </symbol>
+        <symbol id="search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </symbol>
+        <symbol id="logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </symbol>
+        <symbol id="menu-dots-stroke" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+        </symbol>
+        <symbol id="arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </symbol>
+        <symbol id="upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </symbol>
+        <symbol id="skip-forward" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
+        </symbol>
+    </svg>
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="brand brand-icon" aria-label="Whendoist">
+                <svg viewBox="38 40 180 160" aria-hidden="true">
+                    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                </svg>
+            </a>
+            <div class="header-spacer"></div>
+            <nav class="header-nav">
+                <a href="/thoughts" class="nav-item">Thoughts</a>
+                <a href="/dashboard" class="nav-item active">Tasks</a>
+                <a href="/analytics" class="nav-item">Analytics</a>
+                <a href="/settings" class="nav-item">Settings</a>
+            </nav>
+            <button type="button" class="header-search-btn" aria-label="Search">
+                <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#search"></use></svg>
+            </button>
+            <a href="/auth/logout" class="btn-logout" title="Logout">
+                <svg class="icon" width="18" height="18" aria-hidden="true"><use href="#logout"></use></svg>
+            </a>
+        </div>
+    </header>
+
+    <main id="main-content" class="container-fluid" role="main">
+        <div class="tasks-layout">
+            <!-- Mobile Tab Switcher -->
+            <div class="mobile-tabs">
+                <button type="button" class="mobile-tab active" data-view="tasks" aria-selected="true">
+                    <span class="tab-icon"><svg width="20" height="20"><use href="#task-list"/></svg></span>
+                    <span class="tab-label">Tasks</span>
+                </button>
+                <button type="button" class="mobile-tab-add" aria-label="Add Task" title="Quick add task">
+                    <svg width="24" height="24"><use href="#plus"/></svg>
+                </button>
+                <button type="button" class="mobile-tab" data-view="schedule" aria-selected="false">
+                    <span class="tab-icon"><svg width="20" height="20"><use href="#calendar"/></svg></span>
+                    <span class="tab-label">Schedule</span>
+                </button>
+            </div>
+
+            <!-- LEFT PANEL: Task List -->
+            <section class="tasks-panel mobile-active">
+                <div class="energy-wrapper" id="header-energy">
+                    <span class="energy-label">Energy</span>
+                    <div class="header-energy__pills">
+                        <button type="button" class="energy-pill" data-energy="1" aria-pressed="false" title="Zombie">&#x1F9DF;</button>
+                        <button type="button" class="energy-pill active" data-energy="2" aria-pressed="true" title="Normal">&#x2615;</button>
+                        <button type="button" class="energy-pill" data-energy="3" aria-pressed="false" title="Focus">&#x1F9E0;</button>
+                    </div>
+                    <div class="clarity-dots" id="clarity-dots">
+                        <span class="cdot cdot-autopilot"></span>
+                        <span class="cdot cdot-normal"></span>
+                        <span class="cdot cdot-brainstorm"></span>
+                    </div>
+                </div>
+                <div class="task-list-container">
+                    <div class="task-list-header">
+                        <div class="header-row1">
+                            <button type="button" class="header-back-btn" id="header-back-btn" hidden>
+                                <svg class="icon icon-sm back-arrow" aria-hidden="true"><use href="#arrow-left"></use></svg>
+                            </button>
+                            <span class="header-domain-label" id="header-domain-label"></span>
+                            <span class="header-meta" id="header-sorts">
+                                <button type="button" class="header-sort active" data-sort="clarity" data-order="asc" title="Sort by clarity">
+                                    <span class="label-full">Clarity</span><span class="label-compact">CLR</span>
+                                    <span class="sort-icon">&uarr;</span>
+                                </button>
+                                <button type="button" class="header-sort" data-sort="duration" title="Sort by duration">
+                                    <span class="label-full">Duration</span><span class="label-compact">DUR</span>
+                                    <span class="sort-icon"></span>
+                                </button>
+                                <button type="button" class="header-sort" data-sort="impact" title="Sort by impact">
+                                    <span class="label-full">Impact</span><span class="label-compact">IMP</span>
+                                    <span class="sort-icon"></span>
+                                </button>
+                            </span>
+                            <div class="settings-anchor">
+                                <button type="button" class="gear-btn" id="gear-btn" title="Settings">&#x2699;</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-list-scroll" id="task-list-scroll">
+                        <!-- Domain Group 1: Work -->
+                        <details class="project-group" open data-domain-id="1" data-domain-name="Work">
+                            <summary class="project-header">
+                                <span class="project-name">&#x1F4BC; <span class="domain-name-text">Work</span></span>
+                                <span class="task-count">5</span>
+                                <span class="header-spacer"></span>
+                                <button type="button" class="domain-add-btn" data-domain-id="1" aria-label="Add task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#plus"/></svg></button>
+                            </summary>
+                            <div class="task-list">
+                                <!-- Task 1: High impact, autopilot -->
+                                <div class="task-item impact-1" data-clarity="autopilot" data-impact="1" data-task-id="101" data-completed="0" data-duration="30" data-title="Review Q4 financial reports and prepare summary for board meeting" draggable="true">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Review Q4 financial reports and prepare summary for board meeting</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-autopilot">Autopilot</span>
+                                        <span class="meta-duration">30m</span>
+                                        <span class="meta-impact impact-1">High</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <!-- Task 2: Medium impact, brainstorm -->
+                                <div class="task-item impact-2" data-clarity="brainstorm" data-impact="2" data-task-id="102" data-completed="0" data-duration="60" data-title="Draft product roadmap for next quarter" draggable="true">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Draft product roadmap for next quarter</span>
+                                        <span class="task-due">Feb 15</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-brainstorm">Brainstorm</span>
+                                        <span class="meta-duration">1h</span>
+                                        <span class="meta-impact impact-2">Mid</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <!-- Task 3: Low impact, no clarity -->
+                                <div class="task-item impact-3" data-clarity="normal" data-impact="3" data-task-id="103" data-completed="0" data-duration="15" data-title="Update project dependencies to latest versions" draggable="true">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Update project dependencies to latest versions</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-normal"></span>
+                                        <span class="meta-duration">15m</span>
+                                        <span class="meta-impact impact-3">Low</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <!-- Task 4: Recurring with due date -->
+                                <div class="task-item impact-2 scheduled" data-clarity="autopilot" data-impact="2" data-task-id="104" data-completed="0" data-duration="45" data-is-recurring="true" data-title="Weekly team standup notes" draggable="false">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Weekly team standup notes</span>
+                                        <span class="task-due"><span class="recurring-icon" title="Recurring task">&#x21BB;</span> Feb 12</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-autopilot">Autopilot</span>
+                                        <span class="meta-duration">45m</span>
+                                        <span class="meta-impact impact-2">Mid</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <!-- Task 5: Child task with breadcrumb -->
+                                <div class="task-item impact-1" data-clarity="normal" data-impact="1" data-task-id="105" data-completed="0" data-duration="20" data-parent-id="101" data-title="Compile expense data from accounting" draggable="true">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-breadcrumb">Review Q4 financial reports &rarr;</span>
+                                        <span class="task-text">Compile expense data from accounting</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-normal"></span>
+                                        <span class="meta-duration">20m</span>
+                                        <span class="meta-impact impact-1">High</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <div class="add-task-row" data-domain-id="1">
+                                    <span class="add-task-icon">+</span>
+                                    <span class="add-task-text">Add task</span>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Domain Group 2: Personal -->
+                        <details class="project-group" open data-domain-id="2" data-domain-name="Personal">
+                            <summary class="project-header">
+                                <span class="project-name">&#x1F3E0; <span class="domain-name-text">Personal</span></span>
+                                <span class="task-count">3</span>
+                                <span class="header-spacer"></span>
+                                <button type="button" class="domain-add-btn" data-domain-id="2" aria-label="Add task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#plus"/></svg></button>
+                            </summary>
+                            <div class="task-list">
+                                <div class="task-item impact-4" data-clarity="autopilot" data-impact="4" data-task-id="201" data-completed="0" data-duration="10" data-title="Buy groceries for dinner" draggable="true">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Buy groceries for dinner</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-autopilot">Autopilot</span>
+                                        <span class="meta-duration">10m</span>
+                                        <span class="meta-impact impact-4">Min</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <div class="task-item impact-3" data-clarity="brainstorm" data-impact="3" data-task-id="202" data-completed="0" data-duration="" data-title="Plan summer vacation itinerary with family members and coordinate travel dates across multiple timezones" draggable="true">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Plan summer vacation itinerary with family members and coordinate travel dates across multiple timezones</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-brainstorm">Brainstorm</span>
+                                        <span class="meta-duration">&mdash;</span>
+                                        <span class="meta-impact impact-3">Low</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <div class="task-item impact-2" data-clarity="normal" data-impact="2" data-task-id="203" data-completed="0" data-duration="120" data-title="Deep clean apartment" draggable="true">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Deep clean apartment</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-normal"></span>
+                                        <span class="meta-duration">2h</span>
+                                        <span class="meta-impact impact-2">Mid</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <div class="add-task-row" data-domain-id="2">
+                                    <span class="add-task-icon">+</span>
+                                    <span class="add-task-text">Add task</span>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Scheduled Section -->
+                        <details class="section-group" id="section-sched" open>
+                            <summary class="section-separator section-separator--sched">
+                                <span class="sched-label-group">
+                                    <span class="section-sep-label">Scheduled</span>
+                                    <span class="section-count">2</span>
+                                    <span class="sched-label-line"></span>
+                                    <span class="sep-col-label">Date</span>
+                                </span>
+                                <span class="sep-col-label">Clarity</span>
+                                <span class="sep-col-label">Dur</span>
+                                <span class="sep-col-label">Impact</span>
+                                <span class="sep-col-spacer"></span>
+                            </summary>
+                            <div class="section-tasks">
+                                <div class="task-item impact-1 scheduled" data-clarity="autopilot" data-impact="1" data-task-id="301" data-completed="0" data-duration="60" data-scheduled-date="2026-02-12" data-title="Client presentation">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Client presentation</span>
+                                        <span class="task-due today">Feb 12</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-autopilot">Autopilot</span>
+                                        <span class="meta-duration">1h</span>
+                                        <span class="meta-impact impact-1">High</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                                <div class="task-item impact-3 scheduled" data-clarity="normal" data-impact="3" data-task-id="302" data-completed="0" data-duration="30" data-scheduled-date="2026-02-14" data-title="Dentist appointment">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Dentist appointment</span>
+                                        <span class="task-due">Feb 14</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-normal"></span>
+                                        <span class="meta-duration">30m</span>
+                                        <span class="meta-impact impact-3">Low</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Completed Section -->
+                        <details class="section-group" id="section-done">
+                            <summary class="section-separator">
+                                <span class="section-sep-label">Completed</span>
+                                <span class="section-count">1</span>
+                            </summary>
+                            <div class="section-tasks">
+                                <div class="task-item impact-2" data-clarity="autopilot" data-impact="2" data-task-id="401" data-completed="1" data-duration="15" data-title="Send invoice to client">
+                                    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="true">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <div class="task-content">
+                                        <span class="task-text">Send invoice to client</span>
+                                    </div>
+                                    <div class="task-meta">
+                                        <span class="meta-clarity clarity-autopilot">Autopilot</span>
+                                        <span class="meta-duration">15m</span>
+                                        <span class="meta-impact impact-2">Mid</span>
+                                    </div>
+                                    <span class="task-actions">
+                                        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="#menu-dots-stroke"/></svg></button>
+                                    </span>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: Day Calendar -->
+            <aside class="calendar-panel" data-hour-height="60">
+                <div class="calendar-toolbar">
+                    <button type="button" id="go-to-today-btn" class="go-to-today-btn">Today</button>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" data-zoom="out" title="Zoom out">&minus;</button>
+                        <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
+                    </div>
+                </div>
+                <div class="calendar-carousel" id="calendar-carousel">
+                    <div class="day-calendar today" data-day="2026-02-11" id="today-calendar">
+                        <div class="day-header">
+                            <div class="day-header-nav">
+                                <button type="button" class="day-nav-btn day-nav-prev" aria-label="Previous day">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="15 18 9 12 15 6"></polyline>
+                                    </svg>
+                                </button>
+                                <span class="day-header-date">Wednesday, Feb 11</span>
+                                <button type="button" class="day-nav-btn day-nav-next" aria-label="Next day">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                            <button type="button" class="plan-day-btn" title="Plan My Day">
+                                <span class="action-emoji">&#x2728;</span>
+                                <span class="action-name">Plan My Day</span>
+                            </button>
+                        </div>
+
+                        <div class="date-only-banner" data-day="2026-02-11" data-droppable="anytime">
+                            <span class="date-only-label">Anytime</span>
+                            <div class="date-only-tasks">
+                                <div class="date-only-task calendar-item impact-2" data-task-id="501" data-completed="0" data-duration="30" data-title="Review pull requests">
+                                    <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="false">
+                                        <span class="complete-bar"></span>
+                                        <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                    </button>
+                                    <span class="date-only-task-duration">30m</span>
+                                    <span class="date-only-task-text">Review pull requests</span>
+                                    <button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="#upload"/></svg></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="hour-grid">
+                            <div class="hour-row" data-hour="7"><span class="hour-label">07:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="8"><span class="hour-label">08:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="9">
+                                <span class="hour-label">09:00</span>
+                                <div class="hour-slot" data-droppable="true">
+                                    <div class="calendar-event duration-long" style="height: 60px; top: 0px;" data-start-mins="540" data-end-mins="600">
+                                        <div class="event-left">
+                                            <span class="event-time">09:00</span>
+                                            <span class="event-duration">1h</span>
+                                        </div>
+                                        <span class="event-title">Team standup &amp; sprint planning</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hour-row" data-hour="10">
+                                <span class="hour-label">10:00</span>
+                                <div class="hour-slot" data-droppable="true">
+                                    <div class="scheduled-task calendar-item impact-1 duration-medium from-db" style="height: 45px; top: 0px;" data-task-id="301" data-completed="0" data-duration="45" data-title="Client presentation">
+                                        <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="false">
+                                            <span class="complete-bar"></span>
+                                            <span class="complete-check" aria-hidden="true">&#x2713;</span>
+                                        </button>
+                                        <div class="scheduled-task-left">
+                                            <span class="scheduled-task-time">10:00</span>
+                                            <span class="scheduled-task-duration">45m</span>
+                                        </div>
+                                        <span class="scheduled-task-text">Client presentation</span>
+                                        <button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="#upload"/></svg></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hour-row" data-hour="11"><span class="hour-label">11:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="12">
+                                <span class="hour-label">12:00</span>
+                                <div class="hour-slot" data-droppable="true">
+                                    <div class="calendar-event duration-medium" style="height: 30px; top: 0px;" data-start-mins="720" data-end-mins="750">
+                                        <div class="event-left">
+                                            <span class="event-time">12:00</span>
+                                        </div>
+                                        <span class="event-title">Lunch with Sarah</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hour-row" data-hour="13"><span class="hour-label">13:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="14">
+                                <span class="hour-label">14:00</span>
+                                <div class="hour-slot" data-droppable="true">
+                                    <div class="calendar-event duration-long" style="height: 90px; top: 30px;" data-start-mins="870" data-end-mins="960">
+                                        <div class="event-left">
+                                            <span class="event-time">14:30</span>
+                                            <span class="event-duration">1h30m</span>
+                                        </div>
+                                        <span class="event-title">Workshop: Design system migration</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hour-row" data-hour="15"><span class="hour-label">15:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="16"><span class="hour-label">16:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="17"><span class="hour-label">17:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="18"><span class="hour-label">18:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="19"><span class="hour-label">19:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="20"><span class="hour-label">20:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                            <div class="hour-row" data-hour="21"><span class="hour-label">21:00</span><div class="hour-slot" data-droppable="true"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="calendar-fade-gradient"></div>
+            </aside>
+        </div>
+
+        <!-- Add Task FAB -->
+        <button type="button" class="add-task-btn" aria-label="Add Task" title="Quick add task"></button>
+    </main>
+
+    <!-- Bottom sheet (for dialog audit) -->
+    <div class="sheet-backdrop" id="sheet-backdrop"></div>
+    <div class="bottom-sheet" id="bottom-sheet">
+        <div class="sheet-handle"><div class="sheet-handle-bar"></div></div>
+        <div class="sheet-header">
+            <h3 class="sheet-title">Task Actions</h3>
+            <div class="sheet-task-title">Review Q4 financial reports and prepare summary for board meeting next week</div>
+        </div>
+        <div class="sheet-content">
+            <div class="action-sheet-actions">
+                <button class="sheet-action">
+                    <span class="action-icon"><svg class="icon" width="24" height="24"><use href="#calendar"/></svg></span>
+                    <span class="action-label">Schedule</span>
+                </button>
+                <button class="sheet-action">
+                    <span class="action-icon"><svg class="icon" width="24" height="24"><use href="#upload"/></svg></span>
+                    <span class="action-label">Move</span>
+                </button>
+                <button class="sheet-action">
+                    <span class="action-icon"><svg class="icon" width="24" height="24"><use href="#plus"/></svg></span>
+                    <span class="action-label">Subtask</span>
+                </button>
+                <button class="sheet-action sheet-action--danger">
+                    <span class="action-icon"><svg class="icon" width="24" height="24"><use href="#plus"/></svg></span>
+                    <span class="action-label">Delete</span>
+                </button>
+            </div>
+            <button class="sheet-cancel">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Task dialog (for dialog audit) -->
+    <div class="modal-backdrop" id="task-modal" style="display: none;">
+        <div class="modal-window">
+            <div class="modal-hd">
+                <div class="modal-hd-left"><span class="modal-title">Edit Task</span></div>
+                <button class="modal-close-btn" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="capture-stack">
+                    <input type="text" class="capture-field capture-title" placeholder="Task title" value="Review Q4 financial reports">
+                    <div class="capture-divider"></div>
+                    <textarea class="capture-field capture-desc" placeholder="Add description..."></textarea>
+                </div>
+                <div class="modal-section">
+                    <div class="detail-row">
+                        <span class="detail-label">Duration</span>
+                        <div class="detail-control duration-control">
+                            <div class="segmented duration-seg">
+                                <button class="seg-btn">15m</button>
+                                <button class="seg-btn is-active">30m</button>
+                                <button class="seg-btn">1h</button>
+                                <button class="seg-btn">2h</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Impact</span>
+                        <div class="detail-control">
+                            <div class="segmented">
+                                <button class="seg-btn is-active" data-impact="1">High</button>
+                                <button class="seg-btn" data-impact="2">Mid</button>
+                                <button class="seg-btn" data-impact="3">Low</button>
+                                <button class="seg-btn" data-impact="4">Min</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Clarity</span>
+                        <div class="detail-control">
+                            <div class="mode-chips">
+                                <button class="mode-chip active" data-clarity="autopilot">Autopilot</button>
+                                <button class="mode-chip" data-clarity="brainstorm">Brainstorm</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-ft">
+                <div class="ft-left">
+                    <button class="btn btn-danger-outline">Delete</button>
+                </div>
+                <div class="ft-right">
+                    <button class="btn btn-ghost">Cancel</button>
+                    <button class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Tab switching
+    document.querySelectorAll('.mobile-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.mobile-tab').forEach(function(t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+            var view = tab.dataset.view;
+            document.querySelector('.tasks-panel').classList.toggle('mobile-active', view === 'tasks');
+            document.querySelector('.calendar-panel').classList.toggle('mobile-active', view === 'schedule');
+        });
+    });
+    </script>
+</body>
+</html>
