@@ -478,14 +478,19 @@ img, a {
         overflow: hidden;
         border-radius: 0;
         border: none;
+        background: transparent;
         padding-top: var(--header-h);
         padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Bottom fade gradient for calendar — same pattern as tasks panel */
+    /* Bottom fade gradient for calendar.
+       position: absolute (not fixed) because the calendar panel itself doesn't
+       scroll — .hour-grid does.  The panel has position: relative + overflow: hidden
+       which would clip a fixed ::after.  absolute anchors to the panel bottom
+       (= viewport bottom since panel is height: 100vh). */
     .calendar-panel.mobile-active::after {
         content: '';
-        position: fixed;
+        position: absolute;
         bottom: 0;
         left: 0;
         right: 0;

@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.92 — 2026-02-11
+
+### Fixed
+- **Calendar fade gradient not visible on mobile** — Changed `position: fixed` to `position: absolute` for the calendar panel's bottom fade `::after`. The calendar panel has `position: relative` + `overflow: hidden` which trapped the fixed-positioned gradient. Since the hour-grid (not the panel) scrolls, absolute positioning anchors correctly at the panel bottom. Also made the calendar panel background transparent on mobile so the gradient blends cleanly to the page canvas.
+
+---
+
 ## v0.42.91 — 2026-02-11
 
 ### Added
