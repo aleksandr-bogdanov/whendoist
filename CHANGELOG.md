@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.1 — 2026-02-11
+
+### Fixed
+- **Thoughts page mobile polish** — Hidden panel header ("X Thoughts") and "ENTER" hint that wasted vertical space. Capture input restyled as borderless search bar (grey fill, rounded, no focus ring) matching iOS patterns. Action buttons converted from boxy bordered rectangles to ghost icons (transparent bg, no border, circular touch targets, muted color). Thought rows given transparent background for seamless edge-to-edge feel. Text allowed to wrap to 2 lines (matching task items). Dark mode counterparts for all new styles.
+
+---
+
 ## v0.44.0 — 2026-02-11
 
 ### Added
