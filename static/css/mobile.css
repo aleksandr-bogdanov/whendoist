@@ -492,28 +492,46 @@ img, a {
         will-change: auto;
     }
 
-    /* Task list header — sticky below fixed site-header, glass effect now
-       works because content scrolls behind it via tasks-panel scroll. */
+    /* Unified glass layer — single ::before covers both site-header and
+       task-list-header areas. Eliminates the seam between two separate
+       backdrop-filter elements. Sticky at top:0 so it covers both areas
+       when scrolled. z-index 5: above content, below headers' text. */
+    .task-list-container::before {
+        content: '';
+        display: block;
+        position: sticky;
+        top: 0;
+        height: calc(var(--header-h) + 44px);
+        margin-bottom: calc(-1 * (var(--header-h) + 44px));
+        background: rgba(255, 255, 255, 0.72);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
+        z-index: 5;
+        pointer-events: none;
+    }
+
+    /* Task list header — sticky, TRANSPARENT. Glass comes from the unified
+       ::before pseudo above. z-index 10 keeps text above the glass layer. */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
         padding: 2px 8px 0 12px !important;
-        background: rgba(255, 255, 255, 0.72) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        backdrop-filter: blur(20px) saturate(180%);
+        background: transparent !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
         will-change: auto;
         border: none !important;
     }
 
-    /* Remove solid background cover pseudo-element — glass doesn't need it */
+    /* Remove solid background cover pseudo-element — not needed */
     .task-list-header::before {
         display: none !important;
     }
 
-    /* Spectrum bar — visible on mobile as separator below domain label */
+    /* Hide spectrum bar — no separator between the two transparent headers */
     .task-list-header::after {
-        display: block !important;
+        display: none !important;
     }
 
     /* Filter bar row - flex override for mobile */
@@ -1261,16 +1279,17 @@ img, a {
         --header-h: 44px;
     }
 
-    /* Site header — fixed with glass. Content scrolls behind it in
-       .tasks-panel (the scroll container), creating visible blur. */
+    /* Site header — fixed, TRANSPARENT. Glass comes from the unified
+       .task-list-container::before pseudo. z-index 100 keeps nav text
+       above the glass layer. */
     .site-header {
         position: fixed !important;
         left: 0;
         right: 0;
         max-width: none !important;
-        background: rgba(255, 255, 255, 0.72) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        backdrop-filter: blur(20px) saturate(180%);
+        background: transparent !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
         min-height: var(--header-h) !important;
@@ -1622,11 +1641,18 @@ img, a {
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
     }
 
-    /* Dark mode: site header — glass with dark tint */
-    [data-theme="dark"] .site-header {
-        background: rgba(15, 23, 42, 0.72) !important;
+    /* Dark mode: unified glass pseudo — same approach, dark tint */
+    [data-theme="dark"] .task-list-container::before {
+        background: rgba(15, 23, 42, 0.72);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         backdrop-filter: blur(20px) saturate(180%);
+    }
+
+    /* Dark mode: both headers transparent — glass from the pseudo */
+    [data-theme="dark"] .site-header {
+        background: transparent !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
         padding: 8px 16px 0 !important;
     }
 
@@ -1635,9 +1661,9 @@ img, a {
     }
 
     [data-theme="dark"] .task-list-header {
-        background: rgba(15, 23, 42, 0.72) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        backdrop-filter: blur(20px) saturate(180%);
+        background: transparent !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
     }
 
     [data-theme="dark"] .header-domain-label {
