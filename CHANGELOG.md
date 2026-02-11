@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.88 — 2026-02-11
+
+### Added
+- **Bottom fade gradient (mobile)** — Task content now fades out smoothly at the bottom before reaching the energy selector and tab bar, instead of abruptly cutting off. Dark mode uses matching dark canvas color.
+
+### Changed
+- **Progressive domain label (mobile)** — Domain label in the sticky header now reveals proportionally to scroll position instead of toggling as a binary on/off. Scrolling between domains produces a natural crossfade.
+
+---
+
 ## v0.42.87 — 2026-02-11
 
 ### Changed
