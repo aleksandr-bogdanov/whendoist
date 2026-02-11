@@ -748,13 +748,13 @@ img, a {
         z-index: 99;
         margin: 0 !important;
         padding: 4px !important;
-        background: rgba(255, 255, 255, 0.01) !important;
+        background: rgba(255, 248, 235, 0.35) !important;
         -webkit-backdrop-filter: blur(40px) saturate(180%);
         backdrop-filter: blur(40px) saturate(180%);
-        border: 0.5px solid rgba(255, 255, 255, 0.15) !important;
+        border: 0.5px solid rgba(255, 245, 220, 0.4) !important;
         border-radius: 18px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06),
-                    inset 0 0.5px 0 rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 20px rgba(120, 90, 40, 0.06),
+                    inset 0 0.5px 0 rgba(255, 250, 230, 0.4);
         gap: 2px;
     }
 
@@ -799,11 +799,11 @@ img, a {
         color: var(--text-secondary);
     }
 
-    /* Active segment — half-transparent pill */
+    /* Active segment — warm glass pill */
     .energy-wrapper .energy-pill.active {
-        background: rgba(255, 255, 255, 0.2) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05),
-                    0 0.5px 1px rgba(0, 0, 0, 0.03) !important;
+        background: rgba(255, 252, 245, 0.45) !important;
+        box-shadow: 0 1px 4px rgba(120, 90, 40, 0.06),
+                    0 0.5px 1px rgba(120, 90, 40, 0.03) !important;
     }
 
     .energy-wrapper .energy-pill.active::after {
@@ -814,9 +814,9 @@ img, a {
     .energy-pill.active[data-energy="1"],
     .energy-pill.active[data-energy="2"],
     .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.2) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05),
-                    0 0.5px 1px rgba(0, 0, 0, 0.03) !important;
+        background: rgba(255, 252, 245, 0.45) !important;
+        box-shadow: 0 1px 4px rgba(120, 90, 40, 0.06),
+                    0 0.5px 1px rgba(120, 90, 40, 0.03) !important;
     }
 
     /* Task item - compact row with flex layout, matching Thoughts view.
@@ -2185,19 +2185,19 @@ img, a {
 /* Dark mode — ultra-transparent glass everywhere */
 @media (max-width: 900px) {
     [data-theme="dark"] .energy-wrapper {
-        background: rgba(0, 0, 0, 0.01) !important;
+        background: rgba(45, 35, 20, 0.25) !important;
         -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
         backdrop-filter: blur(40px) saturate(180%) !important;
-        border-color: rgba(255, 255, 255, 0.06) !important;
+        border-color: rgba(255, 230, 180, 0.08) !important;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15),
-                    inset 0 0.5px 0 rgba(255, 255, 255, 0.05) !important;
+                    inset 0 0.5px 0 rgba(255, 240, 200, 0.06) !important;
     }
 
     [data-theme="dark"] .energy-wrapper .energy-pill.active,
     [data-theme="dark"] .energy-pill.active[data-energy="1"],
     [data-theme="dark"] .energy-pill.active[data-energy="2"],
     [data-theme="dark"] .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.04) !important;
+        background: rgba(255, 245, 220, 0.06) !important;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
     }
 
