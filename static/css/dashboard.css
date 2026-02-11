@@ -2809,7 +2809,7 @@ body[data-energy-level] .scheduled-group.project-group {
     .date-only-label {
         width: 40px;
         padding: 0.25rem 0.375rem;
-        font-size: 0.65rem;
+        font-size: 0.7rem;
     }
 
     .date-only-tasks {
@@ -2823,11 +2823,11 @@ body[data-energy-level] .scheduled-group.project-group {
 
     .date-only-task {
         padding: 0.125rem 0.375rem;
-        font-size: 0.7rem;
+        font-size: 0.8rem;
     }
 
     .date-only-task-duration {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
 
     .day-header {
@@ -2835,7 +2835,7 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     .day-header-date {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
 
     .plan-day-btn .action-emoji {
@@ -2843,7 +2843,7 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     .plan-day-btn .action-name {
-        font-size: 0.5rem;
+        font-size: 0.67rem;
     }
 }
 
@@ -3192,7 +3192,7 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     .calendar-title {
-        font-size: 0.5rem;
+        font-size: 0.67rem;
     }
 
     .calendar-action-btn {
@@ -3205,7 +3205,7 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     .action-name {
-        font-size: 0.5rem;
+        font-size: 0.67rem;
     }
 
     /* Smaller hour rows for mobile */
@@ -3218,9 +3218,9 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     .hour-label {
-        width: 40px;
+        width: 44px;
         padding: 0.25rem 0.375rem;
-        font-size: 0.55rem;
+        font-size: 0.67rem;
     }
 
     .hour-slot {
@@ -3265,11 +3265,11 @@ body[data-energy-level] .scheduled-group.project-group {
     }
 
     .project-name {
-        font-size: 0.8rem;
+        font-size: 0.87rem;
     }
 
     .task-count {
-        font-size: 0.65rem;
+        font-size: 0.73rem;
         padding: 0.0625rem 0.25rem;
     }
 
@@ -3311,14 +3311,14 @@ body[data-energy-level] .scheduled-group.project-group {
     .plan-helper {
         top: 3rem;
         right: 0.375rem;
-        font-size: 0.55rem;
+        font-size: 0.67rem;
         padding: 0.375rem 0.5rem;
     }
 
     /* Scheduled tasks and events - smaller on mobile */
     .calendar-event,
     .scheduled-task {
-        font-size: 0.55rem;
+        font-size: 0.67rem;
         padding: 1px 0.25rem;
     }
 
