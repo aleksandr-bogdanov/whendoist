@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.7 — 2026-02-11
+
+### Fixed
+- **Toast dismiss button no longer clipped on iPhone SE** — `width: 100%` on `.toast` caused overflow beyond the container's `left`/`right` bounds. Changed to `width: auto` with `box-sizing: border-box` so the toast sizes naturally within the fixed-position container.
+
+---
+
 ## v0.44.6 — 2026-02-11
 
 ### Fixed

@@ -2121,7 +2121,8 @@ img, a {
 
     .toast {
         max-width: none !important;
-        width: 100% !important;
+        width: auto !important;
+        box-sizing: border-box !important;
         gap: 8px !important;
         padding: 10px 10px 10px 12px !important;
     }
