@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.85 — 2026-02-11
+
+### Fixed
+- **Seamless glass header (mobile)** — Fixed broken `::before` pseudo approach from v0.42.84 that created a blank gap. Instead, the `.task-list-header` itself extends upward behind the transparent fixed site-header using `margin-top: -var(--header-h)` + `padding-top: var(--header-h)`. One continuous glass element covers both header areas — no seam, no gap.
+
+---
+
 ## v0.42.84 — 2026-02-10
 
 ### Fixed
