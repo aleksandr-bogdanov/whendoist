@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.82 — 2026-02-10
+
+### Fixed
+- **Truly transparent site header (mobile)** — Removed backdrop-filter and background entirely. Glass blur over a static white canvas is invisible (nothing scrolls behind the site-header), so 2% opacity + blur still rendered as solid white. Now `background: transparent` with no filter — seamless with page background.
+
+---
+
 ## v0.42.81 — 2026-02-10
 
 ### Changed
