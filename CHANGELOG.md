@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.86 — 2026-02-11
+
+### Fixed
+- **Seamless glass header (mobile)** — Fixed 46px blank gap from v0.42.85. Root cause: `position: sticky` constrains elements to the scroll container's **content box**, so `margin-top: -44px` was clamped by `.tasks-panel`'s `padding-top: 44px`. Fix: removed padding-top from `.tasks-panel` entirely — the task-list-header's own `padding-top` now handles both the glass extension and the fixed-header offset.
+
+---
+
 ## v0.42.85 — 2026-02-11
 
 ### Fixed
