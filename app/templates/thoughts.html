@@ -29,7 +29,12 @@
                        placeholder="Capture a thought..."
                        autocomplete="off"
                        aria-label="Capture a thought">
-                <span class="thoughts-capture-hint">Enter</span>
+                <button type="button" class="thoughts-submit-btn" id="thought-submit-btn" aria-label="Add thought">
+                    <span class="submit-label">Enter</span>
+                    <svg class="submit-icon icon icon-xs" aria-hidden="true">
+                        <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-up"></use>
+                    </svg>
+                </button>
             </div>
             <div class="thought-list" id="thought-list">
                 {% if tasks %}
@@ -130,32 +135,42 @@ document.addEventListener('DOMContentLoaded', () => {
         countEl.textContent = `${thoughtCount} Thought${thoughtCount !== 1 ? 's' : ''}`;
     }
 
-    input.addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter' && input.value.trim()) {
-            e.preventDefault();
-            const title = input.value.trim();
-            input.value = '';
+    async function submitThought() {
+        if (!input.value.trim()) return;
+        const title = input.value.trim();
+        input.value = '';
 
-            try {
-                // E2E Encryption: Encrypt if enabled
-                const encryptedTitle = await Crypto.encryptField(title);
+        try {
+            // E2E Encryption: Encrypt if enabled
+            const encryptedTitle = await Crypto.encryptField(title);
 
-                const response = await fetch('/api/v1/tasks', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: encryptedTitle })
-                });
+            const response = await fetch('/api/v1/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: encryptedTitle })
+            });
 
-                if (response.ok) {
-                    const task = await response.json();
-                    // Use original plaintext title for display
-                    task.title = title;
-                    addThoughtToList(task);
-                }
-            } catch (err) {
-                console.error('Failed to create thought:', err);
+            if (response.ok) {
+                const task = await response.json();
+                // Use original plaintext title for display
+                task.title = title;
+                addThoughtToList(task);
             }
+        } catch (err) {
+            console.error('Failed to create thought:', err);
         }
+    }
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            submitThought();
+        }
+    });
+
+    document.getElementById('thought-submit-btn').addEventListener('click', () => {
+        submitThought();
+        input.focus();
     });
 
     function addThoughtToList(task) {

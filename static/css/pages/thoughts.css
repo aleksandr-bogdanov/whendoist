@@ -148,16 +148,35 @@
     box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.1);
 }
 
-.thoughts-capture-hint {
+/* Submit button — desktop: looks like keyboard hint badge, but clickable */
+.thoughts-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 8px;
+    background: var(--bg-panel);
+    border: none;
+    border-radius: var(--radius-xs);
     font-size: 0.5625rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-muted);
     white-space: nowrap;
-    padding: 3px 6px;
-    background: var(--bg-panel);
-    border-radius: var(--radius-xs);
+    cursor: pointer;
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.thoughts-submit-btn:hover {
+    color: var(--text-secondary);
+    background: var(--border-subtle);
+}
+
+/* Desktop: show text label, hide icon */
+.thoughts-submit-btn .submit-icon {
+    display: none;
 }
 
 /* 7) Thought Rows - dense like TASKS, not cards */
@@ -429,8 +448,12 @@ html:not([data-theme="dark"]) .thought-actions .icon-btn.delete:hover {
     color: var(--text-muted);
 }
 
-[data-theme="dark"] .thoughts-capture-hint {
+[data-theme="dark"] .thoughts-submit-btn {
     background: var(--bg-surface);
+}
+
+[data-theme="dark"] .thoughts-submit-btn:hover {
+    background: var(--border-default);
 }
 
 [data-theme="dark"] .thought-row {
