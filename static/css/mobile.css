@@ -310,11 +310,13 @@ img, a {
     transform: scale(0.95);
 }
 
-/* Active tab — accent-tinted glass pill */
+/* Active tab — white glass pill with accent text (matches energy selector) */
 .mobile-tab.active {
-    background: rgba(109, 94, 246, 0.12);
-    border-color: rgba(109, 94, 246, 0.15);
+    background: rgba(255, 255, 255, 0.45);
+    border-color: rgba(0, 0, 0, 0.06);
     color: var(--primary, #6D5EF6);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
+                0 0.5px 1px rgba(0, 0, 0, 0.04);
 }
 
 /* Telegram: icons ~24px, clean line style */
@@ -433,8 +435,8 @@ img, a {
        fixed-header offset AND provides the seamless glass layer. */
     .tasks-panel.mobile-active {
         display: block !important;
-        height: calc(100vh - 44px);
-        height: calc(var(--app-height, 100vh) - 44px);
+        height: 100vh;
+        height: var(--app-height, 100vh);
         overflow-y: auto !important;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
@@ -455,8 +457,8 @@ img, a {
     .calendar-panel.mobile-active {
         display: flex !important;
         flex-direction: column;
-        height: calc(100vh - 44px);
-        height: calc(var(--app-height, 100vh) - 44px);
+        height: 100vh;
+        height: var(--app-height, 100vh);
         overflow: hidden;
         border-radius: 0;
         border: none;
@@ -479,8 +481,8 @@ img, a {
 
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 44px - env(safe-area-inset-top, 0px));
-            height: calc(var(--app-height, 100vh) - 44px - env(safe-area-inset-top, 0px));
+            height: 100vh;
+            height: var(--app-height, 100vh);
         }
     }
 
@@ -531,10 +533,13 @@ img, a {
     }
 
     /* Header domain label — shows current domain name merged into sort header.
-       Hidden by default; JS adds .active when a domain scrolls to top. */
+       Always in the flex flow but collapsed when inactive (flex-grow: 0,
+       opacity: 0). JS adds .active which transitions flex-grow + opacity
+       for a smooth expand/fade rather than a jarring display toggle. */
     .header-domain-label {
-        display: none;
-        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        flex: 0 1 0px;
         min-width: 0;
         font-size: 0.7rem;
         font-weight: 600;
@@ -543,12 +548,13 @@ img, a {
         overflow: hidden;
         text-overflow: ellipsis;
         line-height: 1;
-        opacity: 0.85;
+        opacity: 0;
+        transition: opacity 0.25s ease, flex-grow 0.3s ease;
     }
 
     .header-domain-label.active {
-        display: inline-flex;
-        align-items: center;
+        flex: 1 1 0px;
+        opacity: 0.85;
     }
 
     /* Task count pill inside sticky domain label — matches .task-count in domain headers */
@@ -1388,16 +1394,16 @@ img, a {
         border-radius: 0 !important;
     }
 
-    /* Adjust panel height for smaller header (44px) */
+    /* Full-height panels — content scrolls behind glass tab bar */
     .tasks-panel.mobile-active {
-        height: calc(100vh - 44px);
-        height: calc(var(--app-height, 100vh) - 44px);
+        height: 100vh;
+        height: var(--app-height, 100vh);
         padding-bottom: 0;
     }
 
     .calendar-panel.mobile-active {
-        height: calc(100vh - 44px);
-        height: calc(var(--app-height, 100vh) - 44px);
+        height: 100vh;
+        height: var(--app-height, 100vh);
         padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
     }
 
@@ -1413,7 +1419,8 @@ img, a {
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
-            height: calc(100vh - 44px - env(safe-area-inset-top, 0px));
+            height: 100vh;
+            height: var(--app-height, 100vh);
         }
     }
 }
@@ -1597,11 +1604,13 @@ img, a {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-/* Active tab — accent-tinted dark glass pill */
+/* Active tab — white glass pill with accent text (dark mode) */
 [data-theme="dark"] .mobile-tab.active {
-    background: rgba(109, 94, 246, 0.2);
-    border-color: rgba(109, 94, 246, 0.2);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.08);
     color: var(--primary, #6D5EF6);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2),
+                0 0.5px 1px rgba(0, 0, 0, 0.12);
 }
 
 [data-theme="dark"] .mobile-tab-add {
