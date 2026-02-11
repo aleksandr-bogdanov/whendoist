@@ -1859,24 +1859,24 @@ img, a {
         background: rgba(15, 23, 42, 0.06) !important;
     }
 
-    /* Bottom fade gradient */
+    /* Bottom fade gradient — shorter than Tasks (no energy pill, just tab bar) */
     .thoughts-page::after {
         content: '';
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        height: calc(120px + env(safe-area-inset-bottom, 0px));
+        height: calc(70px + env(safe-area-inset-bottom, 0px));
         background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
         z-index: 98;
         pointer-events: none;
     }
 
-    /* Scroll spacer */
+    /* Scroll spacer — matches gradient height */
     .thought-list::after {
         content: '';
         display: block;
-        height: calc(120px + env(safe-area-inset-bottom, 0px));
+        height: calc(70px + env(safe-area-inset-bottom, 0px));
     }
 
     /* ── Analytics Page ── */
@@ -1974,24 +1974,24 @@ img, a {
         min-height: 44px;
     }
 
-    /* Bottom fade gradient */
+    /* Bottom fade gradient — shorter than Tasks (no energy pill) */
     .analytics-page::after {
         content: '';
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        height: calc(120px + env(safe-area-inset-bottom, 0px));
+        height: calc(70px + env(safe-area-inset-bottom, 0px));
         background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
         z-index: 98;
         pointer-events: none;
     }
 
-    /* Scroll spacer — on last analytics section */
+    /* Scroll spacer — matches gradient height */
     .analytics-page .page-surface::after {
         content: '';
         display: block;
-        height: calc(120px + env(safe-area-inset-bottom, 0px));
+        height: calc(70px + env(safe-area-inset-bottom, 0px));
     }
 
     /* ── Settings Page ── */
@@ -2092,24 +2092,24 @@ img, a {
         margin: 0 !important;
     }
 
-    /* Bottom fade gradient */
+    /* Bottom fade gradient — shorter than Tasks (no energy pill) */
     .settings-page::after {
         content: '';
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        height: calc(120px + env(safe-area-inset-bottom, 0px));
+        height: calc(70px + env(safe-area-inset-bottom, 0px));
         background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
         z-index: 98;
         pointer-events: none;
     }
 
-    /* Scroll spacer */
+    /* Scroll spacer — matches gradient height */
     .settings-grid::after {
         content: '';
         display: block;
-        height: calc(120px + env(safe-area-inset-bottom, 0px));
+        height: calc(70px + env(safe-area-inset-bottom, 0px));
     }
 }
 
