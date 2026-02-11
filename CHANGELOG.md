@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.83 — 2026-02-10
+
+### Changed
+- **Glass site header with scroll-through content (mobile)** — Restructured mobile layout so `.tasks-panel` is the scroll container (was `.task-list-container`). Site header is now `position: fixed` with real glass (`rgba white 0.72` + 20px blur). Task content scrolls behind both the site-header and task-list-header, making the frosted glass effect actually visible.
+- **CSS custom property `--header-h`** — Header height token (44px, or 44px + safe-area in PWA) used for sticky offset and scroll padding
+- **Updated scroll container in JS** — `sticky-domain.js`, `mobile-core.js`, `mobile-tabs.js` all updated to use `.tasks-panel` as the scroll container
+
+---
+
 ## v0.42.82 — 2026-02-10
 
 ### Fixed

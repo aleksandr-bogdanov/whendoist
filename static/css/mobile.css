@@ -427,18 +427,21 @@ img, a {
         display: none !important;
     }
 
-    /* Show active panel — NO padding-bottom. Content scrolls fully behind
-       both glass elements (energy pill + tab bar) for visible blur. The
-       task-list-scroll gets a bottom spacer via CSS instead. */
+    /* Show active panel — NOW the scroll container (was .task-list-container).
+       Content scrolls behind the fixed site-header for visible glass blur.
+       padding-top offsets content below the fixed header. */
     .tasks-panel.mobile-active {
-        display: flex !important;
-        flex-direction: column;
+        display: block !important;
         height: calc(100vh - 44px);
         height: calc(var(--app-height, 100vh) - 44px);
-        overflow: hidden;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         border-radius: 0;
         border: none;
         padding-bottom: 0;
+        padding-top: var(--header-h);
     }
 
     /* Spacer at the bottom of the scroll area so the last task can be
@@ -470,6 +473,10 @@ img, a {
 
     /* PWA mode - account for safe area in header */
     @media (display-mode: standalone) {
+        :root {
+            --header-h: calc(44px + env(safe-area-inset-top, 0px));
+        }
+
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
             height: calc(100vh - 44px - env(safe-area-inset-top, 0px));
@@ -477,31 +484,25 @@ img, a {
         }
     }
 
-    /* Task list container - scrollable with sticky header */
+    /* Task list container — no longer the scroll container (tasks-panel is).
+       Just a wrapper; overflow visible so sticky children work. */
     .task-list-container {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-        /* Override dashboard.css translateZ(0) — transforms on scroll containers
-           break position:sticky on mobile WebKit/Blink */
+        overflow: visible !important;
         transform: none;
-        /* Prevent vertical scroll chaining to body */
-        overscroll-behavior: contain;
+        will-change: auto;
     }
 
-    /* Task list header - ultra-transparent glass, seamless with site header */
+    /* Task list header — sticky below fixed site-header, glass effect now
+       works because content scrolls behind it via tasks-panel scroll. */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
         padding: 2px 8px 0 12px !important;
-        background: rgba(255, 255, 255, 0.02) !important;
-        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
-        backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
-        /* Override dashboard.css will-change:transform — breaks sticky on mobile */
+        background: rgba(255, 255, 255, 0.72) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
         will-change: auto;
-        /* No border — seamless with site header above */
         border: none !important;
     }
 
@@ -1255,16 +1256,24 @@ img, a {
    ============================================================================= */
 
 @media (max-width: 900px) {
-    /* Site header — fully transparent on mobile. Nothing scrolls behind it
-       (scroll is inside .task-list-container), so glass blur is invisible
-       over a static canvas. Transparent = seamless with page background. */
+    /* Header height token — used for fixed header offset */
+    :root {
+        --header-h: 44px;
+    }
+
+    /* Site header — fixed with glass. Content scrolls behind it in
+       .tasks-panel (the scroll container), creating visible blur. */
     .site-header {
-        background: transparent !important;
-        -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important;
+        position: fixed !important;
+        left: 0;
+        right: 0;
+        max-width: none !important;
+        background: rgba(255, 255, 255, 0.72) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
         border-bottom: none !important;
         box-shadow: none !important;
-        min-height: 44px !important;
+        min-height: var(--header-h) !important;
         padding: 8px 16px 0 !important;
     }
 
@@ -1613,11 +1622,11 @@ img, a {
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
     }
 
-    /* Dark mode: site header — also fully transparent (same reason as light) */
+    /* Dark mode: site header — glass with dark tint */
     [data-theme="dark"] .site-header {
-        background: transparent !important;
-        -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important;
+        background: rgba(15, 23, 42, 0.72) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
         padding: 8px 16px 0 !important;
     }
 
@@ -1626,9 +1635,9 @@ img, a {
     }
 
     [data-theme="dark"] .task-list-header {
-        background: rgba(0, 0, 0, 0.02) !important;
-        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
-        backdrop-filter: blur(50px) saturate(200%) brightness(0.9);
+        background: rgba(15, 23, 42, 0.72) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
     }
 
     [data-theme="dark"] .header-domain-label {

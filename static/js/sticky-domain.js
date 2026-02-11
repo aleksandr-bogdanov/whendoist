@@ -15,7 +15,7 @@
 
     var label = document.getElementById('header-domain-label');
     var header = document.querySelector('.task-list-header');
-    var scrollContainer = document.querySelector('.task-list-container');
+    var scrollContainer = document.querySelector('.tasks-panel');
     if (!label || !header || !scrollContainer) return;
 
     var ticking = false;

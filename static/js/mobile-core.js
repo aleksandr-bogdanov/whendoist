@@ -75,7 +75,7 @@ class PullToRefresh {
         this.threshold = options.threshold || 80;
         this.maxPull = options.maxPull || 120;
         this.onRefresh = options.onRefresh || null;
-        this.container = options.container || document.querySelector('.task-list-container');
+        this.container = options.container || document.querySelector('.tasks-panel');
 
         this.indicator = null;
         this.startY = 0;
