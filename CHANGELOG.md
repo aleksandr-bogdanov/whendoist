@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.10 — 2026-02-11
+
+### Fixed
+- **Undo toast stays visible for 8 seconds** — Was 2.5s, now 8s. Backend deletion delay (5s) unchanged — toast now outlasts the commit window so users always have time to tap Undo.
+
+---
+
 ## v0.44.9 — 2026-02-11
 
 ### Fixed
