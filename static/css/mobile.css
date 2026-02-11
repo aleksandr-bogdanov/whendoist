@@ -429,7 +429,8 @@ img, a {
 
     /* Show active panel — NOW the scroll container (was .task-list-container).
        Content scrolls behind the fixed site-header for visible glass blur.
-       padding-top offsets content below the fixed header. */
+       No padding-top: the task-list-header's own padding-top handles the
+       fixed-header offset AND provides the seamless glass layer. */
     .tasks-panel.mobile-active {
         display: block !important;
         height: calc(100vh - 44px);
@@ -441,7 +442,6 @@ img, a {
         border-radius: 0;
         border: none;
         padding-bottom: 0;
-        padding-top: var(--header-h);
     }
 
     /* Spacer at the bottom of the scroll area so the last task can be
@@ -492,15 +492,16 @@ img, a {
         will-change: auto;
     }
 
-    /* Task list header — sticky, extends UP behind the fixed site-header.
-       margin-top pulls it into the scroll container's padding area;
-       padding-top pushes the sort-row content back down below the fixed header.
-       This creates ONE continuous glass layer for both headers — no seam. */
+    /* Task list header — sticky at top:0, with padding-top that extends the
+       glass behind the transparent fixed site-header. This creates ONE
+       continuous glass layer covering both header areas — no seam.
+       padding-top = header height + 2px gap pushes sort-row below the
+       fixed header. No margin-top trick needed: without padding-top on
+       .tasks-panel, the content box starts at 0 so sticky can reach 0. */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
-        margin-top: calc(-1 * var(--header-h));
         padding: calc(var(--header-h) + 2px) 8px 0 12px !important;
         background: rgba(255, 255, 255, 0.72) !important;
         -webkit-backdrop-filter: blur(20px) saturate(180%);
