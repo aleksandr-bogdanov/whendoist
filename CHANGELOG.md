@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.43.2 — 2026-02-11
+
+### Changed
+- **Much more transparent mobile glass UI** — Reduced opacity on site-header glass (0.72→0.45), mobile tab pills (0.65→0.35), active tabs (0.45→0.25), and energy selector wrapper/pills. Matching dark mode reductions. Content now shows through more clearly for a lighter, airier feel.
+
+---
+
 ## v0.43.1 — 2026-02-11
 
 ### Fixed

@@ -288,11 +288,11 @@ img, a {
     padding: 6px 16px;
     border-radius: 16px;
     /* Each pill has its own glass since the container is invisible */
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.35);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     backdrop-filter: blur(40px) saturate(180%);
-    border: 0.5px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 0.5px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     color: #999;
     font-size: 0.8rem;
     font-weight: 500;
@@ -312,11 +312,11 @@ img, a {
 
 /* Active tab — white glass pill with accent text (matches energy selector) */
 .mobile-tab.active {
-    background: rgba(255, 255, 255, 0.45);
-    border-color: rgba(0, 0, 0, 0.06);
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(0, 0, 0, 0.04);
     color: var(--primary, #6D5EF6);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
-                0 0.5px 1px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05),
+                0 0.5px 1px rgba(0, 0, 0, 0.03);
 }
 
 /* Telegram: icons ~24px, clean line style */
@@ -563,7 +563,7 @@ img, a {
         top: 0;
         z-index: 10;
         padding: calc(var(--header-h) + 2px) 8px 0 12px !important;
-        background: rgba(255, 255, 255, 0.72) !important;
+        background: rgba(255, 255, 255, 0.45) !important;
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         backdrop-filter: blur(20px) saturate(180%);
         will-change: auto;
@@ -748,13 +748,13 @@ img, a {
         z-index: 99;
         margin: 0 !important;
         padding: 4px !important;
-        background: rgba(255, 255, 255, 0.02) !important;
+        background: rgba(255, 255, 255, 0.01) !important;
         -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
         backdrop-filter: blur(50px) saturate(200%) brightness(1.05);
-        border: 0.5px solid rgba(255, 255, 255, 0.25) !important;
+        border: 0.5px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 18px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12),
-                    inset 0 0.5px 0 rgba(255, 255, 255, 0.5);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.3);
         gap: 2px;
     }
 
@@ -801,9 +801,9 @@ img, a {
 
     /* Active segment — half-transparent pill */
     .energy-wrapper .energy-pill.active {
-        background: rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
-                    0 0.5px 1px rgba(0, 0, 0, 0.04) !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05),
+                    0 0.5px 1px rgba(0, 0, 0, 0.03) !important;
     }
 
     .energy-wrapper .energy-pill.active::after {
@@ -814,9 +814,9 @@ img, a {
     .energy-pill.active[data-energy="1"],
     .energy-pill.active[data-energy="2"],
     .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08),
-                    0 0.5px 1px rgba(0, 0, 0, 0.04) !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05),
+                    0 0.5px 1px rgba(0, 0, 0, 0.03) !important;
     }
 
     /* Task item - compact row with flex layout, matching Thoughts view.
@@ -1693,20 +1693,20 @@ img, a {
 
 [data-theme="dark"] .mobile-tab {
     color: var(--text-muted);
-    background: rgba(30, 30, 30, 0.75);
+    background: rgba(30, 30, 30, 0.4);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     backdrop-filter: blur(40px) saturate(180%);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Active tab — white glass pill with accent text (dark mode) */
 [data-theme="dark"] .mobile-tab.active {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.05);
     color: var(--primary, #6D5EF6);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2),
-                0 0.5px 1px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12),
+                0 0.5px 1px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="dark"] .mobile-tab-add {
@@ -1716,25 +1716,25 @@ img, a {
 /* Dark mode — ultra-transparent glass everywhere */
 @media (max-width: 900px) {
     [data-theme="dark"] .energy-wrapper {
-        background: rgba(0, 0, 0, 0.02) !important;
+        background: rgba(0, 0, 0, 0.01) !important;
         -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(0.9) !important;
         backdrop-filter: blur(50px) saturate(200%) brightness(0.9) !important;
-        border-color: rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
-                    inset 0 0.5px 0 rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 255, 255, 0.06) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15),
+                    inset 0 0.5px 0 rgba(255, 255, 255, 0.05) !important;
     }
 
     [data-theme="dark"] .energy-wrapper .energy-pill.active,
     [data-theme="dark"] .energy-pill.active[data-energy="1"],
     [data-theme="dark"] .energy-pill.active[data-energy="2"],
     [data-theme="dark"] .energy-pill.active[data-energy="3"] {
-        background: rgba(255, 255, 255, 0.08) !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
     }
 
     /* Dark mode: glass header — dark tint */
     [data-theme="dark"] .task-list-header {
-        background: rgba(15, 23, 42, 0.72) !important;
+        background: rgba(15, 23, 42, 0.45) !important;
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         backdrop-filter: blur(20px) saturate(180%);
     }
