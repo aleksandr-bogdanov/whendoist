@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.0 — 2026-02-11
+
+### Added
+- **Mobile-first redesign for Thoughts, Analytics & Settings** — All three pages now match the Tasks page's Telegram-inspired mobile experience: full-viewport scrolling, glass-morphism sticky headers with backdrop blur, edge-to-edge flat layout (no card borders/shadows), bottom fade gradients, hairline separators, 44px touch targets, and scroll spacers for tab bar clearance. Dark mode counterparts for all glass and gradient elements. Further tightened at 580px breakpoint for smaller phones.
+
+---
+
 ## v0.43.3 — 2026-02-11
 
 ### Fixed
