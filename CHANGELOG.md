@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.90 — 2026-02-11
+
+### Fixed
+- **Calendar panel shifted to top on mobile** — Schedule view content was rendering behind the fixed site header. Added `padding-top: var(--header-h)` to `.calendar-panel.mobile-active` so day headers and time slots start below the header.
+
+---
+
 ## v0.42.89 — 2026-02-11
 
 ### Changed

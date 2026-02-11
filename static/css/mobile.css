@@ -478,6 +478,7 @@ img, a {
         overflow: hidden;
         border-radius: 0;
         border: none;
+        padding-top: var(--header-h);
         padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
     }
 
