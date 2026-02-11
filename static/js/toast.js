@@ -33,7 +33,7 @@ const Toast = (function() {
     };
 
     const DURATIONS = {
-        success: { default: 3000, withAction: 8000 },
+        success: { default: 3000, withAction: 5000 },
         info: { default: 4000, withAction: 8000 },
         warning: { default: 5000, withAction: 8000 },
         error: { default: 6000, withAction: null }  // persistent with action

@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.11 — 2026-02-11
+
+### Changed
+- **Warm-tinted energy selector glass** — Shifted from cool white to warm cream tint (`rgba(255,248,235,0.35)`) matching the task/schedule background warmth. Active pill, border, and shadow all carry the warm undertone. Dark mode uses warm-amber dark glass.
+- **Toast undo duration set to 5 seconds** — Reverted from 8s to 5s per user preference.
+
+---
+
 ## v0.44.10 — 2026-02-11
 
 ### Fixed
