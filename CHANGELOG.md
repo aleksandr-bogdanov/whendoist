@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.99 — 2026-02-11
+
+### Fixed
+- **Mobile font sizes too small on iPhone** — Increased font sizes across mobile CSS (`mobile.css`, `app.css`, `dashboard.css`) to improve readability on 430px iPhone screens. Task titles: 12→13px, metadata: 8.25→9.75px, header sort buttons: 7.5→9px, tab labels: 9→10.5px, nav items: 8.25→9.75px. Meta column widths widened in lockstep (header + task rows) to accommodate larger text. All changes scoped inside `@media (max-width: 900px)` or `@media (max-width: 580px)` — no desktop impact.
+
+---
+
 ## v0.42.98 — 2026-02-11
 
 ### Added
