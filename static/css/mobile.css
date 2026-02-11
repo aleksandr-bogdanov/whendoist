@@ -2130,6 +2130,9 @@ img, a {
     .toast-message {
         font-size: 0.8rem !important;
         min-width: 0 !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
     }
 
     .toast-dismiss {
