@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.4 — 2026-02-11
+
+### Fixed
+- **Thoughts row visual balance** — Asymmetric row padding (16px left, 4px right) because the 44px action buttons provide their own visual inset. Buttons now hug the right edge, balancing the dense left-aligned text. 580px gets 12px/2px.
+
+---
+
 ## v0.44.3 — 2026-02-11
 
 ### Fixed
