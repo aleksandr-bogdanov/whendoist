@@ -4,9 +4,10 @@
  * task-list-header as the user scrolls through domain sections.
  *
  * The label progressively reveals proportional to scroll position:
- * as a project-header scrolls behind the sticky header, the domain
- * label fades in and expands. This creates smooth crossfades when
- * scrolling between domains.
+ * - progress=0 when the project-header top touches the sticky header bottom
+ * - progress=1 when the project-header bottom passes behind the sticky header
+ * - Near domain boundaries, an exit-fade reduces progress so the label
+ *   crossfades smoothly when scrolling in either direction.
  *
  * Layout when scrolled into a domain:
  *   🎵 Music Hustle  13      CLARITY ↑  DUR  IMPACT
@@ -31,12 +32,14 @@
         var headerBottom = header.getBoundingClientRect().bottom;
         var groups = scrollContainer.querySelectorAll('.project-group');
         var activeGroup = null;
+        var activeIndex = -1;
 
         for (var i = 0; i < groups.length; i++) {
             var rect = groups[i].getBoundingClientRect();
             // Group is active if it spans the header's bottom edge
             if (rect.top <= headerBottom && rect.bottom > headerBottom) {
                 activeGroup = groups[i];
+                activeIndex = i;
                 break;
             }
         }
@@ -44,13 +47,34 @@
         if (activeGroup) {
             var domainId = activeGroup.dataset.domainId || '';
 
-            // Calculate scroll-proportional progress from project-header position
+            // Enter progress: how far the active group's header has gone behind
+            // the sticky header. Starts when header TOP touches (progress=0),
+            // reaches 1 when header BOTTOM passes behind (fully hidden).
             var ph = activeGroup.querySelector('.project-header');
-            var progress = 0;
+            var enterProgress = 0;
             if (ph) {
                 var phRect = ph.getBoundingClientRect();
-                var distance = headerBottom - phRect.bottom;
-                progress = Math.max(0, Math.min(1, distance / phRect.height));
+                var distance = headerBottom - phRect.top;
+                enterProgress = Math.max(0, Math.min(1, distance / phRect.height));
+            }
+
+            var progress = enterProgress;
+
+            // Exit fade: when the NEXT group's header is near the sticky header
+            // edge from below, reduce progress for a smooth crossfade at domain
+            // boundaries. This handles scrolling up (returning to a previous
+            // domain) gracefully — the label fades in proportionally as the next
+            // group's header moves away, instead of snapping to full opacity.
+            var nextGroup = groups[activeIndex + 1];
+            if (nextGroup) {
+                var nextPh = nextGroup.querySelector('.project-header');
+                if (nextPh) {
+                    var nextPhRect = nextPh.getBoundingClientRect();
+                    var gap = nextPhRect.top - headerBottom;
+                    if (gap >= 0 && gap < nextPhRect.height) {
+                        progress = Math.min(progress, gap / nextPhRect.height);
+                    }
+                }
             }
 
             // Only swap text content when domain changes (optimization)
