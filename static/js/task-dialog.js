@@ -1249,9 +1249,8 @@
         pendingDeletion = { taskId, removedElements };
 
         // Show toast with undo
-        const displayTitle = taskTitle.length > 30 ? taskTitle.substring(0, 30) + '...' : taskTitle;
         if (window.Toast) {
-            Toast.show(`"${displayTitle}" deleted`, {
+            Toast.show(`"${taskTitle}" deleted`, {
                 onUndo: () => undoDialogDelete()
             });
         }

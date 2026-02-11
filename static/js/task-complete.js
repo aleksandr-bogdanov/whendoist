@@ -621,9 +621,7 @@
 
         // Show toast with undo
         var taskTitle = taskEl.querySelector('.task-text')?.textContent || 'Task';
-        var displayTitle = taskTitle.length > 30 ? taskTitle.substring(0, 30) + '...' : taskTitle;
-
-        showToast('"' + displayTitle + '" deleted', function() { undoDeleteFromMenu(); });
+        showToast('"' + taskTitle + '" deleted', function() { undoDeleteFromMenu(); });
 
         // Remove elements from DOM after animation
         setTimeout(function() {

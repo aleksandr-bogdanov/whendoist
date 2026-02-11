@@ -593,10 +593,8 @@
 
         // Show toast with undo
         const taskTitle = content || 'Task';
-        const displayTitle = taskTitle.length > 30 ? taskTitle.substring(0, 30) + '...' : taskTitle;
-
         if (window.Toast) {
-            Toast.show(`"${displayTitle}" deleted`, {
+            Toast.show(`"${taskTitle}" deleted`, {
                 onUndo: () => undoDelete()
             });
         }

@@ -2131,8 +2131,12 @@ img, a {
         font-size: 0.8rem !important;
         min-width: 0 !important;
         white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 3 !important;
+        -webkit-box-orient: vertical !important;
+        line-height: 1.35 !important;
     }
 
     .toast-dismiss {

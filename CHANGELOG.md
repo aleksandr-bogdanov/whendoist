@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.9 — 2026-02-11
+
+### Fixed
+- **Toast shows full task title instead of truncating at 30 chars** — Removed JS `substring(0, 30)` truncation from all 4 delete flows (thoughts, task-complete, task-dialog, drag-drop). Toast now grows vertically to fit the full message. CSS clamps at 3 lines as a safety net for extremely long titles.
+
+---
+
 ## v0.44.8 — 2026-02-11
 
 ### Fixed
