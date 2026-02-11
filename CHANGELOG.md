@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.5 — 2026-02-11
+
+### Fixed
+- **Reduced bottom empty space on Thoughts, Analytics, Settings** — Fade gradient and scroll spacer reduced from 120px to 70px. The 120px value was copied from Tasks (which needs clearance for both energy pill + tab bar). These pages only have the tab bar (~60px), so 70px is sufficient.
+
+---
+
 ## v0.44.4 — 2026-02-11
 
 ### Fixed
