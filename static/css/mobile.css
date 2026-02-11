@@ -697,6 +697,41 @@ img, a {
         right: -4px;
     }
 
+    /* Touch target expanders for small interactive elements (20px → 44px).
+       Same ::before pattern as .header-sort and .nav-item above. */
+    .day-nav-btn {
+        position: relative;
+    }
+    .day-nav-btn::before {
+        content: '';
+        position: absolute;
+        top: -12px;
+        bottom: -12px;
+        left: -12px;
+        right: -12px;
+    }
+
+    .domain-add-btn {
+        position: relative;
+    }
+    .domain-add-btn::before {
+        content: '';
+        position: absolute;
+        top: -12px;
+        bottom: -12px;
+        left: -12px;
+        right: -12px;
+    }
+
+    .calendar-quick-action::before {
+        content: '';
+        position: absolute;
+        top: -12px;
+        bottom: -12px;
+        left: -12px;
+        right: -12px;
+    }
+
     /* Match column widths to task-meta spans — !important to beat dashboard.css */
     .header-sort[data-sort="duration"] { width: 32px !important; min-width: 32px !important; }
     .header-sort[data-sort="impact"] { width: 24px !important; min-width: 24px !important; }

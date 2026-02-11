@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.96 — 2026-02-11
+
+### Fixed
+- **Mobile touch targets for small buttons** — Added `::before` pseudo-element touch expanders (20px → 44px) for `.day-nav-btn` (calendar navigation), `.domain-add-btn` (project header add button), and `.calendar-quick-action` (calendar card skip/unschedule). Also made `.domain-add-btn` visible on touch devices (was hidden due to hover-only reveal). Verified with Playwright audit across WebKit + Chromium on 3 viewport sizes.
+
+---
+
 ## v0.42.95 — 2026-02-11
 
 ### Fixed
