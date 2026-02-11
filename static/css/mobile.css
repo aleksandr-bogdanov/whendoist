@@ -712,7 +712,7 @@ img, a {
     }
 
     .domain-add-btn {
-        position: relative;
+        position: relative !important; /* beat all:unset in dashboard.css (loads after mobile.css) */
     }
     .domain-add-btn::before {
         content: '';

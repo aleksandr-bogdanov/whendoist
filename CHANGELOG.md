@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.97 — 2026-02-11
+
+### Fixed
+- **Domain add button touch expander cascade fix** — Added `!important` to `position: relative` on `.domain-add-btn` in mobile.css to beat the `all: unset` in dashboard.css which loads later in the cascade. Without this, the `::before` touch expander was anchored to the `.project-header` parent instead of the button, placing the 44px touch target at the wrong position. Also fixed CSS loading order in the Playwright audit test HTML to match production.
+
+---
+
 ## v0.42.96 — 2026-02-11
 
 ### Fixed
