@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.42.91 — 2026-02-11
+
+### Added
+- **Bottom fade gradient on calendar panel (mobile)** — Schedule/Calendar view now has the same smooth bottom fade gradient as the Tasks panel, creating a seamless transition into the energy selector and tab bar. Hour-grid background made transparent so the gradient blends cleanly through calendar content.
+
+---
+
 ## v0.42.90 — 2026-02-11
 
 ### Fixed
