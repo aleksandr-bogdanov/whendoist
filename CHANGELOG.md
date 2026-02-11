@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.43.0 — 2026-02-11
+
+### Removed
+- **Playwright CI workflow** — Removed `.github/workflows/playwright.yml` (was running boilerplate tests against playwright.dev, not Whendoist). Removed `fsevents` from direct dependencies in `package.json` (macOS-only, broke CI on Linux). Local Playwright usage unchanged.
+
+---
+
 ## v0.42.99 — 2026-02-11
 
 ### Fixed
