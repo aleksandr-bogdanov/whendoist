@@ -4071,4 +4071,7 @@ body[data-energy-level] .scheduled-group.project-group {
     .calendar-quick-action {
         opacity: 0.4;
     }
+    .domain-add-btn {
+        opacity: 0.4;
+    }
 }
