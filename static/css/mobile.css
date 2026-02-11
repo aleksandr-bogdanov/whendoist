@@ -492,34 +492,19 @@ img, a {
         will-change: auto;
     }
 
-    /* Unified glass layer — single ::before covers both site-header and
-       task-list-header areas. Eliminates the seam between two separate
-       backdrop-filter elements. Sticky at top:0 so it covers both areas
-       when scrolled. z-index 5: above content, below headers' text. */
-    .task-list-container::before {
-        content: '';
-        display: block;
-        position: sticky;
-        top: 0;
-        height: calc(var(--header-h) + 44px);
-        margin-bottom: calc(-1 * (var(--header-h) + 44px));
-        background: rgba(255, 255, 255, 0.72);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        backdrop-filter: blur(20px) saturate(180%);
-        z-index: 5;
-        pointer-events: none;
-    }
-
-    /* Task list header — sticky, TRANSPARENT. Glass comes from the unified
-       ::before pseudo above. z-index 10 keeps text above the glass layer. */
+    /* Task list header — sticky, extends UP behind the fixed site-header.
+       margin-top pulls it into the scroll container's padding area;
+       padding-top pushes the sort-row content back down below the fixed header.
+       This creates ONE continuous glass layer for both headers — no seam. */
     .task-list-header {
         position: sticky;
         top: 0;
         z-index: 10;
-        padding: 2px 8px 0 12px !important;
-        background: transparent !important;
-        -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important;
+        margin-top: calc(-1 * var(--header-h));
+        padding: calc(var(--header-h) + 2px) 8px 0 12px !important;
+        background: rgba(255, 255, 255, 0.72) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
         will-change: auto;
         border: none !important;
     }
@@ -1641,14 +1626,14 @@ img, a {
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
     }
 
-    /* Dark mode: unified glass pseudo — same approach, dark tint */
-    [data-theme="dark"] .task-list-container::before {
-        background: rgba(15, 23, 42, 0.72);
+    /* Dark mode: glass header — dark tint */
+    [data-theme="dark"] .task-list-header {
+        background: rgba(15, 23, 42, 0.72) !important;
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         backdrop-filter: blur(20px) saturate(180%);
     }
 
-    /* Dark mode: both headers transparent — glass from the pseudo */
+    /* Dark mode: site-header transparent — glass from task-list-header */
     [data-theme="dark"] .site-header {
         background: transparent !important;
         -webkit-backdrop-filter: none !important;
@@ -1658,12 +1643,6 @@ img, a {
 
     [data-theme="dark"] .header-nav {
         background: transparent !important;
-    }
-
-    [data-theme="dark"] .task-list-header {
-        background: transparent !important;
-        -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important;
     }
 
     [data-theme="dark"] .header-domain-label {
