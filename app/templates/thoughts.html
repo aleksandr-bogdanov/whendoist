@@ -234,9 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             pendingDeletion = { taskId, row, parent, nextSibling };
 
-            const displayTitle = title.length > 30 ? title.substring(0, 30) + '...' : title;
             if (window.Toast) {
-                Toast.show(`"${displayTitle}" deleted`, {
+                Toast.show(`"${title}" deleted`, {
                     onUndo: () => undoThoughtDelete()
                 });
             }
