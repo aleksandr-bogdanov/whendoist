@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.8 — 2026-02-11
+
+### Fixed
+- **Toast message wraps instead of truncating on mobile** — Long messages now display on multiple lines instead of being cut off with ellipsis.
+
+---
+
 ## v0.44.7 — 2026-02-11
 
 ### Fixed
