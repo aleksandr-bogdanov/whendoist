@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.2 — 2026-02-11
+
+### Fixed
+- **Thoughts capture bar now stays pinned when scrolling** — Desktop CSS had `overflow: hidden` on `.thoughts-panel` which broke `position: sticky`. Glass header now sticks correctly and provides blur behind the transparent navbar.
+- **Navbar glass on Thoughts page** — Same root cause as above. With sticky working, the capture bar's glass extends behind the transparent site header (matching Tasks page).
+
+### Added
+- **Submit button for thought capture** — Replaced static "Enter" text hint with a clickable button. Desktop: subtle keyboard-hint badge (same look, now clickable). Mobile: iMessage-style round accent button with arrow-up icon. Keeps focus on input after submit for rapid capture.
+
+---
+
 ## v0.44.1 — 2026-02-11
 
 ### Fixed

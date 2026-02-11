@@ -1738,16 +1738,13 @@ img, a {
         display: none !important;
     }
 
-    /* Hide "Enter" hint — no physical Enter key on touch */
-    .thoughts-capture-hint {
-        display: none !important;
-    }
-
-    /* Panel chrome stripped */
+    /* Panel chrome stripped — overflow:visible is CRITICAL for sticky capture bar.
+       Desktop thoughts.css sets overflow:hidden which breaks position:sticky. */
     .thoughts-panel {
         border: none !important;
         border-radius: 0 !important;
         background: transparent !important;
+        overflow: visible !important;
     }
 
     /* Capture input — iOS search bar style: no border, grey fill, rounded */
@@ -1764,6 +1761,40 @@ img, a {
     .thoughts-capture-input:focus {
         box-shadow: none !important;
         background: rgba(15, 23, 42, 0.06) !important;
+    }
+
+    /* Submit button — iMessage-style accent circle with arrow icon */
+    .thoughts-submit-btn {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 50% !important;
+        background: var(--primary, #6D5EF6) !important;
+        border: none !important;
+        padding: 0 !important;
+        flex-shrink: 0;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        box-shadow: none !important;
+        cursor: pointer;
+        margin: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    .thoughts-submit-btn .submit-label {
+        display: none !important;
+    }
+
+    .thoughts-submit-btn .submit-icon {
+        display: block !important;
+        width: 18px !important;
+        height: 18px !important;
+        stroke: white !important;
+    }
+
+    .thoughts-submit-btn:active {
+        transform: scale(0.92);
+        opacity: 0.85;
     }
 
     /* Thought rows — transparent background, hairline separators */
