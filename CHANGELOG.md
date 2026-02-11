@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.43.1 — 2026-02-11
+
+### Fixed
+- **Mobile font sizes round 2 — from minimum readable to normal** — Bumped all mobile font sizes closer to iOS system defaults. Task titles: 13→15px, metadata chips: 9.75→11px, breadcrumbs/due dates: 11→12px, calendar events/hour labels: 8.25→10px, domain headers: 12→13px, energy pills: 13→14px. Meta column widths widened (duration 36→38px, impact 28→30px, clarity 60→66px). Hour label gutter widened 40→44px to fit "12:00" at larger size. All changes scoped inside mobile media queries — no desktop impact.
+
+---
+
 ## v0.43.0 — 2026-02-11
 
 ### Removed
