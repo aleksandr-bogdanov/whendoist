@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.44.6 — 2026-02-11
+
+### Fixed
+- **Toast notifications fit all mobile screens** — Container was `left: 24px` with no right constraint and `max-width: 440px` (wider than iPhone SE). Now uses `left: 12px; right: 12px` for full-width snackbar that fits any viewport. Positioned above the tab bar. Applies to all pages.
+
+---
+
 ## v0.44.5 — 2026-02-11
 
 ### Fixed

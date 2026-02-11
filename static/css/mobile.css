@@ -2111,6 +2111,30 @@ img, a {
         display: block;
         height: calc(70px + env(safe-area-inset-bottom, 0px));
     }
+
+    /* ── Toast — full-width snackbar above tab bar ── */
+    .toast-container {
+        left: 12px !important;
+        right: 12px !important;
+        bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    .toast {
+        max-width: none !important;
+        width: 100% !important;
+        gap: 8px !important;
+        padding: 10px 10px 10px 12px !important;
+    }
+
+    .toast-message {
+        font-size: 0.8rem !important;
+        min-width: 0 !important;
+    }
+
+    .toast-dismiss {
+        width: 24px !important;
+        height: 24px !important;
+    }
 }
 
 /* =============================================================================
