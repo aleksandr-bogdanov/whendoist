@@ -482,6 +482,24 @@ img, a {
         padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
     }
 
+    /* Bottom fade gradient for calendar — same pattern as tasks panel */
+    .calendar-panel.mobile-active::after {
+        content: '';
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(120px + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
+        z-index: 98;
+        pointer-events: none;
+    }
+
+    /* Transparent hour-grid so the fade gradient blends through calendar content */
+    .hour-grid {
+        background: transparent !important;
+    }
+
     /* Calendar toolbar (Today + zoom) — lift above mobile tab bar.
        Desktop rule is bottom: 1rem (in dashboard.css), which sits behind
        the fixed tab bar on mobile.  !important needed because dashboard.css
@@ -1676,7 +1694,8 @@ img, a {
     }
 
     /* Dark mode: bottom fade gradient — fade to dark canvas */
-    [data-theme="dark"] .tasks-panel.mobile-active::after {
+    [data-theme="dark"] .tasks-panel.mobile-active::after,
+    [data-theme="dark"] .calendar-panel.mobile-active::after {
         background: linear-gradient(to bottom, rgba(15,23,42,0), rgba(15,23,42,1));
     }
 
