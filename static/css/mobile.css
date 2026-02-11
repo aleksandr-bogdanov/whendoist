@@ -1526,7 +1526,7 @@ img, a {
         padding-right: 8px !important;
     }
     .thought-row {
-        padding: 10px 12px !important;
+        padding: 10px 2px 10px 12px !important;
     }
     .thought-actions .icon-btn {
         min-width: 40px;
@@ -1802,11 +1802,13 @@ img, a {
         display: none !important;
     }
 
-    /* Thought rows — transparent background, hairline separators */
+    /* Thought rows — transparent background, hairline separators.
+       Asymmetric padding: 16px left for readable text indent,
+       4px right because the 44px action buttons provide their own inset. */
     .thought-row {
         border-bottom: 0.5px solid rgba(15, 23, 42, 0.06) !important;
         border-top: none !important;
-        padding: 10px 16px !important;
+        padding: 10px 4px 10px 16px !important;
         min-height: 44px;
         background: transparent !important;
     }
