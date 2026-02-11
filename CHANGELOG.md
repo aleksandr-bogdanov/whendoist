@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.43.3 — 2026-02-11
+
+### Fixed
+- **Energy selector color mismatch with tab bar** — Unified backdrop-filter recipe across all floating glass elements. Energy selector had extra saturation and brightness that made it visibly warmer than the neutral tab glass. Both now share `blur(40px) saturate(180%)`. Dark mode energy wrapper dropped `brightness(0.9)` which amplified blue tones.
+
+---
+
 ## v0.43.2 — 2026-02-11
 
 ### Changed
