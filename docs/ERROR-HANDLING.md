@@ -211,9 +211,9 @@ Check if the user is currently online.
 
 ## Related Documentation
 
-- [CSRF Protection](CSRF-PROTECTION.md) - Security token implementation
-- [Sentry Integration](SENTRY.md) - Production error monitoring
-- [Toast Notifications](TOAST.md) - User feedback system
+- [Security Guide](SECURITY.md) - Authentication, CSRF protection, rate limiting
+- [Toast System](TOAST-SYSTEM.md) - Typed notifications with queuing and actions
+- [Deployment Guide](DEPLOYMENT.md) - Production setup including Sentry integration
 
 ---
 
