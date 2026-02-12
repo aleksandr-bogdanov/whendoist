@@ -22,7 +22,7 @@
                     <div class="time-sep"><span>{{ group.label }}</span></div>
                     {% for task_item in group.thoughts %}
                     {% set task = task_item.task %}
-                    <div class="bubble-row" data-task-id="{{ task.id }}" data-title="{{ task.title }}">
+                    <div class="bubble-row{% if loop.first %} first-in-group{% endif %}" data-task-id="{{ task.id }}" data-title="{{ task.title }}">
                         <div class="bubble-content">
                             <span class="bubble-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
                         </div>
