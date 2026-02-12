@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.2 — 2026-02-12
+
+### Fixed
+- **Thoughts not loading** — Second occurrence of `"items"` dict key (final group append) was missed in v0.45.1 fix, causing the last date group to silently fail to render.
+
+---
+
 ## v0.45.1 — 2026-02-12
 
 ### Fixed
