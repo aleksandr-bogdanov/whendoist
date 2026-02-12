@@ -475,6 +475,58 @@ async def task_list_partial(
     )
 
 
+@router.get("/api/v1/task-item/{task_id}", response_class=HTMLResponse)
+async def task_item_partial(
+    request: Request,
+    task_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user),
+):
+    """Return server-rendered HTML for a single task item."""
+    if not user:
+        return HTMLResponse(status_code=401)
+
+    task_service = TaskService(db, user.id)
+    task = await task_service.get_task(task_id)
+    if not task:
+        return HTMLResponse(status_code=404)
+
+    prefs_service = PreferencesService(db, user.id)
+    user_prefs = await prefs_service.get_preferences()
+    timezone = user_prefs.timezone
+    today = get_user_today(timezone)
+
+    # Recurrence info
+    next_instances: dict[int, dict] = {}
+    instance_completed_at = None
+    if task.is_recurring:
+        recurrence_service = RecurrenceService(db, user.id, timezone=timezone)
+        instances = await recurrence_service.get_next_instances_for_tasks([task.id])
+        next_instances = {inst.task_id: {"date": inst.instance_date, "id": inst.id} for inst in instances}
+        today_instances = await recurrence_service.get_instances_for_range(today, today, status=None)
+        for inst in today_instances:
+            if inst.task_id == task.id and inst.status == "completed" and inst.completed_at:
+                instance_completed_at = inst.completed_at
+
+    # Subtask count
+    subtasks = await task_service.get_tasks(parent_id=task_id, exclude_statuses=["archived"])
+    subtask_count = len(subtasks)
+
+    task_item = build_native_task_item(task, next_instances, instance_completed_at, subtask_count)
+
+    encryption_ctx = await get_encryption_context(db, user.id)
+
+    return render_template(
+        request,
+        "_task_item.html",
+        {
+            "task_item": task_item,
+            "today": today,
+            **encryption_ctx,
+        },
+    )
+
+
 @router.get("/api/v1/deleted-tasks", response_class=HTMLResponse)
 async def deleted_tasks_partial(
     request: Request,

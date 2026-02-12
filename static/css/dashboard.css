@@ -1457,6 +1457,18 @@
     position: relative;
 }
 
+/* Highlight pulse after in-place update */
+@keyframes task-highlight-pulse {
+    0%   { background-color: var(--task-highlight-bg, rgba(99, 102, 241, 0.15)); }
+    100% { background-color: transparent; }
+}
+.task-item.just-updated {
+    animation: task-highlight-pulse 1.2s ease-out;
+}
+[data-theme="dark"] .task-item.just-updated {
+    --task-highlight-bg: rgba(129, 140, 248, 0.12);
+}
+
 /* Actions cell in task rows - maintains grid alignment */
 .task-actions {
     width: var(--col-actions);

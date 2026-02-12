@@ -839,8 +839,10 @@
                     taskInList.classList.remove('scheduled');
                     updateTaskScheduledDate(taskInList, null);
                     moveTaskToUnscheduledSection(taskInList);
+                } else if (window.TaskMutations) {
+                    // Task doesn't exist in task list (was DB-scheduled), insert it
+                    await TaskMutations.insertNewTask(taskId);
                 } else {
-                    // Task doesn't exist in task list (was DB-scheduled), need to reload
                     window.location.reload();
                 }
             } catch (error) {
@@ -1443,9 +1445,21 @@
     window.moveTaskToUnscheduledSection = moveTaskToUnscheduledSection;
     window.updateTaskScheduledDate = updateTaskScheduledDate;
 
+    /**
+     * Initialize drag handlers on a single task element.
+     * Used for dynamically inserted tasks.
+     * @param {HTMLElement} taskEl
+     */
+    function initSingleTask(taskEl) {
+        if (!taskEl || taskEl.getAttribute('draggable') !== 'true') return;
+        taskEl.addEventListener('dragstart', handleDragStart);
+        taskEl.addEventListener('dragend', handleDragEnd);
+    }
+
     window.DragDrop = {
         init,
         getHourHeight,
+        initSingleTask,
     };
 
     document.addEventListener('DOMContentLoaded', init);

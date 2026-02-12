@@ -1472,8 +1472,19 @@
                 body: JSON.stringify(data),
             });
 
+            const taskData = await response.json();
+            const wasEditing = currentTaskId;
             closeDialog();
-            window.location.reload();
+
+            if (window.TaskMutations) {
+                if (wasEditing) {
+                    await TaskMutations.updateTaskInPlace(wasEditing, taskData);
+                } else {
+                    await TaskMutations.insertNewTask(taskData.id);
+                }
+            } else {
+                window.location.reload();
+            }
         } catch (error) {
             const submitBtn = backdropEl.querySelector('.btn-submit');
             submitBtn.disabled = false;

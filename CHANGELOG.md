@@ -6,6 +6,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.21 — 2026-02-12
+
+### Added
+- **In-place task mutations** — Task edits, creates, completions, deletions, and skips now update the DOM surgically instead of reloading the page. New `TaskMutations` JS module handles patching, section moves, re-sorting, scroll-to, and highlight animation. New `GET /api/v1/task-item/{id}` endpoint returns server-rendered HTML for single task insertion.
+
+### Changed
+- Task dialog save no longer triggers `window.location.reload()` — uses `TaskMutations.updateTaskInPlace()` for edits and `TaskMutations.insertNewTask()` for creates.
+- Task completion/reopening no longer re-fetches entire task list via HTMX — moves task between domain and completed sections in-place.
+- Task deletion no longer calls `refreshTaskListFromServer()` — elements already removed by departure animation.
+- Drag-drop unschedule fallback uses `TaskMutations.insertNewTask()` instead of `window.location.reload()`.
+- Added `DragDrop.initSingleTask()` export for binding drag handlers on dynamically inserted tasks.
+- Added `data-domain-id` attribute to task items for client-side domain change detection.
+
+---
+
 ## v0.45.20 — 2026-02-12
 
 ### Added
