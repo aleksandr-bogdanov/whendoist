@@ -417,6 +417,53 @@
     }
 
     /**
+     * Move a task from the scheduled section (#section-sched) to its domain group.
+     * Handles the cross-section move that moveTaskToUnscheduledSection can't do.
+     * @param {HTMLElement} taskEl
+     */
+    function moveFromScheduledToDomain(taskEl) {
+        if (!taskEl) return;
+
+        var domainId = taskEl.dataset.domainId || '';
+        var sourceSection = taskEl.closest('.section-group');
+
+        // Remove scheduled styling
+        taskEl.classList.remove('scheduled');
+        taskEl.dataset.scheduledDate = '';
+
+        // Remove date label (non-recurring)
+        if (taskEl.dataset.isRecurring !== 'true') {
+            var taskDue = taskEl.querySelector('.task-due');
+            if (taskDue) taskDue.remove();
+        }
+
+        // Make draggable again
+        var hasSubtasks = parseInt(taskEl.dataset.subtaskCount || '0', 10) > 0;
+        if (!hasSubtasks) {
+            taskEl.setAttribute('draggable', 'true');
+            if (window.DragDrop && typeof DragDrop.initSingleTask === 'function') {
+                DragDrop.initSingleTask(taskEl);
+            }
+        }
+
+        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
+        if (!targetGroup) {
+            if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                TaskComplete.refreshTaskList();
+            }
+            return;
+        }
+
+        insertIntoDomainGroup(taskEl, targetGroup);
+        updateSectionCount(sourceSection);
+
+        if (window.TaskSort && typeof TaskSort.applySort === 'function') {
+            TaskSort.applySort();
+        }
+        scrollToAndHighlight(taskEl);
+    }
+
+    /**
      * Scroll to a task element and apply highlight animation.
      * @param {HTMLElement} taskEl
      */
@@ -445,6 +492,7 @@
         insertNewTask: insertNewTask,
         moveTaskToCompleted: moveTaskToCompleted,
         moveTaskToActive: moveTaskToActive,
+        moveFromScheduledToDomain: moveFromScheduledToDomain,
         scrollToAndHighlight: scrollToAndHighlight,
     };
 })();
