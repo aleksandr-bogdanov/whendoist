@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.4 — 2026-02-12
+
+### Fixed
+- **Thoughts dates wrong** — All thoughts showed "Today" because date grouping used `created_at` (import time) instead of `external_created_at` (original Todoist creation date). Now prefers `external_created_at` when available.
+- **Thoughts mobile button alignment** — Promote and delete buttons now right-aligned and vertically consistent across rows instead of floating at different positions next to each bubble.
+
+---
+
 ## v0.45.3 — 2026-02-12
 
 ### Fixed
