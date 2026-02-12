@@ -189,7 +189,7 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
     box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.1);
 }
 
-/* Submit button — circular arrow icon (matches mobile) */
+/* Submit button — solid purple circle with white arrow */
 .bottom-bar-btn {
     width: 36px;
     height: 36px;
@@ -197,8 +197,8 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
     align-items: center;
     justify-content: center;
     padding: 0;
-    background: var(--bg-panel);
-    border: 1px solid var(--border-default);
+    background: var(--primary);
+    border: none;
     border-radius: 50%;
     cursor: pointer;
     margin: 0 !important;
@@ -208,7 +208,7 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
 }
 
 .bottom-bar-btn:hover {
-    background: var(--border-subtle);
+    background: var(--primary-hover);
 }
 
 /* Hide text label, show arrow icon */
@@ -220,11 +220,11 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
     display: block;
     width: 16px;
     height: 16px;
-    stroke: var(--text-secondary);
+    stroke: #fff;
 }
 
 .bottom-bar-btn:hover .submit-icon {
-    stroke: var(--primary);
+    stroke: #fff;
 }
 
 /* 9) Slide-up animation for new bubbles */
@@ -275,19 +275,11 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
 }
 
 [data-theme="dark"] .bottom-bar-btn {
-    background: var(--bg-surface);
+    background: var(--primary);
 }
 
 [data-theme="dark"] .bottom-bar-btn:hover {
-    background: var(--border-default);
-}
-
-[data-theme="dark"] .bottom-bar-btn .submit-icon {
-    stroke: var(--text-muted);
-}
-
-[data-theme="dark"] .bottom-bar-btn:hover .submit-icon {
-    stroke: var(--primary);
+    background: var(--primary-hover);
 }
 
 /* Dark mode icon buttons */

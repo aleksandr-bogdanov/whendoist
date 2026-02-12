@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.19 — 2026-02-12
+
+### Fixed
+- **Thoughts send button redesign** — Replaced ghost outline button with solid purple (`--primary`) fill and white arrow icon for instant visibility in both themes. Updated desktop and mobile CSS.
+
+---
+
 ## v0.45.18 — 2026-02-12
 
 ### Fixed

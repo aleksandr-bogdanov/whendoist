@@ -1843,20 +1843,20 @@ img, a {
     .bottom-bar-btn {
         width: 38px !important;
         height: 38px !important;
-        background: rgba(15, 23, 42, 0.04) !important;
-        border: 1px solid rgba(15, 23, 42, 0.12) !important;
+        background: var(--primary) !important;
+        border: none !important;
         box-shadow: none !important;
     }
 
     .bottom-bar-btn .submit-icon {
         width: 18px !important;
         height: 18px !important;
-        stroke: var(--primary, #6D5EF6) !important;
+        stroke: #fff !important;
     }
 
     .bottom-bar-btn:active {
         transform: scale(0.92);
-        background: rgba(109, 94, 246, 0.12) !important;
+        background: var(--primary-hover) !important;
     }
 
     /* ── Analytics Page ── */
@@ -2247,12 +2247,12 @@ img, a {
         background: rgba(248, 250, 252, 0.10) !important;
     }
 
-    /* Dark: submit button — dark fill, purple icon */
+    /* Dark: submit button — same solid purple */
     [data-theme="dark"] .bottom-bar-btn {
-        background: rgba(248, 250, 252, 0.06) !important;
+        background: var(--primary) !important;
     }
     [data-theme="dark"] .bottom-bar-btn:active {
-        background: rgba(109, 94, 246, 0.15) !important;
+        background: var(--primary-hover) !important;
     }
 
     /* Dark: ghost action buttons */
