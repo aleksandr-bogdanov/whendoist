@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.23 — 2026-02-12
+
+### Added
+- **Standalone privacy policy page** — `/privacy` now serves a full page (not a redirect) with expanded coverage of Google API data usage, data storage, cookies, and deletion rights. Required for Google OAuth verification.
+- **Terms & Privacy links in settings footer** — legal links now accessible from the app
+
+---
+
 ## v0.45.22 — 2026-02-12
 
 ### Fixed

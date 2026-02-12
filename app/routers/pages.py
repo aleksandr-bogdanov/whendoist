@@ -910,8 +910,8 @@ async def terms(request: Request):
 
 @router.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request):
-    """Privacy Policy - redirects to terms page with anchor."""
-    return RedirectResponse(url="/terms#privacy", status_code=302)
+    """Privacy Policy page."""
+    return render_template(request, "privacy.html", {})
 
 
 @router.get("/showcase", response_class=HTMLResponse)

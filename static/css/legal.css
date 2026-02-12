@@ -107,8 +107,21 @@
 
 /* Footer */
 .legal-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     margin-top: 32px;
-    text-align: center;
+}
+
+.legal-nav-link {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.legal-nav-link:hover {
+    color: var(--primary);
 }
 
 .legal-back-button {
