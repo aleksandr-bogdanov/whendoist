@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.22 — 2026-02-12
+
+### Fixed
+- **Save button stuck disabled after in-place edit** — `openDialog()` now resets `submitBtn.disabled = false`, fixing the button becoming inaccessible after editing a task (especially after domain changes).
+- **Unschedule not moving task out of Scheduled section** — `moveTaskToUnscheduledSection()` only works within a single `.task-list` container. Tasks in `#section-sched` now use new `TaskMutations.moveFromScheduledToDomain()` for proper cross-section moves (applies to both RMB unschedule and drag-to-trash).
+
+---
+
 ## v0.45.21 — 2026-02-12
 
 ### Added

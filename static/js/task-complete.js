@@ -846,12 +846,18 @@
             // Update task list item if present
             var taskInList = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
             if (taskInList) {
-                taskInList.classList.remove('scheduled');
-                if (typeof updateTaskScheduledDate === 'function') {
-                    updateTaskScheduledDate(taskInList, null);
-                }
-                if (typeof moveTaskToUnscheduledSection === 'function') {
-                    moveTaskToUnscheduledSection(taskInList);
+                // Check if task is in the scheduled section (cross-section move needed)
+                var inScheduledSection = !!taskInList.closest('#section-sched');
+                if (inScheduledSection && window.TaskMutations) {
+                    TaskMutations.moveFromScheduledToDomain(taskInList);
+                } else {
+                    taskInList.classList.remove('scheduled');
+                    if (typeof updateTaskScheduledDate === 'function') {
+                        updateTaskScheduledDate(taskInList, null);
+                    }
+                    if (typeof moveTaskToUnscheduledSection === 'function') {
+                        moveTaskToUnscheduledSection(taskInList);
+                    }
                 }
             } else if (window.TaskMutations) {
                 await TaskMutations.insertNewTask(taskId);

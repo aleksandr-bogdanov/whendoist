@@ -835,10 +835,16 @@
                 // Check if task exists in task list
                 const taskInList = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
                 if (taskInList) {
-                    // Remove scheduled styling, date, and animate back to position
-                    taskInList.classList.remove('scheduled');
-                    updateTaskScheduledDate(taskInList, null);
-                    moveTaskToUnscheduledSection(taskInList);
+                    // Check if task is in the scheduled section (cross-section move needed)
+                    const inScheduledSection = !!taskInList.closest('#section-sched');
+                    if (inScheduledSection && window.TaskMutations) {
+                        TaskMutations.moveFromScheduledToDomain(taskInList);
+                    } else {
+                        // Task is within a domain group — reorder in-place
+                        taskInList.classList.remove('scheduled');
+                        updateTaskScheduledDate(taskInList, null);
+                        moveTaskToUnscheduledSection(taskInList);
+                    }
                 } else if (window.TaskMutations) {
                     // Task doesn't exist in task list (was DB-scheduled), insert it
                     await TaskMutations.insertNewTask(taskId);

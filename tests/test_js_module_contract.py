@@ -566,6 +566,10 @@ class TestTaskMutationsModuleExportsAPI:
         """Must export scrollToAndHighlight for visual feedback."""
         assert re.search(r"scrollToAndHighlight\s*:", mutations_js)
 
+    def test_exports_move_from_scheduled_to_domain(self, mutations_js: str):
+        """Must export moveFromScheduledToDomain for cross-section unschedule."""
+        assert re.search(r"moveFromScheduledToDomain\s*:", mutations_js)
+
     def test_uses_safe_fetch(self, mutations_js: str):
         """Must use safeFetch for API calls."""
         assert "safeFetch" in mutations_js

@@ -921,8 +921,10 @@
         }
         closeDomainDropdown();
 
-        // Update submit button text
-        backdropEl.querySelector('.btn-submit').textContent = taskId ? 'Save' : 'Add task';
+        // Reset submit button state
+        const submitBtn = backdropEl.querySelector('.btn-submit');
+        submitBtn.disabled = false;
+        submitBtn.textContent = taskId ? 'Save' : 'Add task';
 
         // Hide delete, complete, and batch complete buttons for new tasks
         backdropEl.querySelector('#btn-delete').style.display = 'none';
