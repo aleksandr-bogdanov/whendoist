@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.1 — 2026-02-12
+
+### Fixed
+- **Thoughts page crash on load** — `group.items` in Jinja2 resolved to `dict.items()` method instead of the dict key. Renamed key to `thoughts` to avoid the collision.
+
+---
+
 ## v0.45.0 — 2026-02-12
 
 ### Changed
