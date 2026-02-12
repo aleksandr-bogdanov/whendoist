@@ -674,7 +674,7 @@ async def thoughts(
             current_items.append(item)
 
     if current_items:
-        thought_groups.append({"label": current_label, "items": current_items})
+        thought_groups.append({"label": current_label, "thoughts": current_items})
 
     # Get encryption context for base template
     encryption_ctx = await get_encryption_context(db, user.id)
