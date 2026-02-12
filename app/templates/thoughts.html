@@ -27,6 +27,7 @@
                             <span class="bubble-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
                         </div>
                         <div class="bubble-actions">
+                            <span class="bubble-date">{{ group.label }}</span>
                             <button type="button" class="icon-btn promote" title="Promote to Task" aria-label="Promote to Task">
                                 <svg class="icon icon-xs" aria-hidden="true">
                                     <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-up"></use>
@@ -199,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="bubble-text">${escapeHtml(task.title)}</span>
             </div>
             <div class="bubble-actions">
+                <span class="bubble-date">Today</span>
                 <button type="button" class="icon-btn promote" title="Promote to Task" aria-label="Promote to Task">
                     <svg class="icon icon-xs" aria-hidden="true">
                         <use href="${iconSprite}#arrow-up"></use>

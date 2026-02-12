@@ -122,6 +122,11 @@
     pointer-events: auto;
 }
 
+/* Inline date label — hidden on desktop (time-sep used instead) */
+.bubble-date {
+    display: none;
+}
+
 /* Icon buttons in bubble actions */
 .thoughts-page .icon-btn {
     width: 26px;
