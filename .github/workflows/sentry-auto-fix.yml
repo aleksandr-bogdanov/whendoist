@@ -10,7 +10,7 @@
 #   2. GitHub Copilot subscription (Pro, Pro+, Business, or Enterprise)
 #
 # How it works:
-#   Sentry error → alert fires → GitHub issue created → auto-assigned to
+#   Sentry error → alert fires → GitHub issue created → workflow comments
 #   @copilot → Copilot agent reads issue + codebase → creates draft fix PR
 # =============================================================================
 
@@ -21,7 +21,7 @@ on:
     types: [opened]
 
 jobs:
-  assign-copilot:
+  trigger-copilot:
     # Trigger on issues that look like they came from Sentry
     if: >
       contains(github.event.issue.body, 'sentry.io') ||
@@ -32,13 +32,13 @@ jobs:
       issues: write
 
     steps:
-      - name: Assign to Copilot
+      - name: Trigger Copilot via comment
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.addAssignees({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              assignees: ['copilot']
+              body: '@copilot Investigate this Sentry error and fix it. Read the stack trace above, find the root cause in the codebase, and open a draft PR with the fix. If this is a transient infrastructure issue (network timeout, DB connection lost), just explain why no code fix is needed.'
             });
