@@ -200,12 +200,23 @@
                 showToast(data.completed ? 'Task completed' : 'Task reopened', undoCallback);
             }
 
-            // Animate out then refresh task list (domain <-> completed)
-            if (taskEl.classList.contains('task-item')) {
-                // Wait for pop animation (250ms), then slide-out, then refresh
+            // Move task between sections (domain <-> completed)
+            if (taskEl.classList.contains('task-item') && window.TaskMutations) {
                 pendingCompletionTimeout = setTimeout(function() {
                     taskEl.classList.add('departing');
-                    pendingRefreshTimeout = setTimeout(function() { refreshTaskListFromServer(); }, 350);
+                    pendingRefreshTimeout = setTimeout(function() {
+                        taskEl.classList.remove('departing');
+                        if (data.completed) {
+                            TaskMutations.moveTaskToCompleted(taskEl);
+                        } else {
+                            var domainId = taskEl.dataset.domainId || '';
+                            TaskMutations.moveTaskToActive(taskEl, domainId);
+                        }
+                        if (window.TaskSort && typeof TaskSort.applySort === 'function') {
+                            TaskSort.applySort();
+                        }
+                        TaskMutations.scrollToAndHighlight(taskEl);
+                    }, 350);
                 }, 250);
             }
 
@@ -688,7 +699,17 @@
             await safeFetch('/api/v1/tasks/' + taskId, {
                 method: 'DELETE'
             });
-            refreshTaskListFromServer();
+            // Elements already removed from DOM by departure animation — update section counts
+            removedElements.forEach(function(item) {
+                var section = item.parent ? item.parent.closest('.project-group') || item.parent.closest('.section-group') : null;
+                if (section && window.TaskMutations) {
+                    // Count is recalculated from remaining .task-item elements
+                    var countEl = section.querySelector('.task-count') || section.querySelector('.section-count');
+                    if (countEl) {
+                        countEl.textContent = section.querySelectorAll('.task-item').length;
+                    }
+                }
+            });
         } catch (error) {
             // Restore elements on failure
             removedElements.forEach(function(item) {
@@ -756,11 +777,22 @@
 
             showToast('Skipped for ' + getDateLabel(taskEl));
 
-            // Animate out then refresh
-            if (taskEl.classList.contains('task-item')) {
+            // Update task in-place with next occurrence
+            if (taskEl.classList.contains('task-item') && window.TaskMutations) {
+                var taskId = taskEl.dataset.taskId;
                 setTimeout(function() {
                     taskEl.classList.add('departing');
-                    setTimeout(function() { refreshTaskListFromServer(); }, 350);
+                    setTimeout(async function() {
+                        try {
+                            var resp = await safeFetch('/api/v1/tasks/' + taskId);
+                            var taskData = await resp.json();
+                            taskEl.classList.remove('departing', 'skipped');
+                            taskEl.dataset.completed = '0';
+                            await TaskMutations.updateTaskInPlace(taskId, taskData);
+                        } catch (e) {
+                            refreshTaskListFromServer();
+                        }
+                    }, 350);
                 }, 250);
             }
         } catch (error) {
@@ -821,6 +853,8 @@
                 if (typeof moveTaskToUnscheduledSection === 'function') {
                     moveTaskToUnscheduledSection(taskInList);
                 }
+            } else if (window.TaskMutations) {
+                await TaskMutations.insertNewTask(taskId);
             } else {
                 refreshTaskListFromServer();
             }

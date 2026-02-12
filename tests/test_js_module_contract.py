@@ -533,3 +533,56 @@ class TestShortcutsModule:
     def test_excludes_inputs(self, shortcuts_js: str):
         """Must exclude shortcuts when typing in input fields."""
         assert "excludeInputs" in shortcuts_js or "input" in shortcuts_js.lower()
+
+
+class TestTaskMutationsModuleExportsAPI:
+    """Verify task-mutations.js exports the required in-place update API."""
+
+    @pytest.fixture
+    def mutations_js(self) -> str:
+        return (JS_DIR / "task-mutations.js").read_text()
+
+    def test_exports_window_task_mutations_object(self, mutations_js: str):
+        """TaskMutations must be exposed on window object."""
+        assert "window.TaskMutations" in mutations_js
+
+    def test_exports_update_task_in_place(self, mutations_js: str):
+        """Must export updateTaskInPlace for editing."""
+        assert re.search(r"updateTaskInPlace\s*:", mutations_js)
+
+    def test_exports_insert_new_task(self, mutations_js: str):
+        """Must export insertNewTask for creation."""
+        assert re.search(r"insertNewTask\s*:", mutations_js)
+
+    def test_exports_move_task_to_completed(self, mutations_js: str):
+        """Must export moveTaskToCompleted for completion."""
+        assert re.search(r"moveTaskToCompleted\s*:", mutations_js)
+
+    def test_exports_move_task_to_active(self, mutations_js: str):
+        """Must export moveTaskToActive for reopening."""
+        assert re.search(r"moveTaskToActive\s*:", mutations_js)
+
+    def test_exports_scroll_to_and_highlight(self, mutations_js: str):
+        """Must export scrollToAndHighlight for visual feedback."""
+        assert re.search(r"scrollToAndHighlight\s*:", mutations_js)
+
+    def test_uses_safe_fetch(self, mutations_js: str):
+        """Must use safeFetch for API calls."""
+        assert "safeFetch" in mutations_js
+
+    def test_handles_encryption(self, mutations_js: str):
+        """Must handle encrypted task titles."""
+        assert "Crypto" in mutations_js
+
+
+class TestDragDropInitSingleTaskExport:
+    """Verify drag-drop.js exports initSingleTask for dynamically inserted tasks."""
+
+    @pytest.fixture
+    def dragdrop_js(self) -> str:
+        return (JS_DIR / "drag-drop.js").read_text()
+
+    def test_exports_init_single_task(self, dragdrop_js: str):
+        """Must export initSingleTask in DragDrop API."""
+        assert re.search(r"initSingleTask", dragdrop_js)
+        assert re.search(r"window\.DragDrop\s*=\s*\{[^}]*initSingleTask", dragdrop_js, re.DOTALL)

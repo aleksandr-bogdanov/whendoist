@@ -21,6 +21,7 @@
      data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
      {% if task_item.next_instance_id %}data-instance-id="{{ task_item.next_instance_id }}"{% endif %}
      data-title="{{ task.title }}"
+     data-domain-id="{{ task.domain_id or '' }}"
      data-subtask-count="{{ task_item.subtask_count or 0 }}"
      {% if task.parent_id %}data-parent-id="{{ task.parent_id }}"{% endif %}
      {% if not task.scheduled_date and not task_item.subtask_count %}draggable="true"{% endif %}>
