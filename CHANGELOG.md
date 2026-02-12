@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.8 — 2026-02-12
+
+### Improved
+- **Thoughts header taller** — glass backdrop extended to +64px (was +48px) for even softer fade.
+- **Thoughts font matches Tasks** — bubble text now 1.0rem matching task-item mobile font.
+- **Thoughts light theme contrast** — stronger bubble shadow (10% + 0.5px outline ring) for better definition against white background.
+
+---
+
 ## v0.45.7 — 2026-02-12
 
 ### Improved
