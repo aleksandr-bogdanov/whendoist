@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.12 — 2026-02-12
+
+### Improved
+- **Thoughts desktop minimal redesign** — Desktop now matches mobile's minimal look: submit button is a circular arrow icon (removed "Enter" text badge), title/subtitle hidden, time-sep separators replaced with inline date labels, bottom bar border removed, max-width tightened to 600px. Removed redundant mobile.css overrides that are now in base CSS.
+
+---
+
 ## v0.45.11 — 2026-02-12
 
 ### Improved
