@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.11 — 2026-02-12
+
+### Improved
+- **Thoughts header taller** — glass backdrop extended to +80px (was +64px).
+- **Thoughts bottom fade gradient** — Replaced glass bottom bar with transparent-to-solid gradient matching Tasks page. Bottom bar is now transparent; input/button float over a `::after` gradient that fades scroll content seamlessly. Dark mode fades to dark canvas.
+
+---
+
 ## v0.45.10 — 2026-02-12
 
 ### Fixed
