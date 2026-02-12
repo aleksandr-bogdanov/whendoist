@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.15 — 2026-02-12
+
+### Fixed
+- **Desktop toast notifications** — Long messages now wrap (up to 3 lines) instead of being cropped with ellipsis. On ultrawide monitors, toast aligns with the content area instead of being stranded in the far-left corner.
+
+---
+
 ## v0.45.14 — 2026-02-12
 
 ### Fixed
