@@ -631,9 +631,50 @@ async def thoughts(
     # Get tasks without a domain (inbox/thoughts) - use SQL filter
     inbox_tasks = await task_service.get_tasks(status="pending", top_level_only=True, has_domain=False)
 
-    # Build task items for display
+    # Build task items sorted by created_at ASC (oldest first = chat order)
     task_items = [build_native_task_item(t) for t in inbox_tasks]
-    task_items.sort(key=native_task_sort_key)
+    task_items.sort(key=lambda t: t["task"].created_at)
+
+    # Group by date in user timezone
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    today = get_user_today(timezone)
+    yesterday = today - timedelta(days=1)
+
+    from zoneinfo import ZoneInfo
+
+    try:
+        tz = ZoneInfo(timezone) if timezone else ZoneInfo("UTC")
+    except (KeyError, TypeError):
+        tz = ZoneInfo("UTC")
+
+    thought_groups: list[dict[str, Any]] = []
+    current_label: str | None = None
+    current_items: list[dict] = []
+
+    for item in task_items:
+        created = item["task"].created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+        item_date = created.astimezone(tz).date()
+
+        if item_date == today:
+            label = "Today"
+        elif item_date == yesterday:
+            label = "Yesterday"
+        else:
+            label = item_date.strftime("%b %-d")
+
+        if label != current_label:
+            if current_items:
+                thought_groups.append({"label": current_label, "items": current_items})
+            current_label = label
+            current_items = [item]
+        else:
+            current_items.append(item)
+
+    if current_items:
+        thought_groups.append({"label": current_label, "items": current_items})
 
     # Get encryption context for base template
     encryption_ctx = await get_encryption_context(db, user.id)
@@ -643,7 +684,8 @@ async def thoughts(
         "thoughts.html",
         {
             "user": user,
-            "tasks": task_items,
+            "thought_groups": thought_groups,
+            "total_count": len(task_items),
             "is_demo_user": DemoService.is_demo_user(user.email),
             **encryption_ctx,
         },

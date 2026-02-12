@@ -1155,19 +1155,19 @@ img, a {
 
     /* Thoughts page icon buttons */
     .thoughts-page .icon-btn,
-    .thought-actions .icon-btn {
+    .bubble-actions .icon-btn {
         background: var(--bg-surface) !important;
         border: 1px solid var(--border-default) !important;
         color: var(--text-secondary) !important;
     }
 
     .thoughts-page .icon-btn svg,
-    .thought-actions .icon-btn svg {
+    .bubble-actions .icon-btn svg {
         stroke: var(--text-secondary) !important;
     }
 
     .thoughts-page .icon-btn:active,
-    .thought-actions .icon-btn:active {
+    .bubble-actions .icon-btn:active {
         background: var(--bg-panel) !important;
         transform: scale(0.95);
     }
@@ -1521,16 +1521,12 @@ img, a {
     }
 
     /* Thoughts — tighter horizontal padding */
-    .thoughts-page .thoughts-capture-bar {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
+    .bubble-row {
+        padding: 3px 4px !important;
     }
-    .thought-row {
-        padding: 10px 2px 10px 12px !important;
-    }
-    .thought-actions .icon-btn {
-        min-width: 40px;
-        min-height: 40px;
+    .bubble-actions .icon-btn {
+        min-width: 44px;
+        min-height: 44px;
     }
 
     /* Analytics — zero container padding */
@@ -1654,9 +1650,9 @@ img, a {
    ============================================================================= */
 
 @media (max-width: 900px) {
-    /* Thought action buttons - remove Pico margin */
+    /* Bubble action buttons - remove Pico margin */
     .thoughts-page .icon-btn,
-    .thought-actions .icon-btn {
+    .bubble-actions .icon-btn {
         margin: 0 !important;
         margin-bottom: 0 !important;
     }
@@ -1691,80 +1687,104 @@ img, a {
     button.mobile-tab-add,
     button.icon-btn,
     .mobile-tabs button,
-    .thought-actions button {
+    .bubble-actions button {
         margin: 0 !important;
         margin-bottom: 0 !important;
     }
 
-    /* ── Thoughts Page ── */
+    /* ── Thoughts Page — Chat Layout ── */
     .thoughts-page {
         height: 100vh;
         height: var(--app-height, 100vh);
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
+        overflow: hidden !important;
         padding: 0 !important;
+        max-width: none !important;
     }
 
-    .thoughts-page .page-surface {
-        border: none !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        background: transparent !important;
-        padding: 0 !important;
-    }
-
-    /* Glass sticky capture bar — same pattern as .task-list-header */
-    .thoughts-capture-bar {
-        position: sticky !important;
-        top: 0;
-        z-index: 10;
-        padding: calc(var(--header-h) + 8px) 12px 8px !important;
-        background: rgba(255, 255, 255, 0.45) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        backdrop-filter: blur(20px) saturate(180%);
-        border: none !important;
-        border-bottom: 0.5px solid rgba(15, 23, 42, 0.06) !important;
-        border-radius: 0 !important;
-    }
-
-    /* Hide title/subtitle/panel-header on mobile — capture bar is the header */
+    /* Hide title/subtitle on mobile */
     .thoughts-title,
     .thoughts-subtitle {
         display: none !important;
     }
 
-    .thoughts-panel-header {
-        display: none !important;
+    /* Chat container — full viewport */
+    .thoughts-chat {
+        height: 100%;
+        width: 100%;
     }
 
-    /* Panel chrome stripped — overflow:visible is CRITICAL for sticky capture bar.
-       Desktop thoughts.css sets overflow:hidden which breaks position:sticky. */
-    .thoughts-panel {
-        border: none !important;
-        border-radius: 0 !important;
+    /* Scroll area — clearance for header */
+    .scroll-area {
+        padding-top: calc(var(--header-h) + 8px);
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    /* Bubble content — wider on mobile */
+    .bubble-content {
+        max-width: 85% !important;
+    }
+
+    .bubble-text {
+        font-size: 1rem !important;
+    }
+
+    /* Actions — always visible, ghost style */
+    .bubble-actions {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .bubble-actions .icon-btn {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         background: transparent !important;
-        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 50% !important;
+        color: var(--text-muted) !important;
     }
 
-    /* Capture input — iOS search bar style: no border, grey fill, rounded */
-    .thoughts-capture-input {
+    .bubble-actions .icon-btn svg {
+        stroke: var(--text-muted) !important;
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .bubble-actions .icon-btn:active {
+        background: rgba(15, 23, 42, 0.06) !important;
+    }
+
+    /* Bottom bar — glass morphism, safe area */
+    .bottom-bar {
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+        background: rgba(255, 255, 255, 0.45) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
+        border-top: 0.5px solid rgba(15, 23, 42, 0.06) !important;
+    }
+
+    /* Input — iOS style: no border, grey fill, pill */
+    .bottom-bar-input {
         font-size: 1.0rem !important;
         height: 44px !important;
         border: none !important;
-        border-radius: 10px !important;
+        border-radius: 22px !important;
         background: rgba(15, 23, 42, 0.04) !important;
         box-shadow: none !important;
-        padding: 0 14px !important;
+        padding: 0 16px !important;
     }
 
-    .thoughts-capture-input:focus {
+    .bottom-bar-input:focus {
         box-shadow: none !important;
         background: rgba(15, 23, 42, 0.06) !important;
     }
 
-    /* Submit button — subtle circle, purple icon */
-    .thoughts-submit-btn {
+    /* Submit button — circle with arrow icon */
+    .bottom-bar-btn {
         width: 38px !important;
         height: 38px !important;
         border-radius: 50% !important;
@@ -1781,102 +1801,20 @@ img, a {
         margin-bottom: 0 !important;
     }
 
-    .thoughts-submit-btn .submit-label {
+    .bottom-bar-btn .submit-label {
         display: none !important;
     }
 
-    .thoughts-submit-btn .submit-icon {
+    .bottom-bar-btn .submit-icon {
         display: block !important;
         width: 18px !important;
         height: 18px !important;
         stroke: var(--primary, #6D5EF6) !important;
     }
 
-    .thoughts-submit-btn:active {
+    .bottom-bar-btn:active {
         transform: scale(0.92);
         background: rgba(109, 94, 246, 0.12) !important;
-    }
-
-    /* Hide dot on mobile — frees ~18px horizontal for text */
-    .thought-dot {
-        display: none !important;
-    }
-
-    /* Thought rows — transparent background, hairline separators.
-       Asymmetric padding: 16px left for readable text indent,
-       4px right because the 44px action buttons provide their own inset. */
-    .thought-row {
-        border-bottom: 0.5px solid rgba(15, 23, 42, 0.06) !important;
-        border-top: none !important;
-        padding: 10px 4px 10px 16px !important;
-        min-height: 44px;
-        background: transparent !important;
-    }
-
-    .thought-row:hover {
-        background: transparent !important;
-    }
-
-    /* Thought text font */
-    .thought-text {
-        font-size: 1.0rem !important;
-        white-space: normal !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.3;
-    }
-
-    /* Actions — always visible, compact gap */
-    .thought-actions {
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        gap: 0 !important;
-    }
-
-    /* Action buttons — ghost icons, no borders (overrides section 6 touch rules) */
-    .thought-actions .icon-btn {
-        min-width: 44px;
-        min-height: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        border-radius: 50% !important;
-        color: var(--text-muted) !important;
-    }
-
-    .thought-actions .icon-btn svg {
-        stroke: var(--text-muted) !important;
-        width: 16px !important;
-        height: 16px !important;
-    }
-
-    .thought-actions .icon-btn:active {
-        background: rgba(15, 23, 42, 0.06) !important;
-    }
-
-    /* Bottom fade gradient — shorter than Tasks (no energy pill, just tab bar) */
-    .thoughts-page::after {
-        content: '';
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: calc(70px + env(safe-area-inset-bottom, 0px));
-        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
-        z-index: 98;
-        pointer-events: none;
-    }
-
-    /* Scroll spacer — matches gradient height */
-    .thought-list::after {
-        content: '';
-        display: block;
-        height: calc(70px + env(safe-area-inset-bottom, 0px));
     }
 
     /* ── Analytics Page ── */
@@ -2236,38 +2174,40 @@ img, a {
         border-bottom-color: transparent !important;
     }
 
-    /* Dark: glass headers — Thoughts, Analytics, Settings */
-    [data-theme="dark"] .thoughts-capture-bar {
+    /* Dark: glass bottom bar */
+    [data-theme="dark"] .bottom-bar {
         background: rgba(15, 23, 42, 0.45) !important;
-        border-bottom-color: rgba(248, 250, 252, 0.06) !important;
+        border-top-color: rgba(248, 250, 252, 0.06) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
     }
 
-    /* Dark: capture input — dark grey fill */
-    [data-theme="dark"] .thoughts-capture-input {
+    /* Dark: input — dark grey fill */
+    [data-theme="dark"] .bottom-bar-input {
         background: rgba(248, 250, 252, 0.06) !important;
     }
-    [data-theme="dark"] .thoughts-capture-input:focus {
+    [data-theme="dark"] .bottom-bar-input:focus {
         background: rgba(248, 250, 252, 0.10) !important;
     }
 
     /* Dark: submit button — dark fill, purple icon */
-    [data-theme="dark"] .thoughts-submit-btn {
+    [data-theme="dark"] .bottom-bar-btn {
         background: rgba(248, 250, 252, 0.06) !important;
     }
-    [data-theme="dark"] .thoughts-submit-btn:active {
+    [data-theme="dark"] .bottom-bar-btn:active {
         background: rgba(109, 94, 246, 0.15) !important;
     }
 
     /* Dark: ghost action buttons */
-    [data-theme="dark"] .thought-actions .icon-btn {
+    [data-theme="dark"] .bubble-actions .icon-btn {
         background: transparent !important;
         border: none !important;
         color: var(--text-muted) !important;
     }
-    [data-theme="dark"] .thought-actions .icon-btn svg {
+    [data-theme="dark"] .bubble-actions .icon-btn svg {
         stroke: var(--text-muted) !important;
     }
-    [data-theme="dark"] .thought-actions .icon-btn:active {
+    [data-theme="dark"] .bubble-actions .icon-btn:active {
         background: rgba(248, 250, 252, 0.06) !important;
     }
     [data-theme="dark"] .analytics-header {
@@ -2280,16 +2220,10 @@ img, a {
         background: rgba(15, 23, 42, 0.45) !important;
     }
 
-    /* Dark: bottom fade gradients — Thoughts, Analytics, Settings */
-    [data-theme="dark"] .thoughts-page::after,
+    /* Dark: bottom fade gradients — Analytics, Settings */
     [data-theme="dark"] .analytics-page::after,
     [data-theme="dark"] .settings-page::after {
         background: linear-gradient(to bottom, rgba(15,23,42,0), rgba(15,23,42,1));
-    }
-
-    /* Dark: hairline separators */
-    [data-theme="dark"] .thought-row {
-        border-bottom-color: rgba(248, 250, 252, 0.06) !important;
     }
     [data-theme="dark"] .analytics-page .panel {
         border-top-color: rgba(248, 250, 252, 0.06) !important;

@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.0 — 2026-02-12
+
+### Changed
+- **Thoughts page chat-style redesign** — Replaced top-input panel layout with bottom-input chat layout. Bubbles with left-aligned content and right-pinned actions, timestamp date separators (Today/Yesterday/date), scroll-area with gravity pushing bubbles to bottom, slide-up animation for new thoughts, glass morphism bottom bar on mobile. Input now sits in the thumb zone for easy capture.
+
+---
+
 ## v0.44.11 — 2026-02-11
 
 ### Changed

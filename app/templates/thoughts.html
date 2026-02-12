@@ -9,41 +9,24 @@
 {% endblock %}
 
 {% block content %}
-<!-- Page wrapper for centering -->
 <div class="thoughts-page">
-    <div class="page-surface">
-        <div class="thoughts-container">
-        <!-- Title -->
-        <h1 class="thoughts-title">Thought Cabinet</h1>
-        <p class="thoughts-subtitle">Quick capture for ideas, tasks, and notes</p>
+    <h1 class="thoughts-title">Thought Cabinet</h1>
+    <p class="thoughts-subtitle">Quick capture for ideas, tasks, and notes</p>
 
-        <!-- Thoughts Panel with slim bar capture -->
-        <div class="thoughts-panel">
-            <div class="thoughts-panel-header">
-                <span id="thought-count">{{ tasks|length if tasks else 0 }} Thoughts</span>
-            </div>
-            <div class="thoughts-capture-bar">
-                <input type="text"
-                       id="quick-add-input"
-                       class="thoughts-capture-input"
-                       placeholder="Capture a thought..."
-                       autocomplete="off"
-                       aria-label="Capture a thought">
-                <button type="button" class="thoughts-submit-btn" id="thought-submit-btn" aria-label="Add thought">
-                    <span class="submit-label">Enter</span>
-                    <svg class="submit-icon icon icon-xs" aria-hidden="true">
-                        <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-up"></use>
-                    </svg>
-                </button>
-            </div>
-            <div class="thought-list" id="thought-list">
-                {% if tasks %}
-                    {% for task_item in tasks %}
+    <div class="thoughts-chat">
+        <div class="scroll-area" id="scroll-area">
+            <div class="scroll-spacer"></div>
+            <div class="bubble-list" id="bubble-list">
+                {% if thought_groups %}
+                    {% for group in thought_groups %}
+                    <div class="time-sep"><span>{{ group.label }}</span></div>
+                    {% for task_item in group.items %}
                     {% set task = task_item.task %}
-                    <div class="thought-row" data-task-id="{{ task.id }}" data-title="{{ task.title }}">
-                        <div class="thought-dot"></div>
-                        <span class="thought-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
-                        <div class="thought-actions">
+                    <div class="bubble-row" data-task-id="{{ task.id }}" data-title="{{ task.title }}">
+                        <div class="bubble-content">
+                            <span class="bubble-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
+                        </div>
+                        <div class="bubble-actions">
                             <button type="button" class="icon-btn promote" title="Promote to Task" aria-label="Promote to Task">
                                 <svg class="icon icon-xs" aria-hidden="true">
                                     <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-up"></use>
@@ -57,14 +40,29 @@
                         </div>
                     </div>
                     {% endfor %}
+                    {% endfor %}
                 {% else %}
                     <div class="thought-empty-state" id="thought-empty">
                         <img src="{{ url_for('static', path='img/illustrations/empty-thoughts.svg') }}" alt="" class="empty-state-illustration" width="100" height="100" aria-hidden="true">
-                        <p class="empty-state-text">No thoughts yet. Start typing above.</p>
+                        <p class="empty-state-text">No thoughts yet. Start typing below.</p>
                     </div>
                 {% endif %}
             </div>
         </div>
+
+        <div class="bottom-bar">
+            <input type="text"
+                   id="quick-add-input"
+                   class="bottom-bar-input"
+                   placeholder="Capture a thought..."
+                   autocomplete="off"
+                   aria-label="Capture a thought">
+            <button type="button" class="bottom-bar-btn" id="thought-submit-btn" aria-label="Add thought">
+                <span class="submit-label">Enter</span>
+                <svg class="submit-icon icon icon-xs" aria-hidden="true">
+                    <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#arrow-up"></use>
+                </svg>
+            </button>
         </div>
     </div>
 </div>
@@ -77,43 +75,36 @@
 <!-- E2E Encryption: Decrypt thought titles on page load -->
 <script>
 (async function decryptThoughtTitles() {
-    // Only decrypt if encryption is enabled and key is available
     if (!Crypto.canCrypto()) {
         return;
     }
 
-    /**
-     * Check if a value looks like encrypted data (base64 with min length).
-     * AES-256-GCM: 12 bytes IV + ciphertext + 16 bytes tag = min 28 bytes = ~38 base64 chars
-     */
     function looksEncrypted(value) {
         if (!value || value.length < 38) return false;
         return /^[A-Za-z0-9+/]+=*$/.test(value);
     }
 
-    const thoughtRows = document.querySelectorAll('[data-title]');
-    if (thoughtRows.length === 0) return;
+    const bubbleRows = document.querySelectorAll('[data-title]');
+    if (bubbleRows.length === 0) return;
 
-    for (const el of thoughtRows) {
+    for (const el of bubbleRows) {
         const title = el.dataset.title;
         if (!title) continue;
 
         try {
-            // If it doesn't look encrypted, use as-is (plaintext)
             const displayTitle = looksEncrypted(title)
                 ? await Crypto.decryptField(title)
                 : title;
 
             if (!displayTitle) continue;
 
-            const textEl = el.querySelector('.thought-text');
+            const textEl = el.querySelector('.bubble-text');
             if (textEl) {
                 textEl.textContent = displayTitle;
             }
         } catch (e) {
-            // On error, display original value (it's likely plaintext)
             console.error('Failed to decrypt thought title:', e);
-            const textEl = el.querySelector('.thought-text');
+            const textEl = el.querySelector('.bubble-text');
             if (textEl) {
                 textEl.textContent = title;
             }
@@ -125,14 +116,34 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('quick-add-input');
-    const list = document.getElementById('thought-list');
-    const countEl = document.getElementById('thought-count');
+    const bubbleList = document.getElementById('bubble-list');
+    const scrollArea = document.getElementById('scroll-area');
     const emptyState = document.getElementById('thought-empty');
 
-    let thoughtCount = {{ tasks|length if tasks else 0 }};
+    let thoughtCount = {{ total_count|default(0) }};
+    let todaySeparatorAdded = false;
 
-    function updateCount() {
-        countEl.textContent = `${thoughtCount} Thought${thoughtCount !== 1 ? 's' : ''}`;
+    function scrollToBottom() {
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+
+    // Scroll to bottom on load
+    scrollToBottom();
+
+    function maybeAddTodaySeparator() {
+        if (todaySeparatorAdded) return;
+        todaySeparatorAdded = true;
+
+        // Check if last separator is already "Today"
+        const seps = bubbleList.querySelectorAll('.time-sep span');
+        if (seps.length > 0 && seps[seps.length - 1].textContent === 'Today') {
+            return;
+        }
+
+        const sep = document.createElement('div');
+        sep.className = 'time-sep';
+        sep.innerHTML = '<span>Today</span>';
+        bubbleList.appendChild(sep);
     }
 
     async function submitThought() {
@@ -141,10 +152,9 @@ document.addEventListener('DOMContentLoaded', () => {
         input.value = '';
 
         try {
-            // E2E Encryption: Encrypt if enabled
             const encryptedTitle = await Crypto.encryptField(title);
 
-            const response = await fetch('/api/v1/tasks', {
+            const response = await safeFetch('/api/v1/tasks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: encryptedTitle })
@@ -152,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 const task = await response.json();
-                // Use original plaintext title for display
                 task.title = title;
                 addThoughtToList(task);
             }
@@ -178,14 +187,18 @@ document.addEventListener('DOMContentLoaded', () => {
             emptyState.remove();
         }
 
+        maybeAddTodaySeparator();
+
         const row = document.createElement('div');
-        row.className = 'thought-row is-new';
+        row.className = 'bubble-row is-new';
         row.dataset.taskId = task.id;
+        row.dataset.title = task.title;
         const iconSprite = '{{ url_for("static", path="img/icons/ui-icons.svg") }}';
         row.innerHTML = `
-            <div class="thought-dot"></div>
-            <span class="thought-text">${escapeHtml(task.title)}</span>
-            <div class="thought-actions">
+            <div class="bubble-content">
+                <span class="bubble-text">${escapeHtml(task.title)}</span>
+            </div>
+            <div class="bubble-actions">
                 <button type="button" class="icon-btn promote" title="Promote to Task" aria-label="Promote to Task">
                     <svg class="icon icon-xs" aria-hidden="true">
                         <use href="${iconSprite}#arrow-up"></use>
@@ -199,17 +212,15 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        if (list.firstChild) {
-            list.insertBefore(row, list.firstChild);
-        } else {
-            list.appendChild(row);
-        }
-
-        setTimeout(() => row.classList.remove('is-new'), 700);
-
+        bubbleList.appendChild(row);
         attachRowListeners(row);
         thoughtCount++;
-        updateCount();
+
+        // Animate and scroll
+        requestAnimationFrame(() => {
+            scrollToBottom();
+            setTimeout(() => row.classList.remove('is-new'), 700);
+        });
     }
 
     let pendingDeletion = null;
@@ -220,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const taskId = row.dataset.taskId;
 
         row.querySelector('.delete').addEventListener('click', () => {
-            const title = row.querySelector('.thought-text').textContent || 'Thought';
+            const title = row.querySelector('.bubble-text').textContent || 'Thought';
             const parent = row.parentElement;
             const nextSibling = row.nextSibling;
 
@@ -230,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             row.remove();
             thoughtCount--;
-            updateCount();
 
             pendingDeletion = { taskId, row, parent, nextSibling };
 
@@ -270,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         thoughtCount++;
-        updateCount();
         pendingDeletion = null;
     }
 
@@ -284,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            await fetch(`/api/v1/tasks/${taskId}`, { method: 'DELETE' });
+            await safeFetch(`/api/v1/tasks/${taskId}`, { method: 'DELETE' });
         } catch (err) {
             console.error('Failed to delete:', err);
             if (window.Toast) {
@@ -293,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.querySelectorAll('.thought-row:not(.thought-empty)').forEach(attachRowListeners);
+    document.querySelectorAll('.bubble-row').forEach(attachRowListeners);
 
     function escapeHtml(text) {
         const div = document.createElement('div');
