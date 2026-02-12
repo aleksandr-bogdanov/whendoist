@@ -1,10 +1,10 @@
 /* =============================================================================
-   Thoughts Page — Chat-Style Layout
+   Thoughts Page — Minimal Chat-Style Layout
    ============================================================================= */
 
 /* 1) Page wrapper — fills viewport below header */
 .thoughts-page {
-    max-width: 720px;
+    max-width: 600px;
     margin: 0 auto;
     height: calc(100vh - var(--header-height));
     display: flex;
@@ -13,24 +13,10 @@
     box-sizing: border-box;
 }
 
-/* 2) Title + Subtitle */
-.thoughts-title {
-    text-transform: uppercase;
-    letter-spacing: 0.10em;
-    font-weight: 700;
-    font-size: 1.5rem;
-    line-height: 1;
-    color: var(--text-primary);
-    margin: 16px 0 8px;
-}
-
+/* 2) Title + Subtitle — hidden for minimal look */
+.thoughts-title,
 .thoughts-subtitle {
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-weight: 600;
-    font-size: 0.68rem;
-    color: var(--text-secondary);
-    margin: 0 0 16px;
+    display: none;
 }
 
 /* 3) Chat container — fills remaining space */
@@ -61,23 +47,9 @@
     padding-bottom: 8px;
 }
 
-/* 5) Time separator — centered pill */
+/* 5) Time separator — hidden, dates are inline */
 .time-sep {
-    display: flex;
-    justify-content: center;
-    padding: 12px 0 6px;
-}
-
-.time-sep span {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    background: var(--bg-panel);
-    border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    padding: 3px 12px;
+    display: none;
 }
 
 /* 6) Bubble row — left-aligned bubble with right-pinned actions */
@@ -85,7 +57,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 3px 0;
+    padding: 4px 0;
+}
+
+/* Visual break between date groups */
+.bubble-row.first-in-group {
+    margin-top: 6px;
 }
 
 .bubble-content {
@@ -122,9 +99,17 @@
     pointer-events: auto;
 }
 
-/* Inline date label — hidden on desktop (time-sep used instead) */
+/* Inline date label — subtle, always visible */
 .bubble-date {
-    display: none;
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    opacity: 0.5;
+    white-space: nowrap;
+    /* Visible even when actions are hidden */
+    pointer-events: none;
 }
 
 /* Icon buttons in bubble actions */
@@ -171,13 +156,12 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
     margin-bottom: 0 !important;
 }
 
-/* 8) Bottom bar — input outside scroll area */
+/* 8) Bottom bar — minimal, no border */
 .bottom-bar {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px 0 16px;
-    border-top: 1px solid var(--border-subtle);
     flex-shrink: 0;
 }
 
@@ -205,35 +189,42 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
     box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.1);
 }
 
-/* Submit button — desktop: keyboard hint badge */
+/* Submit button — circular arrow icon (matches mobile) */
 .bottom-bar-btn {
+    width: 36px;
+    height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 3px 10px;
+    padding: 0;
     background: var(--bg-panel);
     border: none;
-    border-radius: var(--radius-xs);
-    font-size: 0.5625rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
-    white-space: nowrap;
+    border-radius: 50%;
     cursor: pointer;
     margin: 0 !important;
     margin-bottom: 0 !important;
-    transition: color 0.15s ease, background 0.15s ease;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
 }
 
 .bottom-bar-btn:hover {
-    color: var(--text-secondary);
     background: var(--border-subtle);
 }
 
-/* Desktop: show text label, hide icon */
-.bottom-bar-btn .submit-icon {
+/* Hide text label, show arrow icon */
+.bottom-bar-btn .submit-label {
     display: none;
+}
+
+.bottom-bar-btn .submit-icon {
+    display: block;
+    width: 16px;
+    height: 16px;
+    stroke: var(--text-muted);
+}
+
+.bottom-bar-btn:hover .submit-icon {
+    stroke: var(--primary);
 }
 
 /* 9) Slide-up animation for new bubbles */
@@ -252,7 +243,7 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
     animation: slide-up-fade 400ms var(--ease-out);
 }
 
-/* 10) Responsive — actions always visible below 600px, wider bubbles */
+/* 10) Responsive — actions always visible below 600px */
 @media (max-width: 600px) {
     .bubble-actions {
         opacity: 1;
@@ -273,16 +264,6 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
     border-color: var(--border-default);
 }
 
-[data-theme="dark"] .time-sep span {
-    background: var(--bg-surface);
-    border-color: var(--border-default);
-    color: var(--text-muted);
-}
-
-[data-theme="dark"] .bottom-bar {
-    border-top-color: var(--border-default);
-}
-
 [data-theme="dark"] .bottom-bar-input {
     background: var(--bg-panel);
     color: var(--text-primary);
@@ -299,6 +280,14 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
 
 [data-theme="dark"] .bottom-bar-btn:hover {
     background: var(--border-default);
+}
+
+[data-theme="dark"] .bottom-bar-btn .submit-icon {
+    stroke: var(--text-muted);
+}
+
+[data-theme="dark"] .bottom-bar-btn:hover .submit-icon {
+    stroke: var(--primary);
 }
 
 /* Dark mode icon buttons */

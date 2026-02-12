@@ -1706,12 +1706,6 @@ img, a {
         max-width: none !important;
     }
 
-    /* Hide title/subtitle on mobile */
-    .thoughts-title,
-    .thoughts-subtitle {
-        display: none !important;
-    }
-
     /* Chat container — full viewport */
     .thoughts-chat {
         height: 100%;
@@ -1743,21 +1737,9 @@ img, a {
         padding-right: 4px;
     }
 
-    /* Hide date separators — dates are inline with actions on mobile */
-    .time-sep {
-        display: none !important;
-    }
-
-    /* Inline date label — subtle, left of action buttons */
+    /* Inline date label — mobile tweaks */
     .bubble-date {
-        display: inline !important;
-        font-size: 0.6rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--text-muted);
         opacity: 0.45;
-        white-space: nowrap;
         margin-left: 4px;
     }
 
@@ -1857,30 +1839,15 @@ img, a {
         background: rgba(15, 23, 42, 0.06) !important;
     }
 
-    /* Submit button — circle with arrow icon */
+    /* Submit button — mobile size + touch feedback */
     .bottom-bar-btn {
         width: 38px !important;
         height: 38px !important;
-        border-radius: 50% !important;
         background: rgba(15, 23, 42, 0.04) !important;
-        border: none !important;
-        padding: 0 !important;
-        flex-shrink: 0;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
         box-shadow: none !important;
-        cursor: pointer;
-        margin: 0 !important;
-        margin-bottom: 0 !important;
-    }
-
-    .bottom-bar-btn .submit-label {
-        display: none !important;
     }
 
     .bottom-bar-btn .submit-icon {
-        display: block !important;
         width: 18px !important;
         height: 18px !important;
         stroke: var(--primary, #6D5EF6) !important;
