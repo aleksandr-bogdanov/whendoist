@@ -169,7 +169,13 @@ async def dashboard(
     # Include both pending and completed tasks so completed ones show dimmed
     # Flat view: load all tasks (parents + subtasks) for hierarchy display
     domains = await task_service.get_domains()
-    tasks = await task_service.get_tasks(status=None, top_level_only=False, include_subtasks=False, has_domain=True)
+    tasks = await task_service.get_tasks(
+        status=None,
+        top_level_only=False,
+        include_subtasks=False,
+        has_domain=True,
+        exclude_statuses=["archived"],
+    )
 
     # Compute subtask counts for parent task badges
     subtask_counts: dict[int, int] = {}
@@ -423,7 +429,13 @@ async def task_list_partial(
 
     # Get domains and tasks - flat view with hierarchy metadata
     domains = await task_service.get_domains()
-    tasks = await task_service.get_tasks(status=None, top_level_only=False, include_subtasks=False, has_domain=True)
+    tasks = await task_service.get_tasks(
+        status=None,
+        top_level_only=False,
+        include_subtasks=False,
+        has_domain=True,
+        exclude_statuses=["archived"],
+    )
 
     # Compute subtask counts for parent task badges
     subtask_counts: dict[int, int] = {}
