@@ -1,0 +1,63 @@
+# =============================================================================
+# Sentry Auto-Fix with Claude Code
+# =============================================================================
+#
+# When Sentry creates a GitHub issue (via its GitHub integration), Claude Code
+# investigates the error using the full codebase and opens a fix PR.
+#
+# Prerequisites:
+#   1. Sentry GitHub integration enabled (auto-creates issues with stack traces)
+#   2. ANTHROPIC_API_KEY secret in repo settings
+#
+# How it works:
+#   Sentry error → alert fires → GitHub issue created → Claude Code reads
+#   issue + codebase → creates fix PR (or comments if not a code bug)
+# =============================================================================
+
+name: Sentry Auto-Fix
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  auto-fix:
+    # Trigger on issues that look like they came from Sentry
+    if: >
+      contains(github.event.issue.body, 'sentry.io') ||
+      contains(github.event.issue.labels.*.name, 'sentry')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            A new Sentry error was reported in this GitHub issue.
+            The issue body contains the error details and stack traces from Sentry.
+
+            Steps:
+            1. Read the issue body carefully for stack traces, error messages, and affected files
+            2. Read the relevant source files to understand the context
+            3. Determine the root cause
+            4. If fixable: create a branch, fix the code, and open a PR
+            5. If transient (infra/network/timeout): comment on the issue explaining why no code fix is needed
+
+            PR rules (from CLAUDE.md):
+            - Bump version in pyproject.toml
+            - Run: uv lock
+            - Update CHANGELOG.md
+            - PR title: v{version}/fix: Description
+            - Run: uv run ruff format . && uv run ruff check .
+            - Never push directly to master
+          max_turns: "15"

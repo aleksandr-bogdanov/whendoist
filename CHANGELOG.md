@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.20 — 2026-02-12
+
+### Added
+- **Sentry auto-fix workflow** — GitHub Actions workflow that triggers Claude Code to investigate and fix Sentry errors automatically when they create GitHub issues.
+
+---
+
 ## v0.45.19 — 2026-02-12
 
 ### Fixed
