@@ -1726,7 +1726,7 @@ img, a {
         top: 0;
         left: 0;
         right: 0;
-        height: calc(var(--header-h) + 64px);
+        height: calc(var(--header-h) + 80px);
         background: rgba(255, 255, 255, 0.45);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         backdrop-filter: blur(20px) saturate(180%);
@@ -1816,13 +1816,29 @@ img, a {
         background: rgba(15, 23, 42, 0.06) !important;
     }
 
-    /* Bottom bar — glass morphism, safe area */
+    /* Bottom fade gradient — transparent→solid, matches Tasks page.
+       ::after on .thoughts-chat sits behind the bottom-bar. */
+    .thoughts-chat::after {
+        content: '';
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(100px + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    /* Bottom bar — transparent, floating above the fade gradient */
     .bottom-bar {
         padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
-        background: rgba(255, 255, 255, 0.45) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        backdrop-filter: blur(20px) saturate(180%);
-        border-top: 0.5px solid rgba(15, 23, 42, 0.06) !important;
+        background: transparent !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+        border-top: none !important;
+        position: relative;
+        z-index: 3;
     }
 
     /* Input — iOS style: no border, grey fill, pill */
@@ -2242,12 +2258,17 @@ img, a {
         box-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.2);
     }
 
-    /* Dark: glass bottom bar */
+    /* Dark: bottom fade gradient — fade to dark canvas */
+    [data-theme="dark"] .thoughts-chat::after {
+        background: linear-gradient(to bottom, rgba(15,23,42,0), rgba(15,23,42,1));
+    }
+
+    /* Dark: bottom bar stays transparent */
     [data-theme="dark"] .bottom-bar {
-        background: rgba(15, 23, 42, 0.45) !important;
-        border-top-color: rgba(248, 250, 252, 0.06) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        backdrop-filter: blur(20px) saturate(180%);
+        background: transparent !important;
+        border-top: none !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
     }
 
     /* Dark: input — dark grey fill */
