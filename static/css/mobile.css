@@ -1718,21 +1718,20 @@ img, a {
         width: 100%;
     }
 
-    /* Glass header backdrop — matches task-list-header approach.
-       Fixed pseudo covers the header area with blur. Mask fades out
-       the bottom edge so the transition from blurred to clear is soft. */
+    /* Glass header backdrop — tall with soft gradient fade.
+       mask-image fades out the bottom so blur transitions smoothly. */
     .thoughts-chat::before {
         content: '';
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        height: calc(var(--header-h) + 24px);
+        height: calc(var(--header-h) + 48px);
         background: rgba(255, 255, 255, 0.45);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         backdrop-filter: blur(20px) saturate(180%);
-        -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-        mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
         z-index: 5;
         pointer-events: none;
     }
@@ -1762,13 +1761,25 @@ img, a {
         padding-right: 2px;
     }
 
-    /* Bubble content — wider on mobile */
+    /* Bubble rows — more breathing room */
+    .bubble-row {
+        padding: 5px 4px !important;
+    }
+
+    /* Visual break between date groups */
+    .bubble-row.first-in-group {
+        margin-top: 6px;
+    }
+
+    /* Bubble content — wider, borderless, lighter feel */
     .bubble-content {
         max-width: 85% !important;
+        border: none !important;
+        box-shadow: 0 0.5px 2px rgba(15, 23, 42, 0.06);
     }
 
     .bubble-text {
-        font-size: 1rem !important;
+        font-size: 0.9375rem !important;
     }
 
     /* Actions — always visible, ghost style, right-aligned */
@@ -1794,8 +1805,8 @@ img, a {
 
     .bubble-actions .icon-btn svg {
         stroke: var(--text-muted) !important;
-        width: 16px !important;
-        height: 16px !important;
+        width: 14px !important;
+        height: 14px !important;
     }
 
     .bubble-actions .icon-btn:active {
@@ -2221,6 +2232,11 @@ img, a {
     /* Dark: glass header backdrop for thoughts */
     [data-theme="dark"] .thoughts-chat::before {
         background: rgba(15, 23, 42, 0.45);
+    }
+
+    /* Dark: bubble shadow adjustment */
+    [data-theme="dark"] .bubble-content {
+        box-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.2);
     }
 
     /* Dark: glass bottom bar */

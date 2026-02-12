@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.7 — 2026-02-12
+
+### Improved
+- **Thoughts mobile polish** — Taller glass header (+48px) with softer mask fade (40% opaque → transparent). Removed bubble borders for lighter feel (subtle shadow instead). More breathing room between rows (5px vs 3px). Visual breaks between date groups via `first-in-group` class. Smaller action button icons (14px vs 16px). Dark mode shadow tuning.
+
+---
+
 ## v0.45.6 — 2026-02-12
 
 ### Fixed
