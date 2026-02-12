@@ -1696,9 +1696,13 @@ img, a {
     .thoughts-page {
         position: fixed !important;
         inset: 0 !important;
+        /* Override desktop height: calc(100vh - var(--header-height)) —
+           explicit height wins over top+bottom in CSS, causing a gap. */
+        height: auto !important;
         z-index: 1 !important;
         overflow: hidden !important;
         padding: 0 !important;
+        margin: 0 !important;
         max-width: none !important;
     }
 
@@ -1715,18 +1719,20 @@ img, a {
     }
 
     /* Glass header backdrop — matches task-list-header approach.
-       Fixed pseudo covers the header area with blur so content
-       scrolling behind the transparent site-header is readable. */
+       Fixed pseudo covers the header area with blur. Mask fades out
+       the bottom edge so the transition from blurred to clear is soft. */
     .thoughts-chat::before {
         content: '';
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        height: var(--header-h);
+        height: calc(var(--header-h) + 24px);
         background: rgba(255, 255, 255, 0.45);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         backdrop-filter: blur(20px) saturate(180%);
+        -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
         z-index: 5;
         pointer-events: none;
     }
@@ -1738,17 +1744,22 @@ img, a {
         padding-right: 12px;
     }
 
-    /* Date separators — subtle text only, no pill */
+    /* Hide date separators — dates are inline with actions on mobile */
     .time-sep {
-        padding: 8px 0 2px !important;
+        display: none !important;
     }
-    .time-sep span {
-        font-size: 0.6rem !important;
-        font-weight: 500 !important;
-        background: none !important;
-        border: none !important;
-        padding: 0 !important;
-        opacity: 0.5;
+
+    /* Inline date label — subtle, left of action buttons */
+    .bubble-date {
+        display: inline !important;
+        font-size: 0.6rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        opacity: 0.45;
+        white-space: nowrap;
+        padding-right: 2px;
     }
 
     /* Bubble content — wider on mobile */

@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.6 — 2026-02-12
+
+### Fixed
+- **Thoughts bottom blank space** — Desktop `height: calc(100vh - header)` overrode `bottom: 0` from `inset`. Added `height: auto !important` on mobile.
+- **Thoughts header too sharp** — Glass backdrop extended by 24px with mask-image gradient fade so blur transitions smoothly.
+- **Thoughts dates inline** — Moved date labels from separator rows into each bubble's action area (left of buttons). Desktop keeps time-sep; mobile shows inline dates.
+
+---
+
 ## v0.45.5 — 2026-02-12
 
 ### Fixed
