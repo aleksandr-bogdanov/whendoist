@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.16 — 2026-02-12
+
+### Fixed
+- **Google Calendar 403 on re-login** — OAuth write scope flag is now derived from actual token response scopes instead of persisting stale cookie state. If Google returns 403 when creating the calendar, the flag is reset and user is prompted to re-authorize instead of getting a 500 error.
+
+---
+
+## v0.45.15 — 2026-02-12
+
+### Fixed
+- **Desktop toast notifications** — Long messages now wrap (up to 3 lines) instead of being cropped with ellipsis. On ultrawide monitors, toast aligns with the content area instead of being stranded in the far-left corner.
+
+---
+
 ## v0.45.14 — 2026-02-12
 
 ### Fixed

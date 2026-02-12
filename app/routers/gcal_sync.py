@@ -8,6 +8,7 @@ trigger manual re-syncs, and check sync status.
 import asyncio
 import logging
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import delete, func, select
@@ -243,6 +244,18 @@ async def enable_sync(
     try:
         async with GoogleCalendarClient(db, google_token) as client:
             calendar_id, created = await client.find_or_create_calendar(GCAL_SYNC_CALENDAR_NAME)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 403:
+            google_token.gcal_write_scope = False
+            await db.commit()
+            return SyncEnableResponse(
+                success=False,
+                message="Calendar write access expired. Please re-authorize with Google.",
+                needs_reauth=True,
+                reauth_url="/auth/google?write_scope=true",
+            )
+        logger.exception(f"Failed to find/create Whendoist calendar: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
     except Exception as e:
         logger.exception(f"Failed to find/create Whendoist calendar: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail="Failed to create calendar in Google.") from e
