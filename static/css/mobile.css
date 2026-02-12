@@ -1729,10 +1729,11 @@ img, a {
         font-size: 1rem !important;
     }
 
-    /* Actions — always visible, ghost style */
+    /* Actions — always visible, ghost style, next to bubble (not far-right) */
     .bubble-actions {
         opacity: 1 !important;
         pointer-events: auto !important;
+        margin-left: 0 !important;
     }
 
     .bubble-actions .icon-btn {

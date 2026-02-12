@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.3 — 2026-02-12
+
+### Fixed
+- **Thoughts mobile layout** — Action buttons pinned to far-right edge of screen instead of sitting next to bubble content. Removed `margin-left: auto` override on mobile.
+
+---
+
 ## v0.45.2 — 2026-02-12
 
 ### Fixed
