@@ -1694,8 +1694,9 @@ img, a {
 
     /* ── Thoughts Page — Chat Layout ── */
     .thoughts-page {
-        height: 100vh;
-        height: var(--app-height, 100vh);
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 1 !important;
         overflow: hidden !important;
         padding: 0 !important;
         max-width: none !important;
@@ -1713,11 +1714,41 @@ img, a {
         width: 100%;
     }
 
+    /* Glass header backdrop — matches task-list-header approach.
+       Fixed pseudo covers the header area with blur so content
+       scrolling behind the transparent site-header is readable. */
+    .thoughts-chat::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--header-h);
+        background: rgba(255, 255, 255, 0.45);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
+        z-index: 5;
+        pointer-events: none;
+    }
+
     /* Scroll area — clearance for header */
     .scroll-area {
         padding-top: calc(var(--header-h) + 8px);
         padding-left: 12px;
         padding-right: 12px;
+    }
+
+    /* Date separators — subtle text only, no pill */
+    .time-sep {
+        padding: 8px 0 2px !important;
+    }
+    .time-sep span {
+        font-size: 0.6rem !important;
+        font-weight: 500 !important;
+        background: none !important;
+        border: none !important;
+        padding: 0 !important;
+        opacity: 0.5;
     }
 
     /* Bubble content — wider on mobile */
@@ -2174,6 +2205,11 @@ img, a {
 
     [data-theme="dark"] .project-header {
         border-bottom-color: transparent !important;
+    }
+
+    /* Dark: glass header backdrop for thoughts */
+    [data-theme="dark"] .thoughts-chat::before {
+        background: rgba(15, 23, 42, 0.45);
     }
 
     /* Dark: glass bottom bar */
