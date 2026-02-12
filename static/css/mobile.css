@@ -1730,9 +1730,9 @@ img, a {
         pointer-events: none;
     }
 
-    /* Scroll area — clearance for header */
+    /* Scroll area — clearance for header glass blur zone */
     .scroll-area {
-        padding-top: calc(var(--header-h) + 8px);
+        padding-top: calc(var(--header-h) + 40px);
         padding-left: 12px;
         padding-right: 4px;
     }
@@ -1844,6 +1844,7 @@ img, a {
         width: 38px !important;
         height: 38px !important;
         background: rgba(15, 23, 42, 0.04) !important;
+        border: 1px solid rgba(15, 23, 42, 0.12) !important;
         box-shadow: none !important;
     }
 

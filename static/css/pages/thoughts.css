@@ -198,7 +198,7 @@ html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
     justify-content: center;
     padding: 0;
     background: var(--bg-panel);
-    border: none;
+    border: 1px solid var(--border-subtle);
     border-radius: 50%;
     cursor: pointer;
     margin: 0 !important;

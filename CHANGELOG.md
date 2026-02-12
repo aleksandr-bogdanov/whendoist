@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.14 — 2026-02-12
+
+### Fixed
+- **Send button contrast** — Added visible border to submit button on both desktop and mobile (was white-on-grey with no definition).
+- **Top blur clipping oldest thought** — Increased scroll-area top padding to clear the glass header blur zone so the first bubble isn't obscured.
+
+---
+
 ## v0.45.12 — 2026-02-12
 
 ### Improved
