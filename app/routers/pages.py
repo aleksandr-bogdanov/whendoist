@@ -667,7 +667,7 @@ async def thoughts(
 
         if label != current_label:
             if current_items:
-                thought_groups.append({"label": current_label, "items": current_items})
+                thought_groups.append({"label": current_label, "thoughts": current_items})
             current_label = label
             current_items = [item]
         else:
