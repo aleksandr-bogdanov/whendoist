@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.5 — 2026-02-12
+
+### Fixed
+- **Thoughts blank space at bottom** — Switched to `position: fixed; inset: 0` on mobile so page fills the exact viewport, eliminating gap from Pico CSS parent padding.
+- **Thoughts date separators too prominent** — Removed pill styling (background, border) from date labels on mobile; now subtle centered text at 60% font size with 50% opacity.
+- **Thoughts header fully transparent** — Added glass backdrop (`blur(20px)`) behind the site-header area on the thoughts page, matching the Tasks page approach. Includes dark mode support.
+
+---
+
 ## v0.45.4 — 2026-02-12
 
 ### Fixed
