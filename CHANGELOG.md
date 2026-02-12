@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.9 — 2026-02-12
+
+### Improved
+- **Thoughts horizontal rhythm** — Tighter action area: button width 36px (was 44px), zero gap between buttons, scroll-area right padding 4px (was 12px). Date label gets `margin-left: 4px` for breathing room from bubble.
+
+---
+
 ## v0.45.8 — 2026-02-12
 
 ### Improved
