@@ -653,7 +653,7 @@ async def thoughts(
     current_items: list[dict] = []
 
     for item in task_items:
-        created = item["task"].created_at
+        created = item["task"].external_created_at or item["task"].created_at
         if created.tzinfo is None:
             created = created.replace(tzinfo=UTC)
         item_date = created.astimezone(tz).date()
