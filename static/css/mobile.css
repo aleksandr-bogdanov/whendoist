@@ -1802,7 +1802,7 @@ img, a {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        border-radius: 50% !important;
+        border-radius: 18px !important;
         color: var(--text-muted) !important;
     }
 

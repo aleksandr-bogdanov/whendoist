@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## v0.45.10 — 2026-02-12
+
+### Fixed
+- **Thoughts oval buttons** — `border-radius: 50%` on 36×44px buttons made ovals. Changed to fixed `18px` radius for rounded rectangle.
+
+---
+
 ## v0.45.9 — 2026-02-12
 
 ### Improved
