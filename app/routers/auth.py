@@ -216,6 +216,15 @@ async def google_callback(
     refresh_token = tokens.get("refresh_token")
     expires_in = tokens.get("expires_in", 3600)
 
+    # Determine write scope from actually granted scopes (source of truth),
+    # falling back to the cookie hint for older flows that don't return scope.
+    granted_scope = tokens.get("scope", "")
+    has_write_scope = (
+        ("auth/calendar " in f"{granted_scope} " and "calendar.readonly" not in granted_scope)
+        if granted_scope
+        else oauth_gcal_write_scope == "true"
+    )
+
     # Get user info including name
     user_info = await google.get_user_info(access_token)
     email = user_info["email"]
@@ -237,15 +246,12 @@ async def google_callback(
     result = await db.execute(select(GoogleToken).where(GoogleToken.user_id == user.id))
     token = result.scalar_one_or_none()
 
-    has_write_scope = oauth_gcal_write_scope == "true"
-
     if token:
         token.access_token = access_token
         if refresh_token:
             token.refresh_token = refresh_token
         token.expires_at = google.calculate_expires_at(expires_in)
-        if has_write_scope:
-            token.gcal_write_scope = True
+        token.gcal_write_scope = has_write_scope
     else:
         token = GoogleToken(
             user_id=user.id,
