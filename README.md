@@ -184,13 +184,14 @@ just fmt      # Format code
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
 | [Toast System](docs/TOAST-SYSTEM.md) | Typed notifications with queuing, actions, and backward compatibility |
-| [In-Place Mutations](docs/2026-02-12-in-place-task-mutations.md) | TaskMutations module — no-reload DOM updates for task operations |
+| [In-Place Mutations](docs/IN-PLACE-MUTATIONS.md) | TaskMutations module — no-reload DOM updates for task operations |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |
 | [UI Components](docs/brand/UI-KIT.md) | Button, form, panel specs |
 | **Reference** | |
-| [Changelog](CHANGELOG.md) | Version history + post-v1.0 backlog |
+| [Post-v1.0 Backlog](docs/POST-1.0-BACKLOG.md) | Deferred work and future roadmap |
+| [Changelog](CHANGELOG.md) | Version history |
 | [Test Architecture](tests/README.md) | Testing patterns |
 | [Archived Docs](docs/archive/) | Historical audits, reviews, and plans |
 
