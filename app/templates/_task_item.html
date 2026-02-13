@@ -1,3 +1,3 @@
 {# Single task item fragment — used by GET /api/v1/task-item/{id} #}
-{% from '_task_list.html' import render_task_item %}
+{% from '_task_item_macro.html' import render_task_item %}
 {{ render_task_item(task_item, today, encryption_enabled) }}

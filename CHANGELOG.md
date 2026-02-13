@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.28 — 2026-02-13
+
+### Fixed
+- **Template import KeyError: 'request'** — extracted `render_task_item` macro to separate `_task_item_macro.html` file to avoid Jinja2 evaluating `url_for` calls in `_task_list.html` during template imports (Sentry issue WHENDOIST-G)
+
+---
+
 ## v0.45.27 — 2026-02-13
 
 ### Fixed
