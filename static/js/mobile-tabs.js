@@ -96,20 +96,23 @@ class MobileTabs {
         }
 
         // Restore scroll position of incoming panel (or scroll to now on first calendar view)
+        // Double-rAF ensures layout is fully committed after display:none → display:flex toggle
         var self = this;
         requestAnimationFrame(() => {
-            if (view === 'tasks') {
-                var scrollEl = self.tasksPanel;
-                if (scrollEl) scrollEl.scrollTop = self._tasksScrollTop || 0;
-            } else if (view === 'schedule') {
-                if (!self._calendarScrolled && window.scrollCalendarToNow) {
-                    window.scrollCalendarToNow();
-                    self._calendarScrolled = true;
-                } else {
-                    var scrollEl = self.calendarPanel?.querySelector('.calendar-carousel');
-                    if (scrollEl) scrollEl.scrollTop = self._calendarScrollTop || 0;
+            requestAnimationFrame(() => {
+                if (view === 'tasks') {
+                    var scrollEl = self.tasksPanel;
+                    if (scrollEl) scrollEl.scrollTop = self._tasksScrollTop || 0;
+                } else if (view === 'schedule') {
+                    if (!self._calendarScrolled && window.scrollCalendarToNow) {
+                        window.scrollCalendarToNow();
+                        self._calendarScrolled = true;
+                    } else {
+                        var scrollEl = self.calendarPanel?.querySelector('.calendar-carousel');
+                        if (scrollEl) scrollEl.scrollTop = self._calendarScrollTop || 0;
+                    }
                 }
-            }
+            });
         });
 
         // Haptic feedback
