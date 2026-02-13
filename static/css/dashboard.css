@@ -2592,6 +2592,14 @@ body[data-energy-level] .scheduled-group.project-group {
     opacity: 1;
 }
 
+.day-nav-btn:active {
+    background: rgba(109, 94, 246, 0.15);
+    color: var(--primary);
+    opacity: 1;
+    transform: scale(0.92);
+    transition: all 0.05s ease;
+}
+
 .day-nav-btn svg {
     width: 14px;
     height: 14px;
@@ -2604,6 +2612,11 @@ body[data-energy-level] .scheduled-group.project-group {
 
 [data-theme="dark"] .day-nav-btn:hover {
     background: rgba(139, 124, 247, 0.12);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .day-nav-btn:active {
+    background: rgba(139, 124, 247, 0.2);
     color: var(--primary);
 }
 

@@ -492,6 +492,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (todayBtn && todayCalendar && carousel) {
         todayBtn.addEventListener('click', () => {
+            if (window.navigateToDay) {
+                const todayIndex = Array.from(document.querySelectorAll('.day-calendar')).indexOf(todayCalendar);
+                if (todayIndex !== -1) { window.navigateToDay(todayIndex); return; }
+            }
             todayCalendar.scrollIntoView({ behavior: 'smooth', inline: 'start' });
         });
 
@@ -551,6 +555,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         currentVisibleDay = entry.target;
                         updateSharedHeader(entry.target);
+                        // Sync targetDayIndex so manual swipes keep nav accurate
+                        const idx = Array.from(dayCalendars).indexOf(entry.target);
+                        if (idx !== -1) targetDayIndex = idx;
                     }
                 });
             },
@@ -558,29 +565,29 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         dayCalendars.forEach(day => dayObserver.observe(day));
 
-        // Calendar navigation buttons (in shared header)
-        const getVisibleDayIndex = () => {
-            const scrollLeft = carousel.scrollLeft;
-            const dayWidth = carousel.offsetWidth;
-            return Math.round(scrollLeft / dayWidth);
-        };
+        // Calendar navigation — track intended index to avoid mid-scroll race
+        let targetDayIndex = Array.from(dayCalendars).indexOf(
+            document.getElementById('today-calendar') || dayCalendars[0]
+        );
+
+        function navigateToDay(index) {
+            index = Math.max(0, Math.min(index, dayCalendars.length - 1));
+            targetDayIndex = index;
+            // Update header immediately — don't wait for observer
+            updateSharedHeader(dayCalendars[index]);
+            dayCalendars[index].scrollIntoView({ behavior: 'smooth', inline: 'start' });
+        }
+
+        // Expose for Go To Today and Plan My Day
+        window.navigateToDay = navigateToDay;
+        window.getTargetDayIndex = () => targetDayIndex;
 
         document.querySelectorAll('.day-nav-prev').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const currentIndex = getVisibleDayIndex();
-                if (currentIndex > 0) {
-                    dayCalendars[currentIndex - 1].scrollIntoView({ behavior: 'smooth', inline: 'start' });
-                }
-            });
+            btn.addEventListener('click', () => navigateToDay(targetDayIndex - 1));
         });
 
         document.querySelectorAll('.day-nav-next').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const currentIndex = getVisibleDayIndex();
-                if (currentIndex < dayCalendars.length - 1) {
-                    dayCalendars[currentIndex + 1].scrollIntoView({ behavior: 'smooth', inline: 'start' });
-                }
-            });
+            btn.addEventListener('click', () => navigateToDay(targetDayIndex + 1));
         });
     }
 
