@@ -7,6 +7,20 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.32 — 2026-02-13
+
+### Fixed
+- **PWA content overlap resolved** — `--header-h` standalone override was being clobbered by a later `--header-h: 44px` at same specificity; moved into the standalone media query block so safe-area-inset-top is used for content offset
+- **PWA bottom gap in dark mode** — `body` now gets matching background-color alongside `html` in standalone mode
+- **Calendar swipe navigation restored** — `.hour-grid` had `touch-action: pan-y` which blocked horizontal swipes from reaching the carousel; changed to `pan-x pan-y`
+- **Mobile tabs scroll save/restore** — selector was `.calendar-scroll` (doesn't exist) instead of `.calendar-carousel`
+
+### Added
+- **Fixed calendar day header** — date label and nav buttons now live above the carousel so they stay put during horizontal swipes; day label updates via IntersectionObserver
+- **Schedule toast** — editing a task to add a scheduled date now shows a confirmation toast ("Scheduled 'title' for Jan 6")
+
+---
+
 ## v0.45.31 — 2026-02-13
 
 ### Fixed

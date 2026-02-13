@@ -2524,9 +2524,23 @@ body[data-energy-level] .scheduled-group.project-group {
 }
 
 /* =============================================================================
-   Day Header (date and Plan button)
+   Shared Day Header (fixed above carousel — date nav + Plan button)
    ============================================================================= */
 
+.calendar-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 7.5px 0.75rem;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+    line-height: 1;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+/* Legacy .day-header kept for compatibility but no longer rendered */
 .day-header {
     display: flex;
     align-items: center;
@@ -2866,7 +2880,7 @@ body[data-energy-level] .scheduled-group.project-group {
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior-x: none;
-    touch-action: pan-y;  /* Allow vertical scroll, let horizontal swipe bubble to carousel */
+    touch-action: pan-x pan-y;  /* Allow both axes; overflow-x:hidden prevents local horizontal scroll, so horizontal swipes propagate to carousel */
     position: relative;  /* For time selection overlay positioning */
     background: var(--bg-surface);
     isolation: isolate;  /* Create stacking context so task z-index works across rows */

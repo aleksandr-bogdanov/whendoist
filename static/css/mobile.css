@@ -531,12 +531,8 @@ img, a {
         bottom: calc(1rem + 60px + env(safe-area-inset-bottom, 0px)) !important;
     }
 
-    /* PWA mode - account for safe area in header and use stable 100vh */
+    /* PWA mode - stable 100vh (no dynamic address bar) */
     @media (display-mode: standalone) {
-        :root {
-            --header-h: calc(44px + env(safe-area-inset-top, 0px));
-        }
-
         /* In PWA standalone there's no dynamic address bar, so 100vh is stable.
            Using var(--app-height) can leave a gap if innerHeight doesn't include
            the bottom safe area. */
@@ -1399,11 +1395,16 @@ img, a {
 
     /* PWA standalone: restore notch clearance (must come after longhand rule) */
     @media (display-mode: standalone) {
+        :root {
+            --header-h: calc(44px + env(safe-area-inset-top, 0px));
+        }
+
         .site-header {
             padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
         }
 
-        html {
+        html,
+        body {
             background-color: var(--bg-surface, #fff);
         }
     }
@@ -2222,13 +2223,14 @@ img, a {
         padding-left: 16px !important;
     }
 
-    /* Dark PWA standalone: restore notch clearance + html background */
+    /* Dark PWA standalone: restore notch clearance + html/body background */
     @media (display-mode: standalone) {
         [data-theme="dark"] .site-header {
             padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
         }
 
-        [data-theme="dark"] html {
+        [data-theme="dark"] html,
+        [data-theme="dark"] body {
             background-color: var(--bg-surface, #0f172a);
         }
     }

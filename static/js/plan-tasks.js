@@ -265,8 +265,14 @@
     }
 
     function createPlanButton(calendarPanel) {
-        // Attach click listeners to all per-day plan buttons
-        const planButtons = calendarPanel.querySelectorAll('.plan-day-btn');
+        // Attach click listener to shared plan button
+        const sharedBtn = document.getElementById('shared-plan-day-btn');
+        if (sharedBtn) {
+            sharedBtn.addEventListener('click', handlePlanButtonClick);
+        }
+
+        // Attach click listeners to any per-day plan buttons (hero cards)
+        const planButtons = calendarPanel.querySelectorAll('.plan-day-btn:not(#shared-plan-day-btn)');
         planButtons.forEach(btn => {
             btn.addEventListener('click', handlePlanButtonClick);
         });
@@ -280,7 +286,20 @@
     function handlePlanButtonClick(e) {
         e.stopPropagation();
         const clickedBtn = e.currentTarget;
-        const dayCalendar = clickedBtn.closest('.day-calendar');
+        let dayCalendar = clickedBtn.closest('.day-calendar');
+
+        // Shared header button — look up visible day via data-current-day
+        if (!dayCalendar) {
+            const sharedHeader = document.getElementById('calendar-day-header');
+            const currentDay = sharedHeader?.dataset.currentDay;
+            if (currentDay) {
+                dayCalendar = document.querySelector('.day-calendar[data-day="' + currentDay + '"]');
+            }
+            // Fallback to currentVisibleCalendar
+            if (!dayCalendar) {
+                dayCalendar = currentVisibleCalendar;
+            }
+        }
 
         if (isInSelectionMode) {
             // Save reference before exiting (exitSelectionMode sets it to null)
@@ -1387,8 +1406,8 @@
      */
     function enterPlanMode(dayCalendar) {
         if (!dayCalendar) return;
-        // Find the plan button for this calendar to track state
-        planBtn = dayCalendar.querySelector('.plan-day-btn');
+        // Use shared plan button (no longer per-day)
+        planBtn = document.getElementById('shared-plan-day-btn') || dayCalendar.querySelector('.plan-day-btn');
         enterSelectionMode(dayCalendar);
     }
 
