@@ -258,6 +258,14 @@
                 if (typeof moveTaskToScheduledSection === 'function') {
                     moveTaskToScheduledSection(taskEl);
                 }
+                // Show confirmation toast
+                if (window.Toast) {
+                    var taskText = taskEl.querySelector('.task-text');
+                    var title = taskText ? taskText.textContent.trim() : 'Task';
+                    var date = new Date(newScheduledDate + 'T00:00:00');
+                    var formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    Toast.success('Scheduled "' + title + '" for ' + formatted);
+                }
             } else if (oldScheduledDate && !newScheduledDate) {
                 // Became unscheduled
                 if (typeof moveTaskToUnscheduledSection === 'function') {

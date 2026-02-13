@@ -73,7 +73,7 @@ class MobileTabs {
             var scrollEl = this.tasksPanel;
             if (scrollEl) this._tasksScrollTop = scrollEl.scrollTop;
         } else if (this.activeTab === 'schedule') {
-            var scrollEl = this.calendarPanel?.querySelector('.calendar-scroll');
+            var scrollEl = this.calendarPanel?.querySelector('.calendar-carousel');
             if (scrollEl) this._calendarScrollTop = scrollEl.scrollTop;
         }
 
@@ -106,7 +106,7 @@ class MobileTabs {
                     window.scrollCalendarToNow();
                     self._calendarScrolled = true;
                 } else {
-                    var scrollEl = self.calendarPanel?.querySelector('.calendar-scroll');
+                    var scrollEl = self.calendarPanel?.querySelector('.calendar-carousel');
                     if (scrollEl) scrollEl.scrollTop = self._calendarScrollTop || 0;
                 }
             }

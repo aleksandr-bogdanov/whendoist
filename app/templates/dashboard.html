@@ -120,33 +120,34 @@
                 <button class="zoom-btn" data-zoom="in" title="Zoom in">+</button>
             </div>
         </div>
+        {# Shared day header — stays fixed above the carousel during swipe #}
+        <div class="calendar-day-header" id="calendar-day-header">
+            <div class="day-header-nav">
+                <button type="button" class="day-nav-btn day-nav-prev" aria-label="Previous day">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <span class="day-header-date" id="current-day-label">{{ today.strftime('%A, %b %d') }}</span>
+                <button type="button" class="day-nav-btn day-nav-next" aria-label="Next day">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+            <button type="button" class="plan-day-btn" id="shared-plan-day-btn" title="Plan My Day">
+                <span class="action-emoji">✨</span>
+                <span class="action-name">Plan My Day</span>
+            </button>
+        </div>
         <div class="calendar-carousel" id="calendar-carousel">
             {% for day in calendar_days %}
             <div class="day-calendar{% if day.is_today %} today{% elif day.offset < 0 %} past{% else %} future{% endif %}"
                  data-day="{{ day.date.isoformat() }}"
                  data-day-name="{{ day.date.strftime('%A') }}"
                  data-day-date="{{ day.date.strftime('%B %d') }}"
+                 data-day-label="{{ day.date.strftime('%A, %b %d') }}"
                  {% if day.is_today %}id="today-calendar"{% endif %}>
-
-                <div class="day-header">
-                    <div class="day-header-nav">
-                        <button type="button" class="day-nav-btn day-nav-prev" aria-label="Previous day">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg>
-                        </button>
-                        <span class="day-header-date">{{ day.date.strftime('%A, %b %d') }}</span>
-                        <button type="button" class="day-nav-btn day-nav-next" aria-label="Next day">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </button>
-                    </div>
-                    <button type="button" class="plan-day-btn" title="Plan My Day">
-                        <span class="action-emoji">✨</span>
-                        <span class="action-name">Plan My Day</span>
-                    </button>
-                </div>
 
                 <div class="pmd-hero" data-pmd-hero hidden>
                     <div class="pmd-hero-label">Plan this day</div>
@@ -522,6 +523,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Shared day header — update label when visible day changes
+        const sharedHeader = document.getElementById('calendar-day-header');
+        const dayLabel = document.getElementById('current-day-label');
+
+        function updateSharedHeader(dayEl) {
+            if (!dayEl || !sharedHeader) return;
+            var label = dayEl.dataset.dayLabel || dayEl.dataset.dayName + ', ' + dayEl.dataset.dayDate;
+            if (dayLabel) dayLabel.textContent = label;
+            sharedHeader.dataset.currentDay = dayEl.dataset.day;
+        }
+
+        // Initialize from today-calendar
+        var initDay = document.getElementById('today-calendar') || dayCalendars[0];
+        if (initDay) updateSharedHeader(initDay);
+
         const dayObserver = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
@@ -534,6 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                         currentVisibleDay = entry.target;
+                        updateSharedHeader(entry.target);
                     }
                 });
             },
@@ -541,14 +558,13 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         dayCalendars.forEach(day => dayObserver.observe(day));
 
-        // Calendar navigation buttons (in day headers)
+        // Calendar navigation buttons (in shared header)
         const getVisibleDayIndex = () => {
             const scrollLeft = carousel.scrollLeft;
             const dayWidth = carousel.offsetWidth;
             return Math.round(scrollLeft / dayWidth);
         };
 
-        // Attach nav handlers to all day-nav-btn elements
         document.querySelectorAll('.day-nav-prev').forEach(btn => {
             btn.addEventListener('click', () => {
                 const currentIndex = getVisibleDayIndex();
@@ -643,8 +659,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (sub) sub.textContent = 'Fill your free time with what matters';
                 hero.hidden = false;
 
-                var headerPlanBtn = cal.querySelector('.day-header .plan-day-btn');
-                if (headerPlanBtn) headerPlanBtn.style.display = 'none';
+                // Hide shared plan button if the visible day has a hero card
+                var sharedPlanBtn = document.getElementById('shared-plan-day-btn');
+                if (sharedPlanBtn && cal.classList.contains('today')) {
+                    sharedPlanBtn.style.display = 'none';
+                }
             }
         });
     })();
