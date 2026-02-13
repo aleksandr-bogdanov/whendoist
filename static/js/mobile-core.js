@@ -82,6 +82,7 @@ class PullToRefresh {
         this.currentY = 0;
         this.isPulling = false;
         this.isRefreshing = false;
+        this._rafId = null;
 
         this.init();
     }
@@ -118,43 +119,49 @@ class PullToRefresh {
             this.isPulling = true;
         }, { passive: true });
 
+        // Non-passive so we can preventDefault when pulling
         this.container.addEventListener('touchmove', (e) => {
             if (!this.isPulling || this.isRefreshing) return;
 
             this.currentY = e.touches[0].clientY;
             const deltaY = this.currentY - this.startY;
 
-            // Only pull down
+            // Only pull down — abandon if user scrolls up
             if (deltaY < 0) {
                 this.isPulling = false;
+                this.hide();
                 return;
             }
 
-            // Check if we're actually scrolled to top
+            // Abandon if container scrolled away from top
             if (this.container.scrollTop > 0) {
                 this.isPulling = false;
+                this.hide();
                 return;
             }
 
-            // Show indicator
+            // Prevent native overscroll while we handle the gesture
+            e.preventDefault();
+
+            // Rubber-band dampening for natural feel
             const progress = Math.min(deltaY / this.threshold, 1);
-            const pullAmount = Math.min(deltaY, this.maxPull);
+            const pullAmount = this.maxPull * (1 - Math.exp(-deltaY / this.maxPull));
 
-            this.indicator.classList.add('visible');
-            this.indicator.style.transform = `translateX(-50%) translateY(${12 + pullAmount * 0.3}px)`;
+            // Batch DOM updates in rAF
+            if (this._rafId) cancelAnimationFrame(this._rafId);
+            this._rafId = requestAnimationFrame(() => {
+                this.indicator.classList.add('visible', 'dragging');
+                this.indicator.style.transform = `translateX(-50%) translateY(${12 + pullAmount * 0.3}px)`;
 
-            // Update text based on progress
-            const text = this.indicator.querySelector('.ptr-text');
-            if (progress >= 1) {
-                text.textContent = 'Release to refresh';
-            } else {
-                text.textContent = 'Pull to refresh';
-            }
+                // Update text based on progress
+                const text = this.indicator.querySelector('.ptr-text');
+                text.textContent = progress >= 1 ? 'Release to refresh' : 'Pull to refresh';
 
-            // Rotate spinner based on progress
-            const spinner = this.indicator.querySelector('.ptr-spinner');
-            spinner.style.transform = `rotate(${progress * 180}deg)`;
-        }, { passive: true });
+                // Rotate spinner based on progress
+                const spinner = this.indicator.querySelector('.ptr-spinner');
+                spinner.style.transform = `rotate(${progress * 180}deg)`;
+            });
+        }, { passive: false });
 
         this.container.addEventListener('touchend', async () => {
             if (!this.isPulling) return;
@@ -179,6 +186,7 @@ class PullToRefresh {
 
     async refresh() {
         this.isRefreshing = true;
+        this.indicator.classList.remove('dragging');
         this.indicator.classList.add('refreshing');
         this.indicator.querySelector('.ptr-text').textContent = 'Refreshing...';
         this.indicator.style.transform = 'translateX(-50%) translateY(12px)';
@@ -188,22 +196,36 @@ class PullToRefresh {
             window.HapticEngine.trigger('medium');
         }
 
+        const refreshStart = Date.now();
+
         try {
             if (this.onRefresh) {
                 await this.onRefresh();
             } else {
-                // Default: trigger HTMX refresh
+                // Default: trigger HTMX refresh and wait for completion
                 const taskList = document.querySelector('[hx-get*="/dashboard"]');
                 if (taskList && window.htmx) {
                     window.htmx.trigger(taskList, 'refresh');
+
+                    // Wait for HTMX to settle, with a 5s safety timeout
+                    await Promise.race([
+                        new Promise(resolve => {
+                            taskList.addEventListener('htmx:afterSettle', resolve, { once: true });
+                        }),
+                        new Promise(resolve => setTimeout(resolve, 5000)),
+                    ]);
                 } else {
                     // Fallback: reload page
                     window.location.reload();
+                    return; // page will reload, no need to hide
                 }
             }
 
-            // Wait a bit for visual feedback
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Ensure spinner shows for at least 400ms
+            const elapsed = Date.now() - refreshStart;
+            if (elapsed < 400) {
+                await new Promise(resolve => setTimeout(resolve, 400 - elapsed));
+            }
         } finally {
             this.hide();
             this.isRefreshing = false;
@@ -211,6 +233,11 @@ class PullToRefresh {
     }
 
     hide() {
+        if (this._rafId) {
+            cancelAnimationFrame(this._rafId);
+            this._rafId = null;
+        }
+        this.indicator.classList.remove('dragging');
         this.indicator.classList.remove('visible', 'refreshing');
         this.indicator.style.transform = '';
     }
