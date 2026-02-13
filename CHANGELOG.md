@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.31 — 2026-02-13
+
+### Fixed
+- **Calendar day navigation restored** — `todayCalendar` variable was out of scope in the DOMContentLoaded handler after scroll-to-now refactor; "Go to Today" button and IntersectionObserver now work again
+- **PWA safe areas actually work** — shorthand `padding` rule was clobbering the standalone `padding-top` override; split to longhand and moved standalone override after the base rule in both light and dark mode
+- **Task moves to scheduled section after dialog save** — `moveTaskToScheduledSection` now does a cross-section move into `#section-sched` when the sectioned layout is active, matching the pattern used by `moveTaskToCompleted`
+
+---
+
 ## v0.45.30 — 2026-02-13
 
 ### Fixed
