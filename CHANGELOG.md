@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.28 — 2026-02-13
+
+### Fixed
+- **Task item partial no longer crashes with KeyError: 'request'** — `_task_list.html` had a `url_for()` call at module level (outside any macro) which requires `request` in the Jinja2 context; when `_task_item.html` imported the macro via `{% from %}`, Jinja2 executed the module-level code without context, causing the error. Replaced with a static path.
+
+---
+
 ## v0.45.27 — 2026-02-13
 
 ### Fixed
