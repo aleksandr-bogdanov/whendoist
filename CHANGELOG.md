@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.26 — 2026-02-13
+
+### Fixed
+- **Mobile: pull-to-refresh indicator no longer gets stuck** — when a pull gesture is abandoned mid-drag (user scrolls up or scroll position changes), the indicator now hides immediately instead of staying visible
+- **Mobile: pull-to-refresh feels smoother** — CSS transitions disabled during drag for instant finger-following, rubber-band dampening for natural resistance, rAF-batched DOM updates, and native overscroll prevented during gesture
+- **Mobile: pull-to-refresh waits for actual data** — refresh now waits for HTMX `afterSettle` instead of an arbitrary 500ms timeout, with a 5s safety fallback
+
+---
+
 ## v0.45.25 — 2026-02-13
 
 ### Fixed

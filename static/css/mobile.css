@@ -1328,10 +1328,15 @@ img, a {
     pointer-events: none;
 }
 
+.pull-to-refresh.dragging {
+    transition: none;
+}
+
 .pull-to-refresh.visible {
     transform: translateX(-50%) translateY(12px);
     opacity: 1;
     pointer-events: auto;
+    will-change: transform, opacity;
 }
 
 .pull-to-refresh.refreshing {
