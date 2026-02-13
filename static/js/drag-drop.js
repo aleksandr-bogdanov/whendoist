@@ -1466,6 +1466,7 @@
         init,
         getHourHeight,
         initSingleTask,
+        createScheduledTaskElement,
     };
 
     document.addEventListener('DOMContentLoaded', init);

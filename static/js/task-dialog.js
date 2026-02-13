@@ -1481,6 +1481,7 @@
             if (window.TaskMutations) {
                 if (wasEditing) {
                     await TaskMutations.updateTaskInPlace(wasEditing, taskData);
+                    TaskMutations.updateCalendarItem(wasEditing, taskData);
                 } else {
                     await TaskMutations.insertNewTask(taskData.id);
                 }
