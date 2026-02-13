@@ -470,6 +470,44 @@ window.scrollCalendarToNow = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Reconcile stale cached "today" — PWA may serve week-old HTML
+    (function() {
+        const carousel = document.getElementById('calendar-carousel');
+        if (!carousel) return;
+
+        // Get client's today in YYYY-MM-DD format (local timezone)
+        const now = new Date();
+        const clientToday = now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0');
+
+        const serverToday = document.getElementById('today-calendar');
+
+        // If server's "today" already matches client's today, nothing to do
+        if (serverToday && serverToday.dataset.day === clientToday) return;
+
+        // Try to find the real today in the rendered calendar days
+        const realToday = carousel.querySelector('.day-calendar[data-day="' + clientToday + '"]');
+
+        if (!realToday) {
+            // Real today is outside the rendered range — page is very stale, force reload
+            location.reload();
+            return;
+        }
+
+        // Move today markers from stale element to correct element
+        if (serverToday) {
+            serverToday.removeAttribute('id');
+            serverToday.classList.remove('today');
+            // Stale "today" is always in the past
+            serverToday.classList.add('past');
+        }
+
+        realToday.id = 'today-calendar';
+        realToday.classList.remove('past', 'future');
+        realToday.classList.add('today');
+    })();
+
     // Only scroll to now if calendar is visible (not hidden behind mobile tabs)
     const calendarPanel = document.querySelector('.calendar-panel');
     const isMobile = window.matchMedia('(max-width: 900px)').matches;

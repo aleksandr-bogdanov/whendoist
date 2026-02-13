@@ -2584,6 +2584,7 @@ body[data-energy-level] .scheduled-group.project-group {
     padding: 0;
     margin: 0;  /* Override PICO */
     opacity: 0.6;
+    touch-action: manipulation;
 }
 
 .day-nav-btn:hover {
