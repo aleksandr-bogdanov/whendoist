@@ -483,6 +483,23 @@ img, a {
         padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
     }
 
+    /* Glass header backdrop for calendar — matches task-list-header::before */
+    .calendar-panel.mobile-active::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: calc(var(--header-h) + 20px);
+        background: rgba(255, 255, 255, 0.45);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        z-index: 5;
+        pointer-events: none;
+    }
+
     /* Bottom fade for calendar — mask-image on the carousel itself.
        Unlike position:fixed overlays (which iOS compositing layers from
        -webkit-overflow-scrolling:touch can paint over), mask-image modifies
@@ -1407,6 +1424,15 @@ img, a {
         body {
             background-color: var(--bg-surface, #fff);
         }
+
+        /* All page scroll containers — fill full PWA viewport */
+        .tasks-panel.mobile-active,
+        .calendar-panel.mobile-active,
+        .analytics-page,
+        .settings-page {
+            height: 100vh !important;
+            height: 100dvh !important;
+        }
     }
 
     /* Nav pill — fully transparent on glass header (matches task-list-header) */
@@ -1539,8 +1565,11 @@ img, a {
 
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
-        .calendar-panel.mobile-active {
+        .calendar-panel.mobile-active,
+        .analytics-page,
+        .settings-page {
             height: 100vh !important;
+            height: 100dvh !important;
         }
     }
 
@@ -1748,8 +1777,8 @@ img, a {
         background: rgba(255, 255, 255, 0.45);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
         backdrop-filter: blur(20px) saturate(180%);
-        -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-        mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
         z-index: 5;
         pointer-events: none;
     }
@@ -2253,6 +2282,11 @@ img, a {
 
     [data-theme="dark"] .project-header {
         border-bottom-color: transparent !important;
+    }
+
+    /* Dark: glass header backdrop for calendar */
+    [data-theme="dark"] .calendar-panel.mobile-active::before {
+        background: rgba(15, 23, 42, 0.45);
     }
 
     /* Dark: glass header backdrop for thoughts */

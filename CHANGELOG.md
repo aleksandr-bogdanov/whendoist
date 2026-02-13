@@ -7,6 +7,17 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.33 — 2026-02-14
+
+### Fixed
+- **PWA bottom grey gap eliminated** — removed `main` bottom safe-area padding on mobile; each page already handles its own bottom spacing
+- **Calendar glass header backdrop** — added frosted-glass `::before` layer so content no longer scrolls visibly behind the transparent header
+- **Tab switch scroll restoration** — double-rAF ensures layout is committed after `display:none → flex` toggle before restoring scroll position
+- **Thoughts header overlap** — bumped glass mask opaque zone from 40% to 55% so content doesn't show through the blur
+- **Analytics/Settings PWA height** — added `100dvh` height override for analytics and settings pages in PWA standalone mode (previously only dashboard panels had it)
+
+---
+
 ## v0.45.32 — 2026-02-13
 
 ### Fixed

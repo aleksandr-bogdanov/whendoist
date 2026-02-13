@@ -366,6 +366,10 @@ img.brand-logo {
         padding: 0;
     }
 
+    main.container-fluid {
+        padding-bottom: 0 !important;
+    }
+
     .container-fluid {
         max-width: 100%;
         padding-left: 8px;
