@@ -91,59 +91,93 @@
      */
     function moveTaskToScheduledSection(taskEl) {
         if (!taskEl) return;
-        const taskList = taskEl.closest('.task-list');
-        if (!taskList) return;
 
-        // Get current position
+        // Get current position for FLIP animation
         const firstRect = taskEl.getBoundingClientRect();
-
-        // Get this task's scheduled date for sorting
         const taskDate = taskEl.dataset.scheduledDate || '9999-12-31';
 
-        // Find the correct insertion point within the scheduled section
-        // Order: unscheduled pending → scheduled pending (by date) → completed → add-task-row
-        const tasks = Array.from(taskList.querySelectorAll('.task-item'));
-        const addTaskRow = taskList.querySelector('.add-task-row');
-        let insertBefore = null;
-        let foundScheduledSection = false;
+        // Check if #section-sched exists (cross-section layout)
+        const schedSection = document.getElementById('section-sched');
+        if (schedSection && !taskEl.closest('#section-sched')) {
+            // Cross-section move: task is in a domain group, move to scheduled section
+            const sourceSection = taskEl.closest('.project-group') || taskEl.closest('.section-group');
 
-        for (const t of tasks) {
-            if (t === taskEl) continue;
-
-            const isCompleted = t.classList.contains('completed') ||
-                               t.dataset.completed === '1';
-            const isScheduled = t.dataset.scheduledDate && t.dataset.scheduledDate !== '';
-
-            // Skip unscheduled tasks - we need to go past them
-            if (!isScheduled && !isCompleted) continue;
-
-            // Found a completed task - insert before it (scheduled goes before completed)
-            if (isCompleted) {
-                insertBefore = t;
-                break;
+            let sectionTasks = schedSection.querySelector('.section-tasks');
+            if (!sectionTasks) {
+                sectionTasks = document.createElement('div');
+                sectionTasks.className = 'section-tasks';
+                schedSection.appendChild(sectionTasks);
             }
 
-            // Found a scheduled task - compare dates
-            foundScheduledSection = true;
-            const otherDate = t.dataset.scheduledDate || '9999-12-31';
-
-            // Insert before the first scheduled task with a later date
-            if (taskDate < otherDate) {
-                insertBefore = t;
-                break;
+            // Find sorted insertion point by date within section-tasks
+            const existingTasks = Array.from(sectionTasks.querySelectorAll('.task-item'));
+            let insertBefore = null;
+            for (const t of existingTasks) {
+                if (t === taskEl) continue;
+                const otherDate = t.dataset.scheduledDate || '9999-12-31';
+                if (taskDate < otherDate) {
+                    insertBefore = t;
+                    break;
+                }
             }
-        }
 
-        // Insert at correct position
-        if (insertBefore) {
-            taskList.insertBefore(taskEl, insertBefore);
-        } else if (addTaskRow) {
-            taskList.insertBefore(taskEl, addTaskRow);
+            if (insertBefore) {
+                sectionTasks.insertBefore(taskEl, insertBefore);
+            } else {
+                sectionTasks.appendChild(taskEl);
+            }
+
+            // Open the section so the user can see the moved task
+            if (!schedSection.open) {
+                schedSection.open = true;
+            }
+
+            // Update counts on source and destination
+            if (window.TaskMutations && typeof TaskMutations.updateSectionCount === 'function') {
+                TaskMutations.updateSectionCount(sourceSection);
+                TaskMutations.updateSectionCount(schedSection);
+            }
         } else {
-            taskList.appendChild(taskEl);
+            // No cross-section layout (or already inside #section-sched) —
+            // reorder within the current task-list
+            const taskList = taskEl.closest('.task-list') || taskEl.closest('.section-tasks');
+            if (!taskList) return;
+
+            const tasks = Array.from(taskList.querySelectorAll('.task-item'));
+            const addTaskRow = taskList.querySelector('.add-task-row');
+            let insertBefore = null;
+
+            for (const t of tasks) {
+                if (t === taskEl) continue;
+
+                const isCompleted = t.classList.contains('completed') ||
+                                   t.dataset.completed === '1';
+                const isScheduled = t.dataset.scheduledDate && t.dataset.scheduledDate !== '';
+
+                if (!isScheduled && !isCompleted) continue;
+
+                if (isCompleted) {
+                    insertBefore = t;
+                    break;
+                }
+
+                const otherDate = t.dataset.scheduledDate || '9999-12-31';
+                if (taskDate < otherDate) {
+                    insertBefore = t;
+                    break;
+                }
+            }
+
+            if (insertBefore) {
+                taskList.insertBefore(taskEl, insertBefore);
+            } else if (addTaskRow) {
+                taskList.insertBefore(taskEl, addTaskRow);
+            } else {
+                taskList.appendChild(taskEl);
+            }
         }
 
-        // Get new position and animate
+        // FLIP animation
         const lastRect = taskEl.getBoundingClientRect();
         const deltaY = firstRect.top - lastRect.top;
 

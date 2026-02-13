@@ -571,5 +571,6 @@
         moveFromScheduledToDomain: moveFromScheduledToDomain,
         scrollToAndHighlight: scrollToAndHighlight,
         updateCalendarItem: updateCalendarItem,
+        updateSectionCount: updateSectionCount,
     };
 })();

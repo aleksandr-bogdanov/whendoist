@@ -574,6 +574,10 @@ class TestTaskMutationsModuleExportsAPI:
         """Must export updateCalendarItem for dialog→calendar sync."""
         assert re.search(r"updateCalendarItem\s*:", mutations_js)
 
+    def test_exports_update_section_count(self, mutations_js: str):
+        """Must export updateSectionCount for cross-section moves."""
+        assert re.search(r"updateSectionCount\s*:", mutations_js)
+
     def test_uses_safe_fetch(self, mutations_js: str):
         """Must use safeFetch for API calls."""
         assert "safeFetch" in mutations_js
