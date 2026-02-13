@@ -405,11 +405,15 @@
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Scroll carousel to today's calendar (or tomorrow after 8pm)
-    const todayCalendar = document.getElementById('today-calendar');
+/**
+ * Scroll the calendar carousel to today and the hour-grid to the current time.
+ * Extracted as a named function so MobileTabs can call it when the calendar
+ * panel first becomes visible (scrollIntoView is a no-op on hidden elements).
+ */
+window.scrollCalendarToNow = function() {
+    var todayCalendar = document.getElementById('today-calendar');
     if (todayCalendar) {
-        const initHour = new Date().getHours();
+        var initHour = new Date().getHours();
         if (initHour >= 20 && todayCalendar.nextElementSibling) {
             todayCalendar.nextElementSibling.scrollIntoView({ behavior: 'instant', inline: 'start' });
         } else {
@@ -417,49 +421,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Add "now" line to today's calendar and scroll to it
-    const todayHourGrid = todayCalendar?.querySelector('.hour-grid');
+    var todayHourGrid = todayCalendar ? todayCalendar.querySelector('.hour-grid') : null;
     if (todayHourGrid) {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        const hourHeight = parseInt(document.querySelector('.calendar-panel')?.dataset.hourHeight, 10) || 60;
+        var now = new Date();
+        var currentHour = now.getHours();
+        var currentMinute = now.getMinutes();
+        var hourHeight = parseInt(document.querySelector('.calendar-panel')?.dataset.hourHeight, 10) || 60;
 
-        // Find the current hour's row (not adjacent-day) and calculate position
-        const currentHourRow = todayHourGrid.querySelector(`.hour-row[data-hour="${currentHour}"]:not(.adjacent-day)`);
+        var currentHourRow = todayHourGrid.querySelector('.hour-row[data-hour="' + currentHour + '"]:not(.adjacent-day)');
         if (currentHourRow) {
-            const topPosition = currentHourRow.offsetTop + (currentMinute / 60 * hourHeight);
+            var topPosition = currentHourRow.offsetTop + (currentMinute / 60 * hourHeight);
 
-            // Create now line element
-            const nowLine = document.createElement('div');
-            nowLine.className = 'now-line';
-            nowLine.style.top = `${topPosition}px`;
-            todayHourGrid.appendChild(nowLine);
+            // Create now line if it doesn't exist yet
+            var nowLine = todayHourGrid.querySelector('.now-line');
+            if (!nowLine) {
+                nowLine = document.createElement('div');
+                nowLine.className = 'now-line';
+                todayHourGrid.appendChild(nowLine);
+
+                // Update now line position every minute
+                setInterval(function() {
+                    var n = new Date();
+                    var h = n.getHours();
+                    var m = n.getMinutes();
+                    var hr = todayHourGrid.querySelector('.hour-row[data-hour="' + h + '"]:not(.adjacent-day)');
+                    if (hr) {
+                        nowLine.style.top = (hr.offsetTop + (m / 60 * hourHeight)) + 'px';
+                    }
+                }, 60000);
+            }
+            nowLine.style.top = topPosition + 'px';
 
             // Scroll to show current time (centered in view)
-            const gridHeight = todayHourGrid.clientHeight;
-            const scrollTarget = Math.max(0, topPosition - (gridHeight / 2));
+            var gridHeight = todayHourGrid.clientHeight;
+            var scrollTarget = Math.max(0, topPosition - (gridHeight / 2));
             todayHourGrid.scrollTop = scrollTarget;
-
-            // Update now line position every minute
-            setInterval(() => {
-                const now = new Date();
-                const h = now.getHours();
-                const m = now.getMinutes();
-                const hourRow = todayHourGrid.querySelector(`.hour-row[data-hour="${h}"]:not(.adjacent-day)`);
-                if (hourRow) {
-                    nowLine.style.top = `${hourRow.offsetTop + (m / 60 * hourHeight)}px`;
-                }
-            }, 60000);
         }
     } else {
         // Fallback: scroll other calendars to 8am (main day hours, not adjacent)
-        document.querySelectorAll('.hour-grid').forEach(grid => {
-            const hourRow = grid.querySelector('.hour-row[data-hour="8"]:not(.adjacent-day)');
+        document.querySelectorAll('.hour-grid').forEach(function(grid) {
+            var hourRow = grid.querySelector('.hour-row[data-hour="8"]:not(.adjacent-day)');
             if (hourRow) {
                 grid.scrollTop = hourRow.offsetTop;
             }
         });
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Only scroll to now if calendar is visible (not hidden behind mobile tabs)
+    const calendarPanel = document.querySelector('.calendar-panel');
+    const isMobile = window.matchMedia('(max-width: 900px)').matches;
+    const calendarVisible = calendarPanel && (!isMobile || calendarPanel.classList.contains('mobile-active'));
+    if (calendarVisible) {
+        window.scrollCalendarToNow();
     }
 
     // Calculate initial overlaps for all day calendars

@@ -484,6 +484,82 @@
     }
 
     // ======================================================================
+    // CALENDAR SYNC
+    // ======================================================================
+
+    /**
+     * Update a task's calendar card after editing via the dialog.
+     * Removes old card(s) and creates a new one at the correct position.
+     *
+     * @param {string|number} taskId
+     * @param {Object} taskData - JSON response from PUT /api/v1/tasks/{id}
+     */
+    function updateCalendarItem(taskId, taskData) {
+        // Remove all existing calendar cards for this task
+        var oldCards = document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]');
+        var affectedCalendars = [];
+        oldCards.forEach(function(el) {
+            var dayCal = el.closest('.day-calendar');
+            if (dayCal && affectedCalendars.indexOf(dayCal) === -1) {
+                affectedCalendars.push(dayCal);
+            }
+            el.remove();
+        });
+
+        // Also remove date-only cards
+        var oldDateOnly = document.querySelectorAll('.date-only-task[data-task-id="' + taskId + '"]');
+        oldDateOnly.forEach(function(el) { el.remove(); });
+
+        // Recalculate overlaps on calendars that lost a card
+        affectedCalendars.forEach(function(cal) {
+            if (typeof recalculateOverlaps === 'function') {
+                recalculateOverlaps(cal);
+            }
+        });
+
+        // If the task is now scheduled with a time, create a new card
+        if (taskData.scheduled_date && taskData.scheduled_time &&
+            window.DragDrop && typeof DragDrop.createScheduledTaskElement === 'function') {
+
+            // Parse time "HH:MM" or "HH:MM:SS"
+            var timeParts = taskData.scheduled_time.split(':');
+            var hour = parseInt(timeParts[0], 10);
+            var minutes = parseInt(timeParts[1], 10);
+
+            // Derive title — use decrypted display title from task-item if possible
+            var displayTitle = taskData.title || '';
+            var taskEl = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+            if (taskEl) {
+                var textEl = taskEl.querySelector('.task-text');
+                if (textEl) displayTitle = textEl.textContent;
+            }
+
+            var duration = taskData.duration_minutes || 30;
+            var impact = taskData.impact || 4;
+            var completed = taskData.status === 'completed' ? '1' : '0';
+
+            var newCard = DragDrop.createScheduledTaskElement(
+                taskId, displayTitle, duration, hour, minutes,
+                String(impact), completed
+            );
+
+            // Find the correct day-calendar and hour-row
+            var startMins = hour * 60 + minutes;
+            var dayCal = document.querySelector('.day-calendar[data-day="' + taskData.scheduled_date + '"]');
+            if (dayCal) {
+                var hourRow = dayCal.querySelector('.hour-row[data-hour="' + hour + '"]:not(.adjacent-day)');
+                if (hourRow) {
+                    var slot = hourRow.querySelector('.hour-slot');
+                    if (slot) {
+                        slot.appendChild(newCard);
+                    }
+                }
+                recalculateOverlaps(dayCal);
+            }
+        }
+    }
+
+    // ======================================================================
     // EXPORTS
     // ======================================================================
 
@@ -494,5 +570,6 @@
         moveTaskToActive: moveTaskToActive,
         moveFromScheduledToDomain: moveFromScheduledToDomain,
         scrollToAndHighlight: scrollToAndHighlight,
+        updateCalendarItem: updateCalendarItem,
     };
 })();

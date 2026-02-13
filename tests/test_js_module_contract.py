@@ -570,6 +570,10 @@ class TestTaskMutationsModuleExportsAPI:
         """Must export moveFromScheduledToDomain for cross-section unschedule."""
         assert re.search(r"moveFromScheduledToDomain\s*:", mutations_js)
 
+    def test_exports_update_calendar_item(self, mutations_js: str):
+        """Must export updateCalendarItem for dialog→calendar sync."""
+        assert re.search(r"updateCalendarItem\s*:", mutations_js)
+
     def test_uses_safe_fetch(self, mutations_js: str):
         """Must use safeFetch for API calls."""
         assert "safeFetch" in mutations_js
@@ -590,3 +594,12 @@ class TestDragDropInitSingleTaskExport:
         """Must export initSingleTask in DragDrop API."""
         assert re.search(r"initSingleTask", dragdrop_js)
         assert re.search(r"window\.DragDrop\s*=\s*\{[^}]*initSingleTask", dragdrop_js, re.DOTALL)
+
+    def test_exports_create_scheduled_task_element(self, dragdrop_js: str):
+        """Must export createScheduledTaskElement for calendar item creation."""
+        assert re.search(r"createScheduledTaskElement", dragdrop_js)
+        assert re.search(
+            r"window\.DragDrop\s*=\s*\{[^}]*createScheduledTaskElement",
+            dragdrop_js,
+            re.DOTALL,
+        )

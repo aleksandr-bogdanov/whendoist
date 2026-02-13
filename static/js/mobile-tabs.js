@@ -15,6 +15,7 @@ class MobileTabs {
         this.calendarPanel = null;
         this.activeTab = 'tasks';
         this.initialized = false;
+        this._calendarScrolled = false;
         this.init();
     }
 
@@ -94,14 +95,20 @@ class MobileTabs {
             this.calendarPanel?.classList.add('mobile-active');
         }
 
-        // Restore scroll position of incoming panel
+        // Restore scroll position of incoming panel (or scroll to now on first calendar view)
+        var self = this;
         requestAnimationFrame(() => {
             if (view === 'tasks') {
-                var scrollEl = this.tasksPanel;
-                if (scrollEl) scrollEl.scrollTop = this._tasksScrollTop || 0;
+                var scrollEl = self.tasksPanel;
+                if (scrollEl) scrollEl.scrollTop = self._tasksScrollTop || 0;
             } else if (view === 'schedule') {
-                var scrollEl = this.calendarPanel?.querySelector('.calendar-scroll');
-                if (scrollEl) scrollEl.scrollTop = this._calendarScrollTop || 0;
+                if (!self._calendarScrolled && window.scrollCalendarToNow) {
+                    window.scrollCalendarToNow();
+                    self._calendarScrolled = true;
+                } else {
+                    var scrollEl = self.calendarPanel?.querySelector('.calendar-scroll');
+                    if (scrollEl) scrollEl.scrollTop = self._calendarScrollTop || 0;
+                }
             }
         });
 

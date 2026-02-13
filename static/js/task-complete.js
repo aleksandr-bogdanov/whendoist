@@ -811,9 +811,14 @@
     // UNSCHEDULE TASK (calendar card → back to task list)
     // ==========================================================================
 
+    // Pending unschedule state for undo support
+    let pendingUnschedule = null;
+    let unscheduleTimeout = null;
+    const UNSCHEDULE_DELAY = 2000;
+
     /**
      * Unschedule a task from the calendar.
-     * Removes scheduled_date and scheduled_time via API.
+     * Removes scheduled_date and scheduled_time via API with undo support.
      * @param {HTMLElement} taskEl - The calendar card element
      * @param {string} taskId - Task ID
      */
@@ -825,6 +830,35 @@
             return;
         }
 
+        // Cancel any existing pending unschedule
+        if (pendingUnschedule) {
+            executeUnschedule(pendingUnschedule.taskId);
+        }
+
+        // Capture original state before removal
+        var origScheduledDate = taskEl.closest('.day-calendar')?.dataset.day || '';
+        var origStartMins = taskEl.dataset.startMins || '';
+        var origDuration = taskEl.dataset.duration || '30';
+        var origImpact = taskEl.dataset.impact || '4';
+        var origCompleted = taskEl.dataset.completed || '0';
+        var origTitle = '';
+        var textEl = taskEl.querySelector('.scheduled-task-text');
+        if (textEl) {
+            var clone = textEl.cloneNode(true);
+            var occSpan = clone.querySelector('.occurrence-day');
+            if (occSpan) occSpan.remove();
+            origTitle = clone.textContent.trim();
+        }
+        // Derive hour/minutes from startMins
+        var origHour = 0;
+        var origMinutes = 0;
+        if (origStartMins) {
+            var sm = parseInt(origStartMins, 10);
+            origHour = Math.floor(sm / 60);
+            origMinutes = sm % 60;
+        }
+        var origScheduledTime = String(origHour).padStart(2, '0') + ':' + String(origMinutes).padStart(2, '0') + ':00';
+
         // Optimistic: remove from calendar
         var parent = taskEl.parentElement;
         var nextSibling = taskEl.nextSibling;
@@ -834,6 +868,107 @@
             recalculateOverlaps(dayCalendar);
         }
 
+        // Update task list item if present
+        var taskInList = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+        if (taskInList) {
+            var inScheduledSection = !!taskInList.closest('#section-sched');
+            if (inScheduledSection && window.TaskMutations) {
+                TaskMutations.moveFromScheduledToDomain(taskInList);
+            } else {
+                taskInList.classList.remove('scheduled');
+                if (typeof updateTaskScheduledDate === 'function') {
+                    updateTaskScheduledDate(taskInList, null);
+                }
+                if (typeof moveTaskToUnscheduledSection === 'function') {
+                    moveTaskToUnscheduledSection(taskInList);
+                }
+            }
+        }
+
+        // Store for undo
+        pendingUnschedule = {
+            taskId: taskId,
+            scheduledDate: origScheduledDate,
+            scheduledTime: origScheduledTime,
+            hour: origHour,
+            minutes: origMinutes,
+            duration: origDuration,
+            impact: origImpact,
+            completed: origCompleted,
+            title: origTitle,
+            dayCalendar: dayCalendar,
+        };
+
+        // Show toast with undo
+        showToast('Task unscheduled', function() { undoUnschedule(); });
+
+        // Schedule actual API call
+        unscheduleTimeout = setTimeout(function() { executeUnschedule(taskId); }, UNSCHEDULE_DELAY);
+    }
+
+    /**
+     * Undo a pending unschedule — restore the calendar card and re-schedule the task.
+     */
+    function undoUnschedule() {
+        if (!pendingUnschedule) return;
+
+        var info = pendingUnschedule;
+        pendingUnschedule = null;
+
+        // Cancel the scheduled API call
+        if (unscheduleTimeout) {
+            clearTimeout(unscheduleTimeout);
+            unscheduleTimeout = null;
+        }
+
+        // Recreate the calendar card
+        if (info.scheduledDate && info.scheduledTime &&
+            window.DragDrop && typeof DragDrop.createScheduledTaskElement === 'function') {
+
+            var newCard = DragDrop.createScheduledTaskElement(
+                info.taskId, info.title, info.duration,
+                info.hour, info.minutes, info.impact, info.completed
+            );
+
+            var dayCal = info.dayCalendar || document.querySelector('.day-calendar[data-day="' + info.scheduledDate + '"]');
+            if (dayCal) {
+                var hourRow = dayCal.querySelector('.hour-row[data-hour="' + info.hour + '"]:not(.adjacent-day)');
+                if (hourRow) {
+                    var slot = hourRow.querySelector('.hour-slot');
+                    if (slot) slot.appendChild(newCard);
+                }
+                if (typeof recalculateOverlaps === 'function') {
+                    recalculateOverlaps(dayCal);
+                }
+            }
+        }
+
+        // Restore task list item to scheduled state
+        var taskInList = document.querySelector('.task-item[data-task-id="' + info.taskId + '"]');
+        if (taskInList) {
+            taskInList.classList.add('scheduled');
+            if (typeof updateTaskScheduledDate === 'function') {
+                updateTaskScheduledDate(taskInList, info.scheduledDate);
+            }
+            if (typeof moveTaskToScheduledSection === 'function') {
+                moveTaskToScheduledSection(taskInList);
+            }
+        }
+    }
+
+    /**
+     * Execute the actual unschedule API call.
+     * @param {string} taskId - Task ID
+     */
+    async function executeUnschedule(taskId) {
+        if (!pendingUnschedule || pendingUnschedule.taskId !== taskId) return;
+
+        pendingUnschedule = null;
+        if (unscheduleTimeout) {
+            clearTimeout(unscheduleTimeout);
+            unscheduleTimeout = null;
+        }
+
         try {
             await safeFetch('/api/v1/tasks/' + taskId, {
                 method: 'PUT',
@@ -841,44 +976,15 @@
                 body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
             });
 
-            showToast('Task unscheduled');
-
-            // Update task list item if present
+            // If no task in list, insert it now (DB-only scheduled task)
             var taskInList = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
-            if (taskInList) {
-                // Check if task is in the scheduled section (cross-section move needed)
-                var inScheduledSection = !!taskInList.closest('#section-sched');
-                if (inScheduledSection && window.TaskMutations) {
-                    TaskMutations.moveFromScheduledToDomain(taskInList);
-                } else {
-                    taskInList.classList.remove('scheduled');
-                    if (typeof updateTaskScheduledDate === 'function') {
-                        updateTaskScheduledDate(taskInList, null);
-                    }
-                    if (typeof moveTaskToUnscheduledSection === 'function') {
-                        moveTaskToUnscheduledSection(taskInList);
-                    }
-                }
-            } else if (window.TaskMutations) {
+            if (!taskInList && window.TaskMutations) {
                 await TaskMutations.insertNewTask(taskId);
-            } else {
-                refreshTaskListFromServer();
             }
         } catch (error) {
-            // Revert: restore element
-            if (parent) {
-                if (nextSibling && nextSibling.parentNode === parent) {
-                    parent.insertBefore(taskEl, nextSibling);
-                } else {
-                    parent.appendChild(taskEl);
-                }
-                if (dayCalendar && typeof recalculateOverlaps === 'function') {
-                    recalculateOverlaps(dayCalendar);
-                }
-            }
             handleError(error, 'Failed to unschedule task', {
                 component: 'task-complete',
-                action: 'unscheduleTask'
+                action: 'executeUnschedule'
             });
         }
     }

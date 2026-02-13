@@ -7,6 +7,17 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.30 — 2026-02-13
+
+### Fixed
+- **Calendar now scrolls to current time on mobile** — `scrollIntoView` was a no-op on the hidden calendar panel; now deferred to the first tab switch via `MobileTabs`
+- **Editing a task's schedule via the dialog now updates its calendar card** — new `TaskMutations.updateCalendarItem()` removes the old card and creates a new one at the correct position
+- **Unscheduling a task from the calendar now shows an undo toast** — matches the undo pattern used by delete and complete actions; API call is deferred 2 seconds
+- **PWA mode: header no longer cramped near the notch** — `!important` on `padding-top` in the nested standalone media query overrides the mobile shorthand
+- **PWA mode: no more white gap at the bottom** — panels use stable `100vh` instead of `var(--app-height)` in standalone mode (no dynamic address bar)
+
+---
+
 ## v0.45.29 — 2026-02-13
 
 ### Added
