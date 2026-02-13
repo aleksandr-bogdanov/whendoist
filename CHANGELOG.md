@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.35 — 2026-02-14
+
+### Fixed
+- **Double-tap zoom on rapid calendar nav taps** — added `touch-action: manipulation` to `.day-nav-btn` so fast taps advance days instead of triggering Safari zoom
+- **Stale cached "today" in PWA** — added client-side reconciliation that detects when the service worker serves a cached page with the wrong "today" and corrects the calendar markers (or forces a reload if the real today is outside the rendered range)
+
+---
+
 ## v0.45.34 — 2026-02-14
 
 ### Fixed
