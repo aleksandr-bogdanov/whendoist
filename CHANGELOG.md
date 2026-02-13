@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.27 — 2026-02-13
+
+### Fixed
+- **Sentry auto-fix workflow now actually triggers Copilot** — switched from commenting `@copilot` (ignored by bots) to assigning `copilot-swe-agent[bot]` via the REST API with `agent_assignment` parameters
+
+---
+
 ## v0.45.26 — 2026-02-13
 
 ### Fixed
