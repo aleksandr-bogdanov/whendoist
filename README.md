@@ -157,6 +157,17 @@ just lint     # Run ruff
 just fmt      # Format code
 ```
 
+### Claude Code Skills
+
+Custom [slash commands](https://docs.anthropic.com/en/docs/claude-code/skills) for automated issue management:
+
+| Command | Description |
+|---------|-------------|
+| `/fix-issue 123` | Fix a single GitHub issue end-to-end — investigate root cause, implement fix, run checks, create versioned PR, wait for CI, merge, and close |
+| `/fix-all-issues` | Fix all open GitHub issues one by one, following the same workflow for each |
+
+Both skills enforce the full project workflow: root cause analysis, `ruff format` + `ruff check` + `pyright` + `pytest`, version bump, changelog entry, and squash-merge PR.
+
 ### Tech Stack
 
 | Layer | Technology |
