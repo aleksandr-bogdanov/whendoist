@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.25 — 2026-02-13
+
+### Fixed
+- **Mobile: parent task names no longer truncated to 1 line** — breadcrumb above child tasks now wraps up to 2 lines instead of cutting off long parent names
+
+---
+
 ## v0.45.23 — 2026-02-12
 
 ### Added

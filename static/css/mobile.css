@@ -879,7 +879,10 @@ img, a {
         color: var(--text-muted);
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
         flex-shrink: 1 !important;
         max-width: 100%;
         opacity: 0.6;
