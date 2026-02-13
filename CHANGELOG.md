@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.29 — 2026-02-13
+
+### Added
+- **Claude Code skills checked into repo** — `/fix-issue <number>` and `/fix-all-issues` slash commands for automated end-to-end issue resolution (investigate, fix, PR, merge)
+
+---
+
 ## v0.45.28 — 2026-02-13
 
 ### Fixed

@@ -56,6 +56,10 @@ Thumbs.db
 # Build artifacts (generated during CI release)
 static/build-manifest.json
 
+# Claude Code (keep skills tracked, ignore everything else)
+.claude/*
+!.claude/skills/
+
 # Playwright
 node_modules/
 /test-results/
