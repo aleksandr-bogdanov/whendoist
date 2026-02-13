@@ -712,18 +712,36 @@ img, a {
         right: -4px;
     }
 
-    /* Touch target expanders for small interactive elements (20px → 44px).
-       Same ::before pattern as .header-sort and .nav-item above. */
+    /* Taller calendar header on mobile with bigger nav buttons */
+    .calendar-day-header {
+        padding: 10px 0.75rem;
+    }
+
+    .day-header-nav {
+        gap: 8px;
+    }
+
     .day-nav-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        opacity: 0.8;
         position: relative;
     }
+
+    .day-nav-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Expand invisible touch target: 28px + 2×10px = 48px */
     .day-nav-btn::before {
         content: '';
         position: absolute;
-        top: -12px;
-        bottom: -12px;
-        left: -12px;
-        right: -12px;
+        top: -10px;
+        bottom: -10px;
+        left: -10px;
+        right: -10px;
     }
 
     .domain-add-btn {

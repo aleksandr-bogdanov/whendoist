@@ -7,6 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.34 — 2026-02-14
+
+### Fixed
+- **Calendar nav skipping dates on rapid tap** — replaced live `scrollLeft` calculation with intent-based `targetDayIndex` so rapid taps always advance correctly
+- **Calendar nav buttons too small on mobile** — enlarged from 20×20px to 28×28px with 18px SVG icons and 48px touch targets
+- **No active/press feedback on nav buttons** — added `:active` state with scale + purple background for instant tactile feedback
+- **Taller mobile calendar header** — increased padding for better visual weight and button spacing
+
+---
+
 ## v0.45.33 — 2026-02-14
 
 ### Fixed
