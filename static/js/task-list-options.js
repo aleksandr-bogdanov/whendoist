@@ -360,11 +360,6 @@
         const textEl = taskEl.querySelector('.task-text');
         const taskTitle = textEl ? textEl.textContent.trim() : '';
 
-        // Remember position for undo re-insertion
-        const parentGroup = taskEl.closest('.project-group');
-        const nextSibling = taskEl.nextElementSibling;
-
-
         // Visual feedback - fade out
         taskEl.style.opacity = '0.5';
         taskEl.style.pointerEvents = 'none';
@@ -381,18 +376,15 @@
             taskEl.style.opacity = '0';
 
             setTimeout(() => {
+                // Remove task element and clean up empty group
+                const group = taskEl.closest('.project-group');
                 taskEl.remove();
+                if (group && group.querySelectorAll('.task-item').length === 0) {
+                    group.remove();
+                }
 
                 // Update count in header
                 updateDeletedCount(-1);
-
-                // Check if any tasks remain in the group
-                if (parentGroup) {
-                    const remainingTasks = parentGroup.querySelectorAll('.task-item');
-                    if (remainingTasks.length === 0) {
-                        parentGroup.remove();
-                    }
-                }
 
                 // Re-create calendar card if task was scheduled
                 if (window.TaskMutations && typeof TaskMutations.updateCalendarItem === 'function') {
@@ -402,7 +394,7 @@
                 const label = taskTitle ? '"' + taskTitle + '" restored' : 'Task restored';
                 Toast.show(label, {
                     onUndo: function() {
-                        undoRestore(taskId, taskEl, parentGroup, nextSibling);
+                        undoRestore(taskId);
                     }
                 });
             }, 300);
@@ -420,7 +412,7 @@
     /**
      * Undo a restore — re-archive the task and put it back in the deleted list.
      */
-    async function undoRestore(taskId, taskEl, parentGroup, nextSibling) {
+    async function undoRestore(taskId) {
         try {
             await safeFetch(`/api/v1/tasks/${taskId}`, { method: 'DELETE' });
 
@@ -429,28 +421,16 @@
                 TaskMutations.updateCalendarItem(taskId, { status: 'archived' });
             }
 
-            // Re-insert task element into the deleted list
-            taskEl.style.transition = '';
-            taskEl.style.transform = '';
-            taskEl.style.opacity = '';
-            taskEl.style.pointerEvents = '';
-
-            const list = parentGroup ? parentGroup.querySelector('.task-list') : null;
-            if (list) {
-                // Re-add the group if it was removed
-                if (!parentGroup.parentElement) {
-                    const container = document.querySelector('.deleted-tasks-container') ||
-                                      document.querySelector('.scroll-container');
-                    if (container) container.appendChild(parentGroup);
-                }
-                if (nextSibling && nextSibling.parentElement === list) {
-                    list.insertBefore(taskEl, nextSibling);
-                } else {
-                    list.appendChild(taskEl);
+            // Reload the deleted tasks list — much more reliable than DOM re-insertion
+            if (currentView === 'deleted') {
+                const taskListScroll = document.getElementById('task-list-scroll');
+                if (taskListScroll && window.htmx) {
+                    htmx.ajax('GET', '/api/v1/deleted-tasks', {
+                        target: '#task-list-scroll',
+                        swap: 'innerHTML'
+                    });
                 }
             }
-
-            updateDeletedCount(1);
         } catch (error) {
             handleError(error, 'Failed to undo restore', {
                 component: 'task-list-options',

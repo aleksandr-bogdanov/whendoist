@@ -17,6 +17,11 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.60 — 2026-02-14
+
+### Fixed
+- Undo on restore toast now works reliably — reloads deleted tasks list via HTMX instead of fragile DOM re-insertion
+
 ## v0.45.59 — 2026-02-14
 
 ### Fixed
