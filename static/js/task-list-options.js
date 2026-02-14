@@ -356,14 +356,19 @@
         const taskId = taskEl.dataset.taskId;
         if (!taskId) return;
 
+        // Grab task title before removal for the toast
+        const textEl = taskEl.querySelector('.task-text');
+        const taskTitle = textEl ? textEl.textContent.trim() : '';
+
         // Visual feedback - fade out
         taskEl.style.opacity = '0.5';
         taskEl.style.pointerEvents = 'none';
 
         try {
-            await safeFetch(`/api/v1/tasks/${taskId}/restore`, {
+            const resp = await safeFetch(`/api/v1/tasks/${taskId}/restore`, {
                 method: 'POST',
             });
+            const taskData = await resp.json();
 
             // Animate removal
             taskEl.style.transition = 'all 0.3s ease';
@@ -392,7 +397,13 @@
                     }
                 }
 
-                showToast('Task restored');
+                // Re-create calendar card if task was scheduled
+                if (window.TaskMutations && typeof TaskMutations.updateCalendarItem === 'function') {
+                    TaskMutations.updateCalendarItem(taskId, taskData);
+                }
+
+                const label = taskTitle ? '"' + taskTitle + '" restored' : 'Task restored';
+                showToast(label);
             }, 300);
 
         } catch (error) {
