@@ -324,6 +324,12 @@
             // Update section count
             updateSectionCount(targetGroup);
 
+            // If the new task is scheduled, move it to the scheduled section
+            var scheduledDate = taskEl.dataset.scheduledDate || '';
+            if (scheduledDate && typeof moveTaskToScheduledSection === 'function') {
+                moveTaskToScheduledSection(taskEl);
+            }
+
             // Decrypt if encryption is active
             if (typeof Crypto !== 'undefined' && Crypto.canCrypto && Crypto.canCrypto()) {
                 var title = taskEl.dataset.title;
