@@ -22,6 +22,7 @@ Todo:
 ### Fixed
 - Deleted tasks not appearing in Deleted subview until page refresh — task deletion uses a 2–5s undo delay before calling the API; navigating to the Deleted view now flushes any pending deletion first
 
+
 ## v0.45.55 — 2026-02-14
 
 ### Fixed
