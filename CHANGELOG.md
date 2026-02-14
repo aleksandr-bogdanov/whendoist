@@ -11,12 +11,20 @@ Todo:
 - BIG: Scheduled backups
 - BIG: Parent tasks
 - Move thoughts bubbles a bit to the left to center out the visual weight of the page.
-- Scheduled "testtesttest" for Feb 15 - add UNDO to the toast.
-- Unscheduled "testtesttest" for Feb 15 - add Toast itself.
 - Separate past scheduled tasks from normal scheduled tasks
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.61 — 2026-02-14
+
+### Fixed
+- Scheduling toast now shows with undo button — "Scheduled 'taskName' for Feb 15" with undo to revert
+- Unschedule toast now includes task name — '"taskName" unscheduled' instead of generic 'Task unscheduled'
+- Right-click unschedule from task list now removes the calendar card (was leaving it orphaned)
+- Undo unschedule from task list now correctly restores the calendar card
+
+
+
 ## v0.45.60 — 2026-02-14
 
 ### Fixed

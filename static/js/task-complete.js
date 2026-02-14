@@ -848,41 +848,71 @@
             executeUnschedule(pendingUnschedule.taskId);
         }
 
-        // Capture original state before removal
-        var origScheduledDate = taskEl.closest('.day-calendar')?.dataset.day || '';
-        var origStartMins = taskEl.dataset.startMins || '';
-        var origDuration = taskEl.dataset.duration || '30';
-        var origImpact = taskEl.dataset.impact || '4';
-        var origCompleted = taskEl.dataset.completed || '0';
+        // Determine whether taskEl is a calendar card or a task-list item
+        var isCalendarCard = taskEl.classList.contains('calendar-item');
+        var calendarCard = isCalendarCard
+            ? taskEl
+            : document.querySelector('.scheduled-task[data-task-id="' + taskId + '"], .date-only-task[data-task-id="' + taskId + '"]');
+        var taskInList = isCalendarCard
+            ? document.querySelector('.task-item[data-task-id="' + taskId + '"]')
+            : taskEl;
+
+        // Capture original state from calendar card (has time info) or task-list item
+        var origScheduledDate = '';
+        var origStartMins = '';
+        var origDuration = '30';
+        var origImpact = '4';
+        var origCompleted = '0';
         var origTitle = '';
-        var textEl = taskEl.querySelector('.scheduled-task-text');
-        if (textEl) {
-            var clone = textEl.cloneNode(true);
-            var occSpan = clone.querySelector('.occurrence-day');
-            if (occSpan) occSpan.remove();
-            origTitle = clone.textContent.trim();
-        }
-        // Derive hour/minutes from startMins
         var origHour = 0;
         var origMinutes = 0;
-        if (origStartMins) {
-            var sm = parseInt(origStartMins, 10);
-            origHour = Math.floor(sm / 60);
-            origMinutes = sm % 60;
-        }
-        var origScheduledTime = String(origHour).padStart(2, '0') + ':' + String(origMinutes).padStart(2, '0') + ':00';
+        var origScheduledTime = '';
+        var dayCalendar = null;
 
-        // Optimistic: remove from calendar
-        var parent = taskEl.parentElement;
-        var nextSibling = taskEl.nextSibling;
-        var dayCalendar = taskEl.closest('.day-calendar');
-        taskEl.remove();
-        if (dayCalendar && typeof recalculateOverlaps === 'function') {
-            recalculateOverlaps(dayCalendar);
+        if (calendarCard) {
+            dayCalendar = calendarCard.closest('.day-calendar');
+            origScheduledDate = dayCalendar?.dataset.day || '';
+            origStartMins = calendarCard.dataset.startMins || '';
+            origDuration = calendarCard.dataset.duration || '30';
+            origImpact = calendarCard.dataset.impact || '4';
+            origCompleted = calendarCard.dataset.completed || '0';
+            // Get title from calendar card
+            var textEl = calendarCard.querySelector('.scheduled-task-text');
+            if (textEl) {
+                var clone = textEl.cloneNode(true);
+                var occSpan = clone.querySelector('.occurrence-day');
+                if (occSpan) occSpan.remove();
+                origTitle = clone.textContent.trim();
+            }
+            if (origStartMins) {
+                var sm = parseInt(origStartMins, 10);
+                origHour = Math.floor(sm / 60);
+                origMinutes = sm % 60;
+            }
+            origScheduledTime = String(origHour).padStart(2, '0') + ':' + String(origMinutes).padStart(2, '0') + ':00';
+
+            // Remove calendar card from DOM
+            calendarCard.remove();
+            if (dayCalendar && typeof recalculateOverlaps === 'function') {
+                recalculateOverlaps(dayCalendar);
+            }
         }
 
-        // Update task list item if present
-        var taskInList = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+        // Fall back to task-list item for missing info
+        if (!origScheduledDate && taskInList) {
+            origScheduledDate = taskInList.dataset.scheduledDate || '';
+        }
+        if (!origTitle && taskInList) {
+            var taskTextEl = taskInList.querySelector('.task-text');
+            if (taskTextEl) origTitle = taskTextEl.textContent.trim();
+        }
+        if (taskInList) {
+            origDuration = calendarCard ? origDuration : (taskInList.dataset.duration || '30');
+            origImpact = calendarCard ? origImpact : (taskInList.dataset.impact || '4');
+            origCompleted = calendarCard ? origCompleted : (taskInList.dataset.completed || '0');
+        }
+
+        // Update task list item (move to unscheduled, don't remove)
         if (taskInList) {
             var inScheduledSection = !!taskInList.closest('#section-sched');
             if (inScheduledSection && window.TaskMutations) {
@@ -912,8 +942,9 @@
             dayCalendar: dayCalendar,
         };
 
-        // Show toast with undo
-        showToast('Task unscheduled', function() { undoUnschedule(); });
+        // Show toast with task name and undo
+        var toastMsg = origTitle ? ('"' + origTitle + '" unscheduled') : 'Task unscheduled';
+        showToast(toastMsg, function() { undoUnschedule(); });
 
         // Schedule actual API call
         unscheduleTimeout = setTimeout(function() { executeUnschedule(taskId); }, UNSCHEDULE_DELAY);
