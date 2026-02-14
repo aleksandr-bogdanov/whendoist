@@ -10,10 +10,14 @@
 // This creates a CSS custom property that reflects the actual viewport height.
 
 function updateViewportHeight() {
-    // Get the actual viewport height
-    const vh = window.innerHeight * 0.01;
+    // In PWA standalone mode, innerHeight can underreport on iOS by
+    // safe-area-inset-top (59px on iPhone 15 Pro Max).  screen.height
+    // is always the true viewport height.  See docs/PWA-VIEWPORT-FIX.md
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    const h = isStandalone ? screen.height : window.innerHeight;
+    const vh = h * 0.01;
     document.documentElement.style.setProperty('--vh', `${vh}px`);
-    document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    document.documentElement.style.setProperty('--app-height', `${h}px`);
 }
 
 // Update on load

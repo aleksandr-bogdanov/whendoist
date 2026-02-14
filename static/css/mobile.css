@@ -1455,19 +1455,19 @@ img, a {
             height: auto !important;
         }
 
-        /* All page containers — use 100dvh to fill the full PWA viewport.
-           100dvh is more accurate than 100vh on iOS (accounts for dynamic
-           toolbar). Falls back to 100vh where 100dvh is unsupported.
+        /* All page containers — use --app-height (set to screen.height by
+           the inline <script> in <head> and mobile-core.js).  On iOS PWA
+           standalone, innerHeight/100dvh can underreport by safe-area-inset-top
+           (59px on iPhone 15 Pro Max).  screen.height is always correct.
+           Falls back to 100vh if JS hasn't run yet.
            IMPORTANT: these must remain position:static (in-flow) so that
-           html/body have non-zero content height — otherwise iOS shrinks
-           the viewport by safe-area-inset-top.  See docs/PWA-VIEWPORT-FIX.md */
+           html/body have non-zero content height.  See docs/PWA-VIEWPORT-FIX.md */
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active,
         .thoughts-page,
         .analytics-page,
         .settings-page {
-            height: 100vh !important;
-            height: 100dvh !important;
+            height: var(--app-height, 100vh) !important;
         }
     }
 
@@ -1605,8 +1605,7 @@ img, a {
         .thoughts-page,
         .analytics-page,
         .settings-page {
-            height: 100vh !important;
-            height: 100dvh !important;
+            height: var(--app-height, 100vh) !important;
         }
     }
 

@@ -8,11 +8,22 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 ---
 
 Todo: 
-- Scheduled backups
+- BIG: Scheduled backups
+- BIG: Parent tasks
 - Move thoughts bubbles a bit to the left to center out the visual weight of the page.
 - Scheduled "testtesttest" for Feb 15 - add UNDO to the toast.
 - Unscheduled "testtesttest" for Feb 15 - add Toast itself.
+- Separate past scheduled tasks from normal scheduled tasks
+- Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
+- 
+## v0.45.48 — 2026-02-14
+
+### Fixed
+- **PWA bottom gap (for real)** — `100dvh` and `window.innerHeight` underreport by 59px on iOS PWA standalone (Settings/Analytics/Thoughts still showed 873px instead of 932px even after v0.45.47 position:static fix). Root cause: iOS Safari's viewport height calculation is unreliable in standalone mode. Fix: use `screen.height` (always correct) via early inline `<script>` in `<head>` that sets `--app-height` before first paint, and `mobile-core.js` for resize events. Standalone CSS blocks now use `height: var(--app-height, 100vh) !important` instead of `100dvh`.
+
+---
+
 ## v0.45.47 — 2026-02-14
 
 ### Fixed

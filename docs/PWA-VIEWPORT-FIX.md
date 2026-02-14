@@ -52,14 +52,27 @@ Debug data from iPhone 15 Pro Max confirmed this:
 | Tasks | `static` | 947px | **932px** (full) |
 | Thoughts | `fixed` | 0px | **873px** (shrunk) |
 
-The fix: page containers must use `height: var(--app-height, 100vh)` with `position: static`
-(the default), so they remain in normal flow and give html/body non-zero content height.
-In PWA standalone mode, `height: 100dvh !important` overrides to use the accurate dynamic
-viewport height.
+The fix: page containers must use `position: static` (the default), so they remain in normal
+flow and give html/body non-zero content height.
+
+### Trigger 3: `100dvh` / `innerHeight` underreporting (v0.45.48 discovery)
+
+Even with triggers 1 and 2 fixed, `100dvh` and `window.innerHeight` can still report 873px
+instead of 932px on some pages. The viewport height calculation in iOS Safari's standalone
+mode is fundamentally unreliable.
+
+`screen.height` is always correct — it always returns the true physical viewport height in
+CSS pixels (932px on iPhone 15 Pro Max).
+
+The fix: set `--app-height` to `screen.height` via JavaScript (inline `<script>` in `<head>`
+for first paint, and `mobile-core.js` for resize events). CSS standalone blocks use
+`height: var(--app-height, 100vh) !important` instead of `100dvh`.
 
 ## The Fix
 
-In `mobile.css`, inside `@media (display-mode: standalone)`:
+Three layers of defense:
+
+### 1. Overflow fix — in `mobile.css`, `@media (display-mode: standalone)`:
 
 ```css
 html, body {
@@ -69,17 +82,34 @@ html, body {
 }
 ```
 
-This **only affects PWA standalone mode**. In browser mode, the body-scroll-lock and Pico
-overflow rules still apply normally (the viewport shrinking bug doesn't manifest in browser
-mode because there's no status bar safe area).
+### 2. Position fix — page containers must NOT use `position: fixed`:
+
+```css
+/* In general mobile block */
+.settings-page { height: var(--app-height, 100vh); /* position: static (default) */ }
+```
+
+### 3. Height fix — use `screen.height` via JS instead of `100dvh`:
+
+```html
+<!-- In <head>, before CSS layout -->
+<script>
+if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+    document.documentElement.style.setProperty('--app-height', screen.height + 'px');
+}
+</script>
+```
+
+```css
+/* In standalone CSS block */
+.settings-page { height: var(--app-height, 100vh) !important; }
+```
 
 ## Why This Works
 
-- `overflow: visible !important` prevents the root overflow from propagating `hidden` to the viewport
-- `height: auto !important` overrides `height: 100%` from the mobile body-scroll-lock, which
-  would constrain html/body to the (potentially shrunken) viewport size
-- `min-height: 0 !important` overrides `min-height: -webkit-fill-available` from app.css, which
-  also interacts with the viewport calculation on iOS
+- **Overflow fix**: `overflow: visible !important` prevents root overflow from propagating to the viewport
+- **Position fix**: `position: static` keeps page containers in normal flow → html/body have non-zero height
+- **Height fix**: `screen.height` is always the correct physical viewport height in CSS pixels, unaffected by the iOS viewport calculation bug. `100dvh` and `innerHeight` are unreliable.
 
 ## How to Verify
 
