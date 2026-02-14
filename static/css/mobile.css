@@ -552,10 +552,11 @@ img, a {
     @media (display-mode: standalone) {
         /* In PWA standalone there's no dynamic address bar, so 100vh is stable.
            Using var(--app-height) can leave a gap if innerHeight doesn't include
-           the bottom safe area. */
+           the bottom safe area. 100dvh is more accurate on iOS 15.4+. */
         .tasks-panel.mobile-active,
         .calendar-panel.mobile-active {
             height: 100vh !important;
+            height: 100dvh !important;
         }
     }
 
@@ -1441,6 +1442,14 @@ img, a {
         html,
         body {
             background-color: var(--bg-surface, #fff);
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        main.container-fluid {
+            height: 100%;
+            overflow: hidden;
         }
 
         /* All page scroll containers — fill full PWA viewport */
