@@ -11,6 +11,13 @@ Todo:
 - Scheduled backups
 - ?
 
+## v0.45.46 — 2026-02-14
+
+### Added
+- **PWA debug badge on all pages** — Shows viewport dimensions, computed styles (overflow, position, height), bounding rects, and gap measurement for the active page container in standalone mode; visible on Tasks (working) vs Settings (broken) for side-by-side comparison
+
+---
+
 ## v0.45.45 — 2026-02-14
 
 ### Fixed
