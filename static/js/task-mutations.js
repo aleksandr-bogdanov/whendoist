@@ -449,6 +449,28 @@
         // Update counts
         updateSectionCount(sourceSection);
         updateSectionCount(completedSection);
+
+        // Remove calendar cards for completed task
+        var taskId = taskEl.dataset.taskId;
+        if (taskId) {
+            var calCards = document.querySelectorAll(
+                '.scheduled-task[data-task-id="' + taskId + '"], ' +
+                '.date-only-task[data-task-id="' + taskId + '"]'
+            );
+            var affectedCalendars = [];
+            calCards.forEach(function(el) {
+                var dayCal = el.closest('.day-calendar');
+                if (dayCal && affectedCalendars.indexOf(dayCal) === -1) {
+                    affectedCalendars.push(dayCal);
+                }
+                el.remove();
+            });
+            affectedCalendars.forEach(function(cal) {
+                if (typeof recalculateOverlaps === 'function') {
+                    recalculateOverlaps(cal);
+                }
+            });
+        }
     }
 
     /**
@@ -576,7 +598,9 @@
         });
 
         // If the task is now scheduled with a time, create a new card
+        // Skip creation for completed/archived tasks — they should not appear on the calendar
         if (taskData.scheduled_date && taskData.scheduled_time &&
+            taskData.status !== 'completed' && taskData.status !== 'archived' &&
             window.DragDrop && typeof DragDrop.createScheduledTaskElement === 'function') {
 
             // Parse time "HH:MM" or "HH:MM:SS"
