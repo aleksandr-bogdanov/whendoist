@@ -17,6 +17,12 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.59 — 2026-02-14
+
+### Fixed
+- Restore task toast now includes undo button — pressing undo re-archives the task, removes the calendar card, and re-inserts it into the Deleted list
+
+
 ## v0.45.58 — 2026-02-14
 
 ### Fixed

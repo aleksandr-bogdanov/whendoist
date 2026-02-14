@@ -360,6 +360,11 @@
         const textEl = taskEl.querySelector('.task-text');
         const taskTitle = textEl ? textEl.textContent.trim() : '';
 
+        // Remember position for undo re-insertion
+        const parentGroup = taskEl.closest('.project-group');
+        const nextSibling = taskEl.nextElementSibling;
+
+
         // Visual feedback - fade out
         taskEl.style.opacity = '0.5';
         taskEl.style.pointerEvents = 'none';
@@ -379,21 +384,13 @@
                 taskEl.remove();
 
                 // Update count in header
-                const titleEl = document.getElementById('header-view-title');
-                if (titleEl) {
-                    const match = titleEl.textContent.match(/(\d+)/);
-                    if (match) {
-                        const newCount = parseInt(match[1], 10) - 1;
-                        titleEl.textContent = `Deleted (${newCount})`;
-                    }
-                }
+                updateDeletedCount(-1);
 
                 // Check if any tasks remain in the group
-                const group = taskEl.closest('.project-group');
-                if (group) {
-                    const remainingTasks = group.querySelectorAll('.task-item');
+                if (parentGroup) {
+                    const remainingTasks = parentGroup.querySelectorAll('.task-item');
                     if (remainingTasks.length === 0) {
-                        group.remove();
+                        parentGroup.remove();
                     }
                 }
 
@@ -403,7 +400,11 @@
                 }
 
                 const label = taskTitle ? '"' + taskTitle + '" restored' : 'Task restored';
-                showToast(label);
+                Toast.show(label, {
+                    onUndo: function() {
+                        undoRestore(taskId, taskEl, parentGroup, nextSibling);
+                    }
+                });
             }, 300);
 
         } catch (error) {
@@ -413,6 +414,63 @@
             });
             taskEl.style.opacity = '';
             taskEl.style.pointerEvents = '';
+        }
+    }
+
+    /**
+     * Undo a restore — re-archive the task and put it back in the deleted list.
+     */
+    async function undoRestore(taskId, taskEl, parentGroup, nextSibling) {
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}`, { method: 'DELETE' });
+
+            // Remove calendar card
+            if (window.TaskMutations && typeof TaskMutations.updateCalendarItem === 'function') {
+                TaskMutations.updateCalendarItem(taskId, { status: 'archived' });
+            }
+
+            // Re-insert task element into the deleted list
+            taskEl.style.transition = '';
+            taskEl.style.transform = '';
+            taskEl.style.opacity = '';
+            taskEl.style.pointerEvents = '';
+
+            const list = parentGroup ? parentGroup.querySelector('.task-list') : null;
+            if (list) {
+                // Re-add the group if it was removed
+                if (!parentGroup.parentElement) {
+                    const container = document.querySelector('.deleted-tasks-container') ||
+                                      document.querySelector('.scroll-container');
+                    if (container) container.appendChild(parentGroup);
+                }
+                if (nextSibling && nextSibling.parentElement === list) {
+                    list.insertBefore(taskEl, nextSibling);
+                } else {
+                    list.appendChild(taskEl);
+                }
+            }
+
+            updateDeletedCount(1);
+        } catch (error) {
+            handleError(error, 'Failed to undo restore', {
+                component: 'task-list-options',
+                action: 'undoRestore'
+            });
+        }
+    }
+
+    /**
+     * Update the deleted tasks count in the header.
+     * @param {number} delta - Amount to change count by (+1 or -1)
+     */
+    function updateDeletedCount(delta) {
+        const titleEl = document.getElementById('header-view-title');
+        if (titleEl) {
+            const match = titleEl.textContent.match(/(\d+)/);
+            if (match) {
+                const newCount = Math.max(0, parseInt(match[1], 10) + delta);
+                titleEl.textContent = 'Deleted (' + newCount + ')';
+            }
         }
     }
 
