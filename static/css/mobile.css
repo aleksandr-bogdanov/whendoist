@@ -1433,14 +1433,10 @@ img, a {
         html,
         body {
             background-color: var(--bg-surface, #fff);
-            height: 100vh;
-            height: 100dvh;
-            overflow: hidden;
-        }
-
-        main.container-fluid {
-            height: 100%;
-            overflow: hidden;
+            /* Kill -webkit-fill-available from app.css — it causes iOS to shrink
+               the viewport by safe-area-inset-top (59px on iPhone 15 Pro Max),
+               making 100dvh/innerHeight report 873px instead of 932px. */
+            min-height: 0 !important;
         }
 
         /* All page scroll containers — fill full PWA viewport */
