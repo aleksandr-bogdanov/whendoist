@@ -24,6 +24,7 @@ Todo:
 - Undo unschedule from task list now correctly restores the calendar card
 
 
+
 ## v0.45.60 — 2026-02-14
 
 ### Fixed
