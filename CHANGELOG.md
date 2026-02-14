@@ -22,6 +22,7 @@ Todo:
 ### Fixed
 - Archived (deleted) tasks reappearing on calendar after page refresh — calendar queries now exclude archived tasks
 
+
 ## v0.45.56 — 2026-02-14
 
 ### Fixed
