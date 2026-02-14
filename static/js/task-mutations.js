@@ -326,8 +326,11 @@
 
             // If the new task is scheduled, move it to the scheduled section
             var scheduledDate = taskEl.dataset.scheduledDate || '';
-            if (scheduledDate && typeof moveTaskToScheduledSection === 'function') {
-                moveTaskToScheduledSection(taskEl);
+            if (scheduledDate) {
+                ensureScheduledSectionExists();
+                if (typeof moveTaskToScheduledSection === 'function') {
+                    moveTaskToScheduledSection(taskEl);
+                }
             }
 
             // Decrypt if encryption is active
@@ -363,6 +366,45 @@
                 TaskComplete.refreshTaskList();
             }
             return null;
+        }
+    }
+
+    /**
+     * Create #section-sched if it doesn't exist yet.
+     * Mirrors moveTaskToCompleted's creation of #section-done.
+     */
+    function ensureScheduledSectionExists() {
+        if (document.getElementById('section-sched')) return;
+
+        var scrollContainer = document.getElementById('task-list-scroll');
+        if (!scrollContainer) return;
+
+        var section = document.createElement('details');
+        section.className = 'section-group';
+        section.id = 'section-sched';
+        section.open = true;
+        section.innerHTML =
+            '<summary class="section-separator section-separator--sched">' +
+                '<span class="sched-label-group">' +
+                    '<span class="section-sep-label">Scheduled</span>' +
+                    '<span class="section-count">0</span>' +
+                    '<span class="past-badge" id="past-badge" hidden></span>' +
+                    '<span class="sched-label-line"></span>' +
+                    '<span class="sep-col-label">Date</span>' +
+                '</span>' +
+                '<span class="sep-col-label">Clarity</span>' +
+                '<span class="sep-col-label">Dur</span>' +
+                '<span class="sep-col-label">Impact</span>' +
+                '<span class="sep-col-spacer"></span>' +
+            '</summary>' +
+            '<div class="section-tasks"></div>';
+
+        // Insert before #section-done (or append at end)
+        var doneSection = document.getElementById('section-done');
+        if (doneSection) {
+            scrollContainer.insertBefore(section, doneSection);
+        } else {
+            scrollContainer.appendChild(section);
         }
     }
 
