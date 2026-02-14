@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.36 — 2026-02-14
+
+### Fixed
+- **PWA bottom gap fully eliminated** — locked `html/body` to `100dvh` with `overflow: hidden` in standalone mode; prevents body-level scroll that created visible gap below page containers
+- **Main container overflow locked** — `main.container-fluid` gets `height: 100%; overflow: hidden` in PWA standalone, ensuring no body-level scroll from page container heights
+
+---
+
 ## v0.45.35 — 2026-02-14
 
 ### Fixed
