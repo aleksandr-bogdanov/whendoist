@@ -1484,6 +1484,7 @@
                     TaskMutations.updateCalendarItem(wasEditing, taskData);
                 } else {
                     await TaskMutations.insertNewTask(taskData.id);
+                    TaskMutations.updateCalendarItem(taskData.id, taskData);
                 }
             } else {
                 window.location.reload();
