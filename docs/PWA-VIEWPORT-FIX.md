@@ -19,7 +19,11 @@ This makes `100dvh`, `100vh`, `window.innerHeight`, and all CSS viewport units r
 
 The difference (932 - 873 = 59) exactly equals `safe-area-inset-top`.
 
-## Root Cause
+## Root Causes
+
+There are **two independent triggers** for this viewport shrink bug:
+
+### Trigger 1: `overflow: hidden` on root
 
 Per the CSS Overflow spec, `overflow` set on the root element (`<html>`) **propagates to the
 viewport**. iOS Safari then treats the viewport as having `overflow: hidden`, and for PWA
@@ -33,6 +37,25 @@ Two sources set `overflow: hidden` on the root element:
    to prevent body-level scrolling (page containers scroll internally)
 
 When either propagates to the viewport, the viewport shrinks.
+
+### Trigger 2: `position: fixed` on all page content (v0.45.47 discovery)
+
+When **all visible content** uses `position: fixed`, every element is taken out of normal
+document flow. This causes `<html>` and `<body>` to collapse to **0px height** (no in-flow
+children). iOS Safari interprets this zero-height body as having no content and shrinks
+the viewport — even if `overflow: visible` is set.
+
+Debug data from iPhone 15 Pro Max confirmed this:
+
+| Page | Container position | html height | window.innerHeight |
+|------|-------------------|-------------|-------------------|
+| Tasks | `static` | 947px | **932px** (full) |
+| Thoughts | `fixed` | 0px | **873px** (shrunk) |
+
+The fix: page containers must use `height: var(--app-height, 100vh)` with `position: static`
+(the default), so they remain in normal flow and give html/body non-zero content height.
+In PWA standalone mode, `height: 100dvh !important` overrides to use the accurate dynamic
+viewport height.
 
 ## The Fix
 
@@ -69,8 +92,12 @@ mode because there's no status bar safe area).
 
 1. **Never set `overflow: hidden` on `html` or `body` in PWA standalone mode** — it shrinks the viewport
 2. **Never set `height: 100%` or fixed heights on `html`/`body` in PWA mode** — use `auto`
-3. **If adding a CSS framework or reset**, check if it sets `overflow` on `:root` or `body`
-4. Page-level scroll should be handled by page containers (`.tasks-panel`, `.settings-page`, etc.),
+3. **Never use `position: fixed` on page containers** — it removes them from flow, collapsing
+   html/body to 0px height, which triggers the viewport shrink even with `overflow: visible`
+4. **Page containers must stay in normal flow** — use `height: var(--app-height, 100vh)` with
+   `height: 100dvh !important` in `@media (display-mode: standalone)`
+5. **If adding a CSS framework or reset**, check if it sets `overflow` on `:root` or `body`
+6. Page-level scroll should be handled by page containers (`.tasks-panel`, `.settings-page`, etc.),
    not by body-level overflow
 
 ## Debug Tools

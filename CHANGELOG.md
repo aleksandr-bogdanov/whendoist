@@ -9,7 +9,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 Todo: 
 - Scheduled backups
-- ?
+- Move thoughts bubbles a bit to the left to center out the visual weight of the page.
+- Scheduled "testtesttest" for Feb 15 - add UNDO to the toast.
+- Unscheduled "testtesttest" for Feb 15 - add Toast itself.
+- 
+## v0.45.47 — 2026-02-14
+
+### Fixed
+- **PWA bottom gap on all non-Tasks pages** — Root cause: `position: fixed` on page containers (Thoughts, Analytics, Settings) removed them from normal document flow, collapsing html/body to 0px height. iOS Safari interprets zero-height body as "no content" and shrinks the viewport by `safe-area-inset-top` (59px) even with `overflow: visible`. Fix: reverted all page containers from `position: fixed; inset: 0` to `position: static` with `height: var(--app-height, 100vh)`, plus `height: 100dvh !important` in standalone mode. Elements in normal flow keep html/body at full content height, preventing the viewport shrink. Bumped service worker cache to v18.
+
+---
 
 ## v0.45.46 — 2026-02-14
 
