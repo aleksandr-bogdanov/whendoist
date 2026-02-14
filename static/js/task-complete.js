@@ -685,6 +685,19 @@
     }
 
     /**
+     * Flush any pending deletion immediately (skip undo delay).
+     * Returns a promise that resolves when the API call completes.
+     */
+    function flushPendingDeletion() {
+        if (!pendingDeletion) return Promise.resolve();
+        if (deletionTimeout) {
+            clearTimeout(deletionTimeout);
+            deletionTimeout = null;
+        }
+        return executeDeleteFromMenu(pendingDeletion.taskId);
+    }
+
+    /**
      * Execute the actual deletion via API.
      * @param {string} taskId - Task ID
      */
@@ -1059,6 +1072,7 @@
         init: init,
         refreshTaskList: refreshTaskListFromServer,
         toggle: toggleCompletion,
+        flushPendingDeletion: flushPendingDeletion,
     };
 
     // Initialize when DOM is ready
