@@ -627,6 +627,67 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.day-nav-next').forEach(btn => {
             btn.addEventListener('click', () => navigateToDay(targetDayIndex + 1));
         });
+
+        // Desktop drag-to-swipe between calendar days
+        // (Touch devices use native scroll; this only handles mouse/pen)
+        (function() {
+            var isDown = false;
+            var isDragging = false;
+            var startX, startY, scrollStart;
+            var THRESHOLD = 8;
+
+            carousel.addEventListener('pointerdown', function(e) {
+                if (e.pointerType === 'touch') return;
+                if (e.button !== 0) return;
+                if (e.target.closest('button, a, input, select, [draggable="true"], .calendar-quick-action')) return;
+
+                isDown = true;
+                isDragging = false;
+                startX = e.pageX;
+                startY = e.pageY;
+                scrollStart = carousel.scrollLeft;
+            });
+
+            document.addEventListener('pointermove', function(e) {
+                if (!isDown || e.pointerType === 'touch') return;
+
+                var dx = e.pageX - startX;
+                var dy = e.pageY - startY;
+
+                if (!isDragging) {
+                    if (Math.abs(dx) < THRESHOLD && Math.abs(dy) < THRESHOLD) return;
+                    // Vertical movement dominates — let hour-grid scroll normally
+                    if (Math.abs(dy) > Math.abs(dx)) { isDown = false; return; }
+                    isDragging = true;
+                    carousel.style.scrollBehavior = 'auto';
+                    carousel.style.scrollSnapType = 'none';
+                    carousel.style.cursor = 'grabbing';
+                }
+
+                e.preventDefault();
+                carousel.scrollLeft = scrollStart - dx;
+            });
+
+            document.addEventListener('pointerup', function(e) {
+                if (!isDown || e.pointerType === 'touch') return;
+                var wasDragging = isDragging;
+                isDown = false;
+                isDragging = false;
+
+                if (wasDragging) {
+                    carousel.style.scrollBehavior = '';
+                    carousel.style.scrollSnapType = '';
+                    carousel.style.cursor = '';
+                    var dx = e.pageX - startX;
+                    // If dragged more than 25% of carousel width, navigate
+                    if (Math.abs(dx) > carousel.offsetWidth * 0.25) {
+                        navigateToDay(targetDayIndex + (dx > 0 ? -1 : 1));
+                    } else {
+                        navigateToDay(targetDayIndex);
+                    }
+                }
+            });
+        })();
     }
 
     // Plan My Day banner — show in evening (for tomorrow) or morning (for today)
