@@ -2584,7 +2584,6 @@ body[data-energy-level] .scheduled-group.project-group {
     padding: 0;
     margin: 0;  /* Override PICO */
     opacity: 0.6;
-    touch-action: manipulation;
 }
 
 .day-nav-btn:hover {
@@ -2894,7 +2893,6 @@ body[data-energy-level] .scheduled-group.project-group {
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior-x: none;
-    touch-action: pan-x pan-y;  /* Allow both axes; overflow-x:hidden prevents local horizontal scroll, so horizontal swipes propagate to carousel */
     position: relative;  /* For time selection overlay positioning */
     background: var(--bg-surface);
     isolation: isolate;  /* Create stacking context so task z-index works across rows */

@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.37 — 2026-02-14
+
+### Fixed
+- **Completely disable zoom on iPhone PWA** — added `maximum-scale=1.0, user-scalable=no` to viewport meta and global `touch-action: manipulation` via `*` selector to prevent pinch-to-zoom and double-tap-to-zoom everywhere
+
+---
+
 ## v0.45.36 — 2026-02-14
 
 ### Fixed
