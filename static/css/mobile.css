@@ -1433,10 +1433,13 @@ img, a {
         html,
         body {
             background-color: var(--bg-surface, #fff);
-            /* Kill -webkit-fill-available from app.css — it causes iOS to shrink
-               the viewport by safe-area-inset-top (59px on iPhone 15 Pro Max),
-               making 100dvh/innerHeight report 873px instead of 932px. */
             min-height: 0 !important;
+            /* Pico CSS sets overflow-x:hidden on :root and body. Per CSS spec,
+               root overflow propagates to the viewport. On iOS PWA standalone,
+               overflow:hidden on the viewport causes it to shrink by
+               safe-area-inset-top (59px), making 100dvh=873 instead of 932.
+               Override to visible so the viewport covers the full screen. */
+            overflow: visible !important;
         }
 
         /* All page scroll containers — fill full PWA viewport */

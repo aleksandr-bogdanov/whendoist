@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.39 — 2026-02-14
+
+### Fixed
+- **PWA bottom gap: actual root cause** — Pico CSS sets `overflow-x: hidden` on `:root` and `body`; per CSS spec, root overflow propagates to the viewport; on iOS PWA standalone, `overflow: hidden` on the viewport causes it to shrink by `safe-area-inset-top` (59px), making `100dvh = 873px` instead of `932px`; overriding to `overflow: visible !important` restores full-screen viewport
+
+---
+
 ## v0.45.38 — 2026-02-14
 
 ### Fixed
