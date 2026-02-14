@@ -15,6 +15,13 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.62 — 2026-02-14
+
+### Fixed
+- Undo scheduling now properly restores task to unscheduled section (was refreshing before API call completed)
+- Recurring instance scheduling now shows toast with undo (undo skips the instance)
+
+
 ## v0.45.61 — 2026-02-14
 
 ### Fixed
