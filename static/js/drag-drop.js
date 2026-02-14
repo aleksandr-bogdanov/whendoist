@@ -37,6 +37,14 @@
 
     const DEFAULT_DURATION = 30;
     const MAX_OVERLAP_COLUMNS = 3;
+
+    /**
+     * Format a YYYY-MM-DD date string as "Feb 15" for toast messages.
+     */
+    function formatDateShort(dateStr) {
+        var d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
     const ZOOM_STEPS = [30, 40, 50, 60, 70, 80, 90, 100];
     const ZOOM_MIN = 30;
     const ZOOM_MAX = 100;
@@ -1067,7 +1075,30 @@
             }
 
             log.info(`Scheduled ${effectiveInstanceId ? 'instance ' + effectiveInstanceId : 'task ' + taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
-            // No reload needed - optimistic update is sufficient
+
+            // Show toast with undo (skip for recurring instances — they have their own flow)
+            if (!effectiveInstanceId && window.Toast) {
+                Toast.show('Scheduled "' + content + '" for ' + formatDateShort(day), {
+                    action: {
+                        label: 'Undo',
+                        callback: function() {
+                            // Remove calendar card
+                            element.remove();
+                            recalculateOverlaps(dayCalendar);
+                            // Unschedule via API
+                            safeFetch('/api/v1/tasks/' + taskId, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
+                            });
+                            // Refresh task list to restore task
+                            if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                                TaskComplete.refreshTaskList();
+                            }
+                        }
+                    }
+                });
+            }
         } catch (error) {
             log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}:`, error);
             // Remove the optimistic element on failure
@@ -1400,6 +1431,29 @@
             });
 
             log.info(`Scheduled ${taskId} for ${day} (anytime)`);
+
+            // Show toast with undo
+            if (window.Toast) {
+                Toast.show('Scheduled "' + content + '" for ' + formatDateShort(day), {
+                    action: {
+                        label: 'Undo',
+                        callback: function() {
+                            // Remove date-only card
+                            el.remove();
+                            // Unschedule via API
+                            safeFetch('/api/v1/tasks/' + taskId, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
+                            });
+                            // Refresh task list to restore task
+                            if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                                TaskComplete.refreshTaskList();
+                            }
+                        }
+                    }
+                });
+            }
         } catch (error) {
             log.error(`Failed to schedule task ${taskId} to Anytime:`, error);
             el.remove();
