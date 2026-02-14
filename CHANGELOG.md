@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.38 — 2026-02-14
+
+### Fixed
+- **PWA bottom gap root cause found and fixed** — `min-height: -webkit-fill-available` on html/body caused iOS to shrink the CSS viewport by `safe-area-inset-top` (59px), making `100dvh`/`innerHeight` report 873px instead of 932px; overriding to `min-height: 0` in standalone mode restores the full viewport
+- **Removed html/body overflow:hidden** — the previous approach of locking html/body to viewport height with overflow:hidden was counterproductive; it interacted with `-webkit-fill-available` to shrink the viewport further
+
+---
+
 ## v0.45.37 — 2026-02-14
 
 ### Fixed
