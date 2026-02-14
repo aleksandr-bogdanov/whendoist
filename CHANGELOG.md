@@ -11,10 +11,10 @@ Todo:
 - Scheduled backups
 - ?
 
-## v0.45.41 — 2026-02-14
+## v0.45.42 — 2026-02-14
 
 ### Fixed
-- **New scheduled tasks stay in domain group** — `insertNewTask()` never checked for `scheduled_date`, so tasks created via "Add task" with a scheduled date appeared in the domain group instead of the Scheduled section; now moves them to `#section-sched` and creates a calendar card when applicable
+- **New scheduled tasks stay in domain group** — `insertNewTask()` never checked for `scheduled_date`, so tasks created via "Add task" with a scheduled date appeared in the domain group instead of the Scheduled section; now creates `#section-sched` dynamically if it doesn't exist (same pattern as `#section-done`), then moves the task there and adds a calendar card when applicable
 
 ## v0.45.40 — 2026-02-14
 
