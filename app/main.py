@@ -232,7 +232,9 @@ async def readiness_check():
     try:
         async with async_session_factory() as db:
             # Just check if any valid tokens exist (don't actually call Google API)
-            result = await db.execute(text("SELECT COUNT(*) FROM google_tokens WHERE access_token IS NOT NULL"))
+            result = await db.execute(
+                text("SELECT COUNT(*) FROM google_tokens WHERE access_token_encrypted IS NOT NULL")
+            )
             token_count = result.scalar() or 0
             if token_count > 0:
                 checks["google_calendar"] = "configured"

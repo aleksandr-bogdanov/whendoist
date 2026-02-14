@@ -17,12 +17,20 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.50 — 2026-02-14
+
+### Fixed
+- **Health check query error** — Fixed `column "access_token" does not exist` error on every deploy by updating health check to query `access_token_encrypted` (column was renamed when encryption was added).
+
+---
+
 ## v0.45.49 — 2026-02-14
 
 ### Removed
 - **PWA debug badge** — Viewport fix confirmed working on iPhone 15 Pro Max; removed the live overlay from `base.html`. Static debug page (`/static/debug-pwa.html`) and Settings footer link remain for future testing.
 
 ---
+
 
 ## v0.45.48 — 2026-02-14
 
