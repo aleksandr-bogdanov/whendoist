@@ -364,6 +364,7 @@
         const parentGroup = taskEl.closest('.project-group');
         const nextSibling = taskEl.nextElementSibling;
 
+
         // Visual feedback - fade out
         taskEl.style.opacity = '0.5';
         taskEl.style.pointerEvents = 'none';
