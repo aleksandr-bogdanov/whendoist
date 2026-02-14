@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>PWA Debug</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html {
+            background: red;
+            /* Show safe areas */
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        body {
+            background: blue;
+            min-height: 100vh;
+            font-family: -apple-system, sans-serif;
+            font-size: 13px;
+            color: #fff;
+        }
+        #main-mock {
+            background: green;
+            padding: 8px;
+        }
+        #page-mock {
+            background: rgba(0,0,0,0.7);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        /* Replicate the app's PWA CSS */
+        @media (display-mode: standalone) {
+            #standalone-indicator { background: #4ade80 !important; }
+            #standalone-indicator::after { content: ' YES' }
+        }
+
+        h2 { font-size: 15px; margin: 12px 0 6px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 4px; }
+        .row { display: flex; justify-content: space-between; padding: 2px 0; }
+        .label { opacity: 0.7; }
+        .val { font-weight: bold; font-family: monospace; }
+        .warn { color: #fbbf24; }
+        .ok { color: #4ade80; }
+        .bad { color: #f87171; }
+
+        #color-test {
+            margin-top: 12px;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #color-test div {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .legend { margin-top: 8px; font-size: 11px; opacity: 0.7; line-height: 1.4; }
+
+        /* Test: does 100dvh fill the screen? */
+        #dvh-test {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100vh;
+            background: yellow;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        #dvh-test-inner {
+            position: absolute;
+            top: 0;
+            left: 4px;
+            width: 4px;
+            height: 100dvh;
+            background: cyan;
+        }
+        #dvh-test-label {
+            position: fixed;
+            top: 50%;
+            left: 12px;
+            font-size: 10px;
+            z-index: 10000;
+            pointer-events: none;
+            background: rgba(0,0,0,0.8);
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Visual height test bars: yellow=100vh, cyan=100dvh -->
+    <div id="dvh-test"><div id="dvh-test-inner"></div></div>
+    <div id="dvh-test-label">yellow=100vh cyan=100dvh</div>
+
+    <div id="main-mock">
+        <div id="page-mock">
+            <h2>Layer colors visible?</h2>
+            <div class="row">
+                <span>If you see RED at edges</span>
+                <span class="val bad">html bg visible (safe area gap)</span>
+            </div>
+            <div class="row">
+                <span>If you see BLUE</span>
+                <span class="val warn">body extends beyond main</span>
+            </div>
+            <div class="row">
+                <span>If you see GREEN</span>
+                <span class="val warn">main extends beyond page</span>
+            </div>
+            <div class="row">
+                <span>If only dark panel</span>
+                <span class="val ok">page fills everything</span>
+            </div>
+
+            <h2>Standalone Detection</h2>
+            <div class="row">
+                <span class="label">@media (display-mode: standalone)</span>
+                <span id="standalone-indicator" class="val" style="background:#f87171;padding:2px 6px;border-radius:4px;">NO</span>
+            </div>
+            <div class="row">
+                <span class="label">navigator.standalone</span>
+                <span id="nav-standalone" class="val"></span>
+            </div>
+            <div class="row">
+                <span class="label">matchMedia standalone</span>
+                <span id="mm-standalone" class="val"></span>
+            </div>
+
+            <h2>Viewport Dimensions</h2>
+            <div class="row"><span class="label">window.innerHeight</span><span id="v-ih" class="val"></span></div>
+            <div class="row"><span class="label">window.innerWidth</span><span id="v-iw" class="val"></span></div>
+            <div class="row"><span class="label">screen.height</span><span id="v-sh" class="val"></span></div>
+            <div class="row"><span class="label">screen.width</span><span id="v-sw" class="val"></span></div>
+            <div class="row"><span class="label">screen.availHeight</span><span id="v-ah" class="val"></span></div>
+            <div class="row"><span class="label">visualViewport.height</span><span id="v-vvh" class="val"></span></div>
+            <div class="row"><span class="label">visualViewport.offsetTop</span><span id="v-vvo" class="val"></span></div>
+            <div class="row"><span class="label">documentElement.clientHeight</span><span id="v-dch" class="val"></span></div>
+            <div class="row"><span class="label">devicePixelRatio</span><span id="v-dpr" class="val"></span></div>
+
+            <h2>CSS Unit Values (measured)</h2>
+            <div class="row"><span class="label">100vh (px)</span><span id="u-vh" class="val"></span></div>
+            <div class="row"><span class="label">100dvh (px)</span><span id="u-dvh" class="val"></span></div>
+            <div class="row"><span class="label">100svh (px)</span><span id="u-svh" class="val"></span></div>
+            <div class="row"><span class="label">100lvh (px)</span><span id="u-lvh" class="val"></span></div>
+            <div class="row"><span class="label">--app-height</span><span id="u-ah" class="val"></span></div>
+
+            <h2>Safe Area Insets (measured)</h2>
+            <div class="row"><span class="label">top</span><span id="sa-top" class="val"></span></div>
+            <div class="row"><span class="label">bottom</span><span id="sa-bottom" class="val"></span></div>
+            <div class="row"><span class="label">left</span><span id="sa-left" class="val"></span></div>
+            <div class="row"><span class="label">right</span><span id="sa-right" class="val"></span></div>
+
+            <h2>Element Bounding Rects</h2>
+            <div class="row"><span class="label">html height</span><span id="r-html" class="val"></span></div>
+            <div class="row"><span class="label">body height</span><span id="r-body" class="val"></span></div>
+            <div class="row"><span class="label">main height</span><span id="r-main" class="val"></span></div>
+            <div class="row"><span class="label">page height</span><span id="r-page" class="val"></span></div>
+            <div class="row"><span class="label">body bottom edge</span><span id="r-body-bot" class="val"></span></div>
+            <div class="row"><span class="label">gap (screen - body bottom)</span><span id="r-gap" class="val"></span></div>
+
+            <h2>Computed Styles</h2>
+            <div class="row"><span class="label">html height</span><span id="cs-html-h" class="val"></span></div>
+            <div class="row"><span class="label">html min-height</span><span id="cs-html-mh" class="val"></span></div>
+            <div class="row"><span class="label">html overflow</span><span id="cs-html-o" class="val"></span></div>
+            <div class="row"><span class="label">body height</span><span id="cs-body-h" class="val"></span></div>
+            <div class="row"><span class="label">body min-height</span><span id="cs-body-mh" class="val"></span></div>
+            <div class="row"><span class="label">body overflow</span><span id="cs-body-o" class="val"></span></div>
+            <div class="row"><span class="label">body padding-bottom</span><span id="cs-body-pb" class="val"></span></div>
+            <div class="row"><span class="label">body margin</span><span id="cs-body-m" class="val"></span></div>
+
+            <p class="legend">
+                Left edge: yellow bar = 100vh, cyan bar = 100dvh.<br>
+                If cyan is shorter than yellow, dvh &lt; vh.<br>
+                If both stop before screen bottom, viewport doesn't cover safe area.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function measure() {
+            // Standalone
+            document.getElementById('nav-standalone').textContent = String(navigator.standalone);
+            document.getElementById('nav-standalone').className = 'val ' + (navigator.standalone ? 'ok' : 'bad');
+            var mm = window.matchMedia('(display-mode: standalone)').matches;
+            document.getElementById('mm-standalone').textContent = String(mm);
+            document.getElementById('mm-standalone').className = 'val ' + (mm ? 'ok' : 'bad');
+
+            // Viewport
+            document.getElementById('v-ih').textContent = window.innerHeight + 'px';
+            document.getElementById('v-iw').textContent = window.innerWidth + 'px';
+            document.getElementById('v-sh').textContent = screen.height + 'px';
+            document.getElementById('v-sw').textContent = screen.width + 'px';
+            document.getElementById('v-ah').textContent = screen.availHeight + 'px';
+            document.getElementById('v-dpr').textContent = window.devicePixelRatio;
+            if (window.visualViewport) {
+                document.getElementById('v-vvh').textContent = window.visualViewport.height + 'px';
+                document.getElementById('v-vvo').textContent = window.visualViewport.offsetTop + 'px';
+            }
+            document.getElementById('v-dch').textContent = document.documentElement.clientHeight + 'px';
+
+            // CSS units — create temp elements to measure
+            function measureUnit(unit) {
+                var el = document.createElement('div');
+                el.style.position = 'fixed';
+                el.style.top = '0';
+                el.style.height = '100' + unit;
+                el.style.width = '1px';
+                el.style.visibility = 'hidden';
+                document.body.appendChild(el);
+                var h = el.getBoundingClientRect().height;
+                document.body.removeChild(el);
+                return h;
+            }
+            document.getElementById('u-vh').textContent = measureUnit('vh') + 'px';
+            try { document.getElementById('u-dvh').textContent = measureUnit('dvh') + 'px'; }
+            catch(e) { document.getElementById('u-dvh').textContent = 'unsupported'; }
+            try { document.getElementById('u-svh').textContent = measureUnit('svh') + 'px'; }
+            catch(e) { document.getElementById('u-svh').textContent = 'unsupported'; }
+            try { document.getElementById('u-lvh').textContent = measureUnit('lvh') + 'px'; }
+            catch(e) { document.getElementById('u-lvh').textContent = 'unsupported'; }
+            document.getElementById('u-ah').textContent = getComputedStyle(document.documentElement).getPropertyValue('--app-height') || 'not set';
+
+            // Safe area insets
+            function measureSafeArea(side) {
+                var el = document.createElement('div');
+                el.style.position = 'fixed';
+                el.style.width = '1px';
+                el.style.height = 'env(safe-area-inset-' + side + ', 0px)';
+                if (side === 'left' || side === 'right') {
+                    el.style.height = '1px';
+                    el.style.width = 'env(safe-area-inset-' + side + ', 0px)';
+                }
+                el.style.visibility = 'hidden';
+                document.body.appendChild(el);
+                var rect = el.getBoundingClientRect();
+                var val = (side === 'left' || side === 'right') ? rect.width : rect.height;
+                document.body.removeChild(el);
+                return val;
+            }
+            document.getElementById('sa-top').textContent = measureSafeArea('top') + 'px';
+            document.getElementById('sa-bottom').textContent = measureSafeArea('bottom') + 'px';
+            document.getElementById('sa-left').textContent = measureSafeArea('left') + 'px';
+            document.getElementById('sa-right').textContent = measureSafeArea('right') + 'px';
+
+            // Bounding rects
+            var htmlRect = document.documentElement.getBoundingClientRect();
+            var bodyRect = document.body.getBoundingClientRect();
+            var mainRect = document.getElementById('main-mock').getBoundingClientRect();
+            var pageRect = document.getElementById('page-mock').getBoundingClientRect();
+            document.getElementById('r-html').textContent = Math.round(htmlRect.height) + 'px (top:' + Math.round(htmlRect.top) + ')';
+            document.getElementById('r-body').textContent = Math.round(bodyRect.height) + 'px (top:' + Math.round(bodyRect.top) + ')';
+            document.getElementById('r-main').textContent = Math.round(mainRect.height) + 'px';
+            document.getElementById('r-page').textContent = Math.round(pageRect.height) + 'px';
+            document.getElementById('r-body-bot').textContent = Math.round(bodyRect.bottom) + 'px';
+            var gap = window.innerHeight - bodyRect.bottom;
+            document.getElementById('r-gap').textContent = Math.round(gap) + 'px';
+            document.getElementById('r-gap').className = 'val ' + (Math.abs(gap) < 2 ? 'ok' : 'bad');
+
+            // Computed styles
+            var htmlCS = getComputedStyle(document.documentElement);
+            var bodyCS = getComputedStyle(document.body);
+            document.getElementById('cs-html-h').textContent = htmlCS.height;
+            document.getElementById('cs-html-mh').textContent = htmlCS.minHeight;
+            document.getElementById('cs-html-o').textContent = htmlCS.overflow;
+            document.getElementById('cs-body-h').textContent = bodyCS.height;
+            document.getElementById('cs-body-mh').textContent = bodyCS.minHeight;
+            document.getElementById('cs-body-o').textContent = bodyCS.overflow;
+            document.getElementById('cs-body-pb').textContent = bodyCS.paddingBottom;
+            document.getElementById('cs-body-m').textContent = bodyCS.margin;
+        }
+
+        // Run after a short delay to let layout settle
+        setTimeout(measure, 200);
+        // Also on resize
+        window.addEventListener('resize', function() { setTimeout(measure, 200); });
+    </script>
+</body>
+</html>
