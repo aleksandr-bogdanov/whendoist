@@ -17,6 +17,13 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.53 — 2026-02-14
+
+### Fixed
+- **Desktop calendar swipe dead** — Added pointer-based drag-to-swipe on the calendar carousel so desktop users can click-drag horizontally to switch days. Touch devices continue using native scroll.
+
+---
+
 ## v0.45.52 — 2026-02-14
 
 ### Fixed
