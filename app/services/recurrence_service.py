@@ -221,6 +221,7 @@ class RecurrenceService:
             .join(Task)
             .where(
                 TaskInstance.user_id == self.user_id,
+                Task.status != "archived",
                 TaskInstance.instance_date >= start_date,
                 TaskInstance.instance_date <= end_date,
             )

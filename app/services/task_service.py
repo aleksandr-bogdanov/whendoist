@@ -490,6 +490,7 @@ class TaskService:
             .where(
                 Task.user_id == self.user_id,
                 Task.is_recurring == False,
+                Task.status != "archived",
                 Task.scheduled_date >= start_date,
                 Task.scheduled_date <= end_date,
             )
