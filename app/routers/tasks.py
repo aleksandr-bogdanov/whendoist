@@ -588,7 +588,7 @@ async def delete_task(
     asyncio.create_task(_fire_and_forget_unsync_task(task_id, user.id))
 
 
-@router.post("/{task_id}/restore", status_code=200)
+@router.post("/{task_id}/restore", response_model=TaskResponse, status_code=200)
 async def restore_task(
     task_id: int,
     user: User = Depends(require_user),
@@ -605,7 +605,7 @@ async def restore_task(
     if task.scheduled_date:
         asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
 
-    return {"status": "restored", "task_id": task_id}
+    return _task_to_response(task)
 
 
 @router.post("/{task_id}/complete", status_code=200)
