@@ -115,8 +115,8 @@ if (window.matchMedia('(display-mode: standalone)').matches || navigator.standal
 
 1. Open the PWA on an iPhone
 2. Go to Settings → footer → "PWA Debug" link
-3. Check that `100dvh` equals `screen.height` (e.g., both 932px on iPhone 15 Pro Max)
-4. If `100dvh < screen.height`, the viewport is shrunk — check for new overflow:hidden rules
+3. Check that `screen.height` matches the expected full viewport (e.g., 932px on iPhone 15 Pro Max)
+4. Visually confirm no grey gap at the bottom of any page
 
 ## Rules to Prevent Recurrence
 
@@ -124,8 +124,8 @@ if (window.matchMedia('(display-mode: standalone)').matches || navigator.standal
 2. **Never set `height: 100%` or fixed heights on `html`/`body` in PWA mode** — use `auto`
 3. **Never use `position: fixed` on page containers** — it removes them from flow, collapsing
    html/body to 0px height, which triggers the viewport shrink even with `overflow: visible`
-4. **Page containers must stay in normal flow** — use `height: var(--app-height, 100vh)` with
-   `height: 100dvh !important` in `@media (display-mode: standalone)`
+4. **Never use `100dvh` or `innerHeight` for page container heights in standalone mode** — they
+   underreport on iOS. Use `var(--app-height)` which is set to `screen.height` by JS.
 5. **If adding a CSS framework or reset**, check if it sets `overflow` on `:root` or `body`
 6. Page-level scroll should be handled by page containers (`.tasks-panel`, `.settings-page`, etc.),
    not by body-level overflow
