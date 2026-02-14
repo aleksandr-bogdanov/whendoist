@@ -2411,8 +2411,8 @@ body[data-energy-level] .scheduled-group.project-group {
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -2892,7 +2892,6 @@ body[data-energy-level] .scheduled-group.project-group {
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior-x: none;
     position: relative;  /* For time selection overlay positioning */
     background: var(--bg-surface);
     isolation: isolate;  /* Create stacking context so task z-index works across rows */

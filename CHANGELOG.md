@@ -17,6 +17,13 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.54 — 2026-02-14
+
+### Fixed
+- **Calendar trackpad swipe broken on macOS** — Removed `overscroll-behavior-x: none` from `.hour-grid` (was blocking horizontal scroll chaining to carousel) and `scroll-behavior: smooth` from carousel (was fighting scroll-snap on trackpad input). Added `overscroll-behavior-x: contain` on carousel to prevent browser back-navigation.
+
+---
+
 ## v0.45.53 — 2026-02-14
 
 ### Fixed
