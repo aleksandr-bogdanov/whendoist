@@ -17,6 +17,13 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.52 — 2026-02-14
+
+### Fixed
+- **Completed tasks persist on calendar** — Completing a task now removes its calendar card (`.scheduled-task` / `.date-only-task`). Editing a completed task no longer re-creates the calendar card.
+
+---
+
 ## v0.45.51 — 2026-02-14
 
 ### Fixed
