@@ -268,7 +268,9 @@
                 }
             } else if (oldScheduledDate && !newScheduledDate) {
                 // Became unscheduled
-                if (typeof moveTaskToUnscheduledSection === 'function') {
+                if (taskEl.closest('#section-sched')) {
+                    moveFromScheduledToDomain(taskEl);
+                } else if (typeof moveTaskToUnscheduledSection === 'function') {
                     moveTaskToUnscheduledSection(taskEl);
                 }
             }

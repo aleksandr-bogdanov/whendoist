@@ -11,6 +11,11 @@ Todo:
 - Scheduled backups
 - ?
 
+## v0.45.44 — 2026-02-14
+
+### Fixed
+- **Unscheduling a task from Scheduled section doesn't move it back** — `updateTaskInPlace` called `moveTaskToUnscheduledSection` which only reorders within the same list; when the task is in `#section-sched`, now calls `moveFromScheduledToDomain` instead to do the proper cross-section move back to its domain group
+
 ## v0.45.43 — 2026-02-14
 
 ### Fixed
