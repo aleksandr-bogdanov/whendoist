@@ -102,11 +102,19 @@ instance_q = select(TaskInstance.completed_at, literal(True).label("is_instance"
 combined = union_all(task_q, instance_q)  # Single query, not two
 ```
 
-### 8. PWA: Never set `overflow: hidden` on `html`/`body` in standalone mode
-On iOS Safari in PWA standalone mode, `overflow: hidden` on the root element propagates
-to the viewport and **shrinks it by `safe-area-inset-top`** (59px on iPhone 15 Pro Max).
-This makes `100dvh`, `100vh`, and `innerHeight` report wrong values. The fix in `mobile.css`
-overrides to `overflow: visible !important` in `@media (display-mode: standalone)`.
+### 8. PWA: Never shrink the iOS viewport
+On iOS Safari in PWA standalone mode, the viewport shrinks by `safe-area-inset-top` (59px
+on iPhone 15 Pro Max) when **either** of these conditions is true:
+1. `overflow: hidden` on `html`/`body` — propagates to viewport per CSS spec
+2. `position: fixed` on **all** page containers — removes them from flow, collapsing
+   html/body to 0px height, which also triggers the viewport shrink
+
+**Rules:**
+- Never set `overflow: hidden` on `html`/`body` in standalone mode (use `overflow: visible !important`)
+- Never use `position: fixed` on page containers — use `height: var(--app-height, 100vh)` with
+  `height: 100dvh !important` in standalone mode. Elements must stay in normal flow so html/body
+  have non-zero content height.
+
 See [docs/PWA-VIEWPORT-FIX.md](docs/PWA-VIEWPORT-FIX.md) for full details.
 
 ---

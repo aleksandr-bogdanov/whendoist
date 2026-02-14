@@ -1455,15 +1455,20 @@ img, a {
             height: auto !important;
         }
 
-        /* Dashboard panels — height-based fill (works within tasks-layout) */
+        /* All page containers — use 100dvh to fill the full PWA viewport.
+           100dvh is more accurate than 100vh on iOS (accounts for dynamic
+           toolbar). Falls back to 100vh where 100dvh is unsupported.
+           IMPORTANT: these must remain position:static (in-flow) so that
+           html/body have non-zero content height — otherwise iOS shrinks
+           the viewport by safe-area-inset-top.  See docs/PWA-VIEWPORT-FIX.md */
         .tasks-panel.mobile-active,
-        .calendar-panel.mobile-active {
+        .calendar-panel.mobile-active,
+        .thoughts-page,
+        .analytics-page,
+        .settings-page {
             height: 100vh !important;
             height: 100dvh !important;
         }
-
-        /* Analytics/Settings use position:fixed in the general mobile
-           block (same as Thoughts), so no standalone override needed. */
     }
 
     /* Nav pill — fully transparent on glass header (matches task-list-header) */
@@ -1596,7 +1601,10 @@ img, a {
 
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
-        .calendar-panel.mobile-active {
+        .calendar-panel.mobile-active,
+        .thoughts-page,
+        .analytics-page,
+        .settings-page {
             height: 100vh !important;
             height: 100dvh !important;
         }
@@ -1775,13 +1783,14 @@ img, a {
     }
 
     /* ── Thoughts Page — Chat Layout ── */
+    /* IMPORTANT: Do NOT use position:fixed here — it removes the element
+       from normal flow, collapsing html/body to 0px height.  On iOS PWA
+       standalone this triggers a viewport-shrink bug (59px shorter).
+       height-based sizing keeps the element in-flow so html/body have
+       content height and the viewport stays full.  See docs/PWA-VIEWPORT-FIX.md */
     .thoughts-page {
-        position: fixed !important;
-        inset: 0 !important;
-        /* Override desktop height: calc(100vh - var(--header-height)) —
-           explicit height wins over top+bottom in CSS, causing a gap. */
-        height: auto !important;
-        z-index: 1 !important;
+        height: 100vh;
+        height: var(--app-height, 100vh);
         overflow: hidden !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -1942,16 +1951,11 @@ img, a {
     }
 
     /* ── Analytics Page ── */
-    /* Fixed positioning (same as Thoughts page) bypasses all parent
-       constraints — Pico's body>main padding, overflow propagation, etc.
-       Without this, the page container sits inside <main> which has
-       padding-block:1rem from Pico (specificity 0,0,2 beats our override),
-       causing a bottom gap in PWA standalone mode. */
+    /* IMPORTANT: Do NOT use position:fixed — causes iOS PWA viewport shrink.
+       See comment on .thoughts-page and docs/PWA-VIEWPORT-FIX.md */
     .analytics-page {
-        position: fixed !important;
-        inset: 0 !important;
-        height: auto !important;
-        z-index: 1 !important;
+        height: 100vh;
+        height: var(--app-height, 100vh);
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
@@ -2066,12 +2070,11 @@ img, a {
     }
 
     /* ── Settings Page ── */
-    /* Fixed positioning — same pattern as Thoughts and Analytics pages */
+    /* IMPORTANT: Do NOT use position:fixed — causes iOS PWA viewport shrink.
+       See comment on .thoughts-page and docs/PWA-VIEWPORT-FIX.md */
     .settings-page {
-        position: fixed !important;
-        inset: 0 !important;
-        height: auto !important;
-        z-index: 1 !important;
+        height: 100vh;
+        height: var(--app-height, 100vh);
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
