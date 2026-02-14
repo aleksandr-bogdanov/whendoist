@@ -622,51 +622,5 @@
     </script>
     {% endif %}
 
-<!-- PWA Debug Badge — shows on all pages in standalone mode -->
-<script>
-(function() {
-    if (!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) return;
-    var b = document.createElement('div');
-    b.id = 'pwa-dbg';
-    b.style.cssText = 'position:fixed;bottom:40px;left:4px;z-index:99999;background:rgba(0,0,0,0.88);color:#0f0;font:10px/1.4 monospace;padding:6px 8px;border-radius:6px;pointer-events:none;max-width:220px;word-break:break-all;';
-    document.body.appendChild(b);
-    function m() {
-        var h = document.documentElement, bd = document.body;
-        var mn = document.getElementById('main-content');
-        var pg = document.querySelector('.tasks-panel.mobile-active') ||
-                 document.querySelector('.settings-page') ||
-                 document.querySelector('.analytics-page') ||
-                 document.querySelector('.thoughts-page');
-        var hCS = getComputedStyle(h), bCS = getComputedStyle(bd);
-        var mCS = mn ? getComputedStyle(mn) : {};
-        var pCS = pg ? getComputedStyle(pg) : {};
-        // measure 100dvh
-        var d = document.createElement('div');
-        d.style.cssText = 'position:fixed;top:0;height:100dvh;width:1px;visibility:hidden';
-        document.body.appendChild(d);
-        var dvh = d.getBoundingClientRect().height;
-        document.body.removeChild(d);
-        var pgR = pg ? pg.getBoundingClientRect() : {};
-        var pgName = pg ? (pg.className.split(' ')[0] || '?') : 'none';
-        var L = [];
-        L.push('<b style="color:#fff">' + pgName + '</b>');
-        L.push('iH:' + innerHeight + ' sH:' + screen.height + ' dvh:' + Math.round(dvh));
-        L.push('html o:' + hCS.overflow + ' h:' + hCS.height);
-        L.push('body o:' + bCS.overflow + ' h:' + bCS.height);
-        L.push('main pt:' + (mCS.paddingTop||'?') + ' pb:' + (mCS.paddingBottom||'?'));
-        L.push('main h:' + (mCS.height||'?'));
-        if (pg) {
-            L.push('pg pos:' + pCS.position + ' h:' + pCS.height);
-            L.push('pg t:' + pCS.top + ' b:' + pCS.bottom);
-            L.push('pg oy:' + pCS.overflowY);
-            L.push('pgR ' + Math.round(pgR.top) + ',' + Math.round(pgR.left) + ' ' + Math.round(pgR.width) + 'x' + Math.round(pgR.height));
-            L.push('gap:' + Math.round(innerHeight - pgR.bottom));
-        }
-        b.innerHTML = L.join('<br>');
-    }
-    setTimeout(m, 600);
-    window.addEventListener('resize', function() { setTimeout(m, 300); });
-})();
-</script>
 </body>
 </html>
