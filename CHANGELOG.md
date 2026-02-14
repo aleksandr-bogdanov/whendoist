@@ -17,6 +17,13 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.51 — 2026-02-14
+
+### Fixed
+- **Calendar quick action overlapping checkbox** — On medium/long duration calendar tasks, the quick action button now shifts left of the complete checkbox instead of overlapping it.
+
+---
+
 ## v0.45.50 — 2026-02-14
 
 ### Fixed

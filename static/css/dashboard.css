@@ -4058,6 +4058,11 @@ body[data-energy-level] .scheduled-group.project-group {
     background: var(--bg-hover);
 }
 
+/* Non-short tasks: position quick action to left of checkbox */
+.scheduled-task.calendar-item:not(.duration-short) .calendar-quick-action {
+    right: calc(var(--cal-check-hit) + 4px);
+}
+
 /* Short tasks: compact quick-action instead of hiding entirely */
 .duration-short .calendar-quick-action {
     width: 16px;
