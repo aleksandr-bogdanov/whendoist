@@ -11,6 +11,13 @@ Todo:
 - Scheduled backups
 - ?
 
+## v0.45.45 — 2026-02-14
+
+### Fixed
+- **PWA bottom gap on Settings/Analytics (for real this time)** — Three root causes: (1) `position: fixed; inset: 0` was inside a nested `@media (display-mode: standalone)` block that didn't apply reliably on iOS; moved to the general mobile block matching the Thoughts page pattern; (2) Pico CSS `body>main { padding-block: 1rem }` (specificity 0,0,2) was beating our `main { padding: 0 }` (0,0,1), adding 16px top padding to `<main>`; overridden with `body > main { padding-block: 0 !important }`; (3) service worker `CACHE_VERSION` was stuck at `v16`, potentially serving stale CSS; bumped to `v17`
+
+---
+
 ## v0.45.44 — 2026-02-14
 
 ### Fixed

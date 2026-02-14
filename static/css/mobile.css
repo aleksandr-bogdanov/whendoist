@@ -401,6 +401,13 @@ img, a {
         overscroll-behavior: none !important;
     }
 
+    /* Kill Pico CSS padding on main — Pico's `body > main` (specificity 0,0,2)
+       beats our `main { padding: 0 }` (0,0,1). Page containers handle their own
+       spacing; main padding creates gaps in PWA mode. */
+    body > main {
+        padding-block: 0 !important;
+    }
+
     /* Override dashboard grid - single column, full height */
     .tasks-layout {
         display: flex !important;
@@ -1455,18 +1462,8 @@ img, a {
             height: 100dvh !important;
         }
 
-        /* Analytics/Settings — fixed positioning like Thoughts page.
-           height: 100dvh alone fails because parent <main> has Pico CSS
-           padding (body>main { padding-block: 1rem }) that offsets the
-           page container, and the layout chain can leave a bottom gap.
-           position:fixed bypasses all parent constraints. */
-        .analytics-page,
-        .settings-page {
-            position: fixed !important;
-            inset: 0 !important;
-            height: auto !important;
-            z-index: 1 !important;
-        }
+        /* Analytics/Settings use position:fixed in the general mobile
+           block (same as Thoughts), so no standalone override needed. */
     }
 
     /* Nav pill — fully transparent on glass header (matches task-list-header) */
@@ -1602,14 +1599,6 @@ img, a {
         .calendar-panel.mobile-active {
             height: 100vh !important;
             height: 100dvh !important;
-        }
-
-        .analytics-page,
-        .settings-page {
-            position: fixed !important;
-            inset: 0 !important;
-            height: auto !important;
-            z-index: 1 !important;
         }
     }
 
@@ -1953,13 +1942,22 @@ img, a {
     }
 
     /* ── Analytics Page ── */
+    /* Fixed positioning (same as Thoughts page) bypasses all parent
+       constraints — Pico's body>main padding, overflow propagation, etc.
+       Without this, the page container sits inside <main> which has
+       padding-block:1rem from Pico (specificity 0,0,2 beats our override),
+       causing a bottom gap in PWA standalone mode. */
     .analytics-page {
-        height: 100vh;
-        height: var(--app-height, 100vh);
+        position: fixed !important;
+        inset: 0 !important;
+        height: auto !important;
+        z-index: 1 !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
         padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
     }
 
     .analytics-page .page-surface {
@@ -2068,13 +2066,18 @@ img, a {
     }
 
     /* ── Settings Page ── */
+    /* Fixed positioning — same pattern as Thoughts and Analytics pages */
     .settings-page {
-        height: 100vh;
-        height: var(--app-height, 100vh);
+        position: fixed !important;
+        inset: 0 !important;
+        height: auto !important;
+        z-index: 1 !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
         padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
     }
 
     .settings-page .page-surface {
