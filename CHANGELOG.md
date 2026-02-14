@@ -23,6 +23,7 @@ Todo:
 - Restore task toast now shows task name (e.g. `"My task" restored` instead of generic `Task restored`)
 - Restored scheduled tasks now reappear on the calendar immediately (restore endpoint returns full task data, frontend calls `updateCalendarItem`)
 
+
 ## v0.45.57 — 2026-02-14
 
 ### Fixed
