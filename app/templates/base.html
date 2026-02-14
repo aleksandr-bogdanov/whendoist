@@ -55,6 +55,16 @@
     <!-- Theme initialization (must be before CSS to prevent flash) -->
     <script src="/static/js/theme.js"></script>
 
+    <!-- PWA viewport height fix — must run before CSS layout.
+         On iOS PWA standalone, innerHeight/100dvh can underreport by
+         safe-area-inset-top (59px). screen.height is always correct.
+         See docs/PWA-VIEWPORT-FIX.md -->
+    <script>
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+        document.documentElement.style.setProperty('--app-height', screen.height + 'px');
+    }
+    </script>
+
     <!-- Styles -->
     <link rel="stylesheet" href="/static/vendor/pico.min.css">
     <link rel="stylesheet" href="/static/vendor/air-datepicker.css">
