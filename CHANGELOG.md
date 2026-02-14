@@ -11,6 +11,13 @@ Todo:
 - Scheduled backups
 - ?
 
+## v0.45.43 — 2026-02-14
+
+### Fixed
+- **PWA bottom gap on Settings/Analytics** — `height: 100dvh` approach failed because Pico CSS `body>main { padding-block: 1rem }` offsets the page container within `<main>`, and the layout chain leaves a gap at the bottom; switched to `position: fixed; inset: 0` (same pattern as Thoughts page) which bypasses all parent constraints
+
+---
+
 ## v0.45.42 — 2026-02-14
 
 ### Fixed

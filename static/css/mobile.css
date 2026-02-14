@@ -1448,13 +1448,24 @@ img, a {
             height: auto !important;
         }
 
-        /* All page scroll containers — fill full PWA viewport */
+        /* Dashboard panels — height-based fill (works within tasks-layout) */
         .tasks-panel.mobile-active,
-        .calendar-panel.mobile-active,
-        .analytics-page,
-        .settings-page {
+        .calendar-panel.mobile-active {
             height: 100vh !important;
             height: 100dvh !important;
+        }
+
+        /* Analytics/Settings — fixed positioning like Thoughts page.
+           height: 100dvh alone fails because parent <main> has Pico CSS
+           padding (body>main { padding-block: 1rem }) that offsets the
+           page container, and the layout chain can leave a bottom gap.
+           position:fixed bypasses all parent constraints. */
+        .analytics-page,
+        .settings-page {
+            position: fixed !important;
+            inset: 0 !important;
+            height: auto !important;
+            z-index: 1 !important;
         }
     }
 
@@ -1588,11 +1599,17 @@ img, a {
 
     @media (display-mode: standalone) {
         .tasks-panel.mobile-active,
-        .calendar-panel.mobile-active,
-        .analytics-page,
-        .settings-page {
+        .calendar-panel.mobile-active {
             height: 100vh !important;
             height: 100dvh !important;
+        }
+
+        .analytics-page,
+        .settings-page {
+            position: fixed !important;
+            inset: 0 !important;
+            height: auto !important;
+            z-index: 1 !important;
         }
     }
 
