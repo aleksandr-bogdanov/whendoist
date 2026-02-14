@@ -102,6 +102,13 @@ instance_q = select(TaskInstance.completed_at, literal(True).label("is_instance"
 combined = union_all(task_q, instance_q)  # Single query, not two
 ```
 
+### 8. PWA: Never set `overflow: hidden` on `html`/`body` in standalone mode
+On iOS Safari in PWA standalone mode, `overflow: hidden` on the root element propagates
+to the viewport and **shrinks it by `safe-area-inset-top`** (59px on iPhone 15 Pro Max).
+This makes `100dvh`, `100vh`, and `innerHeight` report wrong values. The fix in `mobile.css`
+overrides to `overflow: visible !important` in `@media (display-mode: standalone)`.
+See [docs/PWA-VIEWPORT-FIX.md](docs/PWA-VIEWPORT-FIX.md) for full details.
+
 ---
 
 ## Documentation

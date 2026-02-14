@@ -7,6 +7,25 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+Todo: 
+- Scheduled backups
+- ?
+
+## v0.45.40 — 2026-02-14
+
+### Fixed
+- **PWA bottom gap on all pages** — `overflow: visible` fix from v0.45.39 only worked on Tasks page; the mobile body-scroll-lock (`height: 100% !important`) was constraining html/body to the shrunken viewport on other pages; removed `height: 100%` and added `height: auto !important` in standalone override so all pages (Settings, Analytics, Thoughts) get the full-screen viewport
+
+### Added
+- **PWA Viewport Fix documentation** — new `docs/PWA-VIEWPORT-FIX.md` explaining the iOS Safari viewport shrinking bug, root cause, fix, and prevention rules
+- **Permanent PWA Debug link** — Settings footer has a "PWA Debug" link to `/static/debug-pwa.html` for diagnosing viewport issues on any device
+- **CLAUDE.md rule #8** — never set `overflow: hidden` on `html`/`body` in PWA standalone mode
+
+### Removed
+- Temporary in-app debug overlay from settings page
+
+---
+
 ## v0.45.39 — 2026-02-14
 
 ### Fixed
