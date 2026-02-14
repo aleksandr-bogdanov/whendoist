@@ -17,6 +17,11 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.57 — 2026-02-14
+
+### Fixed
+- Archived (deleted) tasks reappearing on calendar after page refresh — calendar queries now exclude archived tasks
+
 ## v0.45.56 — 2026-02-14
 
 ### Fixed
