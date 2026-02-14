@@ -1076,27 +1076,33 @@
 
             log.info(`Scheduled ${effectiveInstanceId ? 'instance ' + effectiveInstanceId : 'task ' + taskId} at ${day} ${hour}:${String(minutes).padStart(2, '0')}`);
 
-            // Show toast with undo (skip for recurring instances — they have their own flow)
-            if (!effectiveInstanceId && window.Toast) {
-                Toast.show('Scheduled "' + content + '" for ' + formatDateShort(day), {
-                    action: {
-                        label: 'Undo',
-                        callback: function() {
-                            // Remove calendar card
-                            element.remove();
-                            recalculateOverlaps(dayCalendar);
-                            // Unschedule via API
-                            safeFetch('/api/v1/tasks/' + taskId, {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
-                            });
-                            // Refresh task list to restore task
+            // Show toast with undo
+            if (window.Toast) {
+                var undoCallback = effectiveInstanceId
+                    ? function() {
+                        // Recurring instance: remove card and skip the instance
+                        element.remove();
+                        recalculateOverlaps(dayCalendar);
+                        safeFetch('/api/v1/instances/' + effectiveInstanceId + '/skip', {
+                            method: 'POST',
+                        });
+                    }
+                    : function() {
+                        // Regular task: remove card and unschedule via API, then refresh list
+                        element.remove();
+                        recalculateOverlaps(dayCalendar);
+                        safeFetch('/api/v1/tasks/' + taskId, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
+                        }).then(function() {
                             if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
                                 TaskComplete.refreshTaskList();
                             }
-                        }
-                    }
+                        });
+                    };
+                Toast.show('Scheduled "' + content + '" for ' + formatDateShort(day), {
+                    action: { label: 'Undo', callback: undoCallback }
                 });
             }
         } catch (error) {
@@ -1438,18 +1444,16 @@
                     action: {
                         label: 'Undo',
                         callback: function() {
-                            // Remove date-only card
                             el.remove();
-                            // Unschedule via API
                             safeFetch('/api/v1/tasks/' + taskId, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
+                            }).then(function() {
+                                if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                                    TaskComplete.refreshTaskList();
+                                }
                             });
-                            // Refresh task list to restore task
-                            if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
-                                TaskComplete.refreshTaskList();
-                            }
                         }
                     }
                 });
