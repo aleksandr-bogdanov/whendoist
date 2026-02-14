@@ -392,10 +392,12 @@ img, a {
    ============================================================================= */
 
 @media (max-width: 900px) {
-    /* Prevent body scroll — only .task-list-container should scroll */
+    /* Prevent body scroll — only page containers should scroll.
+       NOTE: overflow:hidden on html/body propagates to the iOS viewport and
+       shrinks it by safe-area-inset-top in PWA standalone mode.
+       The standalone block below overrides this to overflow:visible. */
     html, body {
         overflow: hidden !important;
-        height: 100% !important;
         overscroll-behavior: none !important;
     }
 
@@ -1434,12 +1436,16 @@ img, a {
         body {
             background-color: var(--bg-surface, #fff);
             min-height: 0 !important;
-            /* Pico CSS sets overflow-x:hidden on :root and body. Per CSS spec,
-               root overflow propagates to the viewport. On iOS PWA standalone,
-               overflow:hidden on the viewport causes it to shrink by
-               safe-area-inset-top (59px), making 100dvh=873 instead of 932.
-               Override to visible so the viewport covers the full screen. */
+            /* CRITICAL iOS PWA fix: Pico CSS (overflow-x:hidden on :root) and
+               the mobile body-scroll-lock above (overflow:hidden !important)
+               both propagate overflow:hidden to the viewport per CSS spec.
+               On iOS PWA standalone, this shrinks the viewport by
+               safe-area-inset-top (59px on iPhone 15 Pro Max), making
+               100dvh/innerHeight=873 instead of 932. Also kill height:100%
+               from the body-scroll-lock — it constrains body to the shrunken
+               viewport size. See docs/PWA-VIEWPORT-FIX.md */
             overflow: visible !important;
+            height: auto !important;
         }
 
         /* All page scroll containers — fill full PWA viewport */

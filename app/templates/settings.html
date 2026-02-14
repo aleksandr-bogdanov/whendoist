@@ -635,7 +635,7 @@
             <span class="footer-sep">·</span>
             <a href="/privacy" class="footer-link">Privacy</a>
             <span class="footer-sep">·</span>
-            <a href="/static/debug-pwa.html" class="footer-link" style="color:#f87171;">PWA Debug</a>
+            <a href="/static/debug-pwa.html" class="footer-link">PWA Debug</a>
         </footer>
     </div>
 </div>
@@ -2040,63 +2040,4 @@ function _pollSyncStatus(btn) {
 })();
 </script>
 
-<!-- TEMPORARY: PWA debug overlay — remove after diagnosing bottom gap -->
-<script>
-(function() {
-    if (!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) return;
-    var panel = document.createElement('div');
-    panel.id = 'pwa-debug-overlay';
-    panel.style.cssText = 'position:fixed;bottom:40px;right:8px;z-index:99999;background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.5 monospace;padding:8px 10px;border-radius:8px;max-width:260px;pointer-events:none;';
-    document.body.appendChild(panel);
-
-    function m() {
-        var html = document.documentElement;
-        var body = document.body;
-        var main = document.getElementById('main-content');
-        var page = document.querySelector('.settings-page');
-        var hCS = getComputedStyle(html);
-        var bCS = getComputedStyle(body);
-        var mCS = main ? getComputedStyle(main) : {};
-        var pCS = page ? getComputedStyle(page) : {};
-
-        var lines = [];
-        lines.push('<b style="color:#fff">PWA Debug (in-app)</b>');
-        lines.push('standalone: ' + window.matchMedia('(display-mode: standalone)').matches);
-        lines.push('---');
-        lines.push('html h:' + hCS.height + ' o:' + hCS.overflow);
-        lines.push('html minH:' + hCS.minHeight);
-        lines.push('body h:' + bCS.height + ' o:' + bCS.overflow);
-        lines.push('body minH:' + bCS.minHeight);
-        lines.push('body pb:' + bCS.paddingBottom);
-        lines.push('main h:' + (mCS.height||'?') + ' o:' + (mCS.overflow||'?'));
-        lines.push('main pb:' + (mCS.paddingBottom||'?'));
-        lines.push('.settings h:' + (pCS.height||'?'));
-        lines.push('.settings o:' + (pCS.overflow||'?'));
-        lines.push('---');
-        lines.push('innerH:' + window.innerHeight + ' screenH:' + screen.height);
-
-        // Measure 100dvh
-        var dvhEl = document.createElement('div');
-        dvhEl.style.cssText = 'position:fixed;top:0;height:100dvh;width:1px;visibility:hidden';
-        document.body.appendChild(dvhEl);
-        lines.push('100dvh:' + dvhEl.getBoundingClientRect().height + 'px');
-        document.body.removeChild(dvhEl);
-
-        // Bounding rects
-        var htmlR = html.getBoundingClientRect();
-        var bodyR = body.getBoundingClientRect();
-        lines.push('---');
-        lines.push('htmlRect h:' + Math.round(htmlR.height));
-        lines.push('bodyRect h:' + Math.round(bodyR.height) + ' top:' + Math.round(bodyR.top));
-        lines.push('bodyBot:' + Math.round(bodyR.bottom) + ' gap:' + Math.round(window.innerHeight - bodyR.bottom));
-        if (main) { var mR = main.getBoundingClientRect(); lines.push('mainRect h:' + Math.round(mR.height)); }
-        if (page) { var pR = page.getBoundingClientRect(); lines.push('pageRect h:' + Math.round(pR.height)); }
-
-        panel.innerHTML = lines.join('<br>');
-    }
-
-    setTimeout(m, 500);
-    window.addEventListener('resize', function() { setTimeout(m, 300); });
-})();
-</script>
 {% endblock %}
