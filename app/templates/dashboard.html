@@ -514,6 +514,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const calendarVisible = calendarPanel && (!isMobile || calendarPanel.classList.contains('mobile-active'));
     if (calendarVisible) {
         window.scrollCalendarToNow();
+        // Pre-sync all hour-grids to today's scroll position
+        var todayGrid = document.querySelector('#today-calendar .hour-grid');
+        if (todayGrid) {
+            var initScroll = todayGrid.scrollTop;
+            document.querySelectorAll('.day-calendar .hour-grid').forEach(function(grid) {
+                if (grid !== todayGrid) grid.scrollTop = initScroll;
+            });
+        }
     }
 
     // Calculate initial overlaps for all day calendars
@@ -555,12 +563,30 @@ document.addEventListener('DOMContentLoaded', () => {
         let lastScrollTop = null;
         let currentVisibleDay = null;
 
-        // Track vertical scroll on each hour-grid
+        // Sync vertical scroll across all hour-grids continuously
+        let isSyncing = false;
+        let syncRAF = null;
+
+        function syncAllHourGrids(scrollTop) {
+            if (isSyncing) return;
+            lastScrollTop = scrollTop;
+            if (syncRAF) return;
+            syncRAF = requestAnimationFrame(() => {
+                syncRAF = null;
+                isSyncing = true;
+                dayCalendars.forEach(day => {
+                    const grid = day.querySelector('.hour-grid');
+                    if (grid) grid.scrollTop = lastScrollTop;
+                });
+                isSyncing = false;
+            });
+        }
+
         dayCalendars.forEach(day => {
             const hourGrid = day.querySelector('.hour-grid');
             if (hourGrid) {
                 hourGrid.addEventListener('scroll', () => {
-                    lastScrollTop = hourGrid.scrollTop;
+                    syncAllHourGrids(hourGrid.scrollTop);
                 });
             }
         });
@@ -584,13 +610,6 @@ document.addEventListener('DOMContentLoaded', () => {
             (entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-                        // Sync vertical scroll position to new visible day
-                        if (currentVisibleDay !== entry.target && lastScrollTop !== null) {
-                            const newHourGrid = entry.target.querySelector('.hour-grid');
-                            if (newHourGrid) {
-                                newHourGrid.scrollTop = lastScrollTop;
-                            }
-                        }
                         currentVisibleDay = entry.target;
                         updateSharedHeader(entry.target);
                         // Sync targetDayIndex so manual swipes keep nav accurate

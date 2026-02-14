@@ -17,6 +17,11 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.55 — 2026-02-14
+
+### Fixed
+- Calendar hour-grid scroll jump when swiping between days — all grids now stay synced continuously
+
 ## v0.45.54 — 2026-02-14
 
 ### Fixed
