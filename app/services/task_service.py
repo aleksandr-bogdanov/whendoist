@@ -289,10 +289,6 @@ class TaskService:
             recurrence_end=recurrence_end,
             position=max_pos + 1,
         )
-        # Auto-populate scheduled_date for recurring tasks
-        if is_recurring and scheduled_date is None and recurrence_start:
-            task.scheduled_date = recurrence_start
-
         self.db.add(task)
         await self.db.flush()
         return task
@@ -336,10 +332,6 @@ class TaskService:
                     if not domain:
                         continue  # Skip unowned domain_id silently
                 setattr(task, field, value)
-
-        # Auto-populate scheduled_date for recurring tasks
-        if task.is_recurring and task.scheduled_date is None and task.recurrence_start:
-            task.scheduled_date = task.recurrence_start
 
         await self.db.flush()
         return task
