@@ -994,12 +994,25 @@
 
         const { minutes } = calculateDropPosition(e, slot);
 
+        // Capture original position before removing (for undo on reschedule)
+        let origDay = '';
+        let origStartMins = '';
+        let origSlot = null;
+        let origDayCalendar = null;
+        if (draggedElement?.classList.contains('scheduled-task')) {
+            origDayCalendar = draggedElement.closest('.day-calendar');
+            origDay = origDayCalendar?.dataset.day || '';
+            origStartMins = draggedElement.dataset.startMins || '';
+            const origHourVal = origStartMins ? Math.floor(parseInt(origStartMins, 10) / 60) : 0;
+            const origHourRow = origDayCalendar?.querySelector('.hour-row[data-hour="' + origHourVal + '"]:not(.adjacent-day)');
+            origSlot = origHourRow?.querySelector('.hour-slot') || null;
+        }
+
         // Remove the dragged element if it's a scheduled task being rescheduled
         if (draggedElement?.classList.contains('scheduled-task')) {
-            const oldCalendar = draggedElement.closest('.day-calendar');
             draggedElement.remove();
-            if (oldCalendar && oldCalendar !== dayCalendar) {
-                recalculateOverlaps(oldCalendar);
+            if (origDayCalendar && origDayCalendar !== dayCalendar) {
+                recalculateOverlaps(origDayCalendar);
             }
         }
 
@@ -1080,12 +1093,34 @@
             if (window.Toast) {
                 var undoCallback = effectiveInstanceId
                     ? function() {
-                        // Recurring instance: remove card and skip the instance
+                        // Recurring instance: remove new card
                         element.remove();
                         recalculateOverlaps(dayCalendar);
-                        safeFetch('/api/v1/instances/' + effectiveInstanceId + '/skip', {
-                            method: 'POST',
-                        });
+                        if (origDay && origStartMins) {
+                            // Was rescheduled — restore to original time
+                            var sm = parseInt(origStartMins, 10);
+                            var oh = Math.floor(sm / 60);
+                            var om = sm % 60;
+                            var origDatetime = origDay + 'T' + String(oh).padStart(2, '0') + ':' + String(om).padStart(2, '0') + ':00';
+                            var restoredCard = createScheduledTaskElement(
+                                taskId, content, duration, oh, om, impact, completed,
+                                effectiveInstanceId, effectiveInstanceDate
+                            );
+                            if (origSlot) {
+                                origSlot.appendChild(restoredCard);
+                                recalculateOverlaps(origDayCalendar);
+                            }
+                            safeFetch('/api/v1/instances/' + effectiveInstanceId + '/schedule', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ scheduled_datetime: origDatetime }),
+                            });
+                        } else {
+                            // Was freshly scheduled from task list — skip it
+                            safeFetch('/api/v1/instances/' + effectiveInstanceId + '/skip', {
+                                method: 'POST',
+                            });
+                        }
                     }
                     : function() {
                         // Regular task: remove card and unschedule via API, then refresh list

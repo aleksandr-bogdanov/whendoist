@@ -15,6 +15,15 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.63 — 2026-02-14
+
+### Fixed
+- Undo recurring instance reschedule now restores card to original time slot (was skipping instead)
+- Scroll-to-task after unschedule/move now centers the task on screen (was scrolling past it)
+- Setting recurrence via task dialog now updates recurring icon and date immediately (was requiring reload)
+- Setting scheduled date via task dialog on recurring tasks now moves task to scheduled section immediately
+
+
 ## v0.45.62 — 2026-02-14
 
 ### Fixed

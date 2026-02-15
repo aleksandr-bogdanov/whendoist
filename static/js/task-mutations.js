@@ -240,11 +240,35 @@
 
         var oldDomainId = taskEl.dataset.domainId || '';
         var oldScheduledDate = taskEl.dataset.scheduledDate || '';
+        var oldIsRecurring = taskEl.dataset.isRecurring === 'true';
 
-        await patchTaskElement(taskEl, taskData);
+        // If recurrence changed, re-fetch server-rendered HTML for correct display
+        // (recurring icon, date labels, next_occurrence depend on server-side logic)
+        if (taskData.is_recurring !== undefined && oldIsRecurring !== taskData.is_recurring) {
+            try {
+                var resp = await safeFetch('/api/v1/task-item/' + taskId);
+                var html = await resp.text();
+                var temp = document.createElement('div');
+                temp.innerHTML = html.trim();
+                var newEl = temp.querySelector('.task-item');
+                if (newEl) {
+                    taskEl.replaceWith(newEl);
+                    taskEl = newEl;
+                    if (window.DragDrop && typeof DragDrop.initSingleTask === 'function') {
+                        DragDrop.initSingleTask(taskEl);
+                    }
+                }
+            } catch (e) {
+                // Fallback: patch normally
+                await patchTaskElement(taskEl, taskData);
+            }
+        } else {
+            await patchTaskElement(taskEl, taskData);
+        }
 
         var newDomainId = String(taskData.domain_id || '');
-        var newScheduledDate = taskData.scheduled_date || '';
+        // Use element's data attribute as source of truth (re-fetched element has next_occurrence)
+        var newScheduledDate = taskEl.dataset.scheduledDate || taskData.scheduled_date || '';
 
         // Handle domain change
         if (taskData.domain_id !== undefined && oldDomainId !== newDomainId) {
@@ -252,7 +276,7 @@
         }
 
         // Handle scheduled/unscheduled transitions
-        if (taskData.scheduled_date !== undefined) {
+        if (oldScheduledDate !== newScheduledDate) {
             if (!oldScheduledDate && newScheduledDate) {
                 // Became scheduled
                 if (typeof moveTaskToScheduledSection === 'function') {
@@ -550,7 +574,7 @@
     function scrollToAndHighlight(taskEl) {
         if (!taskEl) return;
 
-        taskEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         // Remove previous animation if still running
         taskEl.classList.remove('just-updated');
