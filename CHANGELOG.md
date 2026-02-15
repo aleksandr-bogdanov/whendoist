@@ -7,6 +7,19 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.68 — 2026-02-15
+
+### Added
+- Automatic export snapshots with configurable frequency (daily/weekly/monthly)
+- Content-hash deduplication: inactive users generate zero additional storage
+- Snapshot management UI in Settings > Backup panel (toggle, frequency, retention, create/download/restore/delete)
+- Background loop checks every 30 minutes for due snapshots
+- Manual snapshot creation ("Create Now" button)
+- Restore from any snapshot with typed confirmation
+- New `ExportSnapshot` model and `export_snapshots` table
+- New `UserPreferences` columns: `snapshots_enabled`, `snapshots_frequency`, `snapshots_retain_count`
+- 6 new API endpoints under `/api/v1/backup/snapshots`
+
 ## v0.45.67 — 2026-02-15
 
 ### Changed

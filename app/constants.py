@@ -7,7 +7,7 @@ used across the application. Constants are grouped by domain.
 v0.15.0: Architecture Cleanup
 """
 
-from datetime import date
+from datetime import date, timedelta
 from enum import IntEnum
 
 
@@ -144,6 +144,23 @@ INSTANCE_RETENTION_DAYS = 90  # Days to keep completed/skipped instances
 
 # Materialization timeout (5 minutes for runaway materialization cycles)
 MATERIALIZATION_TIMEOUT_SECONDS = 300
+
+
+# =============================================================================
+# Snapshot Constants
+# =============================================================================
+
+SNAPSHOT_CHECK_INTERVAL_SECONDS = 1800  # 30 minutes
+SNAPSHOT_LOOP_TIMEOUT_SECONDS = 300  # 5 minutes
+SNAPSHOT_VALID_FREQUENCIES = {"daily", "weekly", "monthly"}
+SNAPSHOT_FREQUENCY_INTERVALS: dict[str, timedelta] = {
+    "daily": timedelta(days=1),
+    "weekly": timedelta(days=7),
+    "monthly": timedelta(days=30),
+}
+SNAPSHOT_RETAIN_MIN = 1
+SNAPSHOT_RETAIN_MAX = 50
+SNAPSHOT_RETAIN_DEFAULT = 10
 
 
 # =============================================================================
