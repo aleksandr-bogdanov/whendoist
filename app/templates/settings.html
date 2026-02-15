@@ -440,6 +440,69 @@
                         <div id="backup-status-wrap" class="expand-content" style="display: none; padding-top: 0;">
                             <div id="backup-status" class="expand-status" style="margin-top: 0;"></div>
                         </div>
+
+                        <!-- Automatic Snapshots -->
+                        <div class="settings-row">
+                            <div class="backup-info">
+                                <span class="pref-label">Automatic Snapshots</span>
+                                <span class="pref-desc">Periodically save backups for easy rollback</span>
+                            </div>
+                            <div class="settings-row__right">
+                                <label class="toggle-switch-label">
+                                    <div class="toggle-switch {% if user_prefs.snapshots_enabled %}enabled{% endif %}" id="snapshots-toggle" onclick="toggleSnapshots(this)"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Snapshot config (hidden when disabled) -->
+                        <div id="snapshot-config" style="{% if not user_prefs.snapshots_enabled %}display: none;{% endif %}">
+                            <div class="settings-row">
+                                <div class="backup-info">
+                                    <span class="pref-label">Frequency</span>
+                                    <span class="pref-desc">How often to create automatic snapshots</span>
+                                </div>
+                                <div class="settings-row__right">
+                                    <select id="snapshot-frequency" class="pref-select" onchange="updateSnapshotSchedule()">
+                                        <option value="daily" {% if user_prefs.snapshots_frequency == 'daily' %}selected{% endif %}>Daily</option>
+                                        <option value="weekly" {% if user_prefs.snapshots_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                                        <option value="monthly" {% if user_prefs.snapshots_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="settings-row">
+                                <div class="backup-info">
+                                    <span class="pref-label">Keep</span>
+                                    <span class="pref-desc">Maximum number of snapshots to retain</span>
+                                </div>
+                                <div class="settings-row__right">
+                                    <select id="snapshot-retain-count" class="pref-select" onchange="updateSnapshotSchedule()">
+                                        <option value="3" {% if user_prefs.snapshots_retain_count == 3 %}selected{% endif %}>3</option>
+                                        <option value="5" {% if user_prefs.snapshots_retain_count == 5 %}selected{% endif %}>5</option>
+                                        <option value="10" {% if user_prefs.snapshots_retain_count == 10 %}selected{% endif %}>10</option>
+                                        <option value="20" {% if user_prefs.snapshots_retain_count == 20 %}selected{% endif %}>20</option>
+                                        <option value="50" {% if user_prefs.snapshots_retain_count == 50 %}selected{% endif %}>50</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="settings-row">
+                                <div class="backup-info">
+                                    <span class="pref-label">Manual Snapshot</span>
+                                    <span class="pref-desc">Create a snapshot right now</span>
+                                </div>
+                                <div class="settings-row__right">
+                                    <button type="button" class="btn-sm btn-sm--primary" id="btn-create-snapshot" onclick="createManualSnapshot()">
+                                        Create Now
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Snapshot list -->
+                            <div id="snapshot-list" class="snapshot-list"></div>
+
+                            <div id="snapshot-status-wrap" class="expand-content" style="display: none; padding-top: 0;">
+                                <div id="snapshot-status" class="expand-status" style="margin-top: 0;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1338,6 +1401,213 @@ async function importBackup(input) {
         btn.textContent = 'Restore Backup';
         input.value = '';
     }
+}
+
+// ============================================================================
+// Snapshot Functions
+// ============================================================================
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+async function toggleSnapshots(el) {
+    const enabled = !el.classList.contains('enabled');
+    try {
+        const response = await fetch('/api/v1/backup/snapshots/schedule', {
+            method: 'PUT',
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ enabled }),
+        });
+        if (response.ok) {
+            el.classList.toggle('enabled');
+            const config = document.getElementById('snapshot-config');
+            config.style.display = enabled ? '' : 'none';
+            if (enabled) loadSnapshotList();
+        }
+    } catch (e) {
+        console.error('Failed to toggle snapshots:', e);
+    }
+}
+
+async function updateSnapshotSchedule() {
+    const frequency = document.getElementById('snapshot-frequency').value;
+    const retainCount = parseInt(document.getElementById('snapshot-retain-count').value);
+    try {
+        await fetch('/api/v1/backup/snapshots/schedule', {
+            method: 'PUT',
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ frequency, retain_count: retainCount }),
+        });
+    } catch (e) {
+        console.error('Failed to update snapshot schedule:', e);
+    }
+}
+
+async function createManualSnapshot() {
+    const btn = document.getElementById('btn-create-snapshot');
+    const statusWrap = document.getElementById('snapshot-status-wrap');
+    const status = document.getElementById('snapshot-status');
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+    statusWrap.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/v1/backup/snapshots', {
+            method: 'POST',
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+        });
+
+        if (response.ok) {
+            status.textContent = 'Snapshot created';
+            status.className = 'expand-status success';
+            statusWrap.style.display = 'block';
+            loadSnapshotList();
+        } else {
+            const data = await response.json();
+            throw new Error(data.detail || 'Failed to create snapshot');
+        }
+    } catch (e) {
+        status.textContent = 'Failed: ' + e.message;
+        status.className = 'expand-status error';
+        statusWrap.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Now';
+    }
+}
+
+async function loadSnapshotList() {
+    const container = document.getElementById('snapshot-list');
+    if (!container) return;
+
+    try {
+        const response = await fetch('/api/v1/backup/snapshots');
+        if (!response.ok) return;
+        const data = await response.json();
+
+        if (data.snapshots.length === 0) {
+            container.innerHTML = '<div class="snapshot-empty">No snapshots yet</div>';
+            return;
+        }
+
+        container.innerHTML = data.snapshots.map(s => {
+            const date = new Date(s.created_at);
+            const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            const badge = s.is_manual
+                ? '<span class="snapshot-badge snapshot-badge--manual">Manual</span>'
+                : '<span class="snapshot-badge snapshot-badge--auto">Auto</span>';
+
+            return `
+                <div class="snapshot-item" data-id="${s.id}">
+                    <div class="snapshot-item__info">
+                        <span class="snapshot-item__date">${dateStr} ${timeStr}</span>
+                        ${badge}
+                        <span class="snapshot-item__size">${formatBytes(s.size_bytes)}</span>
+                    </div>
+                    <div class="snapshot-actions">
+                        <button type="button" class="btn-sm btn-sm--ghost" onclick="downloadSnapshot(${s.id})" title="Download">Download</button>
+                        <button type="button" class="btn-sm btn-sm--ghost" onclick="restoreSnapshot(${s.id})" title="Restore">Restore</button>
+                        <button type="button" class="btn-sm btn-sm--ghost btn-sm--danger-text" onclick="deleteSnapshot(${s.id})" title="Delete">Delete</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('Failed to load snapshots:', e);
+    }
+}
+
+async function downloadSnapshot(id) {
+    try {
+        const response = await fetch(`/api/v1/backup/snapshots/${id}/download`);
+        if (!response.ok) throw new Error('Download failed');
+
+        const disposition = response.headers.get('Content-Disposition');
+        const filenameMatch = disposition && disposition.match(/filename="(.+)"/);
+        const filename = filenameMatch ? filenameMatch[1] : 'whendoist_snapshot.json';
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    } catch (e) {
+        alert('Download failed: ' + e.message);
+    }
+}
+
+async function restoreSnapshot(id) {
+    const confirmText = prompt('This will REPLACE all your current data with the snapshot.\n\nType "RESTORE" to confirm:');
+    if (confirmText !== 'RESTORE') {
+        if (confirmText !== null) alert('Confirmation text did not match. Operation cancelled.');
+        return;
+    }
+
+    const statusWrap = document.getElementById('snapshot-status-wrap');
+    const status = document.getElementById('snapshot-status');
+    status.textContent = 'Restoring...';
+    status.className = 'expand-status';
+    statusWrap.style.display = 'block';
+
+    try {
+        const response = await fetch(`/api/v1/backup/snapshots/${id}/restore`, {
+            method: 'POST',
+            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            status.textContent = `Restored: ${data.domains} domains, ${data.tasks} tasks`;
+            status.className = 'expand-status success';
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            throw new Error(data.detail || 'Restore failed');
+        }
+    } catch (e) {
+        status.textContent = 'Restore failed: ' + e.message;
+        status.className = 'expand-status error';
+    }
+}
+
+async function deleteSnapshot(id) {
+    if (!confirm('Delete this snapshot?')) return;
+
+    try {
+        const response = await fetch(`/api/v1/backup/snapshots/${id}`, {
+            method: 'DELETE',
+            headers: window.getCSRFHeaders(),
+        });
+
+        if (response.ok) {
+            const item = document.querySelector(`.snapshot-item[data-id="${id}"]`);
+            if (item) item.remove();
+            // Check if list is now empty
+            const container = document.getElementById('snapshot-list');
+            if (!container.querySelector('.snapshot-item')) {
+                container.innerHTML = '<div class="snapshot-empty">No snapshots yet</div>';
+            }
+        } else {
+            const data = await response.json();
+            alert(data.detail || 'Delete failed');
+        }
+    } catch (e) {
+        alert('Delete failed: ' + e.message);
+    }
+}
+
+// Load snapshot list on page load if enabled
+if (document.getElementById('snapshot-config') && document.getElementById('snapshot-config').style.display !== 'none') {
+    loadSnapshotList();
 }
 
 // Show tasks needing mode assignment

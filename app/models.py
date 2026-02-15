@@ -220,6 +220,11 @@ class UserPreferences(Base):
     gcal_sync_calendar_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     gcal_sync_error: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
+    # Snapshot preferences
+    snapshots_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    snapshots_frequency: Mapped[str] = mapped_column(String(10), default="weekly")  # daily/weekly/monthly
+    snapshots_retain_count: Mapped[int] = mapped_column(Integer, default=10)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -478,3 +483,29 @@ class GoogleCalendarEventSync(Base):
         Index("ix_gcal_sync_user_task", "user_id", "task_id"),
         Index("ix_gcal_sync_user_instance", "user_id", "task_instance_id"),
     )
+
+
+# =============================================================================
+# Export Snapshot Models (v0.45.68)
+# =============================================================================
+
+
+class ExportSnapshot(Base):
+    """
+    Automated backup snapshot of user data.
+
+    Stores gzip-compressed JSON export with content-hash deduplication.
+    Automatic snapshots skip creation when data hasn't changed.
+    """
+
+    __tablename__ = "export_snapshots"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)  # gzip JSON
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)  # SHA-256 hex
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)  # compressed size
+    is_manual: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (Index("ix_snapshot_user_created", "user_id", "created_at"),)

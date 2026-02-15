@@ -1,7 +1,8 @@
 """
 Backup and restore API endpoints.
 
-Provides endpoints for exporting and importing user data.
+Provides endpoints for exporting and importing user data,
+plus automated snapshot management.
 
 Rate limited to 5 requests/minute per user due to computational expense.
 """
@@ -12,15 +13,22 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants import BACKUP_MAX_SIZE_BYTES
+from app.constants import (
+    BACKUP_MAX_SIZE_BYTES,
+    SNAPSHOT_RETAIN_MAX,
+    SNAPSHOT_RETAIN_MIN,
+    SNAPSHOT_VALID_FREQUENCIES,
+)
 from app.database import get_db
 from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import User
 from app.routers.auth import require_user
 from app.services.backup_service import BackupService, BackupValidationError
+from app.services.preferences_service import PreferencesService
+from app.services.snapshot_service import SnapshotService
 
 logger = logging.getLogger("whendoist")
 router = APIRouter(prefix="/backup", tags=["backup"])
@@ -33,6 +41,46 @@ class ImportResponse(BaseModel):
     domains: int
     tasks: int
     preferences: int
+
+
+class SnapshotInfo(BaseModel):
+    """Single snapshot metadata."""
+
+    id: int
+    size_bytes: int
+    is_manual: bool
+    created_at: str
+
+
+class SnapshotListResponse(BaseModel):
+    """List of snapshots plus schedule config."""
+
+    snapshots: list[SnapshotInfo]
+    enabled: bool
+    frequency: str
+    retain_count: int
+
+
+class SnapshotScheduleRequest(BaseModel):
+    """Update snapshot schedule settings."""
+
+    enabled: bool | None = None
+    frequency: str | None = None
+    retain_count: int | None = None
+
+    @field_validator("frequency")
+    @classmethod
+    def validate_frequency(cls, v: str | None) -> str | None:
+        if v is not None and v not in SNAPSHOT_VALID_FREQUENCIES:
+            raise ValueError(f"frequency must be one of {SNAPSHOT_VALID_FREQUENCIES}")
+        return v
+
+    @field_validator("retain_count")
+    @classmethod
+    def validate_retain_count(cls, v: int | None) -> int | None:
+        if v is not None and not (SNAPSHOT_RETAIN_MIN <= v <= SNAPSHOT_RETAIN_MAX):
+            raise ValueError(f"retain_count must be between {SNAPSHOT_RETAIN_MIN} and {SNAPSHOT_RETAIN_MAX}")
+        return v
 
 
 @router.get("/export")
@@ -107,3 +155,167 @@ async def import_backup(
         logger.error(f"Backup import failed: {e}", exc_info=True)
         await db.rollback()
         raise HTTPException(status_code=500, detail="Import failed") from e
+
+
+# =============================================================================
+# Snapshot Endpoints
+# =============================================================================
+
+
+@router.get("/snapshots", response_model=SnapshotListResponse)
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
+async def list_snapshots(
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all snapshots with schedule configuration."""
+    prefs_service = PreferencesService(db, user.id)
+    prefs = await prefs_service.get_preferences()
+
+    service = SnapshotService(db, user.id)
+    rows = await service.list_snapshots()
+
+    return SnapshotListResponse(
+        snapshots=[
+            SnapshotInfo(
+                id=row.id,
+                size_bytes=row.size_bytes,
+                is_manual=row.is_manual,
+                created_at=row.created_at.isoformat(),
+            )
+            for row in rows
+        ],
+        enabled=prefs.snapshots_enabled,
+        frequency=prefs.snapshots_frequency,
+        retain_count=prefs.snapshots_retain_count,
+    )
+
+
+@router.put("/snapshots/schedule")
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
+async def update_snapshot_schedule(
+    request: Request,
+    body: SnapshotScheduleRequest,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update snapshot schedule settings (enabled, frequency, retain_count)."""
+    prefs_service = PreferencesService(db, user.id)
+    prefs = await prefs_service.get_preferences()
+
+    if body.enabled is not None:
+        prefs.snapshots_enabled = body.enabled
+    if body.frequency is not None:
+        prefs.snapshots_frequency = body.frequency
+    if body.retain_count is not None:
+        prefs.snapshots_retain_count = body.retain_count
+
+    await db.commit()
+
+    return {
+        "enabled": prefs.snapshots_enabled,
+        "frequency": prefs.snapshots_frequency,
+        "retain_count": prefs.snapshots_retain_count,
+    }
+
+
+@router.post("/snapshots")
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
+async def create_manual_snapshot(
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a manual snapshot."""
+    service = SnapshotService(db, user.id)
+    snapshot = await service.create_snapshot(is_manual=True)
+    await db.commit()
+
+    if not snapshot:
+        raise HTTPException(status_code=500, detail="Failed to create snapshot")
+
+    return {
+        "id": snapshot.id,
+        "size_bytes": snapshot.size_bytes,
+        "is_manual": snapshot.is_manual,
+        "created_at": snapshot.created_at.isoformat() if snapshot.created_at else None,
+    }
+
+
+@router.get("/snapshots/{snapshot_id}/download")
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
+async def download_snapshot(
+    snapshot_id: int,
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download a snapshot as a JSON file."""
+    service = SnapshotService(db, user.id)
+    data = await service.get_snapshot_data(snapshot_id)
+
+    if data is None:
+        raise HTTPException(status_code=404, detail="Snapshot not found")
+
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    filename = f"whendoist_snapshot_{timestamp}.json"
+
+    return Response(
+        content=json.dumps(data, indent=2, ensure_ascii=False),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/snapshots/{snapshot_id}/restore")
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
+async def restore_snapshot(
+    snapshot_id: int,
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Restore user data from a snapshot."""
+    snapshot_service = SnapshotService(db, user.id)
+    data = await snapshot_service.get_snapshot_data(snapshot_id)
+
+    if data is None:
+        raise HTTPException(status_code=404, detail="Snapshot not found")
+
+    try:
+        backup_service = BackupService(db, user.id)
+        counts = await backup_service.import_all(data, clear_existing=True)
+        await db.commit()
+
+        return {
+            "success": True,
+            "domains": counts["domains"],
+            "tasks": counts["tasks"],
+            "preferences": counts["preferences"],
+        }
+    except BackupValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        logger.error(f"Snapshot restore failed: {e}", exc_info=True)
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Restore failed") from e
+
+
+@router.delete("/snapshots/{snapshot_id}")
+@limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
+async def delete_snapshot(
+    snapshot_id: int,
+    request: Request,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete a single snapshot."""
+    service = SnapshotService(db, user.id)
+    deleted = await service.delete_snapshot(snapshot_id)
+    await db.commit()
+
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Snapshot not found")
+
+    return {"success": True}

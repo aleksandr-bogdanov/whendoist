@@ -78,6 +78,10 @@ async def lifespan(app: FastAPI):
             start_materialization_background,
             stop_materialization_background,
         )
+        from app.tasks.snapshots import (
+            start_snapshot_background,
+            stop_snapshot_background,
+        )
 
         # Verify database connectivity
         async with async_session_factory() as db:
@@ -98,6 +102,10 @@ async def lifespan(app: FastAPI):
         # Start background materialization loop (runs initial materialization
         # immediately without blocking server startup / healthchecks)
         start_materialization_background()
+
+        # Start background snapshot loop (first run after 30-min sleep)
+        start_snapshot_background()
+
         logger.info(f"Startup complete ({time.monotonic() - boot_start:.1f}s)")
 
     except Exception as e:
@@ -110,7 +118,9 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down Whendoist...")
     try:
         from app.tasks.recurring import stop_materialization_background
+        from app.tasks.snapshots import stop_snapshot_background
 
+        stop_snapshot_background()
         stop_materialization_background()
     except Exception as e:
         logger.warning(f"Error stopping background tasks: {e}")
