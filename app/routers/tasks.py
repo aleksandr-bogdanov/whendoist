@@ -462,6 +462,11 @@ async def create_task(
     timezone = await prefs_service.get_timezone()
     user_today = get_user_today(timezone)
 
+    # Auto-populate scheduled_date for recurring tasks
+    scheduled_date = data.scheduled_date
+    if data.is_recurring and scheduled_date is None:
+        scheduled_date = data.recurrence_start or user_today
+
     service = TaskService(db, user.id)
     task = await service.create_task(
         title=data.title,
@@ -473,7 +478,7 @@ async def create_task(
         clarity=data.clarity,
         due_date=data.due_date,
         due_time=data.due_time,
-        scheduled_date=data.scheduled_date,
+        scheduled_date=scheduled_date,
         scheduled_time=data.scheduled_time,
         is_recurring=data.is_recurring,
         recurrence_rule=data.recurrence_rule,
@@ -528,6 +533,12 @@ async def update_task(
     # Get only fields that were explicitly set in the request
     # This allows us to distinguish between "not provided" and "set to null"
     update_data = data.model_dump(exclude_unset=True)
+
+    # Auto-populate scheduled_date for recurring tasks
+    is_recurring = update_data.get("is_recurring", current.is_recurring)
+    if is_recurring and update_data.get("scheduled_date") is None:
+        recurrence_start = update_data.get("recurrence_start", current.recurrence_start)
+        update_data["scheduled_date"] = recurrence_start or user_today
 
     task = await service.update_task(
         task_id=task_id,
