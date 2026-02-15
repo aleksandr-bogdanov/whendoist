@@ -7,14 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
-Todo: 
-- BIG: Scheduled backups
-- BIG: Parent tasks
-- Move thoughts bubbles a bit to the left to center out the visual weight of the page.
-- Separate past scheduled tasks from normal scheduled tasks
-- Remove or redesign the scrollbar in THOUGHTS (desktop only)
-- 
-- 
+## v0.45.67 — 2026-02-15
+
+### Changed
+- Toast system: single-toast model → stacked toasts (max 3 visible simultaneously)
+- All delete operations (menu, dialog, trash) now use immediate API + undo via restore
+- Unschedule now uses immediate API + undo via reschedule
+- Added `Toast.undo(message, callback)` convenience method with consistent 5s duration
+- Removed `flushPendingDeletion` infrastructure (no longer needed with immediate API calls)
+- Normalized all undo callers to use `Toast.undo()` (task-complete, task-dialog, drag-drop, task-list-options, plan-tasks)
+
 ## v0.45.66 — 2026-02-15
 
 ### Removed

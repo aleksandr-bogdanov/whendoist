@@ -583,11 +583,6 @@
         }
     }
 
-    // Track pending deletion for undo
-    let pendingDeletion = null;
-    let deletionTimeout = null;
-    const DELETION_DELAY = 2000; // 2 seconds to undo
-
     async function handleTrashDrop(e) {
         e.preventDefault();
         trashBin.classList.remove('drag-over');
@@ -615,9 +610,6 @@
 
         wasDroppedSuccessfully = true; // Prevent unschedule logic
 
-        // Cancel any pending deletion
-        cancelPendingDeletion();
-
         // Animate task elements out, then remove from DOM
         const taskElements = document.querySelectorAll(`[data-task-id="${taskId}"]`);
         const removedElements = [];
@@ -633,21 +625,8 @@
             }
         });
 
-        // Store for undo
-        pendingDeletion = { taskId, removedElements, removed: false };
-
-        // Show toast with undo
-        const taskTitle = content || 'Task';
-        if (window.Toast) {
-            Toast.show(`"${taskTitle}" deleted`, {
-                onUndo: () => undoDelete()
-            });
-        }
-
-        // Remove from DOM after animation completes, then schedule API deletion
+        // Remove from DOM after animation
         setTimeout(() => {
-            if (!pendingDeletion || pendingDeletion.taskId !== taskId) return;
-            pendingDeletion.removed = true;
             taskElements.forEach(el => {
                 const dayCalendar = el.closest('.day-calendar');
                 el.remove();
@@ -655,26 +634,21 @@
             });
         }, 350);
 
-        // Schedule actual deletion after delay
-        deletionTimeout = setTimeout(() => executeDelete(taskId), DELETION_DELAY);
-    }
+        // Call DELETE API immediately
+        const taskTitle = content || 'Task';
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+            log.info(`Deleted task ${taskId}`);
 
-    /**
-     * Undo the pending deletion - restore UI elements.
-     */
-    function undoDelete() {
-        if (!pendingDeletion) return;
-
-        const { removedElements, removed } = pendingDeletion;
-
-        // Cancel the scheduled deletion
-        if (deletionTimeout) {
-            clearTimeout(deletionTimeout);
-            deletionTimeout = null;
-        }
-
-        if (removed) {
-            // Elements already removed from DOM — re-insert them
+            // Show toast with undo (undo calls restore API)
+            Toast.undo(`"${taskTitle}" deleted`, function() {
+                restoreTrashDelete(taskId, removedElements);
+            });
+        } catch (error) {
+            log.error(`Failed to delete task ${taskId}:`, error);
+            // Restore elements on failure
             removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                 if (parent) {
                     el.classList.remove('departing');
@@ -686,30 +660,26 @@
                     if (dayCalendar) recalculateOverlaps(dayCalendar);
                 }
             });
-        } else {
-            // Still animating — just remove the departing class
-            removedElements.forEach(({ el }) => {
-                el.classList.remove('departing');
+            handleError(error, 'Failed to delete task', {
+                component: 'drag-drop',
+                action: 'handleTrashDrop'
             });
         }
-
-        pendingDeletion = null;
-        log.info('Deletion undone');
     }
 
     /**
-     * Execute the actual deletion after delay.
+     * Restore a task deleted via trash drop. Calls restore API and re-inserts DOM.
+     * @param {string} taskId - Task ID
+     * @param {Array} removedElements - Captured DOM element info
      */
-    async function executeDelete(taskId) {
-        if (!pendingDeletion || pendingDeletion.taskId !== taskId) return;
-
-        const { removedElements } = pendingDeletion;
-        pendingDeletion = null;
-        deletionTimeout = null;
-
-        const restoreElements = () => {
+    async function restoreTrashDelete(taskId, removedElements) {
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}/restore`, {
+                method: 'POST'
+            });
             removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                 if (parent) {
+                    el.classList.remove('departing');
                     if (nextSibling && nextSibling.parentNode === parent) {
                         parent.insertBefore(el, nextSibling);
                     } else {
@@ -718,35 +688,13 @@
                     if (dayCalendar) recalculateOverlaps(dayCalendar);
                 }
             });
-        };
-
-        try {
-            await safeFetch(`/api/v1/tasks/${taskId}`, {
-                method: 'DELETE'
-            });
-            log.info(`Deleted task ${taskId}`);
+            log.info('Deletion undone for task ' + taskId);
         } catch (error) {
-            log.error(`Failed to delete task ${taskId}:`, error);
-            restoreElements();
-            handleError(error, 'Failed to delete task', {
+            log.error('Failed to restore task ' + taskId + ':', error);
+            handleError(error, 'Failed to restore task', {
                 component: 'drag-drop',
-                action: 'executeDeleteNow',
-                retry: () => executeDelete(taskId)
+                action: 'restoreTrashDelete'
             });
-        }
-    }
-
-    /**
-     * Cancel any pending deletion (used when starting a new drag).
-     */
-    function cancelPendingDeletion() {
-        if (deletionTimeout) {
-            clearTimeout(deletionTimeout);
-            deletionTimeout = null;
-        }
-        // If there was a pending deletion, execute it immediately
-        if (pendingDeletion) {
-            executeDelete(pendingDeletion.taskId);
         }
     }
 
@@ -1139,9 +1087,7 @@
                             }
                         });
                     };
-                Toast.show('Scheduled "' + content + '" for ' + formatDateShort(day), {
-                    action: { label: 'Undo', callback: undoCallback }
-                });
+                Toast.undo('Scheduled "' + content + '" for ' + formatDateShort(day), undoCallback);
             }
         } catch (error) {
             log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}:`, error);
@@ -1477,25 +1423,18 @@
             log.info(`Scheduled ${taskId} for ${day} (anytime)`);
 
             // Show toast with undo
-            if (window.Toast) {
-                Toast.show('Scheduled "' + content + '" for ' + formatDateShort(day), {
-                    action: {
-                        label: 'Undo',
-                        callback: function() {
-                            el.remove();
-                            safeFetch('/api/v1/tasks/' + taskId, {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
-                            }).then(function() {
-                                if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
-                                    TaskComplete.refreshTaskList();
-                                }
-                            });
-                        }
+            Toast.undo('Scheduled "' + content + '" for ' + formatDateShort(day), function() {
+                el.remove();
+                safeFetch('/api/v1/tasks/' + taskId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
+                }).then(function() {
+                    if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                        TaskComplete.refreshTaskList();
                     }
                 });
-            }
+            });
         } catch (error) {
             log.error(`Failed to schedule task ${taskId} to Anytime:`, error);
             el.remove();

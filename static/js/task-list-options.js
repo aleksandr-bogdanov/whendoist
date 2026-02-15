@@ -181,23 +181,12 @@
 
     /**
      * Show deleted tasks view.
-     * Flushes any pending deletions first so newly deleted tasks appear.
      */
-    async function showDeletedTasks() {
+    function showDeletedTasks() {
         closePanel();
         currentView = 'deleted';
 
         setSpecialViewHeader(true);
-
-        // Flush pending deletions so the server has them before we fetch
-        const flushPromises = [];
-        if (window.TaskComplete && typeof window.TaskComplete.flushPendingDeletion === 'function') {
-            flushPromises.push(window.TaskComplete.flushPendingDeletion());
-        }
-        if (window.TaskDialog && typeof window.TaskDialog.flushPendingDeletion === 'function') {
-            flushPromises.push(window.TaskDialog.flushPendingDeletion());
-        }
-        await Promise.all(flushPromises);
 
         const taskListScroll = document.getElementById('task-list-scroll');
         if (taskListScroll && window.htmx) {
@@ -392,10 +381,8 @@
                 }
 
                 const label = taskTitle ? '"' + taskTitle + '" restored' : 'Task restored';
-                Toast.show(label, {
-                    onUndo: function() {
-                        undoRestore(taskId);
-                    }
+                Toast.undo(label, function() {
+                    undoRestore(taskId);
                 });
             }, 300);
 

@@ -1048,9 +1048,7 @@
         // Show undo toast if tasks were scheduled
         if (scheduled.length > 0 && typeof Toast !== 'undefined') {
             const taskWord = scheduled.length === 1 ? 'task' : 'tasks';
-            Toast.show(`Scheduled ${scheduled.length} ${taskWord}`, {
-                onUndo: undoLastPlan,
-            });
+            Toast.undo(`Scheduled ${scheduled.length} ${taskWord}`, undoLastPlan);
         }
     }
 
