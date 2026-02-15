@@ -15,6 +15,13 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.66 — 2026-02-15
+
+### Removed
+
+- Copilot setup steps workflow (replaced by /fix-all-issues)
+- Sentry auto-fix workflow (replaced by /fix-all-issues)
+
 ## v0.45.65 — 2026-02-15
 
 ### Fixed

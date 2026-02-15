@@ -30,6 +30,7 @@ These should still be addressed before v1.0:
 ### Recurring Tasks
 
 - **Timezone on scheduled_time** — `scheduled_time` stored as bare Time (no TZ); materialized as UTC. A user in EST with a 9 AM task gets instances at 9 AM UTC = 4 AM EST. Needs user timezone preference + TZ-aware materialization
+- **Explicit recurrence_start + scheduled_date interaction** — Setting both `recurrence_start` and `scheduled_date` independently has quirks. Currently `scheduled_date` auto-populates from `recurrence_start` (or today) when not set, but explicitly setting both leads to confusing behavior. Simplify: either unify into one field or clarify precedence
 - **recurrence_rule validation** — Any dict accepted; malformed input silently produces zero instances. UI sends valid JSON so risk is API-only
 - **Monthly 31st skips short months** — `dateutil.rrule` with `bymonthday=31` skips Feb/Apr/Jun/Sep/Nov. Needs UI tooltip when `day_of_month > 28`
 - **regenerate_instances cleanup** — Changing a recurrence rule doesn't clean up completed/skipped instances from the old rule
