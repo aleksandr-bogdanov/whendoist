@@ -21,11 +21,6 @@
     let pendingCompletionTimeout = null;
     let pendingRefreshTimeout = null;
 
-    // Pending deletion for undo support
-    let pendingDeletion = null;
-    let deletionTimeout = null;
-    const DELETION_DELAY = 2000;
-
     /**
      * Initialize task completion handlers.
      */
@@ -195,9 +190,17 @@
             // Show toast notification
             if (isRecurring) {
                 var dateLabel = getDateLabel(taskEl);
-                showToast(data.completed ? 'Done for ' + dateLabel : 'Reopened for ' + dateLabel, undoCallback);
+                if (undoCallback) {
+                    Toast.undo(data.completed ? 'Done for ' + dateLabel : 'Reopened for ' + dateLabel, undoCallback);
+                } else {
+                    Toast.show(data.completed ? 'Done for ' + dateLabel : 'Reopened for ' + dateLabel);
+                }
             } else {
-                showToast(data.completed ? 'Task completed' : 'Task reopened', undoCallback);
+                if (undoCallback) {
+                    Toast.undo(data.completed ? 'Task completed' : 'Task reopened', undoCallback);
+                } else {
+                    Toast.show(data.completed ? 'Task completed' : 'Task reopened');
+                }
             }
 
             // Move task between sections (domain <-> completed)
@@ -574,16 +577,17 @@
     }
 
     // ==========================================================================
-    // DELETE TASK (with undo toast)
+    // DELETE TASK (immediate API + undo via restore)
     // ==========================================================================
 
     /**
      * Delete a task from the actions menu with undo support.
+     * Calls DELETE API immediately; undo calls POST /restore.
      * @param {HTMLElement} taskEl - The task element
      * @param {string} taskId - Task ID
      * @param {number} subtaskCount - Number of subtasks
      */
-    function deleteTaskFromMenu(taskEl, taskId, subtaskCount) {
+    async function deleteTaskFromMenu(taskEl, taskId, subtaskCount) {
         // Check network status
         if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
             if (window.Toast && typeof Toast.warning === 'function') {
@@ -600,9 +604,6 @@
             );
             if (!confirmed) return;
         }
-
-        // Cancel any existing pending deletion
-        cancelPendingDeletion();
 
         // Gather all elements for this task (task-item + calendar cards + subtasks)
         var taskElements = document.querySelectorAll('[data-task-id="' + taskId + '"]');
@@ -627,101 +628,36 @@
             }
         });
 
-        // Store for undo
-        pendingDeletion = { taskId: taskId, removedElements: removedElements, removed: false };
-
-        // Show toast with undo
+        // Get task title for toast
         var taskTitle = taskEl.querySelector('.task-text')?.textContent || 'Task';
-        showToast('"' + taskTitle + '" deleted', function() { undoDeleteFromMenu(); });
 
         // Remove elements from DOM after animation
         setTimeout(function() {
-            if (!pendingDeletion || pendingDeletion.taskId !== taskId) return;
-            pendingDeletion.removed = true;
             removedElements.forEach(function(item) {
                 item.el.remove();
             });
         }, 350);
 
-        // Schedule actual API deletion
-        deletionTimeout = setTimeout(function() { executeDeleteFromMenu(taskId); }, DELETION_DELAY);
-    }
-
-    /**
-     * Undo the pending deletion — restore UI elements.
-     */
-    function undoDeleteFromMenu() {
-        if (!pendingDeletion) return;
-
-        var removedElements = pendingDeletion.removedElements;
-        var removed = pendingDeletion.removed;
-
-        // Cancel the scheduled API deletion
-        if (deletionTimeout) {
-            clearTimeout(deletionTimeout);
-            deletionTimeout = null;
-        }
-
-        if (removed) {
-            // Elements already removed — re-insert them
-            removedElements.forEach(function(item) {
-                if (item.parent) {
-                    item.el.classList.remove('departing');
-                    if (item.nextSibling && item.nextSibling.parentNode === item.parent) {
-                        item.parent.insertBefore(item.el, item.nextSibling);
-                    } else {
-                        item.parent.appendChild(item.el);
-                    }
-                }
-            });
-        } else {
-            // Still animating — just remove departing class
-            removedElements.forEach(function(item) {
-                item.el.classList.remove('departing');
-            });
-        }
-
-        pendingDeletion = null;
-    }
-
-    /**
-     * Flush any pending deletion immediately (skip undo delay).
-     * Returns a promise that resolves when the API call completes.
-     */
-    function flushPendingDeletion() {
-        if (!pendingDeletion) return Promise.resolve();
-        if (deletionTimeout) {
-            clearTimeout(deletionTimeout);
-            deletionTimeout = null;
-        }
-        return executeDeleteFromMenu(pendingDeletion.taskId);
-    }
-
-    /**
-     * Execute the actual deletion via API.
-     * @param {string} taskId - Task ID
-     */
-    async function executeDeleteFromMenu(taskId) {
-        if (!pendingDeletion || pendingDeletion.taskId !== taskId) return;
-
-        var removedElements = pendingDeletion.removedElements;
-        pendingDeletion = null;
-        deletionTimeout = null;
-
+        // Call DELETE API immediately
         try {
             await safeFetch('/api/v1/tasks/' + taskId, {
                 method: 'DELETE'
             });
-            // Elements already removed from DOM by departure animation — update section counts
+
+            // Update section counts
             removedElements.forEach(function(item) {
                 var section = item.parent ? item.parent.closest('.project-group') || item.parent.closest('.section-group') : null;
                 if (section && window.TaskMutations) {
-                    // Count is recalculated from remaining .task-item elements
                     var countEl = section.querySelector('.task-count') || section.querySelector('.section-count');
                     if (countEl) {
                         countEl.textContent = section.querySelectorAll('.task-item').length;
                     }
                 }
+            });
+
+            // Show toast with undo (undo calls restore API)
+            Toast.undo('"' + taskTitle + '" deleted', function() {
+                restoreDeletedTask(taskId, removedElements);
             });
         } catch (error) {
             // Restore elements on failure
@@ -743,14 +679,32 @@
     }
 
     /**
-     * Cancel any pending deletion.
+     * Restore a deleted task via API and re-insert DOM elements.
+     * @param {string} taskId - Task ID
+     * @param {Array} removedElements - Captured DOM element info for re-insertion
      */
-    function cancelPendingDeletion() {
-        if (deletionTimeout) {
-            clearTimeout(deletionTimeout);
-            deletionTimeout = null;
+    async function restoreDeletedTask(taskId, removedElements) {
+        try {
+            await safeFetch('/api/v1/tasks/' + taskId + '/restore', {
+                method: 'POST'
+            });
+            // Re-insert DOM elements
+            removedElements.forEach(function(item) {
+                if (item.parent) {
+                    item.el.classList.remove('departing');
+                    if (item.nextSibling && item.nextSibling.parentNode === item.parent) {
+                        item.parent.insertBefore(item.el, item.nextSibling);
+                    } else {
+                        item.parent.appendChild(item.el);
+                    }
+                }
+            });
+        } catch (error) {
+            handleError(error, 'Failed to restore task', {
+                component: 'task-complete',
+                action: 'restoreDeletedTask'
+            });
         }
-        pendingDeletion = null;
     }
 
     // ==========================================================================
@@ -788,7 +742,7 @@
                 applyCompletionClass(el, false);
             });
 
-            showToast('Skipped for ' + getDateLabel(taskEl));
+            Toast.show('Skipped for ' + getDateLabel(taskEl));
 
             // Update task in-place with next occurrence
             if (taskEl.classList.contains('task-item') && window.TaskMutations) {
@@ -821,17 +775,12 @@
     }
 
     // ==========================================================================
-    // UNSCHEDULE TASK (calendar card → back to task list)
+    // UNSCHEDULE TASK (immediate API + undo via reschedule)
     // ==========================================================================
-
-    // Pending unschedule state for undo support
-    let pendingUnschedule = null;
-    let unscheduleTimeout = null;
-    const UNSCHEDULE_DELAY = 2000;
 
     /**
      * Unschedule a task from the calendar.
-     * Removes scheduled_date and scheduled_time via API with undo support.
+     * Calls PUT API immediately; undo re-schedules via PUT.
      * @param {HTMLElement} taskEl - The calendar card element
      * @param {string} taskId - Task ID
      */
@@ -841,11 +790,6 @@
                 Toast.warning("You're offline — changes won't be saved until you reconnect.");
             }
             return;
-        }
-
-        // Cancel any existing pending unschedule
-        if (pendingUnschedule) {
-            executeUnschedule(pendingUnschedule.taskId);
         }
 
         // Determine whether taskEl is a calendar card or a task-list item
@@ -928,8 +872,8 @@
             }
         }
 
-        // Store for undo
-        pendingUnschedule = {
+        // Capture undo data in closure
+        var undoData = {
             taskId: taskId,
             scheduledDate: origScheduledDate,
             scheduledTime: origScheduledTime,
@@ -942,77 +886,7 @@
             dayCalendar: dayCalendar,
         };
 
-        // Show toast with task name and undo
-        var toastMsg = origTitle ? ('"' + origTitle + '" unscheduled') : 'Task unscheduled';
-        showToast(toastMsg, function() { undoUnschedule(); });
-
-        // Schedule actual API call
-        unscheduleTimeout = setTimeout(function() { executeUnschedule(taskId); }, UNSCHEDULE_DELAY);
-    }
-
-    /**
-     * Undo a pending unschedule — restore the calendar card and re-schedule the task.
-     */
-    function undoUnschedule() {
-        if (!pendingUnschedule) return;
-
-        var info = pendingUnschedule;
-        pendingUnschedule = null;
-
-        // Cancel the scheduled API call
-        if (unscheduleTimeout) {
-            clearTimeout(unscheduleTimeout);
-            unscheduleTimeout = null;
-        }
-
-        // Recreate the calendar card
-        if (info.scheduledDate && info.scheduledTime &&
-            window.DragDrop && typeof DragDrop.createScheduledTaskElement === 'function') {
-
-            var newCard = DragDrop.createScheduledTaskElement(
-                info.taskId, info.title, info.duration,
-                info.hour, info.minutes, info.impact, info.completed
-            );
-
-            var dayCal = info.dayCalendar || document.querySelector('.day-calendar[data-day="' + info.scheduledDate + '"]');
-            if (dayCal) {
-                var hourRow = dayCal.querySelector('.hour-row[data-hour="' + info.hour + '"]:not(.adjacent-day)');
-                if (hourRow) {
-                    var slot = hourRow.querySelector('.hour-slot');
-                    if (slot) slot.appendChild(newCard);
-                }
-                if (typeof recalculateOverlaps === 'function') {
-                    recalculateOverlaps(dayCal);
-                }
-            }
-        }
-
-        // Restore task list item to scheduled state
-        var taskInList = document.querySelector('.task-item[data-task-id="' + info.taskId + '"]');
-        if (taskInList) {
-            taskInList.classList.add('scheduled');
-            if (typeof updateTaskScheduledDate === 'function') {
-                updateTaskScheduledDate(taskInList, info.scheduledDate);
-            }
-            if (typeof moveTaskToScheduledSection === 'function') {
-                moveTaskToScheduledSection(taskInList);
-            }
-        }
-    }
-
-    /**
-     * Execute the actual unschedule API call.
-     * @param {string} taskId - Task ID
-     */
-    async function executeUnschedule(taskId) {
-        if (!pendingUnschedule || pendingUnschedule.taskId !== taskId) return;
-
-        pendingUnschedule = null;
-        if (unscheduleTimeout) {
-            clearTimeout(unscheduleTimeout);
-            unscheduleTimeout = null;
-        }
-
+        // Call API immediately
         try {
             await safeFetch('/api/v1/tasks/' + taskId, {
                 method: 'PUT',
@@ -1021,14 +895,94 @@
             });
 
             // If no task in list, insert it now (DB-only scheduled task)
-            var taskInList = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
-            if (!taskInList && window.TaskMutations) {
+            var taskInListCheck = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+            if (!taskInListCheck && window.TaskMutations) {
                 await TaskMutations.insertNewTask(taskId);
             }
+
+            // Show toast with undo
+            var toastMsg = origTitle ? ('"' + origTitle + '" unscheduled') : 'Task unscheduled';
+            Toast.undo(toastMsg, function() { undoUnschedule(undoData); });
         } catch (error) {
+            // Restore calendar card on failure
+            if (undoData.scheduledDate && undoData.scheduledTime &&
+                window.DragDrop && typeof DragDrop.createScheduledTaskElement === 'function') {
+                var newCard = DragDrop.createScheduledTaskElement(
+                    undoData.taskId, undoData.title, undoData.duration,
+                    undoData.hour, undoData.minutes, undoData.impact, undoData.completed
+                );
+                var dayCal = undoData.dayCalendar || document.querySelector('.day-calendar[data-day="' + undoData.scheduledDate + '"]');
+                if (dayCal) {
+                    var hourRow = dayCal.querySelector('.hour-row[data-hour="' + undoData.hour + '"]:not(.adjacent-day)');
+                    if (hourRow) {
+                        var slot = hourRow.querySelector('.hour-slot');
+                        if (slot) slot.appendChild(newCard);
+                    }
+                    if (typeof recalculateOverlaps === 'function') {
+                        recalculateOverlaps(dayCal);
+                    }
+                }
+            }
             handleError(error, 'Failed to unschedule task', {
                 component: 'task-complete',
-                action: 'executeUnschedule'
+                action: 'unscheduleTask'
+            });
+        }
+    }
+
+    /**
+     * Undo an unschedule — re-schedule the task via API and restore the calendar card.
+     * @param {Object} info - Captured original state
+     */
+    async function undoUnschedule(info) {
+        try {
+            // Re-schedule via API
+            await safeFetch('/api/v1/tasks/' + info.taskId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scheduled_date: info.scheduledDate,
+                    scheduled_time: info.scheduledTime,
+                }),
+            });
+
+            // Recreate the calendar card
+            if (info.scheduledDate && info.scheduledTime &&
+                window.DragDrop && typeof DragDrop.createScheduledTaskElement === 'function') {
+
+                var newCard = DragDrop.createScheduledTaskElement(
+                    info.taskId, info.title, info.duration,
+                    info.hour, info.minutes, info.impact, info.completed
+                );
+
+                var dayCal = info.dayCalendar || document.querySelector('.day-calendar[data-day="' + info.scheduledDate + '"]');
+                if (dayCal) {
+                    var hourRow = dayCal.querySelector('.hour-row[data-hour="' + info.hour + '"]:not(.adjacent-day)');
+                    if (hourRow) {
+                        var slot = hourRow.querySelector('.hour-slot');
+                        if (slot) slot.appendChild(newCard);
+                    }
+                    if (typeof recalculateOverlaps === 'function') {
+                        recalculateOverlaps(dayCal);
+                    }
+                }
+            }
+
+            // Restore task list item to scheduled state
+            var taskInList = document.querySelector('.task-item[data-task-id="' + info.taskId + '"]');
+            if (taskInList) {
+                taskInList.classList.add('scheduled');
+                if (typeof updateTaskScheduledDate === 'function') {
+                    updateTaskScheduledDate(taskInList, info.scheduledDate);
+                }
+                if (typeof moveTaskToScheduledSection === 'function') {
+                    moveTaskToScheduledSection(taskInList);
+                }
+            }
+        } catch (error) {
+            handleError(error, 'Failed to reschedule task', {
+                component: 'task-complete',
+                action: 'undoUnschedule'
             });
         }
     }
@@ -1083,27 +1037,11 @@
         return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
-    /**
-     * Show a toast notification.
-     * @param {string} message - Message to display
-     * @param {Function|null} onUndo - Optional undo callback
-     */
-    function showToast(message, onUndo) {
-        if (typeof window.Toast !== 'undefined' && typeof window.Toast.show === 'function') {
-            if (onUndo) {
-                window.Toast.show(message, { onUndo: onUndo });
-            } else {
-                window.Toast.show(message, { showUndo: false });
-            }
-        }
-    }
-
     // Expose public API
     window.TaskComplete = {
         init: init,
         refreshTaskList: refreshTaskListFromServer,
         toggle: toggleCompletion,
-        flushPendingDeletion: flushPendingDeletion,
     };
 
     // Initialize when DOM is ready

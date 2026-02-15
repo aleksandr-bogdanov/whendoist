@@ -1,11 +1,12 @@
 /**
  * Toast Notification System
  *
- * Provides typed toast notifications with queuing, actions, and backward compatibility.
- * Supports success, error, warning, and info toasts with customizable durations and actions.
+ * Provides typed toast notifications with stacking, actions, and backward compatibility.
+ * Multiple toasts render simultaneously (max 3 visible), each with independent lifecycle.
  *
  * New API:
  *   Toast.show(message, { type, action, duration, id })
+ *   Toast.undo(message, callback)
  *   Toast.success(message, options)
  *   Toast.error(message, options)
  *   Toast.warning(message, options)
@@ -39,23 +40,17 @@ const Toast = (function() {
         error: { default: 6000, withAction: null }  // persistent with action
     };
 
-    const PRIORITY = {
-        error: 4,
-        warning: 3,
-        info: 2,
-        success: 1
-    };
-
-    const MAX_QUEUE_SIZE = 5;
+    const MAX_VISIBLE = 3;
+    const UNDO_DURATION = 5000;
 
     // ========================================================================
     // State
     // ========================================================================
 
     let container = null;
-    let queue = [];
-    let currentToast = null;
-    let dismissTimeout = null;
+    /** @type {Array<{id: string|null, element: HTMLElement, timeout: number|null, config: Object}>} */
+    let activeToasts = [];
+    let toastIdCounter = 0;
 
     // ========================================================================
     // Initialization
@@ -73,110 +68,45 @@ const Toast = (function() {
     }
 
     // ========================================================================
-    // Queue Management
-    // ========================================================================
-
-    /**
-     * Add a toast to the queue and process it.
-     * @param {Object} toast - Toast configuration
-     */
-    function enqueue(toast) {
-        init();
-
-        // Check for duplicate ID and update in-place if found
-        if (toast.id && currentToast && currentToast.id === toast.id) {
-            updateCurrentToast(toast);
-            return;
-        }
-
-        // Check if same ID is in queue
-        const queueIndex = queue.findIndex(t => t.id && t.id === toast.id);
-        if (queueIndex !== -1) {
-            queue[queueIndex] = toast;
-            return;
-        }
-
-        // Priority queue: errors jump to front
-        if (toast.type === 'error' && queue.length > 0) {
-            queue.unshift(toast);
-        } else {
-            queue.push(toast);
-        }
-
-        // Enforce max queue size (drop oldest non-errors)
-        if (queue.length > MAX_QUEUE_SIZE) {
-            const nonErrorIndex = queue.findIndex(t => t.type !== 'error');
-            if (nonErrorIndex !== -1) {
-                queue.splice(nonErrorIndex, 1);
-            }
-        }
-
-        // Process queue if nothing is showing
-        if (!currentToast) {
-            processQueue();
-        }
-    }
-
-    /**
-     * Process the next toast in the queue.
-     */
-    function processQueue() {
-        if (queue.length === 0) {
-            currentToast = null;
-            return;
-        }
-
-        const toast = queue.shift();
-        currentToast = toast;
-        displayToast(toast);
-    }
-
-    /**
-     * Update the currently displayed toast.
-     * @param {Object} toast - New toast configuration
-     */
-    function updateCurrentToast(toast) {
-        if (!currentToast) return;
-
-        // Update message and type
-        const toastEl = container.querySelector('.toast');
-        if (!toastEl) return;
-
-        const messageEl = toastEl.querySelector('.toast-message');
-        const iconEl = toastEl.querySelector('.toast-icon');
-
-        if (messageEl) messageEl.textContent = toast.message;
-        if (iconEl) iconEl.textContent = ICONS[toast.type] || ICONS.info;
-
-        // Update type class
-        toastEl.className = `toast visible toast-${toast.type}`;
-
-        // Reset auto-dismiss timer
-        if (dismissTimeout) {
-            clearTimeout(dismissTimeout);
-            dismissTimeout = null;
-        }
-
-        const duration = getDuration(toast);
-        if (duration) {
-            dismissTimeout = setTimeout(() => hide(), duration);
-        }
-
-        // Update current toast state
-        currentToast = toast;
-    }
-
-    // ========================================================================
     // Display & Dismiss
     // ========================================================================
 
     /**
-     * Display a toast notification.
+     * Display a toast notification. Stacks with existing toasts.
      * @param {Object} toast - Toast configuration
      */
     function displayToast(toast) {
-        const toastEl = createToastElement(toast);
-        container.innerHTML = '';
+        init();
+
+        // Dedup by id: if same ID exists in activeToasts, update in place
+        if (toast.id) {
+            var existing = activeToasts.find(function(entry) {
+                return entry.id === toast.id;
+            });
+            if (existing) {
+                updateToast(existing, toast);
+                return;
+            }
+        }
+
+        // Cap at MAX_VISIBLE: dismiss oldest when limit reached
+        if (activeToasts.length >= MAX_VISIBLE) {
+            dismissToast(activeToasts[0]);
+        }
+
+        var internalId = '__toast_' + (++toastIdCounter);
+        var entry = {
+            id: toast.id || null,
+            internalId: internalId,
+            element: null,
+            timeout: null,
+            config: toast
+        };
+
+        var toastEl = createToastElement(toast, function() {
+            dismissToast(entry);
+        });
+        entry.element = toastEl;
         container.appendChild(toastEl);
 
         // Trigger reflow for animation
@@ -184,56 +114,95 @@ const Toast = (function() {
         toastEl.classList.add('visible');
 
         // Auto-dismiss
-        const duration = getDuration(toast);
+        var duration = getDuration(toast);
         if (duration) {
-            dismissTimeout = setTimeout(() => hide(), duration);
+            entry.timeout = setTimeout(function() {
+                dismissToast(entry);
+            }, duration);
         }
+
+        activeToasts.push(entry);
+    }
+
+    /**
+     * Update an existing toast entry in place.
+     * @param {Object} entry - Active toast entry
+     * @param {Object} newConfig - New toast configuration
+     */
+    function updateToast(entry, newConfig) {
+        var toastEl = entry.element;
+        if (!toastEl) return;
+
+        var messageEl = toastEl.querySelector('.toast-message');
+        var iconEl = toastEl.querySelector('.toast-icon');
+
+        if (messageEl) messageEl.textContent = newConfig.message;
+        if (iconEl) iconEl.textContent = ICONS[newConfig.type] || ICONS.info;
+
+        // Update type class
+        toastEl.className = 'toast visible toast-' + newConfig.type;
+
+        // Reset auto-dismiss timer
+        if (entry.timeout) {
+            clearTimeout(entry.timeout);
+            entry.timeout = null;
+        }
+
+        var duration = getDuration(newConfig);
+        if (duration) {
+            entry.timeout = setTimeout(function() {
+                dismissToast(entry);
+            }, duration);
+        }
+
+        entry.config = newConfig;
     }
 
     /**
      * Create a toast DOM element.
      * @param {Object} toast - Toast configuration
+     * @param {Function} dismissFn - Per-toast dismiss function
      * @returns {HTMLElement} Toast element
      */
-    function createToastElement(toast) {
-        const toastEl = document.createElement('div');
-        toastEl.className = `toast toast-${toast.type}`;
+    function createToastElement(toast, dismissFn) {
+        var toastEl = document.createElement('div');
+        toastEl.className = 'toast toast-' + toast.type;
         toastEl.setAttribute('role', 'status');
         toastEl.setAttribute('aria-live', toast.type === 'error' ? 'assertive' : 'polite');
 
-        const icon = document.createElement('span');
+        var icon = document.createElement('span');
         icon.className = 'toast-icon';
         icon.textContent = ICONS[toast.type] || ICONS.info;
 
-        const message = document.createElement('span');
+        var message = document.createElement('span');
         message.className = 'toast-message';
         message.textContent = toast.message;
 
-        const actions = document.createElement('div');
+        var actions = document.createElement('div');
         actions.className = 'toast-actions';
 
         // Action button (if provided)
         if (toast.action) {
-            const actionBtn = document.createElement('button');
+            var actionBtn = document.createElement('button');
             actionBtn.type = 'button';
             actionBtn.className = 'toast-action';
             actionBtn.textContent = toast.action.label;
-            actionBtn.addEventListener('click', () => {
+            actionBtn.addEventListener('click', function() {
                 if (toast.action.callback) {
                     toast.action.callback();
                 }
-                hide();
+                dismissFn();
             });
             actions.appendChild(actionBtn);
         }
 
         // Dismiss button
-        const dismissBtn = document.createElement('button');
+        var dismissBtn = document.createElement('button');
         dismissBtn.type = 'button';
         dismissBtn.className = 'toast-dismiss';
         dismissBtn.setAttribute('aria-label', 'Dismiss');
         dismissBtn.textContent = '✕';
-        dismissBtn.addEventListener('click', hide);
+        dismissBtn.addEventListener('click', dismissFn);
         actions.appendChild(dismissBtn);
 
         toastEl.appendChild(icon);
@@ -252,42 +221,60 @@ const Toast = (function() {
         if (toast.duration === 'persistent') return null;
         if (typeof toast.duration === 'number') return toast.duration;
 
-        const durations = DURATIONS[toast.type] || DURATIONS.info;
+        var durations = DURATIONS[toast.type] || DURATIONS.info;
         return toast.action ? durations.withAction : durations.default;
     }
 
     /**
-     * Hide the current toast.
+     * Dismiss a specific toast entry.
+     * @param {Object} entry - The toast entry to dismiss
      */
-    function hide() {
-        const toastEl = container?.querySelector('.toast.visible');
-        if (!toastEl) return;
+    function dismissToast(entry) {
+        if (!entry || !entry.element) return;
+
+        // Remove from active list
+        var idx = activeToasts.indexOf(entry);
+        if (idx === -1) return; // Already dismissed
+        activeToasts.splice(idx, 1);
 
         // Clear timeout
-        if (dismissTimeout) {
-            clearTimeout(dismissTimeout);
-            dismissTimeout = null;
+        if (entry.timeout) {
+            clearTimeout(entry.timeout);
+            entry.timeout = null;
         }
+
+        var toastEl = entry.element;
+        entry.element = null; // Prevent double-dismiss
 
         // Exit animation
         toastEl.classList.remove('visible');
         toastEl.classList.add('is-exiting');
 
         // Remove after animation
-        setTimeout(() => {
+        setTimeout(function() {
             if (toastEl.parentNode) {
                 toastEl.parentNode.removeChild(toastEl);
             }
-            processQueue();
         }, 200);
     }
 
     /**
-     * Clear all toasts (current + queue).
+     * Hide the most recent toast (backward compat for callers using Toast.hide()).
+     */
+    function hide() {
+        if (activeToasts.length === 0) return;
+        dismissToast(activeToasts[activeToasts.length - 1]);
+    }
+
+    /**
+     * Clear all active toasts.
      */
     function clear() {
-        queue = [];
-        hide();
+        // Dismiss all in reverse order (newest first)
+        var toasts = activeToasts.slice();
+        for (var i = toasts.length - 1; i >= 0; i--) {
+            dismissToast(toasts[i]);
+        }
     }
 
     // ========================================================================
@@ -301,13 +288,13 @@ const Toast = (function() {
      * @param {Object} legacyOptions - Legacy 3-arg pattern options
      */
     function show(message, typeOrOptions, legacyOptions) {
-        let options = {};
+        var options = {};
 
         // Backward compatibility handling
         if (typeof typeOrOptions === 'string') {
             // 2-arg: Toast.show(msg, 'error')
             // 3-arg: Toast.show(msg, 'error', { duration: 5000 })
-            options = { ...legacyOptions, type: typeOrOptions };
+            options = Object.assign({}, legacyOptions, { type: typeOrOptions });
         } else if (typeOrOptions && typeof typeOrOptions === 'object') {
             // Standard options object
             options = typeOrOptions;
@@ -323,7 +310,7 @@ const Toast = (function() {
         }
 
         // Build toast config
-        const toast = {
+        var toast = {
             id: options.id || null,
             message: message,
             type: options.type || 'success',
@@ -331,7 +318,7 @@ const Toast = (function() {
             duration: options.duration !== undefined ? options.duration : undefined
         };
 
-        enqueue(toast);
+        displayToast(toast);
     }
 
     /**
@@ -339,8 +326,9 @@ const Toast = (function() {
      * @param {string} message - The message to display
      * @param {Object} options - Options
      */
-    function success(message, options = {}) {
-        show(message, { ...options, type: 'success' });
+    function success(message, options) {
+        options = options || {};
+        show(message, Object.assign({}, options, { type: 'success' }));
     }
 
     /**
@@ -348,8 +336,9 @@ const Toast = (function() {
      * @param {string} message - The message to display
      * @param {Object} options - Options
      */
-    function error(message, options = {}) {
-        show(message, { ...options, type: 'error' });
+    function error(message, options) {
+        options = options || {};
+        show(message, Object.assign({}, options, { type: 'error' }));
     }
 
     /**
@@ -357,8 +346,9 @@ const Toast = (function() {
      * @param {string} message - The message to display
      * @param {Object} options - Options
      */
-    function warning(message, options = {}) {
-        show(message, { ...options, type: 'warning' });
+    function warning(message, options) {
+        options = options || {};
+        show(message, Object.assign({}, options, { type: 'warning' }));
     }
 
     /**
@@ -366,8 +356,22 @@ const Toast = (function() {
      * @param {string} message - The message to display
      * @param {Object} options - Options
      */
-    function info(message, options = {}) {
-        show(message, { ...options, type: 'info' });
+    function info(message, options) {
+        options = options || {};
+        show(message, Object.assign({}, options, { type: 'info' }));
+    }
+
+    /**
+     * Show an undo toast with standardized duration.
+     * @param {string} message - The message to display
+     * @param {Function} callback - The undo callback
+     */
+    function undo(message, callback) {
+        show(message, {
+            type: 'success',
+            action: { label: 'Undo', callback: callback },
+            duration: UNDO_DURATION
+        });
     }
 
     // ========================================================================
@@ -381,7 +385,8 @@ const Toast = (function() {
         success,
         error,
         warning,
-        info
+        info,
+        undo
     };
 })();
 

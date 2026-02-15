@@ -1205,11 +1205,6 @@
         }
     }
 
-    // Track pending deletion for undo
-    let pendingDeletion = null;
-    let deletionTimeout = null;
-    const DELETION_DELAY = 5000;
-
     async function handleDelete() {
         // Check network status before optimistic update
         if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
@@ -1228,11 +1223,6 @@
         const taskTitle = backdropEl.querySelector('[name="title"]').value || 'Task';
         closeDialog();
 
-        // Cancel any existing pending deletion
-        if (pendingDeletion) {
-            executeDeleteNow(pendingDeletion.taskId, pendingDeletion.removedElements);
-        }
-
         // Remove task from UI immediately
         const taskElements = document.querySelectorAll(`[data-task-id="${taskId}"]`);
         const removedElements = [];
@@ -1247,68 +1237,18 @@
             }
         });
 
-        // Store for undo
-        pendingDeletion = { taskId, removedElements };
-
-        // Show toast with undo
-        if (window.Toast) {
-            Toast.show(`"${taskTitle}" deleted`, {
-                onUndo: () => undoDialogDelete()
+        // Call DELETE API immediately
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
+                method: 'DELETE'
             });
-        }
 
-        // Schedule actual deletion after delay
-        if (deletionTimeout) clearTimeout(deletionTimeout);
-        deletionTimeout = setTimeout(() => executeDeleteNow(taskId, removedElements), DELETION_DELAY);
-    }
-
-    function undoDialogDelete() {
-        if (!pendingDeletion) return;
-
-        const { removedElements } = pendingDeletion;
-
-        if (deletionTimeout) {
-            clearTimeout(deletionTimeout);
-            deletionTimeout = null;
-        }
-
-        removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
-            if (parent) {
-                if (nextSibling && nextSibling.parentNode === parent) {
-                    parent.insertBefore(el, nextSibling);
-                } else {
-                    parent.appendChild(el);
-                }
-                if (dayCalendar && window.recalculateOverlaps) {
-                    window.recalculateOverlaps(dayCalendar);
-                }
-            }
-        });
-
-        pendingDeletion = null;
-    }
-
-    /**
-     * Flush any pending deletion immediately (skip undo delay).
-     * Returns a promise that resolves when the API call completes.
-     */
-    function flushPendingDeletion() {
-        if (!pendingDeletion) return Promise.resolve();
-        if (deletionTimeout) {
-            clearTimeout(deletionTimeout);
-            deletionTimeout = null;
-        }
-        return executeDeleteNow(pendingDeletion.taskId, pendingDeletion.removedElements);
-    }
-
-    async function executeDeleteNow(taskId, removedElements) {
-        pendingDeletion = null;
-        if (deletionTimeout) {
-            clearTimeout(deletionTimeout);
-            deletionTimeout = null;
-        }
-
-        const restoreElements = () => {
+            // Show toast with undo (undo calls restore API)
+            Toast.undo(`"${taskTitle}" deleted`, function() {
+                restoreDialogDelete(taskId, removedElements);
+            });
+        } catch (error) {
+            // Restore elements on failure
             removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
                 if (parent) {
                     if (nextSibling && nextSibling.parentNode === parent) {
@@ -1321,18 +1261,39 @@
                     }
                 }
             });
-        };
-
-        try {
-            await safeFetch(`/api/v1/tasks/${taskId}`, {
-                method: 'DELETE'
-            });
-        } catch (error) {
-            restoreElements();
             handleError(error, 'Failed to delete task', {
                 component: 'task-dialog',
-                action: 'executeDeleteNow',
-                retry: () => executeDeleteNow(taskId, removedElements)
+                action: 'handleDelete'
+            });
+        }
+    }
+
+    /**
+     * Restore a task deleted from the dialog via API and re-insert DOM elements.
+     * @param {string} taskId - Task ID
+     * @param {Array} removedElements - Captured DOM element info for re-insertion
+     */
+    async function restoreDialogDelete(taskId, removedElements) {
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}/restore`, {
+                method: 'POST'
+            });
+            removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
+                if (parent) {
+                    if (nextSibling && nextSibling.parentNode === parent) {
+                        parent.insertBefore(el, nextSibling);
+                    } else {
+                        parent.appendChild(el);
+                    }
+                    if (dayCalendar && window.recalculateOverlaps) {
+                        window.recalculateOverlaps(dayCalendar);
+                    }
+                }
+            });
+        } catch (error) {
+            handleError(error, 'Failed to restore task', {
+                component: 'task-dialog',
+                action: 'restoreDialogDelete'
             });
         }
     }
@@ -1527,6 +1488,5 @@
         open: openDialog,
         close: closeDialog,
         refresh: loadDomains,
-        flushPendingDeletion: flushPendingDeletion,
     };
 })();

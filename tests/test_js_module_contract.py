@@ -302,6 +302,10 @@ class TestToastModuleExportsAPI:
         """Must export info convenience method."""
         assert re.search(r"return\s*\{[^}]*info", toast_js, re.DOTALL)
 
+    def test_exports_undo_function(self, toast_js: str):
+        """Must export undo convenience method for standardized undo toasts."""
+        assert re.search(r"return\s*\{[^}]*undo", toast_js, re.DOTALL)
+
     def test_supports_undo_callback(self, toast_js: str):
         """Must support onUndo callback option for backward compatibility."""
         assert "onUndo" in toast_js
@@ -310,9 +314,17 @@ class TestToastModuleExportsAPI:
         """Must support type parameter for toast variants."""
         assert "type:" in toast_js or "toast.type" in toast_js
 
-    def test_has_toast_queue(self, toast_js: str):
-        """Must implement queue for multiple toasts."""
-        assert "queue" in toast_js.lower()
+    def test_has_stacked_toasts(self, toast_js: str):
+        """Must implement stacked toasts (multiple visible simultaneously)."""
+        assert "activeToasts" in toast_js
+
+    def test_has_max_visible_limit(self, toast_js: str):
+        """Must cap visible toasts at MAX_VISIBLE."""
+        assert "MAX_VISIBLE" in toast_js
+
+    def test_has_undo_duration_constant(self, toast_js: str):
+        """Must define UNDO_DURATION constant for standardized undo timing."""
+        assert "UNDO_DURATION" in toast_js
 
     def test_has_type_icons(self, toast_js: str):
         """Must define icons for each toast type."""
