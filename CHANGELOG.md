@@ -15,6 +15,13 @@ Todo:
 - Remove or redesign the scrollbar in THOUGHTS (desktop only)
 - 
 - 
+## v0.45.64 — 2026-02-15
+
+### Fixed
+- Recurring tasks now auto-populate `scheduled_date` from `recurrence_start` when no scheduled date is set (both create and update)
+- `moveTaskToScheduledSection()` now adds `.scheduled` CSS class for proper muted styling
+- Scheduled tasks moved via DOM are no longer draggable
+
 ## v0.45.63 — 2026-02-14
 
 ### Fixed
