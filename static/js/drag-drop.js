@@ -100,6 +100,9 @@
     function moveTaskToScheduledSection(taskEl) {
         if (!taskEl) return;
 
+        taskEl.classList.add('scheduled');
+        taskEl.removeAttribute('draggable');
+
         // Get current position for FLIP animation
         const firstRect = taskEl.getBoundingClientRect();
         const taskDate = taskEl.dataset.scheduledDate || '9999-12-31';
