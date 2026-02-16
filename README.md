@@ -195,6 +195,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
 | [Toast System](docs/TOAST-SYSTEM.md) | Typed notifications with queuing, actions, and backward compatibility |
+| [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with content-hash dedup, storage tradeoffs |
 | [In-Place Mutations](docs/IN-PLACE-MUTATIONS.md) | TaskMutations module — no-reload DOM updates for task operations |
 | [PWA Viewport Fix](docs/PWA-VIEWPORT-FIX.md) | iOS viewport shrinking bug from overflow:hidden — diagnosis and workaround |
 | **Brand & Design** | |
