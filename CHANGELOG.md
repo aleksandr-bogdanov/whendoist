@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.78 — 2026-02-16
+
+### Fixed
+- Downgrade bulk sync abort logging from `error` to `warning` for expected conditions (calendar access revoked, token expired) to prevent false Sentry alerts
+
 ## v0.45.77 — 2026-02-16
 
 ### Fixed
