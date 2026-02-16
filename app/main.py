@@ -53,7 +53,7 @@ def _run_migrations() -> None:
             else:
                 logger.warning(f"migrate: {line}")
     if result.returncode != 0:
-        logger.error(f"Migration failed with exit code {result.returncode}")
+        logger.warning(f"Migration failed with exit code {result.returncode}")
         raise RuntimeError("Database migration failed")
 
 
@@ -108,6 +108,10 @@ async def lifespan(app: FastAPI):
 
         logger.info(f"Startup complete ({time.monotonic() - boot_start:.1f}s)")
 
+    except RuntimeError as e:
+        # Migration failures are transient (deploy races) — log at warning, not error
+        logger.warning(f"Startup failed: {type(e).__name__}: {e}")
+        raise
     except Exception as e:
         logger.exception(f"Startup failed: {type(e).__name__}: {e}")
         raise
