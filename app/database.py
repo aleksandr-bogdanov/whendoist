@@ -1,6 +1,8 @@
 import logging
 from collections.abc import AsyncGenerator
 
+from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -37,6 +39,8 @@ async def get_db() -> AsyncGenerator[AsyncSession]:
     async with async_session_factory() as session:
         try:
             yield session
+        except (HTTPException, RequestValidationError):
+            raise
         except Exception as e:
             logger.exception(f"Database session error: {type(e).__name__}: {e}")
             await session.rollback()

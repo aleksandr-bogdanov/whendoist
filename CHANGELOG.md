@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.74 — 2026-02-16
+
+### Fixed
+- Stop logging expected HTTP responses (404, validation errors) as database errors in `get_db` — eliminates false Sentry alerts when instances are deleted between page load and user interaction
+
 ## v0.45.73 — 2026-02-16
 
 ### Fixed
