@@ -34,14 +34,14 @@ const Toast = (function() {
     };
 
     const DURATIONS = {
-        success: { default: 3000, withAction: 5000 },
-        info: { default: 4000, withAction: 8000 },
-        warning: { default: 5000, withAction: 8000 },
-        error: { default: 6000, withAction: null }  // persistent with action
+        success: { default: 4000, withAction: 8000 },
+        info: { default: 5000, withAction: 10000 },
+        warning: { default: 6000, withAction: 10000 },
+        error: { default: 8000, withAction: null }  // persistent with action
     };
 
     const MAX_VISIBLE = 3;
-    const UNDO_DURATION = 5000;
+    const UNDO_DURATION = 10000;
 
     // ========================================================================
     // State
