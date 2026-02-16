@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.84 — 2026-02-16
+
+### Fixed
+- Recurring task "skip" button no longer lost when dragging from Anytime banner to timed slot and back
+- Drag preview now follows cursor grab point instead of always showing at top-left
+- Adjacent-day hours (previous evening, next morning) now render Google Calendar events and scheduled tasks
+
 ## v0.45.83 — 2026-02-16
 
 ### Fixed

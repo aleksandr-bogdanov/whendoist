@@ -7,6 +7,60 @@
 <link rel="stylesheet" href="/static/css/dialog.css?v={{ app_version|default('') }}">
 {% endblock %}
 
+{% macro render_calendar_event(event, cal_hh) %}
+{% set duration_mins = ((event.end - event.start).total_seconds() / 60)|int %}
+{% set height_px = (duration_mins / 60 * cal_hh)|int %}
+{% set top_px = (event.start.minute / 60 * cal_hh)|int %}
+{% set duration_class = 'duration-short' if duration_mins < 30 else ('duration-medium' if duration_mins < 60 else 'duration-long') %}
+{% set start_mins = event.start.hour * 60 + event.start.minute %}
+{% set end_mins = start_mins + duration_mins %}
+<div class="calendar-event {{ duration_class }}" style="height: {{ height_px }}px; top: {{ top_px }}px;" data-start-mins="{{ start_mins }}" data-end-mins="{{ end_mins }}">
+    <div class="event-left">
+        <span class="event-time">{{ event.start.strftime('%H:%M') }}</span>
+        {% if duration_mins >= 30 %}
+        <span class="event-duration">{% if duration_mins >= 60 %}{{ duration_mins // 60 }}h{% if duration_mins % 60 %}{{ duration_mins % 60 }}m{% endif %}{% else %}{{ duration_mins }}m{% endif %}</span>
+        {% endif %}
+    </div>
+    <span class="event-title">{{ event.summary }}</span>
+</div>
+{% endmacro %}
+
+{% macro render_scheduled_task(scheduled, cal_hh, day_date, encryption_enabled) %}
+{% set duration_mins = scheduled.duration_minutes %}
+{% set height_px = (duration_mins / 60 * cal_hh)|int %}
+{% set top_px = (scheduled.start.minute / 60 * cal_hh)|int %}
+{% set duration_class = 'duration-short' if duration_mins < 30 else ('duration-medium' if duration_mins < 60 else 'duration-long') %}
+{% set start_mins = scheduled.start.hour * 60 + scheduled.start.minute %}
+{% set end_mins = start_mins + duration_mins %}
+{% set task_status = scheduled.instance.status if scheduled.is_instance else scheduled.task.status %}
+<div class="scheduled-task calendar-item impact-{{ scheduled.task.impact or 4 }} {{ duration_class }} from-db{% if scheduled.is_instance %} recurring-instance{% endif %}{% if scheduled.completion_age_class %} {{ scheduled.completion_age_class }}{% endif %}"
+     style="height: {{ height_px }}px; top: {{ top_px }}px;"
+     data-task-id="{{ scheduled.task.id }}"
+     data-completed="{{ '1' if task_status == 'completed' else '0' }}"
+     {% if scheduled.is_instance %}data-instance-id="{{ scheduled.instance.id }}" data-instance-date="{{ scheduled.instance.instance_date.isoformat() }}"{% endif %}
+     data-is-recurring="{{ 'true' if scheduled.task.recurrence_rule else 'false' }}"
+     data-scheduled-date="{{ day_date.isoformat() }}"
+     data-start-mins="{{ start_mins }}"
+     data-end-mins="{{ end_mins }}"
+     data-duration="{{ duration_mins }}"
+     data-clarity="{{ scheduled.clarity }}"
+     data-impact="{{ scheduled.task.impact or 4 }}"
+     data-title="{{ scheduled.task.title }}">
+    <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task_status == 'completed' else 'false' }}">
+        <span class="complete-bar"></span>
+        <span class="complete-check" aria-hidden="true">✓</span>
+    </button>
+    <div class="scheduled-task-left">
+        <span class="scheduled-task-time">{{ scheduled.start.strftime('%H:%M') }}</span>
+        {% if duration_mins >= 30 %}
+        <span class="scheduled-task-duration">{% if duration_mins >= 60 %}{{ duration_mins // 60 }}h{% if duration_mins % 60 %}{{ duration_mins % 60 }}m{% endif %}{% else %}{{ duration_mins }}m{% endif %}</span>
+        {% endif %}
+    </div>
+    <span class="scheduled-task-text">{% if encryption_enabled %}🔒{% else %}{{ scheduled.task.title }}{% endif %}{% if scheduled.is_instance %}<span class="occurrence-day" title="Occurrence: {{ scheduled.instance.instance_date.strftime('%A, %b %d') }}">{{ scheduled.instance.instance_date.strftime('%a') }}</span>{% endif %}</span>
+    {% if scheduled.is_instance %}<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#skip-forward"/></svg></button>{% else %}<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#upload"/></svg></button>{% endif %}
+</div>
+{% endmacro %}
+
 {% block content %}
 {% if not google_connected %}
 <div class="connection-banner">
@@ -200,10 +254,18 @@
                 <div class="hour-grid">
                     <!-- Previous evening hours (21:00-23:59 from day before) -->
                     {% set prev_day = day.date - timedelta(days=1) %}
+                    {% set cal_hh = user_prefs.calendar_hour_height or 60 %}
                     {% for hour in range(21, 24) %}
                     <div class="hour-row adjacent-day prev-day" data-hour="{{ hour }}" data-actual-date="{{ prev_day.isoformat() }}">
                         <span class="hour-label">{{ '%02d' % hour }}:00</span>
-                        <div class="hour-slot" data-droppable="true"></div>
+                        <div class="hour-slot" data-droppable="true">
+                            {% for event in events_by_date.get(prev_day, []) if not event.all_day and event.start.hour == hour %}
+                            {{ render_calendar_event(event, cal_hh) }}
+                            {% endfor %}
+                            {% for scheduled in scheduled_tasks_by_date.get(prev_day, []) if scheduled.start.hour == hour %}
+                            {{ render_scheduled_task(scheduled, cal_hh, prev_day, encryption_enabled) }}
+                            {% endfor %}
+                        </div>
                     </div>
                     {% endfor %}
 
@@ -216,59 +278,12 @@
                     <div class="hour-row" data-hour="{{ hour }}">
                         <span class="hour-label">{{ '%02d' % hour }}:00</span>
                         <div class="hour-slot" data-droppable="true">
-                            {% set cal_hh = user_prefs.calendar_hour_height or 60 %}
                             {% for event in day.events if not event.all_day and event.start.hour == hour %}
-                            {% set duration_mins = ((event.end - event.start).total_seconds() / 60)|int %}
-                            {% set height_px = (duration_mins / 60 * cal_hh)|int %}
-                            {% set top_px = (event.start.minute / 60 * cal_hh)|int %}
-                            {% set duration_class = 'duration-short' if duration_mins < 30 else ('duration-medium' if duration_mins < 60 else 'duration-long') %}
-                            {% set start_mins = event.start.hour * 60 + event.start.minute %}
-                            {% set end_mins = start_mins + duration_mins %}
-                            <div class="calendar-event {{ duration_class }}" style="height: {{ height_px }}px; top: {{ top_px }}px;" data-start-mins="{{ start_mins }}" data-end-mins="{{ end_mins }}">
-                                <div class="event-left">
-                                    <span class="event-time">{{ event.start.strftime('%H:%M') }}</span>
-                                    {% if duration_mins >= 30 %}
-                                    <span class="event-duration">{% if duration_mins >= 60 %}{{ duration_mins // 60 }}h{% if duration_mins % 60 %}{{ duration_mins % 60 }}m{% endif %}{% else %}{{ duration_mins }}m{% endif %}</span>
-                                    {% endif %}
-                                </div>
-                                <span class="event-title">{{ event.summary }}</span>
-                            </div>
+                            {{ render_calendar_event(event, cal_hh) }}
                             {% endfor %}
                             {# Scheduled native tasks #}
                             {% for scheduled in day.scheduled_tasks if scheduled.start.hour == hour %}
-                            {% set duration_mins = scheduled.duration_minutes %}
-                            {% set height_px = (duration_mins / 60 * cal_hh)|int %}
-                            {% set top_px = (scheduled.start.minute / 60 * cal_hh)|int %}
-                            {% set duration_class = 'duration-short' if duration_mins < 30 else ('duration-medium' if duration_mins < 60 else 'duration-long') %}
-                            {% set start_mins = scheduled.start.hour * 60 + scheduled.start.minute %}
-                            {% set end_mins = start_mins + duration_mins %}
-                            {% set task_status = scheduled.instance.status if scheduled.is_instance else scheduled.task.status %}
-                            <div class="scheduled-task calendar-item impact-{{ scheduled.task.impact or 4 }} {{ duration_class }} from-db{% if scheduled.is_instance %} recurring-instance{% endif %}{% if scheduled.completion_age_class %} {{ scheduled.completion_age_class }}{% endif %}"
-                                 style="height: {{ height_px }}px; top: {{ top_px }}px;"
-                                 data-task-id="{{ scheduled.task.id }}"
-                                 data-completed="{{ '1' if task_status == 'completed' else '0' }}"
-                                 {% if scheduled.is_instance %}data-instance-id="{{ scheduled.instance.id }}" data-instance-date="{{ scheduled.instance.instance_date.isoformat() }}"{% endif %}
-                                 data-is-recurring="{{ 'true' if scheduled.task.recurrence_rule else 'false' }}"
-                                 data-scheduled-date="{{ day.date.isoformat() }}"
-                                 data-start-mins="{{ start_mins }}"
-                                 data-end-mins="{{ end_mins }}"
-                                 data-duration="{{ duration_mins }}"
-                                 data-clarity="{{ scheduled.clarity }}"
-                                 data-impact="{{ scheduled.task.impact or 4 }}"
-                                 data-title="{{ scheduled.task.title }}">
-                                <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if task_status == 'completed' else 'false' }}">
-                                    <span class="complete-bar"></span>
-                                    <span class="complete-check" aria-hidden="true">✓</span>
-                                </button>
-                                <div class="scheduled-task-left">
-                                    <span class="scheduled-task-time">{{ scheduled.start.strftime('%H:%M') }}</span>
-                                    {% if duration_mins >= 30 %}
-                                    <span class="scheduled-task-duration">{% if duration_mins >= 60 %}{{ duration_mins // 60 }}h{% if duration_mins % 60 %}{{ duration_mins % 60 }}m{% endif %}{% else %}{{ duration_mins }}m{% endif %}</span>
-                                    {% endif %}
-                                </div>
-                                <span class="scheduled-task-text">{% if encryption_enabled %}🔒{% else %}{{ scheduled.task.title }}{% endif %}{% if scheduled.is_instance %}<span class="occurrence-day" title="Occurrence: {{ scheduled.instance.instance_date.strftime('%A, %b %d') }}">{{ scheduled.instance.instance_date.strftime('%a') }}</span>{% endif %}</span>
-                                {% if scheduled.is_instance %}<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#skip-forward"/></svg></button>{% else %}<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#upload"/></svg></button>{% endif %}
-                            </div>
+                            {{ render_scheduled_task(scheduled, cal_hh, day.date, encryption_enabled) }}
                             {% endfor %}
                         </div>
                     </div>
@@ -284,7 +299,14 @@
                     {% for hour in range(0, 6) %}
                     <div class="hour-row adjacent-day next-day" data-hour="{{ hour }}" data-actual-date="{{ next_day.isoformat() }}">
                         <span class="hour-label">{{ '%02d' % hour }}:00</span>
-                        <div class="hour-slot" data-droppable="true"></div>
+                        <div class="hour-slot" data-droppable="true">
+                            {% for event in events_by_date.get(next_day, []) if not event.all_day and event.start.hour == hour %}
+                            {{ render_calendar_event(event, cal_hh) }}
+                            {% endfor %}
+                            {% for scheduled in scheduled_tasks_by_date.get(next_day, []) if scheduled.start.hour == hour %}
+                            {{ render_scheduled_task(scheduled, cal_hh, next_day, encryption_enabled) }}
+                            {% endfor %}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>

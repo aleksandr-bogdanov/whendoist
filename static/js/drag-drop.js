@@ -759,6 +759,12 @@
             instanceDate,
         }));
 
+        // Set drag image with correct offset so preview matches grab point
+        const rect = draggedElement.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+        e.dataTransfer.setDragImage(draggedElement, offsetX, offsetY);
+
         // Add body class to freeze hover states
         document.body.classList.add('is-dragging');
 
@@ -1359,7 +1365,7 @@
             return;
         }
 
-        const { taskId, content, duration, clarity, impact, completed, isScheduled, isDateOnly } = taskData;
+        const { taskId, content, duration, clarity, impact, completed, isScheduled, isDateOnly, instanceId, instanceDate } = taskData;
         if (!taskId) return;
 
         const day = banner.dataset.day;
@@ -1391,7 +1397,7 @@
 
         // Create date-only task element in the banner
         const tasksContainer = banner.querySelector('.date-only-tasks');
-        const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed);
+        const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed, instanceId, instanceDate);
         tasksContainer.appendChild(el);
 
         // Mark original task in task list and animate out, then refresh
@@ -1452,7 +1458,7 @@
     /**
      * Create a date-only task element for the Anytime banner.
      */
-    function createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed = '0') {
+    function createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed = '0', instanceId = '', instanceDate = '') {
         const durationMins = parseInt(duration, 10) || 0;
         const impactVal = impact || '4';
         const isCompleted = completed === '1';
@@ -1466,6 +1472,14 @@
         el.dataset.completed = completed;
         el.draggable = true;
 
+        if (instanceId) {
+            el.dataset.instanceId = instanceId;
+            el.dataset.isRecurring = 'true';
+        }
+        if (instanceDate) {
+            el.dataset.instanceDate = instanceDate;
+        }
+
         let durationHtml = '';
         if (durationMins > 0) {
             const durationStr = durationMins >= 60
@@ -1474,6 +1488,10 @@
             durationHtml = `<span class="date-only-task-duration">${durationStr}</span>`;
         }
 
+        const quickAction = instanceId
+            ? '<button class="calendar-quick-action" data-action="skip" type="button" aria-label="Skip this occurrence" title="Skip"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#skip-forward"/></svg></button>'
+            : '<button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#upload"/></svg></button>';
+
         el.innerHTML = `
             <button class="complete-gutter complete-gutter--always" type="button" aria-label="Complete task" aria-pressed="${isCompleted}">
                 <span class="complete-bar"></span>
@@ -1481,7 +1499,7 @@
             </button>
             ${durationHtml}
             <span class="date-only-task-text">${escapeHtml(content)}</span>
-            <button class="calendar-quick-action" data-action="unschedule" type="button" aria-label="Unschedule" title="Unschedule"><svg width="14" height="14"><use href="/static/img/icons/ui-icons.svg#upload"/></svg></button>
+            ${quickAction}
         `;
 
         el.addEventListener('dragstart', handleDragStart);

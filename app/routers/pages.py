@@ -312,6 +312,8 @@ async def dashboard(
     # Get the user's Whendoist sync calendar ID to filter out duplicates
     gcal_sync_calendar_id = user_prefs.gcal_sync_calendar_id if user_prefs else None
 
+    events_by_date: dict[date, list] = {}
+
     if google_token:
         try:
             selections = (
@@ -395,6 +397,8 @@ async def dashboard(
             "calendar_days": calendar_days,
             "today": today,
             "timedelta": timedelta,  # For adjacent day calculations in template
+            "events_by_date": events_by_date,
+            "scheduled_tasks_by_date": scheduled_tasks_by_date,
             "user_prefs": user_prefs,
             "show_wizard": show_wizard,
             # Wizard-related variables
