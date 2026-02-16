@@ -129,21 +129,16 @@ docs/plans/2026-02-16-15-19-skip-recurring-instance-bugs.md
 
 Claude Code auto-generates random plan names — **always rename to descriptive names**.
 
-Each plan has YAML frontmatter tracking its lifecycle:
+Each plan has YAML frontmatter:
 ```yaml
 ---
-status: draft          # draft → in_progress → shipped
-version: null          # set when PR merges (e.g., v0.45.75)
-pr: null               # set when PR is created (e.g., 270)
+version: v0.45.75     # set when PR merges
+pr: 270               # set when PR is created
 created: 2026-02-16
 ---
 ```
 
-Update frontmatter as the plan progresses:
-- Plan created → `status: draft`
-- Implementation started → `status: in_progress`
-- PR created → set `pr: <number>`
-- PR merged → set `version: v{x.y.z}`, `status: shipped`
+Set `pr` when creating the PR, and `version` when it merges.
 
 ---
 

@@ -1,5 +1,4 @@
 ---
-status: in_progress
 version: v0.45.75
 pr: 270
 created: 2026-02-16
