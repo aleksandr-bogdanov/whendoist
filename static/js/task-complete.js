@@ -240,7 +240,9 @@
                     : document.querySelector('.task-item[data-task-id="' + taskId + '"]');
                 if (listEl) {
                     // Recurring tasks: re-fetch to get next occurrence (don't move to Completed)
-                    if (isRecurring && data.completed) {
+                    // Check both frontend flag and API response (instance_id confirms recurring)
+                    var isRecurringCompletion = (isRecurring || data.instance_id || listEl.dataset.isRecurring === 'true') && data.completed;
+                    if (isRecurringCompletion) {
                         pendingCompletionTimeout = setTimeout(function() {
                             listEl.classList.add('departing');
                             pendingRefreshTimeout = setTimeout(async function() {
