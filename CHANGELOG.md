@@ -7,6 +7,12 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.75 — 2026-02-16
+
+### Fixed
+- Skip recurring instance: calendar no longer renders skipped instances after refresh
+- Skip recurring instance: task list now shows next occurrence immediately instead of crossing out current date
+
 ## v0.45.74 — 2026-02-16
 
 ### Fixed

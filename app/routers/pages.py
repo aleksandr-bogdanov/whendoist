@@ -257,6 +257,10 @@ async def dashboard(
     # Recurring task instances (include completed to show them dimmed)
     instances = await recurrence_service.get_instances_for_range(start_date, end_date, status=None)
     for instance in instances:
+        # Skip skipped instances entirely — they shouldn't render on the calendar
+        if instance.status == "skipped":
+            continue
+
         # Skip completed instances outside retention window
         is_completed = instance.status == "completed" or instance.completed_at is not None
         if is_completed and not TaskService.is_within_retention_window(instance.completed_at, calendar_retention_days):

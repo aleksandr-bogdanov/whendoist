@@ -120,6 +120,33 @@ See [docs/PWA-VIEWPORT-FIX.md](docs/PWA-VIEWPORT-FIX.md) for full details.
 
 ---
 
+## Plan Files
+
+Plans live in `docs/plans/` with a datetime prefix and descriptive kebab-case name:
+```
+docs/plans/2026-02-16-15-19-skip-recurring-instance-bugs.md
+```
+
+Claude Code auto-generates random plan names — **always rename to descriptive names**.
+
+Each plan has YAML frontmatter tracking its lifecycle:
+```yaml
+---
+status: draft          # draft → in_progress → shipped
+version: null          # set when PR merges (e.g., v0.45.75)
+pr: null               # set when PR is created (e.g., 270)
+created: 2026-02-16
+---
+```
+
+Update frontmatter as the plan progresses:
+- Plan created → `status: draft`
+- Implementation started → `status: in_progress`
+- PR created → set `pr: <number>`
+- PR merged → set `version: v{x.y.z}`, `status: shipped`
+
+---
+
 ## Documentation
 
 **Document significant changes.** When adding features, fixing non-trivial bugs, or changing architecture:

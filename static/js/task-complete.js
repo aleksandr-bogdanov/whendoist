@@ -744,24 +744,41 @@
 
             Toast.show('Skipped for ' + getDateLabel(taskEl));
 
-            // Update task in-place with next occurrence
-            if (taskEl.classList.contains('task-item') && window.TaskMutations) {
+            // Update task in-place with next occurrence via server-rendered HTML
+            if (taskEl.classList.contains('task-item')) {
                 var taskId = taskEl.dataset.taskId;
                 setTimeout(function() {
                     taskEl.classList.add('departing');
                     setTimeout(async function() {
                         try {
-                            var resp = await safeFetch('/api/v1/tasks/' + taskId);
-                            var taskData = await resp.json();
-                            taskEl.classList.remove('departing', 'skipped');
-                            taskEl.dataset.completed = '0';
-                            await TaskMutations.updateTaskInPlace(taskId, taskData);
+                            var resp = await safeFetch('/api/v1/task-item/' + taskId);
+                            var html = await resp.text();
+                            var temp = document.createElement('div');
+                            temp.innerHTML = html.trim();
+                            var newEl = temp.querySelector('.task-item');
+                            if (newEl) {
+                                taskEl.replaceWith(newEl);
+                                if (window.DragDrop && typeof DragDrop.initSingleTask === 'function') {
+                                    DragDrop.initSingleTask(newEl);
+                                }
+                                if (window.TaskSort && typeof TaskSort.applySort === 'function') {
+                                    TaskSort.applySort();
+                                }
+                            }
                         } catch (e) {
                             refreshTaskListFromServer();
                         }
                     }, 350);
                 }, 250);
             }
+
+            // Remove skipped calendar cards after animation
+            document.querySelectorAll('.calendar-item[data-instance-id="' + instanceId + '"]').forEach(function(el) {
+                setTimeout(function() {
+                    el.classList.add('departing');
+                    setTimeout(function() { el.remove(); }, 350);
+                }, 600);
+            });
         } catch (error) {
             // Revert optimistic update
             taskEl.classList.remove('skipped');
