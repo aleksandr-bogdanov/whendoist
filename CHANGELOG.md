@@ -7,6 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.80 — 2026-02-16
+
+### Fixed
+- Task completion from calendar card now moves the task-list item to the Completed section (was only showing checkmark without moving)
+- Changing duration of a completed task no longer removes it from the calendar
+- Right-click context menu now includes Complete/Reopen action for all tasks
+
+### Changed
+- Increased toast notification timeouts: undo window from 5s to 10s, all other toast types also extended for better visibility
+
 ## v0.45.79 — 2026-02-16
 
 ### Fixed

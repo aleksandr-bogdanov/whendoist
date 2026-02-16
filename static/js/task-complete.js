@@ -168,8 +168,12 @@
             syncTaskCompletionState(taskId, instanceId, data.completed, taskEl);
 
             // Build undo callback for completions (not reopenings)
+            // Find the task-list counterpart (may be the same as taskEl)
+            var listItemForUndo = taskEl.classList.contains('task-item')
+                ? taskEl
+                : document.querySelector('.task-item[data-task-id="' + taskId + '"]');
             var undoCallback = null;
-            if (data.completed && taskEl.classList.contains('task-item')) {
+            if (data.completed && listItemForUndo) {
                 undoCallback = function() {
                     // Cancel pending animation/refresh
                     if (pendingCompletionTimeout) {
@@ -181,7 +185,7 @@
                         pendingRefreshTimeout = null;
                     }
                     // Restore task visually
-                    taskEl.classList.remove('departing');
+                    listItemForUndo.classList.remove('departing');
                     // Re-toggle via API to reverse
                     toggleCompletion(taskEl, taskId, instanceId, false, isRecurring);
                 };
@@ -204,23 +208,29 @@
             }
 
             // Move task between sections (domain <-> completed)
-            if (taskEl.classList.contains('task-item') && window.TaskMutations) {
-                pendingCompletionTimeout = setTimeout(function() {
-                    taskEl.classList.add('departing');
-                    pendingRefreshTimeout = setTimeout(function() {
-                        taskEl.classList.remove('departing');
-                        if (data.completed) {
-                            TaskMutations.moveTaskToCompleted(taskEl);
-                        } else {
-                            var domainId = taskEl.dataset.domainId || '';
-                            TaskMutations.moveTaskToActive(taskEl, domainId);
-                        }
-                        if (window.TaskSort && typeof TaskSort.applySort === 'function') {
-                            TaskSort.applySort();
-                        }
-                        TaskMutations.scrollToAndHighlight(taskEl);
-                    }, 350);
-                }, 250);
+            // Always target the task-list item, even when completing from a calendar card
+            if (window.TaskMutations) {
+                var listEl = taskEl.classList.contains('task-item')
+                    ? taskEl
+                    : document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+                if (listEl) {
+                    pendingCompletionTimeout = setTimeout(function() {
+                        listEl.classList.add('departing');
+                        pendingRefreshTimeout = setTimeout(function() {
+                            listEl.classList.remove('departing');
+                            if (data.completed) {
+                                TaskMutations.moveTaskToCompleted(listEl);
+                            } else {
+                                var domainId = listEl.dataset.domainId || '';
+                                TaskMutations.moveTaskToActive(listEl, domainId);
+                            }
+                            if (window.TaskSort && typeof TaskSort.applySort === 'function') {
+                                TaskSort.applySort();
+                            }
+                            TaskMutations.scrollToAndHighlight(listEl);
+                        }, 350);
+                    }, 250);
+                }
             }
 
         } catch (error) {
@@ -412,6 +422,7 @@
             isRecurring: taskEl.dataset.isRecurring === 'true' || !!taskEl.dataset.instanceId,
             isScheduled: !!taskEl.dataset.scheduledDate || taskEl.classList.contains('calendar-item'),
             isCalendarCard: taskEl.classList.contains('calendar-item'),
+            isCompleted: taskEl.dataset.completed === '1',
             subtaskCount: parseInt(taskEl.dataset.subtaskCount || '0', 10),
         };
     }
@@ -522,6 +533,17 @@
             });
             menu.appendChild(unschedBtn);
         }
+
+        // Complete / Reopen
+        var completeLabel = opts.isCompleted ? 'Reopen' : 'Complete';
+        var completeIcon = opts.isCompleted ? '↩️' : '✓';
+        var completeBtn = createMenuItem(completeIcon, completeLabel);
+        completeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dismissActionsMenu();
+            toggleCompletion(taskEl, opts.taskId, opts.instanceId, !opts.isCompleted, opts.isRecurring);
+        });
+        menu.appendChild(completeBtn);
 
         // Edit task / Edit series
         var editLabel = opts.isRecurring ? 'Edit series' : 'Edit task';

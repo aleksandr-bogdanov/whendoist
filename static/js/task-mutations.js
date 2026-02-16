@@ -622,9 +622,9 @@
         });
 
         // If the task is now scheduled with a time, create a new card
-        // Skip creation for completed/archived tasks — they should not appear on the calendar
+        // Skip creation only for archived tasks
         if (taskData.scheduled_date && taskData.scheduled_time &&
-            taskData.status !== 'completed' && taskData.status !== 'archived' &&
+            taskData.status !== 'archived' &&
             window.DragDrop && typeof DragDrop.createScheduledTaskElement === 'function') {
 
             // Parse time "HH:MM" or "HH:MM:SS"
