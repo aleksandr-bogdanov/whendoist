@@ -759,23 +759,6 @@
             instanceDate,
         }));
 
-        // Set drag image via clone — using the element itself is unreliable
-        // across browsers (Safari ignores offset, Chrome clips at viewport edge).
-        const rect = draggedElement.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left;
-        const offsetY = e.clientY - rect.top;
-        const dragClone = draggedElement.cloneNode(true);
-        dragClone.style.position = 'fixed';
-        dragClone.style.top = '-1000px';
-        dragClone.style.left = '0';
-        dragClone.style.width = rect.width + 'px';
-        dragClone.style.height = rect.height + 'px';
-        dragClone.style.opacity = '0.99';
-        dragClone.style.pointerEvents = 'none';
-        document.body.appendChild(dragClone);
-        e.dataTransfer.setDragImage(dragClone, offsetX, offsetY);
-        setTimeout(() => dragClone.remove(), 0);
-
         // Add body class to freeze hover states
         document.body.classList.add('is-dragging');
 
@@ -1027,31 +1010,30 @@
 
         recalculateOverlaps(dayCalendar);
 
-        // Sync adjacent-day drop to the actual day's main calendar.
-        // When a task is dropped into a "next morning" or "previous evening"
-        // section, it also needs to appear in the main calendar for that date.
-        if (hourRow?.classList.contains('adjacent-day')) {
-            const actualDate = hourRow.dataset.actualDate;
-            const mainDayCal = document.querySelector(
-                '.day-calendar[data-day="' + actualDate + '"]'
-            );
-            if (mainDayCal) {
-                const mainHourRow = mainDayCal.querySelector(
-                    '.hour-row[data-hour="' + hour + '"]:not(.adjacent-day)'
-                );
-                const mainSlot = mainHourRow?.querySelector('.hour-slot');
-                if (mainSlot) {
-                    // Remove any previous synced clone for this task in the main calendar
-                    mainDayCal.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]')
-                        .forEach(function(el) { el.remove(); });
-                    const clone = element.cloneNode(true);
-                    clone.addEventListener('dragstart', handleDragStart);
-                    clone.addEventListener('dragend', handleDragEnd);
-                    mainSlot.appendChild(clone);
-                    recalculateOverlaps(mainDayCal);
-                }
+        // Sync task across all visible calendar views showing this date+hour.
+        // Handles both directions: adjacent→main and main→adjacent.
+        // 1. Remove stale copies of this task from other calendars.
+        document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]').forEach(function(el) {
+            if (el !== element) {
+                var cal = el.closest('.day-calendar');
+                el.remove();
+                if (cal) recalculateOverlaps(cal);
             }
-        }
+        });
+        // 2. Clone into any other hour-row (main or adjacent) showing this date+hour.
+        document.querySelectorAll('.hour-row[data-hour="' + hour + '"]').forEach(function(hr) {
+            if (hr === hourRow) return;
+            var isAdj = hr.classList.contains('adjacent-day');
+            var hrDate = isAdj ? hr.dataset.actualDate : hr.closest('.day-calendar')?.dataset.day;
+            if (hrDate !== day) return;
+            var hrSlot = hr.querySelector('.hour-slot');
+            if (!hrSlot) return;
+            var clone = element.cloneNode(true);
+            clone.addEventListener('dragstart', handleDragStart);
+            clone.addEventListener('dragend', handleDragEnd);
+            hrSlot.appendChild(clone);
+            recalculateOverlaps(hr.closest('.day-calendar'));
+        });
 
         // Save to API immediately
         const scheduledDate = day;
