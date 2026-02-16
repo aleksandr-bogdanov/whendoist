@@ -769,14 +769,14 @@ class GCalSyncService:
                 msg = "Google authorization expired. Please reconnect Google Calendar in Settings."
                 await self._disable_sync_on_error(msg)
                 stats["error"] = msg
-                logger.error(f"Bulk sync aborted for user {self.user_id}: {msg}")
+                logger.warning(f"Bulk sync aborted for user {self.user_id}: {msg}")
                 await self.db.flush()
                 return stats
             if _is_calendar_error(e):
                 msg = _calendar_error_message(e)
                 await self._disable_sync_on_error(msg)
                 stats["error"] = msg
-                logger.error(f"Bulk sync aborted for user {self.user_id}: {msg}")
+                logger.warning(f"Bulk sync aborted for user {self.user_id}: {msg}")
                 await self.db.flush()
                 return stats
             raise
