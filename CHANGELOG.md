@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.76 — 2026-02-16
+
+### Changed
+- Simplify plan file frontmatter — remove `status` field, keep only `version`, `pr`, `created`
+
 ## v0.45.75 — 2026-02-16
 
 ### Fixed
