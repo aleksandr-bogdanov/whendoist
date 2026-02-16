@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.86 — 2026-02-17
+
+### Fixed
+- Drag clone now sets explicit height, off-screen positioning, and opacity for reliable `setDragImage` across browsers (rAF removed clone too early, grid collapsed without height)
+- Adjacent-day rescheduling no longer duplicates synced clones in the main calendar — previous clone is removed before appending new one
+- Undo and error callbacks now clean up synced adjacent-day clones from the DOM
+
 ## v0.45.85 — 2026-02-16
 
 ### Fixed

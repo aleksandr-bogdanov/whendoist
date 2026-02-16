@@ -766,14 +766,15 @@
         const offsetY = e.clientY - rect.top;
         const dragClone = draggedElement.cloneNode(true);
         dragClone.style.position = 'fixed';
-        dragClone.style.top = '0';
+        dragClone.style.top = '-1000px';
         dragClone.style.left = '0';
         dragClone.style.width = rect.width + 'px';
-        dragClone.style.zIndex = '-1';
+        dragClone.style.height = rect.height + 'px';
+        dragClone.style.opacity = '0.99';
         dragClone.style.pointerEvents = 'none';
         document.body.appendChild(dragClone);
         e.dataTransfer.setDragImage(dragClone, offsetX, offsetY);
-        requestAnimationFrame(() => dragClone.remove());
+        setTimeout(() => dragClone.remove(), 0);
 
         // Add body class to freeze hover states
         document.body.classList.add('is-dragging');
@@ -1040,6 +1041,9 @@
                 );
                 const mainSlot = mainHourRow?.querySelector('.hour-slot');
                 if (mainSlot) {
+                    // Remove any previous synced clone for this task in the main calendar
+                    mainDayCal.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]')
+                        .forEach(function(el) { el.remove(); });
                     const clone = element.cloneNode(true);
                     clone.addEventListener('dragstart', handleDragStart);
                     clone.addEventListener('dragend', handleDragEnd);
@@ -1083,8 +1087,10 @@
             if (window.Toast) {
                 var undoCallback = effectiveInstanceId
                     ? function() {
-                        // Recurring instance: remove new card
+                        // Recurring instance: remove new card and any synced clone
                         element.remove();
+                        document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]')
+                            .forEach(function(el) { el.remove(); });
                         recalculateOverlaps(dayCalendar);
                         if (origDay && origStartMins) {
                             // Was rescheduled — restore to original time
@@ -1113,8 +1119,10 @@
                         }
                     }
                     : function() {
-                        // Regular task: remove card and unschedule via API, then refresh list
+                        // Regular task: remove card and any synced clone, unschedule via API, then refresh list
                         element.remove();
+                        document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]')
+                            .forEach(function(el) { el.remove(); });
                         recalculateOverlaps(dayCalendar);
                         safeFetch('/api/v1/tasks/' + taskId, {
                             method: 'PUT',
@@ -1130,8 +1138,10 @@
             }
         } catch (error) {
             log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}:`, error);
-            // Remove the optimistic element on failure
+            // Remove the optimistic element and any synced clone on failure
             element.remove();
+            document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]')
+                .forEach(function(el) { el.remove(); });
             if (original) {
                 original.classList.remove('scheduled');
                 moveTaskToUnscheduledSection(original);
