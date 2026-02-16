@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.88 — 2026-02-17
+
+### Fixed
+- Restored clone-based `setDragImage` — removing it caused layout glitches (task rendering under wrong hour slot). Drag offset remains best-effort; proper fix deferred.
+
 ## v0.45.87 — 2026-02-17
 
 ### Fixed
