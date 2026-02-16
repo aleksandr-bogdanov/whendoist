@@ -759,6 +759,23 @@
             instanceDate,
         }));
 
+        // Set drag image via clone to avoid glitches when hiding the original.
+        // Offset is best-effort — some browsers ignore setDragImage offset.
+        const rect = draggedElement.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+        const dragClone = draggedElement.cloneNode(true);
+        dragClone.style.position = 'fixed';
+        dragClone.style.top = '-1000px';
+        dragClone.style.left = '0';
+        dragClone.style.width = rect.width + 'px';
+        dragClone.style.height = rect.height + 'px';
+        dragClone.style.opacity = '0.99';
+        dragClone.style.pointerEvents = 'none';
+        document.body.appendChild(dragClone);
+        e.dataTransfer.setDragImage(dragClone, offsetX, offsetY);
+        setTimeout(() => dragClone.remove(), 0);
+
         // Add body class to freeze hover states
         document.body.classList.add('is-dragging');
 
