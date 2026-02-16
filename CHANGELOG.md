@@ -7,6 +7,12 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.82 — 2026-02-16
+
+### Fixed
+- Reopen toast now has an undo button (was missing — only completions had undo)
+- Completing a recurring task now re-fetches next occurrence instead of moving to Completed section
+
 ## v0.45.81 — 2026-02-16
 
 ### Fixed
