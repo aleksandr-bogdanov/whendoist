@@ -70,8 +70,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/recurrence-picker.js"></script>
-<script src="/static/js/task-dialog.js"></script>
+<script src="/static/js/recurrence-picker.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/task-dialog.js?v={{ app_version|default('') }}"></script>
 
 <!-- E2E Encryption: Decrypt thought titles on page load -->
 <script>

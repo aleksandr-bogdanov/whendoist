@@ -204,7 +204,7 @@
 
 {% block scripts %}
 <script src="/static/vendor/apexcharts.min.js"></script>
-<script src="/static/js/task-dialog.js"></script>
+<script src="/static/js/task-dialog.js?v={{ app_version|default('') }}"></script>
 <script>
 // Chart data from backend
 const stats = {{ stats | tojson }};

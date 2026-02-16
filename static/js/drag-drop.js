@@ -759,11 +759,21 @@
             instanceDate,
         }));
 
-        // Set drag image with correct offset so preview matches grab point
+        // Set drag image via clone — using the element itself is unreliable
+        // across browsers (Safari ignores offset, Chrome clips at viewport edge).
         const rect = draggedElement.getBoundingClientRect();
         const offsetX = e.clientX - rect.left;
         const offsetY = e.clientY - rect.top;
-        e.dataTransfer.setDragImage(draggedElement, offsetX, offsetY);
+        const dragClone = draggedElement.cloneNode(true);
+        dragClone.style.position = 'fixed';
+        dragClone.style.top = '0';
+        dragClone.style.left = '0';
+        dragClone.style.width = rect.width + 'px';
+        dragClone.style.zIndex = '-1';
+        dragClone.style.pointerEvents = 'none';
+        document.body.appendChild(dragClone);
+        e.dataTransfer.setDragImage(dragClone, offsetX, offsetY);
+        requestAnimationFrame(() => dragClone.remove());
 
         // Add body class to freeze hover states
         document.body.classList.add('is-dragging');
@@ -1015,6 +1025,29 @@
         }
 
         recalculateOverlaps(dayCalendar);
+
+        // Sync adjacent-day drop to the actual day's main calendar.
+        // When a task is dropped into a "next morning" or "previous evening"
+        // section, it also needs to appear in the main calendar for that date.
+        if (hourRow?.classList.contains('adjacent-day')) {
+            const actualDate = hourRow.dataset.actualDate;
+            const mainDayCal = document.querySelector(
+                '.day-calendar[data-day="' + actualDate + '"]'
+            );
+            if (mainDayCal) {
+                const mainHourRow = mainDayCal.querySelector(
+                    '.hour-row[data-hour="' + hour + '"]:not(.adjacent-day)'
+                );
+                const mainSlot = mainHourRow?.querySelector('.hour-slot');
+                if (mainSlot) {
+                    const clone = element.cloneNode(true);
+                    clone.addEventListener('dragstart', handleDragStart);
+                    clone.addEventListener('dragend', handleDragEnd);
+                    mainSlot.appendChild(clone);
+                    recalculateOverlaps(mainDayCal);
+                }
+            }
+        }
 
         // Save to API immediately
         const scheduledDate = day;

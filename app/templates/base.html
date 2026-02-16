@@ -53,7 +53,7 @@
     <meta name="csrf-token" content="{{ csrf_token|default('') }}">
 
     <!-- Theme initialization (must be before CSS to prevent flash) -->
-    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/theme.js?v={{ app_version|default('') }}"></script>
 
     <!-- PWA viewport height fix — must run before CSS layout.
          On iOS PWA standalone, innerHeight/100dvh can underreport by
@@ -104,16 +104,16 @@
     {% block extra_css %}{% endblock %}
     <script src="/static/vendor/htmx.min.js"></script>
     <script src="/static/vendor/air-datepicker.js"></script>
-    <script src="/static/js/toast.js"></script>
-    <script src="/static/js/error-handler.js"></script>
-    <script src="/static/js/shortcuts.js"></script>
-    <script src="/static/js/crypto.js"></script>
-    <script src="/static/js/passkey.js"></script>
+    <script src="/static/js/toast.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/error-handler.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/shortcuts.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/crypto.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/passkey.js?v={{ app_version|default('') }}"></script>
     <!-- Mobile utilities -->
-    <script src="/static/js/device-detection.js"></script>
-    <script src="/static/js/haptics.js"></script>
-    <script src="/static/js/mobile-sheet.js"></script>
-    <script src="/static/js/mobile-core.js"></script>
+    <script src="/static/js/device-detection.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/haptics.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/mobile-sheet.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/mobile-core.js?v={{ app_version|default('') }}"></script>
     <!-- Global config for encryption state (must be before crypto.js usage) -->
     <script>
     window.WHENDOIST = {
@@ -494,7 +494,7 @@
             </nav>
         </div>
     </div>
-    <script src="/static/js/wizard.js"></script>
+    <script src="/static/js/wizard.js?v={{ app_version|default('') }}"></script>
     {% endif %}
 
     {% block scripts %}{% endblock %}
