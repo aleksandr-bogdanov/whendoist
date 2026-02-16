@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.87 — 2026-02-17
+
+### Fixed
+- Drag offset: removed clone-based `setDragImage` entirely — browser's native drag behavior already preserves cursor offset, clone kept failing silently and falling back to (0,0)
+- Adjacent-day sync is now bidirectional — moving a task to 10pm in today's main calendar now appears in tomorrow's "previous evening", and vice versa
+- Undo and error callbacks clean up all synced copies across calendars
+
 ## v0.45.86 — 2026-02-17
 
 ### Fixed
