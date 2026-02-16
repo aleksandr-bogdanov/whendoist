@@ -459,7 +459,7 @@
         const hour = parseInt(hourRow.dataset.hour, 10);
         const slotRect = hourSlot.getBoundingClientRect();
         const clickY = e.clientY - slotRect.top;
-        const quarterIndex = Math.min(Math.floor((clickY / slotRect.height) * 4), 3);
+        const quarterIndex = Math.max(0, Math.min(Math.floor((clickY / slotRect.height) * 4), 3));
         const minutes = quarterIndex * 15;
 
         // Convert to unified time (prev-day: -3*60 to 0, main-day: 0 to 24*60, next-day: 24*60 to 30*60)
@@ -640,7 +640,7 @@
         const hour = parseInt(hourRow.dataset.hour, 10);
         const slotRect = hourSlot.getBoundingClientRect();
         const touchY = touch.clientY - slotRect.top;
-        const quarterIndex = Math.min(Math.floor((touchY / slotRect.height) * 4), 3);
+        const quarterIndex = Math.max(0, Math.min(Math.floor((touchY / slotRect.height) * 4), 3));
         const minutes = quarterIndex * 15;
 
         // Convert to unified time
