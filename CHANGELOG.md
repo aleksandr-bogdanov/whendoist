@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.71 — 2026-02-16
+
+### Fixed
+- Snapshot list items now align with settings rows (matching padding, background, button sizing)
+- Snapshot action buttons use consistent `btn-sm` sizing with smaller inline variant
+- Delete button uses standard `btn-sm--danger` style instead of custom danger-text class
+
 ## v0.45.70 — 2026-02-16
 
 ### Fixed

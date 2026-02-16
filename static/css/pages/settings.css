@@ -528,14 +528,13 @@
 
 /* Snapshot List */
 .snapshot-list {
-    margin-top: 4px;
+    margin-top: 0;
 }
 
 .snapshot-empty {
-    padding: 12px 0;
+    padding: 12px 16px;
     font-size: 0.75rem;
     color: var(--text-secondary);
-    text-align: center;
 }
 
 .snapshot-item {
@@ -543,8 +542,9 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 0;
+    padding: 10px 16px;
     border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
 }
 
 .snapshot-item:last-child {
@@ -555,12 +555,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
     min-width: 0;
 }
 
 .snapshot-item__date {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     color: var(--text-primary);
 }
 
@@ -570,12 +569,13 @@
 }
 
 .snapshot-badge {
-    font-size: 0.625rem;
+    font-size: 0.5625rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 1px 6px;
-    border-radius: 4px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    line-height: 1;
 }
 
 .snapshot-badge--auto {
@@ -590,17 +590,16 @@
 
 .snapshot-actions {
     display: flex;
-    gap: 4px;
+    gap: 2px;
     flex-shrink: 0;
+    margin-left: auto;
 }
 
-.btn-sm--danger-text {
-    color: var(--red-500, #ef4444) !important;
-}
-
-.btn-sm--danger-text:hover {
-    color: var(--red-600, #dc2626) !important;
-    background: rgba(239, 68, 68, 0.08);
+.snapshot-actions .btn-sm {
+    font-size: 0.5625rem;
+    padding: 0 8px;
+    height: 24px;
+    line-height: 24px;
 }
 
 /* Import Preview */
