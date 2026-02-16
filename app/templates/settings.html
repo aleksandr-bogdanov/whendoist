@@ -471,7 +471,7 @@
                             <!-- Snapshot list -->
                             <div id="snapshot-list" class="snapshot-list"></div>
 
-                            <div id="snapshot-status-wrap" class="expand-content" style="display: none; padding-top: 0;">
+                            <div id="snapshot-status-wrap" style="display: none; padding: 8px 16px 4px;">
                                 <div id="snapshot-status" class="expand-status" style="margin-top: 0;"></div>
                             </div>
                         </div>
@@ -1472,9 +1472,9 @@ async function loadSnapshotList() {
                         <span class="snapshot-item__size">${formatBytes(s.size_bytes)}</span>
                     </div>
                     <div class="snapshot-actions">
-                        <button type="button" class="btn-sm btn-sm--ghost" onclick="downloadSnapshot(${s.id})" title="Download">Download</button>
-                        <button type="button" class="btn-sm btn-sm--ghost" onclick="restoreSnapshot(${s.id})" title="Restore">Restore</button>
-                        <button type="button" class="btn-sm btn-sm--ghost btn-sm--danger-text" onclick="deleteSnapshot(${s.id})" title="Delete">Delete</button>
+                        <button type="button" class="btn-sm btn-sm--ghost" onclick="downloadSnapshot(${s.id})">Download</button>
+                        <button type="button" class="btn-sm btn-sm--ghost" onclick="restoreSnapshot(${s.id})">Restore</button>
+                        <button type="button" class="btn-sm btn-sm--danger" onclick="deleteSnapshot(${s.id})">Delete</button>
                     </div>
                 </div>
             `;
