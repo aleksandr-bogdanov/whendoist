@@ -167,13 +167,13 @@
             // (e.g., if task appears in both list and calendar)
             syncTaskCompletionState(taskId, instanceId, data.completed, taskEl);
 
-            // Build undo callback for completions (not reopenings)
+            // Build undo callback (works for both complete and reopen)
             // Find the task-list counterpart (may be the same as taskEl)
             var listItemForUndo = taskEl.classList.contains('task-item')
                 ? taskEl
                 : document.querySelector('.task-item[data-task-id="' + taskId + '"]');
             var undoCallback = null;
-            if (data.completed && listItemForUndo) {
+            if (listItemForUndo) {
                 undoCallback = function() {
                     // Cancel pending animation/refresh
                     if (pendingCompletionTimeout) {
@@ -187,7 +187,7 @@
                     // Restore task visually
                     listItemForUndo.classList.remove('departing');
                     // Re-toggle via API to reverse
-                    toggleCompletion(taskEl, taskId, instanceId, false, isRecurring);
+                    toggleCompletion(taskEl, taskId, instanceId, !data.completed, isRecurring);
                 };
             }
 
@@ -239,25 +239,52 @@
                     ? taskEl
                     : document.querySelector('.task-item[data-task-id="' + taskId + '"]');
                 if (listEl) {
-                    pendingCompletionTimeout = setTimeout(function() {
-                        listEl.classList.add('departing');
-                        pendingRefreshTimeout = setTimeout(function() {
-                            listEl.classList.remove('departing');
-                            if (data.completed) {
-                                TaskMutations.moveTaskToCompleted(listEl);
-                            } else {
-                                // Ensure completion styling is fully cleared before move
-                                listEl.classList.remove('completed');
-                                listEl.dataset.completed = '0';
-                                var domainId = listEl.dataset.domainId || '';
-                                TaskMutations.moveTaskToActive(listEl, domainId);
-                            }
-                            if (window.TaskSort && typeof TaskSort.applySort === 'function') {
-                                TaskSort.applySort();
-                            }
-                            TaskMutations.scrollToAndHighlight(listEl);
-                        }, 350);
-                    }, 250);
+                    // Recurring tasks: re-fetch to get next occurrence (don't move to Completed)
+                    if (isRecurring && data.completed) {
+                        pendingCompletionTimeout = setTimeout(function() {
+                            listEl.classList.add('departing');
+                            pendingRefreshTimeout = setTimeout(async function() {
+                                try {
+                                    var resp = await safeFetch('/api/v1/task-item/' + taskId);
+                                    var html = await resp.text();
+                                    var temp = document.createElement('div');
+                                    temp.innerHTML = html.trim();
+                                    var newEl = temp.querySelector('.task-item');
+                                    if (newEl) {
+                                        listEl.replaceWith(newEl);
+                                        if (window.DragDrop && typeof DragDrop.initSingleTask === 'function') {
+                                            DragDrop.initSingleTask(newEl);
+                                        }
+                                        if (window.TaskSort && typeof TaskSort.applySort === 'function') {
+                                            TaskSort.applySort();
+                                        }
+                                    }
+                                } catch (e) {
+                                    refreshTaskListFromServer();
+                                }
+                            }, 350);
+                        }, 250);
+                    } else {
+                        pendingCompletionTimeout = setTimeout(function() {
+                            listEl.classList.add('departing');
+                            pendingRefreshTimeout = setTimeout(function() {
+                                listEl.classList.remove('departing');
+                                if (data.completed) {
+                                    TaskMutations.moveTaskToCompleted(listEl);
+                                } else {
+                                    // Ensure completion styling is fully cleared before move
+                                    listEl.classList.remove('completed');
+                                    listEl.dataset.completed = '0';
+                                    var domainId = listEl.dataset.domainId || '';
+                                    TaskMutations.moveTaskToActive(listEl, domainId);
+                                }
+                                if (window.TaskSort && typeof TaskSort.applySort === 'function') {
+                                    TaskSort.applySort();
+                                }
+                                TaskMutations.scrollToAndHighlight(listEl);
+                            }, 350);
+                        }, 250);
+                    }
                 }
             }
 
