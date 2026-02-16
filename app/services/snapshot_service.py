@@ -53,8 +53,9 @@ class SnapshotService:
             if latest_hash == content_hash:
                 return None
 
-        # Compress full data (including exported_at/version)
-        full_json = json.dumps(data, separators=(",", ":"), sort_keys=True, ensure_ascii=False).encode()
+        # Compress full data (including exported_at/version) — no sort_keys
+        # so field order matches BackupService.export_all() insertion order
+        full_json = json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode()
         compressed = gzip.compress(full_json)
 
         snapshot = ExportSnapshot(
