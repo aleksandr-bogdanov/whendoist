@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.79 — 2026-02-16
+
+### Fixed
+- Downgrade migration failure logging from `error`/`exception` to `warning` to prevent false Sentry alerts during transient deployment races
+
 ## v0.45.78 — 2026-02-16
 
 ### Fixed
