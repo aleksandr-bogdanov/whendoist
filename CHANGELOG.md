@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.72 — 2026-02-16
+
+### Added
+- `docs/SNAPSHOTS.md` — architecture doc covering storage tradeoffs, dedup, background loop, and why not Celery/S3
+
 ## v0.45.71 — 2026-02-16
 
 ### Fixed
