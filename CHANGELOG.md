@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.73 — 2026-02-16
+
+### Fixed
+- Clamp calendar drop position quarter index to [0, 3] — prevents negative minutes (e.g., `07:-15:00`) when cursor is above slot edge during drag-drop or touch scheduling
+
 ## v0.45.72 — 2026-02-16
 
 ### Added

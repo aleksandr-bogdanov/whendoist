@@ -1151,7 +1151,7 @@
     function calculateDropPosition(e, slot) {
         const slotRect = slot.getBoundingClientRect();
         const dropY = e.clientY - slotRect.top;
-        const quarterIndex = Math.min(Math.floor((dropY / slotRect.height) * 4), 3);
+        const quarterIndex = Math.max(0, Math.min(Math.floor((dropY / slotRect.height) * 4), 3));
         const minutes = quarterIndex * 15;
         const hour = parseInt(slot.closest('.hour-row')?.dataset.hour, 10);
         return { quarterIndex, minutes, hour };
