@@ -191,19 +191,44 @@
                 };
             }
 
+            // Extract task title for toast
+            var toastTitle = '';
+            if (listItemForUndo) {
+                var titleEl = listItemForUndo.querySelector('.task-text');
+                if (titleEl) toastTitle = titleEl.textContent.trim();
+            }
+            if (!toastTitle) {
+                var calTitleEl = taskEl.querySelector('.scheduled-task-text') || taskEl.querySelector('.date-only-task-text');
+                if (calTitleEl) {
+                    var cloned = calTitleEl.cloneNode(true);
+                    var occSpan = cloned.querySelector('.occurrence-day');
+                    if (occSpan) occSpan.remove();
+                    toastTitle = cloned.textContent.trim();
+                }
+            }
+            if (toastTitle && toastTitle.length > 40) {
+                toastTitle = toastTitle.substring(0, 40) + '\u2026';
+            }
+
             // Show toast notification
             if (isRecurring) {
                 var dateLabel = getDateLabel(taskEl);
+                var recurMsg = toastTitle
+                    ? (data.completed ? '\u201c' + toastTitle + '\u201d done for ' + dateLabel : '\u201c' + toastTitle + '\u201d reopened for ' + dateLabel)
+                    : (data.completed ? 'Done for ' + dateLabel : 'Reopened for ' + dateLabel);
                 if (undoCallback) {
-                    Toast.undo(data.completed ? 'Done for ' + dateLabel : 'Reopened for ' + dateLabel, undoCallback);
+                    Toast.undo(recurMsg, undoCallback);
                 } else {
-                    Toast.show(data.completed ? 'Done for ' + dateLabel : 'Reopened for ' + dateLabel);
+                    Toast.show(recurMsg);
                 }
             } else {
+                var msg = toastTitle
+                    ? (data.completed ? '\u201c' + toastTitle + '\u201d completed' : '\u201c' + toastTitle + '\u201d reopened')
+                    : (data.completed ? 'Task completed' : 'Task reopened');
                 if (undoCallback) {
-                    Toast.undo(data.completed ? 'Task completed' : 'Task reopened', undoCallback);
+                    Toast.undo(msg, undoCallback);
                 } else {
-                    Toast.show(data.completed ? 'Task completed' : 'Task reopened');
+                    Toast.show(msg);
                 }
             }
 
@@ -221,6 +246,9 @@
                             if (data.completed) {
                                 TaskMutations.moveTaskToCompleted(listEl);
                             } else {
+                                // Ensure completion styling is fully cleared before move
+                                listEl.classList.remove('completed');
+                                listEl.dataset.completed = '0';
                                 var domainId = listEl.dataset.domainId || '';
                                 TaskMutations.moveTaskToActive(listEl, domainId);
                             }

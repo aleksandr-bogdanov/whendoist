@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.81 — 2026-02-16
+
+### Fixed
+- Completing a task from the calendar context menu now greys out the card instead of removing it
+- Undo after calendar completion now un-greys the card instantly (no reload needed)
+- Reopening a completed scheduled task now returns it to the Scheduled section (was going to Domain)
+- Reopened tasks no longer retain grey completion styling
+- Completion/reopen toasts now show the task name (e.g., "Buy groceries" completed)
+
 ## v0.45.80 — 2026-02-16
 
 ### Fixed

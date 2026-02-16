@@ -474,27 +474,6 @@
         updateSectionCount(sourceSection);
         updateSectionCount(completedSection);
 
-        // Remove calendar cards for completed task
-        var taskId = taskEl.dataset.taskId;
-        if (taskId) {
-            var calCards = document.querySelectorAll(
-                '.scheduled-task[data-task-id="' + taskId + '"], ' +
-                '.date-only-task[data-task-id="' + taskId + '"]'
-            );
-            var affectedCalendars = [];
-            calCards.forEach(function(el) {
-                var dayCal = el.closest('.day-calendar');
-                if (dayCal && affectedCalendars.indexOf(dayCal) === -1) {
-                    affectedCalendars.push(dayCal);
-                }
-                el.remove();
-            });
-            affectedCalendars.forEach(function(cal) {
-                if (typeof recalculateOverlaps === 'function') {
-                    recalculateOverlaps(cal);
-                }
-            });
-        }
     }
 
     /**
@@ -506,6 +485,16 @@
         if (!taskEl) return;
 
         var sourceSection = taskEl.closest('.section-group');
+
+        // If the task is scheduled, route it back to the Scheduled section
+        if (taskEl.dataset.scheduledDate) {
+            ensureScheduledSectionExists();
+            if (typeof moveTaskToScheduledSection === 'function') {
+                moveTaskToScheduledSection(taskEl);
+            }
+            updateSectionCount(sourceSection);
+            return;
+        }
 
         var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
         if (!targetGroup) {
