@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.77 — 2026-02-16
+
+### Fixed
+- Plan My Day: tasks now schedule into all free slots, not just the first one — a GCal event mid-day no longer causes tasks to pile up before it while leaving the afternoon empty
+
+### Added
+- Pluggable scheduler config: `PlanTasks.setConfig()` supports `bufferBetweenTasks`, `bufferBeforeEvent`, `bufferAfterEvent`, and `priorityWeight`
+- Extracted `_sortTasks()` method for configurable task prioritization
+
 ## v0.45.76 — 2026-02-16
 
 ### Changed
