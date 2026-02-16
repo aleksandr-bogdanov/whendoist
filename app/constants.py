@@ -152,15 +152,8 @@ MATERIALIZATION_TIMEOUT_SECONDS = 300
 
 SNAPSHOT_CHECK_INTERVAL_SECONDS = 1800  # 30 minutes
 SNAPSHOT_LOOP_TIMEOUT_SECONDS = 300  # 5 minutes
-SNAPSHOT_VALID_FREQUENCIES = {"daily", "weekly", "monthly"}
-SNAPSHOT_FREQUENCY_INTERVALS: dict[str, timedelta] = {
-    "daily": timedelta(days=1),
-    "weekly": timedelta(days=7),
-    "monthly": timedelta(days=30),
-}
-SNAPSHOT_RETAIN_MIN = 1
-SNAPSHOT_RETAIN_MAX = 50
-SNAPSHOT_RETAIN_DEFAULT = 10
+SNAPSHOT_FREQUENCY_INTERVAL = timedelta(days=1)  # Daily snapshots for all users
+SNAPSHOT_RETAIN_COUNT = 10  # Keep last 10 snapshots per user
 
 
 # =============================================================================

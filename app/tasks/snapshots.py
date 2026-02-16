@@ -2,9 +2,8 @@
 Background task for automated export snapshots.
 
 Periodically checks users with snapshots enabled and creates
-new snapshots when due (based on frequency setting).
-Uses content-hash deduplication so inactive users generate
-zero additional storage.
+daily snapshots. Uses content-hash deduplication so inactive
+users generate zero additional storage.
 """
 
 import asyncio
@@ -15,8 +14,9 @@ from sqlalchemy import select
 
 from app.constants import (
     SNAPSHOT_CHECK_INTERVAL_SECONDS,
-    SNAPSHOT_FREQUENCY_INTERVALS,
+    SNAPSHOT_FREQUENCY_INTERVAL,
     SNAPSHOT_LOOP_TIMEOUT_SECONDS,
+    SNAPSHOT_RETAIN_COUNT,
 )
 from app.database import async_session_factory
 from app.models import UserPreferences
@@ -36,31 +36,26 @@ async def process_due_snapshots() -> dict[str, int]:
     # Get users with snapshots enabled
     async with async_session_factory() as db:
         result = await db.execute(
-            select(
-                UserPreferences.user_id, UserPreferences.snapshots_frequency, UserPreferences.snapshots_retain_count
-            ).where(UserPreferences.snapshots_enabled == True)  # noqa: E712
+            select(UserPreferences.user_id).where(UserPreferences.snapshots_enabled == True)  # noqa: E712
         )
-        users = list(result.all())
+        user_ids = [row[0] for row in result.all()]
 
-    if not users:
+    if not user_ids:
         logger.debug("No users with snapshots enabled")
         return stats
 
     now = datetime.now(UTC)
 
-    for user_id, frequency, retain_count in users:
+    for user_id in user_ids:
         try:
             async with async_session_factory() as db:
                 service = SnapshotService(db, user_id)
 
-                # Check if snapshot is due
+                # Check if snapshot is due (daily)
                 latest_time = await service.get_latest_snapshot_time()
-                interval = SNAPSHOT_FREQUENCY_INTERVALS.get(frequency)
-
-                if interval and latest_time:
-                    # Make both timezone-aware for comparison
+                if latest_time:
                     latest_aware = latest_time.replace(tzinfo=UTC) if latest_time.tzinfo is None else latest_time
-                    if (now - latest_aware) < interval:
+                    if (now - latest_aware) < SNAPSHOT_FREQUENCY_INTERVAL:
                         stats["users_checked"] += 1
                         continue
 
@@ -68,8 +63,7 @@ async def process_due_snapshots() -> dict[str, int]:
                 snapshot = await service.create_snapshot(is_manual=False)
                 if snapshot:
                     stats["snapshots_created"] += 1
-                    # Enforce retention after creating
-                    deleted = await service.enforce_retention(retain_count)
+                    deleted = await service.enforce_retention(SNAPSHOT_RETAIN_COUNT)
                     if deleted > 0:
                         logger.debug(f"Snapshot retention: deleted {deleted} old snapshots for user {user_id}")
                 else:
