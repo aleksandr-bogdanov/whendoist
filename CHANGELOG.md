@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.83 — 2026-02-16
+
+### Fixed
+- Recurring task completion now reliably detects recurrence via API response (`instance_id`), not just frontend data attribute
+
 ## v0.45.82 — 2026-02-16
 
 ### Fixed
