@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.85 — 2026-02-16
+
+### Fixed
+- JS files now have cache-busting `?v=` query params (CSS had them, JS didn't) — browsers no longer serve stale scripts after deploy
+- Drag preview uses clone-based `setDragImage` for reliable offset across browsers (Safari ignored offset on original element)
+- Dropping a task into adjacent-day area (next morning / previous evening) now syncs the element to the main calendar for that date without reload
+
 ## v0.45.84 — 2026-02-16
 
 ### Fixed

@@ -322,20 +322,20 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/task-mutations.js"></script>
-<script src="/static/js/recurrence-picker.js"></script>
-<script src="/static/js/task-dialog.js"></script>
-<script src="/static/js/energy-selector.js"></script>
-<script src="/static/js/task-list-options.js"></script>
-<script src="/static/js/task-sort.js"></script>
-<script src="/static/js/task-complete.js"></script>
-<script src="/static/js/drag-drop.js"></script>
-<script src="/static/js/plan-tasks.js"></script>
+<script src="/static/js/task-mutations.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/recurrence-picker.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/task-dialog.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/energy-selector.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/task-list-options.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/task-sort.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/task-complete.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/drag-drop.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/plan-tasks.js?v={{ app_version|default('') }}"></script>
 <!-- Mobile-specific scripts -->
-<script src="/static/js/mobile-tabs.js"></script>
-<script src="/static/js/sticky-domain.js"></script>
-<script src="/static/js/task-swipe.js"></script>
-<script src="/static/js/gesture-discovery.js"></script>
+<script src="/static/js/mobile-tabs.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/sticky-domain.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/task-swipe.js?v={{ app_version|default('') }}"></script>
+<script src="/static/js/gesture-discovery.js?v={{ app_version|default('') }}"></script>
 
 <!-- E2E Encryption: Decrypt task titles and domain names on page load -->
 <script>
