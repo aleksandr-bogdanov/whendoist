@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.70 — 2026-02-16
+
+### Fixed
+- Snapshot downloads now have same field order as backup exports (removed `sort_keys` from stored blob)
+
 ## v0.45.69 — 2026-02-16
 
 ### Changed
