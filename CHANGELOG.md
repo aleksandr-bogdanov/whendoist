@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.69 — 2026-02-16
+
+### Changed
+- Simplified snapshot config: removed frequency/retention dropdowns, hardcoded daily + 10 retention
+- Removed `snapshots_frequency` and `snapshots_retain_count` from `UserPreferences`
+- Toggle endpoint changed from `PUT /snapshots/schedule` to `PUT /snapshots/enabled`
+
 ## v0.45.68 — 2026-02-15
 
 ### Added

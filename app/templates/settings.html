@@ -445,7 +445,7 @@
                         <div class="settings-row">
                             <div class="backup-info">
                                 <span class="pref-label">Automatic Snapshots</span>
-                                <span class="pref-desc">Periodically save backups for easy rollback</span>
+                                <span class="pref-desc">Daily backups (last 10 kept) for easy rollback</span>
                             </div>
                             <div class="settings-row__right">
                                 <label class="toggle-switch-label">
@@ -454,36 +454,8 @@
                             </div>
                         </div>
 
-                        <!-- Snapshot config (hidden when disabled) -->
+                        <!-- Snapshot section (hidden when disabled) -->
                         <div id="snapshot-config" style="{% if not user_prefs.snapshots_enabled %}display: none;{% endif %}">
-                            <div class="settings-row">
-                                <div class="backup-info">
-                                    <span class="pref-label">Frequency</span>
-                                    <span class="pref-desc">How often to create automatic snapshots</span>
-                                </div>
-                                <div class="settings-row__right">
-                                    <select id="snapshot-frequency" class="pref-select" onchange="updateSnapshotSchedule()">
-                                        <option value="daily" {% if user_prefs.snapshots_frequency == 'daily' %}selected{% endif %}>Daily</option>
-                                        <option value="weekly" {% if user_prefs.snapshots_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
-                                        <option value="monthly" {% if user_prefs.snapshots_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="settings-row">
-                                <div class="backup-info">
-                                    <span class="pref-label">Keep</span>
-                                    <span class="pref-desc">Maximum number of snapshots to retain</span>
-                                </div>
-                                <div class="settings-row__right">
-                                    <select id="snapshot-retain-count" class="pref-select" onchange="updateSnapshotSchedule()">
-                                        <option value="3" {% if user_prefs.snapshots_retain_count == 3 %}selected{% endif %}>3</option>
-                                        <option value="5" {% if user_prefs.snapshots_retain_count == 5 %}selected{% endif %}>5</option>
-                                        <option value="10" {% if user_prefs.snapshots_retain_count == 10 %}selected{% endif %}>10</option>
-                                        <option value="20" {% if user_prefs.snapshots_retain_count == 20 %}selected{% endif %}>20</option>
-                                        <option value="50" {% if user_prefs.snapshots_retain_count == 50 %}selected{% endif %}>50</option>
-                                    </select>
-                                </div>
-                            </div>
                             <div class="settings-row">
                                 <div class="backup-info">
                                     <span class="pref-label">Manual Snapshot</span>
@@ -1416,35 +1388,24 @@ function formatBytes(bytes) {
 }
 
 async function toggleSnapshots(el) {
-    const enabled = !el.classList.contains('enabled');
     try {
-        const response = await fetch('/api/v1/backup/snapshots/schedule', {
+        const response = await fetch('/api/v1/backup/snapshots/enabled', {
             method: 'PUT',
             headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ enabled }),
         });
         if (response.ok) {
-            el.classList.toggle('enabled');
+            const data = await response.json();
+            if (data.enabled) {
+                el.classList.add('enabled');
+            } else {
+                el.classList.remove('enabled');
+            }
             const config = document.getElementById('snapshot-config');
-            config.style.display = enabled ? '' : 'none';
-            if (enabled) loadSnapshotList();
+            config.style.display = data.enabled ? '' : 'none';
+            if (data.enabled) loadSnapshotList();
         }
     } catch (e) {
         console.error('Failed to toggle snapshots:', e);
-    }
-}
-
-async function updateSnapshotSchedule() {
-    const frequency = document.getElementById('snapshot-frequency').value;
-    const retainCount = parseInt(document.getElementById('snapshot-retain-count').value);
-    try {
-        await fetch('/api/v1/backup/snapshots/schedule', {
-            method: 'PUT',
-            headers: window.getCSRFHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ frequency, retain_count: retainCount }),
-        });
-    } catch (e) {
-        console.error('Failed to update snapshot schedule:', e);
     }
 }
 

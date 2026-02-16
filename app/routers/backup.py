@@ -13,15 +13,10 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants import (
-    BACKUP_MAX_SIZE_BYTES,
-    SNAPSHOT_RETAIN_MAX,
-    SNAPSHOT_RETAIN_MIN,
-    SNAPSHOT_VALID_FREQUENCIES,
-)
+from app.constants import BACKUP_MAX_SIZE_BYTES
 from app.database import get_db
 from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import User
@@ -53,34 +48,10 @@ class SnapshotInfo(BaseModel):
 
 
 class SnapshotListResponse(BaseModel):
-    """List of snapshots plus schedule config."""
+    """List of snapshots plus enabled state."""
 
     snapshots: list[SnapshotInfo]
     enabled: bool
-    frequency: str
-    retain_count: int
-
-
-class SnapshotScheduleRequest(BaseModel):
-    """Update snapshot schedule settings."""
-
-    enabled: bool | None = None
-    frequency: str | None = None
-    retain_count: int | None = None
-
-    @field_validator("frequency")
-    @classmethod
-    def validate_frequency(cls, v: str | None) -> str | None:
-        if v is not None and v not in SNAPSHOT_VALID_FREQUENCIES:
-            raise ValueError(f"frequency must be one of {SNAPSHOT_VALID_FREQUENCIES}")
-        return v
-
-    @field_validator("retain_count")
-    @classmethod
-    def validate_retain_count(cls, v: int | None) -> int | None:
-        if v is not None and not (SNAPSHOT_RETAIN_MIN <= v <= SNAPSHOT_RETAIN_MAX):
-            raise ValueError(f"retain_count must be between {SNAPSHOT_RETAIN_MIN} and {SNAPSHOT_RETAIN_MAX}")
-        return v
 
 
 @router.get("/export")
@@ -169,7 +140,7 @@ async def list_snapshots(
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all snapshots with schedule configuration."""
+    """List all snapshots with enabled state."""
     prefs_service = PreferencesService(db, user.id)
     prefs = await prefs_service.get_preferences()
 
@@ -187,37 +158,23 @@ async def list_snapshots(
             for row in rows
         ],
         enabled=prefs.snapshots_enabled,
-        frequency=prefs.snapshots_frequency,
-        retain_count=prefs.snapshots_retain_count,
     )
 
 
-@router.put("/snapshots/schedule")
+@router.put("/snapshots/enabled")
 @limiter.limit(BACKUP_LIMIT, key_func=get_user_or_ip)
-async def update_snapshot_schedule(
+async def toggle_snapshots(
     request: Request,
-    body: SnapshotScheduleRequest,
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update snapshot schedule settings (enabled, frequency, retain_count)."""
+    """Toggle automatic snapshots on/off."""
     prefs_service = PreferencesService(db, user.id)
     prefs = await prefs_service.get_preferences()
-
-    if body.enabled is not None:
-        prefs.snapshots_enabled = body.enabled
-    if body.frequency is not None:
-        prefs.snapshots_frequency = body.frequency
-    if body.retain_count is not None:
-        prefs.snapshots_retain_count = body.retain_count
-
+    prefs.snapshots_enabled = not prefs.snapshots_enabled
     await db.commit()
 
-    return {
-        "enabled": prefs.snapshots_enabled,
-        "frequency": prefs.snapshots_frequency,
-        "retain_count": prefs.snapshots_retain_count,
-    }
+    return {"enabled": prefs.snapshots_enabled}
 
 
 @router.post("/snapshots")

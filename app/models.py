@@ -222,8 +222,6 @@ class UserPreferences(Base):
 
     # Snapshot preferences
     snapshots_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    snapshots_frequency: Mapped[str] = mapped_column(String(10), default="weekly")  # daily/weekly/monthly
-    snapshots_retain_count: Mapped[int] = mapped_column(Integer, default=10)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
