@@ -444,6 +444,40 @@ class TestPlanTasksModule:
             "plan-tasks.js must check subtaskCount to exclude parent tasks from scheduling"
         )
 
+    def test_has_sort_tasks_method(self, plan_js: str):
+        """Must have _sortTasks method extracted from schedule()."""
+        assert "_sortTasks" in plan_js, "plan-tasks.js must have _sortTasks method for configurable task sorting"
+
+    def test_exports_set_config(self, plan_js: str):
+        """Must export setConfig for runtime scheduler configuration."""
+        assert re.search(r"window\.PlanTasks\s*=\s*\{[^}]*setConfig", plan_js, re.DOTALL), (
+            "PlanTasks must export setConfig for buffer/priority configuration"
+        )
+
+    def test_schedule_accepts_config_param(self, plan_js: str):
+        """schedule() must accept a config parameter."""
+        assert re.search(r"schedule\(tasks,\s*occupiedSlots,\s*targetRange,\s*config", plan_js), (
+            "schedule() must accept a 4th config parameter for pluggable scheduling"
+        )
+
+    def test_has_per_slot_cursor(self, plan_js: str):
+        """Must use per-slot cursors instead of single slotIndex."""
+        assert "slotState" in plan_js and "cursor" in plan_js, (
+            "schedule() must use per-slot cursor tracking to fix the multi-slot scheduling bug"
+        )
+
+    def test_has_buffer_between_tasks_support(self, plan_js: str):
+        """Must support bufferBetweenTasks config."""
+        assert "bufferBetweenTasks" in plan_js, (
+            "schedule() must support bufferBetweenTasks for gaps between scheduled tasks"
+        )
+
+    def test_has_buffer_around_events_support(self, plan_js: str):
+        """Must support buffer before/after calendar events."""
+        assert "bufferBeforeEvent" in plan_js and "bufferAfterEvent" in plan_js, (
+            "_findFreeSlots() must support buffers around calendar events"
+        )
+
 
 class TestEnergySelectorModule:
     """Verify energy-selector.js handles energy mode filtering."""

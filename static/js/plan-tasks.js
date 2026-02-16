@@ -12,7 +12,7 @@
  * 2. Filter tasks: exclude those with mismatched energy level or due dates
  * 3. Sort tasks: date-matched first, then smaller duration, then higher priority
  * 4. Find free slots within selection (gaps between calendar events)
- * 5. Greedy bin-packing: place tasks into slots, skip if doesn't fit
+ * 5. First-fit bin-packing: place each task into the first slot with enough space
  */
 (function () {
     'use strict';
@@ -59,16 +59,32 @@
     // SCHEDULING STRATEGY
     // ==========================================================================
 
+    // ==========================================================================
+    // SCHEDULER CONFIGURATION
+    // ==========================================================================
+
+    /** @type {SchedulerConfig} */
+    const DEFAULT_CONFIG = {
+        bufferBeforeEvent: 0,   // minutes before calendar events to keep free
+        bufferAfterEvent: 0,    // minutes after calendar events to keep free
+        bufferBetweenTasks: 0,  // minutes between consecutive scheduled tasks
+        priorityWeight: 0,      // 0 = duration-first (default), >0 = priority matters more
+    };
+
+    let planConfig = { ...DEFAULT_CONFIG };
+
     /**
      * Smart scheduling strategy.
      *
-     * Prioritization:
+     * Prioritization (configurable via planConfig):
      * 1. Tasks with due date matching target day (highest priority)
-     * 2. Smaller duration tasks (prevents pile-up)
-     * 3. Higher Todoist priority (P4 > P3 > P2 > P1)
+     * 2. When priorityWeight > 0: higher impact tasks first
+     * 3. Smaller duration tasks (prevents pile-up)
+     * 4. Higher Todoist priority as tiebreaker
      *
-     * Uses greedy bin-packing: fills available slots with tasks that fit,
-     * skipping tasks that are too large for remaining slot space.
+     * Uses first-fit bin-packing with per-slot cursors: each free slot
+     * tracks its own fill level. Tasks that don't fit in one slot are
+     * tried against subsequent slots.
      *
      * @type {SchedulingStrategy}
      */
@@ -80,65 +96,88 @@
          * @param {Task[]} tasks - Tasks to schedule
          * @param {TimeSlot[]} occupiedSlots - Already occupied time slots
          * @param {TimeRange} targetRange - Selected time range
+         * @param {SchedulerConfig} [config] - Scheduler configuration
          * @returns {ScheduledTask[]} Tasks with assigned start/end times
          */
-        schedule(tasks, occupiedSlots, targetRange) {
-            const sortedTasks = [...tasks].sort((a, b) => {
-                // 1. Tasks with matching due date first
-                if (a.hasMatchingDate && !b.hasMatchingDate) return -1;
-                if (!a.hasMatchingDate && b.hasMatchingDate) return 1;
+        schedule(tasks, occupiedSlots, targetRange, config = {}) {
+            const bufferBetween = config.bufferBetweenTasks || 0;
+            const sortedTasks = this._sortTasks(tasks, config);
 
-                // 2. Smaller duration first (prevents small task pile-up)
-                if (a.duration !== b.duration) return a.duration - b.duration;
-
-                // 3. Higher priority (4=highest, 1=lowest in Todoist)
-                return b.priority - a.priority;
-            });
-
-            const freeSlots = this._findFreeSlots(occupiedSlots, targetRange);
+            const freeSlots = this._findFreeSlots(occupiedSlots, targetRange, config);
             if (freeSlots.length === 0) return [];
 
+            // Per-slot cursor: each slot tracks how full it is independently
+            const slotState = freeSlots.map(s => ({ ...s, cursor: s.startMins }));
             const scheduled = [];
-            let slotIndex = 0;
-            let currentPosition = freeSlots[0].startMins;
 
             for (const task of sortedTasks) {
-                if (slotIndex >= freeSlots.length) break;
+                const dur = task.duration || DEFAULT_TASK_DURATION;
 
-                const slot = freeSlots[slotIndex];
-                const taskDuration = task.duration || DEFAULT_TASK_DURATION;
-                const remainingInSlot = slot.endMins - currentPosition;
-
-                if (taskDuration <= remainingInSlot) {
-                    scheduled.push({
-                        task,
-                        startMins: currentPosition,
-                        endMins: currentPosition + taskDuration,
-                    });
-                    currentPosition += taskDuration;
-
-                    // Move to next slot if current is filled
-                    if (currentPosition >= slot.endMins) {
-                        slotIndex++;
-                        if (slotIndex < freeSlots.length) {
-                            currentPosition = freeSlots[slotIndex].startMins;
-                        }
+                // First-fit: try each slot until we find one with enough space
+                for (const slot of slotState) {
+                    const remaining = slot.endMins - slot.cursor;
+                    if (dur <= remaining) {
+                        scheduled.push({
+                            task,
+                            startMins: slot.cursor,
+                            endMins: slot.cursor + dur,
+                        });
+                        // Advance cursor by duration + buffer, clamped to slot end
+                        slot.cursor = Math.min(slot.cursor + dur + bufferBetween, slot.endMins);
+                        break;
                     }
                 }
-                // Skip task if it doesn't fit (greedy bin-packing)
             }
 
             return scheduled;
         },
 
         /**
+         * Sort tasks for scheduling based on config.
+         * @param {Task[]} tasks - Tasks to sort
+         * @param {SchedulerConfig} [config] - Scheduler configuration
+         * @returns {Task[]} Sorted copy of tasks
+         */
+        _sortTasks(tasks, config = {}) {
+            return [...tasks].sort((a, b) => {
+                // 1. Tasks with matching due date first (always)
+                if (a.hasMatchingDate && !b.hasMatchingDate) return -1;
+                if (!a.hasMatchingDate && b.hasMatchingDate) return 1;
+
+                // 2. Higher impact first (when priorityWeight is set)
+                if (config.priorityWeight) {
+                    const pw = config.priorityWeight;
+                    const priDiff = (b.priority * pw) - (a.priority * pw);
+                    if (priDiff !== 0) return priDiff;
+                }
+
+                // 3. Smaller duration first (fit more tasks)
+                if (a.duration !== b.duration) return a.duration - b.duration;
+
+                // 4. Higher priority as tiebreaker
+                return b.priority - a.priority;
+            });
+        },
+
+        /**
          * Find free time slots within target range.
+         * Applies buffers around occupied slots when configured.
          * @param {TimeSlot[]} occupiedSlots - Occupied slots
          * @param {TimeRange} targetRange - Target range
+         * @param {SchedulerConfig} [config] - Scheduler configuration
          * @returns {TimeSlot[]} Available free slots
          */
-        _findFreeSlots(occupiedSlots, targetRange) {
-            const sorted = [...occupiedSlots].sort((a, b) => a.startMins - b.startMins);
+        _findFreeSlots(occupiedSlots, targetRange, config = {}) {
+            const bufferBefore = config.bufferBeforeEvent || 0;
+            const bufferAfter = config.bufferAfterEvent || 0;
+
+            // Apply buffers to occupied slots
+            const buffered = occupiedSlots.map(s => ({
+                startMins: s.startMins - bufferBefore,
+                endMins: s.endMins + bufferAfter,
+            }));
+
+            const sorted = [...buffered].sort((a, b) => a.startMins - b.startMins);
             const freeSlots = [];
             let currentStart = targetRange.startMins;
 
@@ -996,7 +1035,7 @@
         const occupiedSlots = collectOccupiedSlots(selectionDayCalendar);
         const targetRange = { startMins: selectionStart, endMins: selectionEnd };
 
-        const scheduled = currentStrategy.schedule(allTasks, occupiedSlots, targetRange);
+        const scheduled = currentStrategy.schedule(allTasks, occupiedSlots, targetRange, planConfig);
         log.info(`Scheduled ${scheduled.length}/${allTasks.length} tasks`);
 
         // Store original state for undo before making changes
@@ -1409,11 +1448,21 @@
         enterSelectionMode(dayCalendar);
     }
 
+    /**
+     * Update scheduler configuration.
+     * @param {Partial<SchedulerConfig>} overrides - Config values to merge
+     */
+    function setConfig(overrides) {
+        Object.assign(planConfig, overrides);
+        log.info('Config updated:', planConfig);
+    }
+
     window.PlanTasks = {
         init,
         enterPlanMode,
         registerStrategy,
         setStrategy,
+        setConfig,
         getStrategies: () => Array.from(strategies.keys()),
         /** Enable/disable debug logging at runtime */
         setDebug: (enabled) => { /* Would need to make DEBUG mutable */ },
@@ -1459,7 +1508,15 @@
  */
 
 /**
+ * @typedef {Object} SchedulerConfig
+ * @property {number} [bufferBeforeEvent] - Minutes before calendar events to keep free
+ * @property {number} [bufferAfterEvent] - Minutes after calendar events to keep free
+ * @property {number} [bufferBetweenTasks] - Minutes between consecutive scheduled tasks
+ * @property {number} [priorityWeight] - 0 = duration-first, >0 = priority matters more
+ */
+
+/**
  * @typedef {Object} SchedulingStrategy
  * @property {string} name - Strategy identifier
- * @property {function(Task[], TimeSlot[], TimeRange): ScheduledTask[]} schedule - Scheduling function
+ * @property {function(Task[], TimeSlot[], TimeRange, SchedulerConfig=): ScheduledTask[]} schedule - Scheduling function
  */
