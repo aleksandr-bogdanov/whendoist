@@ -1,27 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LayoutDashboard } from "lucide-react";
+import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
+import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
+import { TaskPanel } from "@/components/dashboard/task-panel";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
 function DashboardPage() {
+  const { data: tasks, isLoading: tasksLoading } = useListTasksApiV1TasksGet();
+
+  const { data: domains, isLoading: domainsLoading } = useListDomainsApiV1DomainsGet();
+
   return (
-    <div className="flex flex-1 items-center justify-center p-8">
-      <div className="text-center space-y-3">
-        <LayoutDashboard className="mx-auto h-12 w-12 text-muted-foreground/50" />
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-muted-foreground max-w-md">
-          The task dashboard is being built in the next phase. Check out{" "}
-          <a href="/settings" className="text-primary hover:underline">
-            Settings
-          </a>{" "}
-          and{" "}
-          <a href="/thoughts" className="text-primary hover:underline">
-            Thoughts
-          </a>{" "}
-          in the meantime.
-        </p>
+    <div className="flex flex-1 h-full">
+      {/* Task panel — full width for now, calendar panel comes in Phase 8 */}
+      <div className="flex flex-col flex-1 min-w-0">
+        <TaskPanel tasks={tasks} domains={domains} isLoading={tasksLoading || domainsLoading} />
       </div>
     </div>
   );

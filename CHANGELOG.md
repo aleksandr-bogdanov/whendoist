@@ -7,6 +7,20 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.5 — 2026-02-17
+
+### Added
+- React dashboard task panel: tasks grouped by domain with collapsible sections
+- Task item component with impact badges, clarity labels, duration chips, due date indicators
+- Subtask tree with expand/collapse toggle and nested indentation
+- Scheduled section: tasks grouped by date (Today, Tomorrow, day headers)
+- Completed section: sorted by completion date, collapsible
+- Client-side task processing: energy filtering, multi-field sorting, domain grouping
+- Encryption-aware task display: transparent decryption via crypto store integration
+- Task utility library: sorting, filtering, grouping, date formatting helpers
+
+---
+
 ## v0.47.4 — 2026-02-17
 
 ### Added
