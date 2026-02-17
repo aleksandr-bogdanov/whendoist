@@ -284,6 +284,56 @@ class TestSubtasks:
         await pg_session.refresh(subtask)
         assert subtask.status == "archived"
 
+    async def test_create_subtask_of_subtask_raises(self, pg_session: AsyncSession, task_service: TaskService):
+        """Cannot create a subtask of a subtask (depth-1 enforcement)."""
+        grandparent = await task_service.create_task(title="Grandparent")
+        await pg_session.commit()
+
+        parent = await task_service.create_task(title="Parent", parent_id=grandparent.id)
+        await pg_session.commit()
+
+        with pytest.raises(ValueError, match="Subtasks cannot have subtasks"):
+            await task_service.create_task(title="Grandchild", parent_id=parent.id)
+
+    async def test_create_subtask_of_recurring_task_raises(self, pg_session: AsyncSession, task_service: TaskService):
+        """Cannot add a subtask to a recurring task."""
+        recurring = await task_service.create_task(
+            title="Recurring Task",
+            is_recurring=True,
+            recurrence_rule={"freq": "daily", "interval": 1},
+        )
+        await pg_session.commit()
+
+        with pytest.raises(ValueError, match="Recurring tasks cannot have subtasks"):
+            await task_service.create_task(title="Subtask", parent_id=recurring.id)
+
+    async def test_update_parent_to_recurring_raises(self, pg_session: AsyncSession, task_service: TaskService):
+        """A task with children cannot become recurring."""
+        parent = await task_service.create_task(title="Parent")
+        await pg_session.commit()
+
+        await task_service.create_task(title="Subtask", parent_id=parent.id)
+        await pg_session.commit()
+
+        with pytest.raises(ValueError, match="Tasks with subtasks cannot be recurring"):
+            await task_service.update_task(parent.id, is_recurring=True)
+
+    async def test_subtask_can_be_recurring(self, pg_session: AsyncSession, task_service: TaskService):
+        """A subtask can be recurring (only parents with children are blocked)."""
+        parent = await task_service.create_task(title="Parent")
+        await pg_session.commit()
+
+        subtask = await task_service.create_task(
+            title="Recurring Subtask",
+            parent_id=parent.id,
+            is_recurring=True,
+            recurrence_rule={"freq": "weekly", "interval": 1},
+        )
+        await pg_session.commit()
+
+        assert subtask.is_recurring is True
+        assert subtask.parent_id == parent.id
+
 
 @pytest.mark.integration
 class TestScheduling:

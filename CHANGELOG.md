@@ -7,6 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.46.0 — 2026-02-17
+
+### Added
+- Depth-1 subtask constraint: subtasks cannot have subtasks (max nesting depth = 1)
+- Mutual exclusion: recurring tasks cannot have children, tasks with children cannot become recurring
+- Todoist import flattens deep nesting to depth-1 (grandchildren become direct children of root ancestor)
+- Todoist import strips recurrence from parent tasks that have children
+- Alembic migration to flatten existing deep nesting and strip parent recurrence in production data
+- Service-layer validation returns 422 for constraint violations
+
 ## v0.45.99 — 2026-02-17
 
 ### Fixed

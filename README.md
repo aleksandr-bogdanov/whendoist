@@ -192,6 +192,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Demo Login](docs/DEMO-LOGIN.md) | Demo accounts for testing and previews |
 | [Error Handling](docs/ERROR-HANDLING.md) | Production error recovery, safeFetch() usage, typed errors |
 | **Architecture** | |
+| [Subtasks](docs/SUBTASKS.md) | Parent-child philosophy: three-level hierarchy, container model, enforced constraints |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
 | [Toast System](docs/TOAST-SYSTEM.md) | Typed notifications with queuing, actions, and backward compatibility |
