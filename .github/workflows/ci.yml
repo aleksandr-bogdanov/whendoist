@@ -8,7 +8,7 @@
 #   1. lint      - Code style checks (ruff)          ┐
 #   2. typecheck - Static type analysis (pyright)     │
 #   3. test      - Unit + integration tests (pytest)  ├ run in parallel
-#   4. frontend  - TypeScript, Biome lint, build      ┘
+#   4. frontend  - TypeScript check, Biome lint        ┘
 #
 # All jobs must pass for PRs to be mergeable.
 # Railway "Wait for CI" pauses deploys until this workflow succeeds.
@@ -132,7 +132,7 @@ jobs:
         run: uv run pytest -v -m integration
 
   # ---------------------------------------------------------------------------
-  # Frontend: TypeScript checks, lint, and production build
+  # Frontend: TypeScript checks and lint (build verified by Railway deployment)
   # ---------------------------------------------------------------------------
   frontend:
     name: Frontend
@@ -154,6 +154,3 @@ jobs:
 
       - name: Biome lint + format check
         run: cd frontend && npx biome check .
-
-      - name: Production build
-        run: cd frontend && npx vite build
