@@ -41,6 +41,7 @@ export function DayColumn({
     data: { type: "calendar", dateStr },
   });
 
+
   const positioned = useMemo(
     () => calculateOverlaps(events, tasks, dateStr, hourHeight),
     [events, tasks, dateStr, hourHeight],
@@ -114,6 +115,7 @@ export function DayColumn({
         {isOver && (
           <div className="absolute inset-0 border-2 border-dashed border-primary/40 rounded-md pointer-events-none z-30" />
         )}
+
 
         {/* Current time indicator */}
         {currentTimeOffset >= 0 && currentTimeOffset <= TOTAL_HOURS * hourHeight && (

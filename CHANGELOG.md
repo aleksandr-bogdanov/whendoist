@@ -21,6 +21,7 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+
 ## v0.47.7 — 2026-02-17
 
 ### Added
