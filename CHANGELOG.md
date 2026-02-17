@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.95 — 2026-02-17
+
+### Fixed
+- Zoom level no longer resets when dropping a task — `initZoom` now skips height reset on re-init (triggered by `refreshTaskList` → `DragDrop.init()`)
+- Trash bin no longer gets stuck in red highlighted state — `drag-over` class cleared at start of each new drag and `hideTrashBin` resets inline styles
+- Auto-scroll trigger zone increased from 60px to 100px for easier activation
+
 ## v0.45.94 — 2026-02-17
 
 ### Fixed
