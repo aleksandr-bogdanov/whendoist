@@ -7,6 +7,26 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.2 — 2026-02-17
+
+### Added
+- React SPA app shell: header with theme toggle and user menu, sidebar with nav links and domain list, mobile bottom nav bar
+- Auth guard layout route (`_authenticated`): session check via `/api/v1/me`, encryption unlock modal integration
+- Login page with Google OAuth button and demo login support
+- Theme provider: light/dark/system modes with OS preference sync and meta theme-color updates
+- Encryption unlock modal: passphrase entry with passkey (WebAuthn PRF) fallback
+- `/api/v1/me` backend endpoint: user profile, encryption status, calendar connection flag
+- `test_value` field added to encryption status API response for client-side passphrase verification
+- Dashboard, Settings, Analytics, Thoughts stub pages under authenticated layout
+- PWA standalone viewport fix CSS and iOS safe area padding
+- Biome config: Tailwind v4 directive parsing, import organization
+
+### Fixed
+- TypeScript 5.9 `Uint8Array<ArrayBufferLike>` type errors in crypto and passkey modules (build-mode compatibility)
+- Biome `node:` protocol import for vite config
+
+---
+
 ## v0.47.1 — 2026-02-17
 
 ### Added

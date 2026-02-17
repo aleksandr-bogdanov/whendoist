@@ -59,6 +59,7 @@ class EncryptionStatusResponse(BaseModel):
 
     enabled: bool
     salt: str | None = None  # Only returned if encryption is enabled
+    test_value: str | None = None  # Encrypted test value for passphrase verification
 
 
 class EncryptionSetupRequest(BaseModel):
@@ -136,6 +137,7 @@ async def get_encryption_status(
     return EncryptionStatusResponse(
         enabled=prefs.encryption_enabled,
         salt=prefs.encryption_salt if prefs.encryption_enabled else None,
+        test_value=prefs.encryption_test_value if prefs.encryption_enabled else None,
     )
 
 

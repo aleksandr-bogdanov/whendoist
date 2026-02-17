@@ -54,7 +54,7 @@ export function arrayToBase64(array: Uint8Array): string {
   return btoa(String.fromCharCode(...array));
 }
 
-export function base64ToArray(base64: string): Uint8Array {
+export function base64ToArray(base64: string): Uint8Array<ArrayBuffer> {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -72,7 +72,7 @@ export function base64ToArray(base64: string): Uint8Array {
  */
 export async function deriveKey(
   passphrase: string,
-  salt: Uint8Array,
+  salt: Uint8Array<ArrayBuffer>,
   iterations: number = PBKDF2_ITERATIONS,
 ): Promise<CryptoKey> {
   const encoder = new TextEncoder();
@@ -102,7 +102,7 @@ export async function deriveKey(
 /**
  * Generate a random 32-byte salt for key derivation.
  */
-export function generateSalt(): Uint8Array {
+export function generateSalt(): Uint8Array<ArrayBuffer> {
   return crypto.getRandomValues(new Uint8Array(32));
 }
 
