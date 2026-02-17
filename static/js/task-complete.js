@@ -217,7 +217,7 @@
                     ? (data.completed ? '\u201c' + toastTitle + '\u201d done for ' + dateLabel : '\u201c' + toastTitle + '\u201d reopened for ' + dateLabel)
                     : (data.completed ? 'Done for ' + dateLabel : 'Reopened for ' + dateLabel);
                 if (undoCallback) {
-                    Toast.undo(recurMsg, undoCallback);
+                    Toast.undo(recurMsg, undoCallback, 'task-' + taskId);
                 } else {
                     Toast.show(recurMsg);
                 }
@@ -226,7 +226,7 @@
                     ? (data.completed ? '\u201c' + toastTitle + '\u201d completed' : '\u201c' + toastTitle + '\u201d reopened')
                     : (data.completed ? 'Task completed' : 'Task reopened');
                 if (undoCallback) {
-                    Toast.undo(msg, undoCallback);
+                    Toast.undo(msg, undoCallback, 'task-' + taskId);
                 } else {
                     Toast.show(msg);
                 }
@@ -737,7 +737,7 @@
             // Show toast with undo (undo calls restore API)
             Toast.undo('"' + taskTitle + '" deleted', function() {
                 restoreDeletedTask(taskId, removedElements);
-            });
+            }, 'task-' + taskId);
         } catch (error) {
             // Restore elements on failure
             removedElements.forEach(function(item) {
@@ -1005,7 +1005,7 @@
 
             // Show toast with undo
             var toastMsg = origTitle ? ('"' + origTitle + '" unscheduled') : 'Task unscheduled';
-            Toast.undo(toastMsg, function() { undoUnschedule(undoData); });
+            Toast.undo(toastMsg, function() { undoUnschedule(undoData); }, 'task-' + taskId);
         } catch (error) {
             // Restore calendar card on failure
             if (undoData.scheduledDate && undoData.scheduledTime &&
