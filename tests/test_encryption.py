@@ -2,17 +2,15 @@
 End-to-End Encryption Tests.
 
 Comprehensive tests for the E2E encryption implementation in Whendoist.
-Tests cover service layer, API endpoints, multitenancy isolation, and
-JavaScript module contracts.
+Tests cover service layer, API endpoints, and multitenancy isolation.
 
-Test Category: Unit (async, uses in-memory SQLite) + Contract (JS verification)
+Test Category: Unit (async, uses in-memory SQLite)
 Related Code:
 - app/services/preferences_service.py (encryption config)
 - app/services/task_service.py (user-scoped CRUD)
 - app/routers/preferences.py (encryption endpoints)
 - app/routers/tasks.py (all-content, batch-update endpoints)
 - app/routers/domains.py (batch-update endpoint)
-- static/js/crypto.js (client-side encryption)
 
 Architecture Overview:
 - ONE global toggle (encryption_enabled) per user - not per-record flags
@@ -29,8 +27,6 @@ Security Guarantees Tested:
 
 See tests/README.md for full test architecture.
 """
-
-from pathlib import Path
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -419,139 +415,6 @@ class TestEncryptionDataIsolation:
         await db_session.flush()
 
         assert domain.user_id == test_user.id
-
-
-# =============================================================================
-# JavaScript Module Contract Tests
-# =============================================================================
-
-
-JS_DIR = Path(__file__).parent.parent / "static" / "js"
-
-
-class TestCryptoModuleExportsAPI:
-    """Verify crypto.js exports the required API for client-side encryption."""
-
-    @pytest.fixture
-    def crypto_js(self) -> str:
-        return (JS_DIR / "crypto.js").read_text()
-
-    def test_exports_window_crypto_object(self, crypto_js: str):
-        """Crypto must be exposed on window object."""
-        assert "window.Crypto = Crypto" in crypto_js
-
-    def test_exports_is_encryption_enabled(self, crypto_js: str):
-        """Must export isEncryptionEnabled for state checking."""
-        assert "isEncryptionEnabled" in crypto_js
-
-    def test_exports_can_crypto(self, crypto_js: str):
-        """Must export canCrypto for checking if operations are possible."""
-        assert "canCrypto" in crypto_js
-
-    def test_exports_has_stored_key(self, crypto_js: str):
-        """Must export hasStoredKey for checking key availability."""
-        assert "hasStoredKey" in crypto_js
-
-    def test_exports_setup_encryption(self, crypto_js: str):
-        """Must export setupEncryption for initial passphrase setup."""
-        assert "setupEncryption" in crypto_js
-
-    def test_exports_unlock_encryption(self, crypto_js: str):
-        """Must export unlockEncryption for subsequent unlocks."""
-        assert "unlockEncryption" in crypto_js
-
-    def test_exports_encrypt_field(self, crypto_js: str):
-        """Must export encryptField for encrypting individual values."""
-        assert "encryptField" in crypto_js
-
-    def test_exports_decrypt_field(self, crypto_js: str):
-        """Must export decryptField for decrypting individual values."""
-        assert "decryptField" in crypto_js
-
-    def test_exports_encrypt_all_data(self, crypto_js: str):
-        """Must export encryptAllData for batch encryption on enable."""
-        assert "encryptAllData" in crypto_js
-
-    def test_exports_decrypt_all_data(self, crypto_js: str):
-        """Must export decryptAllData for batch decryption on disable."""
-        assert "decryptAllData" in crypto_js
-
-    def test_exports_clear_stored_key(self, crypto_js: str):
-        """Must export clearStoredKey for logout."""
-        assert "clearStoredKey" in crypto_js
-
-
-class TestCryptoModuleArchitecture:
-    """Verify crypto.js follows the global toggle architecture."""
-
-    @pytest.fixture
-    def crypto_js(self) -> str:
-        return (JS_DIR / "crypto.js").read_text()
-
-    def test_uses_window_whendoist_config(self, crypto_js: str):
-        """Must check window.WHENDOIST for encryption state."""
-        assert "window.WHENDOIST" in crypto_js
-        assert "encryptionEnabled" in crypto_js
-
-    def test_uses_session_storage_for_key(self, crypto_js: str):
-        """Key must be stored in sessionStorage (cleared on tab close)."""
-        assert "sessionStorage" in crypto_js
-
-    def test_uses_pbkdf2_iterations(self, crypto_js: str):
-        """Must use PBKDF2 with sufficient iterations (600k OWASP 2024)."""
-        assert "PBKDF2_ITERATIONS" in crypto_js
-        assert "600000" in crypto_js
-
-    def test_uses_aes_gcm(self, crypto_js: str):
-        """Must use AES-GCM for authenticated encryption."""
-        assert "AES-GCM" in crypto_js
-
-    def test_uses_web_crypto_api(self, crypto_js: str):
-        """Must use Web Crypto API (crypto.subtle)."""
-        assert "crypto.subtle" in crypto_js
-
-    def test_has_test_value_constant(self, crypto_js: str):
-        """Must have known test value for passphrase verification."""
-        assert "WHENDOIST_ENCRYPTION_TEST" in crypto_js
-
-    def test_documents_architecture(self, crypto_js: str):
-        """Module should document its architecture."""
-        assert "global toggle" in crypto_js.lower() or "window.WHENDOIST" in crypto_js
-
-
-class TestCryptoModuleIntegration:
-    """Verify other modules properly integrate with crypto.js."""
-
-    def test_dashboard_calls_decrypt_on_load(self):
-        """dashboard.html should decrypt data on page load if encryption enabled."""
-        dashboard_html = (Path(__file__).parent.parent / "app" / "templates" / "dashboard.html").read_text()
-
-        assert "Crypto.canCrypto()" in dashboard_html, "dashboard.html must check Crypto.canCrypto() before decrypting"
-        assert "Crypto.decryptField" in dashboard_html, (
-            "dashboard.html must use Crypto.decryptField to decrypt task titles"
-        )
-
-    def test_settings_has_encryption_setup_flow(self):
-        """settings.html should have encryption enable/disable UI."""
-        settings_html = (Path(__file__).parent.parent / "app" / "templates" / "settings.html").read_text()
-
-        assert "Crypto.setupEncryption" in settings_html, "settings.html must use Crypto.setupEncryption for enabling"
-        assert "encryptAllData" in settings_html or "encryptAllData" in settings_html, (
-            "settings.html must use batch encryption when enabling"
-        )
-
-    def test_task_dialog_encrypts_on_save(self):
-        """task-dialog.js should encrypt fields when saving if encryption enabled."""
-        task_dialog_js = (JS_DIR / "task-dialog.js").read_text()
-
-        assert "Crypto" in task_dialog_js, "task-dialog.js must use Crypto module"
-
-    def test_base_template_sets_encryption_config(self):
-        """base.html should set window.WHENDOIST config for encryption state."""
-        base_html = (Path(__file__).parent.parent / "app" / "templates" / "base.html").read_text()
-
-        assert "window.WHENDOIST" in base_html, "base.html must set window.WHENDOIST global config"
-        assert "encryptionEnabled" in base_html, "base.html must include encryptionEnabled in config"
 
 
 # =============================================================================

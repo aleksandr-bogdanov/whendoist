@@ -7,6 +7,27 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.0 — 2026-02-17
+
+### Added
+- Keyboard shortcuts system: ?, q, n, j/k navigation, c/e/x task actions, Escape
+- Shortcuts help modal with categorized shortcut reference
+- First-run toast hinting at keyboard shortcuts for desktop users
+- Motion animations: task enter/exit (slide + fade), subtask expand/collapse, domain group layout animation, list reorder
+
+### Removed
+- All legacy Jinja2 templates (app/templates/ — 18 files)
+- All vanilla JavaScript modules (static/js/ — 25 files)
+- All legacy CSS files (static/css/ — 22 files)
+- Vendor libraries: HTMX, Pico CSS, ApexCharts, Air Datepicker (static/vendor/)
+- Legacy service worker and manifest (static/sw.js, static/manifest.json)
+- Legacy page router (app/routers/pages.py) and task editor router (app/routers/task_editor.py)
+- Legacy debug pages (static/debug-drag.html, static/debug-pwa.html)
+- Obsolete JS contract tests (test_js_module_contract.py, test_hotfix_0_8_6.py, test_hotfix_0_8_8.py, test_task_item_partial.py)
+- Removed JS contract test classes from remaining hotfix tests
+
+---
+
 ## v0.47.9 — 2026-02-17
 
 ### Added

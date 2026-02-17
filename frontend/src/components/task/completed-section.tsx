@@ -1,4 +1,5 @@
 import { CheckCircle2, ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
@@ -48,9 +49,20 @@ export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedS
 
       <CollapsibleContent>
         <div className="pt-1">
-          {sorted.map((task) => (
-            <TaskItem key={task.id} task={task} onSelect={onSelectTask} onEdit={onEditTask} />
-          ))}
+          <AnimatePresence initial={false}>
+            {sorted.map((task) => (
+              <motion.div
+                key={task.id}
+                layout
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </CollapsibleContent>
     </Collapsible>

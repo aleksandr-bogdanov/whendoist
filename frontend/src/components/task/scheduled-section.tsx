@@ -1,4 +1,5 @@
 import { CalendarClock, ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { groupScheduledByDate } from "@/lib/task-utils";
@@ -49,9 +50,20 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
               <div className="px-3 py-1 text-xs font-medium text-muted-foreground">
                 {group.label}
               </div>
-              {group.tasks.map((task) => (
-                <TaskItem key={task.id} task={task} onSelect={onSelectTask} onEdit={onEditTask} />
-              ))}
+              <AnimatePresence initial={false}>
+                {group.tasks.map((task) => (
+                  <motion.div
+                    key={task.id}
+                    layout
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           ))}
         </div>

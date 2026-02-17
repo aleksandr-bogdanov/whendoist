@@ -2,14 +2,13 @@
 Passkey (WebAuthn) Tests.
 
 Comprehensive tests for the passkey-based E2E encryption unlock in Whendoist.
-Tests cover the service layer, multitenancy isolation, and JavaScript module contracts.
+Tests cover the service layer, multitenancy isolation, and data model.
 
-Test Category: Unit (async, uses in-memory SQLite) + Contract (JS verification)
+Test Category: Unit (async, uses in-memory SQLite)
 Related Code:
 - app/services/passkey_service.py (WebAuthn credential management)
 - app/routers/passkeys.py (passkey API endpoints)
 - app/models.py (UserPasskey model)
-- static/js/passkey.js (client-side WebAuthn + PRF)
 
 Architecture Overview (Key Wrapping):
 - Master key: The actual AES-256-GCM encryption key (from passphrase or first passkey)
@@ -30,8 +29,6 @@ Security Guarantees Tested:
 See tests/README.md for full test architecture.
 """
 
-from pathlib import Path
-
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,9 +36,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import User, UserPasskey, UserPreferences
 from app.services.passkey_service import PasskeyService
 from app.services.preferences_service import PreferencesService
-
-JS_DIR = Path(__file__).parent.parent / "static" / "js"
-
 
 # =============================================================================
 # Fixtures
@@ -408,189 +402,3 @@ class TestPasskeyDataModel:
         assert test_passkey.created_at is not None
         # last_used_at can be None initially
         assert hasattr(test_passkey, "last_used_at")
-
-
-# =============================================================================
-# Passkey.js Contract Tests (Architecture Verification)
-# =============================================================================
-
-
-class TestPasskeyJSModuleAPI:
-    """Verify passkey.js exports the required public API."""
-
-    @pytest.fixture
-    def passkey_js(self) -> str:
-        return (JS_DIR / "passkey.js").read_text()
-
-    def test_exports_support_detection(self, passkey_js: str):
-        """Must export browser support detection functions."""
-        assert "isSupported" in passkey_js
-        assert "isPrfLikelySupported" in passkey_js
-
-    def test_exports_registration_function(self, passkey_js: str):
-        """Must export registerPasskey for creating new passkeys."""
-        assert "async function registerPasskey" in passkey_js
-
-    def test_exports_authentication_function(self, passkey_js: str):
-        """Must export unlockWithPasskey for authenticating."""
-        assert "async function unlockWithPasskey" in passkey_js
-
-
-class TestPasskeyJSKeyWrapping:
-    """
-    Verify passkey.js implements correct key wrapping architecture.
-
-    This is CRITICAL for multi-passkey support. Without key wrapping,
-    each passkey would derive its own independent key.
-    """
-
-    @pytest.fixture
-    def passkey_js(self) -> str:
-        return (JS_DIR / "passkey.js").read_text()
-
-    def test_has_wrap_function(self, passkey_js: str):
-        """Must have wrapMasterKey function."""
-        assert "async function wrapMasterKey" in passkey_js
-
-    def test_has_unwrap_function(self, passkey_js: str):
-        """Must have unwrapMasterKey function."""
-        assert "async function unwrapMasterKey" in passkey_js
-
-    def test_wrap_uses_aes_gcm(self, passkey_js: str):
-        """Key wrapping must use AES-GCM."""
-        # Check for AES-GCM usage in wrap/unwrap context
-        assert "AES-GCM" in passkey_js
-
-    def test_wrap_exports_master_key(self, passkey_js: str):
-        """wrapMasterKey must export the master key to raw bytes."""
-        assert "exportKey" in passkey_js
-        assert "'raw'" in passkey_js
-
-    def test_unwrap_imports_master_key(self, passkey_js: str):
-        """unwrapMasterKey must import the decrypted key as CryptoKey."""
-        assert "importKey" in passkey_js
-
-
-class TestPasskeyJSRegistrationFlow:
-    """Verify passkey.js registration flow is correct."""
-
-    @pytest.fixture
-    def passkey_js(self) -> str:
-        return (JS_DIR / "passkey.js").read_text()
-
-    def test_checks_unlock_state(self, passkey_js: str):
-        """Registration must verify encryption is unlocked."""
-        assert "Crypto.hasStoredKey()" in passkey_js
-
-    def test_retrieves_master_key(self, passkey_js: str):
-        """Registration must get the current master key."""
-        assert "Crypto.getStoredKey()" in passkey_js
-
-    def test_calls_wrap_master_key(self, passkey_js: str):
-        """Registration must wrap the master key."""
-        assert "wrapMasterKey" in passkey_js
-
-    def test_sends_wrapped_key_to_server(self, passkey_js: str):
-        """Registration must send wrapped_key (not encryption_test_value)."""
-        assert "wrapped_key:" in passkey_js or 'wrapped_key":' in passkey_js
-
-
-class TestPasskeyJSAuthenticationFlow:
-    """Verify passkey.js authentication flow is correct."""
-
-    @pytest.fixture
-    def passkey_js(self) -> str:
-        return (JS_DIR / "passkey.js").read_text()
-
-    def test_calls_unwrap_master_key(self, passkey_js: str):
-        """Authentication must unwrap the master key."""
-        assert "unwrapMasterKey" in passkey_js
-
-    def test_verifies_against_test_value(self, passkey_js: str):
-        """Authentication must verify the unwrapped key."""
-        assert "WHENDOIST_ENCRYPTION_TEST" in passkey_js
-
-    def test_stores_master_key(self, passkey_js: str):
-        """Authentication must store the master key in session."""
-        assert "Crypto.storeKey" in passkey_js
-
-    def test_handles_credential_mismatch(self, passkey_js: str):
-        """Authentication must handle when wrong credential is selected."""
-        # The retry logic for looking up the correct wrapped_key
-        assert "by-credential" in passkey_js
-
-
-class TestPasskeyJSErrorHandling:
-    """Verify passkey.js has proper error handling."""
-
-    @pytest.fixture
-    def passkey_js(self) -> str:
-        return (JS_DIR / "passkey.js").read_text()
-
-    def test_registration_returns_error_object(self, passkey_js: str):
-        """registerPasskey must return { success, error } format."""
-        assert "return { success: true }" in passkey_js
-        assert "return {" in passkey_js and "success: false" in passkey_js
-
-    def test_authentication_returns_error_object(self, passkey_js: str):
-        """unlockWithPasskey must return { success, error } format."""
-        # Both functions use same pattern
-        assert passkey_js.count("success: true") >= 2
-        assert passkey_js.count("success: false") >= 2
-
-    def test_logs_errors_to_console(self, passkey_js: str):
-        """Errors must be logged for debugging."""
-        assert "console.error" in passkey_js
-
-
-class TestPasskeyJSDocumentation:
-    """Verify passkey.js is properly documented."""
-
-    @pytest.fixture
-    def passkey_js(self) -> str:
-        return (JS_DIR / "passkey.js").read_text()
-
-    def test_has_module_header(self, passkey_js: str):
-        """Module must have architecture documentation."""
-        assert "Architecture:" in passkey_js
-
-    def test_documents_master_key_concept(self, passkey_js: str):
-        """Must document the master key concept."""
-        assert "master key" in passkey_js.lower() or "Master key" in passkey_js
-
-    def test_documents_wrapping_key_concept(self, passkey_js: str):
-        """Must document the wrapping key concept."""
-        assert "wrapping key" in passkey_js.lower() or "Wrapping key" in passkey_js
-
-
-# =============================================================================
-# Integration Contract Tests (API Paths)
-# =============================================================================
-
-
-class TestPasskeyAPIContract:
-    """Verify passkey.js uses correct API endpoints."""
-
-    @pytest.fixture
-    def passkey_js(self) -> str:
-        return (JS_DIR / "passkey.js").read_text()
-
-    def test_registration_options_endpoint(self, passkey_js: str):
-        """/api/v1/passkeys/register/options endpoint."""
-        assert "/api/v1/passkeys/register/options" in passkey_js
-
-    def test_registration_verify_endpoint(self, passkey_js: str):
-        """/api/v1/passkeys/register/verify endpoint."""
-        assert "/api/v1/passkeys/register/verify" in passkey_js
-
-    def test_authentication_options_endpoint(self, passkey_js: str):
-        """/api/v1/passkeys/authenticate/options endpoint."""
-        assert "/api/v1/passkeys/authenticate/options" in passkey_js
-
-    def test_authentication_verify_endpoint(self, passkey_js: str):
-        """/api/v1/passkeys/authenticate/verify endpoint."""
-        assert "/api/v1/passkeys/authenticate/verify" in passkey_js
-
-    def test_credential_lookup_endpoint(self, passkey_js: str):
-        """/api/v1/passkeys/by-credential/ endpoint for retry logic."""
-        assert "/api/v1/passkeys/by-credential/" in passkey_js

@@ -16,8 +16,6 @@ Related Issues: Settings > Google Calendars toggle doesn't work
 v0.28.1: Calendar Toggle Fix
 """
 
-from pathlib import Path
-
 
 class TestCalendarToggleUrlEncoding:
     """
@@ -32,28 +30,6 @@ class TestCalendarToggleUrlEncoding:
     The wizard worked because it uses a bulk POST with calendar_ids in the body,
     not individual toggle endpoints with IDs in the URL path.
     """
-
-    def test_calendar_toggle_url_is_urlencoded(self):
-        """
-        Calendar toggle URL MUST encode the calendar ID.
-
-        Without encoding, calendar IDs containing # are broken:
-        - /api/v1/calendars/en.usa#holiday@group.v.calendar.google.com/toggle
-        - Browser sends: /api/v1/calendars/en.usa (everything after # is fragment)
-
-        The toggle uses fetch() with encodeURIComponent() in JavaScript.
-        """
-        settings_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
-        source = settings_file.read_text()
-
-        # Calendar toggle must use encodeURIComponent (fetch-based) or urlencode (HTMX)
-        has_js_encoding = "encodeURIComponent" in source and "calendars/" in source
-        has_htmx_encoding = "cal.id | urlencode" in source or "cal.id|urlencode" in source
-        assert has_js_encoding or has_htmx_encoding, (
-            "Calendar toggle URL must encode the calendar ID. "
-            "Use encodeURIComponent() in fetch or {{ cal.id | urlencode }} in HTMX. "
-            "Without this, calendar IDs containing # or @ characters will break."
-        )
 
     def test_calendar_toggle_endpoint_registered(self):
         """Verify the calendar toggle endpoint exists."""
