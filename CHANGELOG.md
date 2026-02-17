@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.4 — 2026-02-18
+
+### Changed
+- Switched Railway builder from nixpacks back to railpack (root `package.json` with Playwright was the actual issue, now deleted)
+- Removed `nixpacks.toml` — railpack auto-detects Python + Node.js from `pyproject.toml` and `frontend/package.json`
+
+---
+
 ## v0.48.3 — 2026-02-18
 
 ### Fixed
