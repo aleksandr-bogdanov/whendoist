@@ -30,12 +30,9 @@
         <span class="complete-check" aria-hidden="true">✓</span>
     </button>
     <div class="task-content">
-        {% if task_item.parent_name %}
-        <span class="task-breadcrumb">{% if encryption_enabled %}🔒{% else %}{{ task_item.parent_name }} →{% endif %}</span>
-        {% endif %}
         <span class="task-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
-        {% if task_item.subtask_count %}
-        <span class="subtask-badge">{{ task_item.subtask_count }} subtask{{ 's' if task_item.subtask_count > 1 else '' }}</span>
+        {% if task_item.subtask_count and not task.parent_id %}
+        <span class="subtask-badge">{{ task_item.subtask_count }}</span>
         {% endif %}
         {% if task.is_recurring %}
         {% set sched_date = task_item.next_occurrence or task.scheduled_date %}
@@ -82,6 +79,24 @@
         <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="/static/img/icons/ui-icons.svg#menu-dots-stroke"/></svg></button>
     </span>
 </div>
+{# ── Subtask container (only for parent tasks with children) ── #}
+{% if task_item.subtask_count > 0 and not task.parent_id %}
+<div class="subtask-container" data-parent-id="{{ task.id }}">
+    <button class="expand-toggle" aria-expanded="true" aria-label="Toggle subtasks">
+        <svg class="chevron-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 2 8 6 4 10"/></svg>
+        <span class="subtask-summary">{{ task_item.subtask_count }} subtask{{ 's' if task_item.subtask_count > 1 else '' }}</span>
+    </button>
+    <div class="subtask-list">
+        {% for sub in task_item.subtasks %}
+        {{ render_task_item(sub, today, encryption_enabled) }}
+        {% endfor %}
+        <div class="add-task-row add-subtask-row" data-parent-id="{{ task.id }}">
+            <span class="add-task-icon">+</span>
+            <span class="add-task-text">Add subtask</span>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endmacro %}
 
 {# ── Plan My Day contextual banner ── #}
@@ -169,3 +184,45 @@
     </div>
 </details>
 {% endif %}
+
+{# ── Expand/collapse JavaScript ── #}
+<script>
+(function() {
+    var STORAGE_KEY = 'subtask-collapsed';
+
+    function getCollapsedState() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+        catch (e) { return {}; }
+    }
+
+    // Restore collapsed state on load
+    document.querySelectorAll('.expand-toggle').forEach(function(toggle) {
+        var container = toggle.closest('.subtask-container');
+        if (!container) return;
+        var parentId = container.dataset.parentId;
+        var state = getCollapsedState();
+        if (state[parentId]) {
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    // Toggle on click
+    document.addEventListener('click', function(e) {
+        var toggle = e.target.closest('.expand-toggle');
+        if (!toggle) return;
+        e.preventDefault();
+        var expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        var container = toggle.closest('.subtask-container');
+        if (!container) return;
+        var parentId = container.dataset.parentId;
+        var state = getCollapsedState();
+        if (expanded) {
+            state[parentId] = true;
+        } else {
+            delete state[parentId];
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    });
+})();
+</script>

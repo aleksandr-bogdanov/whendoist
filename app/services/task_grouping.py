@@ -9,6 +9,7 @@ sorted by date.
 
 v0.15.0: Extracted from app/routers/pages.py
 v0.33.1: Hardcode section defaults, flatten scheduled/completed sections
+v0.46.2: Subtask containers — subtasks nested under parents, not flat
 """
 
 import contextlib
@@ -36,7 +37,7 @@ def build_native_task_item(
     task: Task,
     next_instances: dict[int, dict] | None = None,
     instance_completed_at: datetime | None = None,
-    subtask_count: int = 0,
+    subtask_count: int | None = None,
 ) -> TaskItem:
     """
     Create a task item dict from native Task model.
@@ -45,7 +46,7 @@ def build_native_task_item(
         task: The task to build item for
         next_instances: Dict of task_id -> {date, id} for recurring tasks
         instance_completed_at: For recurring tasks, the completion time of today's instance
-        subtask_count: Number of subtasks this task has (for parent badge)
+        subtask_count: Number of subtasks (None = auto-detect from eager-loaded relationship)
 
     Returns:
         Dict with task metadata suitable for template rendering
@@ -80,6 +81,10 @@ def build_native_task_item(
     if "subtasks" in sa_inspect(task).dict:
         subtasks = [build_native_task_item(s, next_instances) for s in (task.subtasks or [])]
 
+    # Derive subtask_count from eagerly loaded subtasks if not explicitly provided
+    if subtask_count is None:
+        subtask_count = len(subtasks)
+
     return {
         "task": task,
         "clarity_display": clarity_display(clarity),
@@ -99,13 +104,14 @@ def group_tasks_by_domain(
     next_instances: dict[int, dict] | None = None,
     today_instance_completions: dict[int, datetime] | None = None,
     user_prefs: UserPreferences | None = None,
-    subtask_counts: dict[int, int] | None = None,
 ) -> GroupedTasks:
     """
     Group tasks by domain with flat scheduled/completed sections.
 
     Active (unscheduled, pending) tasks are grouped by domain.
     Scheduled and completed tasks are collected into flat cross-domain lists.
+    Subtasks are nested under their parent via eager-loaded relationships,
+    not included as flat entries.
 
     Args:
         tasks: List of tasks to group
@@ -113,7 +119,6 @@ def group_tasks_by_domain(
         next_instances: Dict of task_id -> next instance date for recurring tasks
         today_instance_completions: Dict of task_id -> completed_at for today's recurring instances
         user_prefs: User preferences for filtering/sorting
-        subtask_counts: Dict of task_id -> subtask count
 
     Returns:
         Dict with 'domain_groups', 'scheduled_tasks', 'completed_tasks'
@@ -133,6 +138,10 @@ def group_tasks_by_domain(
         return task.status == "completed" or task.completed_at is not None or bool(instance_completed_at)
 
     for task in tasks:
+        # Skip subtasks — they appear nested under their parent container
+        if task.parent_id is not None:
+            continue
+
         instance_completed_at = today_instance_completions.get(task.id) if today_instance_completions else None
         is_scheduled = task.scheduled_date is not None
         is_task_completed = _is_completed(task, instance_completed_at)
@@ -144,8 +153,8 @@ def group_tasks_by_domain(
             if task.is_recurring and hide_recurring_after and instance_completed_at:
                 continue
 
-        count = subtask_counts.get(task.id, 0) if subtask_counts else 0
-        task_item = build_native_task_item(task, next_instances, instance_completed_at, subtask_count=count)
+        # subtask_count derived from eagerly loaded subtasks (None = auto-detect)
+        task_item = build_native_task_item(task, next_instances, instance_completed_at)
 
         # Route into the correct bucket
         if is_task_completed:

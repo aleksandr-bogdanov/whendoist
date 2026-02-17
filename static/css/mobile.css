@@ -898,33 +898,16 @@ img, a {
         line-height: 1.3;
     }
 
-    /* Two-line layout for child tasks (show parent breadcrumb above task name).
-       Uses flex-wrap so breadcrumb is line 1, task-text + due-date share line 2. */
-    .task-item:has(.task-breadcrumb) .task-content {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        align-items: baseline !important;
-        gap: 1px 4px !important;
+    /* ── Subtask container — mobile overrides ── */
+    .subtask-container {
+        margin-left: 8px;
+        padding-left: 8px;
+        border-left-width: 1.5px;
     }
 
-    .task-item:has(.task-breadcrumb) .task-breadcrumb {
-        width: 100%; /* Forces line break after breadcrumb */
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: normal !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        flex-shrink: 1 !important;
-        max-width: 100%;
-        opacity: 0.6;
-        line-height: 1.2;
-    }
-
-    .task-item:has(.task-breadcrumb) .task-text {
-        line-height: 1.2;
+    .expand-toggle {
+        min-height: 44px;
+        padding: 8px 12px;
     }
 
     /* Due date inline and smaller */

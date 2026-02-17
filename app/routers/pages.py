@@ -165,23 +165,16 @@ async def dashboard(
     # Note: Instance materialization is now handled by background task (v0.14.0)
     # No longer blocking request here
 
-    # Get domains and tasks (exclude inbox/thoughts - tasks without domain)
-    # Include both pending and completed tasks so completed ones show dimmed
-    # Flat view: load all tasks (parents + subtasks) for hierarchy display
+    # Get domains and top-level tasks with subtasks eagerly loaded
+    # Subtasks are nested under parents, not shown as flat entries
     domains = await task_service.get_domains()
     tasks = await task_service.get_tasks(
         status=None,
-        top_level_only=False,
-        include_subtasks=False,
+        top_level_only=True,
+        include_subtasks=True,
         has_domain=True,
         exclude_statuses=["archived"],
     )
-
-    # Compute subtask counts for parent task badges
-    subtask_counts: dict[int, int] = {}
-    for task in tasks:
-        if task.parent_id:
-            subtask_counts[task.parent_id] = subtask_counts.get(task.parent_id, 0) + 1
 
     # Get next occurrence for each recurring task (date + instance ID for completion)
     next_instances: dict[int, dict] = {}
@@ -198,9 +191,7 @@ async def dashboard(
             if inst.status == "completed" and inst.completed_at:
                 today_instance_completions[inst.task_id] = inst.completed_at
 
-    grouped = group_tasks_by_domain(
-        tasks, domains, next_instances, today_instance_completions, user_prefs, subtask_counts
-    )
+    grouped = group_tasks_by_domain(tasks, domains, next_instances, today_instance_completions, user_prefs)
 
     # Get scheduled tasks for calendar display
     # Note: Redefine start_date here (was used above for instance fetching)
@@ -435,21 +426,15 @@ async def task_list_partial(
     # Note: Instance materialization is now handled by background task (v0.14.0)
     # No longer blocking request here
 
-    # Get domains and tasks - flat view with hierarchy metadata
+    # Get domains and top-level tasks with subtasks eagerly loaded
     domains = await task_service.get_domains()
     tasks = await task_service.get_tasks(
         status=None,
-        top_level_only=False,
-        include_subtasks=False,
+        top_level_only=True,
+        include_subtasks=True,
         has_domain=True,
         exclude_statuses=["archived"],
     )
-
-    # Compute subtask counts for parent task badges
-    subtask_counts: dict[int, int] = {}
-    for task in tasks:
-        if task.parent_id:
-            subtask_counts[task.parent_id] = subtask_counts.get(task.parent_id, 0) + 1
 
     # Get next occurrence for each recurring task (date + instance ID for completion)
     next_instances: dict[int, dict] = {}
@@ -466,9 +451,7 @@ async def task_list_partial(
             if inst.status == "completed" and inst.completed_at:
                 today_instance_completions[inst.task_id] = inst.completed_at
 
-    grouped = group_tasks_by_domain(
-        tasks, domains, next_instances, today_instance_completions, user_prefs, subtask_counts
-    )
+    grouped = group_tasks_by_domain(tasks, domains, next_instances, today_instance_completions, user_prefs)
 
     return render_template(
         request,
@@ -516,11 +499,8 @@ async def task_item_partial(
             if inst.task_id == task.id and inst.status == "completed" and inst.completed_at:
                 instance_completed_at = inst.completed_at
 
-    # Subtask count
-    subtasks = await task_service.get_tasks(parent_id=task_id, exclude_statuses=["archived"])
-    subtask_count = len(subtasks)
-
-    task_item = build_native_task_item(task, next_instances, instance_completed_at, subtask_count)
+    # subtask_count derived from eagerly loaded task.subtasks (via get_task)
+    task_item = build_native_task_item(task, next_instances, instance_completed_at)
 
     encryption_ctx = await get_encryption_context(db, user.id)
 

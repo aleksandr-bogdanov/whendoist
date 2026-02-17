@@ -392,3 +392,73 @@ class TestBuildNativeTaskItem:
         item = build_native_task_item(loaded_child)
 
         assert item["parent_name"] == "Parent Task"
+
+    async def test_subtask_count_auto_detected_from_eager_loaded(
+        self, db_session: AsyncSession, test_user: User, test_domain: Domain
+    ):
+        """When subtask_count=None, count is derived from eagerly loaded subtasks."""
+        parent = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Parent Task",
+        )
+        db_session.add(parent)
+        await db_session.flush()
+
+        for i in range(3):
+            child = Task(
+                user_id=test_user.id,
+                domain_id=test_domain.id,
+                title=f"Child {i}",
+                parent_id=parent.id,
+            )
+            db_session.add(child)
+        await db_session.flush()
+
+        # Eagerly load subtasks
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        result = await db_session.execute(select(Task).where(Task.id == parent.id).options(selectinload(Task.subtasks)))
+        loaded_parent = result.scalar_one()
+
+        item = build_native_task_item(loaded_parent)
+
+        assert item["subtask_count"] == 3
+        assert len(item["subtasks"]) == 3
+
+
+class TestGroupTasksFilterSubtasks:
+    """Tests for group_tasks_by_domain filtering out subtasks."""
+
+    async def test_subtasks_not_in_flat_list(self, db_session: AsyncSession, test_user: User, test_domain: Domain):
+        """Subtasks (tasks with parent_id) are skipped by group_tasks_by_domain."""
+        from app.services.task_grouping import group_tasks_by_domain
+
+        parent = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Parent",
+            status="pending",
+        )
+        db_session.add(parent)
+        await db_session.flush()
+
+        child = Task(
+            user_id=test_user.id,
+            domain_id=test_domain.id,
+            title="Child",
+            parent_id=parent.id,
+            status="pending",
+        )
+        db_session.add(child)
+        await db_session.flush()
+
+        result = group_tasks_by_domain([parent, child], [test_domain])
+
+        # Only the parent should appear in domain groups
+        all_tasks = []
+        for group in result["domain_groups"]:
+            all_tasks.extend(group["tasks"])
+        assert len(all_tasks) == 1
+        assert all_tasks[0]["task"].title == "Parent"

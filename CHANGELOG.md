@@ -7,6 +7,19 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.46.2 — 2026-02-17
+
+### Added
+- Expand/collapse subtask containers: parent tasks render as collapsible groups with nested children
+- Subtasks only appear under their parent container, not in flat Scheduled/Completed sections
+- Expand/collapse state persisted in localStorage per parent task ID
+- Subtask count badge on parent tasks derived from eager-loaded relationship (no separate query)
+- "Add subtask" row inside each subtask container (wired in PR 3)
+
+### Removed
+- Breadcrumb display (`parent name ->`) for subtasks — replaced by visual nesting
+- External `subtask_counts` dict — subtask count now auto-detected from eager-loaded data
+
 ## v0.46.1 — 2026-02-17
 
 ### Added
