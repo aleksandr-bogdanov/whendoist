@@ -13,8 +13,7 @@ Coverage:
 - Task visibility filtering (retention window, show/hide toggles)
 
 Note: These tests verify SERVER-SIDE sorting only. Client-side sorting
-(column header clicks) is tested in test_js_module_contract.py and
-e2e/test_task_sorting_e2e.py.
+is handled by the React SPA (frontend/src/components/dashboard/).
 
 See tests/README.md for full test architecture.
 

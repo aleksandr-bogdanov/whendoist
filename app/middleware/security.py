@@ -20,7 +20,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Content Security Policy
-        # Note: 'unsafe-inline' required for ~45 onclick handlers in templates.
+        # Note: 'unsafe-inline' kept for compatibility with inline PWA viewport script.
         # Tracked for nonce-based CSP refactor in Post-v1.0 Backlog.
         csp = (
             "default-src 'self'; "

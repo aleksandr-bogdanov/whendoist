@@ -49,7 +49,7 @@ def build_native_task_item(
         subtask_count: Number of subtasks (None = auto-detect from eager-loaded relationship)
 
     Returns:
-        Dict with task metadata suitable for template rendering
+        Dict with task metadata suitable for API response rendering
     """
     # Map clarity string to Clarity enum for display
     clarity = None

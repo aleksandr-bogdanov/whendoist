@@ -7,9 +7,8 @@ Implements the Synchronizer Token Pattern:
 3. Exempt paths for OAuth callbacks (which have their own state protection)
 
 Token delivery:
-- Template context via `csrf_token` variable
-- Meta tag in base.html: <meta name="csrf-token" content="...">
-- JavaScript reads from meta tag and sends as X-CSRF-Token header
+- Session cookie (auto-generated per session)
+- React SPA reads token via GET /api/v1/csrf and sends as X-CSRF-Token header
 
 v0.24.0: Security Hardening
 """
@@ -69,7 +68,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if "session" not in request.scope:
             return await call_next(request)
 
-        # Always ensure a CSRF token exists in session (for template rendering)
+        # Always ensure a CSRF token exists in session
         get_csrf_token(request)
 
         # Only validate on protected methods
