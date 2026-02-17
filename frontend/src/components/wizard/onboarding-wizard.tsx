@@ -320,7 +320,7 @@ function TodoistStep() {
                     queryClient.invalidateQueries({
                       queryKey: getListDomainsApiV1DomainsGetQueryKey(),
                     });
-                    toast.success(`Imported ${data.tasks_imported} tasks`);
+                    toast.success(`Imported ${data.tasks_created} tasks`);
                     setShowPreview(false);
                   },
                 },

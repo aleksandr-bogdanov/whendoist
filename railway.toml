@@ -1,5 +1,7 @@
 [build]
 builder = "railpack"
+# Build React SPA frontend before the Python app starts
+buildCommand = "cd frontend && npm ci && npm run build"
 
 [deploy]
 # Run migrations before starting the app

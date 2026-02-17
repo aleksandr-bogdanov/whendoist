@@ -7,6 +7,23 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.4 — 2026-02-17
+
+### Added
+- FastAPI SPA serving: catch-all route serves React app's `index.html` for client-side routing
+- SPA static asset mounting (`/assets/*`, `/icons/*`, `/manifest.webmanifest`, `/registerSW.js`)
+- Service worker fallback: prefers SPA service worker (`frontend/dist/sw.js`) over legacy
+- iOS PWA meta tags: apple-touch-icon, apple-mobile-web-app-capable, status bar style
+- Inline viewport fix script in `<head>`: sets `--app-height` from `screen.height` for iOS PWA
+- PWA icons copied to `frontend/public/icons/` (app icons, maskable icons, apple-touch-icons)
+- Enhanced PWA manifest: shortcuts, maskable icons, categories, orientation, start_url, scope
+- Railway build command for frontend (`cd frontend && npm ci && npm run build`)
+
+### Fixed
+- TypeScript error: `tasks_imported` → `tasks_created` in settings and wizard import success toast
+
+---
+
 ## v0.47.3 — 2026-02-17
 
 ### Added
