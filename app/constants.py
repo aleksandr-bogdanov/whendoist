@@ -73,8 +73,8 @@ class RetentionDays(IntEnum):
 # =============================================================================
 # Crypto Constants
 # =============================================================================
-# These mirror the values in static/js/crypto.js for documentation purposes.
-# The authoritative values are in the JS file (client-side encryption).
+# These constants are used for server-side validation of client-side encryption.
+# The authoritative client-side implementation is in frontend/src/lib/crypto.ts.
 
 PBKDF2_ITERATIONS = 600_000  # 2024 OWASP recommendation
 

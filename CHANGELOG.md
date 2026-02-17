@@ -7,6 +7,22 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.2 — 2026-02-18
+
+### Added
+- Frontend CI job: TypeScript type-checking, Biome lint, and production build in GitHub Actions
+- Frontend commands and conventions section in CLAUDE.md
+- React + TypeScript tech stack in README.md with frontend setup instructions
+
+### Changed
+- Updated stale comments referencing deleted Jinja2 templates and vanilla JS modules
+- Updated CSP middleware comment to reflect React SPA architecture
+
+### Removed
+- `jinja2` Python dependency (no longer used after React SPA migration)
+
+---
+
 ## v0.48.1 — 2026-02-18
 
 ### Added

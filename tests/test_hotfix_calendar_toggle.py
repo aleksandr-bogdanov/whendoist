@@ -4,11 +4,8 @@ Hotfix Tests - Calendar Toggle URL Encoding.
 This test verifies the fix for calendar toggles in Settings not working.
 
 Bug: Google Calendar IDs often contain special characters (e.g., # @ in IDs like
-"en.usa#holiday@group.v.calendar.google.com"). When rendered in the template
-without URL encoding, the # character is treated as a URL fragment delimiter,
-causing the browser to only send the portion before #, breaking the toggle.
-
-Fix: Use Jinja2's urlencode filter in the hx-post URL.
+"en.usa#holiday@group.v.calendar.google.com"). The API must handle URL-encoded
+calendar IDs correctly so the # character isn't treated as a URL fragment.
 
 Test Category: Contract
 Related Issues: Settings > Google Calendars toggle doesn't work

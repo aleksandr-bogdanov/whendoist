@@ -33,10 +33,16 @@ git clone https://github.com/aleksandr-bogdanov/whendoist.git
 cd whendoist
 uv sync
 cp .env.example .env   # Configure OAuth credentials
-just db-up && just dev
+
+# Frontend
+cd frontend && npm install && cd ..
+
+# Start
+just db-up && just dev           # Backend at :8000
+cd frontend && npm run dev       # Frontend dev server at :5173 (proxies API to :8000)
 ```
 
-Open http://localhost:8000 and connect Google Calendar.
+Open http://localhost:5173 (dev) or http://localhost:8000 (production build) and connect Google Calendar.
 
 See the [Deployment Guide](docs/DEPLOYMENT.md) for production setup.
 
@@ -151,10 +157,18 @@ See [Performance Guide](docs/PERFORMANCE.md) for optimization details.
 ## 🛠 Development
 
 ```bash
+# Backend
 just dev      # Dev server with hot reload
 just test     # Run pytest
 just lint     # Run ruff
 just fmt      # Format code
+
+# Frontend
+cd frontend && npm run dev          # Vite dev server with HMR
+cd frontend && npm run build        # Production build
+cd frontend && npx orval            # Regenerate API types from OpenAPI spec
+cd frontend && npx biome check .    # Lint + format check
+cd frontend && npx tsc --noEmit     # TypeScript type check
 ```
 
 ### Claude Code Skills
@@ -173,9 +187,10 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | Layer | Technology |
 |-------|------------|
 | Backend | Python 3.13, FastAPI, SQLAlchemy 2.0 (async) |
-| Frontend | HTMX, Jinja2, Pico CSS, ApexCharts |
+| Frontend | React 19, TypeScript, TanStack Router/Query, Tailwind CSS v4, shadcn/ui |
+| Build | Vite 7, Biome, orval (OpenAPI codegen) |
 | Database | PostgreSQL with asyncpg |
-| Tooling | uv, ruff, pytest |
+| Tooling | uv, ruff, pytest, Biome |
 
 ---
 
@@ -199,6 +214,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with content-hash dedup, storage tradeoffs |
 | [In-Place Mutations](docs/IN-PLACE-MUTATIONS.md) | TaskMutations module — no-reload DOM updates for task operations |
 | [PWA Viewport Fix](docs/PWA-VIEWPORT-FIX.md) | iOS viewport shrinking bug from overflow:hidden — diagnosis and workaround |
+| [React SPA Migration](docs/plans/2026-02-17-react-spa-migration.md) | Migration plan from Jinja2/HTMX to React + TypeScript SPA |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |
@@ -222,5 +238,5 @@ Alex Bogdanov — [alex@bogdanov.wtf](mailto:alex@bogdanov.wtf)
 ---
 
 <p align="center">
-  <sub>Built with FastAPI, HTMX, and too much coffee ☕</sub>
+  <sub>Built with FastAPI, React, and too much coffee ☕</sub>
 </p>
