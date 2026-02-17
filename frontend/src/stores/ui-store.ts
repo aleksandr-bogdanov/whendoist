@@ -5,6 +5,7 @@ type Theme = "light" | "dark" | "system";
 type EnergyLevel = 1 | 2 | 3;
 type SortField = "impact" | "duration" | "clarity";
 type SortDirection = "asc" | "desc";
+type MobileTab = "tasks" | "calendar";
 
 interface UIState {
   theme: Theme;
@@ -16,6 +17,9 @@ interface UIState {
   expandedDomains: Set<number>;
   expandedSubtasks: Set<number>;
   selectedTaskId: number | null;
+  mobileTab: MobileTab;
+  calendarHourHeight: number;
+  calendarCenterDate: string;
 }
 
 interface UIActions {
@@ -27,6 +31,9 @@ interface UIActions {
   toggleExpandedDomain: (domainId: number) => void;
   toggleExpandedSubtask: (taskId: number) => void;
   selectTask: (taskId: number | null) => void;
+  setMobileTab: (tab: MobileTab) => void;
+  setCalendarHourHeight: (height: number) => void;
+  setCalendarCenterDate: (date: string) => void;
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -41,6 +48,9 @@ export const useUIStore = create<UIState & UIActions>()(
       expandedDomains: new Set<number>(),
       expandedSubtasks: new Set<number>(),
       selectedTaskId: null,
+      mobileTab: "tasks",
+      calendarHourHeight: 60,
+      calendarCenterDate: new Date().toISOString().split("T")[0],
 
       setTheme: (theme) => set({ theme }),
       setEnergyLevel: (level) => set({ energyLevel: level }),
@@ -80,12 +90,17 @@ export const useUIStore = create<UIState & UIActions>()(
         }),
 
       selectTask: (taskId) => set({ selectedTaskId: taskId }),
+      setMobileTab: (tab) => set({ mobileTab: tab }),
+      setCalendarHourHeight: (height) =>
+        set({ calendarHourHeight: Math.max(30, Math.min(100, height)) }),
+      setCalendarCenterDate: (date) => set({ calendarCenterDate: date }),
     }),
     {
       name: "whendoist-ui",
       partialize: (state) => ({
         theme: state.theme,
         energyLevel: state.energyLevel,
+        calendarHourHeight: state.calendarHourHeight,
       }),
     },
   ),
