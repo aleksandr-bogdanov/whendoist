@@ -1323,7 +1323,7 @@
         }
         autoScrollGrid = grid;
         var rect = grid.getBoundingClientRect();
-        var EDGE = 100;
+        var EDGE = 200;
         var distFromTop = e.clientY - rect.top;
         var distFromBottom = rect.bottom - e.clientY;
 
