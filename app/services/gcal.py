@@ -182,6 +182,10 @@ class GoogleCalendarClient:
             # Rollback to release lock
             await self.db.rollback()
             raise
+        except Exception:
+            # DB errors (e.g. statement timeout) — rollback to keep session usable
+            await self.db.rollback()
+            raise
 
     async def _ensure_valid_token(self) -> None:
         """
@@ -225,6 +229,10 @@ class GoogleCalendarClient:
                 self.google_token.expires_at = datetime.now(UTC) + timedelta(seconds=tokens["expires_in"])
             await self.db.commit()
         except TokenRefreshError:
+            await self.db.rollback()
+            raise
+        except Exception:
+            # DB errors (e.g. statement timeout) — rollback to keep session usable
             await self.db.rollback()
             raise
 
