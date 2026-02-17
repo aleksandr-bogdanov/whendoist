@@ -7,6 +7,22 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.1 — 2026-02-17
+
+### Added
+- orval API codegen: 82 TypeScript model types and TanStack Query hooks for all endpoints
+- E2E encryption module port (`crypto.ts`): PBKDF2 key derivation, AES-256-GCM encrypt/decrypt, batch operations
+- WebAuthn passkey module port (`passkey.ts`): PRF-based key wrapping, registration/authentication flows
+- Zustand stores: `crypto-store` (encryption state + derived key), `ui-store` (theme, energy, sort, view preferences)
+- `use-crypto` hook: transparent decrypt-on-fetch / encrypt-on-mutate integration with TanStack Query
+
+### Changed
+- Migrated biome.json to v2.4.2 schema
+- Fixed `api-client.ts` baseURL to empty string (prevents double-prefixing with orval paths)
+- Reduced TanStack Query staleTime from 60s to 30s
+
+---
+
 ## v0.47.0 — 2026-02-17
 
 ### Added
