@@ -1383,7 +1383,8 @@
         }
 
         const element = createScheduledTaskElement(
-            task.taskId, task.content, task.duration, hour, minutes, task.impact
+            task.taskId, task.content, task.duration, hour, minutes, task.impact,
+            '0', '', '', day
         );
         hourSlot.appendChild(element);
 
