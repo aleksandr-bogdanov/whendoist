@@ -7,6 +7,18 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.0 — 2026-02-17
+
+### Added
+- React SPA frontend scaffold (`frontend/` directory)
+- Vite 6 + React 19 + TypeScript (strict mode) with React Compiler
+- TanStack Router (file-based routing) + TanStack Query v5
+- Zustand, Tailwind CSS v4, shadcn/ui (20 components), Biome
+- orval config for OpenAPI codegen, vite-plugin-pwa
+- Motion, dnd-kit, @use-gesture/react, Zod, lucide-react, sonner, axios
+
+---
+
 ## v0.46.7 — 2026-02-17
 
 ### Improved
