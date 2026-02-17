@@ -436,6 +436,7 @@
 
     /**
      * Move a task element to the completed section.
+     * If the task is a parent (has subtasks), also moves child task elements.
      * @param {HTMLElement} taskEl
      */
     function moveTaskToCompleted(taskEl) {
@@ -467,8 +468,23 @@
         var sectionTasks = completedSection.querySelector('.section-tasks');
         if (!sectionTasks) return;
 
-        // Move element
+        // Collect child task elements before moving the parent
+        var taskId = taskEl.dataset.taskId;
+        var childEls = taskId
+            ? Array.from(document.querySelectorAll('.task-item[data-parent-id="' + taskId + '"]'))
+            : [];
+
+        // Move parent element
         sectionTasks.prepend(taskEl);
+
+        // Move child elements right after the parent
+        childEls.forEach(function(childEl) {
+            var childSource = childEl.closest('.project-group') || childEl.closest('.section-group');
+            taskEl.after(childEl);
+            if (childSource && childSource !== sourceSection) {
+                updateSectionCount(childSource);
+            }
+        });
 
         // Update counts
         updateSectionCount(sourceSection);

@@ -356,13 +356,25 @@ class TaskService:
         return task
 
     async def complete_task(self, task_id: int) -> Task | None:
-        """Mark a non-recurring task as completed."""
+        """Mark a non-recurring task as completed.
+
+        If the task has subtasks (is a container), cascades completion
+        to all pending children. Returns the task with subtasks loaded.
+        """
         task = await self.get_task(task_id)
         if not task:
             return None
 
+        now = datetime.now(UTC)
         task.status = "completed"
-        task.completed_at = datetime.now(UTC)
+        task.completed_at = now
+
+        # Cascade: complete all pending subtasks
+        for subtask in task.subtasks:
+            if subtask.status != "completed":
+                subtask.status = "completed"
+                subtask.completed_at = now
+
         await self.db.flush()
         return task
 

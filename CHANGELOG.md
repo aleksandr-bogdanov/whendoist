@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.46.1 — 2026-02-17
+
+### Added
+- Completion cascade: completing a parent task (container) marks all pending subtasks as completed
+- Uncompleting a parent does NOT uncomplete children (intentional — child work is preserved)
+- Cascaded subtasks are unsynced from Google Calendar when parent is completed
+- Frontend cascades completion visually to all child elements and removes their calendar cards
+- `moveTaskToCompleted` now moves child task elements alongside the parent
+
 ## v0.46.0 — 2026-02-17
 
 ### Added
