@@ -675,8 +675,8 @@
             }
         });
 
-        // Remove from DOM after animation
-        setTimeout(() => {
+        // Remove from DOM after animation (store ID for cancellation)
+        const removalTimeout = setTimeout(() => {
             taskElements.forEach(el => {
                 const dayCalendar = el.closest('.day-calendar');
                 el.remove();
@@ -694,9 +694,11 @@
 
             // Show toast with undo (undo calls restore API)
             Toast.undo(`"${taskTitle}" deleted`, function() {
+                clearTimeout(removalTimeout);
                 restoreTrashDelete(taskId, removedElements);
             }, 'task-' + taskId);
         } catch (error) {
+            clearTimeout(removalTimeout);
             log.error(`Failed to delete task ${taskId}:`, error);
             // Restore elements on failure
             removedElements.forEach(({ el, parent, nextSibling, dayCalendar }) => {
@@ -1588,7 +1590,8 @@
             clone.addEventListener('dragstart', handleDragStart);
             clone.addEventListener('dragend', handleDragEnd);
             hrSlot.appendChild(clone);
-            recalculateOverlaps(hr.closest('.day-calendar'));
+            var cal = hr.closest('.day-calendar');
+            if (cal) recalculateOverlaps(cal);
         });
     }
 
@@ -1603,9 +1606,11 @@
      * @param {string|number} duration - Duration in minutes
      * @param {number} hour - Hour (0-23)
      * @param {number} minutes - Minutes (0, 15, 30, 45)
-     * @param {string} clarity - Clarity level
+     * @param {string} impact - Impact level (1-4)
+     * @param {string} completed - '0' or '1'
      * @param {string} instanceId - Instance ID (for recurring tasks)
      * @param {string} instanceDate - Instance date ISO string (for recurring tasks)
+     * @param {string} scheduledDate - ISO date string for adjacent-day display
      * @returns {HTMLElement} Scheduled task element
      */
     function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, impact = '4', completed = '0', instanceId = '', instanceDate = '', scheduledDate = '') {
@@ -1803,6 +1808,7 @@
 
         // Create date-only task element in the banner
         const tasksContainer = banner.querySelector('.date-only-tasks');
+        if (!tasksContainer) return;
         const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed, instanceId, instanceDate, day);
         tasksContainer.appendChild(el);
 

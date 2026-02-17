@@ -17,9 +17,9 @@
     // Active actions menu reference (for cleanup)
     let activeActionsMenu = null;
 
-    // Pending completion animation timeouts (for undo cancellation)
-    let pendingCompletionTimeout = null;
-    let pendingRefreshTimeout = null;
+    // Pending completion animation timeouts keyed by taskId (for undo cancellation)
+    var pendingCompletionTimeouts = {};
+    var pendingRefreshTimeouts = {};
 
     /**
      * Initialize task completion handlers.
@@ -175,14 +175,14 @@
             var undoCallback = null;
             if (listItemForUndo) {
                 undoCallback = function() {
-                    // Cancel pending animation/refresh
-                    if (pendingCompletionTimeout) {
-                        clearTimeout(pendingCompletionTimeout);
-                        pendingCompletionTimeout = null;
+                    // Cancel pending animation/refresh for this specific task
+                    if (pendingCompletionTimeouts[taskId]) {
+                        clearTimeout(pendingCompletionTimeouts[taskId]);
+                        delete pendingCompletionTimeouts[taskId];
                     }
-                    if (pendingRefreshTimeout) {
-                        clearTimeout(pendingRefreshTimeout);
-                        pendingRefreshTimeout = null;
+                    if (pendingRefreshTimeouts[taskId]) {
+                        clearTimeout(pendingRefreshTimeouts[taskId]);
+                        delete pendingRefreshTimeouts[taskId];
                     }
                     // Restore task visually
                     listItemForUndo.classList.remove('departing');
@@ -243,9 +243,9 @@
                     // Check both frontend flag and API response (instance_id confirms recurring)
                     var isRecurringCompletion = (isRecurring || data.instance_id || listEl.dataset.isRecurring === 'true') && data.completed;
                     if (isRecurringCompletion) {
-                        pendingCompletionTimeout = setTimeout(function() {
+                        pendingCompletionTimeouts[taskId] = setTimeout(function() {
                             listEl.classList.add('departing');
-                            pendingRefreshTimeout = setTimeout(async function() {
+                            pendingRefreshTimeouts[taskId] = setTimeout(async function() {
                                 try {
                                     var resp = await safeFetch('/api/v1/task-item/' + taskId);
                                     var html = await resp.text();
@@ -267,9 +267,9 @@
                             }, 350);
                         }, 250);
                     } else {
-                        pendingCompletionTimeout = setTimeout(function() {
+                        pendingCompletionTimeouts[taskId] = setTimeout(function() {
                             listEl.classList.add('departing');
-                            pendingRefreshTimeout = setTimeout(function() {
+                            pendingRefreshTimeouts[taskId] = setTimeout(function() {
                                 listEl.classList.remove('departing');
                                 if (data.completed) {
                                     TaskMutations.moveTaskToCompleted(listEl);
@@ -851,11 +851,18 @@
                 }, 250);
             }
 
-            // Remove skipped calendar cards after animation
-            document.querySelectorAll('.calendar-item[data-instance-id="' + instanceId + '"]').forEach(function(el) {
+            // Remove skipped calendar cards after animation and recalculate overlaps
+            var skippedCards = document.querySelectorAll('.calendar-item[data-instance-id="' + instanceId + '"]');
+            skippedCards.forEach(function(el) {
+                var dayCal = el.closest('.day-calendar');
                 setTimeout(function() {
                     el.classList.add('departing');
-                    setTimeout(function() { el.remove(); }, 350);
+                    setTimeout(function() {
+                        el.remove();
+                        if (dayCal && typeof recalculateOverlaps === 'function') {
+                            recalculateOverlaps(dayCal);
+                        }
+                    }, 350);
                 }, 600);
             });
         } catch (error) {

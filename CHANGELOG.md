@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.99 — 2026-02-17
+
+### Fixed
+- Trash delete undo race: clicking undo within 350ms no longer causes restored elements to be removed by the pending animation timeout
+- Completion undo with rapid toggles: each task now tracks its own animation timeout, so undoing Task A no longer cancels Task B's animation
+- Null guard in `handleAnytimeDrop` prevents crash when `.date-only-tasks` container is missing
+- Null guard in `syncCardToAdjacentCalendars` prevents crash when `recalculateOverlaps` receives null
+- Skip instance now recalculates calendar overlaps after removing cards
+
 ## v0.45.98 — 2026-02-17
 
 ### Fixed
