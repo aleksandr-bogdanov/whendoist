@@ -759,36 +759,25 @@
             instanceDate,
         }));
 
-        // Set drag image via clone to avoid glitches when hiding the original.
-        // Offset is best-effort — some browsers ignore setDragImage offset.
-        const rect = draggedElement.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left;
-        const offsetY = e.clientY - rect.top;
-        const dragClone = draggedElement.cloneNode(true);
-        dragClone.style.position = 'fixed';
-        dragClone.style.top = '-1000px';
-        dragClone.style.left = '0';
-        dragClone.style.width = rect.width + 'px';
-        dragClone.style.height = rect.height + 'px';
-        dragClone.style.opacity = '0.99';
-        dragClone.style.pointerEvents = 'none';
-        document.body.appendChild(dragClone);
-        e.dataTransfer.setDragImage(dragClone, offsetX, offsetY);
-        setTimeout(() => dragClone.remove(), 0);
-
-        // Add body class to freeze hover states
-        document.body.classList.add('is-dragging');
-
-        // Delay style changes until after browser captures drag image
-        setTimeout(() => {
-            if (draggedElement) {
-                draggedElement.classList.add('dragging');
-                // Hide scheduled/date-only tasks to prevent double display
-                if (isDraggingScheduledTask || isDraggingDateOnlyTask) {
-                    draggedElement.style.visibility = 'hidden';
+        // Use the browser's native drag ghost — it automatically places the
+        // cursor at the grab point, no offset calculation needed.
+        // Delay ALL style changes until the browser has captured the drag image.
+        // Double-rAF waits 2 compositing frames, which is reliable across
+        // browsers. Previous attempts used setTimeout(0) which races with the
+        // compositor — the browser may capture *after* the timeout fires,
+        // picking up visibility:hidden or the collapsed clone.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                if (draggedElement) {
+                    document.body.classList.add('is-dragging');
+                    draggedElement.classList.add('dragging');
+                    // Hide scheduled/date-only tasks to prevent double display
+                    if (isDraggingScheduledTask || isDraggingDateOnlyTask) {
+                        draggedElement.style.visibility = 'hidden';
+                    }
                 }
-            }
-        }, 0);
+            });
+        });
 
         // Show trash bin when dragging
         showTrashBin();
