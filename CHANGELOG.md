@@ -7,10 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.90 — 2026-02-17
+
+### Fixed
+- Drag ghost now follows grab point — replaced unreliable native ghost and clone-based `setDragImage` with a custom drag overlay that follows the cursor via `drag` events. Suppresses native ghost with 1x1 transparent image, renders a clone at the grab offset. Immune to CSS context issues (transform, overflow, compositing layers) that caused all previous approaches to silently fall back to (0,0) offset.
+
 ## v0.45.89 — 2026-02-17
 
 ### Fixed
-- Drag ghost now follows grab point instead of snapping to top-left — removed clone-based `setDragImage` (which browsers silently ignored) in favor of native drag ghost, and replaced `setTimeout(0)` with double-rAF to prevent `visibility:hidden` from racing with drag-image capture
+- (Superseded by v0.45.90) Attempted native drag ghost + double-rAF — worked on debug page but not in actual app CSS context
 
 ## v0.45.88 — 2026-02-17
 

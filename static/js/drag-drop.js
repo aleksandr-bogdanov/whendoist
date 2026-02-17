@@ -87,6 +87,13 @@
     let wasDroppedSuccessfully = false;
     let trashBin = null;
 
+    // Custom drag overlay — replaces unreliable native drag ghost
+    let dragOverlay = null;
+    let dragOverlayOffsetX = 0;
+    let dragOverlayOffsetY = 0;
+    const EMPTY_DRAG_IMG = new Image(1, 1);
+    EMPTY_DRAG_IMG.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
     // ==========================================================================
     // ANIMATED REORDERING
     // ==========================================================================
@@ -370,6 +377,14 @@
         document.querySelectorAll('.day-calendar').forEach(cal => {
             if (cal.querySelectorAll('[data-start-mins]').length > 0) {
                 recalculateOverlaps(cal);
+            }
+        });
+
+        // Move custom drag overlay to follow cursor
+        document.addEventListener('drag', function(e) {
+            if (dragOverlay && e.clientX > 0 && e.clientY > 0) {
+                dragOverlay.style.left = (e.clientX - dragOverlayOffsetX) + 'px';
+                dragOverlay.style.top = (e.clientY - dragOverlayOffsetY) + 'px';
             }
         });
 
@@ -759,25 +774,30 @@
             instanceDate,
         }));
 
-        // Use the browser's native drag ghost — it automatically places the
-        // cursor at the grab point, no offset calculation needed.
-        // Delay ALL style changes until the browser has captured the drag image.
-        // Double-rAF waits 2 compositing frames, which is reliable across
-        // browsers. Previous attempts used setTimeout(0) which races with the
-        // compositor — the browser may capture *after* the timeout fires,
-        // picking up visibility:hidden or the collapsed clone.
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                if (draggedElement) {
-                    document.body.classList.add('is-dragging');
-                    draggedElement.classList.add('dragging');
-                    // Hide scheduled/date-only tasks to prevent double display
-                    if (isDraggingScheduledTask || isDraggingDateOnlyTask) {
-                        draggedElement.style.visibility = 'hidden';
-                    }
-                }
-            });
-        });
+        // Custom drag overlay — suppresses the native ghost (which has
+        // unreliable offset in this app's CSS context) and renders a clone
+        // that follows the cursor via the 'drag' event.
+        const rect = draggedElement.getBoundingClientRect();
+        dragOverlayOffsetX = e.clientX - rect.left;
+        dragOverlayOffsetY = e.clientY - rect.top;
+
+        e.dataTransfer.setDragImage(EMPTY_DRAG_IMG, 0, 0);
+
+        dragOverlay = draggedElement.cloneNode(true);
+        dragOverlay.style.cssText =
+            'position:fixed;margin:0;pointer-events:none;z-index:99999;' +
+            'opacity:0.9;box-shadow:0 8px 24px rgba(0,0,0,0.3);' +
+            'transition:none;will-change:left,top;' +
+            'left:' + rect.left + 'px;top:' + rect.top + 'px;' +
+            'width:' + rect.width + 'px;height:' + rect.height + 'px;';
+        document.body.appendChild(dragOverlay);
+
+        // Now safe to modify the original immediately — no ghost capture race
+        document.body.classList.add('is-dragging');
+        draggedElement.classList.add('dragging');
+        if (isDraggingScheduledTask || isDraggingDateOnlyTask) {
+            draggedElement.style.visibility = 'hidden';
+        }
 
         // Show trash bin when dragging
         showTrashBin();
@@ -794,6 +814,12 @@
      * Handle drag end - unschedule if a scheduled task was dropped outside calendar
      */
     async function handleDragEnd(e) {
+        // Remove custom drag overlay
+        if (dragOverlay) {
+            dragOverlay.remove();
+            dragOverlay = null;
+        }
+
         const taskId = draggedTaskId;
         const element = draggedElement;
         const wasScheduledTask = element?.classList.contains('scheduled-task');
