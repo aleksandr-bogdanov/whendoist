@@ -1,19 +1,27 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
 import { CompletedSection } from "@/components/task/completed-section";
 import { ScheduledSection } from "@/components/task/scheduled-section";
 import { TaskList } from "@/components/task/task-list";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { decrypt, looksEncrypted } from "@/lib/crypto";
 import { categorizeTasks, filterByEnergy, groupByDomain, sortTasks } from "@/lib/task-utils";
 import { useCryptoStore } from "@/stores/crypto-store";
 import { useUIStore } from "@/stores/ui-store";
+import { EnergySelector } from "./energy-selector";
+import { FilterBar } from "./filter-bar";
+import { SettingsPanel } from "./settings-panel";
+import { SortControls } from "./sort-controls";
 
 interface TaskPanelProps {
   tasks: AppRoutersTasksTaskResponse[] | undefined;
   domains: DomainResponse[] | undefined;
   isLoading: boolean;
+  onNewTask?: () => void;
+  onQuickAdd?: () => void;
+  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
 async function decryptTasksWithKey(
@@ -60,7 +68,14 @@ async function decryptDomainsWithKey(
   );
 }
 
-export function TaskPanel({ tasks, domains, isLoading }: TaskPanelProps) {
+export function TaskPanel({
+  tasks,
+  domains,
+  isLoading,
+  onNewTask,
+  onQuickAdd,
+  onEditTask,
+}: TaskPanelProps) {
   const { sortField, sortDirection, energyLevel } = useUIStore();
   const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
   const canDecrypt = encryptionEnabled && isUnlocked && derivedKey !== null;
@@ -140,12 +155,43 @@ export function TaskPanel({ tasks, domains, isLoading }: TaskPanelProps) {
   }
 
   return (
-    <ScrollArea className="flex-1">
-      <div className="p-2 sm:p-3 space-y-1">
-        <TaskList groups={pendingGroups} />
-        <ScheduledSection tasks={scheduledTasks} />
-        <CompletedSection tasks={completedTasks} />
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Panel header with controls */}
+      <div className="flex flex-col gap-2 px-2 sm:px-3 py-2 border-b">
+        {/* Top row: energy + actions */}
+        <div className="flex items-center justify-between gap-2">
+          <EnergySelector />
+          <div className="flex items-center gap-1">
+            {onQuickAdd && (
+              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onQuickAdd}>
+                <Plus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Quick</span>
+              </Button>
+            )}
+            {onNewTask && (
+              <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNewTask}>
+                <Plus className="h-3.5 w-3.5" />
+                New Task
+              </Button>
+            )}
+            <SettingsPanel />
+          </div>
+        </div>
+        {/* Bottom row: sort + filter */}
+        <div className="flex items-center justify-between gap-2">
+          <SortControls />
+          <FilterBar />
+        </div>
       </div>
-    </ScrollArea>
+
+      {/* Task list */}
+      <ScrollArea className="flex-1">
+        <div className="p-2 sm:p-3 space-y-1">
+          <TaskList groups={pendingGroups} onEditTask={onEditTask} />
+          <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />
+          <CompletedSection tasks={completedTasks} onEditTask={onEditTask} />
+        </div>
+      </ScrollArea>
+    </div>
   );
 }

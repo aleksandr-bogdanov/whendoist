@@ -1,0 +1,601 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { Loader2, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import type {
+  AppRoutersTasksTaskResponse,
+  DomainResponse,
+  TaskCreate,
+  TaskUpdate,
+} from "@/api/model";
+import {
+  useCreateTaskApiV1TasksPost,
+  useDeleteTaskApiV1TasksTaskIdDelete,
+  useRestoreTaskApiV1TasksTaskIdRestorePost,
+  useUpdateTaskApiV1TasksTaskIdPut,
+} from "@/api/queries/tasks/tasks";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { useCrypto } from "@/hooks/use-crypto";
+import { IMPACT_COLORS } from "@/lib/task-utils";
+import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
+
+const DURATION_PRESETS = [15, 30, 60, 120, 240] as const;
+const IMPACT_OPTIONS = [
+  { value: 1, label: "P1 High" },
+  { value: 2, label: "P2 Mid" },
+  { value: 3, label: "P3 Low" },
+  { value: 4, label: "P4 Min" },
+];
+const CLARITY_OPTIONS = [
+  { value: "autopilot", label: "Autopilot" },
+  { value: "normal", label: "Normal" },
+  { value: "brainstorm", label: "Brainstorm" },
+];
+
+function formatDurationLabel(m: number) {
+  if (m < 60) return `${m}m`;
+  return `${m / 60}h`;
+}
+
+interface TaskEditorProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  task?: AppRoutersTasksTaskResponse | null;
+  domains: DomainResponse[];
+  parentTasks?: AppRoutersTasksTaskResponse[];
+}
+
+export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: TaskEditorProps) {
+  const isEdit = !!task;
+  const queryClient = useQueryClient();
+  const { encryptTaskFields } = useCrypto();
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  // Form state
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [domainId, setDomainId] = useState<string>("none");
+  const [parentId, setParentId] = useState<string>("none");
+  const [impact, setImpact] = useState(4);
+  const [clarity, setClarity] = useState("normal");
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
+  const [customDuration, setCustomDuration] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(null);
+  const [recurrenceStart, setRecurrenceStart] = useState<string | null>(null);
+  const [recurrenceEnd, setRecurrenceEnd] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Populate form when task changes
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title);
+      setDescription(task.description ?? "");
+      setDomainId(task.domain_id != null ? String(task.domain_id) : "none");
+      setParentId(task.parent_id != null ? String(task.parent_id) : "none");
+      setImpact(task.impact);
+      setClarity(task.clarity ?? "normal");
+      setDurationMinutes(task.duration_minutes);
+      setCustomDuration(task.duration_minutes ? String(task.duration_minutes) : "");
+      setDueDate(task.due_date ?? "");
+      setScheduledDate(task.scheduled_date ?? "");
+      setScheduledTime(task.scheduled_time ?? "");
+      setIsRecurring(task.is_recurring);
+      setRecurrenceRule(
+        task.recurrence_rule ? (task.recurrence_rule as unknown as RecurrenceRule) : null,
+      );
+      setRecurrenceStart(task.recurrence_start ?? null);
+      setRecurrenceEnd(task.recurrence_end ?? null);
+    } else {
+      setTitle("");
+      setDescription("");
+      setDomainId("none");
+      setParentId("none");
+      setImpact(4);
+      setClarity("normal");
+      setDurationMinutes(null);
+      setCustomDuration("");
+      setDueDate("");
+      setScheduledDate("");
+      setScheduledTime("");
+      setIsRecurring(false);
+      setRecurrenceRule(null);
+      setRecurrenceStart(null);
+      setRecurrenceEnd(null);
+    }
+    setDirty(false);
+  }, [task]);
+
+  // Focus title on open
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => titleRef.current?.focus(), 100);
+    }
+  }, [open]);
+
+  const createMutation = useCreateTaskApiV1TasksPost();
+  const updateMutation = useUpdateTaskApiV1TasksTaskIdPut();
+  const deleteMutation = useDeleteTaskApiV1TasksTaskIdDelete();
+  const restoreMutation = useRestoreTaskApiV1TasksTaskIdRestorePost();
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  const markDirty = () => setDirty(true);
+
+  const handleClose = () => {
+    if (dirty) {
+      if (!window.confirm("You have unsaved changes. Discard?")) return;
+    }
+    onOpenChange(false);
+  };
+
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+  };
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+
+    const encrypted = await encryptTaskFields({
+      title: title.trim(),
+      description: description.trim() || null,
+    });
+
+    const parsedDomainId = domainId !== "none" ? Number(domainId) : null;
+    const parsedParentId = parentId !== "none" ? Number(parentId) : null;
+
+    if (isEdit && task) {
+      const data: TaskUpdate = {
+        title: encrypted.title,
+        description: encrypted.description,
+        domain_id: parsedDomainId,
+        parent_id: parsedParentId,
+        impact,
+        clarity,
+        duration_minutes: durationMinutes,
+        due_date: dueDate || null,
+        scheduled_date: scheduledDate || null,
+        scheduled_time: scheduledTime || null,
+        is_recurring: isRecurring,
+        recurrence_rule: recurrenceRule as TaskUpdate["recurrence_rule"],
+        recurrence_start: recurrenceStart,
+        recurrence_end: recurrenceEnd,
+      };
+
+      updateMutation.mutate(
+        { taskId: task.id, data },
+        {
+          onSuccess: () => {
+            toast.success("Task updated");
+            invalidateQueries();
+            setDirty(false);
+            onOpenChange(false);
+          },
+          onError: () => toast.error("Failed to update task"),
+        },
+      );
+    } else {
+      const data: TaskCreate = {
+        title: encrypted.title!,
+        description: encrypted.description,
+        domain_id: parsedDomainId,
+        parent_id: parsedParentId,
+        impact,
+        clarity,
+        duration_minutes: durationMinutes,
+        due_date: dueDate || null,
+        scheduled_date: scheduledDate || null,
+        scheduled_time: scheduledTime || null,
+        is_recurring: isRecurring,
+        recurrence_rule: recurrenceRule as TaskCreate["recurrence_rule"],
+        recurrence_start: recurrenceStart,
+        recurrence_end: recurrenceEnd,
+      };
+
+      createMutation.mutate(
+        { data },
+        {
+          onSuccess: () => {
+            toast.success("Task created");
+            invalidateQueries();
+            setDirty(false);
+            onOpenChange(false);
+          },
+          onError: () => toast.error("Failed to create task"),
+        },
+      );
+    }
+  };
+
+  const handleDelete = () => {
+    if (!task) return;
+    deleteMutation.mutate(
+      { taskId: task.id },
+      {
+        onSuccess: () => {
+          toast.success("Task deleted", {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                restoreMutation.mutate(
+                  { taskId: task.id },
+                  {
+                    onSuccess: () => {
+                      toast.success("Task restored");
+                      invalidateQueries();
+                    },
+                  },
+                );
+              },
+            },
+          });
+          invalidateQueries();
+          setShowDeleteConfirm(false);
+          onOpenChange(false);
+        },
+        onError: () => toast.error("Failed to delete task"),
+      },
+    );
+  };
+
+  const handleDurationPreset = (m: number) => {
+    setDurationMinutes(durationMinutes === m ? null : m);
+    setCustomDuration(durationMinutes === m ? "" : String(m));
+    markDirty();
+  };
+
+  const handleCustomDuration = (val: string) => {
+    setCustomDuration(val);
+    const n = Number(val);
+    setDurationMinutes(n > 0 && n <= 1440 ? n : null);
+    markDirty();
+  };
+
+  return (
+    <>
+      <Sheet open={open} onOpenChange={handleClose}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto" showCloseButton>
+          <SheetHeader>
+            <SheetTitle>{isEdit ? "Edit Task" : "New Task"}</SheetTitle>
+            <SheetDescription>
+              {isEdit
+                ? "Update the task details below."
+                : "Fill in the details to create a new task."}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-5 px-4 pb-4">
+            {/* Title */}
+            <div className="space-y-1.5">
+              <Label htmlFor="task-title" className="text-xs font-medium">
+                Title
+              </Label>
+              <Input
+                ref={titleRef}
+                id="task-title"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  markDirty();
+                }}
+                placeholder="What needs to be done?"
+                className="h-9"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <Label htmlFor="task-desc" className="text-xs font-medium">
+                Description
+              </Label>
+              <Textarea
+                id="task-desc"
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  markDirty();
+                }}
+                placeholder="Add details..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Domain */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Domain</Label>
+              <Select
+                value={domainId}
+                onValueChange={(v) => {
+                  setDomainId(v);
+                  markDirty();
+                }}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="No domain" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No domain (Inbox)</SelectItem>
+                  {domains
+                    .filter((d) => !d.is_archived)
+                    .map((d) => (
+                      <SelectItem key={d.id} value={String(d.id)}>
+                        {d.icon ? `${d.icon} ` : ""}
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Parent task */}
+            {parentTasks && parentTasks.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Parent Task</Label>
+                <Select
+                  value={parentId}
+                  onValueChange={(v) => {
+                    setParentId(v);
+                    markDirty();
+                  }}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="None (top-level)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (top-level)</SelectItem>
+                    {parentTasks
+                      .filter((t) => t.id !== task?.id)
+                      .map((t) => (
+                        <SelectItem key={t.id} value={String(t.id)}>
+                          {t.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Impact */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Impact</Label>
+              <div className="flex gap-1.5">
+                {IMPACT_OPTIONS.map((opt) => (
+                  <Button
+                    key={opt.value}
+                    type="button"
+                    variant={impact === opt.value ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
+                    style={
+                      impact === opt.value
+                        ? {
+                            backgroundColor: IMPACT_COLORS[opt.value],
+                            borderColor: IMPACT_COLORS[opt.value],
+                            color: "white",
+                          }
+                        : undefined
+                    }
+                    onClick={() => {
+                      setImpact(opt.value);
+                      markDirty();
+                    }}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clarity / Mode */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Mode</Label>
+              <div className="flex gap-1.5">
+                {CLARITY_OPTIONS.map((opt) => (
+                  <Button
+                    key={opt.value}
+                    type="button"
+                    variant={clarity === opt.value ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
+                    onClick={() => {
+                      setClarity(opt.value);
+                      markDirty();
+                    }}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Duration */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Duration</Label>
+              <div className="flex gap-1.5 items-center">
+                {DURATION_PRESETS.map((m) => (
+                  <Button
+                    key={m}
+                    type="button"
+                    variant={durationMinutes === m ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 text-xs px-2"
+                    onClick={() => handleDurationPreset(m)}
+                  >
+                    {formatDurationLabel(m)}
+                  </Button>
+                ))}
+                <Input
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={customDuration}
+                  onChange={(e) => handleCustomDuration(e.target.value)}
+                  placeholder="min"
+                  className="h-7 w-16 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Scheduled date + time */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Scheduled</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={scheduledDate}
+                  onChange={(e) => {
+                    setScheduledDate(e.target.value);
+                    markDirty();
+                  }}
+                  className="h-8 text-xs flex-1"
+                />
+                <Input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => {
+                    setScheduledTime(e.target.value);
+                    markDirty();
+                  }}
+                  className="h-8 text-xs w-28"
+                />
+              </div>
+            </div>
+
+            {/* Due date */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Due Date</Label>
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => {
+                  setDueDate(e.target.value);
+                  markDirty();
+                }}
+                className="h-8 text-xs"
+              />
+            </div>
+
+            {/* Recurrence */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-medium">Repeat</Label>
+                <Button
+                  type="button"
+                  variant={isRecurring ? "default" : "outline"}
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => {
+                    const next = !isRecurring;
+                    setIsRecurring(next);
+                    if (!next) {
+                      setRecurrenceRule(null);
+                      setRecurrenceStart(null);
+                      setRecurrenceEnd(null);
+                    } else if (!recurrenceRule) {
+                      setRecurrenceRule({ freq: "daily", interval: 1 });
+                    }
+                    markDirty();
+                  }}
+                >
+                  {isRecurring ? "On" : "Off"}
+                </Button>
+              </div>
+              {isRecurring && (
+                <RecurrencePicker
+                  rule={recurrenceRule}
+                  recurrenceStart={recurrenceStart}
+                  recurrenceEnd={recurrenceEnd}
+                  onChange={(rule, start, end) => {
+                    setRecurrenceRule(rule);
+                    setRecurrenceStart(start);
+                    setRecurrenceEnd(end);
+                    if (!rule) setIsRecurring(false);
+                    markDirty();
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-2 border-t">
+              <Button onClick={handleSave} disabled={isSaving || !title.trim()} className="flex-1">
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEdit ? "Save Changes" : "Create Task"}
+              </Button>
+              {isEdit && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  title="Delete task"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete confirmation */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &ldquo;{task?.title}&rdquo;?
+              {(task?.subtasks?.length ?? 0) > 0 &&
+                ` This will also delete ${task!.subtasks!.length} subtask(s).`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
