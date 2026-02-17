@@ -30,26 +30,7 @@ body.is-dragging .calendar-event {
     pointer-events: none;
 }
 
-/* Single ghost preview - reduced purple, no inner boxing */
-.drop-indicator {
-    background: var(--ghost-bg) !important;
-    border: 1px solid var(--ghost-border) !important;
-    border-radius: 10px;
-    box-shadow: none !important;
-    z-index: 50;
-}
-
-/* Kill any extra inner outlines / dashed artifacts */
-.drop-indicator * {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-/* Time label inside ghost - neutral, not purple */
-.drop-indicator {
-    color: rgba(15, 23, 42, 0.55) !important;
-    font-weight: 600;
-}
+/* Phantom card: single merged indicator replacing old drop-indicator + drag-highlight */
 
 /* Ensure scheduled tasks are visible and positioned correctly */
 .scheduled-task,
@@ -120,20 +101,7 @@ body.is-dragging .calendar-event {
     opacity: 0.5 !important;
 }
 
-/* Duration-aware drag highlight overlay */
-.drag-highlight-overlay {
-    position: absolute;
-    left: 6px;
-    right: 6px;
-    border-radius: 10px;
-    background: rgba(109, 94, 246, 0.06);
-    outline: 2px solid rgba(109, 94, 246, 0.16);
-    outline-offset: -2px;
-    z-index: 1;
-    pointer-events: none;
-    overflow: visible;
-    transition: top 0.08s ease;
-}
+/* (drag-highlight-overlay removed — merged into .drop-indicator phantom card) */
 
 /* Events always above slot highlight and subsequent hour rows */
 .hour-slot .scheduled-task,
@@ -284,73 +252,103 @@ body.is-dragging .scheduled-task {
 .scheduled-task.impact-3::before { background: var(--impact-low); }
 .scheduled-task.impact-4::before { background: var(--impact-min); }
 
-/* Drop indicator / ghost event (reschedule preview) - base positioning */
+/* Phantom card — drop indicator that previews the scheduled task appearance */
 .drop-indicator {
     position: absolute;
     left: 0;
     right: 0;
     display: flex;
     align-items: flex-start;
-    justify-content: flex-start;
-    padding: 0.2rem 0.4rem;
+    gap: 6px;
+    padding: 2px 0.5rem;
+    padding-left: calc(0.5rem + var(--rail-w));
     font-size: 0.65rem;
-    font-weight: 600;
-    color: rgba(15, 23, 42, 0.65);
+    line-height: 1.2;
     pointer-events: none;
     box-sizing: border-box;
     overflow: hidden;
+    background: var(--ghost-bg);
+    border: 1px dashed var(--ghost-border);
+    border-radius: 6px;
+    z-index: 50;
+    transition: top 80ms ease-out;
+}
+
+/* Impact rail on phantom card */
+.drop-indicator::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--rail-w);
+    border-radius: 6px 0 0 6px;
+    opacity: 0.6;
+}
+
+.drop-indicator.impact-1::before { background: var(--impact-high-border); }
+.drop-indicator.impact-2::before { background: var(--impact-medium); }
+.drop-indicator.impact-3::before { background: var(--impact-low); }
+.drop-indicator.impact-4::before { background: var(--impact-min); }
+
+.phantom-time {
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.phantom-title {
+    color: var(--text-muted);
+    opacity: 0.7;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* =============================================================================
    Custom Drag Overlay Styling
    ============================================================================= */
 
-/* Generic drag overlay root */
-.drag-overlay,
-.drag-ghost {
-    max-width: 420px;
+/* Custom drag overlay — replaces native browser ghost */
+.drag-overlay {
+    max-width: 280px;
     width: max-content;
     pointer-events: none;
     z-index: 9999;
 }
 
-/* Force compact layout inside the ghost */
+/* Force compact layout inside the overlay */
 .drag-overlay .task-item,
-.drag-ghost .task-item {
+.drag-overlay .scheduled-task,
+.drag-overlay .date-only-task {
     display: flex !important;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 8px 12px;
     background: var(--bg-surface);
     border: 1px solid var(--border-strong);
-    border-radius: 10px;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+    border-radius: 8px;
+    box-shadow: var(--shadow-drag);
     overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* Hide table columns in ghost */
-.drag-overlay .meta-duration,
-.drag-overlay .meta-impact,
-.drag-overlay .meta-clarity,
-.drag-ghost .meta-duration,
-.drag-ghost .meta-impact,
-.drag-ghost .meta-clarity {
-    display: none !important;
-}
-
-/* When hovering calendar - drag ghost becomes "event pill" */
+/* When hovering calendar - overlay becomes "event pill" */
 body.over-calendar .drag-overlay .task-item,
-body.over-calendar .drag-ghost .task-item {
-    max-width: 320px;
-    border-radius: 10px;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
-    background: rgba(255, 255, 255, 0.94);
+body.over-calendar .drag-overlay .scheduled-task,
+body.over-calendar .drag-overlay .date-only-task {
+    max-width: 240px;
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+    font-size: 0.65rem;
 }
 
-/* Keep only title visible, stronger */
+/* Keep only title visible */
 body.over-calendar .drag-overlay .task-text,
-body.over-calendar .drag-ghost .task-text {
-    font-weight: 700;
+body.over-calendar .drag-overlay .scheduled-task-text,
+body.over-calendar .drag-overlay .date-only-task-text {
+    font-weight: 600;
     color: var(--text-primary);
 }
 
@@ -369,9 +367,9 @@ body.over-calendar .drag-ghost .task-text {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-default);
+    padding: 10px 16px;
+    background: rgba(239, 68, 68, 0.04);
+    border: 1px solid rgba(239, 68, 68, 0.12);
     border-radius: 999px;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
     transition: all 0.2s ease;
@@ -390,27 +388,24 @@ body.is-dragging .trash-bin {
 }
 
 .trash-icon {
-    font-size: 1.125rem;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(15, 23, 42, 0.55);
+    color: rgba(239, 68, 68, 0.5);
+    stroke: currentColor;
     transition: color 0.15s ease;
 }
 
-/* Hide label by default, show on hover/over */
 .trash-label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-muted);
+    color: rgba(239, 68, 68, 0.55);
     transition: all 0.15s ease;
-    display: none;
 }
 
 .trash-bin.drag-over .trash-label {
-    display: inline;
     font-weight: 700;
 }
 
@@ -439,14 +434,31 @@ body.is-dragging .trash-bin {
 
 /* Trash bin */
 [data-theme="dark"] .trash-bin {
-    background: var(--bg-elevated);
-    border-color: var(--border-default);
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.18);
 }
 
 [data-theme="dark"] .trash-icon {
-    color: var(--text-secondary);
+    color: rgba(239, 68, 68, 0.6);
 }
 
 [data-theme="dark"] .trash-label {
-    color: var(--text-muted);
+    color: rgba(239, 68, 68, 0.6);
+}
+
+/* Phantom card text */
+[data-theme="dark"] .phantom-time {
+    color: rgba(248, 250, 252, 0.55);
+}
+
+[data-theme="dark"] .phantom-title {
+    color: rgba(248, 250, 252, 0.35);
+}
+
+/* Drag overlay */
+[data-theme="dark"] .drag-overlay .task-item,
+[data-theme="dark"] .drag-overlay .scheduled-task,
+[data-theme="dark"] .drag-overlay .date-only-task {
+    background: var(--bg-surface);
+    border-color: var(--border-strong);
 }

@@ -7,6 +7,18 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.93 — 2026-02-17
+
+### Added
+- Custom drag overlay replaces native browser ghost — fixed-position clone follows cursor with compact styling, morphs to event pill shape over calendar (`body.over-calendar` toggle)
+- Phantom card drop indicator — merged old drop-indicator + drag-highlight-overlay into a single element showing task title, time, impact rail, and dashed border (80ms snap animation between 15-minute positions)
+- Auto-scroll during drag — hour-grid scrolls vertically when cursor is within 60px of top/bottom edge, with accelerating speed
+- Cross-day drag navigation — hovering near calendar panel left/right edge for 500ms navigates to adjacent day via existing `navigateToDay`
+- Redesigned trash bin — SVG icon from `ui-icons.svg#trash` replaces emoji, "Delete" label always visible, subtle red tint in default state
+
+### Fixed
+- Dark mode ghost tokens — added `--ghost-bg`/`--ghost-border` overrides for dark theme (higher opacity for visibility on dark backgrounds)
+
 ## v0.45.92 — 2026-02-17
 
 ### Fixed
