@@ -82,6 +82,10 @@
 
     /**
      * Apply current sort to all domain groups.
+     *
+     * Only sorts top-level task items (direct children of .task-list).
+     * Subtasks inside .subtask-container are not re-sorted at this level —
+     * they stay grouped under their parent and move with it.
      */
     function applySort() {
         const groups = document.querySelectorAll('.project-group');
@@ -90,22 +94,31 @@
             const taskList = group.querySelector('.task-list');
             if (!taskList) return;
 
-            // Collect all task items
-            const tasks = Array.from(taskList.querySelectorAll('.task-item'));
+            // Collect only top-level task items (skip subtasks inside containers)
+            const tasks = Array.from(taskList.querySelectorAll(':scope > .task-item'));
 
-            // Sort tasks
+            // Sort top-level tasks
             tasks.sort((a, b) => compareTaskItems(a, b));
 
-            // Rebuild the list (preserve add-task-row)
-            const addTaskRow = taskList.querySelector('.add-task-row');
-            const fragment = document.createDocumentFragment();
-            tasks.forEach(task => fragment.appendChild(task));
+            // Preserve the domain-level add-task-row (not subtask add rows)
+            const addTaskRow = taskList.querySelector(':scope > .add-task-row:not(.add-subtask-row)');
 
-            // Clear and repopulate task list
+            // Rebuild: each parent task followed by its subtask-container (if any)
+            const fragment = document.createDocumentFragment();
+            tasks.forEach(task => {
+                fragment.appendChild(task);
+                var taskId = task.dataset.taskId;
+                if (taskId) {
+                    var container = taskList.querySelector(':scope > .subtask-container[data-parent-id="' + taskId + '"]');
+                    if (container) {
+                        fragment.appendChild(container);
+                    }
+                }
+            });
+
+            // Replace content
             taskList.innerHTML = '';
             taskList.appendChild(fragment);
-
-            // Re-add the add-task-row at the end
             if (addTaskRow) {
                 taskList.appendChild(addTaskRow);
             }

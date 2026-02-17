@@ -172,8 +172,8 @@
             const taskList = taskEl.closest('.task-list') || taskEl.closest('.section-tasks');
             if (!taskList) return;
 
-            const tasks = Array.from(taskList.querySelectorAll('.task-item'));
-            const addTaskRow = taskList.querySelector('.add-task-row');
+            const tasks = Array.from(taskList.querySelectorAll(':scope > .task-item'));
+            const addTaskRow = taskList.querySelector(':scope > .add-task-row:not(.add-subtask-row)');
             let insertBefore = null;
 
             for (const t of tasks) {
@@ -239,7 +239,7 @@
         const taskImpact = parseInt(taskEl.dataset.impact || '4', 10);
 
         // Find insertion point: among non-scheduled, non-completed tasks, sorted by impact
-        const tasks = Array.from(taskList.querySelectorAll('.task-item'));
+        const tasks = Array.from(taskList.querySelectorAll(':scope > .task-item'));
         let insertBefore = null;
 
         for (const t of tasks) {

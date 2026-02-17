@@ -751,7 +751,7 @@
                 if (section && window.TaskMutations) {
                     var countEl = section.querySelector('.task-count') || section.querySelector('.section-count');
                     if (countEl) {
-                        countEl.textContent = section.querySelectorAll('.task-item').length;
+                        countEl.textContent = section.querySelectorAll(':scope .task-list > .task-item, :scope .section-tasks > .task-item').length;
                     }
                 }
             });

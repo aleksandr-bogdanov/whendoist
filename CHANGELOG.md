@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.46.6 — 2026-02-17
+
+### Fixed
+- JS modules now preserve subtask containers during sort, drag-drop, and task count updates
+- Task sort (`applySort`) uses `:scope > .task-item` to select only top-level tasks and moves subtask containers with their parent
+- Drag-drop insertion uses `:scope > .task-item` to avoid flattening subtasks into the main list
+- Task count calculations in task-complete and task-mutations skip nested subtask items
+- Energy filter CSS hides subtask containers when their parent task is filtered out
+
 ## v0.46.5 — 2026-02-17
 
 ### Fixed
