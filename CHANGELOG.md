@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.46.5 — 2026-02-17
+
+### Fixed
+- Completion cascade uses direct query instead of relationship to avoid stale subtask list with `expire_on_commit=False`
+
 ## v0.46.4 — 2026-02-17
 
 ### Added

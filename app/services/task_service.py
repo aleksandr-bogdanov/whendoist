@@ -420,11 +420,20 @@ class TaskService:
         task.status = "completed"
         task.completed_at = now
 
-        # Cascade: complete all pending subtasks
-        for subtask in task.subtasks:
-            if subtask.status != "completed":
-                subtask.status = "completed"
-                subtask.completed_at = now
+        # Cascade: complete all pending subtasks.
+        # Query directly rather than using task.subtasks relationship,
+        # which can be stale with expire_on_commit=False.
+        result = await self.db.execute(
+            select(Task).where(
+                Task.parent_id == task_id,
+                Task.user_id == self.user_id,
+                Task.status != "completed",
+            )
+        )
+        pending_subtasks = list(result.scalars().all())
+        for subtask in pending_subtasks:
+            subtask.status = "completed"
+            subtask.completed_at = now
 
         await self.db.flush()
         return task
