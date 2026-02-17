@@ -325,37 +325,84 @@
             var taskEl = temp.querySelector('.task-item');
             if (!taskEl) return null;
 
-            // Find the correct domain group
-            var domainId = taskEl.dataset.domainId || '';
-            var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
+            var parentId = taskEl.dataset.parentId;
 
-            if (!targetGroup) {
-                // Domain group doesn't exist — fallback to full refresh
-                if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
-                    TaskComplete.refreshTaskList();
+            if (parentId) {
+                // ── Subtask insertion ──
+                var container = document.querySelector(
+                    '.subtask-container[data-parent-id="' + parentId + '"]'
+                );
+                if (container) {
+                    // Container exists — insert before the add-subtask-row
+                    var subtaskList = container.querySelector('.subtask-list');
+                    var addRow = subtaskList ? subtaskList.querySelector('.add-subtask-row') : null;
+                    if (subtaskList && addRow) {
+                        subtaskList.insertBefore(taskEl, addRow);
+                    } else if (subtaskList) {
+                        subtaskList.appendChild(taskEl);
+                    }
+                    // Update subtask count in toggle summary
+                    updateSubtaskCount(parentId, 1);
+                } else {
+                    // First subtask — re-fetch parent to get server-rendered container
+                    var parentEl = document.querySelector('.task-item[data-task-id="' + parentId + '"]');
+                    if (parentEl) {
+                        try {
+                            var parentResp = await safeFetch('/api/v1/task-item/' + parentId);
+                            var parentHtml = await parentResp.text();
+                            var parentTemp = document.createElement('div');
+                            parentTemp.innerHTML = parentHtml.trim();
+                            // The response includes both .task-item and .subtask-container
+                            var newParentEl = parentTemp.querySelector('.task-item');
+                            var newContainer = parentTemp.querySelector('.subtask-container');
+                            if (newParentEl) {
+                                parentEl.replaceWith(newParentEl);
+                                // Insert the container right after the new parent element
+                                if (newContainer) {
+                                    newParentEl.after(newContainer);
+                                }
+                                if (window.DragDrop && typeof DragDrop.initSingleTask === 'function') {
+                                    DragDrop.initSingleTask(newParentEl);
+                                }
+                                scrollToAndHighlight(newParentEl);
+                            }
+                        } catch (e) {
+                            console.error('Failed to re-fetch parent task:', e);
+                        }
+                    }
+                    return taskEl;
                 }
-                return null;
-            }
-
-            var taskList = targetGroup.querySelector('.task-list');
-            if (!taskList) return null;
-
-            var addTaskRow = taskList.querySelector('.add-task-row');
-            if (addTaskRow) {
-                taskList.insertBefore(taskEl, addTaskRow);
             } else {
-                taskList.appendChild(taskEl);
-            }
+                // ── Top-level task insertion ──
+                var domainId = taskEl.dataset.domainId || '';
+                var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
 
-            // Update section count
-            updateSectionCount(targetGroup);
+                if (!targetGroup) {
+                    if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                        TaskComplete.refreshTaskList();
+                    }
+                    return null;
+                }
 
-            // If the new task is scheduled, move it to the scheduled section
-            var scheduledDate = taskEl.dataset.scheduledDate || '';
-            if (scheduledDate) {
-                ensureScheduledSectionExists();
-                if (typeof moveTaskToScheduledSection === 'function') {
-                    moveTaskToScheduledSection(taskEl);
+                var taskList = targetGroup.querySelector('.task-list');
+                if (!taskList) return null;
+
+                var addTaskRow = taskList.querySelector(':scope > .add-task-row');
+                if (addTaskRow) {
+                    taskList.insertBefore(taskEl, addTaskRow);
+                } else {
+                    taskList.appendChild(taskEl);
+                }
+
+                updateSectionCount(targetGroup);
+
+                // If the new task is scheduled, move it to the scheduled section
+                var scheduledDate = taskEl.dataset.scheduledDate || '';
+                if (scheduledDate) {
+                    ensureScheduledSectionExists();
+                    if (typeof moveTaskToScheduledSection === 'function') {
+                        moveTaskToScheduledSection(taskEl);
+                    }
                 }
             }
 
@@ -392,6 +439,42 @@
                 TaskComplete.refreshTaskList();
             }
             return null;
+        }
+    }
+
+    /**
+     * Update subtask count badge and data attribute on a parent task.
+     * @param {string|number} parentId - The parent task ID
+     * @param {number} delta - Amount to add (positive) or subtract (negative)
+     */
+    function updateSubtaskCount(parentId, delta) {
+        var parentEl = document.querySelector('.task-item[data-task-id="' + parentId + '"]');
+        if (!parentEl) return;
+
+        var currentCount = parseInt(parentEl.dataset.subtaskCount || '0', 10);
+        var newCount = Math.max(0, currentCount + delta);
+        parentEl.dataset.subtaskCount = String(newCount);
+
+        // Update the badge
+        var badge = parentEl.querySelector('.subtask-badge');
+        if (badge) {
+            badge.textContent = String(newCount);
+        }
+
+        // Update the expand toggle summary text
+        var container = document.querySelector('.subtask-container[data-parent-id="' + parentId + '"]');
+        if (container) {
+            var summary = container.querySelector('.subtask-summary');
+            if (summary) {
+                summary.textContent = newCount + ' subtask' + (newCount !== 1 ? 's' : '');
+            }
+        }
+
+        // Update draggable state — parents with subtasks shouldn't be draggable
+        if (newCount > 0) {
+            parentEl.removeAttribute('draggable');
+        } else if (!parentEl.dataset.scheduledDate) {
+            parentEl.setAttribute('draggable', 'true');
         }
     }
 
@@ -675,5 +758,6 @@
         scrollToAndHighlight: scrollToAndHighlight,
         updateCalendarItem: updateCalendarItem,
         updateSectionCount: updateSectionCount,
+        updateSubtaskCount: updateSubtaskCount,
     };
 })();

@@ -584,6 +584,14 @@
                     openDialog(taskId);
                 }
             }
+            // Click on add-subtask-row (must check before generic add-task-row)
+            const addSubtaskRow = e.target.closest('.add-subtask-row[data-parent-id]');
+            if (addSubtaskRow) {
+                e.preventDefault();
+                const parentId = addSubtaskRow.dataset.parentId;
+                openDialog(null, { parentId: parentId });
+                return;
+            }
             // Click on add-task-row in domain group
             const addTaskRow = e.target.closest('.add-task-row');
             if (addTaskRow) {
@@ -861,7 +869,7 @@
         form.reset();
 
         // Extract options
-        const { domainId = null } = options;
+        const { domainId = null, parentId = null } = options;
 
         // Update title
         const titleText = backdropEl.querySelector('#modal-title-text');
@@ -920,6 +928,62 @@
             backdropEl.querySelector('.domain-dropdown-text').textContent = def.text;
         }
         closeDomainDropdown();
+
+        // Remove any previous parent context
+        const oldParentInput = form.querySelector('input[name="parent_id"]');
+        if (oldParentInput) oldParentInput.remove();
+        const oldBreadcrumb = modalEl.querySelector('.subtask-breadcrumb');
+        if (oldBreadcrumb) oldBreadcrumb.remove();
+        const domainDropdown = backdropEl.querySelector('#domain-dropdown');
+        domainDropdown.style.display = '';
+
+        // Set up parent context for subtask creation
+        if (parentId && !taskId) {
+            // Add hidden parent_id input
+            const parentInput = document.createElement('input');
+            parentInput.type = 'hidden';
+            parentInput.name = 'parent_id';
+            parentInput.value = parentId;
+            form.appendChild(parentInput);
+
+            // Read parent info from DOM
+            const parentEl = document.querySelector('.task-item[data-task-id="' + parentId + '"]');
+            if (parentEl) {
+                // Pre-fill domain from parent
+                const parentDomainId = parentEl.dataset.domainId;
+                if (parentDomainId) {
+                    const domain = domains.find(d => d.id === parseInt(parentDomainId));
+                    if (domain) {
+                        backdropEl.querySelector('[name="domain_id"]').value = domain.id;
+                        backdropEl.querySelector('.domain-dropdown-text').textContent =
+                            `${domain.icon || '📁'} ${domain.name}`;
+                    }
+                }
+
+                // Check if parent is recurring — block subtask creation
+                if (parentEl.dataset.isRecurring === 'true') {
+                    if (window.Toast) {
+                        Toast.warning('Remove recurrence from this task before adding subtasks.');
+                    }
+                    return;
+                }
+
+                // Show breadcrumb
+                const parentTextEl = parentEl.querySelector('.task-text');
+                const parentTitle = parentTextEl ? parentTextEl.textContent.trim() : 'Parent task';
+                const breadcrumb = document.createElement('div');
+                breadcrumb.className = 'subtask-breadcrumb';
+                breadcrumb.textContent = 'Subtask of: ' + parentTitle;
+                const modalBody = modalEl.querySelector('.modal-body');
+                modalBody.insertBefore(breadcrumb, modalBody.firstChild);
+            }
+
+            // Hide domain dropdown (inherited from parent)
+            domainDropdown.style.display = 'none';
+
+            // Update title
+            backdropEl.querySelector('#modal-title-text').textContent = 'New Subtask';
+        }
 
         // Reset submit button state
         const submitBtn = backdropEl.querySelector('.btn-submit');
@@ -1416,6 +1480,7 @@
             title: formData.get('title'),
             description: formData.get('description') || null,
             domain_id: formData.get('domain_id') ? parseInt(formData.get('domain_id'), 10) : null,
+            parent_id: formData.get('parent_id') ? parseInt(formData.get('parent_id'), 10) : null,
             scheduled_date: scheduledDate,
             scheduled_time: scheduledTime,
             due_date: dueDate,

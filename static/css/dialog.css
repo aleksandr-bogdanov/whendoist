@@ -1186,6 +1186,23 @@ body.modal-open {
 }
 
 /* =============================================================================
+   17a) Subtask Breadcrumb
+   ============================================================================= */
+
+.subtask-breadcrumb {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* =============================================================================
    17) Dark Mode Support
    ============================================================================= */
 
