@@ -16,6 +16,7 @@ from app.routers import (
     gcal_sync,
     import_data,
     instances,
+    me,
     passkeys,
     preferences,
     tasks,
@@ -35,3 +36,4 @@ router.include_router(import_data.router)
 router.include_router(build_info.router)
 router.include_router(wizard.router)
 router.include_router(gcal_sync.router)
+router.include_router(me.router)

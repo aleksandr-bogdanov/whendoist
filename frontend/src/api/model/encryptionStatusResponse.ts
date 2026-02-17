@@ -12,4 +12,5 @@
 export interface EncryptionStatusResponse {
   enabled: boolean;
   salt?: string | null;
+  test_value?: string | null;
 }

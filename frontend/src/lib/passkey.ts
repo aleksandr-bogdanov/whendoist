@@ -104,7 +104,7 @@ function arrayBufferToBase64url(buffer: ArrayBuffer): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
-function base64urlToArray(base64url: string): Uint8Array {
+function base64urlToArray(base64url: string): Uint8Array<ArrayBuffer> {
   const base64 = base64url
     .replace(/-/g, "+")
     .replace(/_/g, "/")
@@ -247,7 +247,7 @@ function parseCreationOptions(options: ServerCreationOptions): PublicKeyCredenti
       ...cred,
       id: base64urlToArray(cred.id),
     })),
-  } as PublicKeyCredentialCreationOptions;
+  } as unknown as PublicKeyCredentialCreationOptions;
 }
 
 function parseRequestOptions(options: ServerRequestOptions): PublicKeyCredentialRequestOptions {
@@ -258,7 +258,7 @@ function parseRequestOptions(options: ServerRequestOptions): PublicKeyCredential
       ...cred,
       id: base64urlToArray(cred.id),
     })),
-  } as PublicKeyCredentialRequestOptions;
+  } as unknown as PublicKeyCredentialRequestOptions;
 }
 
 // ============================================================================
