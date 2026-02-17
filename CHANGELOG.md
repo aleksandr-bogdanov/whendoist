@@ -7,6 +7,12 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.92 — 2026-02-17
+
+### Fixed
+- Drop position now uses element-top instead of cursor — removed custom drag overlay in favor of native ghost, added `getSlotAtGrabTop` using `elementFromPoint` to find the correct hour slot at the dragged element's top edge. Grabbing a task by its bottom no longer schedules it an hour too late.
+- Time/duration hidden from native drag ghost — `scheduled-task-left` gets `visibility: hidden` synchronously at dragstart so the ghost shows only the task name while the drop indicator shows the target time
+
 ## v0.45.91 — 2026-02-17
 
 ### Fixed

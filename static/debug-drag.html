@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drag Offset — Real Context Reproduction</title>
+<!-- Load the EXACT same CSS stack as the real dashboard -->
+<link rel="stylesheet" href="vendor/pico.min.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/components/index.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<style>
+  /* Debug-only styles — NOT in real app */
+  .debug-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+    background: #0d0d1a; border-bottom: 1px solid #333;
+    padding: 6px 16px; font-size: 0.7rem; color: #9ece6a;
+    font-family: monospace;
+    display: flex; gap: 16px; align-items: center;
+  }
+  .debug-header strong { color: #7aa2f7; }
+  #log-line { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  body { padding-top: 28px; }
+
+  /* Override tasks-layout height to fill viewport minus debug header */
+  .tasks-layout {
+    height: calc(100vh - 28px - 1.5rem) !important;
+  }
+
+  /* Drop indicator for debug page */
+  .debug-drop-indicator {
+    position: absolute; left: 0; right: 0;
+    background: rgba(109, 94, 246, 0.25);
+    border-top: 2px solid #6d5ef6;
+    pointer-events: none; z-index: 10;
+    font-size: 0.65rem; color: #6d5ef6;
+    padding: 2px 6px; font-family: monospace;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="debug-header">
+  <strong>Drag Offset Debug</strong> — Real CSS + DOM nesting. Grab by bottom-right corner.
+  <span id="log-line">Ready</span>
+</div>
+
+<!-- ============================================================
+     EXACT same DOM structure as the real dashboard
+     ============================================================ -->
+<main id="main-content" class="container-fluid">
+  <div class="tasks-layout">
+
+    <!-- LEFT: Task List Panel -->
+    <section class="tasks-panel">
+      <div class="task-list-container">
+        <!-- Sticky header (like real app) -->
+        <div class="task-list-header">
+          <div class="header-row1">
+            <div class="header-title">
+              <span style="font-weight:600; font-size:0.8rem;">Debug Tasks</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="task-list-scroll" id="task-list-scroll">
+          <details class="project-group" open>
+            <summary class="project-header">
+              <span class="project-name">Test Domain</span>
+            </summary>
+            <div class="task-list">
+
+              <div class="task-item impact-1" draggable="true"
+                   data-task-id="debug-1" data-duration="30" data-clarity="autopilot"
+                   data-impact="1" data-completed="0" data-subtask-count="0">
+                <div class="complete-gutter"><div class="check-target"></div></div>
+                <div class="task-content">
+                  <span class="task-text">Task 1 — grab by bottom-right</span>
+                </div>
+                <span class="meta-clarity">Autopilot</span>
+                <span class="meta-duration">30m</span>
+                <span class="meta-impact">P1</span>
+                <div class="task-actions">...</div>
+              </div>
+
+              <div class="task-item impact-2" draggable="true"
+                   data-task-id="debug-2" data-duration="60" data-clarity="brainstorm"
+                   data-impact="2" data-completed="0" data-subtask-count="0">
+                <div class="complete-gutter"><div class="check-target"></div></div>
+                <div class="task-content">
+                  <span class="task-text">Task 2 — another draggable</span>
+                </div>
+                <span class="meta-clarity">Brainstorm</span>
+                <span class="meta-duration">60m</span>
+                <span class="meta-impact">P2</span>
+                <div class="task-actions">...</div>
+              </div>
+
+              <div class="task-item impact-3" draggable="true"
+                   data-task-id="debug-3" data-duration="45" data-clarity="none"
+                   data-impact="3" data-completed="0" data-subtask-count="0">
+                <div class="complete-gutter"><div class="check-target"></div></div>
+                <div class="task-content">
+                  <span class="task-text">Task 3 — longer title to test wrapping behavior in grid</span>
+                </div>
+                <span class="meta-clarity">—</span>
+                <span class="meta-duration">45m</span>
+                <span class="meta-impact">P3</span>
+                <div class="task-actions">...</div>
+              </div>
+
+              <!-- Filler items to make it scrollable -->
+              <div class="task-item impact-4" draggable="true" data-task-id="debug-4" data-duration="30" data-impact="4" data-completed="0" data-subtask-count="0">
+                <div class="complete-gutter"><div class="check-target"></div></div>
+                <div class="task-content"><span class="task-text">Filler task 4</span></div>
+                <span class="meta-clarity">—</span><span class="meta-duration">30m</span><span class="meta-impact">P4</span><div class="task-actions">...</div>
+              </div>
+              <div class="task-item impact-1" draggable="true" data-task-id="debug-5" data-duration="30" data-impact="1" data-completed="0" data-subtask-count="0">
+                <div class="complete-gutter"><div class="check-target"></div></div>
+                <div class="task-content"><span class="task-text">Filler task 5</span></div>
+                <span class="meta-clarity">—</span><span class="meta-duration">30m</span><span class="meta-impact">P1</span><div class="task-actions">...</div>
+              </div>
+              <div class="task-item impact-2" draggable="true" data-task-id="debug-6" data-duration="30" data-impact="2" data-completed="0" data-subtask-count="0">
+                <div class="complete-gutter"><div class="check-target"></div></div>
+                <div class="task-content"><span class="task-text">Filler task 6 — scroll down to test</span></div>
+                <span class="meta-clarity">—</span><span class="meta-duration">30m</span><span class="meta-impact">P2</span><div class="task-actions">...</div>
+              </div>
+              <div class="task-item impact-3" draggable="true" data-task-id="debug-7" data-duration="30" data-impact="3" data-completed="0" data-subtask-count="0">
+                <div class="complete-gutter"><div class="check-target"></div></div>
+                <div class="task-content"><span class="task-text">Filler task 7</span></div>
+                <span class="meta-clarity">—</span><span class="meta-duration">30m</span><span class="meta-impact">P3</span><div class="task-actions">...</div>
+              </div>
+              <div class="task-item impact-4" draggable="true" data-task-id="debug-8" data-duration="30" data-impact="4" data-completed="0" data-subtask-count="0">
+                <div class="complete-gutter"><div class="check-target"></div></div>
+                <div class="task-content"><span class="task-text">Filler task 8</span></div>
+                <span class="meta-clarity">—</span><span class="meta-duration">30m</span><span class="meta-impact">P4</span><div class="task-actions">...</div>
+              </div>
+
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Calendar Panel -->
+    <aside class="calendar-panel" data-hour-height="60">
+      <div class="calendar-header">
+        <div class="calendar-nav">
+          <span class="day-label" style="font-weight:600; font-size:0.85rem;">Today (Debug)</span>
+        </div>
+      </div>
+      <div class="calendar-carousel" id="calendar-carousel">
+        <div class="day-calendar today" data-day="2026-02-17" id="today-calendar">
+          <div class="hour-grid">
+
+            <script>
+            // Generate hour rows 6-22
+            (function() {
+              const grid = document.currentScript.parentElement;
+              for (let h = 6; h <= 22; h++) {
+                const row = document.createElement('div');
+                row.className = 'hour-row';
+                row.dataset.hour = h;
+                row.innerHTML = `
+                  <div class="hour-label">${h % 12 || 12}${h < 12 ? 'a' : 'p'}</div>
+                  <div class="hour-slot" data-droppable="true"></div>
+                `;
+                // Add a scheduled task at 9am and 14:00
+                if (h === 9) {
+                  row.querySelector('.hour-slot').innerHTML = `
+                    <div class="scheduled-task calendar-item impact-1 duration-medium from-db"
+                         data-task-id="sched-1" data-completed="0" data-duration="60"
+                         data-clarity="autopilot" data-impact="1" data-title="Scheduled task 9am"
+                         data-start-mins="540" data-end-mins="600"
+                         style="height: 60px;">
+                      <div class="scheduled-task-left">
+                        <span class="scheduled-task-time">9:00</span>
+                        <span class="scheduled-task-duration">60m</span>
+                      </div>
+                      <span class="scheduled-task-text">Scheduled task at 9am — grab me</span>
+                    </div>
+                  `;
+                }
+                if (h === 14) {
+                  row.querySelector('.hour-slot').innerHTML = `
+                    <div class="scheduled-task calendar-item impact-2 duration-short from-db"
+                         data-task-id="sched-2" data-completed="0" data-duration="30"
+                         data-clarity="brainstorm" data-impact="2" data-title="Scheduled task 2pm"
+                         data-start-mins="840" data-end-mins="870"
+                         style="height: 30px;">
+                      <div class="scheduled-task-left">
+                        <span class="scheduled-task-time">2:00</span>
+                        <span class="scheduled-task-duration">30m</span>
+                      </div>
+                      <span class="scheduled-task-text">Scheduled 2pm</span>
+                    </div>
+                  `;
+                }
+                grid.appendChild(row);
+              }
+            })();
+            </script>
+
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</main>
+
+<script>
+const logEl = document.getElementById('log-line');
+function log(msg) {
+  logEl.textContent = msg;
+  console.log('[drag-debug]', msg);
+}
+
+// ============================================================
+// DRAG LOGIC — mirrors drag-drop.js with getOverlaySlot fix
+// ============================================================
+let dragOverlay = null;
+let dragOverlayOffsetX = 0;
+let dragOverlayOffsetY = 0;
+let draggedEl = null;
+let draggedDuration = 30;
+let dropIndicator = null;
+
+const HOUR_HEIGHT = 60; // matches data-hour-height on calendar-panel
+
+// Document-level drag listener to move overlay
+document.addEventListener('drag', function(e) {
+  if (dragOverlay && e.clientX > 0 && e.clientY > 0) {
+    dragOverlay.style.left = (e.clientX - dragOverlayOffsetX) + 'px';
+    dragOverlay.style.top = (e.clientY - dragOverlayOffsetY) + 'px';
+  }
+});
+
+// ---- THE FIX: find slot at overlay top, not cursor ----
+function getOverlaySlot(e) {
+  const overlayTopY = e.clientY - dragOverlayOffsetY;
+  // Hide overlay so elementFromPoint sees through it
+  if (dragOverlay) dragOverlay.style.display = 'none';
+  const el = document.elementFromPoint(e.clientX, overlayTopY);
+  if (dragOverlay) dragOverlay.style.display = '';
+  const slot = el?.closest('.hour-slot');
+  if (slot) return slot;
+  // Fallback: cursor's slot
+  return e.target.closest('.hour-slot');
+}
+
+function calculateDropPosition(e, slot) {
+  const slotRect = slot.getBoundingClientRect();
+  // Use overlay top, not cursor
+  const dropY = (e.clientY - dragOverlayOffsetY) - slotRect.top;
+  const quarterIndex = Math.max(0, Math.min(Math.floor((dropY / slotRect.height) * 4), 3));
+  const minutes = quarterIndex * 15;
+  const hour = parseInt(slot.closest('.hour-row')?.dataset.hour, 10);
+  return { quarterIndex, minutes, hour };
+}
+
+function updateDropIndicator(slot, hour, minutes) {
+  if (!dropIndicator) {
+    dropIndicator = document.createElement('div');
+    dropIndicator.className = 'debug-drop-indicator';
+  }
+  const topPx = (minutes / 60) * HOUR_HEIGHT;
+  const heightPx = (draggedDuration / 60) * HOUR_HEIGHT;
+  dropIndicator.style.top = topPx + 'px';
+  dropIndicator.style.height = heightPx + 'px';
+  dropIndicator.textContent = String(hour).padStart(2,'0') + ':' + String(minutes).padStart(2,'0');
+  if (dropIndicator.parentElement !== slot) {
+    dropIndicator.remove();
+    slot.appendChild(dropIndicator);
+  }
+}
+
+function removeDropIndicator() {
+  if (dropIndicator) dropIndicator.remove();
+}
+
+// Attach to all draggable items
+document.querySelectorAll('.task-item[draggable="true"], .scheduled-task.from-db').forEach(el => {
+  if (el.classList.contains('scheduled-task')) el.draggable = true;
+
+  el.addEventListener('dragstart', function(e) {
+    draggedEl = el;
+    const rect = el.getBoundingClientRect();
+    dragOverlayOffsetX = e.clientX - rect.left;
+    dragOverlayOffsetY = e.clientY - rect.top;
+    draggedDuration = parseInt(el.dataset.duration, 10) || 30;
+
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', el.dataset.taskId);
+
+    // Suppress native ghost via opacity (same as real app)
+    el.style.opacity = '0.01';
+
+    dragOverlay = el.cloneNode(true);
+    dragOverlay.style.cssText =
+      'position:fixed;margin:0;pointer-events:none;z-index:99999;' +
+      'opacity:0.9;box-shadow:0 8px 24px rgba(0,0,0,0.3);' +
+      'transition:none;will-change:left,top;' +
+      'left:' + rect.left + 'px;top:' + rect.top + 'px;' +
+      'width:' + rect.width + 'px;height:' + rect.height + 'px;';
+    document.body.appendChild(dragOverlay);
+
+    requestAnimationFrame(() => {
+      if (draggedEl) {
+        document.body.classList.add('is-dragging');
+        el.classList.add('dragging');
+        if (el.classList.contains('scheduled-task')) {
+          el.style.visibility = 'hidden';
+        }
+      }
+    });
+
+    const pctY = ((dragOverlayOffsetY / rect.height) * 100).toFixed(0);
+    log(`dragstart ${el.dataset.taskId} — offsetY=${dragOverlayOffsetY.toFixed(0)}px (${pctY}% of ${rect.height.toFixed(0)}px)`);
+  });
+
+  el.addEventListener('dragend', function() {
+    if (dragOverlay) { dragOverlay.remove(); dragOverlay = null; }
+    el.classList.remove('dragging');
+    el.style.visibility = '';
+    el.style.opacity = '';
+    document.body.classList.remove('is-dragging');
+    draggedEl = null;
+    dragOverlayOffsetX = 0;
+    dragOverlayOffsetY = 0;
+    removeDropIndicator();
+    document.querySelectorAll('.hour-slot').forEach(s => s.style.background = '');
+    log('dragend');
+  });
+});
+
+// Drop zones — use getOverlaySlot for both dragover and drop
+document.querySelectorAll('.hour-slot[data-droppable="true"]').forEach(slot => {
+  slot.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    const overlaySlot = getOverlaySlot(e);
+    if (!overlaySlot) return;
+
+    const { minutes, hour } = calculateDropPosition(e, overlaySlot);
+    updateDropIndicator(overlaySlot, hour, minutes);
+
+    // Show which slot the cursor is in vs which the overlay top is in
+    const cursorHour = slot.closest('.hour-row')?.dataset.hour;
+    const overlayHour = overlaySlot.closest('.hour-row')?.dataset.hour;
+    const diff = cursorHour !== overlayHour ? ` (cursor@${cursorHour}h)` : '';
+    log(`overlay top → ${hour}:${String(minutes).padStart(2,'0')}${diff}`);
+  });
+
+  slot.addEventListener('dragleave', function(e) {
+    const relatedSlot = e.relatedTarget?.closest('.hour-slot');
+    if (slot !== relatedSlot) {
+      removeDropIndicator();
+    }
+  });
+
+  slot.addEventListener('drop', function(e) {
+    e.preventDefault();
+    removeDropIndicator();
+
+    const overlaySlot = getOverlaySlot(e);
+    if (!overlaySlot) return;
+    const { minutes, hour } = calculateDropPosition(e, overlaySlot);
+    log(`DROPPED → ${hour}:${String(minutes).padStart(2,'0')}`);
+  });
+});
+
+log('Ready — grab tasks by bottom edge, verify drop indicator tracks overlay top');
+</script>
+</body>
+</html>
