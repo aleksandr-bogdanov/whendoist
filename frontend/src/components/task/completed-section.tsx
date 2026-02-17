@@ -8,9 +8,10 @@ import { TaskItem } from "./task-item";
 interface CompletedSectionProps {
   tasks: AppRoutersTasksTaskResponse[];
   onSelectTask?: (taskId: number) => void;
+  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-export function CompletedSection({ tasks, onSelectTask }: CompletedSectionProps) {
+export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedSectionProps) {
   const { showCompleted, toggleShowCompleted } = useUIStore();
 
   if (tasks.length === 0) return null;
@@ -48,7 +49,7 @@ export function CompletedSection({ tasks, onSelectTask }: CompletedSectionProps)
       <CollapsibleContent>
         <div className="pt-1">
           {sorted.map((task) => (
-            <TaskItem key={task.id} task={task} onSelect={onSelectTask} />
+            <TaskItem key={task.id} task={task} onSelect={onSelectTask} onEdit={onEditTask} />
           ))}
         </div>
       </CollapsibleContent>

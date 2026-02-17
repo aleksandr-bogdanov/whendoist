@@ -9,9 +9,10 @@ import { TaskItem } from "./task-item";
 interface ScheduledSectionProps {
   tasks: AppRoutersTasksTaskResponse[];
   onSelectTask?: (taskId: number) => void;
+  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-export function ScheduledSection({ tasks, onSelectTask }: ScheduledSectionProps) {
+export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledSectionProps) {
   const { showScheduled, toggleShowScheduled } = useUIStore();
 
   if (tasks.length === 0) return null;
@@ -49,7 +50,7 @@ export function ScheduledSection({ tasks, onSelectTask }: ScheduledSectionProps)
                 {group.label}
               </div>
               {group.tasks.map((task) => (
-                <TaskItem key={task.id} task={task} onSelect={onSelectTask} />
+                <TaskItem key={task.id} task={task} onSelect={onSelectTask} onEdit={onEditTask} />
               ))}
             </div>
           ))}

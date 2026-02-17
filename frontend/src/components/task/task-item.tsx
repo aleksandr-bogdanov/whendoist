@@ -1,5 +1,8 @@
-import { Calendar, ChevronDown, ChevronRight, Clock, Repeat } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Calendar, Check, ChevronDown, ChevronRight, Clock, Repeat } from "lucide-react";
+import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, SubtaskResponse } from "@/api/model";
+import { useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost } from "@/api/queries/tasks/tasks";
 import { Badge } from "@/components/ui/badge";
 import {
   CLARITY_LABELS,
@@ -15,18 +18,82 @@ interface TaskItemProps {
   task: AppRoutersTasksTaskResponse;
   depth?: number;
   onSelect?: (taskId: number) => void;
+  onEdit?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-export function TaskItem({ task, depth = 0, onSelect }: TaskItemProps) {
+export function TaskItem({ task, depth = 0, onSelect, onEdit }: TaskItemProps) {
   const { selectedTaskId, selectTask, expandedSubtasks, toggleExpandedSubtask } = useUIStore();
+  const queryClient = useQueryClient();
+  const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const isSelected = selectedTaskId === task.id;
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
   const isExpanded = expandedSubtasks.has(task.id);
 
-  const handleClick = () => {
+  const handleTitleClick = () => {
     selectTask(task.id);
     onSelect?.(task.id);
+    onEdit?.(task);
+  };
+
+  const handleToggleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Optimistic update
+    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>([
+      "/api/v1/tasks",
+    ]);
+
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(["/api/v1/tasks"], (old) => {
+      if (!old) return old;
+      return old.map((t) => {
+        if (t.id === task.id) {
+          return {
+            ...t,
+            status: isCompleted ? "pending" : "completed",
+            completed_at: isCompleted ? null : new Date().toISOString(),
+            // Cascade: mark subtasks completed too
+            subtasks: t.subtasks?.map((st) => ({
+              ...st,
+              status: isCompleted ? st.status : "completed",
+            })),
+          };
+        }
+        return t;
+      });
+    });
+
+    toggleComplete.mutate(
+      { taskId: task.id, data: null },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+          if (!isCompleted) {
+            toast.success("Task completed", {
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  toggleComplete.mutate(
+                    { taskId: task.id, data: null },
+                    {
+                      onSuccess: () => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+                      },
+                    },
+                  );
+                },
+              },
+              duration: 5000,
+            });
+          }
+        },
+        onError: () => {
+          // Rollback
+          queryClient.setQueryData(["/api/v1/tasks"], previousTasks);
+          toast.error("Failed to update task");
+        },
+      },
+    );
   };
 
   const dueDate = task.due_date;
@@ -42,25 +109,34 @@ export function TaskItem({ task, depth = 0, onSelect }: TaskItemProps) {
         )}
         style={{ paddingLeft: `${depth * 24 + 8}px` }}
       >
-        {/* Checkbox + title area as a button */}
+        {/* Checkbox */}
         <button
           type="button"
-          className="flex flex-1 items-center gap-2 min-w-0 text-left cursor-pointer hover:opacity-80"
-          onClick={handleClick}
+          className="flex-shrink-0 cursor-pointer"
+          onClick={handleToggleComplete}
+          title={isCompleted ? "Mark as pending" : "Mark as complete"}
         >
-          {/* Checkbox indicator */}
           <div
             className={cn(
-              "flex-shrink-0 h-4 w-4 rounded-full border-2 transition-colors",
+              "flex items-center justify-center h-4 w-4 rounded-full border-2 transition-colors",
               isCompleted
                 ? "bg-primary border-primary"
-                : "border-muted-foreground/40 hover:border-primary",
+                : "border-muted-foreground/40 hover:border-primary hover:bg-primary/10",
             )}
-          />
-          {/* Title */}
+          >
+            {isCompleted && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+          </div>
+        </button>
+
+        {/* Title as clickable for editing */}
+        <button
+          type="button"
+          className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80"
+          onClick={handleTitleClick}
+        >
           <span
             className={cn(
-              "flex-1 text-sm truncate",
+              "text-sm truncate block",
               isCompleted && "line-through text-muted-foreground",
             )}
           >
@@ -162,6 +238,8 @@ interface SubtaskItemProps {
 
 function SubtaskItem({ subtask, depth, onSelect }: SubtaskItemProps) {
   const { selectedTaskId, selectTask } = useUIStore();
+  const queryClient = useQueryClient();
+  const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const isSelected = selectedTaskId === subtask.id;
   const isCompleted = subtask.status === "completed";
 
@@ -170,34 +248,62 @@ function SubtaskItem({ subtask, depth, onSelect }: SubtaskItemProps) {
     onSelect?.(subtask.id);
   };
 
+  const handleToggleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    toggleComplete.mutate(
+      { taskId: subtask.id, data: null },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+        },
+        onError: () => toast.error("Failed to update task"),
+      },
+    );
+  };
+
   return (
-    <button
-      type="button"
+    <div
       className={cn(
-        "group flex w-full items-center gap-2 rounded-md px-2 py-1 cursor-pointer transition-colors text-left",
+        "group flex items-center gap-2 rounded-md px-2 py-1 transition-colors",
         "hover:bg-accent/50",
         isSelected && "bg-accent ring-1 ring-ring/20",
         isCompleted && "opacity-60",
       )}
       style={{ paddingLeft: `${depth * 24 + 8}px` }}
-      onClick={handleClick}
     >
-      <div
-        className={cn(
-          "flex-shrink-0 h-3.5 w-3.5 rounded-full border-2 transition-colors",
-          isCompleted
-            ? "bg-primary border-primary"
-            : "border-muted-foreground/30 hover:border-primary",
-        )}
-      />
-      <span
-        className={cn(
-          "flex-1 text-sm truncate",
-          isCompleted && "line-through text-muted-foreground",
-        )}
+      <button
+        type="button"
+        className="flex-shrink-0 cursor-pointer"
+        onClick={handleToggleComplete}
+        title={isCompleted ? "Mark as pending" : "Mark as complete"}
       >
-        {subtask.title}
-      </span>
+        <div
+          className={cn(
+            "flex items-center justify-center h-3.5 w-3.5 rounded-full border-2 transition-colors",
+            isCompleted
+              ? "bg-primary border-primary"
+              : "border-muted-foreground/30 hover:border-primary hover:bg-primary/10",
+          )}
+        >
+          {isCompleted && <Check className="h-2 w-2 text-primary-foreground" />}
+        </div>
+      </button>
+
+      <button
+        type="button"
+        className="flex-1 min-w-0 text-left cursor-pointer"
+        onClick={handleClick}
+      >
+        <span
+          className={cn(
+            "text-sm truncate block",
+            isCompleted && "line-through text-muted-foreground",
+          )}
+        >
+          {subtask.title}
+        </span>
+      </button>
 
       <span className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
         {subtask.duration_minutes && (
@@ -215,6 +321,6 @@ function SubtaskItem({ subtask, depth, onSelect }: SubtaskItemProps) {
           P{subtask.impact}
         </Badge>
       </span>
-    </button>
+    </div>
   );
 }

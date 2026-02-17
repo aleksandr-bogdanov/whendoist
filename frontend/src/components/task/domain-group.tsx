@@ -9,9 +9,10 @@ interface DomainGroupProps {
   domain: DomainResponse | null;
   tasks: AppRoutersTasksTaskResponse[];
   onSelectTask?: (taskId: number) => void;
+  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-export function DomainGroup({ domain, tasks, onSelectTask }: DomainGroupProps) {
+export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainGroupProps) {
   const { expandedDomains, toggleExpandedDomain } = useUIStore();
   // Default to expanded if not in the set (first load)
   const domainKey = domain?.id ?? 0;
@@ -71,7 +72,7 @@ export function DomainGroup({ domain, tasks, onSelectTask }: DomainGroupProps) {
           style={{ borderColor: domain?.color ?? "var(--border)" }}
         >
           {tasks.map((task) => (
-            <TaskItem key={task.id} task={task} onSelect={onSelectTask} />
+            <TaskItem key={task.id} task={task} onSelect={onSelectTask} onEdit={onEditTask} />
           ))}
         </div>
       </CollapsibleContent>

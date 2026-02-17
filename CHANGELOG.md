@@ -7,6 +7,21 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.6 — 2026-02-17
+
+### Added
+- Task Editor Sheet: right-side panel for creating and editing tasks with all fields (title, description, domain, parent, impact, clarity, duration, dates, recurrence)
+- Task Quick Add dialog: minimal modal with title + domain, Enter to save
+- Recurrence Picker: presets (None, Daily, Weekdays, Weekly, Monthly, Custom) with custom interval, day-of-week, day-of-month, and start/end bounds
+- Task completion: checkbox click with optimistic updates, cascading subtask completion, undo toast
+- Sort controls: clickable column headers for Impact, Duration, Clarity with toggle direction
+- Filter bar: view toggle chips for Scheduled and Completed sections
+- Energy selector: Zombie/Normal/Focus pills with client-side clarity filtering
+- Dashboard settings panel: retention days selector, hide recurring toggle
+- Dashboard header toolbar: New Task button, Quick Add button, integrated controls
+
+---
+
 ## v0.47.5 — 2026-02-17
 
 ### Added
