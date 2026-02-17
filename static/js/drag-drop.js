@@ -53,6 +53,7 @@
     let targetZoomHeight = 60;
     let pendingZoomDelta = 0;
     let zoomRAF = null;
+    let zoomInitialized = false;
 
     /**
      * Get the current hour height from module state.
@@ -434,14 +435,18 @@
         const panel = document.querySelector('.calendar-panel');
         if (!panel) return;
 
-        // Read initial hour height from data attribute (server-rendered)
-        const savedHeight = parseInt(panel.dataset.hourHeight, 10);
-        if (savedHeight && savedHeight >= ZOOM_MIN && savedHeight <= ZOOM_MAX) {
-            setHourHeight(savedHeight);
-            targetZoomHeight = savedHeight;
-        } else {
-            setHourHeight(60);
-            targetZoomHeight = 60;
+        // Only read server-rendered height on first init — subsequent calls
+        // (from refreshTaskList → DragDrop.init) must preserve current zoom.
+        if (!zoomInitialized) {
+            const savedHeight = parseInt(panel.dataset.hourHeight, 10);
+            if (savedHeight && savedHeight >= ZOOM_MIN && savedHeight <= ZOOM_MAX) {
+                setHourHeight(savedHeight);
+                targetZoomHeight = savedHeight;
+            } else {
+                setHourHeight(60);
+                targetZoomHeight = 60;
+            }
+            zoomInitialized = true;
         }
 
         // Recalculate positions for server-rendered events
@@ -587,6 +592,8 @@
 
     function showTrashBin() {
         if (trashBin) {
+            // Always reset drag-over from any previous cycle
+            trashBin.classList.remove('drag-over');
             trashBin.style.display = 'flex';
             // Animate in
             requestAnimationFrame(() => {
@@ -598,6 +605,8 @@
     function hideTrashBin() {
         if (trashBin) {
             trashBin.classList.remove('visible', 'drag-over');
+            trashBin.style.background = '';
+            trashBin.style.borderColor = '';
             // Wait for animation then hide
             setTimeout(() => {
                 if (trashBin && !trashBin.classList.contains('visible')) {
@@ -1314,7 +1323,7 @@
         }
         autoScrollGrid = grid;
         var rect = grid.getBoundingClientRect();
-        var EDGE = 60;
+        var EDGE = 100;
         var distFromTop = e.clientY - rect.top;
         var distFromBottom = rect.bottom - e.clientY;
 
