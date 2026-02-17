@@ -733,10 +733,19 @@ async def toggle_task_complete(
     # Fire-and-forget sync to Google Calendar
     asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
 
+    # If completing a parent task, unsync any scheduled subtasks from Google Calendar
+    cascaded_subtask_ids: list[int] = []
+    if updated_task and updated_task.status == "completed" and updated_task.subtasks:
+        for subtask in updated_task.subtasks:
+            cascaded_subtask_ids.append(subtask.id)
+            if subtask.scheduled_date:
+                asyncio.create_task(_fire_and_forget_unsync_task(subtask.id, user.id))
+
     return {
         "status": updated_task.status if updated_task else "error",
         "task_id": task_id,
         "completed": updated_task.status == "completed" if updated_task else False,
+        "cascaded_subtask_ids": cascaded_subtask_ids,
     }
 
 

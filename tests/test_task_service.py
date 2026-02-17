@@ -336,6 +336,99 @@ class TestSubtasks:
 
 
 @pytest.mark.integration
+class TestCompletionCascade:
+    """Completion cascade tests — completing a parent cascades to children."""
+
+    async def test_complete_parent_cascades_to_children(self, pg_session: AsyncSession, task_service: TaskService):
+        """Completing a parent marks all pending children as completed."""
+        parent = await task_service.create_task(title="Parent")
+        await pg_session.commit()
+
+        sub1 = await task_service.create_task(title="Sub 1", parent_id=parent.id)
+        sub2 = await task_service.create_task(title="Sub 2", parent_id=parent.id)
+        await pg_session.commit()
+
+        completed = await task_service.complete_task(parent.id)
+        await pg_session.commit()
+
+        assert completed is not None
+        assert completed.status == "completed"
+
+        # Refresh subtasks to get updated status
+        await pg_session.refresh(sub1)
+        await pg_session.refresh(sub2)
+        assert sub1.status == "completed"
+        assert sub1.completed_at is not None
+        assert sub2.status == "completed"
+        assert sub2.completed_at is not None
+
+    async def test_uncomplete_parent_does_not_uncomplete_children(
+        self, pg_session: AsyncSession, task_service: TaskService
+    ):
+        """Uncompleting a parent leaves children as-is."""
+        parent = await task_service.create_task(title="Parent")
+        await pg_session.commit()
+
+        sub = await task_service.create_task(title="Sub", parent_id=parent.id)
+        await pg_session.commit()
+
+        # Complete parent (cascades to child)
+        await task_service.complete_task(parent.id)
+        await pg_session.commit()
+
+        # Uncomplete parent
+        uncompleted = await task_service.uncomplete_task(parent.id)
+        await pg_session.commit()
+
+        assert uncompleted is not None
+        assert uncompleted.status == "pending"
+
+        # Child should still be completed
+        await pg_session.refresh(sub)
+        assert sub.status == "completed"
+
+    async def test_complete_childless_task_no_cascade(self, pg_session: AsyncSession, task_service: TaskService):
+        """Completing a task with no subtasks works normally."""
+        task = await task_service.create_task(title="Solo Task")
+        await pg_session.commit()
+
+        completed = await task_service.complete_task(task.id)
+        await pg_session.commit()
+
+        assert completed is not None
+        assert completed.status == "completed"
+        assert completed.completed_at is not None
+
+    async def test_complete_parent_with_already_completed_children(
+        self, pg_session: AsyncSession, task_service: TaskService
+    ):
+        """Completing a parent is idempotent — already-completed children stay completed."""
+        parent = await task_service.create_task(title="Parent")
+        await pg_session.commit()
+
+        sub1 = await task_service.create_task(title="Sub 1", parent_id=parent.id)
+        sub2 = await task_service.create_task(title="Sub 2", parent_id=parent.id)
+        await pg_session.commit()
+
+        # Complete sub1 first
+        await task_service.complete_task(sub1.id)
+        await pg_session.commit()
+        await pg_session.refresh(sub1)
+        original_completed_at = sub1.completed_at
+
+        # Now complete parent — sub1 should keep its original completed_at
+        await task_service.complete_task(parent.id)
+        await pg_session.commit()
+
+        await pg_session.refresh(sub1)
+        await pg_session.refresh(sub2)
+        assert sub1.status == "completed"
+        assert sub1.completed_at == original_completed_at  # Unchanged
+        assert sub2.status == "completed"
+        assert sub2.completed_at is not None
+
+
+@pytest.mark.integration
 class TestScheduling:
     """Task scheduling tests with PostgreSQL."""
 

@@ -167,6 +167,28 @@
             // (e.g., if task appears in both list and calendar)
             syncTaskCompletionState(taskId, instanceId, data.completed, taskEl);
 
+            // Cascade: visually complete all subtasks when completing a parent
+            if (data.completed && data.cascaded_subtask_ids && data.cascaded_subtask_ids.length > 0) {
+                data.cascaded_subtask_ids.forEach(function(subId) {
+                    var subEls = document.querySelectorAll('[data-task-id="' + subId + '"]');
+                    subEls.forEach(function(subEl) {
+                        subEl.dataset.completed = '1';
+                        applyCompletionClass(subEl, true);
+                        var subGutter = subEl.querySelector('.complete-gutter');
+                        if (subGutter) subGutter.setAttribute('aria-pressed', 'true');
+                    });
+                    // Remove calendar cards for cascaded subtasks
+                    var calCards = document.querySelectorAll('.calendar-item[data-task-id="' + subId + '"]');
+                    calCards.forEach(function(card) {
+                        var dayCal = card.closest('.day-calendar');
+                        card.remove();
+                        if (dayCal && typeof recalculateOverlaps === 'function') {
+                            recalculateOverlaps(dayCal);
+                        }
+                    });
+                });
+            }
+
             // Build undo callback (works for both complete and reopen)
             // Find the task-list counterpart (may be the same as taskEl)
             var listItemForUndo = taskEl.classList.contains('task-item')
