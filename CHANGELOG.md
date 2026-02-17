@@ -7,6 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.46.4 — 2026-02-17
+
+### Added
+- Reparent subtasks: move tasks between parents via "Parent task" picker in edit dialog
+- Promote subtasks: "Promote to task" button promotes a subtask to a top-level task
+- `parent_id` is now an updatable field — supports `PUT /api/v1/tasks/{id}` with `parent_id`
+- `_next_position()` helper in TaskService for DRY position calculation
+- DOM helpers `promoteTask()` and `reparentTask()` in TaskMutations module
+- Validation: can't reparent to self, to a subtask, to a recurring task, or a container with children
+
 ## v0.46.3 — 2026-02-17
 
 ### Added

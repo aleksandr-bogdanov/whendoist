@@ -264,17 +264,7 @@ class TaskService:
                 domain_id = None
 
         # Get max position for ordering within domain
-        result = await self.db.execute(
-            select(Task.position)
-            .where(
-                Task.user_id == self.user_id,
-                Task.domain_id == domain_id,
-                Task.parent_id == parent_id,
-            )
-            .order_by(Task.position.desc())
-            .limit(1)
-        )
-        max_pos = result.scalar_one_or_none() or 0
+        max_pos = await self._next_position(domain_id, parent_id) - 1
 
         task = Task(
             user_id=self.user_id,
@@ -299,6 +289,21 @@ class TaskService:
         await self.db.flush()
         return task
 
+    async def _next_position(self, domain_id: int | None, parent_id: int | None) -> int:
+        """Get the next available position for a task within a domain/parent group."""
+        result = await self.db.execute(
+            select(Task.position)
+            .where(
+                Task.user_id == self.user_id,
+                Task.domain_id == domain_id,
+                Task.parent_id == parent_id,
+            )
+            .order_by(Task.position.desc())
+            .limit(1)
+        )
+        max_pos = result.scalar_one_or_none() or 0
+        return max_pos + 1
+
     async def update_task(self, task_id: int, **kwargs) -> Task | None:
         """
         Update a task with provided fields.
@@ -311,6 +316,7 @@ class TaskService:
             "title",
             "description",
             "domain_id",
+            "parent_id",
             "duration_minutes",
             "impact",
             "clarity",
@@ -342,6 +348,41 @@ class TaskService:
             )
             if child_count_result.scalar_one() > 0:
                 raise ValueError("Tasks with subtasks cannot be recurring")
+
+        # Handle parent_id change (reparent/promote) before generic loop
+        if "parent_id" in kwargs:
+            new_parent_id = kwargs.pop("parent_id")
+            if new_parent_id is not None:
+                # Validate: can't be own parent
+                if new_parent_id == task_id:
+                    raise ValueError("A task cannot be its own parent")
+                # Fetch and validate new parent
+                parent = await self.get_task(new_parent_id)
+                if not parent:
+                    raise ValueError("Parent task not found")
+                if parent.parent_id is not None:
+                    raise ValueError("Cannot nest under a subtask")
+                if parent.is_recurring:
+                    raise ValueError("Cannot nest under a recurring task")
+                # Verify task being reparented has no children
+                child_count_result = await self.db.execute(
+                    select(func.count())
+                    .select_from(Task)
+                    .where(
+                        Task.parent_id == task_id,
+                        Task.user_id == self.user_id,
+                    )
+                )
+                if child_count_result.scalar_one() > 0:
+                    raise ValueError("A task with subtasks cannot become a subtask")
+                # Inherit domain from new parent
+                task.domain_id = parent.domain_id
+                task.parent_id = new_parent_id
+                task.position = await self._next_position(parent.domain_id, new_parent_id)
+            else:
+                # Promoting to top-level — keep current domain
+                task.parent_id = None
+                task.position = await self._next_position(task.domain_id, None)
 
         # Update only whitelisted fields that were explicitly provided
         for field, value in kwargs.items():

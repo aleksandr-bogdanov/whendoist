@@ -217,6 +217,16 @@
                             </div>
                         </div>
 
+                        <!-- PARENT PICKER (visible for top-level tasks without children) -->
+                        <div class="detail-row" id="parent-picker-row" style="display: none;">
+                            <div class="detail-label">Parent</div>
+                            <div class="detail-control">
+                                <select class="input" id="parent-picker">
+                                    <option value="">None (top-level)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- BATCH COMPLETE (visible for recurring tasks with pending past instances) -->
                         <div class="detail-row" id="batch-complete-row" style="display: none;">
                             <div class="detail-label"></div>
@@ -253,6 +263,7 @@
                         </div>
                         <div class="ft-center">
                             <button type="button" class="btn btn-danger-outline" id="btn-delete" style="display: none;">Delete</button>
+                            <button type="button" class="btn btn-secondary" id="btn-promote" style="display: none;">Promote to task</button>
                             <button type="button" class="btn btn-complete" id="btn-complete" style="display: none;">
                                 <span class="btn-complete-icon">✓</span> Complete
                             </button>
@@ -618,10 +629,14 @@
         // Form submit
         backdropEl.querySelector('form').addEventListener('submit', handleSubmit);
 
-        // Delete, complete, and batch complete buttons
+        // Delete, promote, complete, and batch complete buttons
         backdropEl.querySelector('#btn-delete').addEventListener('click', handleDelete);
+        backdropEl.querySelector('#btn-promote').addEventListener('click', handlePromote);
         backdropEl.querySelector('#btn-complete').addEventListener('click', handleComplete);
         backdropEl.querySelector('#btn-batch-complete').addEventListener('click', handleBatchComplete);
+
+        // Parent picker change
+        backdropEl.querySelector('#parent-picker').addEventListener('change', handleParentPickerChange);
 
         // Click backdrop to close
         backdropEl.addEventListener('click', (e) => {
@@ -1128,6 +1143,23 @@
                 }
             }
 
+            // Show reparent controls for existing tasks
+            var promoteBtn = backdropEl.querySelector('#btn-promote');
+            var parentPickerRow = backdropEl.querySelector('#parent-picker-row');
+            if (promoteBtn) promoteBtn.style.display = 'none';
+            if (parentPickerRow) parentPickerRow.style.display = 'none';
+
+            if (task.parent_id) {
+                // Editing a subtask — show "Promote to task" button
+                if (promoteBtn) promoteBtn.style.display = 'inline-flex';
+            } else if (!task.parent_id && task.subtasks && task.subtasks.length === 0 && !task.is_recurring) {
+                // Top-level task with no children and not recurring — show parent picker
+                if (parentPickerRow) {
+                    parentPickerRow.style.display = '';
+                    populateParentPicker(task.id, task.domain_id);
+                }
+            }
+
             // Show delete and complete buttons for existing tasks
             backdropEl.querySelector('#btn-delete').style.display = 'inline-flex';
 
@@ -1266,6 +1298,119 @@
             });
         } finally {
             btn.disabled = false;
+        }
+    }
+
+    /**
+     * Populate the parent task picker with eligible top-level tasks.
+     * Eligible: same domain, no parent_id, not recurring, not self.
+     */
+    async function populateParentPicker(currentTaskId, currentDomainId) {
+        var picker = backdropEl.querySelector('#parent-picker');
+        if (!picker) return;
+
+        // Clear existing options except the "None" option
+        picker.innerHTML = '<option value="">None (top-level)</option>';
+
+        try {
+            var response = await safeFetch('/api/v1/tasks?status=pending');
+            var tasks = await response.json();
+
+            for (var i = 0; i < tasks.length; i++) {
+                var t = tasks[i];
+                // Only top-level, non-recurring, not self
+                if (t.parent_id !== null) continue;
+                if (t.is_recurring) continue;
+                if (t.id === currentTaskId) continue;
+
+                var title = t.title;
+                if (typeof Crypto !== 'undefined' && Crypto.canCrypto && Crypto.canCrypto()) {
+                    try { title = await Crypto.decryptField(title); } catch (e) { /* use raw */ }
+                }
+                var opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = title;
+                picker.appendChild(opt);
+            }
+        } catch (error) {
+            console.error('Failed to load parent picker tasks:', error);
+        }
+    }
+
+    /**
+     * Handle parent picker change — reparent task under selected parent.
+     */
+    async function handleParentPickerChange() {
+        if (!currentTaskId) return;
+
+        var picker = backdropEl.querySelector('#parent-picker');
+        var newParentId = picker.value ? parseInt(picker.value, 10) : null;
+
+        // If "None" selected, nothing to do (task is already top-level)
+        if (newParentId === null) return;
+
+        try {
+            var response = await safeFetch('/api/v1/tasks/' + currentTaskId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parent_id: newParentId }),
+            });
+
+            var taskData = await response.json();
+            closeDialog();
+
+            // Re-fetch and replace both old location and new parent
+            if (window.TaskMutations) {
+                await TaskMutations.reparentTask(currentTaskId, newParentId);
+            } else {
+                window.location.reload();
+            }
+        } catch (error) {
+            handleError(error, 'Failed to reparent task', {
+                component: 'task-dialog',
+                action: 'handleParentPickerChange'
+            });
+        }
+    }
+
+    /**
+     * Handle Promote button click — promote subtask to top-level.
+     */
+    async function handlePromote() {
+        if (!currentTaskId) return;
+
+        var promoteBtn = backdropEl.querySelector('#btn-promote');
+        promoteBtn.disabled = true;
+
+        try {
+            var response = await safeFetch('/api/v1/tasks/' + currentTaskId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parent_id: null }),
+            });
+
+            var taskData = await response.json();
+            var oldParentId = document.querySelector('.task-item[data-task-id="' + currentTaskId + '"]');
+            var oldParent = oldParentId ? oldParentId.dataset.parentId : null;
+
+            closeDialog();
+
+            // Move task in DOM
+            if (window.TaskMutations) {
+                await TaskMutations.promoteTask(currentTaskId, oldParent, taskData);
+            } else {
+                window.location.reload();
+            }
+
+            if (window.Toast) {
+                Toast.show('Promoted to top-level task');
+            }
+        } catch (error) {
+            promoteBtn.disabled = false;
+            handleError(error, 'Failed to promote task', {
+                component: 'task-dialog',
+                action: 'handlePromote'
+            });
         }
     }
 
