@@ -7,7 +7,7 @@ All operations are user-scoped (multi-tenant).
 
 from datetime import UTC, date, datetime, time
 
-from sqlalchemy import case, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -247,6 +247,12 @@ class TaskService:
         if parent_id:
             parent = await self.get_task(parent_id)
             if parent:
+                # Depth-1: parent must itself be top-level
+                if parent.parent_id is not None:
+                    raise ValueError("Subtasks cannot have subtasks")
+                # Mutual exclusion: recurring tasks cannot have children
+                if parent.is_recurring:
+                    raise ValueError("Recurring tasks cannot have subtasks")
                 domain_id = parent.domain_id
             else:
                 parent_id = None  # Silently ignore unowned parent_id
@@ -323,6 +329,19 @@ class TaskService:
         task = await self.get_task(task_id)
         if not task:
             return None
+
+        # Guard: tasks with children cannot become recurring
+        if kwargs.get("is_recurring") is True and not task.is_recurring:
+            child_count_result = await self.db.execute(
+                select(func.count())
+                .select_from(Task)
+                .where(
+                    Task.parent_id == task_id,
+                    Task.user_id == self.user_id,
+                )
+            )
+            if child_count_result.scalar_one() > 0:
+                raise ValueError("Tasks with subtasks cannot be recurring")
 
         # Update only whitelisted fields that were explicitly provided
         for field, value in kwargs.items():

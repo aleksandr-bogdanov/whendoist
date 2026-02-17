@@ -224,8 +224,15 @@ class TodoistImportService:
         )
         existing_by_ext_id = {t.external_id: t for t in existing.scalars().all()}
 
-        # Identify tasks that have children (for counter tracking)
-        tasks_with_children: set[str] = {t.parent_id for t in tasks if t.parent_id is not None}
+        # Build root ancestor map to flatten deep nesting to depth-1
+        todoist_parent_map: dict[str, str] = {t.id: t.parent_id for t in tasks if t.parent_id}
+        root_map: dict[str, str] = {
+            tid: self._find_root_ancestor(tid, todoist_parent_map) for tid in todoist_parent_map
+        }
+
+        # Identify tasks that have children AFTER flattening (for counter tracking)
+        # A task has children if it's the root ancestor of any subtask
+        tasks_with_children: set[str] = set(root_map.values())
 
         # Map of Todoist task ID to local task ID
         task_id_map: dict[str, int] = {}
@@ -245,18 +252,15 @@ class TodoistImportService:
                 result.tasks_skipped += 1
                 continue
 
-            # Map domain: subtasks inherit parent's domain, top-level use project mapping
-            if task.parent_id and task.parent_id in task_id_map:
-                # Subtask: look up parent's domain from domain_map via project_id
-                domain_id = domain_map.get(task.project_id)
-            else:
-                domain_id = domain_map.get(task.project_id)
+            # Map domain
+            domain_id = domain_map.get(task.project_id)
             # Note: domain_id can be None for Inbox tasks
 
-            # Resolve parent_id: map Todoist parent_id to local task ID
+            # Resolve parent_id: flatten to root ancestor for depth-1
             local_parent_id = None
             if task.parent_id:
-                local_parent_id = task_id_map.get(task.parent_id)
+                root_todoist_id = root_map.get(task.id, task.parent_id)
+                local_parent_id = task_id_map.get(root_todoist_id)
                 # If parent wasn't imported (skipped/error), task becomes top-level
 
             # Track parent tasks
@@ -293,8 +297,11 @@ class TodoistImportService:
             duration_minutes = parsed_duration or task.duration_minutes
 
             # Parse recurrence from Todoist string
+            # Strip recurrence from tasks that have children (containers can't recur)
             is_recurring = task.due.is_recurring if task.due else False
             recurrence_rule = None
+            if task.id in tasks_with_children:
+                is_recurring = False
             if is_recurring and task.due and task.due.string:
                 recurrence_rule = self._parse_recurrence_string(task.due.string)
 
@@ -326,6 +333,18 @@ class TodoistImportService:
             result.tasks_created += 1
             if clarity is None:
                 result.tasks_need_clarity += 1
+
+    @staticmethod
+    def _find_root_ancestor(tid: str, parent_map: dict[str, str]) -> str:
+        """Walk up the parent chain to find the top-level ancestor."""
+        visited: set[str] = set()
+        current = tid
+        while parent_map.get(current) is not None:
+            if current in visited:
+                break  # cycle guard
+            visited.add(current)
+            current = parent_map[current]
+        return current
 
     def _parse_clarity_from_content(self, content: str) -> tuple[str | None, str]:
         """
@@ -575,8 +594,13 @@ class TodoistImportService:
         # Build task_id_map from existing tasks (includes active tasks just imported)
         task_id_map: dict[str, int] = {t.external_id: t.id for t in existing_by_ext_id.values() if t.external_id}
 
-        # Identify completed tasks that have children (for counter tracking and clarity default)
-        tasks_with_children: set[str] = set(completed_child_to_parent.values())
+        # Build root ancestor map to flatten deep nesting to depth-1
+        root_map: dict[str, str] = {
+            tid: self._find_root_ancestor(tid, completed_child_to_parent) for tid in completed_child_to_parent
+        }
+
+        # Identify completed tasks that have children AFTER flattening
+        tasks_with_children: set[str] = set(root_map.values())
 
         # Two-pass: tasks without parents first, then subtasks
         without_parent: list[dict] = []
@@ -615,12 +639,11 @@ class TodoistImportService:
             content = item.get("content", "")
             project_id = item.get("project_id")
 
-            # Resolve parent_id from completed_child_to_parent (built from
-            # parent_id field in the by_completion_date API response).
-            todoist_parent_id = completed_child_to_parent.get(task_id)
+            # Resolve parent_id: flatten to root ancestor for depth-1
             local_parent_id = None
-            if todoist_parent_id:
-                local_parent_id = task_id_map.get(str(todoist_parent_id))
+            if task_id in root_map:
+                root_todoist_id = root_map[task_id]
+                local_parent_id = task_id_map.get(str(root_todoist_id))
                 # If parent wasn't imported, task becomes top-level
 
             # Track parent tasks

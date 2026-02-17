@@ -468,23 +468,26 @@ async def create_task(
         scheduled_date = data.recurrence_start or user_today
 
     service = TaskService(db, user.id)
-    task = await service.create_task(
-        title=data.title,
-        description=data.description,
-        domain_id=data.domain_id,
-        parent_id=data.parent_id,
-        duration_minutes=data.duration_minutes,
-        impact=data.impact,
-        clarity=data.clarity,
-        due_date=data.due_date,
-        due_time=data.due_time,
-        scheduled_date=scheduled_date,
-        scheduled_time=data.scheduled_time,
-        is_recurring=data.is_recurring,
-        recurrence_rule=data.recurrence_rule,
-        recurrence_start=data.recurrence_start,
-        recurrence_end=data.recurrence_end,
-    )
+    try:
+        task = await service.create_task(
+            title=data.title,
+            description=data.description,
+            domain_id=data.domain_id,
+            parent_id=data.parent_id,
+            duration_minutes=data.duration_minutes,
+            impact=data.impact,
+            clarity=data.clarity,
+            due_date=data.due_date,
+            due_time=data.due_time,
+            scheduled_date=scheduled_date,
+            scheduled_time=data.scheduled_time,
+            is_recurring=data.is_recurring,
+            recurrence_rule=data.recurrence_rule,
+            recurrence_start=data.recurrence_start,
+            recurrence_end=data.recurrence_end,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from None
 
     # Materialize instances if recurring
     if task.is_recurring and task.recurrence_rule:
@@ -540,10 +543,13 @@ async def update_task(
         recurrence_start = update_data.get("recurrence_start", current.recurrence_start)
         update_data["scheduled_date"] = recurrence_start or user_today
 
-    task = await service.update_task(
-        task_id=task_id,
-        **update_data,
-    )
+    try:
+        task = await service.update_task(
+            task_id=task_id,
+            **update_data,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from None
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
