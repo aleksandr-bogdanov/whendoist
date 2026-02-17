@@ -895,54 +895,180 @@
 
         // Unschedule if a scheduled task was dropped outside calendar
         if (shouldUnschedule) {
-            // Element is still hidden from drag, now remove from DOM (no flash)
-            const parent = element.parentElement;
-            const dayCalendar = element.closest('.day-calendar');
-            element.remove();
+            // Capture original state for undo BEFORE removing
+            const origDate = getCardActualDate(element);
+            const origStartMins = element.dataset.startMins || '';
+            const origDuration = element.dataset.duration || '30';
+            const origImpact = element.dataset.impact || '4';
+            const origCompleted = element.dataset.completed || '0';
+            const origInstanceId = element.dataset.instanceId || '';
+            const origInstanceDate = element.dataset.instanceDate || '';
+            const origDayCalendar = element.closest('.day-calendar');
+            const textEl = element.querySelector('.scheduled-task-text');
+            let origTitle = '';
+            if (textEl) {
+                const clone = textEl.cloneNode(true);
+                const occSpan = clone.querySelector('.occurrence-day');
+                if (occSpan) occSpan.remove();
+                origTitle = clone.textContent.trim();
+            }
+            let origHour = 0;
+            let origMinutes = 0;
+            if (origStartMins) {
+                const sm = parseInt(origStartMins, 10);
+                origHour = Math.floor(sm / 60);
+                origMinutes = sm % 60;
+            }
 
-            // Unschedule via API
+            // Remove ALL calendar cards for this task (including adjacent mirrors)
+            removeAllCardsForTask(taskId);
+
+            // Call appropriate API
             try {
-                await safeFetch(`/api/v1/tasks/${taskId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        scheduled_date: null,
-                        scheduled_time: null,
-                    }),
-                });
-
-                // Recalculate overlaps after removal
-                if (dayCalendar) recalculateOverlaps(dayCalendar);
-                // Check if task exists in task list
-                const taskInList = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-                if (taskInList) {
-                    // Check if task is in the scheduled section (cross-section move needed)
-                    const inScheduledSection = !!taskInList.closest('#section-sched');
-                    if (inScheduledSection && window.TaskMutations) {
-                        TaskMutations.moveFromScheduledToDomain(taskInList);
-                    } else {
-                        // Task is within a domain group — reorder in-place
-                        taskInList.classList.remove('scheduled');
-                        updateTaskScheduledDate(taskInList, null);
-                        moveTaskToUnscheduledSection(taskInList);
-                    }
-                } else if (window.TaskMutations) {
-                    // Task doesn't exist in task list (was DB-scheduled), insert it
-                    await TaskMutations.insertNewTask(taskId);
+                if (origInstanceId) {
+                    // Recurring instance: skip instead of unscheduling parent task
+                    await safeFetch('/api/v1/instances/' + origInstanceId + '/skip', {
+                        method: 'POST',
+                    });
                 } else {
-                    window.location.reload();
+                    await safeFetch(`/api/v1/tasks/${taskId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            scheduled_date: null,
+                            scheduled_time: null,
+                        }),
+                    });
+                }
+
+                // Update task list
+                const taskInList = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+                if (!origInstanceId) {
+                    if (taskInList) {
+                        const inScheduledSection = !!taskInList.closest('#section-sched');
+                        if (inScheduledSection && window.TaskMutations) {
+                            TaskMutations.moveFromScheduledToDomain(taskInList);
+                        } else {
+                            taskInList.classList.remove('scheduled');
+                            updateTaskScheduledDate(taskInList, null);
+                            moveTaskToUnscheduledSection(taskInList);
+                        }
+                    } else if (window.TaskMutations) {
+                        await TaskMutations.insertNewTask(taskId);
+                    }
+                }
+
+                // Show toast with undo
+                if (window.Toast) {
+                    var toastMsg = origInstanceId
+                        ? 'Skipped "' + origTitle + '"'
+                        : (origTitle ? '"' + origTitle + '" unscheduled' : 'Task unscheduled');
+                    Toast.undo(toastMsg, function() {
+                        if (origInstanceId) {
+                            // Undo skip: re-schedule instance to original time
+                            var origDatetime = origDate + 'T' + String(origHour).padStart(2, '0') + ':' + String(origMinutes).padStart(2, '0') + ':00';
+                            safeFetch('/api/v1/instances/' + origInstanceId + '/schedule', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ scheduled_datetime: origDatetime }),
+                            });
+                        } else {
+                            // Undo unschedule: re-schedule task
+                            var origTime = String(origHour).padStart(2, '0') + ':' + String(origMinutes).padStart(2, '0') + ':00';
+                            safeFetch('/api/v1/tasks/' + taskId, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    scheduled_date: origDate,
+                                    scheduled_time: origTime,
+                                }),
+                            });
+                        }
+                        // Restore calendar card and sync to adjacent mirrors
+                        if (origDate && origStartMins) {
+                            var newCard = createScheduledTaskElement(
+                                taskId, origTitle, origDuration, origHour, origMinutes,
+                                origImpact, origCompleted, origInstanceId, origInstanceDate, origDate
+                            );
+                            // Find the correct slot (main or adjacent-day)
+                            var placed = false;
+                            document.querySelectorAll('.hour-row[data-hour="' + origHour + '"]').forEach(function(hr) {
+                                if (placed) return;
+                                var isAdj = hr.classList.contains('adjacent-day');
+                                var hrDate = isAdj ? hr.dataset.actualDate : hr.closest('.day-calendar')?.dataset.day;
+                                if (hrDate !== origDate) return;
+                                if (isAdj) return; // Prefer main row
+                                var slot = hr.querySelector('.hour-slot');
+                                if (slot) {
+                                    slot.appendChild(newCard);
+                                    recalculateOverlaps(hr.closest('.day-calendar'));
+                                    placed = true;
+                                }
+                            });
+                            // Fallback: place in any matching row (adjacent-day)
+                            if (!placed) {
+                                document.querySelectorAll('.hour-row[data-hour="' + origHour + '"]').forEach(function(hr) {
+                                    if (placed) return;
+                                    var isAdj = hr.classList.contains('adjacent-day');
+                                    var hrDate = isAdj ? hr.dataset.actualDate : hr.closest('.day-calendar')?.dataset.day;
+                                    if (hrDate !== origDate) return;
+                                    var slot = hr.querySelector('.hour-slot');
+                                    if (slot) {
+                                        slot.appendChild(newCard);
+                                        recalculateOverlaps(hr.closest('.day-calendar'));
+                                        placed = true;
+                                    }
+                                });
+                            }
+                            if (placed) syncCardToAdjacentCalendars(newCard, origDate, origHour);
+                        }
+                        // Refresh task list to reflect re-schedule
+                        if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                            TaskComplete.refreshTaskList();
+                        }
+                    });
                 }
             } catch (error) {
                 log.error('Failed to unschedule task:', error);
-                // Restore element on failure
-                if (parent) {
-                    parent.appendChild(element);
-                    element.style.visibility = '';
+                // Restore card on failure
+                if (origDate && origStartMins) {
+                    var failCard = createScheduledTaskElement(
+                        taskId, origTitle, origDuration, origHour, origMinutes,
+                        origImpact, origCompleted, origInstanceId, origInstanceDate, origDate
+                    );
+                    var placed = false;
+                    document.querySelectorAll('.hour-row[data-hour="' + origHour + '"]').forEach(function(hr) {
+                        if (placed) return;
+                        var isAdj = hr.classList.contains('adjacent-day');
+                        var hrDate = isAdj ? hr.dataset.actualDate : hr.closest('.day-calendar')?.dataset.day;
+                        if (hrDate !== origDate) return;
+                        if (isAdj) return;
+                        var slot = hr.querySelector('.hour-slot');
+                        if (slot) {
+                            slot.appendChild(failCard);
+                            recalculateOverlaps(hr.closest('.day-calendar'));
+                            placed = true;
+                        }
+                    });
+                    if (!placed) {
+                        document.querySelectorAll('.hour-row[data-hour="' + origHour + '"]').forEach(function(hr) {
+                            if (placed) return;
+                            var isAdj = hr.classList.contains('adjacent-day');
+                            var hrDate = isAdj ? hr.dataset.actualDate : hr.closest('.day-calendar')?.dataset.day;
+                            if (hrDate !== origDate) return;
+                            var slot = hr.querySelector('.hour-slot');
+                            if (slot) {
+                                slot.appendChild(failCard);
+                                recalculateOverlaps(hr.closest('.day-calendar'));
+                                placed = true;
+                            }
+                        });
+                    }
+                    if (placed) syncCardToAdjacentCalendars(failCard, origDate, origHour);
                 }
-                if (dayCalendar) recalculateOverlaps(dayCalendar);
                 handleError(error, 'Failed to unschedule task', {
                     component: 'drag-drop',
-                    action: 'handleDragToTrash'
+                    action: 'handleDragEnd'
                 });
             }
         }
@@ -1068,11 +1194,16 @@
         let origDayCalendar = null;
         if (draggedElement?.classList.contains('scheduled-task')) {
             origDayCalendar = draggedElement.closest('.day-calendar');
-            origDay = origDayCalendar?.dataset.day || '';
+            // Use getCardActualDate to handle adjacent-day rows correctly
+            origDay = getCardActualDate(draggedElement);
             origStartMins = draggedElement.dataset.startMins || '';
             const origHourVal = origStartMins ? Math.floor(parseInt(origStartMins, 10) / 60) : 0;
-            const origHourRow = origDayCalendar?.querySelector('.hour-row[data-hour="' + origHourVal + '"]:not(.adjacent-day)');
+            // Find the slot in the correct calendar for the actual date
+            const origActualCal = document.querySelector('.day-calendar[data-day="' + origDay + '"]');
+            const origHourRow = (origActualCal || origDayCalendar)?.querySelector('.hour-row[data-hour="' + origHourVal + '"]:not(.adjacent-day)');
             origSlot = origHourRow?.querySelector('.hour-slot') || null;
+            // Update origDayCalendar to the actual date's calendar for overlap recalc
+            if (origActualCal) origDayCalendar = origActualCal;
         }
 
         // Remove the dragged element if it's a scheduled task being rescheduled
@@ -1105,7 +1236,7 @@
         }
 
         // Create and place scheduled task immediately for visual feedback
-        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, impact, completed, effectiveInstanceId, effectiveInstanceDate);
+        const element = createScheduledTaskElement(taskId, content, duration, hour, minutes, impact, completed, effectiveInstanceId, effectiveInstanceDate, day);
         slot.appendChild(element);
         wasDroppedSuccessfully = true; // Mark successful drop
 
@@ -1137,19 +1268,7 @@
             }
         });
         // 2. Clone into any other hour-row (main or adjacent) showing this date+hour.
-        document.querySelectorAll('.hour-row[data-hour="' + hour + '"]').forEach(function(hr) {
-            if (hr === hourRow) return;
-            var isAdj = hr.classList.contains('adjacent-day');
-            var hrDate = isAdj ? hr.dataset.actualDate : hr.closest('.day-calendar')?.dataset.day;
-            if (hrDate !== day) return;
-            var hrSlot = hr.querySelector('.hour-slot');
-            if (!hrSlot) return;
-            var clone = element.cloneNode(true);
-            clone.addEventListener('dragstart', handleDragStart);
-            clone.addEventListener('dragend', handleDragEnd);
-            hrSlot.appendChild(clone);
-            recalculateOverlaps(hr.closest('.day-calendar'));
-        });
+        syncCardToAdjacentCalendars(element, day, hour);
 
         // Save to API immediately
         const scheduledDate = day;
@@ -1185,11 +1304,8 @@
             if (window.Toast) {
                 var undoCallback = effectiveInstanceId
                     ? function() {
-                        // Recurring instance: remove new card and any synced clone
-                        element.remove();
-                        document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]')
-                            .forEach(function(el) { el.remove(); });
-                        recalculateOverlaps(dayCalendar);
+                        // Recurring instance: remove all cards (including adjacent mirrors)
+                        removeAllCardsForTask(taskId);
                         if (origDay && origStartMins) {
                             // Was rescheduled — restore to original time
                             var sm = parseInt(origStartMins, 10);
@@ -1198,10 +1314,11 @@
                             var origDatetime = origDay + 'T' + String(oh).padStart(2, '0') + ':' + String(om).padStart(2, '0') + ':00';
                             var restoredCard = createScheduledTaskElement(
                                 taskId, content, duration, oh, om, impact, completed,
-                                effectiveInstanceId, effectiveInstanceDate
+                                effectiveInstanceId, effectiveInstanceDate, origDay
                             );
                             if (origSlot) {
                                 origSlot.appendChild(restoredCard);
+                                syncCardToAdjacentCalendars(restoredCard, origDay, oh);
                                 recalculateOverlaps(origDayCalendar);
                             }
                             safeFetch('/api/v1/instances/' + effectiveInstanceId + '/schedule', {
@@ -1217,29 +1334,50 @@
                         }
                     }
                     : function() {
-                        // Regular task: remove card and any synced clone, unschedule via API, then refresh list
-                        element.remove();
-                        document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]')
-                            .forEach(function(el) { el.remove(); });
-                        recalculateOverlaps(dayCalendar);
-                        safeFetch('/api/v1/tasks/' + taskId, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
-                        }).then(function() {
-                            if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
-                                TaskComplete.refreshTaskList();
+                        // Regular task: remove card and all synced clones
+                        removeAllCardsForTask(taskId);
+                        if (origDay && origStartMins) {
+                            // Was rescheduled — restore to original position
+                            var sm = parseInt(origStartMins, 10);
+                            var oh = Math.floor(sm / 60);
+                            var om = sm % 60;
+                            var origTime = String(oh).padStart(2, '0') + ':' + String(om).padStart(2, '0') + ':00';
+                            var restoredCard = createScheduledTaskElement(
+                                taskId, content, duration, oh, om, impact, completed, '', '', origDay
+                            );
+                            if (origSlot) {
+                                origSlot.appendChild(restoredCard);
+                                syncCardToAdjacentCalendars(restoredCard, origDay, oh);
+                                recalculateOverlaps(origDayCalendar);
                             }
-                        });
+                            safeFetch('/api/v1/tasks/' + taskId, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    scheduled_date: origDay,
+                                    scheduled_time: origTime,
+                                    duration_minutes: draggedDuration,
+                                }),
+                            });
+                        } else {
+                            // Was freshly scheduled — unschedule via API
+                            safeFetch('/api/v1/tasks/' + taskId, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ scheduled_date: null, scheduled_time: null }),
+                            }).then(function() {
+                                if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                                    TaskComplete.refreshTaskList();
+                                }
+                            });
+                        }
                     };
                 Toast.undo('Scheduled "' + content + '" for ' + formatDateShort(day), undoCallback);
             }
         } catch (error) {
             log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}:`, error);
             // Remove the optimistic element and any synced clone on failure
-            element.remove();
-            document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]')
-                .forEach(function(el) { el.remove(); });
+            removeAllCardsForTask(taskId);
             if (original) {
                 original.classList.remove('scheduled');
                 moveTaskToUnscheduledSection(original);
@@ -1395,6 +1533,66 @@
     }
 
     // ==========================================================================
+    // ADJACENT-DAY MIRROR UTILITIES
+    // ==========================================================================
+
+    /**
+     * Get the actual scheduled date for a calendar card, handling adjacent-day rows.
+     * Priority: element.scheduledDate > hourRow.actualDate > dayCalendar.day
+     * @param {HTMLElement} cardEl - Calendar card element
+     * @returns {string} ISO date string (YYYY-MM-DD) or ''
+     */
+    function getCardActualDate(cardEl) {
+        return cardEl.dataset.scheduledDate
+            || cardEl.closest('.hour-row')?.dataset.actualDate
+            || cardEl.closest('.day-calendar')?.dataset.day
+            || '';
+    }
+
+    /**
+     * Remove all calendar cards (scheduled-task and date-only-task) for a task
+     * and recalculate overlaps on affected day-calendars.
+     * @param {string} taskId - Task ID
+     * @returns {HTMLElement[]} Array of affected day-calendar elements
+     */
+    function removeAllCardsForTask(taskId) {
+        var affected = [];
+        document.querySelectorAll(
+            '.scheduled-task[data-task-id="' + taskId + '"], .date-only-task[data-task-id="' + taskId + '"]'
+        ).forEach(function(el) {
+            var cal = el.closest('.day-calendar');
+            el.remove();
+            if (cal && affected.indexOf(cal) === -1) affected.push(cal);
+        });
+        affected.forEach(function(cal) { recalculateOverlaps(cal); });
+        return affected;
+    }
+
+    /**
+     * Clone a calendar card into all other hour-rows (main or adjacent) showing
+     * the same date+hour. Handles bidirectional sync: main→adjacent and adjacent→main.
+     * @param {HTMLElement} element - The source card element (already in DOM)
+     * @param {string} day - ISO date string (YYYY-MM-DD)
+     * @param {number} hour - Hour (0-23)
+     */
+    function syncCardToAdjacentCalendars(element, day, hour) {
+        var hourRow = element.closest('.hour-row');
+        document.querySelectorAll('.hour-row[data-hour="' + hour + '"]').forEach(function(hr) {
+            if (hr === hourRow) return;
+            var isAdj = hr.classList.contains('adjacent-day');
+            var hrDate = isAdj ? hr.dataset.actualDate : hr.closest('.day-calendar')?.dataset.day;
+            if (hrDate !== day) return;
+            var hrSlot = hr.querySelector('.hour-slot');
+            if (!hrSlot) return;
+            var clone = element.cloneNode(true);
+            clone.addEventListener('dragstart', handleDragStart);
+            clone.addEventListener('dragend', handleDragEnd);
+            hrSlot.appendChild(clone);
+            recalculateOverlaps(hr.closest('.day-calendar'));
+        });
+    }
+
+    // ==========================================================================
     // SCHEDULED TASK ELEMENT
     // ==========================================================================
 
@@ -1410,7 +1608,7 @@
      * @param {string} instanceDate - Instance date ISO string (for recurring tasks)
      * @returns {HTMLElement} Scheduled task element
      */
-    function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, impact = '4', completed = '0', instanceId = '', instanceDate = '') {
+    function createScheduledTaskElement(taskId, content, duration, hour, minutes = 0, impact = '4', completed = '0', instanceId = '', instanceDate = '', scheduledDate = '') {
         const durationMins = parseInt(duration, 10) || DEFAULT_DURATION;
         const startMins = hour * 60 + minutes;
         const endMins = startMins + durationMins;
@@ -1427,6 +1625,7 @@
         el.dataset.startMins = startMins;
         el.dataset.endMins = endMins;
         el.dataset.completed = completed;
+        if (scheduledDate) el.dataset.scheduledDate = scheduledDate;
         el.draggable = true;
         el.style.height = `${heightPx}px`;
         el.style.top = `${topPx}px`;
@@ -1584,11 +1783,10 @@
 
         wasDroppedSuccessfully = true;
 
-        // Remove existing scheduled task element if rescheduling from calendar
+        // Remove existing scheduled task element(s) if rescheduling from calendar
+        // (includes synced clones in adjacent-day mirrors)
         if (draggedElement?.classList.contains('scheduled-task')) {
-            const oldCalendar = draggedElement.closest('.day-calendar');
-            draggedElement.remove();
-            if (oldCalendar) recalculateOverlaps(oldCalendar);
+            removeAllCardsForTask(taskId);
         }
 
         // Don't add duplicate if already a date-only task being moved to same banner
@@ -1605,7 +1803,7 @@
 
         // Create date-only task element in the banner
         const tasksContainer = banner.querySelector('.date-only-tasks');
-        const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed, instanceId, instanceDate);
+        const el = createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed, instanceId, instanceDate, day);
         tasksContainer.appendChild(el);
 
         // Mark original task in task list and animate out, then refresh
@@ -1666,7 +1864,7 @@
     /**
      * Create a date-only task element for the Anytime banner.
      */
-    function createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed = '0', instanceId = '', instanceDate = '') {
+    function createDateOnlyTaskElement(taskId, content, duration, clarity, impact, completed = '0', instanceId = '', instanceDate = '', scheduledDate = '') {
         const durationMins = parseInt(duration, 10) || 0;
         const impactVal = impact || '4';
         const isCompleted = completed === '1';
@@ -1678,6 +1876,7 @@
         el.dataset.clarity = clarity || 'none';
         el.dataset.impact = impactVal;
         el.dataset.completed = completed;
+        if (scheduledDate) el.dataset.scheduledDate = scheduledDate;
         el.draggable = true;
 
         if (instanceId) {
@@ -1762,6 +1961,9 @@
         getHourHeight,
         initSingleTask,
         createScheduledTaskElement,
+        getCardActualDate,
+        removeAllCardsForTask,
+        syncCardToAdjacentCalendars,
     };
 
     document.addEventListener('DOMContentLoaded', init);

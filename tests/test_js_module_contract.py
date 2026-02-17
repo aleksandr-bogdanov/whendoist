@@ -653,3 +653,12 @@ class TestDragDropInitSingleTaskExport:
             dragdrop_js,
             re.DOTALL,
         )
+
+    def test_exports_adjacent_day_utilities(self, dragdrop_js: str):
+        """Must export adjacent-day mirror utilities for cross-module use."""
+        for fn in ["getCardActualDate", "removeAllCardsForTask", "syncCardToAdjacentCalendars"]:
+            assert re.search(
+                r"window\.DragDrop\s*=\s*\{[^}]*" + fn,
+                dragdrop_js,
+                re.DOTALL,
+            ), f"DragDrop must export {fn}"

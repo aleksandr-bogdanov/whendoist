@@ -7,6 +7,17 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.97 — 2026-02-17
+
+### Fixed
+- Adjacent-day calendar mirrors: unschedule (drag-out + quick-action button) now removes synced clones from all calendars instead of leaving ghost cards
+- Wrong undo date for adjacent-day tasks: unschedule and reschedule undo now uses the task's actual date, not the host calendar's date
+- Drag-to-unschedule now shows an undo toast (previously had no undo, unlike every other operation)
+- Drag-to-unschedule recurring instances now correctly calls skip API instead of modifying the parent task
+- Reschedule undo for regular tasks now restores to original position instead of fully unscheduling
+- Undo-unschedule, task dialog edits, and instance reschedule undo now sync restored cards to adjacent-day mirrors
+- Anytime banner drop now cleans up synced calendar clones when moving a mirrored task
+
 ## v0.45.96 — 2026-02-17
 
 ### Fixed

@@ -588,27 +588,14 @@
      * @param {Object} taskData - JSON response from PUT /api/v1/tasks/{id}
      */
     function updateCalendarItem(taskId, taskData) {
-        // Remove all existing calendar cards for this task
-        var oldCards = document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"]');
-        var affectedCalendars = [];
-        oldCards.forEach(function(el) {
-            var dayCal = el.closest('.day-calendar');
-            if (dayCal && affectedCalendars.indexOf(dayCal) === -1) {
-                affectedCalendars.push(dayCal);
-            }
-            el.remove();
-        });
-
-        // Also remove date-only cards
-        var oldDateOnly = document.querySelectorAll('.date-only-task[data-task-id="' + taskId + '"]');
-        oldDateOnly.forEach(function(el) { el.remove(); });
-
-        // Recalculate overlaps on calendars that lost a card
-        affectedCalendars.forEach(function(cal) {
-            if (typeof recalculateOverlaps === 'function') {
-                recalculateOverlaps(cal);
-            }
-        });
+        // Remove all existing calendar cards for this task (including adjacent mirrors)
+        if (window.DragDrop && typeof DragDrop.removeAllCardsForTask === 'function') {
+            DragDrop.removeAllCardsForTask(taskId);
+        } else {
+            // Fallback: manual removal
+            document.querySelectorAll('.scheduled-task[data-task-id="' + taskId + '"], .date-only-task[data-task-id="' + taskId + '"]')
+                .forEach(function(el) { el.remove(); });
+        }
 
         // If the task is now scheduled with a time, create a new card
         // Skip creation only for archived tasks
@@ -635,11 +622,10 @@
 
             var newCard = DragDrop.createScheduledTaskElement(
                 taskId, displayTitle, duration, hour, minutes,
-                String(impact), completed
+                String(impact), completed, '', '', taskData.scheduled_date
             );
 
             // Find the correct day-calendar and hour-row
-            var startMins = hour * 60 + minutes;
             var dayCal = document.querySelector('.day-calendar[data-day="' + taskData.scheduled_date + '"]');
             if (dayCal) {
                 var hourRow = dayCal.querySelector('.hour-row[data-hour="' + hour + '"]:not(.adjacent-day)');
@@ -647,9 +633,15 @@
                     var slot = hourRow.querySelector('.hour-slot');
                     if (slot) {
                         slot.appendChild(newCard);
+                        // Sync to adjacent-day mirrors
+                        if (typeof DragDrop.syncCardToAdjacentCalendars === 'function') {
+                            DragDrop.syncCardToAdjacentCalendars(newCard, taskData.scheduled_date, hour);
+                        }
                     }
                 }
-                recalculateOverlaps(dayCal);
+                if (typeof recalculateOverlaps === 'function') {
+                    recalculateOverlaps(dayCal);
+                }
             }
         }
     }

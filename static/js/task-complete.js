@@ -911,7 +911,10 @@
 
         if (calendarCard) {
             dayCalendar = calendarCard.closest('.day-calendar');
-            origScheduledDate = dayCalendar?.dataset.day || '';
+            // Use getCardActualDate to handle adjacent-day rows correctly
+            origScheduledDate = (window.DragDrop && typeof DragDrop.getCardActualDate === 'function')
+                ? DragDrop.getCardActualDate(calendarCard)
+                : (dayCalendar?.dataset.day || '');
             origStartMins = calendarCard.dataset.startMins || '';
             origDuration = calendarCard.dataset.duration || '30';
             origImpact = calendarCard.dataset.impact || '4';
@@ -931,10 +934,14 @@
             }
             origScheduledTime = String(origHour).padStart(2, '0') + ':' + String(origMinutes).padStart(2, '0') + ':00';
 
-            // Remove calendar card from DOM
-            calendarCard.remove();
-            if (dayCalendar && typeof recalculateOverlaps === 'function') {
-                recalculateOverlaps(dayCalendar);
+            // Remove ALL calendar cards for this task (including adjacent mirrors)
+            if (window.DragDrop && typeof DragDrop.removeAllCardsForTask === 'function') {
+                DragDrop.removeAllCardsForTask(taskId);
+            } else {
+                calendarCard.remove();
+                if (dayCalendar && typeof recalculateOverlaps === 'function') {
+                    recalculateOverlaps(dayCalendar);
+                }
             }
         }
 
@@ -1005,14 +1012,20 @@
                 window.DragDrop && typeof DragDrop.createScheduledTaskElement === 'function') {
                 var newCard = DragDrop.createScheduledTaskElement(
                     undoData.taskId, undoData.title, undoData.duration,
-                    undoData.hour, undoData.minutes, undoData.impact, undoData.completed
+                    undoData.hour, undoData.minutes, undoData.impact, undoData.completed,
+                    '', '', undoData.scheduledDate
                 );
-                var dayCal = undoData.dayCalendar || document.querySelector('.day-calendar[data-day="' + undoData.scheduledDate + '"]');
+                var dayCal = document.querySelector('.day-calendar[data-day="' + undoData.scheduledDate + '"]') || undoData.dayCalendar;
                 if (dayCal) {
                     var hourRow = dayCal.querySelector('.hour-row[data-hour="' + undoData.hour + '"]:not(.adjacent-day)');
                     if (hourRow) {
                         var slot = hourRow.querySelector('.hour-slot');
-                        if (slot) slot.appendChild(newCard);
+                        if (slot) {
+                            slot.appendChild(newCard);
+                            if (typeof DragDrop.syncCardToAdjacentCalendars === 'function') {
+                                DragDrop.syncCardToAdjacentCalendars(newCard, undoData.scheduledDate, undoData.hour);
+                            }
+                        }
                     }
                     if (typeof recalculateOverlaps === 'function') {
                         recalculateOverlaps(dayCal);
@@ -1048,15 +1061,22 @@
 
                 var newCard = DragDrop.createScheduledTaskElement(
                     info.taskId, info.title, info.duration,
-                    info.hour, info.minutes, info.impact, info.completed
+                    info.hour, info.minutes, info.impact, info.completed,
+                    '', '', info.scheduledDate
                 );
 
-                var dayCal = info.dayCalendar || document.querySelector('.day-calendar[data-day="' + info.scheduledDate + '"]');
+                var dayCal = document.querySelector('.day-calendar[data-day="' + info.scheduledDate + '"]') || info.dayCalendar;
                 if (dayCal) {
                     var hourRow = dayCal.querySelector('.hour-row[data-hour="' + info.hour + '"]:not(.adjacent-day)');
                     if (hourRow) {
                         var slot = hourRow.querySelector('.hour-slot');
-                        if (slot) slot.appendChild(newCard);
+                        if (slot) {
+                            slot.appendChild(newCard);
+                            // Sync to adjacent-day mirrors
+                            if (typeof DragDrop.syncCardToAdjacentCalendars === 'function') {
+                                DragDrop.syncCardToAdjacentCalendars(newCard, info.scheduledDate, info.hour);
+                            }
+                        }
                     }
                     if (typeof recalculateOverlaps === 'function') {
                         recalculateOverlaps(dayCal);
