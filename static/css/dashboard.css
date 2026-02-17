@@ -2321,9 +2321,18 @@ body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[d
 body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] {
     display: none !important;
 }
+/* Hide subtask containers when parent is filtered by zombie mode */
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="normal"] + .subtask-container,
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] + .subtask-container {
+    display: none !important;
+}
 
 /* Normal mode: autopilot + normal (hide brainstorm) */
 body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] {
+    display: none !important;
+}
+/* Hide subtask containers when parent is filtered by normal mode */
+body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] + .subtask-container {
     display: none !important;
 }
 

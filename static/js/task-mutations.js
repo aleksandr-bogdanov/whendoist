@@ -219,7 +219,7 @@
         var countEl = sectionEl.querySelector('.task-count') || sectionEl.querySelector('.section-count');
         if (!countEl) return;
 
-        var taskItems = sectionEl.querySelectorAll('.task-item');
+        var taskItems = sectionEl.querySelectorAll(':scope .task-list > .task-item, :scope .section-tasks > .task-item');
         countEl.textContent = taskItems.length;
     }
 
