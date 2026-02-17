@@ -7,6 +7,18 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.3 — 2026-02-17
+
+### Added
+- Settings page: theme, timezone, Google Calendar, GCal sync, Todoist import, encryption (enable/disable with batch encrypt/decrypt, passkey management), domains CRUD, data management (export/import/snapshots/wipe), keyboard shortcuts, about section
+- Thoughts page: chat-bubble inbox for tasks without a domain, quick capture input, client-side encryption support
+- Privacy Policy and Terms of Service as public React routes (ported from Jinja2 templates)
+- Onboarding wizard: 7-step flow (welcome, energy levels, calendar connect, calendar select, Todoist import, create domains, summary) shown to new users
+- Wizard integration in auth guard layout — automatically shows for users who haven't completed onboarding
+- Updated dashboard stub with navigation links
+
+---
+
 ## v0.47.2 — 2026-02-17
 
 ### Added
