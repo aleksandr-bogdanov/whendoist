@@ -543,3 +543,111 @@ class TestMultitenancy:
         # Verify task still exists
         still_exists = await service_b.get_task(task_id)
         assert still_exists is not None, "Task should still exist"
+
+
+@pytest.mark.integration
+class TestReparentPromote:
+    """Reparent and promote subtask tests with PostgreSQL."""
+
+    async def test_reparent_task_updates_domain(self, pg_session: AsyncSession, task_service: TaskService):
+        """Reparenting a task under a new parent inherits the parent's domain."""
+        domain_a = await task_service.create_domain(name="Domain A")
+        domain_b = await task_service.create_domain(name="Domain B")
+        await pg_session.commit()
+
+        parent = await task_service.create_task(title="Parent", domain_id=domain_b.id)
+        task = await task_service.create_task(title="Task", domain_id=domain_a.id)
+        await pg_session.commit()
+
+        updated = await task_service.update_task(task.id, parent_id=parent.id)
+        await pg_session.commit()
+
+        assert updated is not None
+        assert updated.parent_id == parent.id
+        assert updated.domain_id == domain_b.id
+
+    async def test_promote_subtask_to_top_level(self, pg_session: AsyncSession, task_service: TaskService):
+        """Promoting a subtask sets parent_id to None and preserves domain."""
+        domain = await task_service.create_domain(name="Domain")
+        await pg_session.commit()
+
+        parent = await task_service.create_task(title="Parent", domain_id=domain.id)
+        await pg_session.commit()
+
+        subtask = await task_service.create_task(title="Subtask", parent_id=parent.id)
+        await pg_session.commit()
+
+        assert subtask.parent_id == parent.id
+        assert subtask.domain_id == domain.id
+
+        promoted = await task_service.update_task(subtask.id, parent_id=None)
+        await pg_session.commit()
+
+        assert promoted is not None
+        assert promoted.parent_id is None
+        assert promoted.domain_id == domain.id  # Domain preserved
+
+    async def test_reparent_to_subtask_raises(self, pg_session: AsyncSession, task_service: TaskService):
+        """Cannot nest under a task that already has a parent."""
+        grandparent = await task_service.create_task(title="Grandparent")
+        await pg_session.commit()
+
+        parent = await task_service.create_task(title="Parent", parent_id=grandparent.id)
+        task = await task_service.create_task(title="Task")
+        await pg_session.commit()
+
+        with pytest.raises(ValueError, match="Cannot nest under a subtask"):
+            await task_service.update_task(task.id, parent_id=parent.id)
+
+    async def test_reparent_to_self_raises(self, pg_session: AsyncSession, task_service: TaskService):
+        """Cannot set a task as its own parent."""
+        task = await task_service.create_task(title="Task")
+        await pg_session.commit()
+
+        with pytest.raises(ValueError, match="A task cannot be its own parent"):
+            await task_service.update_task(task.id, parent_id=task.id)
+
+    async def test_reparent_to_recurring_raises(self, pg_session: AsyncSession, task_service: TaskService):
+        """Cannot nest under a recurring task."""
+        recurring = await task_service.create_task(
+            title="Recurring",
+            is_recurring=True,
+            recurrence_rule={"freq": "daily", "interval": 1},
+        )
+        task = await task_service.create_task(title="Task")
+        await pg_session.commit()
+
+        with pytest.raises(ValueError, match="Cannot nest under a recurring task"):
+            await task_service.update_task(task.id, parent_id=recurring.id)
+
+    async def test_reparent_container_with_children_raises(self, pg_session: AsyncSession, task_service: TaskService):
+        """A parent with children cannot become a subtask."""
+        container = await task_service.create_task(title="Container")
+        await pg_session.commit()
+
+        await task_service.create_task(title="Child", parent_id=container.id)
+        new_parent = await task_service.create_task(title="New Parent")
+        await pg_session.commit()
+
+        with pytest.raises(ValueError, match="A task with subtasks cannot become a subtask"):
+            await task_service.update_task(container.id, parent_id=new_parent.id)
+
+    async def test_reparent_recalculates_position(self, pg_session: AsyncSession, task_service: TaskService):
+        """Reparenting sets position correctly in the new parent group."""
+        parent = await task_service.create_task(title="Parent")
+        await pg_session.commit()
+
+        await task_service.create_task(title="Sub 1", parent_id=parent.id)
+        sub2 = await task_service.create_task(title="Sub 2", parent_id=parent.id)
+        await pg_session.commit()
+
+        # Create a standalone task and reparent it under the same parent
+        task = await task_service.create_task(title="New Sub")
+        await pg_session.commit()
+
+        updated = await task_service.update_task(task.id, parent_id=parent.id)
+        await pg_session.commit()
+
+        assert updated is not None
+        # Position should be after sub1 and sub2
+        assert updated.position > sub2.position

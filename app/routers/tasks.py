@@ -185,6 +185,7 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     domain_id: int | None = None
+    parent_id: int | None = None
     duration_minutes: int | None = Field(None, ge=1, le=1440)
     impact: int | None = Field(None, ge=1, le=4)
     clarity: str | None = None

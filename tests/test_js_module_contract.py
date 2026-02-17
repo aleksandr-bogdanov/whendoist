@@ -640,6 +640,14 @@ class TestTaskMutationsModuleExportsAPI:
         """Must export updateSubtaskCount for subtask creation/deletion."""
         assert re.search(r"updateSubtaskCount\s*:", mutations_js)
 
+    def test_exports_promote_task(self, mutations_js: str):
+        """Must export promoteTask for promoting subtasks to top-level."""
+        assert re.search(r"promoteTask\s*:", mutations_js)
+
+    def test_exports_reparent_task(self, mutations_js: str):
+        """Must export reparentTask for moving tasks under a new parent."""
+        assert re.search(r"reparentTask\s*:", mutations_js)
+
     def test_uses_safe_fetch(self, mutations_js: str):
         """Must use safeFetch for API calls."""
         assert "safeFetch" in mutations_js

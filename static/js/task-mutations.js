@@ -746,6 +746,155 @@
     }
 
     // ======================================================================
+    // REPARENT / PROMOTE
+    // ======================================================================
+
+    /**
+     * Promote a subtask to a top-level task in the DOM.
+     * Moves the task-item from the subtask-container to the domain's task-list.
+     *
+     * @param {string|number} taskId - The task being promoted
+     * @param {string|number|null} oldParentId - The previous parent task ID
+     * @param {Object} taskData - API response with updated task data
+     */
+    async function promoteTask(taskId, oldParentId, taskData) {
+        var taskEl = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+        if (!taskEl) {
+            // Task not in DOM — re-fetch from server
+            await insertNewTask(taskId);
+            if (oldParentId) updateSubtaskCount(oldParentId, -1);
+            return;
+        }
+
+        // Clear parent_id data attribute
+        taskEl.dataset.parentId = '';
+
+        // Move to domain group
+        var domainId = taskData.domain_id || taskEl.dataset.domainId || '';
+        taskEl.dataset.domainId = domainId;
+
+        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
+        if (targetGroup) {
+            var taskList = targetGroup.querySelector('.task-list');
+            if (taskList) {
+                var addTaskRow = taskList.querySelector(':scope > .add-task-row');
+                if (addTaskRow) {
+                    taskList.insertBefore(taskEl, addTaskRow);
+                } else {
+                    taskList.appendChild(taskEl);
+                }
+            }
+            // Make draggable again
+            if (!taskEl.dataset.scheduledDate) {
+                taskEl.setAttribute('draggable', 'true');
+                if (window.DragDrop && typeof DragDrop.initSingleTask === 'function') {
+                    DragDrop.initSingleTask(taskEl);
+                }
+            }
+            updateSectionCount(targetGroup);
+        }
+
+        // Update old parent's subtask count
+        if (oldParentId) {
+            updateSubtaskCount(oldParentId, -1);
+            // If this was the last subtask, remove the empty container
+            removeEmptyContainer(oldParentId);
+        }
+
+        // Re-sort and highlight
+        if (window.TaskSort && typeof TaskSort.applySort === 'function') {
+            TaskSort.applySort();
+        }
+        scrollToAndHighlight(taskEl);
+    }
+
+    /**
+     * Reparent a top-level task under a new parent in the DOM.
+     * Re-fetches both old location cleanup and new parent from server.
+     *
+     * @param {string|number} taskId - The task being reparented
+     * @param {string|number} newParentId - The new parent task ID
+     */
+    async function reparentTask(taskId, newParentId) {
+        var taskEl = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+
+        // Remove from current position
+        if (taskEl) {
+            var oldSection = taskEl.closest('.project-group') || taskEl.closest('.section-group');
+            taskEl.remove();
+            updateSectionCount(oldSection);
+        }
+
+        // Re-fetch parent to get updated container with the new subtask
+        var parentEl = document.querySelector('.task-item[data-task-id="' + newParentId + '"]');
+        if (parentEl) {
+            try {
+                var parentResp = await safeFetch('/api/v1/task-item/' + newParentId);
+                var parentHtml = await parentResp.text();
+                var parentTemp = document.createElement('div');
+                parentTemp.innerHTML = parentHtml.trim();
+                var newParentEl = parentTemp.querySelector('.task-item');
+                var newContainer = parentTemp.querySelector('.subtask-container');
+
+                // Also remove old container if exists
+                var oldContainer = document.querySelector('.subtask-container[data-parent-id="' + newParentId + '"]');
+                if (oldContainer) oldContainer.remove();
+
+                if (newParentEl) {
+                    parentEl.replaceWith(newParentEl);
+                    if (newContainer) {
+                        newParentEl.after(newContainer);
+                    }
+                    if (window.DragDrop && typeof DragDrop.initSingleTask === 'function') {
+                        DragDrop.initSingleTask(newParentEl);
+                    }
+                    scrollToAndHighlight(newParentEl);
+                }
+            } catch (e) {
+                console.error('Failed to re-fetch parent after reparent:', e);
+                if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                    TaskComplete.refreshTaskList();
+                }
+            }
+        } else {
+            // Parent not in DOM, full refresh
+            if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
+                TaskComplete.refreshTaskList();
+            }
+        }
+    }
+
+    /**
+     * Remove an empty subtask-container if the parent has no more subtasks.
+     * @param {string|number} parentId
+     */
+    function removeEmptyContainer(parentId) {
+        var container = document.querySelector('.subtask-container[data-parent-id="' + parentId + '"]');
+        if (!container) return;
+
+        var subtaskList = container.querySelector('.subtask-list');
+        if (!subtaskList) return;
+
+        // Count actual task-items (not add-subtask-row)
+        var remaining = subtaskList.querySelectorAll('.task-item');
+        if (remaining.length === 0) {
+            container.remove();
+            // Update parent data attribute
+            var parentEl = document.querySelector('.task-item[data-task-id="' + parentId + '"]');
+            if (parentEl) {
+                parentEl.dataset.subtaskCount = '0';
+                // Make draggable again if not scheduled
+                if (!parentEl.dataset.scheduledDate) {
+                    parentEl.setAttribute('draggable', 'true');
+                    if (window.DragDrop && typeof DragDrop.initSingleTask === 'function') {
+                        DragDrop.initSingleTask(parentEl);
+                    }
+                }
+            }
+        }
+    }
+
+    // ======================================================================
     // EXPORTS
     // ======================================================================
 
@@ -759,5 +908,7 @@
         updateCalendarItem: updateCalendarItem,
         updateSectionCount: updateSectionCount,
         updateSubtaskCount: updateSubtaskCount,
+        promoteTask: promoteTask,
+        reparentTask: reparentTask,
     };
 })();
