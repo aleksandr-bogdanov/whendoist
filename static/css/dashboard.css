@@ -2119,15 +2119,6 @@
     min-width: 0;
 }
 
-.task-breadcrumb {
-    font-size: 0.85rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    white-space: nowrap;
-    flex-shrink: 0;
-    opacity: 0.7;
-}
-
 .subtask-badge {
     font-size: 0.6rem;
     font-weight: 500;
@@ -2138,6 +2129,62 @@
     border-radius: 8px;
     white-space: nowrap;
     flex-shrink: 0;
+}
+
+/* ── Subtask container — collapsible nested children ── */
+.subtask-container {
+    border-left: 2px solid var(--border-subtle, #e2e8f0);
+    margin-left: 16px;
+    padding-left: 12px;
+}
+
+.subtask-container .task-item {
+    font-size: 0.92em;
+}
+
+.expand-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    margin: 2px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: background 0.1s ease;
+}
+
+.expand-toggle:hover {
+    background: var(--bg-inset, rgba(0, 0, 0, 0.04));
+}
+
+.expand-toggle .chevron-icon {
+    transition: transform 0.15s ease;
+    transform: rotate(90deg);
+}
+
+.expand-toggle[aria-expanded="false"] .chevron-icon {
+    transform: rotate(0deg);
+}
+
+.expand-toggle[aria-expanded="false"] + .subtask-list {
+    display: none;
+}
+
+.subtask-summary {
+    color: var(--text-muted);
+}
+
+.add-subtask-row {
+    margin-left: 0;
+}
+
+[data-theme="dark"] .subtask-container {
+    border-left-color: var(--border-default, #334155);
 }
 
 .task-due {
