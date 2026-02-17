@@ -87,12 +87,10 @@
     let wasDroppedSuccessfully = false;
     let trashBin = null;
 
-    // Custom drag overlay — replaces unreliable native drag ghost
-    let dragOverlay = null;
-    let dragOverlayOffsetX = 0;
-    let dragOverlayOffsetY = 0;
-    const EMPTY_DRAG_IMG = new Image(1, 1);
-    EMPTY_DRAG_IMG.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    // Grab offset — how far from the element's top-left the user grabbed.
+    // Used to map cursor position → element-top position for drop calculations.
+    let grabOffsetX = 0;
+    let grabOffsetY = 0;
 
     // ==========================================================================
     // ANIMATED REORDERING
@@ -380,13 +378,6 @@
             }
         });
 
-        // Move custom drag overlay to follow cursor
-        document.addEventListener('drag', function(e) {
-            if (dragOverlay && e.clientX > 0 && e.clientY > 0) {
-                dragOverlay.style.left = (e.clientX - dragOverlayOffsetX) + 'px';
-                dragOverlay.style.top = (e.clientY - dragOverlayOffsetY) + 'px';
-            }
-        });
 
         // Create trash bin
         createTrashBin();
@@ -774,23 +765,18 @@
             instanceDate,
         }));
 
-        // Custom drag overlay — suppresses the native ghost (which has
-        // unreliable offset in this app's CSS context) and renders a clone
-        // that follows the cursor via the 'drag' event.
+        // Record where the user grabbed so drop calculations can map
+        // cursor position → element-top position (the native ghost already
+        // follows the grab point automatically).
         const rect = draggedElement.getBoundingClientRect();
-        dragOverlayOffsetX = e.clientX - rect.left;
-        dragOverlayOffsetY = e.clientY - rect.top;
+        grabOffsetX = e.clientX - rect.left;
+        grabOffsetY = e.clientY - rect.top;
 
-        e.dataTransfer.setDragImage(EMPTY_DRAG_IMG, 0, 0);
-
-        dragOverlay = draggedElement.cloneNode(true);
-        dragOverlay.style.cssText =
-            'position:fixed;margin:0;pointer-events:none;z-index:99999;' +
-            'opacity:0.9;box-shadow:0 8px 24px rgba(0,0,0,0.3);' +
-            'transition:none;will-change:left,top;' +
-            'left:' + rect.left + 'px;top:' + rect.top + 'px;' +
-            'width:' + rect.width + 'px;height:' + rect.height + 'px;';
-        document.body.appendChild(dragOverlay);
+        // Hide old time/duration from the native ghost snapshot — the drop
+        // indicator already shows the target time. visibility:hidden keeps
+        // the spacing so the task name stays in place.
+        const timeBlock = draggedElement.querySelector('.scheduled-task-left');
+        if (timeBlock) timeBlock.style.visibility = 'hidden';
 
         // Defer style changes to next frame — some browsers cancel the drag
         // if the source element is modified (hidden, transformed) during
@@ -820,12 +806,6 @@
      * Handle drag end - unschedule if a scheduled task was dropped outside calendar
      */
     async function handleDragEnd(e) {
-        // Remove custom drag overlay
-        if (dragOverlay) {
-            dragOverlay.remove();
-            dragOverlay = null;
-        }
-
         const taskId = draggedTaskId;
         const element = draggedElement;
         const wasScheduledTask = element?.classList.contains('scheduled-task');
@@ -834,6 +814,9 @@
 
         if (element) {
             element.classList.remove('dragging');
+            // Restore time/duration hidden for the ghost snapshot
+            const timeBlock = element.querySelector('.scheduled-task-left');
+            if (timeBlock) timeBlock.style.visibility = '';
             // Only reset inline styles if we're NOT about to remove the element
             // For date-only tasks that were successfully dropped, they'll be removed by handleDrop
             if (!shouldUnschedule && !(wasDateOnlyTask && wasDroppedSuccessfully)) {
@@ -903,6 +886,8 @@
         isDraggingScheduledTask = false;
         isDraggingDateOnlyTask = false;
         wasDroppedSuccessfully = false;
+        grabOffsetX = 0;
+        grabOffsetY = 0;
         removeDropIndicator();
         removeDragHighlight();
         hideTrashBin();
@@ -915,11 +900,24 @@
         document.querySelectorAll('.hour-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
     }
 
+    /**
+     * Find the hour-slot at the element's top edge (cursor minus grab
+     * offset) using elementFromPoint.  Falls back to the slot under
+     * the cursor when the element top is outside the calendar grid.
+     */
+    function getSlotAtGrabTop(e) {
+        const topY = e.clientY - grabOffsetY;
+        const el = document.elementFromPoint(e.clientX, topY);
+        const slot = el?.closest('.hour-slot');
+        if (slot) return slot;
+        return e.target.closest('.hour-slot');
+    }
+
     function handleDragOver(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
 
-        const slot = e.target.closest('.hour-slot');
+        const slot = getSlotAtGrabTop(e);
         if (!slot) return;
 
         const { quarterIndex, minutes, hour } = calculateDropPosition(e, slot);
@@ -952,9 +950,11 @@
             return;
         }
 
-        const slot = e.target.closest('.hour-slot');
+        const cursorSlot = e.target.closest('.hour-slot');
+        const slot = getSlotAtGrabTop(e);
         if (!slot) return;
 
+        if (cursorSlot) cursorSlot.classList.remove('drag-over');
         slot.classList.remove('drag-over');
         removeDropIndicator();
         removeDragHighlight();
@@ -1219,7 +1219,10 @@
 
     function calculateDropPosition(e, slot) {
         const slotRect = slot.getBoundingClientRect();
-        const dropY = e.clientY - slotRect.top;
+        // Use the element's top edge (cursor minus grab offset), not
+        // the raw cursor.  This way grabbing a task by its bottom edge
+        // still schedules it where the top of the element lands.
+        const dropY = (e.clientY - grabOffsetY) - slotRect.top;
         const quarterIndex = Math.max(0, Math.min(Math.floor((dropY / slotRect.height) * 4), 3));
         const minutes = quarterIndex * 15;
         const hour = parseInt(slot.closest('.hour-row')?.dataset.hour, 10);
