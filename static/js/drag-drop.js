@@ -92,6 +92,18 @@
     let grabOffsetX = 0;
     let grabOffsetY = 0;
 
+    // Custom drag overlay (replaces native browser ghost)
+    let dragOverlay = null;
+
+    // Auto-scroll state (vertical hour-grid scroll during drag)
+    let autoScrollRAF = null;
+    let autoScrollGrid = null;
+    let autoScrollSpeed = 0;
+
+    // Cross-day scroll state (horizontal carousel navigation during drag)
+    let crossDayTimer = null;
+    let crossDayEdge = null;
+
     // ==========================================================================
     // ANIMATED REORDERING
     // ==========================================================================
@@ -382,6 +394,29 @@
         // Create trash bin
         createTrashBin();
 
+        // Document-level drag handler — moves custom overlay, toggles
+        // body.over-calendar, and triggers cross-day edge scroll.
+        document.addEventListener('drag', function(e) {
+            if (!dragOverlay) return;
+            // Browser quirk: final drag event before dragend reports (0, 0)
+            if (e.clientX === 0 && e.clientY === 0) return;
+
+            dragOverlay.style.left = (e.clientX - grabOffsetX) + 'px';
+            dragOverlay.style.top = (e.clientY - grabOffsetY) + 'px';
+
+            // Toggle body.over-calendar when cursor is inside calendar panel
+            var calPanel = document.querySelector('.calendar-panel');
+            if (calPanel) {
+                var calRect = calPanel.getBoundingClientRect();
+                var isOver = e.clientX >= calRect.left && e.clientX <= calRect.right
+                          && e.clientY >= calRect.top && e.clientY <= calRect.bottom;
+                document.body.classList.toggle('over-calendar', isOver);
+            }
+
+            // Cross-day horizontal scroll
+            updateCrossDayScroll(e);
+        });
+
         // Initialize zoom
         initZoom();
     }
@@ -540,7 +575,7 @@
     function createTrashBin() {
         trashBin = document.createElement('div');
         trashBin.className = 'trash-bin';
-        trashBin.innerHTML = '<span class="trash-icon">🗑️</span><span class="trash-label">Delete</span>';
+        trashBin.innerHTML = '<svg class="trash-icon" width="20" height="20"><use href="/static/img/icons/ui-icons.svg#trash"/></svg><span class="trash-label">Delete</span>';
         document.body.appendChild(trashBin);
 
         // Trash bin event handlers
@@ -766,17 +801,37 @@
         }));
 
         // Record where the user grabbed so drop calculations can map
-        // cursor position → element-top position (the native ghost already
-        // follows the grab point automatically).
+        // cursor position → element-top position.
         const rect = draggedElement.getBoundingClientRect();
         grabOffsetX = e.clientX - rect.left;
         grabOffsetY = e.clientY - rect.top;
 
-        // Hide old time/duration from the native ghost snapshot — the drop
-        // indicator already shows the target time. visibility:hidden keeps
-        // the spacing so the task name stays in place.
-        const timeBlock = draggedElement.querySelector('.scheduled-task-left');
-        if (timeBlock) timeBlock.style.visibility = 'hidden';
+        // Suppress native browser ghost — replace with custom overlay
+        var ghostCanvas = document.createElement('canvas');
+        ghostCanvas.width = 1;
+        ghostCanvas.height = 1;
+        e.dataTransfer.setDragImage(ghostCanvas, 0, 0);
+
+        // Build custom drag overlay
+        dragOverlay = document.createElement('div');
+        dragOverlay.className = 'drag-overlay';
+        dragOverlay.style.position = 'fixed';
+        dragOverlay.style.pointerEvents = 'none';
+        dragOverlay.style.zIndex = '9999';
+        dragOverlay.style.left = rect.left + 'px';
+        dragOverlay.style.top = rect.top + 'px';
+
+        var overlayClone = draggedElement.cloneNode(true);
+        overlayClone.style.width = Math.min(rect.width, 280) + 'px';
+        overlayClone.style.margin = '0';
+        overlayClone.style.opacity = '1';
+        overlayClone.style.visibility = 'visible';
+        // Strip metadata columns and action buttons from the overlay
+        overlayClone.querySelectorAll('.meta-duration, .meta-impact, .meta-clarity, .task-due, .task-actions, .complete-gutter, .calendar-quick-action, .scheduled-task-left').forEach(
+            function(el) { el.remove(); }
+        );
+        dragOverlay.appendChild(overlayClone);
+        document.body.appendChild(dragOverlay);
 
         // Defer style changes to next frame — some browsers cancel the drag
         // if the source element is modified (hidden, transformed) during
@@ -814,9 +869,6 @@
 
         if (element) {
             element.classList.remove('dragging');
-            // Restore time/duration hidden for the ghost snapshot
-            const timeBlock = element.querySelector('.scheduled-task-left');
-            if (timeBlock) timeBlock.style.visibility = '';
             // Only reset inline styles if we're NOT about to remove the element
             // For date-only tasks that were successfully dropped, they'll be removed by handleDrop
             if (!shouldUnschedule && !(wasDateOnlyTask && wasDroppedSuccessfully)) {
@@ -880,6 +932,16 @@
             }
         }
 
+        // Clean up custom drag overlay
+        if (dragOverlay) {
+            dragOverlay.remove();
+            dragOverlay = null;
+        }
+
+        // Stop auto-scroll and cross-day timers
+        stopAutoScroll();
+        clearCrossDayTimer();
+
         // Reset state
         draggedElement = null;
         draggedTaskId = null;
@@ -889,11 +951,10 @@
         grabOffsetX = 0;
         grabOffsetY = 0;
         removeDropIndicator();
-        removeDragHighlight();
         hideTrashBin();
 
-        // Remove body drag class
-        document.body.classList.remove('is-dragging');
+        // Remove body drag classes
+        document.body.classList.remove('is-dragging', 'over-calendar');
 
         // Clean up dropzone hints
         document.querySelectorAll('.date-only-banner.drop-hint').forEach(b => b.classList.remove('drop-hint'));
@@ -917,12 +978,14 @@
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
 
+        // Auto-scroll when near hour-grid edges
+        updateAutoScroll(e);
+
         const slot = getSlotAtGrabTop(e);
         if (!slot) return;
 
         const { quarterIndex, minutes, hour } = calculateDropPosition(e, slot);
         updateDropIndicator(slot, hour, minutes);
-        highlightDurationSlots(slot, minutes);
     }
 
     function handleDragEnter(e) {
@@ -934,13 +997,14 @@
         const slot = e.target.closest('.hour-slot');
         const relatedSlot = e.relatedTarget?.closest('.hour-slot');
         if (slot && slot !== relatedSlot) {
-            removeDragHighlight();
             removeDropIndicator();
         }
     }
 
     async function handleDrop(e) {
         e.preventDefault();
+        stopAutoScroll();
+        clearCrossDayTimer();
 
         // Check network status before creating calendar elements
         if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
@@ -957,7 +1021,6 @@
         if (cursorSlot) cursorSlot.classList.remove('drag-over');
         slot.classList.remove('drag-over');
         removeDropIndicator();
-        removeDragHighlight();
 
         let taskData;
         try {
@@ -1174,44 +1237,7 @@
         }
     }
 
-    // ==========================================================================
-    // DURATION-AWARE DRAG HIGHLIGHT
-    // ==========================================================================
-
-    let dragHighlightOverlay = null;
-
-    /**
-     * Show a duration-aware highlight overlay at the current drop position.
-     * @param {HTMLElement} slot - Current hour slot
-     * @param {number} dropMinutes - Minutes offset within the slot (0, 15, 30, 45)
-     */
-    function highlightDurationSlots(slot, dropMinutes) {
-        const hourHeight = getHourHeight();
-        const topPx = (dropMinutes / 60) * hourHeight;
-        const heightPx = (draggedDuration / 60) * hourHeight;
-
-        if (!dragHighlightOverlay) {
-            dragHighlightOverlay = document.createElement('div');
-            dragHighlightOverlay.className = 'drag-highlight-overlay';
-        }
-
-        dragHighlightOverlay.style.top = `${topPx}px`;
-        dragHighlightOverlay.style.height = `${heightPx}px`;
-
-        if (dragHighlightOverlay.parentElement !== slot) {
-            removeDragHighlight();
-            slot.appendChild(dragHighlightOverlay);
-        }
-    }
-
-    /**
-     * Remove the drag highlight overlay.
-     */
-    function removeDragHighlight() {
-        if (dragHighlightOverlay && dragHighlightOverlay.parentElement) {
-            dragHighlightOverlay.remove();
-        }
-    }
+    // (Duration highlight merged into drop indicator — see updateDropIndicator)
 
     // ==========================================================================
     // DROP INDICATOR
@@ -1235,13 +1261,22 @@
             dropIndicator.className = 'drop-indicator';
         }
 
-        const hourHeight = getHourHeight();
-        const topPx = (minutes / 60) * hourHeight;
-        const heightPx = (draggedDuration / 60) * hourHeight;
+        var hourHeight = getHourHeight();
+        var topPx = (minutes / 60) * hourHeight;
+        var heightPx = (draggedDuration / 60) * hourHeight;
+        var impact = draggedElement ? (draggedElement.dataset.impact || '4') : '4';
 
-        dropIndicator.style.top = `${topPx}px`;
-        dropIndicator.style.height = `${heightPx}px`;
-        dropIndicator.textContent = `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        dropIndicator.style.top = topPx + 'px';
+        dropIndicator.style.height = heightPx + 'px';
+        dropIndicator.className = 'drop-indicator impact-' + impact;
+
+        // Get task title from dragged element
+        var textEl = draggedElement ? draggedElement.querySelector('.task-text, .scheduled-task-text, .date-only-task-text') : null;
+        var title = textEl ? textEl.textContent.trim() : '';
+        var timeStr = String(hour).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+
+        dropIndicator.innerHTML = '<span class="phantom-time">' + timeStr + '</span>'
+            + (title ? '<span class="phantom-title">' + escapeHtml(title) + '</span>' : '');
 
         if (dropIndicator.parentElement !== slot) {
             slot.appendChild(dropIndicator);
@@ -1250,6 +1285,98 @@
 
     function removeDropIndicator() {
         dropIndicator?.remove();
+    }
+
+    // ==========================================================================
+    // AUTO-SCROLL (vertical hour-grid scroll during drag)
+    // ==========================================================================
+
+    function autoScrollLoop() {
+        if (!autoScrollGrid || autoScrollSpeed === 0) {
+            autoScrollRAF = null;
+            return;
+        }
+        autoScrollGrid.scrollTop += autoScrollSpeed;
+        autoScrollRAF = requestAnimationFrame(autoScrollLoop);
+    }
+
+    function updateAutoScroll(e) {
+        var grid = e.target.closest ? e.target.closest('.hour-grid') : null;
+        if (!grid) {
+            stopAutoScroll();
+            return;
+        }
+        autoScrollGrid = grid;
+        var rect = grid.getBoundingClientRect();
+        var EDGE = 60;
+        var distFromTop = e.clientY - rect.top;
+        var distFromBottom = rect.bottom - e.clientY;
+
+        if (distFromTop < EDGE && distFromTop >= 0) {
+            autoScrollSpeed = -((EDGE - distFromTop) / EDGE) * 8;
+        } else if (distFromBottom < EDGE && distFromBottom >= 0) {
+            autoScrollSpeed = ((EDGE - distFromBottom) / EDGE) * 8;
+        } else {
+            autoScrollSpeed = 0;
+        }
+
+        if (autoScrollSpeed !== 0 && !autoScrollRAF) {
+            autoScrollRAF = requestAnimationFrame(autoScrollLoop);
+        }
+    }
+
+    function stopAutoScroll() {
+        autoScrollSpeed = 0;
+        autoScrollGrid = null;
+        if (autoScrollRAF) {
+            cancelAnimationFrame(autoScrollRAF);
+            autoScrollRAF = null;
+        }
+    }
+
+    // ==========================================================================
+    // CROSS-DAY SCROLL (horizontal carousel navigation during drag)
+    // ==========================================================================
+
+    function updateCrossDayScroll(e) {
+        var calPanel = document.querySelector('.calendar-panel');
+        if (!calPanel || !window.navigateToDay || !window.getTargetDayIndex) {
+            clearCrossDayTimer();
+            return;
+        }
+        var rect = calPanel.getBoundingClientRect();
+        var EDGE = 60;
+        var edge = null;
+
+        if (e.clientX >= rect.left && e.clientX < rect.left + EDGE
+            && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            edge = 'left';
+        } else if (e.clientX > rect.right - EDGE && e.clientX <= rect.right
+            && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            edge = 'right';
+        }
+
+        if (edge && edge !== crossDayEdge) {
+            clearCrossDayTimer();
+            crossDayEdge = edge;
+            crossDayTimer = setTimeout(function() {
+                var idx = window.getTargetDayIndex();
+                var newIdx = edge === 'left' ? idx - 1 : idx + 1;
+                window.navigateToDay(newIdx);
+                crossDayEdge = null;
+                crossDayTimer = null;
+            }, 500);
+        } else if (!edge) {
+            clearCrossDayTimer();
+        }
+    }
+
+    function clearCrossDayTimer() {
+        if (crossDayTimer) {
+            clearTimeout(crossDayTimer);
+            crossDayTimer = null;
+        }
+        crossDayEdge = null;
     }
 
     // ==========================================================================

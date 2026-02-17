@@ -598,3 +598,9 @@ img.brand-logo {
 [data-theme="dark"] textarea:focus {
     border-color: var(--primary);
 }
+
+/* Dark mode ghost/drop tokens (higher opacity for dark backgrounds) */
+[data-theme="dark"] {
+    --ghost-bg: rgba(109, 94, 246, 0.14);
+    --ghost-border: rgba(109, 94, 246, 0.38);
+}
