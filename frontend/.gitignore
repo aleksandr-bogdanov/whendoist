@@ -6,3 +6,4 @@ dist-ssr
 *.local
 *.tsbuildinfo
 *.log
+openapi.json

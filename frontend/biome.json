@@ -1,8 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "$schema": "https://biomejs.dev/schemas/2.4.2/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -26,6 +24,13 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", "dist", "src/components/ui", "src/routeTree.gen.ts"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/src/components/ui",
+      "!**/src/routeTree.gen.ts",
+      "!**/src/api"
+    ]
   }
 }
