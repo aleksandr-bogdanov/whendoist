@@ -7,6 +7,21 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.8 — 2026-02-17
+
+### Added
+- Drag-and-drop: drag tasks from task list to calendar day columns to schedule them (15-minute snap grid)
+- Drag-and-drop: drag scheduled tasks back to task list to unschedule
+- Drag-and-drop: drag a task onto another task to make it a subtask (reparenting with circular reference prevention)
+- Custom drag overlay: compact task card with title and impact badge follows cursor while dragging
+- Calendar drop zones: day columns highlight with dashed border and tinted background when dragging over
+- Task list drop zone: highlights when dragging a scheduled task back for unscheduling
+- Drop target highlighting on tasks during reparenting hover
+- Optimistic updates with rollback for all drag operations (schedule, unschedule, reparent)
+
+---
+
+
 ## v0.47.7 — 2026-02-17
 
 ### Added

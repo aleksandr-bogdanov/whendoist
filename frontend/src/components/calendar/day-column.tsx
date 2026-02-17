@@ -1,3 +1,4 @@
+import { useDroppable } from "@dnd-kit/core";
 import { useCallback, useMemo, useRef } from "react";
 import type { AppRoutersTasksTaskResponse, EventResponse } from "@/api/model";
 import {
@@ -33,6 +34,13 @@ export function DayColumn({
   const columnRef = useRef<HTMLDivElement>(null);
   const { dayName, dateLabel } = formatDayHeader(dateStr);
   const isToday = dateStr === todayString();
+
+  // Make the entire day column a droppable target for scheduling
+  const { setNodeRef, isOver } = useDroppable({
+    id: `calendar-${dateStr}`,
+    data: { type: "calendar", dateStr },
+  });
+
 
   const positioned = useMemo(
     () => calculateOverlaps(events, tasks, dateStr, hourHeight),
@@ -78,10 +86,14 @@ export function DayColumn({
         <span className="text-[10px] text-muted-foreground">{dateLabel}</span>
       </div>
 
-      {/* Time grid */}
+      {/* Time grid — droppable zone */}
       <div
-        ref={columnRef}
-        className="relative flex-1"
+        ref={(node) => {
+          // Merge refs: dnd-kit droppable + our local ref
+          setNodeRef(node);
+          (columnRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        }}
+        className={`relative flex-1 transition-colors ${isOver ? "bg-primary/5" : ""}`}
         style={{ height: `${TOTAL_HOURS * hourHeight}px` }}
       >
         {/* Hour grid lines */}
@@ -98,6 +110,12 @@ export function DayColumn({
             />
           </div>
         ))}
+
+        {/* Drop indicator when dragging over */}
+        {isOver && (
+          <div className="absolute inset-0 border-2 border-dashed border-primary/40 rounded-md pointer-events-none z-30" />
+        )}
+
 
         {/* Current time indicator */}
         {currentTimeOffset >= 0 && currentTimeOffset <= TOTAL_HOURS * hourHeight && (
