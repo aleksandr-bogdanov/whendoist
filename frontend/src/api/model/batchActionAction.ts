@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.47.0
+ * OpenAPI spec version: 0.48.0
  */
 
 export type BatchActionAction = typeof BatchActionAction[keyof typeof BatchActionAction];

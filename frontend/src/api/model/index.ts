@@ -3,11 +3,13 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.47.0
+ * OpenAPI spec version: 0.48.0
  */
 
+export * from './agingBuckets';
+export * from './agingStatsResponse';
 export * from './allDataResponse';
-export * from './analyticsAnalyticsGetParams';
+export * from './analyticsResponse';
 export * from './appRoutersApiTaskResponse';
 export * from './appRoutersBackupImportResponse';
 export * from './appRoutersImportDataImportResponse';
@@ -31,9 +33,12 @@ export * from './calendarSelectionsRequest';
 export * from './commitTaskResult';
 export * from './commitTasksRequest';
 export * from './commitTasksResponse';
+export * from './dailyCompletionItem';
+export * from './dayOfWeekItem';
 export * from './deletePasskeyResponse';
 export * from './demoLoginAuthDemoGetParams';
 export * from './disconnectTodoistAuthTodoistDisconnectPost200';
+export * from './domainBreakdownItem';
 export * from './domainCreate';
 export * from './domainResponse';
 export * from './domainUpdate';
@@ -41,10 +46,15 @@ export * from './encryptionSetupRequest';
 export * from './encryptionSetupResponse';
 export * from './encryptionStatusResponse';
 export * from './eventResponse';
+export * from './getAnalyticsApiV1AnalyticsGetParams';
 export * from './getEventsApiV1EventsGetParams';
+export * from './getRecentCompletionsApiV1AnalyticsRecentCompletionsGetParams';
 export * from './googleCallbackAuthGoogleCallbackGetParams';
 export * from './googleLoginAuthGoogleGetParams';
+export * from './heatmapItem';
+export * from './hourOfDayItem';
 export * from './hTTPValidationError';
+export * from './impactDistributionItem';
 export * from './importOptions';
 export * from './importPreviewResponse';
 export * from './importPreviewResponseProjectsItem';
@@ -53,11 +63,14 @@ export * from './instanceSchedule';
 export * from './listDomainsApiV1DomainsGetParams';
 export * from './listInstancesApiV1InstancesGetParams';
 export * from './listTasksApiV1TasksGetParams';
+export * from './meResponse';
 export * from './passkeyInfo';
 export * from './passkeyListResponse';
 export * from './preferencesResponse';
 export * from './preferencesUpdate';
 export * from './projectResponse';
+export * from './recentCompletionItem';
+export * from './recurringStatItem';
 export * from './registrationOptionsResponse';
 export * from './registrationOptionsResponseOptions';
 export * from './registrationVerifyRequest';
@@ -66,6 +79,7 @@ export * from './registrationVerifyResponse';
 export * from './scheduledTaskUpdate';
 export * from './snapshotInfo';
 export * from './snapshotListResponse';
+export * from './streaksResponse';
 export * from './subtaskResponse';
 export * from './syncDisableRequest';
 export * from './syncDisableResponse';
@@ -81,6 +95,8 @@ export * from './todoistCallbackAuthTodoistCallbackGetParams';
 export * from './todoistLoginAuthTodoistGetParams';
 export * from './toggleCompleteRequest';
 export * from './validationError';
+export * from './velocityItem';
+export * from './weekComparisonResponse';
 export * from './wipeResponse';
 export * from './wizardActionResponse';
 export * from './wizardStatusResponse';
