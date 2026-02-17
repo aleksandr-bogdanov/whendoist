@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.91 — 2026-02-17
+
+### Fixed
+- Scheduled tasks no longer instantly unschedule on drag start — deferred `visibility:hidden` and class changes to next animation frame so the browser doesn't cancel the drag when the source element is modified during the synchronous `dragstart` handler
+
 ## v0.45.90 — 2026-02-17
 
 ### Fixed
