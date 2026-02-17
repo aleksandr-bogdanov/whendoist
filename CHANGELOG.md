@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.89 — 2026-02-17
+
+### Fixed
+- Drag ghost now follows grab point instead of snapping to top-left — removed clone-based `setDragImage` (which browsers silently ignored) in favor of native drag ghost, and replaced `setTimeout(0)` with double-rAF to prevent `visibility:hidden` from racing with drag-image capture
+
 ## v0.45.88 — 2026-02-17
 
 ### Fixed
