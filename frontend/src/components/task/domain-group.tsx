@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Inbox } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
@@ -176,32 +177,42 @@ export function DomainGroup({
             className="ml-3 border-l-2 pl-0"
             style={{ borderColor: domain?.color ?? "var(--border)" }}
           >
-            {tasks.map((task) =>
-              isTouchDevice ? (
-                <div key={task.id} data-task-swipe-row>
-                  <TaskSwipeRow
-                    onSwipeRight={() => handleSwipeComplete(task)}
-                    onSwipeLeft={handleSwipeSchedule}
-                    onLongPress={() => handleLongPress(task)}
-                  >
+            <AnimatePresence initial={false}>
+              {tasks.map((task) => (
+                <motion.div
+                  key={task.id}
+                  layout
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, x: 40, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                >
+                  {isTouchDevice ? (
+                    <div data-task-swipe-row>
+                      <TaskSwipeRow
+                        onSwipeRight={() => handleSwipeComplete(task)}
+                        onSwipeLeft={handleSwipeSchedule}
+                        onLongPress={() => handleLongPress(task)}
+                      >
+                        <TaskItem
+                          task={task}
+                          onSelect={onSelectTask}
+                          onEdit={onEditTask}
+                          isDropTarget={dragOverTaskId === String(task.id)}
+                        />
+                      </TaskSwipeRow>
+                    </div>
+                  ) : (
                     <TaskItem
                       task={task}
                       onSelect={onSelectTask}
                       onEdit={onEditTask}
                       isDropTarget={dragOverTaskId === String(task.id)}
                     />
-                  </TaskSwipeRow>
-                </div>
-              ) : (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onSelect={onSelectTask}
-                  onEdit={onEditTask}
-                  isDropTarget={dragOverTaskId === String(task.id)}
-                />
-              ),
-            )}
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </CollapsibleContent>
       </Collapsible>

@@ -172,42 +172,6 @@ class TestMainAppIntegration:
         assert "app.add_middleware(CSRFMiddleware)" in content
 
 
-class TestJavaScriptIntegration:
-    """Tests verifying CSRF is integrated with JavaScript."""
-
-    def test_error_handler_js_exists(self):
-        """error-handler.js utility should exist."""
-        assert Path("static/js/error-handler.js").exists()
-
-    def test_error_handler_exports_get_csrf_token(self):
-        """error-handler.js should export getCSRFToken function."""
-        content = Path("static/js/error-handler.js").read_text()
-        assert "getCSRFToken" in content
-        assert "window.getCSRFToken" in content
-
-    def test_error_handler_exports_get_csrf_headers(self):
-        """error-handler.js should export getCSRFHeaders function."""
-        content = Path("static/js/error-handler.js").read_text()
-        assert "getCSRFHeaders" in content
-        assert "window.getCSRFHeaders" in content
-
-    def test_error_handler_reads_from_meta_tag(self):
-        """Should read CSRF token from meta tag."""
-        content = Path("static/js/error-handler.js").read_text()
-        assert 'meta[name="csrf-token"]' in content
-
-    def test_base_template_has_csrf_meta_tag(self):
-        """base.html should include CSRF meta tag."""
-        content = Path("app/templates/base.html").read_text()
-        assert 'name="csrf-token"' in content
-        assert "csrf_token" in content
-
-    def test_error_handler_included_in_base(self):
-        """error-handler.js should be included in base.html."""
-        content = Path("app/templates/base.html").read_text()
-        assert "error-handler.js" in content
-
-
 class TestCSRFDependencyAvailable:
     """Tests for CSRF dependency injection."""
 

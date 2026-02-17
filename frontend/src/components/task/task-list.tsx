@@ -1,4 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
+import { motion } from "motion/react";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import type { DomainGroup as DomainGroupType } from "@/lib/task-utils";
 import { DomainGroup } from "./domain-group";
@@ -31,14 +32,15 @@ export function TaskList({ groups, onSelectTask, onEditTask, dragOverTaskId }: T
   return (
     <div ref={setNodeRef} className={`space-y-1 ${isOver ? "bg-accent/30 rounded-md" : ""}`}>
       {groups.map((group) => (
-        <DomainGroup
-          key={group.domain?.id ?? "inbox"}
-          domain={group.domain}
-          tasks={group.tasks}
-          onSelectTask={onSelectTask}
-          onEditTask={onEditTask}
-          dragOverTaskId={dragOverTaskId}
-        />
+        <motion.div key={group.domain?.id ?? "inbox"} layout transition={{ duration: 0.2 }}>
+          <DomainGroup
+            domain={group.domain}
+            tasks={group.tasks}
+            onSelectTask={onSelectTask}
+            onEditTask={onEditTask}
+            dragOverTaskId={dragOverTaskId}
+          />
+        </motion.div>
       ))}
     </div>
   );

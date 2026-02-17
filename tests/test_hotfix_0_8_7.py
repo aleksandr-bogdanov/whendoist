@@ -1,14 +1,12 @@
 """
-Hotfix v0.8.7 Tests - Thoughts + Connection Resilience + Logging.
+Hotfix v0.8.7 Tests - Connection Resilience + Logging.
 
 These tests verify fixes for:
-1. Thought Cabinet showing locks for plaintext Todoist imports
-2. Database connection resilience during batch updates
-3. Cleaner error logging format
+1. Database connection resilience during batch updates
+2. Cleaner error logging format
 
 Test Category: Contract + Unit
 Related Issues:
-- Thoughts showing 🔒 for Todoist imports
 - Import freezing due to connection drops
 - Verbose error traces in logs
 
@@ -16,77 +14,6 @@ See tests/README.md for full test architecture.
 """
 
 from pathlib import Path
-
-# =============================================================================
-# Thoughts Decryption Contract Tests
-# =============================================================================
-
-
-class TestThoughtsDecryptionContract:
-    """
-    Verify thoughts.html handles plaintext data when encryption is enabled.
-
-    Bug Fix: Thought Cabinet had same decryption bug as dashboard - skipping
-    UI update when decrypted === original, leaving 🔒 visible.
-    """
-
-    def test_has_looks_encrypted_helper(self):
-        """
-        Thoughts MUST have looksEncrypted() helper to detect encrypted data.
-        """
-        thoughts_file = Path(__file__).parent.parent / "app" / "templates" / "thoughts.html"
-        source = thoughts_file.read_text()
-
-        assert "function looksEncrypted(value)" in source, (
-            "Thoughts must have looksEncrypted() helper function. Without this, plaintext thoughts show as 🔒."
-        )
-
-    def test_checks_if_encrypted_before_decrypt(self):
-        """
-        Thoughts MUST check if data looks encrypted before decrypting.
-        """
-        thoughts_file = Path(__file__).parent.parent / "app" / "templates" / "thoughts.html"
-        source = thoughts_file.read_text()
-
-        assert "async function decryptThoughtTitles()" in source, "decryptThoughtTitles function must exist"
-
-        decrypt_section = source.split("async function decryptThoughtTitles()")[1]
-        decrypt_section = decrypt_section.split("})();")[0]
-
-        assert "looksEncrypted(title)" in decrypt_section, (
-            "Thoughts must check looksEncrypted(title) before decrypting. "
-            "Without this check, plaintext data causes UI update to be skipped."
-        )
-
-    def test_no_equality_skip_for_thought_titles(self):
-        """
-        Thoughts must NOT skip update when decrypted === encrypted.
-        """
-        thoughts_file = Path(__file__).parent.parent / "app" / "templates" / "thoughts.html"
-        source = thoughts_file.read_text()
-
-        decrypt_section = source.split("async function decryptThoughtTitles()")[1]
-        decrypt_section = decrypt_section.split("})();")[0]
-
-        assert "decryptedTitle === encryptedTitle" not in decrypt_section, (
-            "Thoughts must NOT skip update when decryptedTitle === encryptedTitle."
-        )
-
-    def test_displays_plaintext_on_error(self):
-        """
-        Thoughts MUST display original value on decryption error.
-        """
-        thoughts_file = Path(__file__).parent.parent / "app" / "templates" / "thoughts.html"
-        source = thoughts_file.read_text()
-
-        decrypt_section = source.split("async function decryptThoughtTitles()")[1]
-        decrypt_section = decrypt_section.split("})();")[0]
-
-        assert "catch" in decrypt_section, "Thoughts must have error handling for decryption"
-        assert "textEl.textContent = title" in decrypt_section, (
-            "Thoughts must display original title on decryption error."
-        )
-
 
 # =============================================================================
 # Batch Update Resilience Tests

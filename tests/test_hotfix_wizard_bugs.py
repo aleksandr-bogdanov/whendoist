@@ -4,13 +4,11 @@ Hotfix Tests - Wizard Bug Fixes.
 These tests verify the fixes for the following issues:
 1. Google user name only updated when user.name was empty
 2. Domain creation allowed duplicates (not idempotent)
-3. Task count not displayed in Settings domains panel
 
 Test Category: Unit + Contract
 Related Issues:
 - User name shows email username instead of Google name
 - Domains duplicated when wizard re-run
-- No task count shown in Settings Life Domains
 
 See tests/README.md for full test architecture.
 
@@ -268,61 +266,3 @@ class TestIdempotentDomainCreationIntegration:
 
         # Should be different domains
         assert domain1.id != domain2.id
-
-
-# =============================================================================
-# Task Count in Settings Tests (Contract)
-# =============================================================================
-
-
-class TestTaskCountInSettingsContract:
-    """
-    Verify task counts are displayed in Settings Life Domains panel.
-
-    Bug Fix: Previously domains in Settings didn't show task counts.
-    """
-
-    def test_settings_route_calculates_task_counts(self):
-        """Settings route must calculate task counts per domain."""
-        pages_file = Path(__file__).parent.parent / "app" / "routers" / "pages.py"
-        source = pages_file.read_text()
-
-        # Find settings function
-        settings_section = source.split("async def settings")[1].split("async def")[0]
-
-        # Must calculate domain_task_counts
-        assert "domain_task_counts" in settings_section
-
-    def test_settings_passes_task_counts_to_template(self):
-        """Settings route must pass task counts to template."""
-        pages_file = Path(__file__).parent.parent / "app" / "routers" / "pages.py"
-        source = pages_file.read_text()
-
-        # Find TemplateResponse in settings function
-        settings_section = source.split("async def settings")[1].split("async def")[0]
-
-        # Must include domain_task_counts in template context
-        assert '"domain_task_counts"' in settings_section or "'domain_task_counts'" in settings_section
-
-    def test_template_displays_task_count(self):
-        """Settings template must display task count for each domain."""
-        template_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
-        source = template_file.read_text()
-
-        # Must have element with task count
-        assert "domain-task-count" in source
-        assert "domain_task_counts" in source
-
-    def test_template_has_task_count_css(self):
-        """Settings page must have CSS for task count styling (inline or external)."""
-        # Check external CSS file (Design System v1.0 migration)
-        css_file = Path(__file__).parent.parent / "static" / "css" / "pages" / "settings.css"
-        if css_file.exists():
-            source = css_file.read_text()
-        else:
-            # Fallback to inline styles in template
-            template_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
-            source = template_file.read_text()
-
-        # Must have CSS for task count
-        assert ".domain-task-count" in source

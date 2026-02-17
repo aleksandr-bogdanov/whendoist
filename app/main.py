@@ -19,7 +19,7 @@ from app.middleware.csrf import CSRFMiddleware
 from app.middleware.rate_limit import limiter
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
-from app.routers import api, auth, pages
+from app.routers import api, auth
 from app.routers import v1 as api_v1
 from app.sentry_integration import init_sentry
 
@@ -269,7 +269,6 @@ async def readiness_check():
 
 
 # Service worker route - served from root for proper scope
-# Try SPA service worker first (frontend/dist/sw.js), fall back to legacy
 @app.get("/sw.js", include_in_schema=False)
 async def service_worker():
     spa_sw = Path("frontend/dist/sw.js")
@@ -279,17 +278,10 @@ async def service_worker():
             media_type="application/javascript",
             headers={"Service-Worker-Allowed": "/"},
         )
-    legacy_sw = Path("static/sw.js")
-    if legacy_sw.exists():
-        return FileResponse(
-            legacy_sw,
-            media_type="application/javascript",
-            headers={"Service-Worker-Allowed": "/"},
-        )
     return JSONResponse({"error": "Service worker not found"}, status_code=404)
 
 
-# Mount static files (legacy - kept during migration, will be removed in PR 2)
+# Mount static files (images, OG assets)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include routers
@@ -301,9 +293,6 @@ app.include_router(api.router)
 
 # API v1 routes at /api/v1/*
 app.include_router(api_v1.router)
-
-# Page routes (legacy Jinja2, kept during migration - will be removed in PR 2)
-app.include_router(pages.router)
 
 # --- React SPA serving ---
 # Mount SPA static assets (Vite's hashed JS/CSS bundles)

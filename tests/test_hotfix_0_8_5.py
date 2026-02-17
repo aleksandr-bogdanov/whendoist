@@ -127,64 +127,6 @@ class TestTodoistOAuthRedirect:
 
 
 # =============================================================================
-# JS Module Contract Tests
-# =============================================================================
-
-
-class TestImportEncryptionContract:
-    """
-    Verify import encryption updates BOTH tasks AND domains.
-
-    Bug Fix: Previously only tasks were batch-updated after import,
-    leaving domains as plaintext even when encryption was enabled.
-    """
-
-    def test_import_encrypts_domains(self):
-        """
-        Import encryption MUST update domains via batch-update endpoint.
-
-        Contract test: Verify the JS code calls /api/v1/domains/batch-update
-        after encrypting imported data.
-        """
-        settings_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
-        source = settings_file.read_text()
-
-        # Find the executeImport function
-        assert "async function executeImport()" in source, "executeImport function must exist"
-
-        # Extract the import section
-        import_section = source.split("async function executeImport()")[1].split("async function")[0]
-
-        # Check for domains batch-update call
-        assert "/api/v1/domains/batch-update" in import_section, (
-            "Import encryption must call /api/v1/domains/batch-update to save encrypted domain names. "
-            "Without this, domains remain as plaintext even when encryption is enabled."
-        )
-
-    def test_import_handles_encryption_errors(self):
-        """
-        Import encryption MUST handle and report errors properly.
-
-        Contract test: Verify error handling exists for batch-update failures.
-        """
-        settings_file = Path(__file__).parent.parent / "app" / "templates" / "settings.html"
-        source = settings_file.read_text()
-
-        import_section = source.split("async function executeImport()")[1].split("async function")[0]
-
-        # Should check response status
-        assert "!taskResp.ok" in import_section or "!domainResp.ok" in import_section, (
-            "Import encryption must check batch-update response status. "
-            "Without this, silent failures leave data as plaintext."
-        )
-
-        # Should report errors to user
-        assert "encryptErrors" in import_section or "Encryption" in import_section, (
-            "Import encryption must report errors to the user"
-        )
-
-
-# =============================================================================
 # Integration Tests
 # =============================================================================
 

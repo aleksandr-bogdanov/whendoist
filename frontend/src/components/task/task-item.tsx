@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Check, ChevronDown, ChevronRight, Clock, Repeat } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, SubtaskResponse } from "@/api/model";
 import { useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost } from "@/api/queries/tasks/tasks";
@@ -108,7 +109,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
   const overdue = isOverdue(dueDate) && !isCompleted;
 
   return (
-    <div ref={setNodeRef}>
+    <div ref={setNodeRef} data-task-id={task.id}>
       <div
         className={cn(
           "group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
@@ -225,9 +226,19 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
       </div>
 
       {/* Expanded subtasks */}
-      {hasSubtasks && isExpanded && (
-        <SubtaskTree subtasks={task.subtasks!} depth={depth + 1} onSelect={onSelect} />
-      )}
+      <AnimatePresence initial={false}>
+        {hasSubtasks && isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <SubtaskTree subtasks={task.subtasks!} depth={depth + 1} onSelect={onSelect} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
