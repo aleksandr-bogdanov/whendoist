@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.96 — 2026-02-17
+
+### Fixed
+- Google token refresh now rolls back DB session on statement timeout, preventing `PendingRollbackError` from poisoning subsequent queries in the same request
+
 ## v0.45.95 — 2026-02-17
 
 ### Fixed
