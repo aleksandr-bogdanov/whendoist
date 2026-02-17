@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.94 — 2026-02-17
+
+### Fixed
+- Drag overlay no longer flies in from top-left — clone resets `position: static` to prevent inherited absolute positioning from calendar cards
+- Phantom card time and title no longer glued together — added margin between timestamp and task name
+- Phantom card text more readable — uses `--text-secondary` instead of double-muted `--text-muted` + opacity
+
 ## v0.45.93 — 2026-02-17
 
 ### Added

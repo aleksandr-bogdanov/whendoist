@@ -826,6 +826,12 @@
         overlayClone.style.margin = '0';
         overlayClone.style.opacity = '1';
         overlayClone.style.visibility = 'visible';
+        // Reset absolute/relative positioning inherited from calendar cards
+        overlayClone.style.position = 'static';
+        overlayClone.style.top = 'auto';
+        overlayClone.style.left = 'auto';
+        overlayClone.style.right = 'auto';
+        overlayClone.style.height = 'auto';
         // Strip metadata columns and action buttons from the overlay
         overlayClone.querySelectorAll('.meta-duration, .meta-impact, .meta-clarity, .task-due, .task-actions, .complete-gutter, .calendar-quick-action, .scheduled-task-left').forEach(
             function(el) { el.remove(); }
