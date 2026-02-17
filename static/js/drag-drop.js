@@ -695,7 +695,7 @@
             // Show toast with undo (undo calls restore API)
             Toast.undo(`"${taskTitle}" deleted`, function() {
                 restoreTrashDelete(taskId, removedElements);
-            });
+            }, 'task-' + taskId);
         } catch (error) {
             log.error(`Failed to delete task ${taskId}:`, error);
             // Restore elements on failure
@@ -1026,7 +1026,7 @@
                         if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
                             TaskComplete.refreshTaskList();
                         }
-                    });
+                    }, 'task-' + taskId);
                 }
             } catch (error) {
                 log.error('Failed to unschedule task:', error);
@@ -1372,7 +1372,7 @@
                             });
                         }
                     };
-                Toast.undo('Scheduled "' + content + '" for ' + formatDateShort(day), undoCallback);
+                Toast.undo('Scheduled "' + content + '" for ' + formatDateShort(day), undoCallback, 'task-' + taskId);
             }
         } catch (error) {
             log.error(`Failed to schedule ${effectiveInstanceId ? 'instance' : 'task'} ${taskId}:`, error);
@@ -1846,7 +1846,7 @@
                         TaskComplete.refreshTaskList();
                     }
                 });
-            });
+            }, 'task-' + taskId);
         } catch (error) {
             log.error(`Failed to schedule task ${taskId} to Anytime:`, error);
             el.remove();

@@ -365,9 +365,11 @@ const Toast = (function() {
      * Show an undo toast with standardized duration.
      * @param {string} message - The message to display
      * @param {Function} callback - The undo callback
+     * @param {string} [id] - Optional dedup ID (same ID replaces previous toast)
      */
-    function undo(message, callback) {
+    function undo(message, callback, id) {
         show(message, {
+            id: id || null,
             type: 'success',
             action: { label: 'Undo', callback: callback },
             duration: UNDO_DURATION

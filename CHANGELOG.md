@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.45.98 — 2026-02-17
+
+### Fixed
+- Rapid drag operations no longer stack multiple undo toasts — toasts now dedup by task ID, replacing the previous toast instead of creating a new one
+
 ## v0.45.97 — 2026-02-17
 
 ### Fixed
