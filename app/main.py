@@ -269,19 +269,27 @@ async def readiness_check():
 
 
 # Service worker route - served from root for proper scope
+# Try SPA service worker first (frontend/dist/sw.js), fall back to legacy
 @app.get("/sw.js", include_in_schema=False)
 async def service_worker():
-    sw_path = Path("static/sw.js")
-    if sw_path.exists():
+    spa_sw = Path("frontend/dist/sw.js")
+    if spa_sw.exists():
         return FileResponse(
-            sw_path,
+            spa_sw,
+            media_type="application/javascript",
+            headers={"Service-Worker-Allowed": "/"},
+        )
+    legacy_sw = Path("static/sw.js")
+    if legacy_sw.exists():
+        return FileResponse(
+            legacy_sw,
             media_type="application/javascript",
             headers={"Service-Worker-Allowed": "/"},
         )
     return JSONResponse({"error": "Service worker not found"}, status_code=404)
 
 
-# Mount static files
+# Mount static files (legacy - kept during migration, will be removed in PR 2)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include routers
@@ -294,5 +302,42 @@ app.include_router(api.router)
 # API v1 routes at /api/v1/*
 app.include_router(api_v1.router)
 
-# Page routes (HTML pages, must be last)
+# Page routes (legacy Jinja2, kept during migration - will be removed in PR 2)
 app.include_router(pages.router)
+
+# --- React SPA serving ---
+# Mount SPA static assets (Vite's hashed JS/CSS bundles)
+_spa_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if _spa_dist.exists():
+    _spa_assets = _spa_dist / "assets"
+    if _spa_assets.exists():
+        app.mount("/assets", StaticFiles(directory=str(_spa_assets)), name="spa-assets")
+
+    # Serve PWA icons from frontend/dist/icons/
+    _spa_icons = _spa_dist / "icons"
+    if _spa_icons.exists():
+        app.mount("/icons", StaticFiles(directory=str(_spa_icons)), name="spa-icons")
+
+    # Serve additional root-level SPA files (manifest, registerSW.js, workbox, etc.)
+    @app.get("/manifest.webmanifest", include_in_schema=False)
+    async def spa_manifest():
+        manifest_path = _spa_dist / "manifest.webmanifest"
+        if manifest_path.exists():
+            return FileResponse(str(manifest_path), media_type="application/manifest+json")
+        raise HTTPException(status_code=404)
+
+    @app.get("/registerSW.js", include_in_schema=False)
+    async def spa_register_sw():
+        path = _spa_dist / "registerSW.js"
+        if path.exists():
+            return FileResponse(str(path), media_type="application/javascript")
+        raise HTTPException(status_code=404)
+
+    # SPA fallback: all non-API, non-auth, non-static routes serve index.html
+    # This MUST be registered AFTER all other routes
+    @app.get("/{path:path}", include_in_schema=False)
+    async def spa_fallback(path: str):
+        # Don't catch API, auth, static, health, or metrics routes
+        if path.startswith(("api/", "auth/", "static/", "health", "ready", "metrics")):
+            raise HTTPException(status_code=404)
+        return FileResponse(str(_spa_dist / "index.html"))
