@@ -3,9 +3,13 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.47.0
+ * OpenAPI spec version: 0.48.0
  */
 
-export type AnalyticsAnalyticsGetParams = {
+export type GetAnalyticsApiV1AnalyticsGetParams = {
+/**
+ * @minimum 7
+ * @maximum 90
+ */
 days?: number;
 };

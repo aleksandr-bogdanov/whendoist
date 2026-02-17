@@ -7,6 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.1 — 2026-02-18
+
+### Added
+- Analytics page with interactive charts: daily completions, domain breakdown (donut), day-of-week, activity heatmap, impact distribution, velocity trend, recurring task rates, resolution time
+- Day range selector (7d/30d/90d) for analytics time window
+- Analytics REST API endpoint (GET /api/v1/analytics) returning comprehensive statistics as JSON
+- Recent completions API endpoint (GET /api/v1/analytics/recent-completions)
+
+---
+
 ## v0.48.0 — 2026-02-17
 
 ### Added
