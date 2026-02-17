@@ -792,12 +792,18 @@
             'width:' + rect.width + 'px;height:' + rect.height + 'px;';
         document.body.appendChild(dragOverlay);
 
-        // Now safe to modify the original immediately — no ghost capture race
-        document.body.classList.add('is-dragging');
-        draggedElement.classList.add('dragging');
-        if (isDraggingScheduledTask || isDraggingDateOnlyTask) {
-            draggedElement.style.visibility = 'hidden';
-        }
+        // Defer style changes to next frame — some browsers cancel the drag
+        // if the source element is modified (hidden, transformed) during
+        // the synchronous dragstart handler.
+        requestAnimationFrame(() => {
+            document.body.classList.add('is-dragging');
+            if (draggedElement) {
+                draggedElement.classList.add('dragging');
+                if (isDraggingScheduledTask || isDraggingDateOnlyTask) {
+                    draggedElement.style.visibility = 'hidden';
+                }
+            }
+        });
 
         // Show trash bin when dragging
         showTrashBin();
