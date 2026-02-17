@@ -1,3 +1,4 @@
+import { useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Check, ChevronDown, ChevronRight, Clock, Repeat } from "lucide-react";
 import { toast } from "sonner";
@@ -19,9 +20,10 @@ interface TaskItemProps {
   depth?: number;
   onSelect?: (taskId: number) => void;
   onEdit?: (task: AppRoutersTasksTaskResponse) => void;
+  isDropTarget?: boolean;
 }
 
-export function TaskItem({ task, depth = 0, onSelect, onEdit }: TaskItemProps) {
+export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: TaskItemProps) {
   const { selectedTaskId, selectTask, expandedSubtasks, toggleExpandedSubtask } = useUIStore();
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
@@ -29,6 +31,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit }: TaskItemProps) {
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
   const isExpanded = expandedSubtasks.has(task.id);
+
+  // Make task draggable
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: String(task.id),
+    data: { type: "task", task },
+  });
 
   const handleTitleClick = () => {
     selectTask(task.id);
@@ -100,19 +108,28 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit }: TaskItemProps) {
   const overdue = isOverdue(dueDate) && !isCompleted;
 
   return (
-    <div>
+    <div ref={setNodeRef}>
       <div
         className={cn(
           "group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
           isSelected && "bg-accent ring-1 ring-ring/20",
           isCompleted && "opacity-60",
+          isDragging && "opacity-30",
+          isDropTarget && "ring-2 ring-primary bg-primary/10",
         )}
         style={{ paddingLeft: `${depth * 24 + 8}px` }}
       >
+        {/* Drag handle — the whole row is draggable via this invisible overlay */}
+        <div
+          className="absolute inset-0 cursor-grab active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        />
+
         {/* Checkbox */}
         <button
           type="button"
-          className="flex-shrink-0 cursor-pointer"
+          className="flex-shrink-0 cursor-pointer relative z-10"
           onClick={handleToggleComplete}
           title={isCompleted ? "Mark as pending" : "Mark as complete"}
         >
@@ -131,7 +148,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit }: TaskItemProps) {
         {/* Title as clickable for editing */}
         <button
           type="button"
-          className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80"
+          className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 relative z-10"
           onClick={handleTitleClick}
         >
           <span
@@ -149,7 +166,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit }: TaskItemProps) {
           <button
             type="button"
             onClick={() => toggleExpandedSubtask(task.id)}
-            className="flex-shrink-0 p-0.5 rounded hover:bg-accent"
+            className="flex-shrink-0 p-0.5 rounded hover:bg-accent relative z-10"
           >
             {isExpanded ? (
               <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
