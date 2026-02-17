@@ -264,7 +264,17 @@ class TaskService:
                 domain_id = None
 
         # Get max position for ordering within domain
-        max_pos = await self._next_position(domain_id, parent_id) - 1
+        result = await self.db.execute(
+            select(Task.position)
+            .where(
+                Task.user_id == self.user_id,
+                Task.domain_id == domain_id,
+                Task.parent_id == parent_id,
+            )
+            .order_by(Task.position.desc())
+            .limit(1)
+        )
+        max_pos = result.scalar_one_or_none() or 0
 
         task = Task(
             user_id=self.user_id,
