@@ -7,6 +7,23 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.9 — 2026-02-17
+
+### Added
+- Mobile swipe gestures: swipe right to complete tasks, swipe left to switch to calendar tab
+- Visual swipe phases: peek (40px), commit (100px), trigger (130px) with green/blue indicators
+- Haptic feedback engine: named vibration patterns (light, medium, success, warning, etc.)
+- Long-press task action sheet: edit, complete, schedule, skip, delete actions via bottom sheet
+- Bottom sheet component using vaul with swipe-to-dismiss
+- Device detection hook: touch, mouse, hybrid, iOS, Android, PWA, reduced motion
+- Viewport management hook: iOS PWA height fix, virtual keyboard detection
+- Gesture discovery: first-time animated swipe hint and long-press tooltip
+- Sticky domain header: floating domain name on mobile that crossfades during scroll
+- TouchSensor added to dnd-kit for mobile drag-and-drop (250ms delay to avoid swipe conflicts)
+
+---
+
+
 ## v0.47.8 — 2026-02-17
 
 ### Added

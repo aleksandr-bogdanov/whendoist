@@ -1,6 +1,7 @@
 import { Loader2, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
+import { StickyDomainHeader } from "@/components/mobile/sticky-domain";
 import { CompletedSection } from "@/components/task/completed-section";
 import { ScheduledSection } from "@/components/task/scheduled-section";
 import { TaskList } from "@/components/task/task-list";
@@ -157,7 +158,7 @@ export function TaskPanel({
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Panel header with controls */}
-      <div className="flex flex-col gap-2 px-2 sm:px-3 py-2 border-b">
+      <div data-task-panel-header className="flex flex-col gap-2 px-2 sm:px-3 py-2 border-b">
         {/* Top row: energy + actions */}
         <div className="flex items-center justify-between gap-2">
           <EnergySelector />
@@ -185,7 +186,8 @@ export function TaskPanel({
       </div>
 
       {/* Task list */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 relative" data-task-scroll-area>
+        <StickyDomainHeader />
         <div className="p-2 sm:p-3 space-y-1">
           <TaskList groups={pendingGroups} onEditTask={onEditTask} />
           <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />
