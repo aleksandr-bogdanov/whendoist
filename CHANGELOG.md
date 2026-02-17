@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.46.7 — 2026-02-17
+
+### Improved
+- `fix-all-issues` skill: adds Sentry integration, regression detection (searches closed issues before creating new ones), and fixes Sentry resolve API endpoint
+
+---
+
 ## v0.46.6 — 2026-02-17
 
 ### Fixed
