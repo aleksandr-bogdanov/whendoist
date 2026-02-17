@@ -422,6 +422,18 @@ class TestTaskDialogModule:
         """Must handle editing existing tasks."""
         assert "edit" in task_dialog_js.lower() or "PUT" in task_dialog_js
 
+    def test_supports_parent_id_for_subtask_creation(self, task_dialog_js: str):
+        """Must accept parentId option for creating subtasks."""
+        assert "parentId" in task_dialog_js, "task-dialog.js must support parentId option for subtask creation"
+
+    def test_includes_parent_id_in_payload(self, task_dialog_js: str):
+        """Must include parent_id in the POST payload when creating subtasks."""
+        assert "parent_id" in task_dialog_js, "task-dialog.js must send parent_id in task creation payload"
+
+    def test_handles_add_subtask_row_click(self, task_dialog_js: str):
+        """Must handle clicks on .add-subtask-row to open subtask dialog."""
+        assert "add-subtask-row" in task_dialog_js, "task-dialog.js must handle add-subtask-row clicks"
+
 
 class TestPlanTasksModule:
     """Verify plan-tasks.js handles Plan My Day feature."""
@@ -623,6 +635,10 @@ class TestTaskMutationsModuleExportsAPI:
     def test_exports_update_section_count(self, mutations_js: str):
         """Must export updateSectionCount for cross-section moves."""
         assert re.search(r"updateSectionCount\s*:", mutations_js)
+
+    def test_exports_update_subtask_count(self, mutations_js: str):
+        """Must export updateSubtaskCount for subtask creation/deletion."""
+        assert re.search(r"updateSubtaskCount\s*:", mutations_js)
 
     def test_uses_safe_fetch(self, mutations_js: str):
         """Must use safeFetch for API calls."""

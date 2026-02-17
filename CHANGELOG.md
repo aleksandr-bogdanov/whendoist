@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.46.3 — 2026-02-17
+
+### Added
+- Create subtasks from UI: "Add subtask" row opens task dialog with parent context
+- Task dialog shows breadcrumb ("Subtask of: ...") and hides domain selector when creating subtasks
+- Domain auto-inherited from parent task; recurring task check blocks subtask creation
+- Subtask inserted into parent's container in DOM; first subtask triggers parent re-fetch for container
+- `TaskMutations.updateSubtaskCount()` for dynamic subtask count badge updates
+
 ## v0.46.2 — 2026-02-17
 
 ### Added
