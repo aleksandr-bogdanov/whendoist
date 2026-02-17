@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import { useGetEncryptionStatusApiV1PreferencesEncryptionGet } from "@/api/queries/preferences/preferences";
+import { useGetWizardStatusApiV1WizardStatusGet } from "@/api/queries/wizard/wizard";
 import { EncryptionUnlock } from "@/components/encryption-unlock";
 import { AppShell } from "@/components/layout/app-shell";
+import { OnboardingWizard } from "@/components/wizard/onboarding-wizard";
 import { useCryptoStore } from "@/stores/crypto-store";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -16,6 +18,8 @@ function AuthenticatedLayout() {
   const meQuery = useGetMeApiV1MeGet();
   const encryptionQuery = useGetEncryptionStatusApiV1PreferencesEncryptionGet();
   const domainsQuery = useListDomainsApiV1DomainsGet();
+  const wizardQuery = useGetWizardStatusApiV1WizardStatusGet();
+  const [wizardDismissed, setWizardDismissed] = useState(false);
 
   const isUnlocked = useCryptoStore((s) => s.isUnlocked);
   const setEnabled = useCryptoStore((s) => s.setEnabled);
@@ -56,6 +60,7 @@ function AuthenticatedLayout() {
   const me = meQuery.data;
 
   const needsUnlock = encryptionStatus?.enabled && !isUnlocked;
+  const showWizard = wizardQuery.data?.completed === false && !wizardDismissed;
 
   return (
     <>
@@ -71,6 +76,7 @@ function AuthenticatedLayout() {
           testValue={encryptionStatus.test_value}
         />
       )}
+      {showWizard && <OnboardingWizard open={true} onComplete={() => setWizardDismissed(true)} />}
     </>
   );
 }
