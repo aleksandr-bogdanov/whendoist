@@ -7,6 +7,21 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.47.7 — 2026-02-17
+
+### Added
+- Calendar panel: 3-day carousel with time grid, Google Calendar events, scheduled Whendoist tasks
+- Day columns with hour grid (6am-11pm), current time indicator (red line), 30-minute subdivisions
+- Overlap detection: side-by-side display when events/tasks overlap (max 3 columns)
+- Zoom controls: +/- buttons and Ctrl+scroll wheel, persisted to localStorage (30-100px per hour)
+- Date navigation: prev/next day buttons, "Today" quick-jump
+- Plan My Day: auto-scheduling dialog — first-fit bin packing of unscheduled tasks into free calendar slots
+- Desktop split pane: task list (55%) + calendar (45%) side by side
+- Mobile tabs: Tasks / Calendar tab bar with show/hide switching
+- Calendar event cards with calendar color, scheduled task cards with impact color border
+
+---
+
 ## v0.47.6 — 2026-02-17
 
 ### Added
