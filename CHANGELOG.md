@@ -7,6 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.3 — 2026-02-18
+
+### Fixed
+- Railway deployment: switched from `railpack` to `nixpacks` builder with explicit Node.js 22 setup
+- Removed root `package.json` with Playwright dependencies that confused the builder into installing browser binaries
+- Added `nixpacks.toml` to ensure Node.js is available for frontend SPA build
+- Removed redundant `releaseCommand` (migrations already run in app lifespan startup)
+
+---
+
 ## v0.48.2 — 2026-02-18
 
 ### Added

@@ -1,12 +1,8 @@
 [build]
-builder = "railpack"
-# Build React SPA frontend before the Python app starts
+builder = "nixpacks"
 buildCommand = "cd frontend && npm ci && npm run build"
 
 [deploy]
-# Run migrations before starting the app
-# Uses scripts/migrate.py which handles stamping for existing databases
-releaseCommand = "uv run python scripts/migrate.py"
 startCommand = "uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT --no-access-log"
 healthcheckPath = "/ready"
 healthcheckTimeout = 30

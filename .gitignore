@@ -60,9 +60,11 @@ static/build-manifest.json
 .claude/*
 !.claude/skills/
 
+# Node
+node_modules/
+
 # Frontend build artifacts
 frontend/dist/
-frontend/node_modules/
 
 # Playwright (legacy)
 /test-results/
