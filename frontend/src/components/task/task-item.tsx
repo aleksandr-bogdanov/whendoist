@@ -148,6 +148,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         {/* Title as clickable for editing */}
         <button
           type="button"
+          data-task-title-btn
           className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 relative z-10"
           onClick={handleTitleClick}
         >

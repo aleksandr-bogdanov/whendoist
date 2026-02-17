@@ -6,6 +6,7 @@ import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
 import { CalendarPanel } from "@/components/calendar/calendar-panel";
 import { TaskPanel } from "@/components/dashboard/task-panel";
+import { GestureDiscovery } from "@/components/gesture-discovery";
 import { TaskDndContext } from "@/components/task/task-dnd-context";
 import { TaskEditor } from "@/components/task/task-editor";
 import { TaskQuickAdd } from "@/components/task/task-quick-add";
@@ -122,6 +123,9 @@ function DashboardPage() {
 
         {/* Quick Add Dialog */}
         <TaskQuickAdd open={quickAddOpen} onOpenChange={setQuickAddOpen} domains={safedomains} />
+
+        {/* Mobile gesture hints (first-time only) */}
+        <GestureDiscovery />
       </div>
     </TaskDndContext>
   );

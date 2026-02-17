@@ -10,6 +10,7 @@ import {
   PointerSensor,
   pointerWithin,
   rectIntersection,
+  TouchSensor,
   type UniqueIdentifier,
   useSensor,
   useSensors,
@@ -70,10 +71,13 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     overType: null,
   });
 
-  // Sensors: pointer with distance constraint to avoid accidental drags
+  // Sensors: pointer for mouse, touch with delay to avoid conflicts with swipe
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
     }),
   );
 
