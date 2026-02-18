@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.9 — 2026-02-18
+
+### Fixed
+- Dashboard/Thoughts showing no tasks: legacy Todoist `GET /api/v1/tasks` endpoint in `api.py` shadowed the native tasks endpoint — removed dead Todoist task/commit/sentry-test endpoints
+- Settings page crash (`commit.slice is not a function`): build info API returns `commit` as `{sha, short}` object, not a string — fixed type cast and usage in settings
+
+---
+
 ## v0.48.8 — 2026-02-18
 
 ### Fixed
