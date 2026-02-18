@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.10 — 2026-02-18
+
+### Fixed
+- Tasks endpoint crashing with `MissingGreenlet`: `get_tasks()` didn't eagerly load `Task.instances` — `_task_to_response` accessed it for recurring tasks, triggering a lazy load outside async context
+
+---
+
 ## v0.48.9 — 2026-02-18
 
 ### Fixed

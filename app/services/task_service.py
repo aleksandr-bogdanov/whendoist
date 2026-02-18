@@ -190,9 +190,13 @@ class TaskService:
             query = query.options(
                 selectinload(Task.subtasks),
                 selectinload(Task.domain),
+                selectinload(Task.instances),
             )
         else:
-            query = query.options(selectinload(Task.domain))
+            query = query.options(
+                selectinload(Task.domain),
+                selectinload(Task.instances),
+            )
 
         # When loading all tasks (not just top-level), also load parent for breadcrumbs
         if not top_level_only or parent_id is not None:
