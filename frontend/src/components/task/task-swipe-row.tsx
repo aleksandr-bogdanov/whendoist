@@ -163,6 +163,7 @@ export function TaskSwipeRow({
   );
 
   function resetState() {
+    clearLongPress();
     setDeltaX(0);
     setIsSwiping(false);
     setPhase("idle");

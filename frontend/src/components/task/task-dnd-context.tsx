@@ -156,7 +156,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
         // Calculate time from pointer Y position relative to the droppable
         // The delta is the pointer's Y position within the calendar column
-        const pointerY = (event.activatorEvent as PointerEvent).clientY + (event.delta?.y ?? 0);
+        let clientY: number;
+        if (event.activatorEvent instanceof TouchEvent) {
+          clientY =
+            event.activatorEvent.touches[0]?.clientY ??
+            event.activatorEvent.changedTouches[0]?.clientY ??
+            0;
+        } else {
+          clientY = (event.activatorEvent as PointerEvent).clientY;
+        }
+        const pointerY = clientY + (event.delta?.y ?? 0);
         const columnTop = rect.top;
         const offsetY = pointerY - columnTop;
 

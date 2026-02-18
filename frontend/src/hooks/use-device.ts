@@ -55,32 +55,29 @@ function getCapabilities(): DeviceCapabilities {
 let cachedCapabilities = getCapabilities();
 const listeners = new Set<() => void>();
 
+// Handler registered once at module scope to avoid O(n²) duplication
+const handler = () => {
+  cachedCapabilities = getCapabilities();
+  for (const listener of listeners) listener();
+};
+
+// Register media query listeners once at module level
+if (typeof window !== "undefined") {
+  for (const query of [
+    "(hover: none)",
+    "(max-width: 900px)",
+    "(max-width: 580px)",
+    "(prefers-reduced-motion: reduce)",
+    "(display-mode: standalone)",
+  ]) {
+    window.matchMedia(query).addEventListener("change", handler);
+  }
+}
+
 function subscribe(callback: () => void) {
   listeners.add(callback);
-
-  // Listen for media query changes that affect capabilities
-  const mediaQueries = [
-    window.matchMedia("(hover: none)"),
-    window.matchMedia("(max-width: 900px)"),
-    window.matchMedia("(max-width: 580px)"),
-    window.matchMedia("(prefers-reduced-motion: reduce)"),
-    window.matchMedia("(display-mode: standalone)"),
-  ];
-
-  const handler = () => {
-    cachedCapabilities = getCapabilities();
-    for (const listener of listeners) listener();
-  };
-
-  for (const mq of mediaQueries) {
-    mq.addEventListener("change", handler);
-  }
-
   return () => {
     listeners.delete(callback);
-    for (const mq of mediaQueries) {
-      mq.removeEventListener("change", handler);
-    }
   };
 }
 

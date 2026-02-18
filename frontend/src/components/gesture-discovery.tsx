@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDevice } from "@/hooks/use-device";
 
@@ -38,6 +38,7 @@ export function GestureDiscovery() {
   }, [isTouchDevice]);
 
   // (b) Long-press hint: show once after first task editor close
+  const longPressTimerRef = useRef<number | null>(null);
   useEffect(() => {
     if (!isTouchDevice) return;
     if (localStorage.getItem(LONGPRESS_HINT_KEY)) return;
@@ -47,7 +48,7 @@ export function GestureDiscovery() {
       if (localStorage.getItem(LONGPRESS_HINT_KEY)) return;
       localStorage.setItem(LONGPRESS_HINT_KEY, "1");
 
-      setTimeout(() => {
+      longPressTimerRef.current = window.setTimeout(() => {
         toast.info("Tip: long-press any task for quick actions", { duration: 4000 });
       }, 500);
     };
@@ -62,7 +63,10 @@ export function GestureDiscovery() {
     };
 
     document.addEventListener("click", clickHandler);
-    return () => document.removeEventListener("click", clickHandler);
+    return () => {
+      document.removeEventListener("click", clickHandler);
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    };
   }, [isTouchDevice]);
 
   return (
