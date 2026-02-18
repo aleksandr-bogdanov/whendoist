@@ -91,6 +91,10 @@ export function PlanMode({ open, onOpenChange, tasks, events, centerDate }: Plan
           <DialogDescription>
             Auto-schedule {eligibleTasks.length} unscheduled tasks into free time slots for{" "}
             {centerDate}.
+            <span className="block mt-1 text-xs">
+              Showing tasks matching your current energy level (Level {energyLevel}). Change your
+              energy level in the task panel to include more or fewer tasks.
+            </span>
           </DialogDescription>
         </DialogHeader>
 

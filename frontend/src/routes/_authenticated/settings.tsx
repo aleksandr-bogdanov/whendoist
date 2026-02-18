@@ -1,6 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router";
 import {
+  ArrowDown,
+  ArrowUp,
   Calendar,
   Database,
   Download,
@@ -47,6 +49,7 @@ import {
   getGetSyncStatusApiV1GcalSyncStatusGetQueryKey,
   useDisableSyncApiV1GcalSyncDisablePost,
   useEnableSyncApiV1GcalSyncEnablePost,
+  useFullSyncApiV1GcalSyncFullSyncPost,
   useGetSyncStatusApiV1GcalSyncStatusGet,
 } from "@/api/queries/gcal-sync/gcal-sync";
 import {
@@ -341,6 +344,7 @@ function GCalSyncSection() {
   const syncQuery = useGetSyncStatusApiV1GcalSyncStatusGet();
   const enableSync = useEnableSyncApiV1GcalSyncEnablePost();
   const disableSync = useDisableSyncApiV1GcalSyncDisablePost();
+  const fullSync = useFullSyncApiV1GcalSyncFullSyncPost();
   const queryClient = useQueryClient();
 
   const syncStatus = syncQuery.data;
@@ -391,13 +395,39 @@ function GCalSyncSection() {
           disabled={enableSync.isPending || disableSync.isPending}
         />
       </div>
-      {syncStatus?.enabled && syncStatus.synced_count != null && (
-        <p className="text-xs text-muted-foreground">
-          {syncStatus.synced_count} tasks synced
-          {syncStatus.sync_error && (
-            <span className="text-destructive ml-2">{syncStatus.sync_error}</span>
-          )}
-        </p>
+      {syncStatus?.enabled && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            {syncStatus.synced_count != null && <>{syncStatus.synced_count} tasks synced</>}
+            {syncStatus.sync_error && (
+              <span className="text-destructive ml-2">{syncStatus.sync_error}</span>
+            )}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => {
+              fullSync.mutate(undefined, {
+                onSuccess: () => {
+                  queryClient.invalidateQueries({
+                    queryKey: getGetSyncStatusApiV1GcalSyncStatusGetQueryKey(),
+                  });
+                  toast.success("Full sync started");
+                },
+                onError: () => toast.error("Failed to start sync"),
+              });
+            }}
+            disabled={fullSync.isPending}
+          >
+            {fullSync.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RotateCcw className="h-3 w-3" />
+            )}
+            Re-sync
+          </Button>
+        </div>
       )}
     </SettingsCard>
   );
@@ -816,7 +846,9 @@ function DomainsSection() {
   const [editIcon, setEditIcon] = useState("");
   const [editColor, setEditColor] = useState("");
 
-  const domains = (domainsQuery.data ?? []).filter((d) => !d.is_archived);
+  const domains = (domainsQuery.data ?? [])
+    .filter((d) => !d.is_archived)
+    .sort((a, b) => a.position - b.position);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -846,6 +878,35 @@ function DomainsSection() {
           setEditingId(null);
         },
         onError: () => toast.error("Failed to update domain"),
+      },
+    );
+  };
+
+  const handleMove = (id: number, direction: "up" | "down") => {
+    const idx = domains.findIndex((d) => d.id === id);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= domains.length) return;
+
+    const current = domains[idx];
+    const other = domains[swapIdx];
+
+    // Swap positions
+    updateDomain.mutate(
+      { domainId: current.id, data: { position: other.position } },
+      {
+        onSuccess: () => {
+          updateDomain.mutate(
+            { domainId: other.id, data: { position: current.position } },
+            {
+              onSuccess: () => {
+                queryClient.invalidateQueries({
+                  queryKey: getListDomainsApiV1DomainsGetQueryKey(),
+                });
+              },
+            },
+          );
+        },
       },
     );
   };
@@ -890,6 +951,26 @@ function DomainsSection() {
               </>
             ) : (
               <>
+                <div className="flex flex-col gap-0.5">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5"
+                    disabled={domains.indexOf(d) === 0}
+                    onClick={() => handleMove(d.id, "up")}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5"
+                    disabled={domains.indexOf(d) === domains.length - 1}
+                    onClick={() => handleMove(d.id, "down")}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                </div>
                 <span className="text-lg">{d.icon || "📁"}</span>
                 <div
                   className="h-3 w-3 rounded-full flex-shrink-0"

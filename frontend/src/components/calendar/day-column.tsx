@@ -1,6 +1,15 @@
 import { useDroppable } from "@dnd-kit/core";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, EventResponse, InstanceResponse } from "@/api/model";
+import {
+  getListInstancesApiV1InstancesGetQueryKey,
+  useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
+  useSkipInstanceApiV1InstancesInstanceIdSkipPost,
+} from "@/api/queries/instances/instances";
+import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import {
   calculateOverlaps,
@@ -147,6 +156,7 @@ export function DayColumn({
                 <CalendarEventCard
                   key={`event-${item.id}`}
                   item={item}
+                  eventId={item.id}
                   summary={event?.summary ?? ""}
                   timeLabel={timeLabel}
                   backgroundColor={event ? calendarColors.get(event.calendar_id) : undefined}
@@ -166,6 +176,7 @@ export function DayColumn({
               <ScheduledTaskCard
                 key={`task-${item.id}`}
                 item={item}
+                taskId={task.id}
                 title={task.title}
                 impact={task.impact}
                 durationMinutes={task.duration_minutes}
@@ -189,15 +200,57 @@ function InstanceCard({
   instance: InstanceResponse;
   timeLabel: string;
 }) {
+  const queryClient = useQueryClient();
+  const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
+  const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
+  const [showActions, setShowActions] = useState(false);
+
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const isCompleted = instance.status === "completed";
+  const isSkipped = instance.status === "skipped";
   const impactColor = IMPACT_COLORS[instance.impact] ?? IMPACT_COLORS[4];
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+  };
+
+  const handleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    completeInstance.mutate(
+      { instanceId: instance.id },
+      {
+        onSuccess: () => {
+          invalidateAll();
+          toast.success("Instance completed");
+        },
+        onError: () => toast.error("Failed to complete instance"),
+      },
+    );
+    setShowActions(false);
+  };
+
+  const handleSkip = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    skipInstance.mutate(
+      { instanceId: instance.id },
+      {
+        onSuccess: () => {
+          invalidateAll();
+          toast.success("Instance skipped");
+        },
+        onError: () => toast.error("Failed to skip instance"),
+      },
+    );
+    setShowActions(false);
+  };
+
   return (
-    <div
-      className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 ${
-        isCompleted ? "opacity-50" : ""
+    <button
+      type="button"
+      className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow ${
+        isCompleted || isSkipped ? "opacity-50" : ""
       }`}
       style={{
         top: `${item.top}px`,
@@ -208,6 +261,7 @@ function InstanceCard({
         borderLeftColor: impactColor,
       }}
       title={`${instance.task_title} (recurring)`}
+      onClick={() => setShowActions((v) => !v)}
     >
       <div className="flex items-center gap-1">
         <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
@@ -218,6 +272,24 @@ function InstanceCard({
       {item.height > 28 && (
         <div className="text-[10px] text-muted-foreground truncate">{timeLabel}</div>
       )}
-    </div>
+      {showActions && instance.status === "pending" && (
+        <div className="flex gap-1 mt-0.5">
+          <button
+            type="button"
+            className="flex items-center gap-0.5 rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 hover:bg-green-500/30"
+            onClick={handleComplete}
+          >
+            <Check className="h-2.5 w-2.5" /> Done
+          </button>
+          <button
+            type="button"
+            className="flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/80"
+            onClick={handleSkip}
+          >
+            <SkipForward className="h-2.5 w-2.5" /> Skip
+          </button>
+        </div>
+      )}
+    </button>
   );
 }

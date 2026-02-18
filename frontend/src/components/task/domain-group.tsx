@@ -128,10 +128,11 @@ export function DomainGroup({
   }, []);
 
   const handleScheduleFromSheet = useCallback(
-    (_task: AppRoutersTasksTaskResponse) => {
+    (task: AppRoutersTasksTaskResponse) => {
+      selectTask(task.id);
       setMobileTab("calendar");
     },
-    [setMobileTab],
+    [selectTask, setMobileTab],
   );
 
   return (

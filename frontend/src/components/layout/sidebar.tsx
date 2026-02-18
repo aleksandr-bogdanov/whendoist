@@ -4,6 +4,7 @@ import type { DomainResponse } from "@/api/model";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { useUIStore } from "@/stores/ui-store";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,6 +20,7 @@ interface SidebarProps {
 export function Sidebar({ domains }: SidebarProps) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { selectedDomainId, selectDomain } = useUIStore();
 
   return (
     <aside className="hidden md:flex md:w-60 md:flex-col border-r bg-sidebar">
@@ -56,9 +58,16 @@ export function Sidebar({ domains }: SidebarProps) {
                   .filter((d) => !d.is_archived)
                   .sort((a, b) => a.position - b.position)
                   .map((domain) => (
-                    <div
+                    <button
                       key={domain.id}
-                      className="flex items-center gap-3 rounded-md px-3 py-1.5 text-sm text-sidebar-foreground/70"
+                      type="button"
+                      onClick={() => selectDomain(domain.id)}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors",
+                        selectedDomainId === domain.id
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                      )}
                     >
                       <span
                         className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -68,7 +77,7 @@ export function Sidebar({ domains }: SidebarProps) {
                         {domain.icon ? `${domain.icon} ` : ""}
                         {domain.name}
                       </span>
-                    </div>
+                    </button>
                   ))}
               </div>
             </div>

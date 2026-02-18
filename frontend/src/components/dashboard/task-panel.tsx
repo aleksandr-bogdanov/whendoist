@@ -14,6 +14,7 @@ import { useCryptoStore } from "@/stores/crypto-store";
 import { useUIStore } from "@/stores/ui-store";
 import { EnergySelector } from "./energy-selector";
 import { FilterBar } from "./filter-bar";
+import { PendingPastBanner } from "./pending-past-banner";
 import { SettingsPanel } from "./settings-panel";
 import { SortControls } from "./sort-controls";
 
@@ -34,7 +35,7 @@ export function TaskPanel({
   onQuickAdd,
   onEditTask,
 }: TaskPanelProps) {
-  const { sortField, sortDirection, energyLevel } = useUIStore();
+  const { sortField, sortDirection, energyLevel, selectedDomainId } = useUIStore();
   const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
   const canDecrypt = encryptionEnabled && isUnlocked && derivedKey !== null;
 
@@ -83,7 +84,12 @@ export function TaskPanel({
     const { pending, scheduled, completed } = categorizeTasks(decryptedTasks);
 
     // Filter by energy level
-    const filteredPending = filterByEnergy(pending, energyLevel);
+    let filteredPending = filterByEnergy(pending, energyLevel);
+
+    // Filter by selected domain
+    if (selectedDomainId !== null) {
+      filteredPending = filteredPending.filter((t) => t.domain_id === selectedDomainId);
+    }
 
     // Sort pending tasks
     const sortedPending = sortTasks(filteredPending, sortField, sortDirection);
@@ -102,7 +108,7 @@ export function TaskPanel({
       scheduledTasks: scheduled,
       completedTasks: completed,
     };
-  }, [decryptedTasks, decryptedDomains, sortField, sortDirection, energyLevel]);
+  }, [decryptedTasks, decryptedDomains, sortField, sortDirection, energyLevel, selectedDomainId]);
 
   // Prevent ciphertext flash: show loading while decryption is pending
   const decryptionPending = canDecrypt && (tasks?.length ?? 0) > 0 && decryptedTasks.length === 0;
@@ -149,6 +155,7 @@ export function TaskPanel({
       <ScrollArea className="flex-1 relative" data-task-scroll-area>
         <StickyDomainHeader />
         <div className="p-2 sm:p-3 space-y-1">
+          <PendingPastBanner />
           <TaskList groups={pendingGroups} onEditTask={onEditTask} />
           <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />
           <CompletedSection tasks={completedTasks} onEditTask={onEditTask} />

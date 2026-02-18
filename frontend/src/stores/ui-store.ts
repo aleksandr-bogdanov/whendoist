@@ -17,7 +17,9 @@ interface UIState {
   expandedDomains: Set<number>;
   expandedSubtasks: Set<number>;
   selectedTaskId: number | null;
+  selectedDomainId: number | null;
   mobileTab: MobileTab;
+  quickAddOpen: boolean;
   calendarHourHeight: number;
   calendarCenterDate: string;
 }
@@ -31,7 +33,9 @@ interface UIActions {
   toggleExpandedDomain: (domainId: number) => void;
   toggleExpandedSubtask: (taskId: number) => void;
   selectTask: (taskId: number | null) => void;
+  selectDomain: (domainId: number | null) => void;
   setMobileTab: (tab: MobileTab) => void;
+  setQuickAddOpen: (open: boolean) => void;
   setCalendarHourHeight: (height: number) => void;
   setCalendarCenterDate: (date: string) => void;
 }
@@ -48,7 +52,9 @@ export const useUIStore = create<UIState & UIActions>()(
       expandedDomains: new Set<number>(),
       expandedSubtasks: new Set<number>(),
       selectedTaskId: null,
+      selectedDomainId: null,
       mobileTab: "tasks",
+      quickAddOpen: false,
       calendarHourHeight: 60,
       calendarCenterDate: new Date().toISOString().split("T")[0],
 
@@ -90,7 +96,12 @@ export const useUIStore = create<UIState & UIActions>()(
         }),
 
       selectTask: (taskId) => set({ selectedTaskId: taskId }),
+      selectDomain: (domainId) =>
+        set((state) => ({
+          selectedDomainId: state.selectedDomainId === domainId ? null : domainId,
+        })),
       setMobileTab: (tab) => set({ mobileTab: tab }),
+      setQuickAddOpen: (open) => set({ quickAddOpen: open }),
       setCalendarHourHeight: (height) =>
         set({ calendarHourHeight: Math.max(30, Math.min(100, height)) }),
       setCalendarCenterDate: (date) => set({ calendarCenterDate: date }),

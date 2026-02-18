@@ -38,7 +38,22 @@ function DashboardPage() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
 
-  const { mobileTab, setMobileTab, selectedTaskId, selectTask } = useUIStore();
+  const {
+    mobileTab,
+    setMobileTab,
+    selectedTaskId,
+    selectTask,
+    quickAddOpen: storeQuickAddOpen,
+    setQuickAddOpen: setStoreQuickAddOpen,
+  } = useUIStore();
+
+  // Sync quick-add open state from store (triggered by mobile nav FAB)
+  useEffect(() => {
+    if (storeQuickAddOpen) {
+      setQuickAddOpen(true);
+      setStoreQuickAddOpen(false);
+    }
+  }, [storeQuickAddOpen, setStoreQuickAddOpen]);
 
   // Track whether any modal is open to suppress task shortcuts
   const isModalOpen = editorOpen || quickAddOpen || shortcutsHelpOpen;
