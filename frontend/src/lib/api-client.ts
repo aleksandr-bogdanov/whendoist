@@ -40,10 +40,15 @@ axios.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Guard against multiple simultaneous 401 redirects (e.g. when session expires
+// and tasks/domains/preferences queries all fail at once)
+let isRedirecting = false;
+
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !isRedirecting) {
+      isRedirecting = true;
       window.location.href = "/login";
     }
     // If CSRF token was rejected, clear cache so next request re-fetches

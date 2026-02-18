@@ -9,6 +9,7 @@ import type {
   TaskUpdate,
 } from "@/api/model";
 import {
+  getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
@@ -159,7 +160,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   };
 
   const invalidateQueries = () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+    queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
   };
 
   const handleSave = async () => {

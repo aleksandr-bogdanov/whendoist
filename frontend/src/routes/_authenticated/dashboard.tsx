@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import {
+  getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useListTasksApiV1TasksGet,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
@@ -42,12 +43,9 @@ function DashboardPage() {
   // Track whether any modal is open to suppress task shortcuts
   const isModalOpen = editorOpen || quickAddOpen || shortcutsHelpOpen;
 
-  // Top-level tasks for parent picker (exclude subtasks and the task being edited)
+  // Top-level tasks for parent picker (exclude subtasks and recurring)
   const parentTasks = useMemo(
-    () =>
-      tasks?.filter(
-        (t) => t.parent_id === null && !t.is_recurring && (t.subtasks?.length ?? 0) === 0,
-      ) ?? [],
+    () => tasks?.filter((t) => t.parent_id === null && !t.is_recurring) ?? [],
     [tasks],
   );
 
@@ -156,7 +154,7 @@ function DashboardPage() {
               { taskId: sel, data: null },
               {
                 onSuccess: () => {
-                  queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+                  queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
                   toast.success("Task toggled", { duration: 3000 });
                 },
                 onError: () => toast.error("Failed to update task"),
@@ -220,7 +218,7 @@ function DashboardPage() {
               { taskId: sel },
               {
                 onSuccess: () => {
-                  queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+                  queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
                   toast.success(`Deleted "${task.title}"`, { duration: 5000 });
                 },
                 onError: () => {

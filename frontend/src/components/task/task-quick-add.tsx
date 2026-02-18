@@ -3,7 +3,10 @@ import { Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { DomainResponse, TaskCreate } from "@/api/model";
-import { useCreateTaskApiV1TasksPost } from "@/api/queries/tasks/tasks";
+import {
+  getListTasksApiV1TasksGetQueryKey,
+  useCreateTaskApiV1TasksPost,
+} from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,7 +60,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
       {
         onSuccess: () => {
           toast.success("Task created");
-          queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           setTitle("");
           setDomainId("none");
           onOpenChange(false);

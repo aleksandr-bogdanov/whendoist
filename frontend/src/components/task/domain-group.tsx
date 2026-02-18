@@ -4,7 +4,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
-import { useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost } from "@/api/queries/tasks/tasks";
+import {
+  getListTasksApiV1TasksGetQueryKey,
+  useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
+} from "@/api/queries/tasks/tasks";
 import { TaskActionSheet } from "@/components/mobile/task-action-sheet";
 import { TaskSwipeRow } from "@/components/task/task-swipe-row";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -51,28 +54,31 @@ export function DomainGroup({
   const handleSwipeComplete = useCallback(
     (task: AppRoutersTasksTaskResponse) => {
       const isCompleted = task.status === "completed" || !!task.completed_at;
-      const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>([
-        "/api/v1/tasks",
-      ]);
+      const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+        getListTasksApiV1TasksGetQueryKey(),
+      );
 
-      queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(["/api/v1/tasks"], (old) => {
-        if (!old) return old;
-        return old.map((t) =>
-          t.id === task.id
-            ? {
-                ...t,
-                status: isCompleted ? ("pending" as const) : ("completed" as const),
-                completed_at: isCompleted ? null : new Date().toISOString(),
-              }
-            : t,
-        );
-      });
+      queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+        getListTasksApiV1TasksGetQueryKey(),
+        (old) => {
+          if (!old) return old;
+          return old.map((t) =>
+            t.id === task.id
+              ? {
+                  ...t,
+                  status: isCompleted ? ("pending" as const) : ("completed" as const),
+                  completed_at: isCompleted ? null : new Date().toISOString(),
+                }
+              : t,
+          );
+        },
+      );
 
       toggleComplete.mutate(
         { taskId: task.id, data: null },
         {
           onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+            queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
             if (!isCompleted) {
               toast.success("Task completed", {
                 action: {
@@ -82,7 +88,9 @@ export function DomainGroup({
                       { taskId: task.id, data: null },
                       {
                         onSuccess: () =>
-                          queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] }),
+                          queryClient.invalidateQueries({
+                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          }),
                       },
                     );
                   },
@@ -92,7 +100,7 @@ export function DomainGroup({
             }
           },
           onError: () => {
-            queryClient.setQueryData(["/api/v1/tasks"], previousTasks);
+            queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
             toast.error("Failed to update task");
           },
         },
