@@ -1,5 +1,0 @@
-{
-  "name": "whendoist",
-  "private": true,
-  "description": "Triggers Node.js detection in railpack for frontend SPA build"
-}

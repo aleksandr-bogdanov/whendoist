@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.7 — 2026-02-18
+
+### Fixed
+- Railway build: use `railpack.json` with `packages.node` to explicitly install Node.js 22 — railpack's single-provider model only detects Python, ignoring root `package.json` ([railpack#217](https://github.com/railwayapp/railpack/issues/217))
+- Removed root `package.json` and `package-lock.json` (failed detection workaround from v0.48.5/v0.48.6)
+
+---
+
 ## v0.48.6 — 2026-02-18
 
 ### Fixed
