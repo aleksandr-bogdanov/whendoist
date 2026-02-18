@@ -7,7 +7,7 @@ import { ScheduledSection } from "@/components/task/scheduled-section";
 import { TaskList } from "@/components/task/task-list";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { decrypt, looksEncrypted } from "@/lib/crypto";
+import { decryptDomain, decryptTask } from "@/hooks/use-crypto";
 import { categorizeTasks, filterByEnergy, groupByDomain, sortTasks } from "@/lib/task-utils";
 import { useCryptoStore } from "@/stores/crypto-store";
 import { useUIStore } from "@/stores/ui-store";
@@ -23,50 +23,6 @@ interface TaskPanelProps {
   onNewTask?: () => void;
   onQuickAdd?: () => void;
   onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
-}
-
-async function decryptTasksWithKey(
-  tasks: AppRoutersTasksTaskResponse[],
-  key: CryptoKey,
-): Promise<AppRoutersTasksTaskResponse[]> {
-  return Promise.all(
-    tasks.map(async (task) => {
-      const [title, description] = await Promise.all([
-        task.title && looksEncrypted(task.title)
-          ? decrypt(key, task.title).catch(() => task.title)
-          : task.title,
-        task.description && looksEncrypted(task.description)
-          ? decrypt(key, task.description).catch(() => task.description)
-          : task.description,
-      ]);
-      let subtasks = task.subtasks;
-      if (subtasks?.length) {
-        subtasks = await Promise.all(
-          subtasks.map(async (st) => ({
-            ...st,
-            title:
-              st.title && looksEncrypted(st.title)
-                ? await decrypt(key, st.title).catch(() => st.title)
-                : st.title,
-          })),
-        );
-      }
-      return { ...task, title: title ?? task.title, description: description ?? null, subtasks };
-    }),
-  );
-}
-
-async function decryptDomainsWithKey(
-  domains: DomainResponse[],
-  key: CryptoKey,
-): Promise<DomainResponse[]> {
-  return Promise.all(
-    domains.map(async (d) => ({
-      ...d,
-      name:
-        d.name && looksEncrypted(d.name) ? await decrypt(key, d.name).catch(() => d.name) : d.name,
-    })),
-  );
 }
 
 export function TaskPanel({
@@ -95,7 +51,7 @@ export function TaskPanel({
       return;
     }
     let cancelled = false;
-    decryptTasksWithKey(tasks, derivedKey).then((result) => {
+    Promise.all(tasks.map((t) => decryptTask(t, derivedKey))).then((result) => {
       if (!cancelled) setDecryptedTasks(result);
     });
     return () => {
@@ -113,7 +69,7 @@ export function TaskPanel({
       return;
     }
     let cancelled = false;
-    decryptDomainsWithKey(domains, derivedKey).then((result) => {
+    Promise.all(domains.map((d) => decryptDomain(d, derivedKey))).then((result) => {
       if (!cancelled) setDecryptedDomains(result);
     });
     return () => {
@@ -147,7 +103,10 @@ export function TaskPanel({
     };
   }, [decryptedTasks, decryptedDomains, sortField, sortDirection, energyLevel]);
 
-  if (isLoading) {
+  // Prevent ciphertext flash: show loading while decryption is pending
+  const decryptionPending = canDecrypt && (tasks?.length ?? 0) > 0 && decryptedTasks.length === 0;
+
+  if (isLoading || decryptionPending) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

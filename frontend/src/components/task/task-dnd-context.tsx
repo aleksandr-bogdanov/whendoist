@@ -19,7 +19,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
-import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
+import {
+  getListTasksApiV1TasksGetQueryKey,
+  useUpdateTaskApiV1TasksTaskIdPut,
+} from "@/api/queries/tasks/tasks";
 import { offsetToTime } from "@/lib/calendar-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskDragOverlay } from "./task-drag-overlay";
@@ -161,17 +164,20 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         const scheduledTime = `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
 
         // Optimistic update
-        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>([
-          "/api/v1/tasks",
-        ]);
-        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(["/api/v1/tasks"], (old) => {
-          if (!old) return old;
-          return old.map((t) =>
-            t.id === activeId
-              ? { ...t, scheduled_date: dateStr, scheduled_time: scheduledTime }
-              : t,
-          );
-        });
+        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(),
+        );
+        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(),
+          (old) => {
+            if (!old) return old;
+            return old.map((t) =>
+              t.id === activeId
+                ? { ...t, scheduled_date: dateStr, scheduled_time: scheduledTime }
+                : t,
+            );
+          },
+        );
 
         updateTask.mutate(
           {
@@ -180,11 +186,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           },
           {
             onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
               toast.success("Task scheduled");
             },
             onError: () => {
-              queryClient.setQueryData(["/api/v1/tasks"], previousTasks);
+              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
               toast.error("Failed to schedule task");
             },
           },
@@ -196,15 +202,18 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       if (overId.startsWith("task-list-")) {
         const task = findTask(active.id);
         if (task?.scheduled_date) {
-          const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>([
-            "/api/v1/tasks",
-          ]);
-          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(["/api/v1/tasks"], (old) => {
-            if (!old) return old;
-            return old.map((t) =>
-              t.id === activeId ? { ...t, scheduled_date: null, scheduled_time: null } : t,
-            );
-          });
+          const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+            getListTasksApiV1TasksGetQueryKey(),
+          );
+          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+            getListTasksApiV1TasksGetQueryKey(),
+            (old) => {
+              if (!old) return old;
+              return old.map((t) =>
+                t.id === activeId ? { ...t, scheduled_date: null, scheduled_time: null } : t,
+              );
+            },
+          );
 
           updateTask.mutate(
             {
@@ -213,11 +222,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             },
             {
               onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+                queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
                 toast.success("Task unscheduled");
               },
               onError: () => {
-                queryClient.setQueryData(["/api/v1/tasks"], previousTasks);
+                queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
                 toast.error("Failed to unschedule task");
               },
             },
@@ -241,13 +250,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           }
         }
 
-        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>([
-          "/api/v1/tasks",
-        ]);
-        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(["/api/v1/tasks"], (old) => {
-          if (!old) return old;
-          return old.map((t) => (t.id === activeId ? { ...t, parent_id: overTaskId } : t));
-        });
+        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(),
+        );
+        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(),
+          (old) => {
+            if (!old) return old;
+            return old.map((t) => (t.id === activeId ? { ...t, parent_id: overTaskId } : t));
+          },
+        );
 
         updateTask.mutate(
           {
@@ -256,11 +268,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           },
           {
             onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
               toast.success("Task moved as subtask");
             },
             onError: () => {
-              queryClient.setQueryData(["/api/v1/tasks"], previousTasks);
+              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
               toast.error("Failed to reparent task");
             },
           },

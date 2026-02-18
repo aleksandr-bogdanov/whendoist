@@ -7,6 +7,26 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.12 — 2026-02-18
+
+### Fixed
+- **Encrypted text flashes as ciphertext**: task panel showed raw ciphertext for ~100-300ms before decryption completed — added loading guard while decryption is pending
+- **Encryption enable could corrupt data**: if batch-update failed after encrypting data but before telling server encryption was enabled, data became permanently unreadable — reordered to notify server first
+- **Child routes rendered ciphertext behind unlock dialog**: `_authenticated.tsx` now waits for encryption status and suppresses `<Outlet>` until unlocked
+- **Thoughts page ignored edits**: decryption `useEffect` depended on `thoughts.length` only — changing a thought's title didn't trigger re-decryption. Now uses a stable fingerprint of IDs + title prefixes
+- **Drag handle covered wrong area**: `position: absolute` drag overlay in `task-item.tsx` had no `position: relative` parent — anchored to wrong ancestor
+- **Subtask cascade on uncomplete**: optimistic update marked subtasks as "completed" even when uncompleting the parent — now correctly sets to "pending"
+- **parentTasks filter too restrictive**: excluded tasks that already had subtasks from parent picker, preventing adding more subtasks
+- **401 redirect storm**: multiple simultaneous API failures on session expiry each triggered `window.location.href = "/login"` — added guard flag
+- **Privacy/Terms links caused full page reload**: changed from `<a href>` to TanStack Router `<Link>`
+
+### Changed
+- **27 hardcoded query keys replaced**: all `["/api/v1/tasks"]` strings across 8 frontend files now use `getListTasksApiV1TasksGetQueryKey()` generated helper
+- **Duplicate decryption code removed**: `task-panel.tsx` had its own 42-line decryption functions duplicating `use-crypto.ts` — now imports shared `decryptTask`/`decryptDomain`
+- **11 backend endpoints got response models**: added Pydantic `response_model` to task complete/uncomplete/toggle/batch and instance complete/uncomplete/toggle/skip/batch endpoints — orval will generate proper TypeScript types on next regen
+
+---
+
 ## v0.48.11 — 2026-02-18
 
 ### Fixed

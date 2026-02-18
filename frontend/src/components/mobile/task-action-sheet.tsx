@@ -3,6 +3,7 @@ import { Calendar, Check, Pencil, SkipForward, Trash2, Undo2 } from "lucide-reac
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
+  getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
 } from "@/api/queries/tasks/tasks";
@@ -49,22 +50,25 @@ export function TaskActionSheet({
   const handleToggleComplete = () => {
     close();
 
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>([
-      "/api/v1/tasks",
-    ]);
+    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+    );
 
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(["/api/v1/tasks"], (old) => {
-      if (!old) return old;
-      return old.map((t) =>
-        t.id === task.id
-          ? {
-              ...t,
-              status: isCompleted ? ("pending" as const) : ("completed" as const),
-              completed_at: isCompleted ? null : new Date().toISOString(),
-            }
-          : t,
-      );
-    });
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+      (old) => {
+        if (!old) return old;
+        return old.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: isCompleted ? ("pending" as const) : ("completed" as const),
+                completed_at: isCompleted ? null : new Date().toISOString(),
+              }
+            : t,
+        );
+      },
+    );
 
     haptic(isCompleted ? "light" : "success");
 
@@ -72,11 +76,11 @@ export function TaskActionSheet({
       { taskId: task.id, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success(isCompleted ? "Task reopened" : "Task completed");
         },
         onError: () => {
-          queryClient.setQueryData(["/api/v1/tasks"], previousTasks);
+          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
           toast.error("Failed to update task");
         },
       },
@@ -107,7 +111,7 @@ export function TaskActionSheet({
       { taskId: task.id },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.info(`Deleted "${task.title}"`, { duration: 5000 });
         },
         onError: () => {

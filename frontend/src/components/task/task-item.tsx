@@ -4,7 +4,10 @@ import { Calendar, Check, ChevronDown, ChevronRight, Clock, Repeat } from "lucid
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, SubtaskResponse } from "@/api/model";
-import { useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost } from "@/api/queries/tasks/tasks";
+import {
+  getListTasksApiV1TasksGetQueryKey,
+  useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
+} from "@/api/queries/tasks/tasks";
 import { Badge } from "@/components/ui/badge";
 import {
   CLARITY_LABELS,
@@ -49,34 +52,37 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
     e.stopPropagation();
 
     // Optimistic update
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>([
-      "/api/v1/tasks",
-    ]);
+    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+    );
 
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(["/api/v1/tasks"], (old) => {
-      if (!old) return old;
-      return old.map((t) => {
-        if (t.id === task.id) {
-          return {
-            ...t,
-            status: isCompleted ? "pending" : "completed",
-            completed_at: isCompleted ? null : new Date().toISOString(),
-            // Cascade: mark subtasks completed too
-            subtasks: t.subtasks?.map((st) => ({
-              ...st,
-              status: isCompleted ? st.status : "completed",
-            })),
-          };
-        }
-        return t;
-      });
-    });
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+      (old) => {
+        if (!old) return old;
+        return old.map((t) => {
+          if (t.id === task.id) {
+            return {
+              ...t,
+              status: isCompleted ? "pending" : "completed",
+              completed_at: isCompleted ? null : new Date().toISOString(),
+              // Cascade: mark subtasks completed/pending too
+              subtasks: t.subtasks?.map((st) => ({
+                ...st,
+                status: isCompleted ? "pending" : "completed",
+              })),
+            };
+          }
+          return t;
+        });
+      },
+    );
 
     toggleComplete.mutate(
       { taskId: task.id, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           if (!isCompleted) {
             toast.success("Task completed", {
               action: {
@@ -86,7 +92,9 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                     { taskId: task.id, data: null },
                     {
                       onSuccess: () => {
-                        queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+                        queryClient.invalidateQueries({
+                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        });
                       },
                     },
                   );
@@ -98,7 +106,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         },
         onError: () => {
           // Rollback
-          queryClient.setQueryData(["/api/v1/tasks"], previousTasks);
+          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
           toast.error("Failed to update task");
         },
       },
@@ -112,7 +120,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
     <div ref={setNodeRef} data-task-id={task.id}>
       <div
         className={cn(
-          "group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
+          "group relative flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
           isSelected && "bg-accent ring-1 ring-ring/20",
           isCompleted && "opacity-60",
           isDragging && "opacity-30",
@@ -284,7 +292,7 @@ function SubtaskItem({ subtask, depth, onSelect }: SubtaskItemProps) {
       { taskId: subtask.id, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
         },
         onError: () => toast.error("Failed to update task"),
       },

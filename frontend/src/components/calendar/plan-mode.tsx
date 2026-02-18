@@ -3,7 +3,10 @@ import { CalendarCheck, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, EventResponse } from "@/api/model";
-import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
+import {
+  getListTasksApiV1TasksGetQueryKey,
+  useUpdateTaskApiV1TasksTaskIdPut,
+} from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -69,7 +72,7 @@ export function PlanMode({ open, onOpenChange, tasks, events, centerDate }: Plan
       }
     }
 
-    await queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks"] });
+    await queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
     setIsCommitting(false);
     onOpenChange(false);
 

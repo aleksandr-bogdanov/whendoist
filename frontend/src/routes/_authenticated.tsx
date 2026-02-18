@@ -42,8 +42,9 @@ function AuthenticatedLayout() {
     }
   }, [encryptionStatus, setEnabled]);
 
-  // Loading state
-  if (meQuery.isLoading) {
+  // Loading state — wait for both auth and encryption status
+  // to avoid rendering child routes that would show ciphertext
+  if (meQuery.isLoading || encryptionQuery.isLoading) {
     return (
       <div className="flex h-[var(--app-height,100vh)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-brand" />
@@ -64,16 +65,17 @@ function AuthenticatedLayout() {
 
   return (
     <>
-      <AppShell
-        userName={me?.name ?? undefined}
-        userEmail={me?.email}
-        domains={domainsQuery.data}
-      />
-      {needsUnlock && encryptionStatus?.salt && encryptionStatus?.test_value && (
+      {needsUnlock && encryptionStatus?.salt && encryptionStatus?.test_value ? (
         <EncryptionUnlock
           open={true}
           salt={encryptionStatus.salt}
           testValue={encryptionStatus.test_value}
+        />
+      ) : (
+        <AppShell
+          userName={me?.name ?? undefined}
+          userEmail={me?.email}
+          domains={domainsQuery.data}
         />
       )}
       {showWizard && <OnboardingWizard open={true} onComplete={() => setWizardDismissed(true)} />}

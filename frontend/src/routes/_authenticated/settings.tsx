@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link as RouterLink } from "@tanstack/react-router";
 import {
   Calendar,
   Database,
@@ -522,6 +522,11 @@ function EncryptionSection() {
     try {
       const { salt, testValue } = await setupEncryption(passphrase);
 
+      // Tell server encryption is enabled FIRST — if batch encryption
+      // fails later, server knows encryption is on and client can retry.
+      // The reverse (encrypted data + server unaware) would leave data unreadable.
+      await setupMutation.mutateAsync({ data: { salt, test_value: testValue } });
+
       // Encrypt all existing task titles/descriptions and domain names
       const tasks = (tasksQuery.data ?? []) as Array<{
         id: number;
@@ -551,8 +556,6 @@ function EncryptionSection() {
 
         await setKey(storedKey);
       }
-
-      await setupMutation.mutateAsync({ data: { salt, test_value: testValue } });
 
       queryClient.invalidateQueries({
         queryKey: getGetEncryptionStatusApiV1PreferencesEncryptionGetQueryKey(),
@@ -1230,12 +1233,12 @@ function AboutSection() {
         )}
       </div>
       <div className="flex gap-2 text-xs">
-        <a href="/privacy" className="text-muted-foreground hover:underline">
+        <RouterLink to="/privacy" className="text-muted-foreground hover:underline">
           Privacy Policy
-        </a>
-        <a href="/terms" className="text-muted-foreground hover:underline">
+        </RouterLink>
+        <RouterLink to="/terms" className="text-muted-foreground hover:underline">
           Terms of Service
-        </a>
+        </RouterLink>
       </div>
     </SettingsCard>
   );

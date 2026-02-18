@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Send } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
@@ -32,8 +32,12 @@ function ThoughtsPage() {
   const allTasks = tasksQuery.data ?? [];
   const thoughts = allTasks.filter((t) => t.domain_id === null && t.parent_id === null);
 
-  // Decrypt thoughts — intentionally depend on length only to avoid infinite re-decrypt loops
-  // biome-ignore lint/correctness/useExhaustiveDependencies: thoughts identity changes every render
+  // Decrypt thoughts — depend on a stable fingerprint to avoid infinite re-decrypt loops
+  const thoughtsKey = useMemo(
+    () => thoughts.map((t) => `${t.id}:${t.title?.slice(0, 8)}`).join(","),
+    [thoughts],
+  );
+  // biome-ignore lint/correctness/useExhaustiveDependencies: thoughtsKey is a stable fingerprint
   useEffect(() => {
     let cancelled = false;
     decryptTasks(thoughts).then((result) => {
@@ -42,7 +46,7 @@ function ThoughtsPage() {
     return () => {
       cancelled = true;
     };
-  }, [thoughts.length, decryptTasks]);
+  }, [thoughtsKey, decryptTasks]);
 
   // Auto-scroll to bottom when new thought added
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on count change only

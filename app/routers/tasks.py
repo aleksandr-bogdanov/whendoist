@@ -626,7 +626,43 @@ async def restore_task(
     return _task_to_response(task)
 
 
-@router.post("/{task_id}/complete", status_code=200)
+class TaskCompleteResponse(BaseModel):
+    """Response for task complete/uncomplete."""
+
+    status: str
+    task_id: int
+
+
+class TaskToggleCompleteResponse(BaseModel):
+    """Response for task toggle-complete.
+
+    For recurring tasks, includes instance_id.
+    For non-recurring tasks, includes cascaded_subtask_ids.
+    """
+
+    status: str
+    task_id: int
+    completed: bool
+    instance_id: int | None = None
+    cascaded_subtask_ids: list[int] | None = None
+
+
+class BatchUpdateError(BaseModel):
+    """A single error in a batch update."""
+
+    id: int
+    error: str
+
+
+class BatchUpdateTasksResponse(BaseModel):
+    """Response for batch-update tasks."""
+
+    updated_count: int
+    total_requested: int
+    errors: list[BatchUpdateError] | None = None
+
+
+@router.post("/{task_id}/complete", response_model=TaskCompleteResponse, status_code=200)
 async def complete_task(
     task_id: int,
     user: User = Depends(require_user),
@@ -654,7 +690,7 @@ async def complete_task(
     return {"status": "completed", "task_id": task_id}
 
 
-@router.post("/{task_id}/uncomplete", status_code=200)
+@router.post("/{task_id}/uncomplete", response_model=TaskCompleteResponse, status_code=200)
 async def uncomplete_task(
     task_id: int,
     user: User = Depends(require_user),
@@ -682,7 +718,7 @@ class ToggleCompleteRequest(BaseModel):
     target_date: date | None = None  # For recurring tasks, complete instance for this date
 
 
-@router.post("/{task_id}/toggle-complete", status_code=200)
+@router.post("/{task_id}/toggle-complete", response_model=TaskToggleCompleteResponse, status_code=200)
 async def toggle_task_complete(
     task_id: int,
     data: ToggleCompleteRequest | None = None,
@@ -761,7 +797,7 @@ class BatchUpdateTasksRequest(BaseModel):
     tasks: list[TaskContentData] = Field(max_length=5000)
 
 
-@router.post("/batch-update", status_code=200)
+@router.post("/batch-update", response_model=BatchUpdateTasksResponse, status_code=200)
 async def batch_update_tasks(
     data: BatchUpdateTasksRequest,
     user: User = Depends(require_user),
@@ -785,7 +821,7 @@ async def batch_update_tasks(
     """
     service = TaskService(db, user.id)
     updated_count = 0
-    errors = []
+    errors: list[BatchUpdateError] = []
     batch_size = 25
 
     for i, item in enumerate(data.tasks):
@@ -807,16 +843,14 @@ async def batch_update_tasks(
                 logger.debug(f"Batch update: committed {i + 1}/{len(data.tasks)} tasks")
         except Exception as e:
             await db.rollback()
-            errors.append({"id": item.id, "error": "Update failed"})
+            errors.append(BatchUpdateError(id=item.id, error="Update failed"))
             logger.warning(f"Failed to update task {item.id}: {e}")
 
     # Final commit for remaining items
     await db.commit()
 
-    result: dict[str, int | list[dict[str, str]]] = {
-        "updated_count": updated_count,
-        "total_requested": len(data.tasks),
-    }
-    if errors:
-        result["errors"] = errors
-    return result
+    return BatchUpdateTasksResponse(
+        updated_count=updated_count,
+        total_requested=len(data.tasks),
+        errors=errors if errors else None,
+    )

@@ -31,7 +31,7 @@ async function decryptFieldIfNeeded(
 /**
  * Decrypt task title, description, and subtask titles.
  */
-async function decryptTask(
+export async function decryptTask(
   task: AppRoutersTasksTaskResponse,
   key: CryptoKey,
 ): Promise<AppRoutersTasksTaskResponse> {
@@ -61,7 +61,10 @@ async function decryptTask(
 /**
  * Decrypt domain name.
  */
-async function decryptDomain(domain: DomainResponse, key: CryptoKey): Promise<DomainResponse> {
+export async function decryptDomain(
+  domain: DomainResponse,
+  key: CryptoKey,
+): Promise<DomainResponse> {
   const name = await decryptFieldIfNeeded(domain.name, key);
   return {
     ...domain,

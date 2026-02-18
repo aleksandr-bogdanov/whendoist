@@ -68,6 +68,39 @@ def _instance_to_response(instance: TaskInstance) -> InstanceResponse:
     )
 
 
+class InstanceStatusResponse(BaseModel):
+    """Response for instance complete/uncomplete/skip."""
+
+    status: str
+    instance_id: int
+
+
+class InstanceToggleCompleteResponse(BaseModel):
+    """Response for instance toggle-complete."""
+
+    status: str
+    instance_id: int
+    completed: bool
+
+
+class BatchCompleteResponse(BaseModel):
+    """Response for batch-complete instances."""
+
+    completed_count: int
+
+
+class PendingPastCountResponse(BaseModel):
+    """Response for pending-past-count."""
+
+    pending_count: int
+
+
+class BatchPastResponse(BaseModel):
+    """Response for batch-past instances."""
+
+    affected_count: int
+
+
 # =============================================================================
 # Endpoints
 # =============================================================================
@@ -91,7 +124,7 @@ async def list_instances(
     return [_instance_to_response(i) for i in instances]
 
 
-@router.post("/{instance_id}/complete", status_code=200)
+@router.post("/{instance_id}/complete", response_model=InstanceStatusResponse, status_code=200)
 async def complete_instance(
     instance_id: int,
     user: User = Depends(require_user),
@@ -106,7 +139,7 @@ async def complete_instance(
     return {"status": "completed", "instance_id": instance_id}
 
 
-@router.post("/{instance_id}/uncomplete", status_code=200)
+@router.post("/{instance_id}/uncomplete", response_model=InstanceStatusResponse, status_code=200)
 async def uncomplete_instance(
     instance_id: int,
     user: User = Depends(require_user),
@@ -121,7 +154,7 @@ async def uncomplete_instance(
     return {"status": "pending", "instance_id": instance_id}
 
 
-@router.post("/{instance_id}/toggle-complete", status_code=200)
+@router.post("/{instance_id}/toggle-complete", response_model=InstanceToggleCompleteResponse, status_code=200)
 async def toggle_instance_complete(
     instance_id: int,
     user: User = Depends(require_user),
@@ -140,7 +173,7 @@ async def toggle_instance_complete(
     }
 
 
-@router.post("/{instance_id}/skip", status_code=200)
+@router.post("/{instance_id}/skip", response_model=InstanceStatusResponse, status_code=200)
 async def skip_instance(
     instance_id: int,
     user: User = Depends(require_user),
@@ -189,7 +222,7 @@ class BatchAction(BaseModel):
     action: Literal["complete", "skip"]
 
 
-@router.post("/batch-complete", status_code=200)
+@router.post("/batch-complete", response_model=BatchCompleteResponse, status_code=200)
 async def batch_complete_instances(
     data: BatchCompleteRequest,
     user: User = Depends(require_user),
@@ -204,7 +237,7 @@ async def batch_complete_instances(
     return {"completed_count": count}
 
 
-@router.get("/pending-past-count", status_code=200)
+@router.get("/pending-past-count", response_model=PendingPastCountResponse, status_code=200)
 async def pending_past_count(
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
@@ -217,7 +250,7 @@ async def pending_past_count(
     return {"pending_count": count}
 
 
-@router.post("/batch-past", status_code=200)
+@router.post("/batch-past", response_model=BatchPastResponse, status_code=200)
 async def batch_past_instances(
     data: BatchAction,
     user: User = Depends(require_user),
