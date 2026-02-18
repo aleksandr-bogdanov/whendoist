@@ -1,10 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { CalendarDays, ListTodo } from "lucide-react";
+import { CalendarDays, CalendarPlus, ListTodo, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
+import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const { data: tasks, isLoading: tasksLoading } = useListTasksApiV1TasksGet();
   const { data: domains, isLoading: domainsLoading } = useListDomainsApiV1DomainsGet();
+  const { data: me } = useGetMeApiV1MeGet();
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
@@ -37,6 +39,16 @@ function DashboardPage() {
   const [editingTask, setEditingTask] = useState<AppRoutersTasksTaskResponse | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
+  const [gcalBannerDismissed, setGcalBannerDismissed] = useState(
+    () => localStorage.getItem("gcal-banner-dismissed") === "1",
+  );
+
+  const showGcalBanner = me && !me.calendar_connected && !gcalBannerDismissed;
+
+  const dismissGcalBanner = useCallback(() => {
+    setGcalBannerDismissed(true);
+    localStorage.setItem("gcal-banner-dismissed", "1");
+  }, []);
 
   const {
     mobileTab,
@@ -346,6 +358,28 @@ function DashboardPage() {
               mobileTab === "calendar" ? "flex-1" : "hidden"
             } md:flex md:flex-1`}
           >
+            {showGcalBanner && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border-b text-sm">
+                <CalendarPlus className="h-4 w-4 text-primary flex-shrink-0" />
+                <span className="flex-1">
+                  Connect Google Calendar to see your events alongside tasks.
+                </span>
+                <a
+                  href="/auth/google"
+                  className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Connect
+                </a>
+                <button
+                  type="button"
+                  onClick={dismissGcalBanner}
+                  className="p-0.5 rounded hover:bg-accent"
+                  title="Dismiss"
+                >
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            )}
             <CalendarPanel tasks={safeTasks} onTaskClick={handleEditTask} />
           </div>
         </div>

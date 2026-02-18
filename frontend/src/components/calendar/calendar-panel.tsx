@@ -7,6 +7,7 @@ import {
 } from "@/api/queries/api/api";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Button } from "@/components/ui/button";
+import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
 import {
   addDays,
   DAY_START_HOUR,
@@ -27,6 +28,7 @@ interface CalendarPanelProps {
 export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const { calendarHourHeight, calendarCenterDate, setCalendarHourHeight, setCalendarCenterDate } =
     useUIStore();
+  useSyncCalendarHourHeight();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [planModeOpen, setPlanModeOpen] = useState(false);

@@ -1,16 +1,18 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Inbox } from "lucide-react";
+import { ChevronDown, Inbox, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
+import type { AppRoutersTasksTaskResponse, DomainResponse, TaskCreate } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
+  useCreateTaskApiV1TasksPost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
 } from "@/api/queries/tasks/tasks";
 import { TaskActionSheet } from "@/components/mobile/task-action-sheet";
 import { TaskSwipeRow } from "@/components/task/task-swipe-row";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useCrypto } from "@/hooks/use-crypto";
 import { useDevice } from "@/hooks/use-device";
 import { useHaptics } from "@/hooks/use-haptics";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,36 @@ export function DomainGroup({
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const { trigger: haptic } = useHaptics();
   const isTouchDevice = prefersTouch || hasTouch;
+
+  // Inline add-task state
+  const [addingTask, setAddingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const addInputRef = useRef<HTMLInputElement>(null);
+  const createTask = useCreateTaskApiV1TasksPost();
+  const { encryptTaskFields } = useCrypto();
+
+  const handleInlineAdd = useCallback(async () => {
+    if (!newTaskTitle.trim()) return;
+    const encrypted = await encryptTaskFields({ title: newTaskTitle.trim() });
+    const data: TaskCreate = {
+      title: encrypted.title!,
+      domain_id: domain?.id ?? null,
+      impact: 4,
+      clarity: "normal",
+    };
+    createTask.mutate(
+      { data },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          toast.success("Task created");
+          setNewTaskTitle("");
+          addInputRef.current?.focus();
+        },
+        onError: () => toast.error("Failed to create task"),
+      },
+    );
+  }, [newTaskTitle, domain, createTask, queryClient, encryptTaskFields]);
 
   // Action sheet state
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
@@ -230,6 +262,49 @@ export function DomainGroup({
                 </motion.div>
               ))}
             </AnimatePresence>
+
+            {/* Inline add task */}
+            {addingTask ? (
+              <div className="flex items-center gap-1.5 px-2 py-1">
+                <input
+                  ref={(el) => {
+                    (addInputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+                    el?.focus();
+                  }}
+                  type="text"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newTaskTitle.trim()) {
+                      e.preventDefault();
+                      handleInlineAdd();
+                    }
+                    if (e.key === "Escape") {
+                      setAddingTask(false);
+                      setNewTaskTitle("");
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!newTaskTitle.trim()) {
+                      setAddingTask(false);
+                      setNewTaskTitle("");
+                    }
+                  }}
+                  placeholder="Task title..."
+                  className="flex-1 h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
+                  disabled={createTask.isPending}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingTask(true)}
+                className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+              >
+                <Plus className="h-3 w-3" />
+                Add task
+              </button>
+            )}
           </div>
         </CollapsibleContent>
       </Collapsible>

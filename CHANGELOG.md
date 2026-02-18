@@ -7,6 +7,28 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.3 — 2026-02-18
+
+### Fixed
+- **ScheduledTaskCard complete has no optimistic update**: added `setQueryData` + rollback matching other complete paths
+- **PlanMode dialog closable during active scheduling**: guarded `onOpenChange` with `isCommitting` check
+- **ScheduledTaskCard unschedule button no loading state**: disabled both action buttons while mutation is pending, keep actions visible until resolved
+
+### Added
+- **Task editor Complete/Reopen button**: toggle task completion status from within the editor sheet
+- **Task editor Promote to top-level**: button for subtasks to detach from parent (sets `parent_id: null`)
+- **Network status monitoring**: `useNetworkStatus` hook shows persistent "No internet" / "Back online" toasts
+- **Task editor metadata timestamps**: shows "Created" and "Completed" dates at bottom of editor
+- **Pull-to-refresh on mobile**: custom touch gesture handler on the task panel that invalidates queries
+- **Calendar hour height synced to server**: reads from and debounce-writes to server `preferences.calendar_hour_height`
+- **Google Calendar connection banner**: dismissible banner on dashboard when `calendar_connected` is false
+- **Right-click context menu on desktop tasks**: opens DropdownMenu with Edit, Complete, Schedule, Delete actions
+- **Kebab menu button on desktop tasks**: hover-visible "..." button triggers the same context menu
+- **Inline add-task row per domain group**: compact "Add task" button at bottom of each domain group with inline input
+- **Date/time input shortcuts**: Today and Clear buttons next to scheduled date, scheduled time, and due date inputs
+
+---
+
 ## v0.49.2 — 2026-02-18
 
 ### Fixed
