@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Activity, CheckCircle2, Flame, Loader2, Percent, Trophy } from "lucide-react";
+import { Activity, CheckCircle2, Clock, Flame, Loader2, Percent, Trophy } from "lucide-react";
 import { useState } from "react";
-import { useGetAnalyticsApiV1AnalyticsGet } from "@/api/queries/analytics/analytics";
+import type { RecentCompletionItem } from "@/api/model";
+import {
+  useGetAnalyticsApiV1AnalyticsGet,
+  useGetRecentCompletionsApiV1AnalyticsRecentCompletionsGet,
+} from "@/api/queries/analytics/analytics";
 import { DailyChart } from "@/components/analytics/daily-chart";
 import { DayOfWeekChart } from "@/components/analytics/day-of-week-chart";
 import { DomainBreakdown } from "@/components/analytics/domain-breakdown";
@@ -103,8 +107,11 @@ function AnalyticsPage() {
           <RecurringList data={data.recurring_stats} />
         </div>
 
-        {/* Velocity */}
-        <VelocityChart data={data.velocity_data} />
+        {/* Recent completions + Velocity */}
+        <div className="grid gap-6 sm:grid-cols-2">
+          <RecentCompletions />
+          <VelocityChart data={data.velocity_data} />
+        </div>
 
         {/* Aging stats */}
         <AgingStats
@@ -174,6 +181,42 @@ function AgingStats({
           <span className="font-medium">{medianDays}d</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function RecentCompletions() {
+  const { data, isLoading } = useGetRecentCompletionsApiV1AnalyticsRecentCompletionsGet({
+    limit: 20,
+  });
+
+  const items = (data ?? []) as RecentCompletionItem[];
+
+  return (
+    <div className="rounded-xl border bg-card p-6 shadow-sm space-y-3">
+      <h3 className="font-semibold flex items-center gap-2">
+        <Clock className="h-4 w-4 text-muted-foreground" />
+        Recent Completions
+      </h3>
+      {isLoading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No recent completions</p>
+      ) : (
+        <div className="space-y-1 max-h-64 overflow-y-auto">
+          {items.map((item) => (
+            <div key={`${item.id}-${item.is_instance}`} className="flex items-center gap-2 py-1">
+              <span className="text-sm flex-shrink-0">{item.domain_icon || "📁"}</span>
+              <span className="text-sm truncate flex-1">{item.title}</span>
+              <span className="text-[11px] text-muted-foreground flex-shrink-0">
+                {item.completed_at_display}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,8 +3,14 @@ import { Calendar, Check, Pencil, SkipForward, Trash2, Undo2 } from "lucide-reac
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
+  getListInstancesApiV1InstancesGetQueryKey,
+  useListInstancesApiV1InstancesGet,
+  useSkipInstanceApiV1InstancesInstanceIdSkipPost,
+} from "@/api/queries/instances/instances";
+import {
   getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
+  useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
 } from "@/api/queries/tasks/tasks";
 import { useHaptics } from "@/hooks/use-haptics";
@@ -33,7 +39,21 @@ export function TaskActionSheet({
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
+  const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
+  const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
   const { trigger: haptic } = useHaptics();
+
+  // Fetch today's instances for the recurring task so we can skip it
+  const today = new Date().toISOString().split("T")[0];
+  const instancesQuery = useListInstancesApiV1InstancesGet(
+    { start_date: today, end_date: today },
+    { query: { enabled: !!task?.is_recurring && open } },
+  );
+  const todayInstance = task?.is_recurring
+    ? (instancesQuery.data ?? []).find(
+        (inst) => inst.task_id === task.id && inst.status === "pending",
+      )
+    : undefined;
 
   if (!task) return null;
 
@@ -112,7 +132,26 @@ export function TaskActionSheet({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          toast.info(`Deleted "${task.title}"`, { duration: 5000 });
+          toast.success(`Deleted "${task.title}"`, {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                restoreTask.mutate(
+                  { taskId: task.id },
+                  {
+                    onSuccess: () => {
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      });
+                      toast.success("Task restored");
+                    },
+                    onError: () => toast.error("Failed to restore task"),
+                  },
+                );
+              },
+            },
+            duration: 5000,
+          });
         },
         onError: () => {
           toast.error("Failed to delete task");
@@ -135,11 +174,29 @@ export function TaskActionSheet({
           label="Schedule"
           onClick={handleSchedule}
         />
-        {task.is_recurring && (
+        {task.is_recurring && todayInstance && (
           <ActionButton
             icon={<SkipForward className="h-5 w-5" />}
             label="Skip instance"
-            onClick={close}
+            onClick={() => {
+              close();
+              haptic("light");
+              skipInstance.mutate(
+                { instanceId: todayInstance.id },
+                {
+                  onSuccess: () => {
+                    queryClient.invalidateQueries({
+                      queryKey: getListInstancesApiV1InstancesGetQueryKey(),
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: getListTasksApiV1TasksGetQueryKey(),
+                    });
+                    toast.success("Instance skipped");
+                  },
+                  onError: () => toast.error("Failed to skip instance"),
+                },
+              );
+            }}
           />
         )}
         <ActionButton

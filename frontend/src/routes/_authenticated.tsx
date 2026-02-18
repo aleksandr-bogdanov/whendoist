@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Loader2, RefreshCw } from "lucide-react";
+import { Component, type ErrorInfo, type ReactNode, useEffect, useState } from "react";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import { useGetEncryptionStatusApiV1PreferencesEncryptionGet } from "@/api/queries/preferences/preferences";
@@ -64,7 +64,7 @@ function AuthenticatedLayout() {
   const showWizard = wizardQuery.data?.completed === false && !wizardDismissed;
 
   return (
-    <>
+    <AppErrorBoundary>
       {needsUnlock && encryptionStatus?.salt && encryptionStatus?.test_value ? (
         <EncryptionUnlock
           open={true}
@@ -79,6 +79,48 @@ function AuthenticatedLayout() {
         />
       )}
       {showWizard && <OnboardingWizard open={true} onComplete={() => setWizardDismissed(true)} />}
-    </>
+    </AppErrorBoundary>
   );
+}
+
+class AppErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("App error boundary caught:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-[var(--app-height,100vh)] items-center justify-center p-8">
+          <div className="text-center space-y-4 max-w-sm">
+            <h2 className="text-lg font-semibold">Something went wrong</h2>
+            <p className="text-sm text-muted-foreground">
+              {this.state.error?.message || "An unexpected error occurred."}
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }

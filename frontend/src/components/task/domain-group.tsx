@@ -32,7 +32,7 @@ export function DomainGroup({
   onEditTask,
   dragOverTaskId,
 }: DomainGroupProps) {
-  const { expandedDomains, toggleExpandedDomain, setMobileTab } = useUIStore();
+  const { expandedDomains, toggleExpandedDomain, setMobileTab, selectTask } = useUIStore();
   const { prefersTouch, hasTouch } = useDevice();
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
@@ -68,6 +68,10 @@ export function DomainGroup({
                   ...t,
                   status: isCompleted ? ("pending" as const) : ("completed" as const),
                   completed_at: isCompleted ? null : new Date().toISOString(),
+                  subtasks: t.subtasks?.map((st) => ({
+                    ...st,
+                    status: isCompleted ? "pending" : "completed",
+                  })),
                 }
               : t,
           );
@@ -109,10 +113,14 @@ export function DomainGroup({
     [queryClient, toggleComplete],
   );
 
-  const handleSwipeSchedule = useCallback(() => {
-    haptic("light");
-    setMobileTab("calendar");
-  }, [haptic, setMobileTab]);
+  const handleSwipeSchedule = useCallback(
+    (task: AppRoutersTasksTaskResponse) => {
+      haptic("light");
+      selectTask(task.id);
+      setMobileTab("calendar");
+    },
+    [haptic, selectTask, setMobileTab],
+  );
 
   const handleLongPress = useCallback((task: AppRoutersTasksTaskResponse) => {
     setActionSheetTask(task);
@@ -199,7 +207,7 @@ export function DomainGroup({
                     <div data-task-swipe-row>
                       <TaskSwipeRow
                         onSwipeRight={() => handleSwipeComplete(task)}
-                        onSwipeLeft={handleSwipeSchedule}
+                        onSwipeLeft={() => handleSwipeSchedule(task)}
                         onLongPress={() => handleLongPress(task)}
                       >
                         <TaskItem

@@ -7,6 +7,31 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.0 — 2026-02-18
+
+### Fixed
+- **Sort/filter settings not persisted**: energy level, sort field, sort direction, show-scheduled, and show-completed reset on page reload — added to Zustand persist partialize with custom Set serialization for expandedDomains/expandedSubtasks
+- **showCompleted defaulted to false**: new users saw no completed tasks — changed default to `true`
+- **Swipe-complete didn't cascade to subtasks**: completing a parent task via swipe left subtasks as pending — added subtask cascade in optimistic update
+- **Swipe-left scheduling lost task context**: swiping to schedule opened calendar without selecting the task — now calls `selectTask` before switching to calendar tab
+- **Mobile delete had no undo**: deleting from action sheet was permanent with no recovery — added undo toast with restore action
+- **Skip recurring instance missing on mobile**: action sheet had no way to skip today's recurring instance — added skip button that appears when a pending instance exists for today
+- **Plan mode scheduled tasks sequentially**: applying a plan sent N sequential API calls — switched to `Promise.allSettled` for parallel execution with success/fail counts
+- **Calendar time indicator frozen**: red "now" line was computed once at render and never updated — added `useState` + `setInterval(60s)` to keep it current
+- **Swipe vertical detection used absolute coordinates**: vertical scroll threshold compared absolute `clientY` against relative gesture movement — switched to `movement[1]` from @use-gesture for consistent relative tracking
+- **Wizard domain removal didn't delete from server**: removing a domain in the onboarding wizard only removed it from local state — now calls delete API when server ID is known
+- **Snapshot download button missing**: backup snapshots in settings had no download action — added download button that opens `/api/v1/backup/snapshots/{id}/download`
+- **No error boundary**: unhandled React errors crashed the entire app with a white screen — added `AppErrorBoundary` class component wrapping authenticated layout with reload button
+- **Thoughts page was read-only**: no way to edit, delete, or promote thoughts to tasks — added inline editing, delete with undo, and domain promote pills
+- **Thoughts had no date separators**: all thoughts rendered in a flat list — added date grouping with "Today", "Yesterday", and formatted date labels
+
+### Added
+- **Recurring task instances in calendar**: calendar day columns now show recurring task instances alongside events and scheduled tasks, with distinct styling and skip action
+- **Recent completions widget**: analytics page now shows the 20 most recent task completions with domain icon, title, and completion time
+- **Deleted/trash section**: task panel now has a collapsible "Deleted" section showing archived tasks with restore action
+
+---
+
 ## v0.48.12 — 2026-02-18
 
 ### Fixed

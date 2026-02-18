@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
-import { useCallback, useMemo, useRef } from "react";
-import type { AppRoutersTasksTaskResponse, EventResponse } from "@/api/model";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { AppRoutersTasksTaskResponse, EventResponse, InstanceResponse } from "@/api/model";
+import type { PositionedItem } from "@/lib/calendar-utils";
 import {
   calculateOverlaps,
   DAY_START_HOUR,
@@ -9,6 +10,7 @@ import {
   TOTAL_HOURS,
   todayString,
 } from "@/lib/calendar-utils";
+import { IMPACT_COLORS } from "@/lib/task-utils";
 import { CalendarEventCard } from "./calendar-event";
 import { ScheduledTaskCard } from "./scheduled-task-card";
 
@@ -16,6 +18,7 @@ interface DayColumnProps {
   dateStr: string;
   events: EventResponse[];
   tasks: AppRoutersTasksTaskResponse[];
+  instances?: InstanceResponse[];
   hourHeight: number;
   calendarColors: Map<string, string>;
   onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
@@ -27,6 +30,7 @@ export function DayColumn({
   dateStr,
   events,
   tasks,
+  instances,
   hourHeight,
   calendarColors,
   onTaskClick,
@@ -42,12 +46,17 @@ export function DayColumn({
   });
 
   const positioned = useMemo(
-    () => calculateOverlaps(events, tasks, dateStr, hourHeight),
-    [events, tasks, dateStr, hourHeight],
+    () => calculateOverlaps(events, tasks, dateStr, hourHeight, instances),
+    [events, tasks, dateStr, hourHeight, instances],
   );
 
-  // Current time indicator position
-  const now = new Date();
+  // Current time indicator — update every 60s
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (!isToday) return;
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, [isToday]);
   const currentTimeOffset = isToday
     ? (now.getHours() - DAY_START_HOUR + now.getMinutes() / 60) * hourHeight
     : -1;
@@ -144,6 +153,13 @@ export function DayColumn({
                 />
               );
             }
+            if (item.type === "instance") {
+              const inst = instances?.find((i) => `inst-${i.id}` === item.id);
+              if (!inst) return null;
+              return (
+                <InstanceCard key={item.id} item={item} instance={inst} timeLabel={timeLabel} />
+              );
+            }
             const task = taskMap.get(item.id);
             if (!task) return null;
             return (
@@ -160,6 +176,48 @@ export function DayColumn({
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+function InstanceCard({
+  item,
+  instance,
+  timeLabel,
+}: {
+  item: PositionedItem;
+  instance: InstanceResponse;
+  timeLabel: string;
+}) {
+  const width = `${100 / item.totalColumns}%`;
+  const left = `${(item.column / item.totalColumns) * 100}%`;
+  const isCompleted = instance.status === "completed";
+  const impactColor = IMPACT_COLORS[instance.impact] ?? IMPACT_COLORS[4];
+
+  return (
+    <div
+      className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 ${
+        isCompleted ? "opacity-50" : ""
+      }`}
+      style={{
+        top: `${item.top}px`,
+        height: `${item.height}px`,
+        width,
+        left,
+        backgroundColor: `${impactColor}15`,
+        borderLeftColor: impactColor,
+      }}
+      title={`${instance.task_title} (recurring)`}
+    >
+      <div className="flex items-center gap-1">
+        <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
+        <span className="truncate font-medium" style={{ color: impactColor }}>
+          {instance.task_title}
+        </span>
+      </div>
+      {item.height > 28 && (
+        <div className="text-[10px] text-muted-foreground truncate">{timeLabel}</div>
+      )}
     </div>
   );
 }

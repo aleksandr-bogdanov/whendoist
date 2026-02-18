@@ -5,6 +5,7 @@ import {
   useGetCalendarsApiV1CalendarsGet,
   useGetEventsApiV1EventsGet,
 } from "@/api/queries/api/api";
+import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Button } from "@/components/ui/button";
 import {
   addDays,
@@ -58,7 +59,14 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     return map;
   }, [calendars]);
 
+  // Fetch recurring task instances for the visible range
+  const { data: instances } = useListInstancesApiV1InstancesGet(
+    { start_date: startDate, end_date: endDate },
+    { query: { staleTime: 60_000 } },
+  );
+
   const safeEvents = events ?? [];
+  const safeInstances = instances ?? [];
 
   // Scheduled tasks (have scheduled_date + scheduled_time)
   const scheduledTasks = useMemo(
@@ -174,6 +182,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                 dateStr={dateStr}
                 events={safeEvents}
                 tasks={scheduledTasks}
+                instances={safeInstances}
                 hourHeight={calendarHourHeight}
                 calendarColors={calendarColors}
                 onTaskClick={onTaskClick}

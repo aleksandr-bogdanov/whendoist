@@ -23,6 +23,7 @@ import {
 import {
   getListDomainsApiV1DomainsGetQueryKey,
   useCreateDomainApiV1DomainsPost,
+  useDeleteDomainApiV1DomainsDomainIdDelete,
 } from "@/api/queries/domains/domains";
 import {
   useImportFromTodoistApiV1ImportTodoistPost,
@@ -342,22 +343,30 @@ function TodoistStep() {
 }
 
 function DomainsStep() {
-  const [domains, setDomains] = useState<Array<{ name: string; icon: string; color: string }>>([]);
+  const [domains, setDomains] = useState<
+    Array<{ name: string; icon: string; color: string; serverId?: number }>
+  >([]);
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("📁");
   const [color, setColor] = useState("#6D5EF6");
   const createDomain = useCreateDomainApiV1DomainsPost();
+  const deleteDomain = useDeleteDomainApiV1DomainsDomainIdDelete();
   const queryClient = useQueryClient();
 
   const addDomain = () => {
     if (!name.trim()) return;
     const entry = { name: name.trim(), icon, color };
+    const idx = domains.length;
     setDomains((prev) => [...prev, entry]);
 
     createDomain.mutate(
       { data: { name: entry.name, icon: entry.icon, color: entry.color } },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          const serverId = (data as { id?: number })?.id;
+          if (serverId) {
+            setDomains((prev) => prev.map((d, i) => (i === idx ? { ...d, serverId } : d)));
+          }
           queryClient.invalidateQueries({ queryKey: getListDomainsApiV1DomainsGetQueryKey() });
         },
       },
@@ -365,6 +374,21 @@ function DomainsStep() {
 
     setName("");
     setIcon("📁");
+  };
+
+  const removeDomain = (index: number) => {
+    const domain = domains[index];
+    setDomains((prev) => prev.filter((_, j) => j !== index));
+    if (domain.serverId) {
+      deleteDomain.mutate(
+        { domainId: domain.serverId },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListDomainsApiV1DomainsGetQueryKey() });
+          },
+        },
+      );
+    }
   };
 
   return (
@@ -388,7 +412,7 @@ function DomainsStep() {
                 variant="ghost"
                 size="sm"
                 className="h-6 px-1"
-                onClick={() => setDomains((prev) => prev.filter((_, j) => j !== i))}
+                onClick={() => removeDomain(i)}
               >
                 <Trash2 className="h-3 w-3" />
               </Button>

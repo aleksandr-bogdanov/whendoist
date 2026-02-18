@@ -1068,6 +1068,18 @@ function DataSection() {
                     variant="ghost"
                     size="sm"
                     className="h-6 px-1"
+                    title="Download"
+                    onClick={() => {
+                      window.open(`/api/v1/backup/snapshots/${snap.id}/download`, "_blank");
+                    }}
+                  >
+                    <Download className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1"
+                    title="Restore"
                     onClick={() => setShowRestoreDialog(snap.id)}
                   >
                     <RotateCcw className="h-3 w-3" />
@@ -1076,6 +1088,7 @@ function DataSection() {
                     variant="ghost"
                     size="sm"
                     className="h-6 px-1"
+                    title="Delete"
                     onClick={() => {
                       deleteSnapshot.mutate(
                         { snapshotId: snap.id },
