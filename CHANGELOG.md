@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.6 — 2026-02-18
+
+### Fixed
+- Railway build: added root `package-lock.json` so railpack detects Node.js (package.json alone is insufficient)
+
+---
+
 ## v0.48.5 — 2026-02-18
 
 ### Fixed
