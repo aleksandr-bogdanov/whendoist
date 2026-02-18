@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.11 — 2026-02-18
+
+### Fixed
+- **CSRF token flow broken**: CSRF middleware enforced `X-CSRF-Token` on all mutations but no endpoint existed to retrieve the token and the SPA never sent it — all authenticated POST/PUT/DELETE/PATCH requests returned 403. Added `GET /api/v1/csrf` endpoint and axios request interceptor
+- **Settings panel wrong field names**: dashboard settings read/wrote `deleted_retention_days` and `hide_recurring` (nonexistent) instead of `completed_retention_days` and `hide_recurring_after_completion` — settings appeared to work but silently ignored changes
+
+---
+
 ## v0.48.10 — 2026-02-18
 
 ### Fixed

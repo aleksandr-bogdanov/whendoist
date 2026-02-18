@@ -21,13 +21,8 @@ export function SettingsPanel() {
   const { data: preferences } = useGetPreferencesApiV1PreferencesGet();
   const updatePrefs = useUpdatePreferencesApiV1PreferencesPut();
 
-  const retentionDays =
-    ((preferences as Record<string, unknown> | undefined)?.deleted_retention_days as
-      | number
-      | undefined) ?? 7;
-  const hideRecurring =
-    ((preferences as Record<string, unknown> | undefined)?.hide_recurring as boolean | undefined) ??
-    false;
+  const retentionDays = preferences?.completed_retention_days ?? 7;
+  const hideRecurring = preferences?.hide_recurring_after_completion ?? false;
 
   const updatePref = (key: string, value: unknown) => {
     updatePrefs.mutate(
@@ -61,7 +56,7 @@ export function SettingsPanel() {
                   variant={retentionDays === opt.days ? "default" : "outline"}
                   size="sm"
                   className={cn("h-6 text-[11px] px-2 flex-1")}
-                  onClick={() => updatePref("deleted_retention_days", opt.days)}
+                  onClick={() => updatePref("completed_retention_days", opt.days)}
                 >
                   {opt.label}
                 </Button>
@@ -79,7 +74,7 @@ export function SettingsPanel() {
             <Switch
               id="hide-recurring"
               checked={hideRecurring}
-              onCheckedChange={(v) => updatePref("hide_recurring", v)}
+              onCheckedChange={(v) => updatePref("hide_recurring_after_completion", v)}
             />
           </div>
         </div>
