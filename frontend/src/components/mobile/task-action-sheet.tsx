@@ -101,7 +101,23 @@ export function TaskActionSheet({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          toast.success(isCompleted ? "Task reopened" : "Task completed");
+          toast.success(isCompleted ? "Task reopened" : "Task completed", {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                toggleComplete.mutate(
+                  { taskId: task.id, data: null },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                  },
+                );
+              },
+            },
+            duration: 5000,
+          });
         },
         onError: () => {
           queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);

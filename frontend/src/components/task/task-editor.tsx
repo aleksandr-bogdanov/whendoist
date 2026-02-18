@@ -9,6 +9,10 @@ import type {
   TaskUpdate,
 } from "@/api/model";
 import {
+  useBatchCompleteInstancesApiV1InstancesBatchCompletePost,
+  usePendingPastCountApiV1InstancesPendingPastCountGet,
+} from "@/api/queries/instances/instances";
+import {
   getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
@@ -143,6 +147,14 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       setTimeout(() => titleRef.current?.focus(), 100);
     }
   }, [open]);
+
+  // Pending past instances for recurring tasks
+  const pendingPastQuery = usePendingPastCountApiV1InstancesPendingPastCountGet({
+    query: { enabled: !!task?.is_recurring && open },
+  });
+  const pendingPastCount =
+    (pendingPastQuery.data as { pending_count?: number } | undefined)?.pending_count ?? 0;
+  const batchComplete = useBatchCompleteInstancesApiV1InstancesBatchCompletePost();
 
   const createMutation = useCreateTaskApiV1TasksPost();
   const updateMutation = useUpdateTaskApiV1TasksTaskIdPut();
@@ -288,13 +300,24 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
 
   const handleToggleComplete = () => {
     if (!task) return;
+    const wasCompleted = task.status === "completed" || !!task.completed_at;
     toggleCompleteMutation.mutate(
       { taskId: task.id, data: null },
       {
         onSuccess: () => {
           invalidateQueries();
-          const wasCompleted = task.status === "completed" || !!task.completed_at;
-          toast.success(wasCompleted ? "Task reopened" : "Task completed");
+          toast.success(wasCompleted ? "Task reopened" : "Task completed", {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                toggleCompleteMutation.mutate(
+                  { taskId: task.id, data: null },
+                  { onSuccess: () => invalidateQueries() },
+                );
+              },
+            },
+            duration: 5000,
+          });
           onOpenChange(false);
         },
         onError: () => toast.error("Failed to update task"),
@@ -639,6 +662,35 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                 />
               )}
             </div>
+
+            {/* Batch complete past instances */}
+            {isEdit && task?.is_recurring && pendingPastCount > 0 && (
+              <div className="pt-2 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs w-full"
+                  disabled={batchComplete.isPending}
+                  onClick={() => {
+                    const today = new Date().toISOString().split("T")[0];
+                    batchComplete.mutate(
+                      { data: { task_id: task.id, before_date: today } },
+                      {
+                        onSuccess: (data) => {
+                          const count = (data as { completed_count?: number }).completed_count ?? 0;
+                          invalidateQueries();
+                          toast.success(`Completed ${count} past instance(s)`);
+                        },
+                        onError: () => toast.error("Failed to complete past instances"),
+                      },
+                    );
+                  }}
+                >
+                  {batchComplete.isPending && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                  Complete {pendingPastCount} past instance(s)
+                </Button>
+              </div>
+            )}
 
             {/* Editor actions: promote / complete */}
             {isEdit && task && (

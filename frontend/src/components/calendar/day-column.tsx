@@ -27,6 +27,7 @@ interface DayColumnProps {
   dateStr: string;
   events: EventResponse[];
   tasks: AppRoutersTasksTaskResponse[];
+  anytimeTasks?: AppRoutersTasksTaskResponse[];
   instances?: InstanceResponse[];
   hourHeight: number;
   calendarColors: Map<string, string>;
@@ -39,6 +40,7 @@ export function DayColumn({
   dateStr,
   events,
   tasks,
+  anytimeTasks,
   instances,
   hourHeight,
   calendarColors,
@@ -78,6 +80,12 @@ export function DayColumn({
     return `${formatTime(sh, sm)} - ${formatTime(eh, em)}`;
   }, []);
 
+  // Date-only tasks for this day
+  const dayAnytimeTasks = useMemo(
+    () => (anytimeTasks ?? []).filter((t) => t.scheduled_date === dateStr),
+    [anytimeTasks, dateStr],
+  );
+
   // Find task by ID for click handling
   const taskMap = useMemo(() => {
     const m = new Map<string, AppRoutersTasksTaskResponse>();
@@ -102,6 +110,29 @@ export function DayColumn({
         </span>
         <span className="text-[10px] text-muted-foreground">{dateLabel}</span>
       </div>
+
+      {/* Anytime tasks (date-only, no specific time) */}
+      {dayAnytimeTasks.length > 0 && (
+        <div className="border-b px-1 py-1 space-y-0.5">
+          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide px-0.5">
+            Anytime
+          </span>
+          {dayAnytimeTasks.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className="w-full text-left text-[11px] truncate rounded px-1 py-0.5 hover:bg-accent/50 cursor-pointer"
+              style={{
+                borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
+              }}
+              onClick={() => onTaskClick?.(t)}
+              title={t.title}
+            >
+              {t.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Time grid — droppable zone */}
       <div
@@ -218,6 +249,14 @@ function InstanceCard({
 
   const handleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    const previousInstances = queryClient.getQueryData(getListInstancesApiV1InstancesGetQueryKey());
+    queryClient.setQueryData(
+      getListInstancesApiV1InstancesGetQueryKey(),
+      (old: InstanceResponse[] | undefined) =>
+        old?.map((i) => (i.id === instance.id ? { ...i, status: "completed" as const } : i)),
+    );
+
     completeInstance.mutate(
       { instanceId: instance.id },
       {
@@ -225,7 +264,10 @@ function InstanceCard({
           invalidateAll();
           toast.success("Instance completed");
         },
-        onError: () => toast.error("Failed to complete instance"),
+        onError: () => {
+          queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
+          toast.error("Failed to complete instance");
+        },
       },
     );
     setShowActions(false);
@@ -233,6 +275,14 @@ function InstanceCard({
 
   const handleSkip = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    const previousInstances = queryClient.getQueryData(getListInstancesApiV1InstancesGetQueryKey());
+    queryClient.setQueryData(
+      getListInstancesApiV1InstancesGetQueryKey(),
+      (old: InstanceResponse[] | undefined) =>
+        old?.map((i) => (i.id === instance.id ? { ...i, status: "skipped" as const } : i)),
+    );
+
     skipInstance.mutate(
       { instanceId: instance.id },
       {
@@ -240,7 +290,10 @@ function InstanceCard({
           invalidateAll();
           toast.success("Instance skipped");
         },
-        onError: () => toast.error("Failed to skip instance"),
+        onError: () => {
+          queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
+          toast.error("Failed to skip instance");
+        },
       },
     );
     setShowActions(false);

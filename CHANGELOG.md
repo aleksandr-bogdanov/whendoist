@@ -7,6 +7,27 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.4 — 2026-02-18
+
+### Fixed
+- **Domain group expand/collapse broken on first toggle**: changed from tracking expanded to tracking collapsed domains — empty set now correctly means all expanded
+- **Pull-to-refresh triggers too early**: stored pull distance in ref instead of parsing from DOM regex that never matched
+- **Keyboard 'x' deletes tasks with subtasks without confirmation**: added `window.confirm` when task has subtasks
+- **Date-only scheduled tasks missing from calendar**: added "Anytime" section above time grid in day columns for tasks with `scheduled_date` but no `scheduled_time`
+- **InstanceCard missing optimistic updates**: added `setQueryData` + rollback for complete/skip on recurring instances in calendar
+- **Inconsistent complete/reopen toast feedback**: standardized all 4 entry points to show toast with undo on both complete and reopen
+- **j/k navigation selects hidden tasks**: filtered `visibleTaskIds` to only pending, non-scheduled tasks
+- **Domain reorder second mutation has no error handling**: replaced two sequential mutations with single atomic `batchUpdateDomains` call
+- **Timezone update has no error toast**: added `onError` handler
+- **Delete passkey has no confirmation**: added `window.confirm` before delete
+- **SubtaskItem passes incomplete data to editor**: fetches full task via `getTaskApiV1TasksTaskIdGet` before opening editor
+
+### Added
+- **Batch-complete past recurring instances**: "Complete N past instance(s)" button in task editor for recurring tasks with pending past instances
+- **Todoist disconnect button**: added "Disconnect" option in Todoist settings section
+
+---
+
 ## v0.49.3 — 2026-02-18
 
 ### Fixed

@@ -34,7 +34,7 @@ export function DomainGroup({
   onEditTask,
   dragOverTaskId,
 }: DomainGroupProps) {
-  const { expandedDomains, toggleExpandedDomain, setMobileTab, selectTask } = useUIStore();
+  const { collapsedDomains, toggleCollapsedDomain, setMobileTab, selectTask } = useUIStore();
   const { prefersTouch, hasTouch } = useDevice();
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
@@ -75,12 +75,11 @@ export function DomainGroup({
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const [actionSheetTask, setActionSheetTask] = useState<AppRoutersTasksTaskResponse | null>(null);
 
-  // Default to expanded if not in the set (first load)
   const domainKey = domain?.id ?? 0;
-  const isExpanded = expandedDomains.size === 0 || expandedDomains.has(domainKey);
+  const isExpanded = !collapsedDomains.has(domainKey);
 
   const handleToggle = () => {
-    toggleExpandedDomain(domainKey);
+    toggleCollapsedDomain(domainKey);
   };
 
   const handleSwipeComplete = useCallback(
@@ -115,25 +114,23 @@ export function DomainGroup({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-            if (!isCompleted) {
-              toast.success("Task completed", {
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    toggleComplete.mutate(
-                      { taskId: task.id, data: null },
-                      {
-                        onSuccess: () =>
-                          queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
-                          }),
-                      },
-                    );
-                  },
+            toast.success(isCompleted ? "Task reopened" : "Task completed", {
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  toggleComplete.mutate(
+                    { taskId: task.id, data: null },
+                    {
+                      onSuccess: () =>
+                        queryClient.invalidateQueries({
+                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        }),
+                    },
+                  );
                 },
-                duration: 5000,
-              });
-            }
+              },
+              duration: 5000,
+            });
           },
           onError: () => {
             queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);

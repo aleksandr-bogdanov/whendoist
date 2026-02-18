@@ -21,6 +21,7 @@ export function usePullToRefresh({
   const pullingRef = useRef(false);
   const refreshingRef = useRef(false);
   const indicatorRef = useRef<HTMLDivElement | null>(null);
+  const pullDistanceRef = useRef(0);
 
   const createIndicator = useCallback(() => {
     if (indicatorRef.current) return indicatorRef.current;
@@ -67,6 +68,7 @@ export function usePullToRefresh({
 
       const deltaY = e.touches[0].clientY - startYRef.current;
       if (deltaY > 10) {
+        pullDistanceRef.current = deltaY;
         const indicator = createIndicator();
         const progress = Math.min(deltaY / threshold, 1);
         const translateY = Math.min(deltaY * 0.5, threshold);
@@ -81,13 +83,12 @@ export function usePullToRefresh({
       pullingRef.current = false;
 
       const indicator = indicatorRef.current;
-      if (!indicator) return;
+      if (!indicator) {
+        pullDistanceRef.current = 0;
+        return;
+      }
 
-      const finalY =
-        Number.parseFloat(indicator.style.transform.match(/translateY\(([\d.]+)px\)/)?.[1] ?? "0") +
-        40;
-
-      if (finalY >= threshold * 0.5) {
+      if (pullDistanceRef.current >= threshold) {
         refreshingRef.current = true;
         indicator.textContent = "↻";
         indicator.style.transform = "translate(-50%, 10px)";
@@ -102,6 +103,7 @@ export function usePullToRefresh({
       } else {
         removeIndicator();
       }
+      pullDistanceRef.current = 0;
     };
 
     container.addEventListener("touchstart", handleTouchStart, { passive: true });

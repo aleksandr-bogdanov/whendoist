@@ -29,6 +29,7 @@ import {
   useGetCalendarsApiV1CalendarsGet,
   useSetCalendarSelectionsApiV1CalendarsSelectionsPost,
 } from "@/api/queries/api/api";
+import { useDisconnectTodoistAuthTodoistDisconnectPost } from "@/api/queries/auth/auth";
 import {
   getListSnapshotsApiV1BackupSnapshotsGetQueryKey,
   useCreateManualSnapshotApiV1BackupSnapshotsPost,
@@ -234,6 +235,7 @@ function TimezoneSection() {
                 });
                 toast.success("Timezone updated");
               },
+              onError: () => toast.error("Failed to update timezone"),
             },
           );
         }}
@@ -450,12 +452,13 @@ function TodoistSection() {
     query: { enabled: showPreview },
   });
   const importMutation = useImportFromTodoistApiV1ImportTodoistPost();
+  const disconnectTodoist = useDisconnectTodoistAuthTodoistDisconnectPost();
   const queryClient = useQueryClient();
 
   return (
     <SettingsCard title="Todoist Import" icon={<Download className="h-4 w-4" />}>
       <p className="text-sm text-muted-foreground">Import tasks and projects from Todoist.</p>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button
           variant="outline"
           onClick={() => {
@@ -467,6 +470,20 @@ function TodoistSection() {
         </Button>
         <Button variant="outline" onClick={() => setShowPreview(true)}>
           Preview Import
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            disconnectTodoist.mutate(undefined, {
+              onSuccess: () => toast.success("Todoist disconnected"),
+              onError: () => toast.error("Failed to disconnect Todoist"),
+            });
+          }}
+          disabled={disconnectTodoist.isPending}
+        >
+          {disconnectTodoist.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+          Disconnect
         </Button>
       </div>
 
@@ -724,6 +741,8 @@ function EncryptionSection() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
+                        if (!window.confirm(`Delete passkey "${pk.name}"? This cannot be undone.`))
+                          return;
                         deletePasskeyMutation.mutate(
                           { passkeyId: pk.id },
                           {
@@ -889,6 +908,8 @@ function DomainsSection() {
     );
   };
 
+  const batchUpdateDomains = useBatchUpdateDomainsApiV1DomainsBatchUpdatePost();
+
   const handleMove = (id: number, direction: "up" | "down") => {
     const idx = domains.findIndex((d) => d.id === id);
     if (idx < 0) return;
@@ -898,22 +919,22 @@ function DomainsSection() {
     const current = domains[idx];
     const other = domains[swapIdx];
 
-    // Swap positions
-    updateDomain.mutate(
-      { domainId: current.id, data: { position: other.position } },
+    batchUpdateDomains.mutate(
+      {
+        data: {
+          domains: [
+            { id: current.id, position: other.position },
+            { id: other.id, position: current.position },
+          ],
+        },
+      },
       {
         onSuccess: () => {
-          updateDomain.mutate(
-            { domainId: other.id, data: { position: current.position } },
-            {
-              onSuccess: () => {
-                queryClient.invalidateQueries({
-                  queryKey: getListDomainsApiV1DomainsGetQueryKey(),
-                });
-              },
-            },
-          );
+          queryClient.invalidateQueries({
+            queryKey: getListDomainsApiV1DomainsGetQueryKey(),
+          });
         },
+        onError: () => toast.error("Failed to reorder domains"),
       },
     );
   };

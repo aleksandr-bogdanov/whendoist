@@ -70,9 +70,15 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const safeEvents = events ?? [];
   const safeInstances = instances ?? [];
 
-  // Scheduled tasks (have scheduled_date + scheduled_time)
+  // Scheduled tasks with a specific time
   const scheduledTasks = useMemo(
     () => tasks.filter((t) => t.scheduled_date && t.scheduled_time),
+    [tasks],
+  );
+
+  // Date-only scheduled tasks (no specific time)
+  const anytimeTasks = useMemo(
+    () => tasks.filter((t) => t.scheduled_date && !t.scheduled_time && t.status !== "completed"),
     [tasks],
   );
 
@@ -184,6 +190,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                 dateStr={dateStr}
                 events={safeEvents}
                 tasks={scheduledTasks}
+                anytimeTasks={anytimeTasks}
                 instances={safeInstances}
                 hourHeight={calendarHourHeight}
                 calendarColors={calendarColors}

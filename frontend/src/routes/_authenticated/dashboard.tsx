@@ -77,10 +77,12 @@ function DashboardPage() {
   );
 
   // Flat list of visible task IDs for j/k navigation
+  // Only include pending tasks (not scheduled or completed) to match what's visible
   const visibleTaskIds = useMemo(() => {
     if (!tasks) return [];
-    // Only top-level pending tasks are navigable (matches the visible list)
-    return tasks.filter((t) => t.parent_id === null).map((t) => t.id);
+    return tasks
+      .filter((t) => t.parent_id === null && t.status !== "completed" && !t.scheduled_date)
+      .map((t) => t.id);
   }, [tasks]);
 
   // Keep a ref to avoid stale closures in shortcut handlers
@@ -235,6 +237,11 @@ function DashboardPage() {
             if (modal || sel === null || !all) return;
             const task = all.find((t) => t.id === sel);
             if (!task) return;
+
+            if (task.subtasks?.length) {
+              if (!window.confirm(`Delete "${task.title}" and ${task.subtasks.length} subtask(s)?`))
+                return;
+            }
 
             // Move selection to next task
             const idx = ids.indexOf(sel);
