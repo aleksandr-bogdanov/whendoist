@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link as RouterLink } from "@tanstack/react-router";
+import { createFileRoute, Link as RouterLink, useNavigate } from "@tanstack/react-router";
 import {
   ArrowDown,
   ArrowUp,
@@ -15,6 +15,7 @@ import {
   Moon,
   Plus,
   RotateCcw,
+  Settings2,
   Shield,
   Sun,
   Trash2,
@@ -76,6 +77,10 @@ import {
   useBatchUpdateTasksApiV1TasksBatchUpdatePost,
   useListTasksApiV1TasksGet,
 } from "@/api/queries/tasks/tasks";
+import {
+  getGetWizardStatusApiV1WizardStatusGetQueryKey,
+  useResetWizardApiV1WizardResetPost,
+} from "@/api/queries/wizard/wizard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -141,6 +146,8 @@ function SettingsPage() {
         <DataSection />
         <Separator />
         <ShortcutsSection />
+        <Separator />
+        <SetupSection />
         <Separator />
         <AboutSection />
       </div>
@@ -1305,6 +1312,43 @@ function ShortcutsSection() {
 }
 
 // ============================================================================
+// Setup Section
+// ============================================================================
+
+function SetupSection() {
+  const resetWizard = useResetWizardApiV1WizardResetPost();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  return (
+    <SettingsCard title="Setup" icon={<Settings2 className="h-4 w-4" />}>
+      <p className="text-sm text-muted-foreground">
+        Re-run the onboarding wizard to reconfigure domains, calendar, or imports.
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          resetWizard.mutate(undefined, {
+            onSuccess: () => {
+              queryClient.invalidateQueries({
+                queryKey: getGetWizardStatusApiV1WizardStatusGetQueryKey(),
+              });
+              navigate({ to: "/" });
+            },
+            onError: () => toast.error("Failed to reset wizard"),
+          });
+        }}
+        disabled={resetWizard.isPending}
+      >
+        {resetWizard.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
+        Re-run Setup Wizard
+      </Button>
+    </SettingsCard>
+  );
+}
+
+// ============================================================================
 // About Section
 // ============================================================================
 
@@ -1326,13 +1370,29 @@ function AboutSection() {
           </p>
         )}
       </div>
-      <div className="flex gap-2 text-xs">
+      <div className="flex gap-2 text-xs flex-wrap">
         <RouterLink to="/privacy" className="text-muted-foreground hover:underline">
           Privacy Policy
         </RouterLink>
         <RouterLink to="/terms" className="text-muted-foreground hover:underline">
           Terms of Service
         </RouterLink>
+        <a
+          href="https://github.com/aleksandr-bogdanov/whendoist"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-muted-foreground hover:underline"
+        >
+          GitHub
+        </a>
+        <a
+          href="/static/debug-pwa.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-muted-foreground hover:underline"
+        >
+          PWA Debug
+        </a>
       </div>
     </SettingsCard>
   );

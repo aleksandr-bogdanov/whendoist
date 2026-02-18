@@ -118,6 +118,7 @@ export const useUIStore = create<UIState & UIActions>()(
         showCompleted: state.showCompleted,
         expandedDomains: [...state.expandedDomains],
         expandedSubtasks: [...state.expandedSubtasks],
+        mobileTab: state.mobileTab,
       }),
       storage: {
         getItem: (name) => {

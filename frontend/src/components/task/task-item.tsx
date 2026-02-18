@@ -243,7 +243,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
             transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
           >
-            <SubtaskTree subtasks={task.subtasks!} depth={depth + 1} onSelect={onSelect} />
+            <SubtaskTree
+              subtasks={task.subtasks!}
+              depth={depth + 1}
+              onSelect={onSelect}
+              onEdit={onEdit}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -255,13 +260,14 @@ interface SubtaskTreeProps {
   subtasks: SubtaskResponse[];
   depth: number;
   onSelect?: (taskId: number) => void;
+  onEdit?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-function SubtaskTree({ subtasks, depth, onSelect }: SubtaskTreeProps) {
+function SubtaskTree({ subtasks, depth, onSelect, onEdit }: SubtaskTreeProps) {
   return (
     <div>
       {subtasks.map((st) => (
-        <SubtaskItem key={st.id} subtask={st} depth={depth} onSelect={onSelect} />
+        <SubtaskItem key={st.id} subtask={st} depth={depth} onSelect={onSelect} onEdit={onEdit} />
       ))}
     </div>
   );
@@ -271,9 +277,10 @@ interface SubtaskItemProps {
   subtask: SubtaskResponse;
   depth: number;
   onSelect?: (taskId: number) => void;
+  onEdit?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-function SubtaskItem({ subtask, depth, onSelect }: SubtaskItemProps) {
+function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
   const { selectedTaskId, selectTask } = useUIStore();
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
@@ -283,10 +290,29 @@ function SubtaskItem({ subtask, depth, onSelect }: SubtaskItemProps) {
   const handleClick = () => {
     selectTask(subtask.id);
     onSelect?.(subtask.id);
+    onEdit?.(subtask as unknown as AppRoutersTasksTaskResponse);
   };
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Optimistic update — find subtask within its parent's subtasks array
+    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+    );
+
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+      (old) =>
+        old?.map((t) => ({
+          ...t,
+          subtasks: t.subtasks?.map((st) =>
+            st.id === subtask.id
+              ? { ...st, status: isCompleted ? ("pending" as const) : ("completed" as const) }
+              : st,
+          ),
+        })),
+    );
 
     toggleComplete.mutate(
       { taskId: subtask.id, data: null },
@@ -294,7 +320,10 @@ function SubtaskItem({ subtask, depth, onSelect }: SubtaskItemProps) {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
         },
-        onError: () => toast.error("Failed to update task"),
+        onError: () => {
+          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          toast.error("Failed to update task");
+        },
       },
     );
   };

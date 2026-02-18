@@ -7,6 +7,25 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.2 — 2026-02-18
+
+### Fixed
+- **Subtasks cannot be edited**: pass `onEdit` through to `SubtaskTree`/`SubtaskItem` so clicking a subtask opens the editor
+- **Subtask completion has no optimistic update**: added `setQueryData` before mutation so subtask checkboxes toggle instantly
+- **`pb-safe` utility undefined**: defined `@utility pb-safe` in globals.css for safe-area bottom padding on notched iOS devices
+- **Swipe resetState doesn't clear long-press timer**: added `clearLongPress()` to `resetState()` preventing spurious action sheet on vertical scroll
+- **Shortcuts help shows stale data**: removed `useMemo` with empty deps; shortcuts now always reflect current registrations
+- **Calendar drag-drop on touch devices calculates wrong time**: added `TouchEvent` type guard in `task-dnd-context.tsx` — `TouchEvent.touches[0].clientY` vs `PointerEvent.clientY`
+- **`use-device.ts` O(n²) media query handler duplication**: moved 5 `matchMedia` listeners to module scope (register once) instead of per-subscriber
+- **`mobileTab` not persisted on reload**: added `mobileTab` to `ui-store` partialize so the active tab survives page refresh
+- **`gesture-discovery.tsx` setTimeout leak on unmount**: stored timeout in a ref and clear it in useEffect cleanup
+
+### Added
+- **Re-run Setup Wizard button**: new Setup section in Settings to reset and re-run the onboarding wizard
+- **About section footer links**: added GitHub and PWA Debug links to the Settings About section
+
+---
+
 ## v0.49.1 — 2026-02-18
 
 ### Fixed

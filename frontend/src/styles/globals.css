@@ -131,6 +131,10 @@
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* PWA standalone viewport fix */
 @media (display-mode: standalone) {
   html,

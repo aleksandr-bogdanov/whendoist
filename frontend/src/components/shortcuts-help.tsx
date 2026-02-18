@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getRegisteredShortcuts } from "@/hooks/use-shortcuts";
 
@@ -18,7 +17,7 @@ const KEY_LABELS: Record<string, string> = {
 };
 
 export function ShortcutsHelp({ open, onOpenChange }: ShortcutsHelpProps) {
-  const grouped = useMemo(() => {
+  const grouped = (() => {
     const all = getRegisteredShortcuts();
     const map = new Map<string, { key: string; description: string }[]>();
     for (const s of all) {
@@ -30,7 +29,7 @@ export function ShortcutsHelp({ open, onOpenChange }: ShortcutsHelpProps) {
       });
     }
     return map;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- recalc when opened
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
