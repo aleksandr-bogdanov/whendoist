@@ -81,7 +81,12 @@ export function PlanMode({ open, onOpenChange, tasks, events, centerDate }: Plan
   }, [planned, centerDate, updateTask, queryClient, onOpenChange]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!isCommitting) onOpenChange(v);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

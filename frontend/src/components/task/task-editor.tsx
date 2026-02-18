@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Trash2 } from "lucide-react";
+import { ArrowUpFromLine, CheckCircle, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type {
@@ -13,6 +13,7 @@ import {
   useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
+  useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
@@ -147,6 +148,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   const updateMutation = useUpdateTaskApiV1TasksTaskIdPut();
   const deleteMutation = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreMutation = useRestoreTaskApiV1TasksTaskIdRestorePost();
+  const toggleCompleteMutation = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
@@ -282,6 +284,37 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     const n = Number(val);
     setDurationMinutes(n > 0 && n <= 1440 ? n : null);
     markDirty();
+  };
+
+  const handleToggleComplete = () => {
+    if (!task) return;
+    toggleCompleteMutation.mutate(
+      { taskId: task.id, data: null },
+      {
+        onSuccess: () => {
+          invalidateQueries();
+          const wasCompleted = task.status === "completed" || !!task.completed_at;
+          toast.success(wasCompleted ? "Task reopened" : "Task completed");
+          onOpenChange(false);
+        },
+        onError: () => toast.error("Failed to update task"),
+      },
+    );
+  };
+
+  const handlePromote = () => {
+    if (!task) return;
+    updateMutation.mutate(
+      { taskId: task.id, data: { parent_id: null } },
+      {
+        onSuccess: () => {
+          invalidateQueries();
+          toast.success("Promoted to top-level task");
+          onOpenChange(false);
+        },
+        onError: () => toast.error("Failed to promote task"),
+      },
+    );
   };
 
   return (
@@ -473,7 +506,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Scheduled date + time */}
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Scheduled</Label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Input
                   type="date"
                   value={scheduledDate}
@@ -493,6 +526,35 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                   className="h-8 text-xs w-28"
                 />
               </div>
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => {
+                    setScheduledDate(new Date().toISOString().split("T")[0]);
+                    markDirty();
+                  }}
+                >
+                  Today
+                </Button>
+                {(scheduledDate || scheduledTime) && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] px-2 text-muted-foreground"
+                    onClick={() => {
+                      setScheduledDate("");
+                      setScheduledTime("");
+                      markDirty();
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Due date */}
@@ -507,6 +569,34 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                 }}
                 className="h-8 text-xs"
               />
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => {
+                    setDueDate(new Date().toISOString().split("T")[0]);
+                    markDirty();
+                  }}
+                >
+                  Today
+                </Button>
+                {dueDate && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] px-2 text-muted-foreground"
+                    onClick={() => {
+                      setDueDate("");
+                      markDirty();
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Recurrence */}
@@ -550,7 +640,70 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
               )}
             </div>
 
-            {/* Actions */}
+            {/* Editor actions: promote / complete */}
+            {isEdit && task && (
+              <div className="flex gap-2 pt-2 border-t">
+                {task.parent_id != null && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={handlePromote}
+                    disabled={updateMutation.isPending}
+                  >
+                    <ArrowUpFromLine className="h-3.5 w-3.5" />
+                    Promote to top-level
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={handleToggleComplete}
+                  disabled={toggleCompleteMutation.isPending}
+                >
+                  {task.status === "completed" || task.completed_at ? (
+                    <>
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Reopen
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      Complete
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Metadata timestamps */}
+            {isEdit && task && (
+              <div className="text-[11px] text-muted-foreground pt-2 border-t">
+                {task.created_at && (
+                  <span>
+                    Created{" "}
+                    {new Date(task.created_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                )}
+                {task.completed_at && (
+                  <span>
+                    {" · "}Completed{" "}
+                    {new Date(task.completed_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Save / Delete */}
             <div className="flex gap-2 pt-2 border-t">
               <Button onClick={handleSave} disabled={isSaving || !title.trim()} className="flex-1">
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

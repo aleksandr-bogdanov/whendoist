@@ -8,6 +8,7 @@ import { useGetWizardStatusApiV1WizardStatusGet } from "@/api/queries/wizard/wiz
 import { EncryptionUnlock } from "@/components/encryption-unlock";
 import { AppShell } from "@/components/layout/app-shell";
 import { OnboardingWizard } from "@/components/wizard/onboarding-wizard";
+import { useNetworkStatus } from "@/hooks/use-network-status";
 import { useCryptoStore } from "@/stores/crypto-store";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -20,6 +21,8 @@ function AuthenticatedLayout() {
   const domainsQuery = useListDomainsApiV1DomainsGet();
   const wizardQuery = useGetWizardStatusApiV1WizardStatusGet();
   const [wizardDismissed, setWizardDismissed] = useState(false);
+
+  useNetworkStatus();
 
   const isUnlocked = useCryptoStore((s) => s.isUnlocked);
   const setEnabled = useCryptoStore((s) => s.setEnabled);

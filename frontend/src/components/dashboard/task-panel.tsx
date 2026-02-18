@@ -1,6 +1,8 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
+import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import { StickyDomainHeader } from "@/components/mobile/sticky-domain";
 import { CompletedSection } from "@/components/task/completed-section";
 import { DeletedSection } from "@/components/task/deleted-section";
@@ -9,6 +11,8 @@ import { TaskList } from "@/components/task/task-list";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { decryptDomain, decryptTask } from "@/hooks/use-crypto";
+import { useDevice } from "@/hooks/use-device";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { categorizeTasks, filterByEnergy, groupByDomain, sortTasks } from "@/lib/task-utils";
 import { useCryptoStore } from "@/stores/crypto-store";
 import { useUIStore } from "@/stores/ui-store";
@@ -37,6 +41,18 @@ export function TaskPanel({
 }: TaskPanelProps) {
   const { sortField, sortDirection, energyLevel, selectedDomainId } = useUIStore();
   const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
+  const queryClient = useQueryClient();
+  const { prefersTouch, hasTouch } = useDevice();
+  const isTouchDevice = prefersTouch || hasTouch;
+
+  const handlePullRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+  }, [queryClient]);
+
+  const pullRefreshRef = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+    disabled: !isTouchDevice,
+  });
   const canDecrypt = encryptionEnabled && isUnlocked && derivedKey !== null;
 
   const [decryptedTasks, setDecryptedTasks] = useState<AppRoutersTasksTaskResponse[]>([]);
@@ -152,16 +168,18 @@ export function TaskPanel({
       </div>
 
       {/* Task list */}
-      <ScrollArea className="flex-1 relative" data-task-scroll-area>
-        <StickyDomainHeader />
-        <div className="p-2 sm:p-3 space-y-1">
-          <PendingPastBanner />
-          <TaskList groups={pendingGroups} onEditTask={onEditTask} />
-          <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />
-          <CompletedSection tasks={completedTasks} onEditTask={onEditTask} />
-          <DeletedSection />
-        </div>
-      </ScrollArea>
+      <div ref={pullRefreshRef} className="flex-1 min-h-0 flex flex-col">
+        <ScrollArea className="flex-1 relative" data-task-scroll-area>
+          <StickyDomainHeader />
+          <div className="p-2 sm:p-3 space-y-1">
+            <PendingPastBanner />
+            <TaskList groups={pendingGroups} onEditTask={onEditTask} />
+            <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />
+            <CompletedSection tasks={completedTasks} onEditTask={onEditTask} />
+            <DeletedSection />
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CalendarOff, Check, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
@@ -52,15 +53,37 @@ export function ScheduledTaskCard({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success("Task unscheduled");
+          setShowActions(false);
         },
         onError: () => toast.error("Failed to unschedule task"),
       },
     );
-    setShowActions(false);
   };
 
   const handleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Optimistic update
+    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+    );
+
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+      (old) => {
+        if (!old) return old;
+        return old.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                status: "completed" as const,
+                completed_at: new Date().toISOString(),
+              }
+            : t,
+        );
+      },
+    );
+
     toggleComplete.mutate(
       { taskId, data: null },
       {
@@ -68,7 +91,10 @@ export function ScheduledTaskCard({
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success("Task completed");
         },
-        onError: () => toast.error("Failed to complete task"),
+        onError: () => {
+          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          toast.error("Failed to complete task");
+        },
       },
     );
     setShowActions(false);
@@ -116,15 +142,17 @@ export function ScheduledTaskCard({
         <div className="flex gap-1 mt-0.5">
           <button
             type="button"
-            className="flex items-center gap-0.5 rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 hover:bg-green-500/30"
+            className="flex items-center gap-0.5 rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 hover:bg-green-500/30 disabled:opacity-50"
             onClick={handleComplete}
+            disabled={updateTask.isPending || toggleComplete.isPending}
           >
             <Check className="h-2.5 w-2.5" /> Done
           </button>
           <button
             type="button"
-            className="flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/80"
+            className="flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/80 disabled:opacity-50"
             onClick={handleUnschedule}
+            disabled={updateTask.isPending || toggleComplete.isPending}
           >
             <CalendarOff className="h-2.5 w-2.5" /> Unsched
           </button>
