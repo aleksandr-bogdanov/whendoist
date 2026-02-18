@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.5 — 2026-02-18
+
+### Fixed
+- Railway build: added minimal root `package.json` (no deps) so railpack detects Node.js and installs npm for frontend SPA build
+
+---
+
 ## v0.48.4 — 2026-02-18
 
 ### Changed
