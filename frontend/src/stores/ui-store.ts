@@ -14,7 +14,7 @@ interface UIState {
   sortDirection: SortDirection;
   showScheduled: boolean;
   showCompleted: boolean;
-  expandedDomains: Set<number>;
+  collapsedDomains: Set<number>;
   expandedSubtasks: Set<number>;
   selectedTaskId: number | null;
   selectedDomainId: number | null;
@@ -30,7 +30,7 @@ interface UIActions {
   toggleSort: (field: SortField) => void;
   toggleShowScheduled: () => void;
   toggleShowCompleted: () => void;
-  toggleExpandedDomain: (domainId: number) => void;
+  toggleCollapsedDomain: (domainId: number) => void;
   toggleExpandedSubtask: (taskId: number) => void;
   selectTask: (taskId: number | null) => void;
   selectDomain: (domainId: number | null) => void;
@@ -49,7 +49,7 @@ export const useUIStore = create<UIState & UIActions>()(
       sortDirection: "asc",
       showScheduled: true,
       showCompleted: true,
-      expandedDomains: new Set<number>(),
+      collapsedDomains: new Set<number>(),
       expandedSubtasks: new Set<number>(),
       selectedTaskId: null,
       selectedDomainId: null,
@@ -73,15 +73,15 @@ export const useUIStore = create<UIState & UIActions>()(
       toggleShowScheduled: () => set((s) => ({ showScheduled: !s.showScheduled })),
       toggleShowCompleted: () => set((s) => ({ showCompleted: !s.showCompleted })),
 
-      toggleExpandedDomain: (domainId) =>
+      toggleCollapsedDomain: (domainId) =>
         set((state) => {
-          const next = new Set(state.expandedDomains);
+          const next = new Set(state.collapsedDomains);
           if (next.has(domainId)) {
             next.delete(domainId);
           } else {
             next.add(domainId);
           }
-          return { expandedDomains: next };
+          return { collapsedDomains: next };
         }),
 
       toggleExpandedSubtask: (taskId) =>
@@ -116,7 +116,7 @@ export const useUIStore = create<UIState & UIActions>()(
         sortDirection: state.sortDirection,
         showScheduled: state.showScheduled,
         showCompleted: state.showCompleted,
-        expandedDomains: [...state.expandedDomains],
+        collapsedDomains: [...state.collapsedDomains],
         expandedSubtasks: [...state.expandedSubtasks],
         mobileTab: state.mobileTab,
       }),
@@ -126,8 +126,8 @@ export const useUIStore = create<UIState & UIActions>()(
           if (!str) return null;
           const parsed = JSON.parse(str);
           // Rehydrate arrays back to Sets
-          if (parsed?.state?.expandedDomains) {
-            parsed.state.expandedDomains = new Set(parsed.state.expandedDomains);
+          if (parsed?.state?.collapsedDomains) {
+            parsed.state.collapsedDomains = new Set(parsed.state.collapsedDomains);
           }
           if (parsed?.state?.expandedSubtasks) {
             parsed.state.expandedSubtasks = new Set(parsed.state.expandedSubtasks);

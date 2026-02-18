@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, SubtaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
+  getTaskApiV1TasksTaskIdGet,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
@@ -110,26 +111,24 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          if (!isCompleted) {
-            toast.success("Task completed", {
-              action: {
-                label: "Undo",
-                onClick: () => {
-                  toggleComplete.mutate(
-                    { taskId: task.id, data: null },
-                    {
-                      onSuccess: () => {
-                        queryClient.invalidateQueries({
-                          queryKey: getListTasksApiV1TasksGetQueryKey(),
-                        });
-                      },
+          toast.success(isCompleted ? "Task reopened" : "Task completed", {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                toggleComplete.mutate(
+                  { taskId: task.id, data: null },
+                  {
+                    onSuccess: () => {
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      });
                     },
-                  );
-                },
+                  },
+                );
               },
-              duration: 5000,
-            });
-          }
+            },
+            duration: 5000,
+          });
         },
         onError: () => {
           // Rollback
@@ -456,10 +455,15 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
   const isSelected = selectedTaskId === subtask.id;
   const isCompleted = subtask.status === "completed";
 
-  const handleClick = () => {
+  const handleClick = async () => {
     selectTask(subtask.id);
     onSelect?.(subtask.id);
-    onEdit?.(subtask as unknown as AppRoutersTasksTaskResponse);
+    try {
+      const fullTask = await getTaskApiV1TasksTaskIdGet(subtask.id);
+      onEdit?.(fullTask as AppRoutersTasksTaskResponse);
+    } catch {
+      onEdit?.(subtask as unknown as AppRoutersTasksTaskResponse);
+    }
   };
 
   const handleToggleComplete = (e: React.MouseEvent) => {
