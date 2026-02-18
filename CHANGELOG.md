@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.48.8 — 2026-02-18
+
+### Fixed
+- Railway build: fix `frontend/src/lib/` being gitignored — root `.gitignore` had `lib/` (Python boilerplate) which matched all `lib/` dirs recursively, changed to `/lib/` to scope to root only
+
+---
+
 ## v0.48.7 — 2026-02-18
 
 ### Fixed
