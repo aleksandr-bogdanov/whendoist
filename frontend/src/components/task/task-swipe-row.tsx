@@ -47,7 +47,16 @@ export function TaskSwipeRow({
   }, []);
 
   const bind = useDrag(
-    ({ first, last, movement: [mx], velocity: [vx], direction: [dx], cancel, touches, event }) => {
+    ({
+      first,
+      last,
+      movement: [mx, my],
+      velocity: [vx],
+      direction: [dx],
+      cancel,
+      touches,
+      event,
+    }) => {
       if (disabled) return;
 
       // Cancel multi-touch (pinch-to-zoom)
@@ -83,8 +92,7 @@ export function TaskSwipeRow({
         }, LONG_PRESS_DURATION);
       }
 
-      // Determine scroll direction in first 50ms of movement
-      const [, my] = [mx, (event as TouchEvent).touches?.[0]?.clientY ?? 0];
+      // Wait for enough movement data before deciding
       if (!isSwiping && Math.abs(mx) < 10 && first) {
         return; // Wait for more movement data
       }

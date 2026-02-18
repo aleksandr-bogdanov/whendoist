@@ -44,7 +44,7 @@ export const useUIStore = create<UIState & UIActions>()(
       sortField: "clarity",
       sortDirection: "asc",
       showScheduled: true,
-      showCompleted: false,
+      showCompleted: true,
       expandedDomains: new Set<number>(),
       expandedSubtasks: new Set<number>(),
       selectedTaskId: null,
@@ -101,7 +101,30 @@ export const useUIStore = create<UIState & UIActions>()(
         theme: state.theme,
         energyLevel: state.energyLevel,
         calendarHourHeight: state.calendarHourHeight,
+        sortField: state.sortField,
+        sortDirection: state.sortDirection,
+        showScheduled: state.showScheduled,
+        showCompleted: state.showCompleted,
+        expandedDomains: [...state.expandedDomains],
+        expandedSubtasks: [...state.expandedSubtasks],
       }),
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          if (!str) return null;
+          const parsed = JSON.parse(str);
+          // Rehydrate arrays back to Sets
+          if (parsed?.state?.expandedDomains) {
+            parsed.state.expandedDomains = new Set(parsed.state.expandedDomains);
+          }
+          if (parsed?.state?.expandedSubtasks) {
+            parsed.state.expandedSubtasks = new Set(parsed.state.expandedSubtasks);
+          }
+          return parsed;
+        },
+        setItem: (name, value) => localStorage.setItem(name, JSON.stringify(value)),
+        removeItem: (name) => localStorage.removeItem(name),
+      },
     },
   ),
 );

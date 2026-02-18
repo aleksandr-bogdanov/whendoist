@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
 import { StickyDomainHeader } from "@/components/mobile/sticky-domain";
 import { CompletedSection } from "@/components/task/completed-section";
+import { DeletedSection } from "@/components/task/deleted-section";
 import { ScheduledSection } from "@/components/task/scheduled-section";
 import { TaskList } from "@/components/task/task-list";
 import { Button } from "@/components/ui/button";
@@ -151,6 +152,7 @@ export function TaskPanel({
           <TaskList groups={pendingGroups} onEditTask={onEditTask} />
           <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />
           <CompletedSection tasks={completedTasks} onEditTask={onEditTask} />
+          <DeletedSection />
         </div>
       </ScrollArea>
     </div>

@@ -3,7 +3,7 @@
  * date navigation, and plan mode auto-scheduling.
  */
 
-import type { AppRoutersTasksTaskResponse, EventResponse } from "@/api/model";
+import type { AppRoutersTasksTaskResponse, EventResponse, InstanceResponse } from "@/api/model";
 
 // ─── Date Helpers ────────────────────────────────────────────────────────────
 
@@ -138,7 +138,7 @@ function taskToTimeRange(task: AppRoutersTasksTaskResponse): TimeRange | null {
 
 export interface PositionedItem {
   id: string;
-  type: "event" | "task";
+  type: "event" | "task" | "instance";
   top: number;
   height: number;
   startMinutes: number;
@@ -155,8 +155,14 @@ export function calculateOverlaps(
   tasks: AppRoutersTasksTaskResponse[],
   dateStr: string,
   hourHeight: number,
+  instances?: InstanceResponse[],
 ): PositionedItem[] {
-  const items: { id: string; type: "event" | "task"; range: TimeRange; original: unknown }[] = [];
+  const items: {
+    id: string;
+    type: "event" | "task" | "instance";
+    range: TimeRange;
+    original: unknown;
+  }[] = [];
 
   // Add events for this date
   for (const event of events) {
@@ -172,6 +178,33 @@ export function calculateOverlaps(
     const range = taskToTimeRange(task);
     if (!range) continue;
     items.push({ id: String(task.id), type: "task", range, original: task });
+  }
+
+  // Add recurring task instances for this date
+  if (instances) {
+    for (const inst of instances) {
+      if (inst.instance_date !== dateStr) continue;
+      if (inst.status === "skipped") continue;
+      let range: TimeRange;
+      if (inst.scheduled_datetime) {
+        const dt = new Date(inst.scheduled_datetime);
+        const h = dt.getHours();
+        const m = dt.getMinutes();
+        const duration = inst.duration_minutes ?? 30;
+        range = {
+          startMinutes: toMinutesSinceMidnight(h, m),
+          endMinutes: toMinutesSinceMidnight(h, m) + duration,
+        };
+      } else {
+        // No specific time — place at 9am as default
+        const duration = inst.duration_minutes ?? 30;
+        range = {
+          startMinutes: toMinutesSinceMidnight(9, 0),
+          endMinutes: toMinutesSinceMidnight(9, 0) + duration,
+        };
+      }
+      items.push({ id: `inst-${inst.id}`, type: "instance", range, original: inst });
+    }
   }
 
   // Sort by start time

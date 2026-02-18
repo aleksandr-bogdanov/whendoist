@@ -53,24 +53,21 @@ export function PlanMode({ open, onOpenChange, tasks, events, centerDate }: Plan
     if (planned.length === 0) return;
     setIsCommitting(true);
 
-    let successCount = 0;
-    let failCount = 0;
-
-    for (const p of planned) {
-      const timeStr = `${String(p.scheduledHour).padStart(2, "0")}:${String(p.scheduledMinutes).padStart(2, "0")}`;
-      try {
-        await updateTask.mutateAsync({
+    const results = await Promise.allSettled(
+      planned.map((p) => {
+        const timeStr = `${String(p.scheduledHour).padStart(2, "0")}:${String(p.scheduledMinutes).padStart(2, "0")}`;
+        return updateTask.mutateAsync({
           taskId: p.taskId,
           data: {
             scheduled_date: centerDate,
             scheduled_time: timeStr,
           },
         });
-        successCount++;
-      } catch {
-        failCount++;
-      }
-    }
+      }),
+    );
+
+    const successCount = results.filter((r) => r.status === "fulfilled").length;
+    const failCount = results.filter((r) => r.status === "rejected").length;
 
     await queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
     setIsCommitting(false);
