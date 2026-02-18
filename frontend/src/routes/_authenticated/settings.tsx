@@ -1213,7 +1213,9 @@ function ShortcutsSection() {
 
 function AboutSection() {
   const buildQuery = useGetBuildInfoApiV1BuildInfoGet();
-  const buildInfo = buildQuery.data as { version?: string; commit?: string } | undefined;
+  const buildInfo = buildQuery.data as
+    | { version?: string; commit?: { sha: string; short: string } }
+    | undefined;
 
   return (
     <SettingsCard title="About" icon={<Info className="h-4 w-4" />}>
@@ -1223,7 +1225,7 @@ function AboutSection() {
         </p>
         {buildInfo?.commit && (
           <p>
-            <span className="text-muted-foreground">Commit:</span> {buildInfo.commit.slice(0, 7)}
+            <span className="text-muted-foreground">Commit:</span> {buildInfo.commit.short}
           </p>
         )}
       </div>

@@ -1,25 +1,23 @@
 """
 API endpoints for Whendoist.
 
-Provides JSON API for tasks, projects, calendar events, and task scheduling.
+Provides JSON API for Todoist projects, Google Calendar events, and calendar management.
 """
 
 import logging
 from datetime import UTC, date, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import get_settings
 from app.constants import get_user_today
 from app.database import get_db
 from app.models import GoogleCalendarSelection, GoogleToken, TodoistToken, User
 from app.routers.auth import require_user
 from app.services.calendar_cache import get_calendar_cache
 from app.services.gcal import GoogleCalendarClient
-from app.services.labels import clarity_display, parse_labels
 from app.services.preferences_service import PreferencesService
 from app.services.todoist import TodoistClient
 
@@ -31,33 +29,6 @@ router = APIRouter(prefix="/api/v1", tags=["api"])
 # =============================================================================
 # Response Models
 # =============================================================================
-
-
-class TaskMetadataResponse(BaseModel):
-    """Parsed task metadata from labels and description."""
-
-    clarity: str | None
-    clarity_display: str
-    other_labels: list[str]
-
-
-class TaskResponse(BaseModel):
-    """Complete task representation with parsed metadata."""
-
-    id: str
-    content: str
-    description: str
-    project_id: str
-    project_name: str
-    labels: list[str]
-    metadata: TaskMetadataResponse
-    due_date: date | None
-    due_datetime: datetime | None
-    is_recurring: bool
-    duration_minutes: int | None
-    priority: int
-    parent_id: str | None
-    subtask_count: int
 
 
 class ProjectResponse(BaseModel):
@@ -90,92 +61,9 @@ class CalendarResponse(BaseModel):
     enabled: bool
 
 
-class ScheduledTaskUpdate(BaseModel):
-    """Task scheduling update payload."""
-
-    task_id: str
-    due_datetime: datetime
-    duration_minutes: int = Field(ge=1, le=1440)
-
-
-class CommitTasksRequest(BaseModel):
-    """Request to commit scheduled tasks to Todoist."""
-
-    tasks: list[ScheduledTaskUpdate] = Field(max_length=500)
-
-
-class CommitTaskResult(BaseModel):
-    """Result of committing a single task."""
-
-    task_id: str
-    success: bool
-    error: str | None = None
-
-
-class CommitTasksResponse(BaseModel):
-    """Response from task commit operation."""
-
-    results: list[CommitTaskResult]
-    success_count: int
-    failure_count: int
-
-
 # =============================================================================
 # Endpoints
 # =============================================================================
-
-
-@router.get("/tasks", response_model=list[TaskResponse])
-async def get_tasks(
-    user: User = Depends(require_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Get all tasks with parsed labels and project info."""
-    # Get Todoist token
-    result = await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))
-    token = result.scalar_one_or_none()
-    if not token:
-        raise HTTPException(status_code=400, detail="Todoist not connected")
-
-    async with TodoistClient(token.access_token) as client:
-        tasks = await client.get_tasks()
-        projects = await client.get_projects()
-
-    project_map = {p.id: p.name for p in projects}
-
-    # Build subtask counts
-    subtask_counts = {}
-    for task in tasks:
-        if task.parent_id:
-            subtask_counts[task.parent_id] = subtask_counts.get(task.parent_id, 0) + 1
-
-    responses = []
-    for task in tasks:
-        metadata = parse_labels(task.labels)
-        responses.append(
-            TaskResponse(
-                id=task.id,
-                content=task.content,
-                description=task.description,
-                project_id=task.project_id,
-                project_name=project_map.get(task.project_id, "Unknown"),
-                labels=task.labels,
-                metadata=TaskMetadataResponse(
-                    clarity=metadata.clarity.value if metadata.clarity else None,
-                    clarity_display=clarity_display(metadata.clarity),
-                    other_labels=metadata.other_labels or [],
-                ),
-                due_date=task.due.date if task.due else None,
-                due_datetime=task.due.datetime_ if task.due else None,
-                is_recurring=task.due.is_recurring if task.due else False,
-                duration_minutes=task.duration_minutes,
-                priority=task.priority,
-                parent_id=task.parent_id,
-                subtask_count=subtask_counts.get(task.id, 0),
-            )
-        )
-
-    return responses
 
 
 @router.get("/projects", response_model=list[ProjectResponse])
@@ -403,105 +291,3 @@ async def set_calendar_selections(
     get_calendar_cache().invalidate_user(user.id)
 
     return {"success": True, "enabled_count": len(request.calendar_ids)}
-
-
-@router.post("/tasks/commit", response_model=CommitTasksResponse)
-async def commit_scheduled_tasks(
-    request: CommitTasksRequest,
-    user: User = Depends(require_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Commit scheduled tasks to Todoist by updating due_datetime and duration.
-
-    Processes all tasks, returning individual success/failure status.
-    """
-    # Get Todoist token
-    result = await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))
-    token = result.scalar_one_or_none()
-    if not token:
-        raise HTTPException(status_code=400, detail="Todoist not connected")
-
-    results = []
-    success_count = 0
-    failure_count = 0
-
-    logger.info(f"Committing {len(request.tasks)} tasks for user {user.id}")
-
-    async with TodoistClient(token.access_token) as client:
-        for task_update in request.tasks:
-            logger.info(
-                f"Updating task {task_update.task_id}: "
-                f"due_datetime={task_update.due_datetime}, "
-                f"duration={task_update.duration_minutes}min"
-            )
-            try:
-                await client.update_task(
-                    task_id=task_update.task_id,
-                    due_datetime=task_update.due_datetime,
-                    duration_minutes=task_update.duration_minutes,
-                )
-                logger.info(f"Task {task_update.task_id} updated successfully")
-                results.append(
-                    CommitTaskResult(
-                        task_id=task_update.task_id,
-                        success=True,
-                    )
-                )
-                success_count += 1
-            except Exception as e:
-                error_msg = str(e)
-                logger.error(f"Failed to update task {task_update.task_id}: {error_msg}", exc_info=True)
-                results.append(
-                    CommitTaskResult(
-                        task_id=task_update.task_id,
-                        success=False,
-                        error=error_msg,
-                    )
-                )
-                failure_count += 1
-
-    logger.info(f"Commit complete: {success_count} success, {failure_count} failed")
-
-    return CommitTasksResponse(
-        results=results,
-        success_count=success_count,
-        failure_count=failure_count,
-    )
-
-
-# =============================================================================
-# Sentry Debug Endpoint (Protected)
-# =============================================================================
-
-
-@router.get("/sentry-test")
-async def sentry_test(
-    request: Request,
-    user: User = Depends(require_user),
-):
-    """
-    Test endpoint to verify Sentry error tracking is working.
-
-    Protected by:
-    - Authentication (must be logged in)
-    - Environment flag (SENTRY_DEBUG_ENABLED must be true)
-
-    Raises a test exception that should appear in Sentry dashboard.
-    """
-    settings = get_settings()
-
-    if not settings.sentry_debug_enabled:
-        raise HTTPException(
-            status_code=404,
-            detail="Sentry debug endpoint is disabled. Set SENTRY_DEBUG_ENABLED=true to enable.",
-        )
-
-    # Log who triggered the test for audit trail
-    logger.info(f"Sentry test triggered by user {user.id}")
-
-    # Raise a test exception that Sentry will capture
-    raise Exception(
-        f"Sentry test exception triggered by user {user.id} at {datetime.now(UTC).isoformat()}. "
-        "If you see this in Sentry, error tracking is working correctly!"
-    )

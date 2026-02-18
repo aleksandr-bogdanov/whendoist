@@ -5,8 +5,4 @@
  * OpenAPI spec version: 0.48.8
  */
 
-export interface VelocityItem {
-  date: string;
-  count: number;
-  avg: number;
-}
+export type TaskResponseRecurrenceRule = { [key: string]: unknown } | null;
