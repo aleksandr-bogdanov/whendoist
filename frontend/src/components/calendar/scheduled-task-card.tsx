@@ -1,9 +1,19 @@
-import { CheckCircle2 } from "lucide-react";
+import { useDraggable } from "@dnd-kit/core";
+import { useQueryClient } from "@tanstack/react-query";
+import { CalendarOff, Check, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  getListTasksApiV1TasksGetQueryKey,
+  useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
+  useUpdateTaskApiV1TasksTaskIdPut,
+} from "@/api/queries/tasks/tasks";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 
 interface ScheduledTaskCardProps {
   item: PositionedItem;
+  taskId: number;
   title: string;
   impact: number;
   durationMinutes: number | null;
@@ -13,20 +23,62 @@ interface ScheduledTaskCardProps {
 
 export function ScheduledTaskCard({
   item,
+  taskId,
   title,
   impact,
   durationMinutes,
   timeLabel,
   onClick,
 }: ScheduledTaskCardProps) {
+  const queryClient = useQueryClient();
+  const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
+  const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
+  const [showActions, setShowActions] = useState(false);
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: String(taskId),
+    data: { type: "scheduled-task", taskId },
+  });
+
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const impactColor = IMPACT_COLORS[impact] ?? IMPACT_COLORS[4];
 
+  const handleUnschedule = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    updateTask.mutate(
+      { taskId, data: { scheduled_date: null, scheduled_time: null } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          toast.success("Task unscheduled");
+        },
+        onError: () => toast.error("Failed to unschedule task"),
+      },
+    );
+    setShowActions(false);
+  };
+
+  const handleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleComplete.mutate(
+      { taskId, data: null },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          toast.success("Task completed");
+        },
+        onError: () => toast.error("Failed to complete task"),
+      },
+    );
+    setShowActions(false);
+  };
+
   return (
     <button
+      ref={setNodeRef}
       type="button"
-      className="absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow"
+      className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow ${isDragging ? "opacity-50 ring-1 ring-primary" : ""}`}
       style={{
         top: `${item.top}px`,
         height: `${Math.max(item.height, 18)}px`,
@@ -35,17 +87,47 @@ export function ScheduledTaskCard({
         backgroundColor: "hsl(var(--primary) / 0.12)",
         borderLeft: `3px solid ${impactColor}`,
       }}
-      onClick={onClick}
+      onClick={() => {
+        if (showActions) {
+          setShowActions(false);
+        } else {
+          onClick?.();
+        }
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setShowActions((v) => !v);
+      }}
       title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
+      {...listeners}
+      {...attributes}
     >
       <div className="flex items-center gap-1 truncate">
         <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-primary" />
         <span className="truncate font-medium">{title}</span>
       </div>
-      {item.height > 30 && (
+      {item.height > 30 && !showActions && (
         <div className="truncate opacity-70 text-[10px]">
           {timeLabel}
           {durationMinutes ? ` - ${durationMinutes}m` : ""}
+        </div>
+      )}
+      {showActions && (
+        <div className="flex gap-1 mt-0.5">
+          <button
+            type="button"
+            className="flex items-center gap-0.5 rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 hover:bg-green-500/30"
+            onClick={handleComplete}
+          >
+            <Check className="h-2.5 w-2.5" /> Done
+          </button>
+          <button
+            type="button"
+            className="flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/80"
+            onClick={handleUnschedule}
+          >
+            <CalendarOff className="h-2.5 w-2.5" /> Unsched
+          </button>
         </div>
       )}
     </button>

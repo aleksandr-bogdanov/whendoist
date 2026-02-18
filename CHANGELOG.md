@@ -7,6 +7,29 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.1 — 2026-02-18
+
+### Fixed
+- **Action sheet complete didn't cascade to subtasks**: completing a task from the mobile action sheet only toggled the parent — added subtask cascade matching swipe-right behavior
+- **Action sheet Schedule didn't select the task**: tapping Schedule in the action sheet switched to calendar but didn't highlight which task to schedule — now calls `selectTask` first
+
+### Added
+- **Pending past instances banner**: dashboard shows a dismissable banner when overdue recurring instances exist, with Complete All / Skip All bulk actions
+- **Interactive calendar instance cards**: recurring task instances on the calendar are now clickable with Complete / Skip quick actions
+- **Calendar drag-to-reschedule**: scheduled task cards on the calendar are now draggable to different time slots or days using dnd-kit
+- **Sidebar domain click-to-filter**: clicking a domain in the desktop sidebar filters the task list to that domain; click again to clear
+- **GCal full-sync button**: Re-sync button in Settings > Google Calendar Sync section to trigger a manual full sync
+- **Domain reordering**: up/down arrow buttons in Settings > Domains to change domain display order
+- **Scheduled card quick actions**: right-click or click-to-toggle Complete / Unschedule mini-menu on calendar task cards
+- **Calendar events clickable**: Google Calendar events now open in Google Calendar when clicked
+- **Mobile quick-add FAB**: centered "+" button in the mobile bottom nav for quick task creation from any page
+- **Plan mode energy explanation**: plan mode dialog now explains that tasks are filtered by the current energy level
+
+### Skipped
+- **GCal disconnect (#7)**: no backend endpoint exists for disconnecting Google Calendar OAuth — requires backend work first
+
+---
+
 ## v0.49.0 — 2026-02-18
 
 ### Fixed

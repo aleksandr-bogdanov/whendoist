@@ -84,6 +84,10 @@ export function TaskActionSheet({
                 ...t,
                 status: isCompleted ? ("pending" as const) : ("completed" as const),
                 completed_at: isCompleted ? null : new Date().toISOString(),
+                subtasks: t.subtasks?.map((st) => ({
+                  ...st,
+                  status: isCompleted ? "pending" : "completed",
+                })),
               }
             : t,
         );
