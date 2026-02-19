@@ -320,8 +320,8 @@ export function calculateOverlaps(
     }
   }
 
-  // Sort by start time
-  items.sort((a, b) => a.range.startMinutes - b.range.startMinutes);
+  // Sort by start time, then by id for stable ordering across refetches
+  items.sort((a, b) => a.range.startMinutes - b.range.startMinutes || a.id.localeCompare(b.id));
 
   // Group overlapping items
   const positioned: PositionedItem[] = [];
@@ -492,8 +492,8 @@ export function calculateExtendedOverlaps(
   // Next day: 00:00-16:59
   collectForDate(nextDate, "next", 0, NEXT_DAY_END_HOUR);
 
-  // Sort by absolute start
-  rangeItems.sort((a, b) => a.absStart - b.absStart);
+  // Sort by absolute start, then by id for stable ordering across refetches
+  rangeItems.sort((a, b) => a.absStart - b.absStart || a.id.localeCompare(b.id));
 
   // Group overlapping items and assign columns
   const positioned: PositionedItem[] = [];
