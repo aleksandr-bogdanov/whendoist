@@ -50,6 +50,30 @@
 
 :root {
   --radius: 0.625rem;
+
+  /* Impact colors (brand spec) */
+  --impact-high: #c9505a;
+  --impact-medium: #b8860b;
+  --impact-low: #1a9160;
+  --impact-min: #6b7385;
+
+  /* Clarity colors (brand spec) */
+  --autopilot-color: #167bff;
+  --normal-color: #6d5ef6;
+  --brainstorm-color: #a020c0;
+
+  /* Clarity tints */
+  --autopilot-tint: #eaf2ff;
+  --normal-tint: #efeeff;
+  --brainstorm-tint: #f3ecfa;
+
+  /* Task grid columns */
+  --col-clarity: 60px;
+  --col-duration: 50px;
+  --col-impact: 40px;
+  --col-actions: 36px;
+  --col-gap: 8px;
+  --rail-w: 4px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);

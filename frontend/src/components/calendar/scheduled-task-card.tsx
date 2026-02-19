@@ -133,14 +133,13 @@ export function ScheduledTaskCard({
     <button
       ref={setNodeRef}
       type="button"
-      className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow ${isDragging ? "opacity-50 ring-1 ring-primary" : ""}`}
+      className={`absolute rounded-[10px] px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""}`}
       style={{
         top: `${item.top}px`,
         height: `${Math.max(item.height, 18)}px`,
         width,
         left,
-        backgroundColor: "hsl(var(--primary) / 0.12)",
-        borderLeft: `3px solid ${impactColor}`,
+        borderLeft: `2px solid ${impactColor}`,
       }}
       onClick={() => {
         if (showActions) {

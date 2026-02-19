@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Component, type ErrorInfo, type ReactNode, useEffect, useState } from "react";
-import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import { useGetEncryptionStatusApiV1PreferencesEncryptionGet } from "@/api/queries/preferences/preferences";
 import { useGetWizardStatusApiV1WizardStatusGet } from "@/api/queries/wizard/wizard";
@@ -18,7 +17,6 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const meQuery = useGetMeApiV1MeGet();
   const encryptionQuery = useGetEncryptionStatusApiV1PreferencesEncryptionGet();
-  const domainsQuery = useListDomainsApiV1DomainsGet();
   const wizardQuery = useGetWizardStatusApiV1WizardStatusGet();
   const [wizardDismissed, setWizardDismissed] = useState(false);
 
@@ -75,11 +73,7 @@ function AuthenticatedLayout() {
           testValue={encryptionStatus.test_value}
         />
       ) : (
-        <AppShell
-          userName={me?.name ?? undefined}
-          userEmail={me?.email}
-          domains={domainsQuery.data}
-        />
+        <AppShell userName={me?.name ?? undefined} userEmail={me?.email} />
       )}
       {showWizard && <OnboardingWizard open={true} onComplete={() => setWizardDismissed(true)} />}
     </AppErrorBoundary>

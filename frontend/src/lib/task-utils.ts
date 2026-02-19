@@ -15,10 +15,22 @@ export const IMPACT_LABELS: Record<number, string> = {
 };
 
 export const IMPACT_COLORS: Record<number, string> = {
-  1: "#dc2626",
-  2: "#f97316",
-  3: "#eab308",
-  4: "#22c55e",
+  1: "#C9505A",
+  2: "#B8860B",
+  3: "#1A9160",
+  4: "#6B7385",
+};
+
+export const CLARITY_COLORS: Record<string, string> = {
+  autopilot: "#167BFF",
+  normal: "#6D5EF6",
+  brainstorm: "#A020C0",
+};
+
+export const CLARITY_TINTS: Record<string, string> = {
+  autopilot: "#EAF2FF",
+  normal: "#EFEEFF",
+  brainstorm: "#F3ECFA",
 };
 
 export const CLARITY_LABELS: Record<string, string> = {

@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
 const leftNav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/thoughts", label: "Thoughts", icon: Lightbulb },
+  { to: "/dashboard", label: "Tasks", icon: LayoutDashboard },
 ] as const;
 
 const rightNav = [
