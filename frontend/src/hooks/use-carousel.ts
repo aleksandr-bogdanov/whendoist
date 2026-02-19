@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef } from "react";
 interface UseCarouselOptions {
   /** Called when the carousel settles on a new panel */
   onNavigate: (direction: "prev" | "next") => void;
+  /** Called immediately when the most-visible panel changes during scroll (0=prev, 1=center, 2=next) */
+  onVisiblePanelChange?: (panel: number) => void;
   /** The carousel container element (overflow-x: auto) */
   containerRef: React.RefObject<HTMLDivElement | null>;
   /** Disable carousel interactions (e.g. during dnd-kit drag) */
@@ -21,11 +23,18 @@ const DRAG_THRESHOLD = 8;
  * After snapping to a new panel, calls onNavigate. The parent updates dates and
  * calls scrollToCenter() to recenter the carousel on the new middle panel.
  */
-export function useCarousel({ onNavigate, containerRef, disabled }: UseCarouselOptions) {
+export function useCarousel({
+  onNavigate,
+  onVisiblePanelChange,
+  containerRef,
+  disabled,
+}: UseCarouselOptions) {
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
   const onNavigateRef = useRef(onNavigate);
   onNavigateRef.current = onNavigate;
+  const onVisiblePanelChangeRef = useRef(onVisiblePanelChange);
+  onVisiblePanelChangeRef.current = onVisiblePanelChange;
 
   // Guard to prevent scroll-event navigation detection during programmatic scrolls
   const isProgrammatic = useRef(false);
@@ -41,6 +50,7 @@ export function useCarousel({ onNavigate, containerRef, disabled }: UseCarouselO
     el.style.scrollBehavior = "auto";
     el.scrollLeft = panelWidth; // panel 1 (center)
     currentPanel.current = 1;
+    onVisiblePanelChangeRef.current?.(1);
     // Clear guard after the scroll event fires (next frame)
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -57,20 +67,34 @@ export function useCarousel({ onNavigate, containerRef, disabled }: UseCarouselO
 
     let debounce: ReturnType<typeof setTimeout> | null = null;
 
+    let lastReportedPanel = currentPanel.current;
+
     const onScroll = () => {
       if (isProgrammatic.current) return;
+
+      // Report visible panel immediately (no debounce) for live header updates
+      const panelWidth = el.offsetWidth;
+      if (panelWidth > 0) {
+        const panelIndex = Math.round(el.scrollLeft / panelWidth);
+        if (panelIndex !== lastReportedPanel) {
+          lastReportedPanel = panelIndex;
+          onVisiblePanelChangeRef.current?.(panelIndex);
+        }
+      }
+
+      // Debounced navigation commit (after scroll-snap settles)
       if (debounce) clearTimeout(debounce);
       debounce = setTimeout(() => {
         if (isProgrammatic.current) return;
-        const panelWidth = el.offsetWidth;
-        if (panelWidth === 0) return;
-        const panelIndex = Math.round(el.scrollLeft / panelWidth);
+        const pw = el.offsetWidth;
+        if (pw === 0) return;
+        const panelIndex = Math.round(el.scrollLeft / pw);
         if (panelIndex !== currentPanel.current) {
           const dir = panelIndex > currentPanel.current ? "next" : "prev";
           currentPanel.current = panelIndex;
           onNavigateRef.current(dir);
         }
-      }, 80); // Wait for scroll-snap to settle
+      }, 80);
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
