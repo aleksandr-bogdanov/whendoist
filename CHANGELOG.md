@@ -7,6 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.7 — 2026-02-19
+
+### Fixed
+- **Calendar header layout**: Pinned Today and Plan My Day buttons to the right so long day names (e.g. Wednesday) don't push them off-screen; date label truncates gracefully
+- **Live scroll updates**: Header date label and anytime tasks now update immediately as the carousel scrolls, not just when the scroll settles — eliminates the jarring lag between visible content and header
+- **Anytime section always visible**: Section stays rendered even when the current day has no anytime tasks, preventing layout shifts during carousel navigation
+- **Calendar width**: Widened calendar panel from 33% to 40% of the dashboard (flex ratio 3:2 instead of 2:1)
+
+---
+
 ## v0.51.6 — 2026-02-19
 
 ### Changed

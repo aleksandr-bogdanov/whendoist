@@ -41,18 +41,23 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const savedScrollTop = useRef<number | null>(null);
   const [planModeOpen, setPlanModeOpen] = useState(false);
 
-  // Header label: "THURSDAY, FEB 19"
-  const centerDateLabel = useMemo(() => {
-    const d = parseDate(calendarCenterDate);
+  // Adjacent dates for carousel panels
+  const prevDate = addDays(calendarCenterDate, -1);
+  const nextDate = addDays(calendarCenterDate, 1);
+
+  // Track which carousel panel is currently visible (updates live during scroll)
+  const [visiblePanel, setVisiblePanel] = useState(1); // 0=prev, 1=center, 2=next
+  const displayDate =
+    visiblePanel === 0 ? prevDate : visiblePanel === 2 ? nextDate : calendarCenterDate;
+
+  // Header label based on currently visible panel
+  const displayDateLabel = useMemo(() => {
+    const d = parseDate(displayDate);
     const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
     const month = d.toLocaleDateString("en-US", { month: "short" });
     const day = d.getDate();
     return `${weekday}, ${month} ${day}`.toUpperCase();
-  }, [calendarCenterDate]);
-
-  // Adjacent dates for carousel panels
-  const prevDate = addDays(calendarCenterDate, -1);
-  const nextDate = addDays(calendarCenterDate, 1);
+  }, [displayDate]);
 
   // Data fetch range: wider to cover all carousel panels' extended timelines
   const startDate = addDays(calendarCenterDate, -2);
@@ -94,17 +99,16 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     [tasks],
   );
 
-  // Anytime tasks for the center date (date-only, no time, not completed)
+  // Anytime tasks for the displayed date (date-only, no time, not completed)
   const anytimeTasks = useMemo(
     () =>
       tasks.filter(
-        (t) =>
-          t.scheduled_date === calendarCenterDate && !t.scheduled_time && t.status !== "completed",
+        (t) => t.scheduled_date === displayDate && !t.scheduled_time && t.status !== "completed",
       ),
-    [tasks, calendarCenterDate],
+    [tasks, displayDate],
   );
 
-  const isNotToday = calendarCenterDate !== todayString();
+  const isNotToday = displayDate !== todayString();
 
   // Save scroll position before navigating
   const saveScroll = useCallback(() => {
@@ -164,6 +168,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
 
   const carousel = useCarousel({
     onNavigate: commitNavigation,
+    onVisiblePanelChange: setVisiblePanel,
     containerRef: carouselRef,
     disabled: isDndDragging,
   });
@@ -274,40 +279,42 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   return (
     <div className="relative flex flex-col flex-1 min-h-0 border-l">
       {/* Calendar header */}
-      <div className="flex items-center gap-2 px-2 sm:px-3 py-2 border-b">
-        <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-2 border-b">
+        {/* Navigation: arrows + date label (can shrink) */}
+        <div className="flex items-center gap-0.5 min-w-0">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 relative [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
+            className="h-7 w-7 flex-shrink-0 relative [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
             onClick={goToPrev}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap">
-            {centerDateLabel}
+          <span className="text-xs font-semibold tracking-wide uppercase truncate min-w-0">
+            {displayDateLabel}
           </span>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 relative [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
+            className="h-7 w-7 flex-shrink-0 relative [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
             onClick={goToNext}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
+
+        {/* Pinned action buttons */}
+        <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
           {isNotToday && (
             <Button
               variant="outline"
               size="sm"
-              className="h-6 text-[10px] font-semibold ml-1"
+              className="h-6 text-[10px] font-semibold"
               onClick={goToToday}
             >
               Today
             </Button>
           )}
-        </div>
-
-        <div className="ml-auto">
           <Button
             variant="default"
             size="sm"
@@ -320,14 +327,14 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       </div>
 
-      {/* Anytime section */}
-      {anytimeTasks.length > 0 && (
-        <div className="border-b px-3 py-1.5 flex items-start gap-2 max-h-[82px] overflow-auto flex-shrink-0">
-          <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] mt-1 flex-shrink-0">
-            ANYTIME
-          </span>
-          <div className="flex flex-wrap gap-1 min-w-0">
-            {anytimeTasks.map((t) => (
+      {/* Anytime section — always visible */}
+      <div className="border-b px-3 py-1.5 flex items-start gap-2 max-h-[82px] overflow-auto flex-shrink-0">
+        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] mt-1 flex-shrink-0">
+          ANYTIME
+        </span>
+        <div className="flex flex-wrap gap-1 min-w-0">
+          {anytimeTasks.length > 0 ? (
+            anytimeTasks.map((t) => (
               <button
                 key={t.id}
                 type="button"
@@ -340,10 +347,12 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
               >
                 {t.title}
               </button>
-            ))}
-          </div>
+            ))
+          ) : (
+            <span className="text-[10px] text-muted-foreground/50 mt-0.5">No tasks</span>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Calendar body — vertical scroll wrapper */}
       <div
