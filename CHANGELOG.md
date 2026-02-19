@@ -7,6 +7,21 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.50.2 — 2026-02-19
+
+### Fixed
+- **Task list scroll**: Added `min-h-0` to dashboard flex containers so task list ScrollArea gets proper height bounds
+- **macOS back swipe**: `overscroll-behavior-x: none` on html/body prevents two-finger back/forward navigation
+- **Calendar horizontal scroll**: Restored `overflow-auto` so calendar body scrolls both axes
+- **Calendar duplicate Today**: Removed redundant Today button from header (kept in floating controls only)
+
+### Changed
+- **Checkbox circles**: Made uncompleted state more muted (opacity 20% circle, invisible check until hover)
+- **Parent task click**: Clicking title or anywhere on parent row toggles expand/collapse instead of opening editor
+- **Parent task stats**: Shows active/total subtask count in clarity column alongside aggregated duration
+
+---
+
 ## v0.50.1 — 2026-02-19
 
 ### Fixed

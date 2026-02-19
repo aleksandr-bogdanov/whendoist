@@ -292,9 +292,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={goToToday}>
-            Today
-          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -315,19 +312,13 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             <Sparkles className="h-3.5 w-3.5" />
             Plan
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={zoomOut}>
-            <Minus className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={zoomIn}>
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
         </div>
       </div>
 
       {/* Calendar body */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden"
+        className="flex-1 overflow-auto"
         style={{
           maskImage:
             "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",

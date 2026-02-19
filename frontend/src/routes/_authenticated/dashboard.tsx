@@ -312,7 +312,7 @@ function DashboardPage() {
 
   return (
     <TaskDndContext tasks={safeTasks}>
-      <div className="flex flex-col flex-1 h-full">
+      <div className="flex flex-col flex-1 h-full min-h-0">
         {/* Mobile tab bar */}
         <div className="flex md:hidden border-b">
           <Button
@@ -345,7 +345,7 @@ function DashboardPage() {
         <div className="flex flex-1 min-h-0">
           {/* Task panel */}
           <div
-            className={`flex flex-col min-w-0 ${
+            className={`flex flex-col min-w-0 min-h-0 ${
               mobileTab === "tasks" ? "flex-1" : "hidden"
             } md:flex md:flex-1 md:max-w-[55%]`}
           >
