@@ -205,17 +205,17 @@ export function DomainGroup({
                     style={{ backgroundColor: domain.color ?? "#6D5EF6" }}
                   />
                 )}
-                <span className="flex-1 text-left truncate text-[0.95rem]">{domain.name}</span>
+                <span className="text-left truncate text-[0.95rem]">{domain.name}</span>
               </>
             ) : (
               <>
                 <Inbox className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1 text-left truncate text-[0.95rem]">Inbox</span>
+                <span className="text-left truncate text-[0.95rem]">Inbox</span>
               </>
             )}
 
-            {/* Task count pill */}
-            <span className="text-[11px] text-muted-foreground tabular-nums bg-background/60 px-1.5 py-0.5 rounded-full">
+            {/* Task count pill — next to name, not pushed to edge */}
+            <span className="text-[11px] text-muted-foreground tabular-nums bg-background/60 px-1.5 py-0.5 rounded-full mr-auto">
               {tasks.length}
             </span>
           </button>

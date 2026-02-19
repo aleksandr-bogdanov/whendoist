@@ -148,7 +148,7 @@ export function DayColumn({
   });
 
   return (
-    <div className="flex flex-col flex-shrink-0" style={{ minWidth: "200px", width: "100%" }}>
+    <div className="flex flex-col flex-1 min-w-[140px]">
       {/* Day header */}
       <div
         className={`sticky top-0 z-10 flex flex-col items-center py-1.5 border-b bg-background/95 backdrop-blur-sm ${
