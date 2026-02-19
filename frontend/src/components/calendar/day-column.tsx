@@ -1,4 +1,4 @@
-import { useDroppable } from "@dnd-kit/core";
+import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -14,9 +14,13 @@ import type { PositionedItem } from "@/lib/calendar-utils";
 import {
   calculateOverlaps,
   DAY_START_HOUR,
+  durationToHeight,
   formatDayHeader,
   formatTime,
+  getAdjacentDayItems,
+  offsetToTime,
   TOTAL_HOURS,
+  timeToOffset,
   todayString,
 } from "@/lib/calendar-utils";
 import { IMPACT_COLORS } from "@/lib/task-utils";
@@ -94,6 +98,54 @@ export function DayColumn({
     }
     return m;
   }, [tasks]);
+
+  // Adjacent-day clones (Item 6)
+  const adjacentItems = useMemo(
+    () => getAdjacentDayItems(tasks, events, dateStr, hourHeight),
+    [tasks, events, dateStr, hourHeight],
+  );
+
+  // Phantom card for drag-to-schedule preview (Item 4)
+  const [phantomTime, setPhantomTime] = useState<{ hour: number; minutes: number } | null>(null);
+  const [phantomDuration, setPhantomDuration] = useState(30);
+
+  useDndMonitor({
+    onDragOver(event) {
+      const overId = event.over?.id ? String(event.over.id) : null;
+      if (overId === `calendar-${dateStr}` && columnRef.current) {
+        const rect = columnRef.current.getBoundingClientRect();
+        let clientY: number;
+        if (event.activatorEvent instanceof TouchEvent) {
+          clientY =
+            event.activatorEvent.touches[0]?.clientY ??
+            event.activatorEvent.changedTouches[0]?.clientY ??
+            0;
+        } else {
+          clientY = (event.activatorEvent as PointerEvent).clientY;
+        }
+        const pointerY = clientY + (event.delta?.y ?? 0);
+        const offsetY = pointerY - rect.top;
+        const time = offsetToTime(offsetY, hourHeight);
+        setPhantomTime(time);
+
+        // Try to get the dragged task's duration
+        const activeId =
+          typeof event.active.id === "string"
+            ? Number.parseInt(event.active.id, 10)
+            : Number(event.active.id);
+        const draggedTask = tasks.find((t) => t.id === activeId);
+        setPhantomDuration(draggedTask?.duration_minutes ?? 30);
+      } else if (overId !== `calendar-${dateStr}`) {
+        setPhantomTime(null);
+      }
+    },
+    onDragEnd() {
+      setPhantomTime(null);
+    },
+    onDragCancel() {
+      setPhantomTime(null);
+    },
+  });
 
   return (
     <div className="flex flex-col flex-shrink-0" style={{ minWidth: "200px", width: "100%" }}>
@@ -176,6 +228,37 @@ export function DayColumn({
             </div>
           </div>
         )}
+
+        {/* Phantom card preview during drag-to-schedule */}
+        {phantomTime && (
+          <div
+            className="absolute left-0.5 right-0.5 rounded-md bg-primary/15 border border-dashed border-primary/40 pointer-events-none z-20 flex items-center px-1.5 text-[10px] text-primary font-medium"
+            style={{
+              top: `${timeToOffset(phantomTime.hour, phantomTime.minutes, hourHeight)}px`,
+              height: `${Math.max(durationToHeight(phantomDuration, hourHeight), 18)}px`,
+            }}
+          >
+            {formatTime(phantomTime.hour, phantomTime.minutes)}
+          </div>
+        )}
+
+        {/* Adjacent-day clone items (faded) */}
+        {adjacentItems.map((item) => (
+          <div
+            key={item.id}
+            className="absolute left-0.5 right-0.5 rounded-md px-1.5 py-0.5 overflow-hidden text-xs opacity-30 pointer-events-none"
+            style={{
+              top: `${item.top}px`,
+              height: `${Math.max(item.height, 18)}px`,
+              backgroundColor: "hsl(var(--muted))",
+              borderLeft: "3px solid hsl(var(--muted-foreground) / 0.3)",
+            }}
+          >
+            <div className="truncate text-muted-foreground text-[10px] italic">
+              {item.adjacentLabel}
+            </div>
+          </div>
+        ))}
 
         {/* Rendered items */}
         <div className="absolute inset-0 pl-0.5 pr-0.5">

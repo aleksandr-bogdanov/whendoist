@@ -56,7 +56,15 @@ export const useUIStore = create<UIState & UIActions>()(
       mobileTab: "tasks",
       quickAddOpen: false,
       calendarHourHeight: 60,
-      calendarCenterDate: new Date().toISOString().split("T")[0],
+      calendarCenterDate: (() => {
+        const now = new Date();
+        if (now.getHours() >= 20) {
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          return tomorrow.toISOString().split("T")[0];
+        }
+        return now.toISOString().split("T")[0];
+      })(),
 
       setTheme: (theme) => set({ theme }),
       setEnergyLevel: (level) => set({ energyLevel: level }),

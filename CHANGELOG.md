@@ -7,6 +7,21 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.5 — 2026-02-19
+
+### Added
+- **Calendar swipe navigation**: touch swipe left/right on calendar to navigate days (touch devices only)
+- **Calendar scroll position sync**: scroll position preserved when navigating between days
+- **Calendar auto-scroll during drag**: auto-scrolls calendar when dragging a task near top/bottom edges
+- **Phantom card drop indicator**: shows translucent preview card at snapped time position during drag-to-schedule
+- **Cross-day drag navigation**: auto-navigates to adjacent day when dragging task to left/right edge (500ms delay)
+- **Adjacent-day calendar sync**: tasks scheduled after 9pm appear faded in next day's column, and vice versa for early morning
+- **Calendar auto-advance after 8pm**: calendar defaults to tomorrow when opened after 8pm
+- **Plan mode contextual copy**: "Plan My Day" banner now shows "Plan your morning/afternoon/evening" based on time
+- **Calendar fade gradient**: smooth fade gradient at top/bottom edges of calendar scroll area
+
+---
+
 ## v0.49.4 — 2026-02-18
 
 ### Fixed

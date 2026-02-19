@@ -1,3 +1,5 @@
+import { useDndMonitor } from "@dnd-kit/core";
+import { useDrag } from "@use-gesture/react";
 import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
@@ -7,6 +9,7 @@ import {
 } from "@/api/queries/api/api";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Button } from "@/components/ui/button";
+import { useDevice } from "@/hooks/use-device";
 import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
 import {
   addDays,
@@ -31,7 +34,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   useSyncCalendarHourHeight();
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const savedScrollTop = useRef<number | null>(null);
   const [planModeOpen, setPlanModeOpen] = useState(false);
+  const { prefersTouch } = useDevice();
 
   // Visible date range: center +/- 1 day (3 days on desktop)
   const dates = useMemo(() => {
@@ -82,18 +87,28 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     [tasks],
   );
 
+  // Save scroll position before navigating (Item 2)
+  const saveScroll = useCallback(() => {
+    if (scrollRef.current) {
+      savedScrollTop.current = scrollRef.current.scrollTop;
+    }
+  }, []);
+
   // Navigate dates
   const goToToday = useCallback(() => {
+    saveScroll();
     setCalendarCenterDate(todayString());
-  }, [setCalendarCenterDate]);
+  }, [setCalendarCenterDate, saveScroll]);
 
   const goToPrev = useCallback(() => {
+    saveScroll();
     setCalendarCenterDate(addDays(calendarCenterDate, -1));
-  }, [calendarCenterDate, setCalendarCenterDate]);
+  }, [calendarCenterDate, setCalendarCenterDate, saveScroll]);
 
   const goToNext = useCallback(() => {
+    saveScroll();
     setCalendarCenterDate(addDays(calendarCenterDate, 1));
-  }, [calendarCenterDate, setCalendarCenterDate]);
+  }, [calendarCenterDate, setCalendarCenterDate, saveScroll]);
 
   // Zoom controls
   const zoomIn = useCallback(() => {
@@ -125,6 +140,137 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       scrollRef.current.scrollTop = Math.max(0, targetOffset);
     }
   }, []);
+
+  // Restore scroll position after date navigation (Item 2)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate triggers scroll restore on navigation
+  useEffect(() => {
+    if (savedScrollTop.current !== null && scrollRef.current) {
+      scrollRef.current.scrollTop = savedScrollTop.current;
+      savedScrollTop.current = null;
+    }
+  }, [calendarCenterDate]);
+
+  // Swipe gesture for touch navigation (Item 1)
+  const bindSwipe = useDrag(
+    ({ swipe: [swipeX], event }) => {
+      if (!prefersTouch) return;
+      // Only handle horizontal swipes
+      if (swipeX === -1) {
+        // Swiped left → go to next day
+        event.preventDefault();
+        goToNext();
+      } else if (swipeX === 1) {
+        // Swiped right → go to prev day
+        event.preventDefault();
+        goToPrev();
+      }
+    },
+    {
+      swipe: { distance: 50, velocity: 0.3 },
+      filterTaps: true,
+      axis: "x",
+      pointer: { touch: true },
+    },
+  );
+
+  // Auto-scroll during drag near top/bottom edges (Item 3) + cross-day drag nav (Item 5)
+  const autoScrollRaf = useRef<number>(0);
+  const edgeNavTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDraggingRef = useRef(false);
+
+  useDndMonitor({
+    onDragStart() {
+      isDraggingRef.current = true;
+
+      // Start auto-scroll loop
+      const loop = () => {
+        if (!isDraggingRef.current || !scrollRef.current) return;
+        autoScrollRaf.current = requestAnimationFrame(loop);
+      };
+      autoScrollRaf.current = requestAnimationFrame(loop);
+    },
+    onDragOver(event) {
+      if (!scrollRef.current || !isDraggingRef.current) return;
+
+      const container = scrollRef.current;
+      const rect = container.getBoundingClientRect();
+
+      // Get current pointer Y
+      let clientY: number;
+      if (event.activatorEvent instanceof TouchEvent) {
+        clientY =
+          event.activatorEvent.touches[0]?.clientY ??
+          event.activatorEvent.changedTouches[0]?.clientY ??
+          0;
+      } else {
+        clientY = (event.activatorEvent as PointerEvent).clientY;
+      }
+      const pointerY = clientY + (event.delta?.y ?? 0);
+
+      // Auto-scroll near edges (Item 3)
+      const EDGE_ZONE = 60;
+      const SCROLL_SPEED = 8;
+      const distFromTop = pointerY - rect.top;
+      const distFromBottom = rect.bottom - pointerY;
+
+      if (distFromTop < EDGE_ZONE && distFromTop > 0) {
+        container.scrollTop -= SCROLL_SPEED * (1 - distFromTop / EDGE_ZONE);
+      } else if (distFromBottom < EDGE_ZONE && distFromBottom > 0) {
+        container.scrollTop += SCROLL_SPEED * (1 - distFromBottom / EDGE_ZONE);
+      }
+
+      // Cross-day edge navigation (Item 5)
+      let clientX: number;
+      if (event.activatorEvent instanceof TouchEvent) {
+        clientX =
+          event.activatorEvent.touches[0]?.clientX ??
+          event.activatorEvent.changedTouches[0]?.clientX ??
+          0;
+      } else {
+        clientX = (event.activatorEvent as PointerEvent).clientX;
+      }
+      const pointerX = clientX + (event.delta?.x ?? 0);
+
+      const EDGE_X_ZONE = 40;
+      const distFromLeft = pointerX - rect.left;
+      const distFromRight = rect.right - pointerX;
+
+      if (distFromLeft < EDGE_X_ZONE && distFromLeft >= 0) {
+        if (!edgeNavTimer.current) {
+          edgeNavTimer.current = setTimeout(() => {
+            goToPrev();
+            edgeNavTimer.current = null;
+          }, 500);
+        }
+      } else if (distFromRight < EDGE_X_ZONE && distFromRight >= 0) {
+        if (!edgeNavTimer.current) {
+          edgeNavTimer.current = setTimeout(() => {
+            goToNext();
+            edgeNavTimer.current = null;
+          }, 500);
+        }
+      } else if (edgeNavTimer.current) {
+        clearTimeout(edgeNavTimer.current);
+        edgeNavTimer.current = null;
+      }
+    },
+    onDragEnd() {
+      isDraggingRef.current = false;
+      cancelAnimationFrame(autoScrollRaf.current);
+      if (edgeNavTimer.current) {
+        clearTimeout(edgeNavTimer.current);
+        edgeNavTimer.current = null;
+      }
+    },
+    onDragCancel() {
+      isDraggingRef.current = false;
+      cancelAnimationFrame(autoScrollRaf.current);
+      if (edgeNavTimer.current) {
+        clearTimeout(edgeNavTimer.current);
+        edgeNavTimer.current = null;
+      }
+    },
+  });
 
   return (
     <div className="flex flex-col flex-1 min-h-0 border-l">
@@ -162,7 +308,18 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       </div>
 
       {/* Calendar body */}
-      <div ref={scrollRef} className="flex-1 overflow-auto" onWheel={handleWheel}>
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-auto"
+        style={{
+          maskImage:
+            "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
+        }}
+        onWheel={handleWheel}
+        {...(prefersTouch ? bindSwipe() : {})}
+      >
         <div className="flex">
           {/* Time ruler */}
           <div

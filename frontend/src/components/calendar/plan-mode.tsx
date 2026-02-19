@@ -28,11 +28,19 @@ interface PlanModeProps {
   centerDate: string;
 }
 
+function getTimeOfDayLabel(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
+}
+
 export function PlanMode({ open, onOpenChange, tasks, events, centerDate }: PlanModeProps) {
   const { energyLevel } = useUIStore();
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const [isCommitting, setIsCommitting] = useState(false);
+  const timeOfDayLabel = useMemo(() => getTimeOfDayLabel(), []);
 
   // Filter to unscheduled, pending tasks matching energy level
   const eligibleTasks = useMemo(() => {
@@ -91,7 +99,7 @@ export function PlanMode({ open, onOpenChange, tasks, events, centerDate }: Plan
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            Plan My Day
+            Plan your {timeOfDayLabel}
           </DialogTitle>
           <DialogDescription>
             Auto-schedule {eligibleTasks.length} unscheduled tasks into free time slots for{" "}
