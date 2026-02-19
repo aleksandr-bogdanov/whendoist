@@ -7,6 +7,18 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.0 — 2026-02-19
+
+### Changed
+- **Calendar redesign**: Single extended 44-hour day view (prev 9PM through next 5PM) replacing 3-column layout
+- **Day separators**: "START OF / END OF" pills with dimmed adjacent-day background sections
+- **Anytime section**: Horizontal wrapping pill banner above the time grid for date-only tasks
+- **Smooth continuous zoom**: Ctrl+wheel zooms continuously instead of stepping, snaps to nearest step on save
+- **Today button**: Appears in calendar header when navigated away from today
+- **Larger logo**: WIcon enlarged in header
+
+---
+
 ## v0.50.6 — 2026-02-19
 
 ### Fixed

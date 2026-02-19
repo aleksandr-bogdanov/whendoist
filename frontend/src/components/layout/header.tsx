@@ -68,7 +68,7 @@ export function Header({ userName: _userName, userEmail: _userEmail }: HeaderPro
 
       {/* W Icon */}
       <Link to="/dashboard" className="flex items-center" aria-label="Home">
-        <WIcon className="h-[22px] w-[24px]" />
+        <WIcon className="h-[28px] w-[30px]" />
       </Link>
 
       {/* Navigation tabs — right aligned */}
