@@ -26,6 +26,9 @@ import { useUIStore } from "@/stores/ui-store";
 import { DayColumn } from "./day-column";
 import { PlanMode } from "./plan-mode";
 
+const CENTER_INDEX = 2; // 5 panels: 0, 1, [2], 3, 4
+const PANEL_OFFSETS = [-2, -1, 0, 1, 2];
+
 interface CalendarPanelProps {
   tasks: AppRoutersTasksTaskResponse[];
   onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
@@ -41,14 +44,15 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const savedScrollTop = useRef<number | null>(null);
   const [planModeOpen, setPlanModeOpen] = useState(false);
 
-  // Adjacent dates for carousel panels
-  const prevDate = addDays(calendarCenterDate, -1);
-  const nextDate = addDays(calendarCenterDate, 1);
+  // 5 carousel panel dates
+  const panelDates = useMemo(
+    () => PANEL_OFFSETS.map((offset) => addDays(calendarCenterDate, offset)),
+    [calendarCenterDate],
+  );
 
   // Track which carousel panel is currently visible (updates live during scroll)
-  const [visiblePanel, setVisiblePanel] = useState(1); // 0=prev, 1=center, 2=next
-  const displayDate =
-    visiblePanel === 0 ? prevDate : visiblePanel === 2 ? nextDate : calendarCenterDate;
+  const [visiblePanel, setVisiblePanel] = useState(CENTER_INDEX);
+  const displayDate = addDays(calendarCenterDate, visiblePanel - CENTER_INDEX);
 
   // Header label based on currently visible panel
   const displayDateLabel = useMemo(() => {
@@ -59,9 +63,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     return `${weekday}, ${month} ${day}`.toUpperCase();
   }, [displayDate]);
 
-  // Data fetch range: wider to cover all carousel panels' extended timelines
-  const startDate = addDays(calendarCenterDate, -2);
-  const endDate = addDays(calendarCenterDate, 3);
+  // Wider fetch range: covers all 5 panels' extended timelines + 1 day of navigation buffer
+  // Each panel needs ±1 day for extended timelines (prev evening / next morning),
+  // plus extra padding so that navigating ±2 days still hits cache.
+  const startDate = addDays(calendarCenterDate, -5);
+  const endDate = addDays(calendarCenterDate, 5);
 
   // Fetch events
   const { data: events } = useGetEventsApiV1EventsGet(
@@ -149,22 +155,16 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     targetZoomRef.current = calendarHourHeight;
   }, [calendarHourHeight]);
 
-  // ── Carousel (scroll-snap based) ──────────────────────────────────────────
+  // ── Carousel (scroll-snap based, 5 panels) ────────────────────────────────
   const [isDndDragging, setIsDndDragging] = useState(false);
-  const pendingReset = useRef(false);
 
   const commitNavigation = useCallback(
-    (direction: "prev" | "next") => {
-      pendingReset.current = true;
+    (offset: number) => {
       saveScroll();
       // Reset visiblePanel to center BEFORE updating the date — React 18 batches both
       // state updates into one render, so displayDate never shows the wrong day.
-      setVisiblePanel(1);
-      if (direction === "next") {
-        setCalendarCenterDate(addDays(calendarCenterDate, 1));
-      } else {
-        setCalendarCenterDate(addDays(calendarCenterDate, -1));
-      }
+      setVisiblePanel(CENTER_INDEX);
+      setCalendarCenterDate(addDays(calendarCenterDate, offset));
     },
     [calendarCenterDate, setCalendarCenterDate, saveScroll],
   );
@@ -176,13 +176,10 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     disabled: isDndDragging,
   });
 
-  // After date update from carousel navigation, recenter instantly
+  // After any date change, recenter the carousel to panel 2 (center)
   // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate triggers carousel recenter
   useLayoutEffect(() => {
-    if (pendingReset.current) {
-      pendingReset.current = false;
-      carousel.scrollToCenter();
-    }
+    carousel.scrollToCenter();
   }, [calendarCenterDate]);
 
   // Ctrl+wheel zoom (horizontal wheel is handled natively by the carousel scroll)
@@ -387,7 +384,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             </div>
           </div>
 
-          {/* Scroll-snap carousel */}
+          {/* Scroll-snap carousel (5 panels) */}
           <div
             ref={carouselRef}
             className="flex-1 overflow-x-auto overflow-y-hidden"
@@ -399,52 +396,29 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
               WebkitOverflowScrolling: "touch",
             }}
           >
-            <div className="flex h-full" style={{ width: "300%" }}>
-              <div
-                className="h-full"
-                style={{ flex: "0 0 33.333%", scrollSnapAlign: "start", scrollSnapStop: "always" }}
-              >
-                <DayColumn
-                  centerDate={prevDate}
-                  events={safeEvents}
-                  tasks={scheduledTasks}
-                  instances={safeInstances}
-                  hourHeight={calendarHourHeight}
-                  calendarColors={calendarColors}
-                  onTaskClick={onTaskClick}
-                  panelId="prev"
-                />
-              </div>
-              <div
-                className="h-full"
-                style={{ flex: "0 0 33.333%", scrollSnapAlign: "start", scrollSnapStop: "always" }}
-              >
-                <DayColumn
-                  centerDate={calendarCenterDate}
-                  events={safeEvents}
-                  tasks={scheduledTasks}
-                  instances={safeInstances}
-                  hourHeight={calendarHourHeight}
-                  calendarColors={calendarColors}
-                  onTaskClick={onTaskClick}
-                  panelId="center"
-                />
-              </div>
-              <div
-                className="h-full"
-                style={{ flex: "0 0 33.333%", scrollSnapAlign: "start", scrollSnapStop: "always" }}
-              >
-                <DayColumn
-                  centerDate={nextDate}
-                  events={safeEvents}
-                  tasks={scheduledTasks}
-                  instances={safeInstances}
-                  hourHeight={calendarHourHeight}
-                  calendarColors={calendarColors}
-                  onTaskClick={onTaskClick}
-                  panelId="next"
-                />
-              </div>
+            <div className="flex h-full" style={{ width: "500%" }}>
+              {panelDates.map((date, i) => (
+                <div
+                  key={PANEL_OFFSETS[i]}
+                  className="h-full"
+                  style={{
+                    flex: "0 0 20%",
+                    scrollSnapAlign: "start",
+                    scrollSnapStop: "always",
+                  }}
+                >
+                  <DayColumn
+                    centerDate={date}
+                    events={safeEvents}
+                    tasks={scheduledTasks}
+                    instances={safeInstances}
+                    hourHeight={calendarHourHeight}
+                    calendarColors={calendarColors}
+                    onTaskClick={onTaskClick}
+                    panelId={`p${i}`}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>

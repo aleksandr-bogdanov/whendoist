@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
 
 interface UseCarouselOptions {
-  /** Called when the carousel settles on a new panel */
-  onNavigate: (direction: "prev" | "next") => void;
-  /** Called immediately when the most-visible panel changes during scroll (0=prev, 1=center, 2=next) */
+  /** Called when the carousel settles on a new panel. Offset is relative to center (e.g. -2, -1, +1, +2). */
+  onNavigate: (offset: number) => void;
+  /** Called immediately when the most-visible panel changes during scroll (0-based index). */
   onVisiblePanelChange?: (panel: number) => void;
   /** The carousel container element (overflow-x: auto) */
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -12,16 +12,17 @@ interface UseCarouselOptions {
 }
 
 const DRAG_THRESHOLD = 8;
+const CENTER_INDEX = 2; // 5 panels: 0, 1, [2], 3, 4
 
 /**
- * Native scroll-snap carousel with desktop pointer-drag support.
+ * Native scroll-snap carousel (5 panels) with desktop pointer-drag support.
  *
- * Touch: 100% browser-native (scroll-snap-type: x mandatory). No JS touch handling.
- * Desktop: pointer-event drag manipulates scrollLeft directly (visual feedback during drag).
+ * 5 panels allow 2 consecutive swipes before a recenter cycle, so fast
+ * day-by-day swiping feels immediate.
+ *
+ * Touch: 100% browser-native (scroll-snap-type: x mandatory).
+ * Desktop: pointer-event drag manipulates scrollLeft directly.
  * Trackpad: native horizontal scroll → snap handles it.
- *
- * After snapping to a new panel, calls onNavigate. The parent updates dates and
- * calls scrollToCenter() to recenter the carousel on the new middle panel.
  */
 export function useCarousel({
   onNavigate,
@@ -39,7 +40,7 @@ export function useCarousel({
   // Guard to prevent scroll-event navigation detection during programmatic scrolls
   const isProgrammatic = useRef(false);
   // Track which panel index is "current" to detect changes
-  const currentPanel = useRef(1); // 0=prev, 1=center, 2=next
+  const currentPanel = useRef(CENTER_INDEX);
 
   // ── Scroll to center panel (no animation). Call after date update. ────────
   const scrollToCenter = useCallback(() => {
@@ -48,11 +49,10 @@ export function useCarousel({
     isProgrammatic.current = true;
     const panelWidth = el.offsetWidth;
     el.style.scrollBehavior = "auto";
-    el.scrollLeft = panelWidth; // panel 1 (center)
+    el.scrollLeft = CENTER_INDEX * panelWidth;
     el.style.scrollBehavior = ""; // Restore immediately so next swipe isn't blocked
-    currentPanel.current = 1;
-    onVisiblePanelChangeRef.current?.(1);
-    // Single rAF guard — just long enough for the browser to process the scroll event
+    currentPanel.current = CENTER_INDEX;
+    onVisiblePanelChangeRef.current?.(CENTER_INDEX);
     requestAnimationFrame(() => {
       isProgrammatic.current = false;
     });
@@ -71,10 +71,10 @@ export function useCarousel({
       const panelWidth = el.offsetWidth;
       if (panelWidth === 0) return;
       const panelIndex = Math.round(el.scrollLeft / panelWidth);
-      if (panelIndex !== currentPanel.current) {
-        const dir = panelIndex > currentPanel.current ? "next" : "prev";
+      const offset = panelIndex - CENTER_INDEX;
+      if (offset !== 0) {
         currentPanel.current = panelIndex;
-        onNavigateRef.current(dir);
+        onNavigateRef.current(offset);
       }
     };
 
@@ -96,8 +96,7 @@ export function useCarousel({
       debounce = setTimeout(commitIfNeeded, 150);
     };
 
-    // scrollend fires the instant the scroll-snap animation settles — much faster
-    // than a debounced scroll handler. Supported in Chrome 114+, Firefox 109+, Safari 18+.
+    // scrollend fires the instant scroll-snap settles — faster than debounce
     const onScrollEnd = () => {
       if (debounce) {
         clearTimeout(debounce);
@@ -117,7 +116,6 @@ export function useCarousel({
 
   // ── Initialize scroll position to center panel ────────────────────────────
   useEffect(() => {
-    // Run after first paint so the container has its layout
     requestAnimationFrame(() => {
       scrollToCenter();
     });
@@ -136,7 +134,7 @@ export function useCarousel({
 
     const onPointerDown = (e: PointerEvent) => {
       if (disabledRef.current) return;
-      if (e.pointerType === "touch") return; // Touch uses native scroll
+      if (e.pointerType === "touch") return;
       if (e.button !== 0) return;
       const target = e.target as HTMLElement;
       if (target.closest("button, a, input, select, [draggable='true']")) return;
@@ -180,18 +178,16 @@ export function useCarousel({
       document.body.style.userSelect = "";
 
       if (wasDragging) {
-        // Restore scroll-snap — browser will snap to nearest panel
         el.style.scrollBehavior = "";
         el.style.scrollSnapType = "";
 
         const dx = e.pageX - startX;
         const panelWidth = el.offsetWidth;
         if (Math.abs(dx) > panelWidth * 0.25) {
-          // Navigate: scroll to the target panel with smooth behavior
-          const targetPanel = dx > 0 ? 0 : 2; // drag right → prev (panel 0), drag left → next (panel 2)
+          const direction = dx > 0 ? -1 : 1;
+          const targetPanel = Math.max(0, Math.min(4, currentPanel.current + direction));
           el.scrollTo({ left: targetPanel * panelWidth, behavior: "smooth" });
         } else {
-          // Snap back to current panel
           el.scrollTo({ left: currentPanel.current * panelWidth, behavior: "smooth" });
         }
       }
