@@ -9,16 +9,18 @@ import {
 } from "@/api/queries/api/api";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Button } from "@/components/ui/button";
-import { useDevice } from "@/hooks/use-device";
 import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
 import {
   addDays,
   DAY_START_HOUR,
+  formatDayHeader,
   formatTime,
   getNextZoomStep,
   parseDate,
   TOTAL_HOURS,
+  todayString,
 } from "@/lib/calendar-utils";
+import { IMPACT_COLORS } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { DayColumn } from "./day-column";
 import { PlanMode } from "./plan-mode";
@@ -36,7 +38,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const savedScrollTop = useRef<number | null>(null);
   const [planModeOpen, setPlanModeOpen] = useState(false);
-  const { prefersTouch } = useDevice();
 
   // Visible date range: center +/- 1 day (3 days on desktop)
   const dates = useMemo(() => {
@@ -161,17 +162,13 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, [calendarCenterDate]);
 
-  // Swipe gesture for touch navigation (Item 1)
+  // Swipe gesture for day navigation (touch + desktop mouse drag)
   const bindSwipe = useDrag(
     ({ swipe: [swipeX], event }) => {
-      if (!prefersTouch) return;
-      // Only handle horizontal swipes
       if (swipeX === -1) {
-        // Swiped left → go to next day
         event.preventDefault();
         goToNext();
       } else if (swipeX === 1) {
-        // Swiped right → go to prev day
         event.preventDefault();
         goToPrev();
       }
@@ -180,7 +177,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       swipe: { distance: 50, velocity: 0.3 },
       filterTaps: true,
       axis: "x",
-      pointer: { touch: true },
     },
   );
 
@@ -322,6 +318,54 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       </div>
 
+      {/* Day headers row (outside scroll for time-slot alignment) */}
+      <div className="flex border-b flex-shrink-0">
+        <div className="w-12 flex-shrink-0" />
+        <div className="flex flex-1 divide-x divide-border/40">
+          {dates.map((dateStr) => {
+            const { dayName, dateLabel } = formatDayHeader(dateStr);
+            const isToday = dateStr === todayString();
+            const dayAnytime = anytimeTasks.filter((t) => t.scheduled_date === dateStr);
+            return (
+              <div
+                key={dateStr}
+                className={`flex-1 min-w-[140px] ${isToday ? "bg-primary/5" : ""}`}
+              >
+                <div className="flex flex-col items-center py-1.5">
+                  <span
+                    className={`text-xs font-semibold ${isToday ? "text-primary" : "text-muted-foreground"}`}
+                  >
+                    {dayName}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{dateLabel}</span>
+                </div>
+                {dayAnytime.length > 0 && (
+                  <div className="border-t px-1 py-1 space-y-0.5">
+                    <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide px-0.5">
+                      Anytime
+                    </span>
+                    {dayAnytime.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className="w-full text-left text-[11px] truncate rounded px-1 py-0.5 hover:bg-accent/50 cursor-pointer"
+                        style={{
+                          borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
+                        }}
+                        onClick={() => onTaskClick?.(t)}
+                        title={t.title}
+                      >
+                        {t.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Calendar body */}
       <div
         ref={scrollRef}
@@ -333,14 +377,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
         }}
         onWheel={handleWheel}
-        {...(prefersTouch ? bindSwipe() : {})}
+        {...bindSwipe()}
       >
         <div className="flex">
-          {/* Time ruler */}
-          <div
-            className="flex-shrink-0 w-12 sticky left-0 z-10 bg-background"
-            style={{ paddingTop: "32px" }} // offset for sticky day header
-          >
+          {/* Time ruler — aligned with day column grids */}
+          <div className="flex-shrink-0 w-12 sticky left-0 z-10 bg-background">
             <div className="relative" style={{ height: `${TOTAL_HOURS * calendarHourHeight}px` }}>
               {Array.from({ length: TOTAL_HOURS }, (_, i) => DAY_START_HOUR + i).map((hour) => (
                 <div
@@ -354,7 +395,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             </div>
           </div>
 
-          {/* Day columns */}
+          {/* Day columns (grid only — headers rendered above) */}
           <div className="flex flex-1 divide-x divide-border/40">
             {dates.map((dateStr) => (
               <DayColumn
@@ -362,11 +403,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                 dateStr={dateStr}
                 events={safeEvents}
                 tasks={scheduledTasks}
-                anytimeTasks={anytimeTasks}
                 instances={safeInstances}
                 hourHeight={calendarHourHeight}
                 calendarColors={calendarColors}
                 onTaskClick={onTaskClick}
+                hideHeader
               />
             ))}
           </div>

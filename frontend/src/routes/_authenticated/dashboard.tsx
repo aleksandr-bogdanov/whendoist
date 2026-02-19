@@ -347,7 +347,7 @@ function DashboardPage() {
           <div
             className={`flex flex-col min-w-0 min-h-0 ${
               mobileTab === "tasks" ? "flex-1" : "hidden"
-            } md:flex md:flex-1 md:max-w-[55%]`}
+            } md:flex md:flex-[2] md:min-w-0`}
           >
             <TaskPanel
               tasks={tasks}
@@ -363,7 +363,7 @@ function DashboardPage() {
           <div
             className={`flex flex-col min-w-0 ${
               mobileTab === "calendar" ? "flex-1" : "hidden"
-            } md:flex md:flex-1`}
+            } md:flex md:flex-[1] md:min-w-0`}
           >
             {showGcalBanner && (
               <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border-b text-sm">
