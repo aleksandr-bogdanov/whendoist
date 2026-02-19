@@ -7,6 +7,22 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.50.1 — 2026-02-19
+
+### Fixed
+- **Page scroll lock**: TASKS page no longer scrolls as a whole — only the task list and calendar scroll independently within their containers
+- **Context menu positioning**: Right-click menu now appears at mouse cursor using proper Radix ContextMenu instead of hacked DropdownMenu positioning
+- **Calendar zoom sensitivity**: macOS trackpad pinch-to-zoom now accumulates delta before stepping, preventing runaway zoom
+- **Calendar column width**: Day columns no longer stretch to fill available space with horizontal scroll — they share the panel width evenly
+
+### Changed
+- **Domain group count pill**: Positioned next to domain name (legacy style) instead of pushed to right edge
+- **Parent task display**: Containers show neutral border rail, no clarity/impact columns; duration shows aggregated remaining/total from subtasks
+- **Scheduled section**: Overdue tasks visually separated under a red-tinted "Overdue" banner with count
+- **Checkboxes**: Replaced rounded-square checkboxes with brand-standard circular SVG checkboxes (purple fill + white check when completed)
+
+---
+
 ## v0.50.0 — 2026-02-19
 
 ### Changed

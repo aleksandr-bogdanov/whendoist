@@ -119,13 +119,20 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     setCalendarHourHeight(getNextZoomStep(calendarHourHeight, "out"));
   }, [calendarHourHeight, setCalendarHourHeight]);
 
-  // Ctrl+Scroll wheel zoom
+  // Ctrl+Scroll wheel zoom — accumulate delta to tame macOS trackpad sensitivity
+  const zoomAccumulator = useRef(0);
+  const ZOOM_THRESHOLD = 50; // px of accumulated delta before stepping
+
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? "out" : "in";
-        setCalendarHourHeight(getNextZoomStep(calendarHourHeight, delta));
+        zoomAccumulator.current += e.deltaY;
+        if (Math.abs(zoomAccumulator.current) >= ZOOM_THRESHOLD) {
+          const direction = zoomAccumulator.current > 0 ? "out" : "in";
+          setCalendarHourHeight(getNextZoomStep(calendarHourHeight, direction));
+          zoomAccumulator.current = 0;
+        }
       }
     },
     [calendarHourHeight, setCalendarHourHeight],
@@ -320,7 +327,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       {/* Calendar body */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto"
+        className="flex-1 overflow-y-auto overflow-x-hidden"
         style={{
           maskImage:
             "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
