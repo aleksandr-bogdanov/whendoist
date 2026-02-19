@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.9 — 2026-02-19
+
+### Fixed
+- **Legacy frontend**: Add missing `jinja2` dependency (removed during React migration, needed for legacy mode)
+
+---
+
 ## v0.49.8 — 2026-02-19
 
 ### Added
