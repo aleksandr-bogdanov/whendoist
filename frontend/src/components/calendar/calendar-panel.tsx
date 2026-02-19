@@ -210,6 +210,74 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, [calendarCenterDate]);
 
+  // Desktop drag-to-swipe (pointer events, mouse/pen only — matches legacy)
+  const dragState = useRef<{
+    isDown: boolean;
+    isDragging: boolean;
+    startX: number;
+    startY: number;
+  }>({ isDown: false, isDragging: false, startX: 0, startY: 0 });
+  const DRAG_THRESHOLD = 8;
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType === "touch") return;
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, a, input, select, [draggable='true']")) return;
+
+    dragState.current = { isDown: true, isDragging: false, startX: e.pageX, startY: e.pageY };
+  }, []);
+
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      const ds = dragState.current;
+      if (!ds.isDown || e.pointerType === "touch") return;
+
+      const dx = e.pageX - ds.startX;
+      const dy = e.pageY - ds.startY;
+
+      if (!ds.isDragging) {
+        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+        // Vertical movement dominates — let the scroll container handle it
+        if (Math.abs(dy) > Math.abs(dx)) {
+          ds.isDown = false;
+          return;
+        }
+        ds.isDragging = true;
+        if (scrollRef.current) scrollRef.current.style.cursor = "grabbing";
+      }
+
+      e.preventDefault();
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      const ds = dragState.current;
+      if (!ds.isDown || e.pointerType === "touch") return;
+      const wasDragging = ds.isDragging;
+      ds.isDown = false;
+      ds.isDragging = false;
+
+      if (scrollRef.current) scrollRef.current.style.cursor = "";
+
+      if (wasDragging) {
+        const dx = e.pageX - ds.startX;
+        const containerWidth = scrollRef.current?.offsetWidth ?? 400;
+        if (Math.abs(dx) > containerWidth * 0.25) {
+          saveScroll();
+          if (dx > 0) goToPrev();
+          else goToNext();
+        }
+      }
+    };
+
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+    return () => {
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+    };
+  }, [saveScroll, goToPrev, goToNext]);
+
   // Touch swipe gesture for mobile day navigation
   const bindSwipe = useDrag(
     ({ swipe: [swipeX], event }) => {
@@ -372,6 +440,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
         }}
         onWheel={handleWheel}
+        onPointerDown={handlePointerDown}
         {...bindSwipe()}
       >
         <div className="flex">
