@@ -151,8 +151,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
       // --- Drop onto calendar: schedule the task ---
       if (overId.startsWith("calendar-")) {
-        // calendar-YYYY-MM-DD format
-        const dateStr = overId.replace("calendar-", "");
+        // Droppable data carries the date; IDs are namespaced (calendar-{panelId}-{date})
+        const dateStr = String(over.data.current?.dateStr ?? "");
         const rect = over.rect;
 
         // Calculate time from pointer Y position relative to the droppable

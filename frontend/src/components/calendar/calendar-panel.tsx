@@ -1,7 +1,6 @@
 import { useDndMonitor } from "@dnd-kit/core";
-import { useDrag } from "@use-gesture/react";
 import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
   useGetCalendarsApiV1CalendarsGet,
@@ -9,6 +8,7 @@ import {
 } from "@/api/queries/api/api";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Button } from "@/components/ui/button";
+import { useCarousel } from "@/hooks/use-carousel";
 import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
 import {
   addDays,
@@ -37,6 +37,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   useSyncCalendarHourHeight();
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const savedScrollTop = useRef<number | null>(null);
   const [planModeOpen, setPlanModeOpen] = useState(false);
 
@@ -49,9 +50,13 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     return `${weekday}, ${month} ${day}`.toUpperCase();
   }, [calendarCenterDate]);
 
-  // Data fetch range: prevDay to nextDay+1 (for full coverage)
-  const startDate = addDays(calendarCenterDate, -1);
-  const endDate = addDays(calendarCenterDate, 2);
+  // Adjacent dates for carousel panels
+  const prevDate = addDays(calendarCenterDate, -1);
+  const nextDate = addDays(calendarCenterDate, 1);
+
+  // Data fetch range: prevDay-1 to nextDay+1 (wider range to cover carousel panels)
+  const startDate = addDays(calendarCenterDate, -2);
+  const endDate = addDays(calendarCenterDate, 3);
 
   // Fetch events
   const { data: events } = useGetEventsApiV1EventsGet(
@@ -108,7 +113,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, []);
 
-  // Navigate dates
+  // Navigate dates (used by header buttons — no carousel animation)
   const goToPrev = useCallback(() => {
     saveScroll();
     setCalendarCenterDate(addDays(calendarCenterDate, -1));
@@ -141,11 +146,39 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     targetZoomRef.current = calendarHourHeight;
   }, [calendarHourHeight]);
 
-  // Horizontal wheel accumulator for swipe-to-navigate
-  const swipeAccumulator = useRef(0);
-  const swipeResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const SWIPE_THRESHOLD = 80;
+  // ── Carousel ──────────────────────────────────────────────────────────────
+  const [isDndDragging, setIsDndDragging] = useState(false);
+  const pendingReset = useRef(false);
 
+  const commitNavigation = useCallback(
+    (direction: "prev" | "next") => {
+      pendingReset.current = true;
+      saveScroll();
+      if (direction === "next") {
+        setCalendarCenterDate(addDays(calendarCenterDate, 1));
+      } else {
+        setCalendarCenterDate(addDays(calendarCenterDate, -1));
+      }
+    },
+    [calendarCenterDate, setCalendarCenterDate, saveScroll],
+  );
+
+  const carousel = useCarousel({
+    onNavigate: commitNavigation,
+    containerRef: carouselRef,
+    disabled: isDndDragging,
+  });
+
+  // Reset carousel position after date changes from navigation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate triggers carousel reset after navigation
+  useLayoutEffect(() => {
+    if (pendingReset.current) {
+      pendingReset.current = false;
+      carousel.resetToCenter();
+    }
+  }, [calendarCenterDate]);
+
+  // Wheel handler: Ctrl+wheel = zoom, horizontal = carousel swipe
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -167,26 +200,12 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         return;
       }
 
-      // Horizontal swipe → day navigation (trackpad two-finger horizontal swipe)
+      // Horizontal swipe → carousel visual feedback
       if (Math.abs(e.deltaX) > 0 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        swipeAccumulator.current += e.deltaX;
-        if (swipeResetTimer.current) clearTimeout(swipeResetTimer.current);
-        swipeResetTimer.current = setTimeout(() => {
-          swipeAccumulator.current = 0;
-        }, 300);
-
-        if (swipeAccumulator.current > SWIPE_THRESHOLD) {
-          swipeAccumulator.current = 0;
-          saveScroll();
-          goToNext();
-        } else if (swipeAccumulator.current < -SWIPE_THRESHOLD) {
-          swipeAccumulator.current = 0;
-          saveScroll();
-          goToPrev();
-        }
+        carousel.applyWheelDelta(e.deltaX);
       }
     },
-    [setCalendarHourHeight, saveScroll, goToNext, goToPrev],
+    [setCalendarHourHeight, carousel],
   );
 
   // Scroll to current time on first render
@@ -210,111 +229,21 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, [calendarCenterDate]);
 
-  // Desktop drag-to-swipe (pointer events, mouse/pen only — matches legacy)
-  const dragState = useRef<{
-    isDown: boolean;
-    isDragging: boolean;
-    startX: number;
-    startY: number;
-  }>({ isDown: false, isDragging: false, startX: 0, startY: 0 });
-  const DRAG_THRESHOLD = 8;
-
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.pointerType === "touch") return;
-    if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest("button, a, input, select, [draggable='true']")) return;
-
-    dragState.current = { isDown: true, isDragging: false, startX: e.pageX, startY: e.pageY };
-  }, []);
-
-  useEffect(() => {
-    const onPointerMove = (e: PointerEvent) => {
-      const ds = dragState.current;
-      if (!ds.isDown || e.pointerType === "touch") return;
-
-      const dx = e.pageX - ds.startX;
-      const dy = e.pageY - ds.startY;
-
-      if (!ds.isDragging) {
-        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
-        // Vertical movement dominates — let the scroll container handle it
-        if (Math.abs(dy) > Math.abs(dx)) {
-          ds.isDown = false;
-          return;
-        }
-        ds.isDragging = true;
-        if (scrollRef.current) scrollRef.current.style.cursor = "grabbing";
-      }
-
-      e.preventDefault();
-    };
-
-    const onPointerUp = (e: PointerEvent) => {
-      const ds = dragState.current;
-      if (!ds.isDown || e.pointerType === "touch") return;
-      const wasDragging = ds.isDragging;
-      ds.isDown = false;
-      ds.isDragging = false;
-
-      if (scrollRef.current) scrollRef.current.style.cursor = "";
-
-      if (wasDragging) {
-        const dx = e.pageX - ds.startX;
-        const containerWidth = scrollRef.current?.offsetWidth ?? 400;
-        if (Math.abs(dx) > containerWidth * 0.25) {
-          saveScroll();
-          if (dx > 0) goToPrev();
-          else goToNext();
-        }
-      }
-    };
-
-    document.addEventListener("pointermove", onPointerMove);
-    document.addEventListener("pointerup", onPointerUp);
-    return () => {
-      document.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerup", onPointerUp);
-    };
-  }, [saveScroll, goToPrev, goToNext]);
-
-  // Touch swipe gesture for mobile day navigation
-  const bindSwipe = useDrag(
-    ({ swipe: [swipeX], event }) => {
-      if (swipeX === -1) {
-        event.preventDefault();
-        saveScroll();
-        goToNext();
-      } else if (swipeX === 1) {
-        event.preventDefault();
-        saveScroll();
-        goToPrev();
-      }
-    },
-    {
-      swipe: { distance: 30, velocity: 0.1 },
-      filterTaps: true,
-      axis: "x",
-      pointer: { touch: true },
-    },
-  );
-
-  // Auto-scroll during drag near top/bottom edges
+  // Auto-scroll during dnd-kit drag near top/bottom edges
   const autoScrollRaf = useRef<number>(0);
-  const isDraggingRef = useRef(false);
 
   useDndMonitor({
     onDragStart() {
-      isDraggingRef.current = true;
+      setIsDndDragging(true);
 
       const loop = () => {
-        if (!isDraggingRef.current || !scrollRef.current) return;
+        if (!scrollRef.current) return;
         autoScrollRaf.current = requestAnimationFrame(loop);
       };
       autoScrollRaf.current = requestAnimationFrame(loop);
     },
     onDragOver(event) {
-      if (!scrollRef.current || !isDraggingRef.current) return;
+      if (!scrollRef.current) return;
 
       const container = scrollRef.current;
       const rect = container.getBoundingClientRect();
@@ -343,17 +272,27 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       }
     },
     onDragEnd() {
-      isDraggingRef.current = false;
+      setIsDndDragging(false);
       cancelAnimationFrame(autoScrollRaf.current);
     },
     onDragCancel() {
-      isDraggingRef.current = false;
+      setIsDndDragging(false);
       cancelAnimationFrame(autoScrollRaf.current);
     },
   });
 
   // Hour labels for the time ruler
   const hourLabels = useMemo(() => getExtendedHourLabels(calendarHourHeight), [calendarHourHeight]);
+
+  const totalHeight = EXTENDED_TOTAL_HOURS * calendarHourHeight;
+
+  // Carousel transform style
+  const carouselTransform = `translateX(${-33.333 + carousel.offsetPercent}%)`;
+  const carouselTransition = carousel.isDragging
+    ? "none"
+    : carousel.isAnimating
+      ? "transform 300ms ease-out"
+      : "none";
 
   return (
     <div className="relative flex flex-col flex-1 min-h-0 border-l">
@@ -429,10 +368,10 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       )}
 
-      {/* Calendar body */}
+      {/* Calendar body — single vertical scroll container */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto"
+        className="flex-1 overflow-y-auto overflow-x-hidden"
         style={{
           maskImage:
             "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
@@ -440,16 +379,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
         }}
         onWheel={handleWheel}
-        onPointerDown={handlePointerDown}
-        {...bindSwipe()}
       >
-        <div className="flex">
-          {/* Time ruler */}
-          <div className="flex-shrink-0 w-12 sticky left-0 z-10 bg-background">
-            <div
-              className="relative"
-              style={{ height: `${EXTENDED_TOTAL_HOURS * calendarHourHeight}px` }}
-            >
+        <div className="flex" style={{ height: `${totalHeight}px` }}>
+          {/* Time ruler — stays fixed while carousel scrolls */}
+          <div className="flex-shrink-0 w-12 z-10 bg-background">
+            <div className="relative" style={{ height: `${totalHeight}px` }}>
               {hourLabels.map((hl) => (
                 <div
                   key={`${hl.section}-${hl.hour}`}
@@ -464,17 +398,56 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             </div>
           </div>
 
-          {/* Single day column */}
-          <div className="flex flex-1">
-            <DayColumn
-              centerDate={calendarCenterDate}
-              events={safeEvents}
-              tasks={scheduledTasks}
-              instances={safeInstances}
-              hourHeight={calendarHourHeight}
-              calendarColors={calendarColors}
-              onTaskClick={onTaskClick}
-            />
+          {/* Carousel container — clips horizontal overflow */}
+          <div ref={carouselRef} className="flex-1 overflow-hidden relative">
+            {/* Carousel track — 3 panels, translateX-driven */}
+            <div
+              className="flex h-full"
+              style={{
+                width: "300%",
+                transform: carouselTransform,
+                transition: carouselTransition,
+                willChange: carousel.isDragging ? "transform" : "auto",
+              }}
+              {...carousel.handlers}
+            >
+              <div className="h-full" style={{ flex: "0 0 33.333%" }}>
+                <DayColumn
+                  centerDate={prevDate}
+                  events={safeEvents}
+                  tasks={scheduledTasks}
+                  instances={safeInstances}
+                  hourHeight={calendarHourHeight}
+                  calendarColors={calendarColors}
+                  onTaskClick={onTaskClick}
+                  panelId="prev"
+                />
+              </div>
+              <div className="h-full" style={{ flex: "0 0 33.333%" }}>
+                <DayColumn
+                  centerDate={calendarCenterDate}
+                  events={safeEvents}
+                  tasks={scheduledTasks}
+                  instances={safeInstances}
+                  hourHeight={calendarHourHeight}
+                  calendarColors={calendarColors}
+                  onTaskClick={onTaskClick}
+                  panelId="center"
+                />
+              </div>
+              <div className="h-full" style={{ flex: "0 0 33.333%" }}>
+                <DayColumn
+                  centerDate={nextDate}
+                  events={safeEvents}
+                  tasks={scheduledTasks}
+                  instances={safeInstances}
+                  hourHeight={calendarHourHeight}
+                  calendarColors={calendarColors}
+                  onTaskClick={onTaskClick}
+                  panelId="next"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
