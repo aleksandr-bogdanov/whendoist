@@ -88,6 +88,10 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
   });
 
   const handleTitleClick = () => {
+    if (hasSubtasks) {
+      toggleExpandedSubtask(task.id);
+      return;
+    }
     selectTask(task.id);
     onSelect?.(task.id);
     onEdit?.(task);
@@ -241,17 +245,22 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
   const impactColor = IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4];
   const isParent = hasSubtasks;
 
-  // Aggregated subtask durations for parent containers
-  const subtaskDurations = useMemo(() => {
+  // Aggregated subtask stats for parent containers
+  const subtaskStats = useMemo(() => {
     if (!isParent || !task.subtasks) return null;
-    let pending = 0;
-    let total = 0;
+    let pendingDuration = 0;
+    let totalDuration = 0;
+    let activeCount = 0;
+    const totalCount = task.subtasks.length;
     for (const st of task.subtasks) {
       const d = st.duration_minutes ?? 0;
-      total += d;
-      if (st.status !== "completed") pending += d;
+      totalDuration += d;
+      if (st.status !== "completed") {
+        pendingDuration += d;
+        activeCount++;
+      }
     }
-    return { pending, total };
+    return { pendingDuration, totalDuration, activeCount, totalCount };
   }, [isParent, task.subtasks]);
 
   const contextMenuItems = (
@@ -347,7 +356,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="1.5"
-                          className="text-muted-foreground/40 group-hover/cb:text-[#6D5EF6]"
+                          className="text-muted-foreground/20 group-hover/cb:text-[#6D5EF6]/60"
                         />
                         <polyline
                           points="8 12 10.5 14.5 16 9"
@@ -356,7 +365,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="text-muted-foreground/15 group-hover/cb:text-[#6D5EF6]/40"
+                          className="text-muted-foreground/0 group-hover/cb:text-[#6D5EF6]/30"
                         />
                       </>
                     )}
@@ -424,16 +433,23 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                 <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
                   {isParent ? (
                     <>
-                      {/* Empty clarity slot */}
-                      <span className="w-[var(--col-clarity)]" />
+                      {/* Active / total subtask count */}
+                      <span className="w-[var(--col-clarity)] text-center text-[0.65rem] tabular-nums text-muted-foreground/60">
+                        {subtaskStats ? (
+                          <span>
+                            {subtaskStats.activeCount}
+                            <span className="opacity-50">/{subtaskStats.totalCount}</span>
+                          </span>
+                        ) : null}
+                      </span>
                       {/* Aggregated subtask duration: remaining / total */}
                       <span className="w-[var(--col-duration)] text-center text-[0.65rem] tabular-nums text-muted-foreground/60">
-                        {subtaskDurations && subtaskDurations.total > 0 ? (
+                        {subtaskStats && subtaskStats.totalDuration > 0 ? (
                           <span className="flex items-center justify-center gap-0.5">
                             <Clock className="h-3 w-3" />
-                            {formatDuration(subtaskDurations.pending)}
+                            {formatDuration(subtaskStats.pendingDuration)}
                             <span className="opacity-50">
-                              /{formatDuration(subtaskDurations.total)}
+                              /{formatDuration(subtaskStats.totalDuration)}
                             </span>
                           </span>
                         ) : (
@@ -673,7 +689,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
-                className="text-muted-foreground/30 group-hover/cb:text-[#6D5EF6]"
+                className="text-muted-foreground/20 group-hover/cb:text-[#6D5EF6]/60"
               />
               <polyline
                 points="8 12 10.5 14.5 16 9"
@@ -682,7 +698,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-muted-foreground/15 group-hover/cb:text-[#6D5EF6]/40"
+                className="text-muted-foreground/0 group-hover/cb:text-[#6D5EF6]/30"
               />
             </>
           )}

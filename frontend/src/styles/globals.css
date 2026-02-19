@@ -160,6 +160,12 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Prevent macOS two-finger swipe back/forward navigation */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
 /* Reduced motion: suppress animations globally */
 body.reduced-motion * {
   animation-duration: 0.01ms !important;
