@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.52.0 — 2026-02-19
+
+### Fixed
+- **Event flicker eliminated**: Added `placeholderData: keepPreviousData` to events and instances queries — TanStack Query now keeps showing previous data when the date range shifts instead of briefly returning `undefined`, which caused the visible flash on every carousel navigation
+- **Anytime section fixed height**: Changed from wrapping multi-row layout to fixed 34px single-row with horizontal scroll — calendar body position no longer shifts when anytime content varies between days
+
+---
+
 ## v0.51.9 — 2026-02-19
 
 ### Changed
