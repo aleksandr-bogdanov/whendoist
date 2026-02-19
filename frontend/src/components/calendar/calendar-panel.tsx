@@ -1,4 +1,5 @@
 import { useDndMonitor } from "@dnd-kit/core";
+import { keepPreviousData } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
@@ -69,10 +70,10 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const startDate = addDays(calendarCenterDate, -5);
   const endDate = addDays(calendarCenterDate, 5);
 
-  // Fetch events
+  // Fetch events — keepPreviousData prevents flash when date range shifts
   const { data: events } = useGetEventsApiV1EventsGet(
     { start_date: startDate, end_date: endDate },
-    { query: { staleTime: 60_000 } },
+    { query: { staleTime: 60_000, placeholderData: keepPreviousData } },
   );
 
   // Fetch calendars for color mapping
@@ -90,10 +91,10 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     return map;
   }, [calendars]);
 
-  // Fetch recurring task instances
+  // Fetch recurring task instances — keepPreviousData prevents flash
   const { data: instances } = useListInstancesApiV1InstancesGet(
     { start_date: startDate, end_date: endDate },
-    { query: { staleTime: 60_000 } },
+    { query: { staleTime: 60_000, placeholderData: keepPreviousData } },
   );
 
   const safeEvents = events ?? [];
@@ -327,18 +328,21 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       </div>
 
-      {/* Anytime section — always visible */}
-      <div className="border-b px-3 py-1.5 flex items-start gap-2 max-h-[82px] overflow-auto flex-shrink-0">
-        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] mt-1 flex-shrink-0">
+      {/* Anytime section — fixed height, horizontal scroll */}
+      <div className="border-b px-3 py-1.5 flex items-center gap-2 h-[34px] flex-shrink-0">
+        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] flex-shrink-0">
           ANYTIME
         </span>
-        <div className="flex flex-wrap gap-1 min-w-0">
+        <div
+          className="flex gap-1 min-w-0 overflow-x-auto overflow-y-hidden"
+          style={{ scrollbarWidth: "none" }}
+        >
           {anytimeTasks.length > 0 ? (
             anytimeTasks.map((t) => (
               <button
                 key={t.id}
                 type="button"
-                className="text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-accent/50 cursor-pointer bg-card border border-border/40 max-w-[180px]"
+                className="text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-accent/50 cursor-pointer bg-card border border-border/40 max-w-[180px] flex-shrink-0"
                 style={{
                   borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
                 }}
@@ -349,7 +353,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
               </button>
             ))
           ) : (
-            <span className="text-[10px] text-muted-foreground/50 mt-0.5">No tasks</span>
+            <span className="text-[10px] text-muted-foreground/50">No tasks</span>
           )}
         </div>
       </div>
