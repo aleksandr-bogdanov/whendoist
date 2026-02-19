@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.50.5 — 2026-02-19
+
+### Fixed
+- **Calendar proportions**: Restored legacy 2:1 task-to-calendar ratio (was ~55:45)
+- **Time slot alignment**: Extracted day headers out of scroll area so hour grid lines align perfectly across all day columns
+- **Desktop calendar swipe**: Enabled mouse-drag horizontal swipe to navigate between days (was touch-only)
+
+---
+
 ## v0.50.4 — 2026-02-19
 
 ### Fixed

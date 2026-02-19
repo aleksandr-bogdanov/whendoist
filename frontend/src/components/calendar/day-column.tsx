@@ -36,6 +36,7 @@ interface DayColumnProps {
   hourHeight: number;
   calendarColors: Map<string, string>;
   onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
+  hideHeader?: boolean;
 }
 
 const HOUR_LABELS = Array.from({ length: TOTAL_HOURS }, (_, i) => DAY_START_HOUR + i);
@@ -49,6 +50,7 @@ export function DayColumn({
   hourHeight,
   calendarColors,
   onTaskClick,
+  hideHeader,
 }: DayColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
   const { dayName, dateLabel } = formatDayHeader(dateStr);
@@ -149,41 +151,45 @@ export function DayColumn({
 
   return (
     <div className="flex flex-col flex-1 min-w-[140px]">
-      {/* Day header */}
-      <div
-        className={`sticky top-0 z-10 flex flex-col items-center py-1.5 border-b bg-background/95 backdrop-blur-sm ${
-          isToday ? "bg-primary/5" : ""
-        }`}
-      >
-        <span
-          className={`text-xs font-semibold ${isToday ? "text-primary" : "text-muted-foreground"}`}
-        >
-          {dayName}
-        </span>
-        <span className="text-[10px] text-muted-foreground">{dateLabel}</span>
-      </div>
-
-      {/* Anytime tasks (date-only, no specific time) */}
-      {dayAnytimeTasks.length > 0 && (
-        <div className="border-b px-1 py-1 space-y-0.5">
-          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide px-0.5">
-            Anytime
-          </span>
-          {dayAnytimeTasks.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className="w-full text-left text-[11px] truncate rounded px-1 py-0.5 hover:bg-accent/50 cursor-pointer"
-              style={{
-                borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
-              }}
-              onClick={() => onTaskClick?.(t)}
-              title={t.title}
+      {!hideHeader && (
+        <>
+          {/* Day header */}
+          <div
+            className={`sticky top-0 z-10 flex flex-col items-center py-1.5 border-b bg-background/95 backdrop-blur-sm ${
+              isToday ? "bg-primary/5" : ""
+            }`}
+          >
+            <span
+              className={`text-xs font-semibold ${isToday ? "text-primary" : "text-muted-foreground"}`}
             >
-              {t.title}
-            </button>
-          ))}
-        </div>
+              {dayName}
+            </span>
+            <span className="text-[10px] text-muted-foreground">{dateLabel}</span>
+          </div>
+
+          {/* Anytime tasks (date-only, no specific time) */}
+          {dayAnytimeTasks.length > 0 && (
+            <div className="border-b px-1 py-1 space-y-0.5">
+              <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide px-0.5">
+                Anytime
+              </span>
+              {dayAnytimeTasks.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="w-full text-left text-[11px] truncate rounded px-1 py-0.5 hover:bg-accent/50 cursor-pointer"
+                  style={{
+                    borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
+                  }}
+                  onClick={() => onTaskClick?.(t)}
+                  title={t.title}
+                >
+                  {t.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Time grid — droppable zone */}
