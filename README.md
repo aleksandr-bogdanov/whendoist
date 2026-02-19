@@ -200,6 +200,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 |----------|-------------|
 | **Getting Started** | |
 | [Deployment Guide](docs/DEPLOYMENT.md) | Railway deployment, environment variables, Sentry setup |
+| [Legacy Frontend](docs/LEGACY-FRONTEND.md) | Running Jinja2 + React in parallel on Railway |
 | [Database Migrations](docs/MIGRATIONS.md) | Schema changes with Alembic |
 | **Security** | |
 | [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, headers |

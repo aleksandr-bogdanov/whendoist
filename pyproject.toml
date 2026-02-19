@@ -1,6 +1,6 @@
 [project]
 name = "whendoist"
-version = "0.49.8"
+version = "0.49.9"
 description = "Task scheduling app - WHEN do I do my tasks?"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -23,6 +23,7 @@ dependencies = [
     "alembic>=1.14.0",
     "prometheus-client>=0.21.0",
     "sentry-sdk>=2.19.0",
+    "jinja2>=3.1.6",
 ]
 
 [project.optional-dependencies]
