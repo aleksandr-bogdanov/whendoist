@@ -277,13 +277,23 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       {/* Calendar header */}
       <div className="flex items-center justify-between gap-2 px-2 sm:px-3 py-2 border-b">
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToPrev}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 relative [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
+            onClick={goToPrev}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={goToToday}>
             Today
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToNext}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 relative [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
+            onClick={goToNext}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

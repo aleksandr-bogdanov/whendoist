@@ -7,6 +7,21 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.6 — 2026-02-19
+
+### Added
+- **Glass morphism**: header and mobile nav use `backdrop-blur-md bg-background/80` for frosted glass effect
+- **Spectrum gradient border**: header bottom border replaced with blue→purple→pink gradient
+- **Bottom fade gradient on task list**: scroll area fades out at bottom edge
+- **iOS-style energy segmented control**: energy selector refactored to segmented control with sliding colored indicator
+- **Ghost checkbox**: uncompleted task circles show a faint check icon as a clickable hint
+- **Two-line task names**: task titles wrap to 2 lines before truncating (was single-line truncate)
+- **Today accent coloring**: scheduled section date headers highlight today in primary color
+- **Nunito font**: base font changed to Nunito (Google Fonts, weights 400–700)
+- **44px touch targets**: task checkbox, calendar nav buttons, and energy buttons have expanded hit areas on touch devices
+
+---
+
 ## v0.49.5 — 2026-02-19
 
 ### Added

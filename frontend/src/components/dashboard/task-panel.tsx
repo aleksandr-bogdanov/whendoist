@@ -168,7 +168,7 @@ export function TaskPanel({
       </div>
 
       {/* Task list */}
-      <div ref={pullRefreshRef} className="flex-1 min-h-0 flex flex-col">
+      <div ref={pullRefreshRef} className="flex-1 min-h-0 flex flex-col relative">
         <ScrollArea className="flex-1 relative" data-task-scroll-area>
           <StickyDomainHeader />
           <div className="p-2 sm:p-3 space-y-1">
@@ -179,6 +179,7 @@ export function TaskPanel({
             <DeletedSection />
           </div>
         </ScrollArea>
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
     </div>
   );
