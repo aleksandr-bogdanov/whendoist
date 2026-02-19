@@ -7,6 +7,18 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.50.4 — 2026-02-19
+
+### Fixed
+- **Pinch-to-zoom on desktop**: Disabled macOS trackpad pinch gesture that accidentally zoomed the page (intercepts ctrl+wheel and Safari gesture events)
+- **Sort header alignment**: CLARITY/DURATION/IMPACT sort buttons now use same column widths and positioning as task item metadata columns
+
+### Changed
+- **Page max-width**: Constrained app to 1200px centered, matching legacy site's contained layout
+- **Header breathing room**: Increased navbar height from 56px to 80px and horizontal padding from 24px to 48px
+
+---
+
 ## v0.50.3 — 2026-02-19
 
 ### Fixed

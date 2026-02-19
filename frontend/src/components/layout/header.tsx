@@ -62,7 +62,7 @@ export function Header({ userName: _userName, userEmail: _userEmail }: HeaderPro
   const ThemeIcon = themeIcons[theme];
 
   return (
-    <header className="relative flex h-14 items-center px-4 sm:px-6 bg-background">
+    <header className="relative flex h-20 items-center px-6 sm:px-12 bg-background">
       {/* Gradient bar at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
 
