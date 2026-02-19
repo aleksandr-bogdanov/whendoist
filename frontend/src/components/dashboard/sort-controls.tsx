@@ -4,9 +4,9 @@ import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
 const SORT_OPTIONS = [
-  { field: "clarity" as const, label: "CLR", colVar: "--col-clarity" },
-  { field: "duration" as const, label: "DUR", colVar: "--col-duration" },
-  { field: "impact" as const, label: "IMP", colVar: "--col-impact" },
+  { field: "clarity" as const, label: "Clarity", colVar: "--col-clarity" },
+  { field: "duration" as const, label: "Duration", colVar: "--col-duration" },
+  { field: "impact" as const, label: "Impact", colVar: "--col-impact" },
 ];
 
 export function SortControls() {

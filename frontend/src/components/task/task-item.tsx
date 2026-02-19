@@ -479,10 +479,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                       {/* Duration */}
                       <span className="w-[var(--col-duration)] text-center text-[0.65rem] font-medium tabular-nums text-muted-foreground">
                         {task.duration_minutes ? (
-                          <span className="flex items-center justify-center gap-0.5">
-                            <Clock className="h-3 w-3" />
-                            {formatDuration(task.duration_minutes)}
-                          </span>
+                          formatDuration(task.duration_minutes)
                         ) : (
                           <span className="opacity-30">&mdash;</span>
                         )}
@@ -644,7 +641,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 py-1 transition-colors border-b border-border/20",
+        "group flex items-center gap-[var(--col-gap)] py-1 transition-colors border-b border-border/20",
         "hover:bg-accent/50",
         isSelected && "bg-accent",
         isCompleted && "opacity-60",
@@ -720,17 +717,43 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
         </span>
       </button>
 
+      {/* Metadata columns — grid-aligned with parent task */}
       <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
-        {subtask.duration_minutes && (
-          <span className="text-[0.65rem] text-muted-foreground flex items-center gap-0.5">
-            <Clock className="h-3 w-3" />
-            {formatDuration(subtask.duration_minutes)}
-          </span>
-        )}
-        <span className="text-[0.65rem] font-semibold" style={{ color: impactColor }}>
+        {/* Clarity */}
+        <span className="w-[var(--col-clarity)] text-center">
+          {subtask.clarity && subtask.clarity !== "normal" ? (
+            <span
+              className="inline-block text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full"
+              style={{
+                color: CLARITY_COLORS[subtask.clarity] ?? CLARITY_COLORS.normal,
+                backgroundColor: CLARITY_TINTS[subtask.clarity] ?? CLARITY_TINTS.normal,
+              }}
+            >
+              {CLARITY_LABELS[subtask.clarity] ?? subtask.clarity}
+            </span>
+          ) : null}
+        </span>
+
+        {/* Duration */}
+        <span className="w-[var(--col-duration)] text-center text-[0.65rem] font-medium tabular-nums text-muted-foreground">
+          {subtask.duration_minutes ? (
+            formatDuration(subtask.duration_minutes)
+          ) : (
+            <span className="opacity-30">&mdash;</span>
+          )}
+        </span>
+
+        {/* Impact */}
+        <span
+          className="w-[var(--col-impact)] text-center text-[0.65rem] font-semibold"
+          style={{ color: impactColor }}
+        >
           {IMPACT_LABELS[subtask.impact] ?? "Min"}
         </span>
       </span>
+
+      {/* Actions spacer to match parent row */}
+      <span className="hidden sm:block w-[var(--col-actions)] flex-shrink-0" />
     </div>
   );
 }
