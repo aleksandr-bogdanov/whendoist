@@ -9,7 +9,6 @@ import { DeletedSection } from "@/components/task/deleted-section";
 import { ScheduledSection } from "@/components/task/scheduled-section";
 import { TaskList } from "@/components/task/task-list";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { decryptDomain, decryptTask } from "@/hooks/use-crypto";
 import { useDevice } from "@/hooks/use-device";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
@@ -171,7 +170,7 @@ export function TaskPanel({
 
       {/* Task list */}
       <div ref={pullRefreshRef} className="flex-1 min-h-0 flex flex-col relative">
-        <ScrollArea className="flex-1 relative" data-task-scroll-area>
+        <div className="flex-1 min-h-0 overflow-y-auto relative" data-task-scroll-area>
           <StickyDomainHeader />
           <div className="p-2 sm:p-3 space-y-2">
             <PendingPastBanner />
@@ -180,7 +179,7 @@ export function TaskPanel({
             <CompletedSection tasks={completedTasks} onEditTask={onEditTask} />
             <DeletedSection />
           </div>
-        </ScrollArea>
+        </div>
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
     </div>
