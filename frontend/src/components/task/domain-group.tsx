@@ -175,17 +175,26 @@ export function DomainGroup({
         data-domain-name={domain?.name ?? "Inbox"}
         data-domain-count={String(tasks.length)}
         data-domain-color={domain?.color ?? ""}
+        className="rounded-[10px] border bg-card overflow-hidden"
       >
         <CollapsibleTrigger asChild>
           <button
             type="button"
             data-domain-trigger
             className={cn(
-              "flex w-full items-center gap-2 px-3 py-2 text-sm font-medium",
-              "rounded-md hover:bg-accent/50 transition-colors",
+              "flex w-full items-center gap-2 px-3 py-1.5 text-sm font-bold",
+              "bg-muted/50 hover:bg-muted/80 transition-colors",
             )}
           >
-            {/* Domain icon/color indicator */}
+            {/* Disclosure chevron */}
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 text-muted-foreground transition-transform flex-shrink-0",
+                !isExpanded && "-rotate-90",
+              )}
+            />
+
+            {/* Domain icon/name */}
             {domain ? (
               <>
                 {domain.icon ? (
@@ -196,114 +205,102 @@ export function DomainGroup({
                     style={{ backgroundColor: domain.color ?? "#6D5EF6" }}
                   />
                 )}
-                <span className="flex-1 text-left truncate">{domain.name}</span>
+                <span className="flex-1 text-left truncate text-[0.95rem]">{domain.name}</span>
               </>
             ) : (
               <>
                 <Inbox className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1 text-left truncate">Inbox</span>
+                <span className="flex-1 text-left truncate text-[0.95rem]">Inbox</span>
               </>
             )}
 
-            {/* Task count */}
-            <span className="text-xs text-muted-foreground tabular-nums">{tasks.length}</span>
-
-            {/* Chevron */}
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform",
-                !isExpanded && "-rotate-90",
-              )}
-            />
+            {/* Task count pill */}
+            <span className="text-[11px] text-muted-foreground tabular-nums bg-background/60 px-1.5 py-0.5 rounded-full">
+              {tasks.length}
+            </span>
           </button>
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          {/* Left border accent */}
-          <div
-            className="ml-3 border-l-2 pl-0"
-            style={{ borderColor: domain?.color ?? "var(--border)" }}
-          >
-            <AnimatePresence initial={false}>
-              {tasks.map((task) => (
-                <motion.div
-                  key={task.id}
-                  layout
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, x: 40, height: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                >
-                  {isTouchDevice ? (
-                    <div data-task-swipe-row>
-                      <TaskSwipeRow
-                        onSwipeRight={() => handleSwipeComplete(task)}
-                        onSwipeLeft={() => handleSwipeSchedule(task)}
-                        onLongPress={() => handleLongPress(task)}
-                      >
-                        <TaskItem
-                          task={task}
-                          onSelect={onSelectTask}
-                          onEdit={onEditTask}
-                          isDropTarget={dragOverTaskId === String(task.id)}
-                        />
-                      </TaskSwipeRow>
-                    </div>
-                  ) : (
-                    <TaskItem
-                      task={task}
-                      onSelect={onSelectTask}
-                      onEdit={onEditTask}
-                      isDropTarget={dragOverTaskId === String(task.id)}
-                    />
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {/* Inline add task */}
-            {addingTask ? (
-              <div className="flex items-center gap-1.5 px-2 py-1">
-                <input
-                  ref={(el) => {
-                    (addInputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
-                    el?.focus();
-                  }}
-                  type="text"
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newTaskTitle.trim()) {
-                      e.preventDefault();
-                      handleInlineAdd();
-                    }
-                    if (e.key === "Escape") {
-                      setAddingTask(false);
-                      setNewTaskTitle("");
-                    }
-                  }}
-                  onBlur={() => {
-                    if (!newTaskTitle.trim()) {
-                      setAddingTask(false);
-                      setNewTaskTitle("");
-                    }
-                  }}
-                  placeholder="Task title..."
-                  className="flex-1 h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
-                  disabled={createTask.isPending}
-                />
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAddingTask(true)}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+          <AnimatePresence initial={false}>
+            {tasks.map((task) => (
+              <motion.div
+                key={task.id}
+                layout
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, x: 40, height: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
               >
-                <Plus className="h-3 w-3" />
-                Add task
-              </button>
-            )}
-          </div>
+                {isTouchDevice ? (
+                  <div data-task-swipe-row>
+                    <TaskSwipeRow
+                      onSwipeRight={() => handleSwipeComplete(task)}
+                      onSwipeLeft={() => handleSwipeSchedule(task)}
+                      onLongPress={() => handleLongPress(task)}
+                    >
+                      <TaskItem
+                        task={task}
+                        onSelect={onSelectTask}
+                        onEdit={onEditTask}
+                        isDropTarget={dragOverTaskId === String(task.id)}
+                      />
+                    </TaskSwipeRow>
+                  </div>
+                ) : (
+                  <TaskItem
+                    task={task}
+                    onSelect={onSelectTask}
+                    onEdit={onEditTask}
+                    isDropTarget={dragOverTaskId === String(task.id)}
+                  />
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Inline add task */}
+          {addingTask ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5">
+              <input
+                ref={(el) => {
+                  (addInputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+                  el?.focus();
+                }}
+                type="text"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newTaskTitle.trim()) {
+                    e.preventDefault();
+                    handleInlineAdd();
+                  }
+                  if (e.key === "Escape") {
+                    setAddingTask(false);
+                    setNewTaskTitle("");
+                  }
+                }}
+                onBlur={() => {
+                  if (!newTaskTitle.trim()) {
+                    setAddingTask(false);
+                    setNewTaskTitle("");
+                  }
+                }}
+                placeholder="Task title..."
+                className="flex-1 h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
+                disabled={createTask.isPending}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingTask(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+            >
+              <Plus className="h-3 w-3" />
+              Add task
+            </button>
+          )}
         </CollapsibleContent>
       </Collapsible>
 

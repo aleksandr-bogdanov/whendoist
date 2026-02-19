@@ -273,7 +273,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   });
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 border-l">
+    <div className="relative flex flex-col flex-1 min-h-0 border-l">
       {/* Calendar header */}
       <div className="flex items-center justify-between gap-2 px-2 sm:px-3 py-2 border-b">
         <div className="flex items-center gap-1">
@@ -365,6 +365,34 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
               />
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Floating controls */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+        <button
+          type="button"
+          onClick={goToToday}
+          className="px-3 py-1 text-xs font-semibold rounded-full bg-card border border-border shadow-sm hover:bg-primary hover:text-primary-foreground transition-colors"
+        >
+          Today
+        </button>
+        <div className="flex items-center rounded-full bg-card border border-border shadow-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={zoomOut}
+            className="px-2 py-1 text-xs hover:bg-muted transition-colors"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <div className="w-px h-4 bg-border" />
+          <button
+            type="button"
+            onClick={zoomIn}
+            className="px-2 py-1 text-xs hover:bg-muted transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 

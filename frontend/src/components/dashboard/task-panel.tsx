@@ -39,7 +39,7 @@ export function TaskPanel({
   onQuickAdd,
   onEditTask,
 }: TaskPanelProps) {
-  const { sortField, sortDirection, energyLevel, selectedDomainId } = useUIStore();
+  const { sortField, sortDirection, energyLevel } = useUIStore();
   const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
   const queryClient = useQueryClient();
   const { prefersTouch, hasTouch } = useDevice();
@@ -100,12 +100,7 @@ export function TaskPanel({
     const { pending, scheduled, completed } = categorizeTasks(decryptedTasks);
 
     // Filter by energy level
-    let filteredPending = filterByEnergy(pending, energyLevel);
-
-    // Filter by selected domain
-    if (selectedDomainId !== null) {
-      filteredPending = filteredPending.filter((t) => t.domain_id === selectedDomainId);
-    }
+    const filteredPending = filterByEnergy(pending, energyLevel);
 
     // Sort pending tasks
     const sortedPending = sortTasks(filteredPending, sortField, sortDirection);
@@ -124,7 +119,7 @@ export function TaskPanel({
       scheduledTasks: scheduled,
       completedTasks: completed,
     };
-  }, [decryptedTasks, decryptedDomains, sortField, sortDirection, energyLevel, selectedDomainId]);
+  }, [decryptedTasks, decryptedDomains, sortField, sortDirection, energyLevel]);
 
   // Prevent ciphertext flash: show loading while decryption is pending
   const decryptionPending = canDecrypt && (tasks?.length ?? 0) > 0 && decryptedTasks.length === 0;
@@ -140,8 +135,14 @@ export function TaskPanel({
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Panel header with controls */}
-      <div data-task-panel-header className="flex flex-col gap-2 px-2 sm:px-3 py-2 border-b">
-        {/* Top row: energy + actions */}
+      <div
+        data-task-panel-header
+        className="relative flex flex-col gap-2 px-2 sm:px-3 py-2 border-b"
+      >
+        {/* Spectrum bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
+
+        {/* Row 1: energy + actions */}
         <div className="flex items-center justify-between gap-2">
           <EnergySelector />
           <div className="flex items-center gap-1">
@@ -160,7 +161,8 @@ export function TaskPanel({
             <SettingsPanel />
           </div>
         </div>
-        {/* Bottom row: sort + filter */}
+
+        {/* Row 2: sort controls grid-aligned + filter toggles */}
         <div className="flex items-center justify-between gap-2">
           <SortControls />
           <FilterBar />
@@ -171,7 +173,7 @@ export function TaskPanel({
       <div ref={pullRefreshRef} className="flex-1 min-h-0 flex flex-col relative">
         <ScrollArea className="flex-1 relative" data-task-scroll-area>
           <StickyDomainHeader />
-          <div className="p-2 sm:p-3 space-y-1">
+          <div className="p-2 sm:p-3 space-y-2">
             <PendingPastBanner />
             <TaskList groups={pendingGroups} onEditTask={onEditTask} />
             <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />

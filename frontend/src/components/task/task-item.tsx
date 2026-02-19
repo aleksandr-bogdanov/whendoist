@@ -33,10 +33,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  CLARITY_COLORS,
   CLARITY_LABELS,
+  CLARITY_TINTS,
   formatDate,
   formatDuration,
   IMPACT_COLORS,
+  IMPACT_LABELS,
   isOverdue,
 } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
@@ -102,7 +105,6 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
               ...t,
               status: isCompleted ? "pending" : "completed",
               completed_at: isCompleted ? null : new Date().toISOString(),
-              // Cascade: mark subtasks completed/pending too
               subtasks: t.subtasks?.map((st) => ({
                 ...st,
                 status: isCompleted ? "pending" : "completed",
@@ -161,7 +163,6 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
   }, [task, onEdit]);
 
   const handleMenuComplete = useCallback(() => {
-    // Inline the toggle complete logic to avoid dependency on handleToggleComplete
     const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
@@ -237,6 +238,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
 
   const dueDate = task.due_date;
   const overdue = isOverdue(dueDate) && !isCompleted;
+  const impactColor = IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4];
 
   const menuContent = (
     <DropdownMenuContent
@@ -283,23 +285,28 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
       >
         <div
           className={cn(
-            "group relative flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
-            isSelected && "bg-accent ring-1 ring-ring/20",
+            "group relative flex items-center gap-[var(--col-gap)] py-1.5 transition-colors border-b border-border/40",
+            isSelected && "bg-accent",
             isCompleted && "opacity-60",
             isDragging && "opacity-30",
             isDropTarget && "ring-2 ring-primary bg-primary/10",
             isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
           )}
-          style={{ paddingLeft: `${depth * 24 + 8}px` }}
+          style={{
+            paddingLeft: `${depth * 24 + 8}px`,
+            borderLeftWidth: 2,
+            borderLeftColor: impactColor,
+            borderLeftStyle: "solid",
+          }}
         >
-          {/* Drag handle — the whole row is draggable via this invisible overlay */}
+          {/* Drag handle */}
           <div
             className="absolute inset-0 cursor-grab active:cursor-grabbing"
             {...attributes}
             {...listeners}
           />
 
-          {/* Checkbox */}
+          {/* Checkbox — rounded square */}
           <button
             type="button"
             className="flex-shrink-0 cursor-pointer relative z-10 [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
@@ -308,21 +315,21 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
           >
             <div
               className={cn(
-                "flex items-center justify-center h-4 w-4 rounded-full border-2 transition-colors",
+                "flex items-center justify-center h-4 w-4 rounded-[4px] border-2 transition-colors",
                 isCompleted
-                  ? "bg-primary border-primary"
-                  : "border-muted-foreground/40 hover:border-primary hover:bg-primary/10",
+                  ? "bg-[#6D5EF6] border-[#6D5EF6]"
+                  : "border-muted-foreground/40 hover:border-[#6D5EF6] hover:bg-[#6D5EF6]/10",
               )}
             >
               {isCompleted ? (
-                <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                <Check className="h-2.5 w-2.5 text-white" />
               ) : (
                 <Check className="h-2.5 w-2.5 text-muted-foreground/20" />
               )}
             </div>
           </button>
 
-          {/* Title as clickable for editing */}
+          {/* Title */}
           <button
             type="button"
             data-task-title-btn
@@ -361,50 +368,67 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
             </Badge>
           )}
 
-          {/* Metadata chips */}
-          <span className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
-            {task.is_recurring && <Repeat className="h-3 w-3 text-muted-foreground" />}
+          {/* Recurring indicator */}
+          {task.is_recurring && (
+            <Repeat className="hidden sm:block h-3 w-3 text-muted-foreground flex-shrink-0" />
+          )}
 
-            {dueDate && (
-              <span
-                className={cn(
-                  "text-[11px] flex items-center gap-0.5",
-                  overdue ? "text-destructive font-medium" : "text-muted-foreground",
-                )}
-              >
-                <Calendar className="h-3 w-3" />
-                {formatDate(dueDate)}
-              </span>
-            )}
-
-            {task.duration_minutes && (
-              <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
-                <Clock className="h-3 w-3" />
-                {formatDuration(task.duration_minutes)}
-              </span>
-            )}
-
-            {task.clarity && task.clarity !== "normal" && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                {CLARITY_LABELS[task.clarity] ?? task.clarity}
-              </Badge>
-            )}
-
-            <Badge
-              className="text-[10px] px-1.5 py-0 text-white"
-              style={{
-                backgroundColor: IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4],
-              }}
+          {/* Due date */}
+          {dueDate && (
+            <span
+              className={cn(
+                "hidden sm:flex items-center gap-0.5 text-[11px] flex-shrink-0",
+                overdue ? "text-destructive font-medium" : "text-muted-foreground",
+              )}
             >
-              P{task.impact}
-            </Badge>
+              <Calendar className="h-3 w-3" />
+              {formatDate(dueDate)}
+            </span>
+          )}
+
+          {/* Metadata columns — grid-aligned */}
+          <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
+            {/* Clarity */}
+            <span className="w-[var(--col-clarity)] text-center">
+              {task.clarity && task.clarity !== "normal" ? (
+                <span
+                  className="inline-block text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full"
+                  style={{
+                    color: CLARITY_COLORS[task.clarity] ?? CLARITY_COLORS.normal,
+                    backgroundColor: CLARITY_TINTS[task.clarity] ?? CLARITY_TINTS.normal,
+                  }}
+                >
+                  {CLARITY_LABELS[task.clarity] ?? task.clarity}
+                </span>
+              ) : null}
+            </span>
+
+            {/* Duration */}
+            <span className="w-[var(--col-duration)] text-center text-[0.65rem] font-medium tabular-nums text-muted-foreground">
+              {task.duration_minutes ? (
+                <span className="flex items-center justify-center gap-0.5">
+                  <Clock className="h-3 w-3" />
+                  {formatDuration(task.duration_minutes)}
+                </span>
+              ) : (
+                <span className="opacity-30">&mdash;</span>
+              )}
+            </span>
+
+            {/* Impact — text label */}
+            <span
+              className="w-[var(--col-impact)] text-center text-[0.65rem] font-semibold"
+              style={{ color: impactColor }}
+            >
+              {IMPACT_LABELS[task.impact] ?? "Min"}
+            </span>
           </span>
 
-          {/* Kebab menu button (visible on hover, desktop only) */}
+          {/* Kebab menu button */}
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="hidden sm:flex flex-shrink-0 p-0.5 rounded hover:bg-accent relative z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="hidden sm:flex flex-shrink-0 p-0.5 rounded hover:bg-accent relative z-10 opacity-0 group-hover:opacity-100 transition-opacity w-[var(--col-actions)] justify-center"
               title="Task actions"
               onClick={(e) => {
                 e.stopPropagation();
@@ -471,6 +495,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const isSelected = selectedTaskId === subtask.id;
   const isCompleted = subtask.status === "completed";
+  const impactColor = IMPACT_COLORS[subtask.impact] ?? IMPACT_COLORS[4];
 
   const handleClick = async () => {
     selectTask(subtask.id);
@@ -486,7 +511,6 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // Optimistic update — find subtask within its parent's subtasks array
     const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
@@ -521,12 +545,17 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 rounded-md px-2 py-1 transition-colors",
+        "group flex items-center gap-2 py-1 transition-colors border-b border-border/20",
         "hover:bg-accent/50",
-        isSelected && "bg-accent ring-1 ring-ring/20",
+        isSelected && "bg-accent",
         isCompleted && "opacity-60",
       )}
-      style={{ paddingLeft: `${depth * 24 + 8}px` }}
+      style={{
+        paddingLeft: `${depth * 24 + 8}px`,
+        borderLeftWidth: 2,
+        borderLeftColor: impactColor,
+        borderLeftStyle: "solid",
+      }}
     >
       <button
         type="button"
@@ -536,14 +565,14 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
       >
         <div
           className={cn(
-            "flex items-center justify-center h-3.5 w-3.5 rounded-full border-2 transition-colors",
+            "flex items-center justify-center h-3.5 w-3.5 rounded-[3px] border-2 transition-colors",
             isCompleted
-              ? "bg-primary border-primary"
-              : "border-muted-foreground/30 hover:border-primary hover:bg-primary/10",
+              ? "bg-[#6D5EF6] border-[#6D5EF6]"
+              : "border-muted-foreground/30 hover:border-[#6D5EF6] hover:bg-[#6D5EF6]/10",
           )}
         >
           {isCompleted ? (
-            <Check className="h-2 w-2 text-primary-foreground" />
+            <Check className="h-2 w-2 text-white" />
           ) : (
             <Check className="h-2 w-2 text-muted-foreground/20" />
           )}
@@ -565,21 +594,16 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
         </span>
       </button>
 
-      <span className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+      <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
         {subtask.duration_minutes && (
-          <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
+          <span className="text-[0.65rem] text-muted-foreground flex items-center gap-0.5">
             <Clock className="h-3 w-3" />
             {formatDuration(subtask.duration_minutes)}
           </span>
         )}
-        <Badge
-          className="text-[10px] px-1.5 py-0 text-white"
-          style={{
-            backgroundColor: IMPACT_COLORS[subtask.impact] ?? IMPACT_COLORS[4],
-          }}
-        >
-          P{subtask.impact}
-        </Badge>
+        <span className="text-[0.65rem] font-semibold" style={{ color: impactColor }}>
+          {IMPACT_LABELS[subtask.impact] ?? "Min"}
+        </span>
       </span>
     </div>
   );

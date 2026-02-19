@@ -7,6 +7,26 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.50.0 — 2026-02-19
+
+### Changed
+- **Legacy visual parity**: Complete React frontend restyling to match the legacy Jinja2 aesthetic
+  - Top horizontal tab navigation (THOUGHTS, TASKS, ANALYTICS, SETTINGS) replaces sidebar
+  - W icon logo (three colored bars) replaces text logo
+  - Emoji energy selector (zombie/coffee/brain) with ENERGY label and clarity dots
+  - Uppercase text sort controls and filter toggles (no more shadcn buttons)
+  - Task items: 2px impact rail (left border colored by priority), text labels (High/Mid/Low/Min), rounded-square checkboxes, grid-aligned clarity/duration/impact columns
+  - Domain groups: card-style containers with rounded borders, muted header
+  - Brand color system: impact colors (#C9505A/#B8860B/#1A9160/#6B7385), clarity colors (#167BFF/#6D5EF6/#A020C0)
+  - Calendar: floating Today/zoom controls, rounded task cards with impact rail
+  - Spectrum gradient bar on header and task panel
+  - Nunito + Quicksand fonts loaded from Google Fonts
+
+### Removed
+- Sidebar navigation and domain-click-to-filter feature (domains are grouped in the task list)
+
+---
+
 ## v0.49.9 — 2026-02-19
 
 ### Fixed

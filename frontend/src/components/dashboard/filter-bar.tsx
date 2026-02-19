@@ -1,5 +1,3 @@
-import { CalendarClock, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -7,25 +5,27 @@ export function FilterBar() {
   const { showScheduled, showCompleted, toggleShowScheduled, toggleShowCompleted } = useUIStore();
 
   return (
-    <div className="flex items-center gap-1.5">
-      <Button
-        variant={showScheduled ? "secondary" : "ghost"}
-        size="sm"
-        className={cn("h-6 text-[11px] px-2 gap-1")}
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        className={cn(
+          "text-[0.6875rem] font-semibold tracking-[0.06em] transition-colors uppercase",
+          showScheduled ? "text-foreground" : "text-foreground/38 hover:text-foreground",
+        )}
         onClick={toggleShowScheduled}
       >
-        <CalendarClock className="h-3 w-3" />
-        Scheduled
-      </Button>
-      <Button
-        variant={showCompleted ? "secondary" : "ghost"}
-        size="sm"
-        className={cn("h-6 text-[11px] px-2 gap-1")}
+        SCHEDULED
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "text-[0.6875rem] font-semibold tracking-[0.06em] transition-colors uppercase",
+          showCompleted ? "text-foreground" : "text-foreground/38 hover:text-foreground",
+        )}
         onClick={toggleShowCompleted}
       >
-        <CheckCircle2 className="h-3 w-3" />
-        Completed
-      </Button>
+        COMPLETED
+      </button>
     </div>
   );
 }

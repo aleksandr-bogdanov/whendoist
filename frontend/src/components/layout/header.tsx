@@ -1,26 +1,19 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { BarChart3, LayoutDashboard, LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
+
+const navTabs = [
+  { to: "/thoughts", label: "THOUGHTS" },
+  { to: "/dashboard", label: "TASKS" },
+  { to: "/analytics", label: "ANALYTICS" },
+  { to: "/settings", label: "SETTINGS" },
+] as const;
 
 const themeIcons = {
   light: Sun,
   dark: Moon,
   system: Monitor,
-} as const;
-
-const themeLabels = {
-  light: "Light",
-  dark: "Dark",
-  system: "System",
 } as const;
 
 const themeCycle: Record<string, "light" | "dark" | "system"> = {
@@ -29,95 +22,96 @@ const themeCycle: Record<string, "light" | "dark" | "system"> = {
   system: "light",
 };
 
+function WIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="38 40 180 160" width="17" height="15" className={className} aria-hidden="true">
+      <rect
+        x="48"
+        y="40"
+        width="28"
+        height="160"
+        rx="14"
+        fill="#167BFF"
+        transform="rotate(-8 62 120)"
+      />
+      <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6" />
+      <rect
+        x="180"
+        y="40"
+        width="28"
+        height="160"
+        rx="14"
+        fill="#A020C0"
+        transform="rotate(8 194 120)"
+      />
+    </svg>
+  );
+}
+
 interface HeaderProps {
   userName?: string;
   userEmail?: string;
 }
 
-export function Header({ userName, userEmail }: HeaderProps) {
-  const navigate = useNavigate();
+export function Header({ userName: _userName, userEmail: _userEmail }: HeaderProps) {
+  const routerState = useRouterState();
+  const currentPath = routerState.location.pathname;
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
-
-  const initials = userName
-    ? userName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : (userEmail?.charAt(0).toUpperCase() ?? "?");
 
   const ThemeIcon = themeIcons[theme];
 
   return (
-    <header className="relative flex h-14 items-center justify-between px-4 backdrop-blur-md bg-background/80">
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
-      <Link to="/dashboard" className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">
-          W
-        </div>
-        <span className="text-lg font-semibold hidden sm:inline">Whendoist</span>
+    <header className="relative flex h-11 items-center px-4 bg-background">
+      {/* Gradient bar at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
+
+      {/* W Icon */}
+      <Link to="/dashboard" className="mr-4 flex items-center" aria-label="Home">
+        <WIcon />
       </Link>
 
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(themeCycle[theme])}
-          title={`Theme: ${themeLabels[theme]}`}
-        >
-          <ThemeIcon className="h-4 w-4" />
-        </Button>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-brand/10 text-brand text-xs">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end">
-            <div className="flex items-center gap-2 p-2">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-brand/10 text-brand text-xs">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col space-y-0.5">
-                {userName && <p className="text-sm font-medium leading-none">{userName}</p>}
-                {userEmail && (
-                  <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
-                )}
-              </div>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate({ to: "/dashboard" })}>
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Dashboard
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate({ to: "/settings" })}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate({ to: "/analytics" })}>
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Analytics
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                window.location.href = "/auth/logout";
-              }}
+      {/* Navigation tabs */}
+      <nav className="flex items-center gap-1">
+        {navTabs.map((tab) => {
+          const isActive = currentPath.startsWith(tab.to);
+          return (
+            <Link
+              key={tab.to}
+              to={tab.to}
+              className={cn(
+                "px-2.5 py-1.5 text-[0.6875rem] font-semibold tracking-[0.06em] transition-colors",
+                isActive
+                  ? "text-foreground border-b-2 border-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {tab.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Right side actions */}
+      <div className="ml-auto flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setTheme(themeCycle[theme])}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+          title={`Theme: ${theme}`}
+        >
+          <ThemeIcon className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = "/auth/logout";
+          }}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+          title="Logout"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+        </button>
       </div>
     </header>
   );
