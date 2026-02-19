@@ -38,7 +38,7 @@ interface DayColumnProps {
   calendarColors: Map<string, string>;
   onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
   /** Panel position in carousel — namespaces droppable IDs to avoid conflicts */
-  panelId?: "prev" | "center" | "next";
+  panelId?: string;
 }
 
 export function DayColumn({

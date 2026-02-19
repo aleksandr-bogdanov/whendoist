@@ -7,6 +7,17 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.9 — 2026-02-19
+
+### Changed
+- **5-panel carousel**: Expanded from 3 to 5 scroll-snap panels — user can now swipe 2 days in rapid succession without waiting for the recenter cycle. Each swipe advances one day; two quick swipes advance two days.
+- **Wider data fetch range**: Events, instances, and calendar data now fetched for `centerDate ± 5 days` (was ± 2-3). Navigated-to days almost always hit cache, eliminating event flicker on newly-visited days.
+
+### Fixed
+- **Event flicker on unvisited days**: Days that were never loaded previously would flash empty before events appeared. The wider prefetch window ensures data is already cached when panels slide into view.
+
+---
+
 ## v0.51.8 — 2026-02-19
 
 ### Fixed
