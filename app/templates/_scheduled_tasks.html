@@ -1,0 +1,126 @@
+{# Scheduled Tasks Partial - shows only scheduled tasks #}
+{# Note: Header elements (back button, count) are in the main header, toggled by JS #}
+{% if domains_with_tasks %}
+    {% for domain_item in domains_with_tasks %}
+    <details class="project-group scheduled-group" open data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
+        <summary class="project-header">
+            <span class="project-name">
+                {% if domain_item.domain %}
+                    {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}<span class="domain-name-text">{% if encryption_enabled %}🔒{% else %}{{ domain_item.domain.name }}{% endif %}</span>
+                {% else %}
+                    Thoughts
+                {% endif %}
+            </span>
+        </summary>
+        <div class="task-list scheduled-list">
+            {% for task_item in domain_item.tasks %}
+            {% set task = task_item.task %}
+            {% set is_completed = task.status == 'completed' or task_item.instance_completed_at %}
+            <div class="task-item scheduled-item impact-{{ task.impact }}{% if task_item.completion_age_class %} {{ task_item.completion_age_class }}{% endif %}"
+                 data-clarity="{{ task.clarity }}"
+                 data-impact="{{ task.impact or 4 }}"
+                 data-task-id="{{ task.id }}"
+                 data-completed="{{ '1' if is_completed else '0' }}"
+                 data-duration="{{ task.duration_minutes or '' }}"
+                 data-scheduled-date="{{ (task_item.next_occurrence or task.scheduled_date).isoformat() if (task_item.next_occurrence or task.scheduled_date) else '' }}"
+                 data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
+                 {% if task_item.next_instance_id %}data-instance-id="{{ task_item.next_instance_id }}"{% endif %}>
+                <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if is_completed else 'false' }}">
+                    <span class="complete-bar"></span>
+                    <span class="complete-check" aria-hidden="true">✓</span>
+                </button>
+                <div class="task-content">
+                    <span class="task-text" {% if encryption_enabled %}data-encrypted-title="{{ task.title }}"{% endif %}>{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
+                    {% if task_item.next_occurrence or task.scheduled_date %}
+                    <span class="task-due">
+                        {% if task.is_recurring %}<span class="recurring-icon" title="Recurring task">↻</span>{% endif %}
+                        {{ (task_item.next_occurrence or task.scheduled_date).strftime('%b %d') }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="task-meta">
+                    <span class="meta-clarity clarity-{{ task.clarity }}">
+                        {% if task.clarity == 'autopilot' %}Autopilot
+                        {% elif task.clarity == 'brainstorm' %}Brainstorm
+                        {% endif %}
+                    </span>
+                    <span class="meta-duration">
+                        {% if task.duration_minutes %}
+                            {% if task.duration_minutes >= 60 %}
+                            {{ task.duration_minutes // 60 }}h{% if task.duration_minutes % 60 %}{{ task.duration_minutes % 60 }}m{% endif %}
+                            {% else %}
+                            {{ task.duration_minutes }}m
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </span>
+                    <span class="meta-impact impact-{{ task.impact }}">
+                        {% if task.impact == 1 %}High
+                        {% elif task.impact == 2 %}Mid
+                        {% elif task.impact == 3 %}Low
+                        {% else %}Min{% endif %}
+                    </span>
+                </div>
+                <span class="task-actions"></span>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endfor %}
+{% else %}
+<div class="empty-state scheduled-empty">
+    <p>No scheduled tasks.</p>
+    <p>Schedule tasks by dragging them to the calendar.</p>
+</div>
+{% endif %}
+
+{# Hidden element to pass total_count to JS #}
+<script>
+    (function() {
+        // Update header with scheduled count
+        const titleEl = document.getElementById('header-view-title');
+        if (titleEl) {
+            titleEl.textContent = 'Scheduled (' + {{ total_count }} + ')';
+        }
+        // Re-initialize task completion handlers
+        if (window.TaskComplete && typeof window.TaskComplete.init === 'function') {
+            window.TaskComplete.init();
+        }
+    })();
+</script>
+
+{% if encryption_enabled %}
+<script>
+(async function() {
+    if (!window.Crypto || !Crypto.canCrypto()) return;
+
+    // Decrypt task titles
+    const taskTexts = document.querySelectorAll('.scheduled-group .task-text[data-encrypted-title]');
+    for (const el of taskTexts) {
+        const encrypted = el.dataset.encryptedTitle;
+        if (!encrypted) continue;
+        try {
+            const decrypted = await Crypto.decryptField(encrypted);
+            if (decrypted) el.textContent = decrypted;
+        } catch (e) {
+            console.error('Failed to decrypt task title:', e);
+        }
+    }
+
+    // Decrypt domain names
+    const domainElements = document.querySelectorAll('.scheduled-group[data-domain-name]');
+    for (const el of domainElements) {
+        const name = el.dataset.domainName;
+        if (!name) continue;
+        try {
+            const decrypted = await Crypto.decryptField(name);
+            if (decrypted) {
+                const nameText = el.querySelector('.domain-name-text');
+                if (nameText) nameText.textContent = decrypted;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt domain name:', e);
+        }
+    }
+})();
+</script>
+{% endif %}

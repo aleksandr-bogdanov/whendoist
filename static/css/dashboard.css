@@ -1,0 +1,4175 @@
+/*
+ * Whendoist - Tasks Page Styles
+ * Uses unified Mode ↔ Clarity token system from app.css
+ */
+
+/* =============================================================================
+   Energy Selector — Row 2 of header
+   ============================================================================= */
+
+.energy-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0 4px 34px;  /* Align with task content (was margin-left inside header-row1) */
+}
+
+.energy-wrapper[hidden] {
+    display: none;
+}
+
+.energy-label {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.header-energy__pills {
+    display: flex;
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-default);
+    border-radius: 5px;
+    padding: 1px;
+}
+
+.energy-wrapper .energy-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 20px;
+    padding: 0;
+    margin: 0 !important; /* Override PICO */
+    border: none;
+    border-radius: 4px;
+    background: var(--bg-surface);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.energy-wrapper .energy-pill:hover {
+    background: var(--bg-panel);
+}
+
+/* Mode-tinted active states */
+.energy-pill.active[data-energy="1"] {
+    background: var(--autopilot-tint);
+    box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.25);
+}
+.energy-pill.active[data-energy="2"] {
+    background: var(--normal-tint);
+    box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.25);
+}
+.energy-pill.active[data-energy="3"] {
+    background: var(--brainstorm-tint);
+    box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.25);
+}
+
+/* Mode indicator dots */
+.clarity-dots {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.cdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transition: opacity 0.2s ease;
+}
+
+.cdot-autopilot { background: var(--autopilot-color); }
+.cdot-normal { background: var(--normal-color); }
+.cdot-brainstorm { background: var(--brainstorm-color); }
+
+.cdot.off { opacity: 0.12; }
+
+/* Dark mode for energy selector */
+[data-theme="dark"] .header-energy__pills {
+    background: var(--border-default);
+    border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .energy-wrapper .energy-pill {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .energy-wrapper .energy-pill:hover {
+    background: var(--bg-panel);
+}
+
+/* Dark mode mode-tinted active states */
+[data-theme="dark"] .energy-pill.active[data-energy="1"] {
+    background: var(--autopilot-tint);
+    box-shadow: 0 0 0 1px rgba(22, 123, 255, 0.35);
+}
+[data-theme="dark"] .energy-pill.active[data-energy="2"] {
+    background: var(--normal-tint);
+    box-shadow: 0 0 0 1px rgba(109, 94, 246, 0.35);
+}
+[data-theme="dark"] .energy-pill.active[data-energy="3"] {
+    background: var(--brainstorm-tint);
+    box-shadow: 0 0 0 1px rgba(160, 32, 192, 0.35);
+}
+
+/* Dark mode for spectrum bar — higher opacity for visibility */
+[data-theme="dark"] .task-list-header::after {
+    opacity: 0.5;
+}
+
+/* =============================================================================
+   Layout
+   ============================================================================= */
+
+.tasks-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--layout-gap);
+    height: calc(100vh - 80px - 1.5rem);
+    overflow: hidden;
+    align-items: stretch;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+/* Subtle gradient separator between panels */
+.tasks-layout::before {
+    content: "";
+    position: absolute;
+    left: calc(66.66% - var(--layout-gap) / 2);
+    top: 0;
+    bottom: 0;
+    width: var(--layout-gap);
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(109, 94, 246, 0.03) 50%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+}
+
+.connection-banner {
+    background: var(--impact-medium-tint);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--impact-medium);
+    color: var(--text-primary);
+}
+
+.connection-banner a {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.connection-banner a:hover {
+    color: var(--primary-hover);
+}
+
+/* Demo account floating pill (bottom-right corner) */
+.demo-pill {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1000;
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.demo-pill__label {
+    pointer-events: none;
+}
+
+.demo-pill__actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.demo-pill__actions[hidden] { display: none; }
+
+.demo-pill__btn {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    background: none;
+    color: var(--primary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+}
+
+.demo-pill__btn:hover {
+    background: rgba(168, 85, 247, 0.1);
+}
+
+.demo-pill__btn--reset {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.demo-pill__btn--reset:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* Past-tasks badge on SCHEDULED section header */
+.past-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 9px;
+    font-size: 0.58rem;
+    font-weight: 600;
+    background: rgba(184, 134, 11, 0.10);
+    color: var(--amber-600);
+    border: 1px solid rgba(184, 134, 11, 0.20);
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1.4;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+.past-badge:hover {
+    background: rgba(184, 134, 11, 0.16);
+    border-color: rgba(184, 134, 11, 0.30);
+}
+
+.past-badge[hidden] { display: none; }
+
+/* Past-badge dropdown popover */
+.past-badge-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: var(--z-dropdown);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    padding: 8px;
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.past-badge-popover[hidden] { display: none; }
+
+.past-badge-popover .btn-sm {
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.12s ease;
+}
+
+.past-badge-popover .btn-sm:hover {
+    background: var(--interactive-hover);
+    border-color: var(--border-strong);
+}
+
+.past-badge-popover .btn-complete {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.past-badge-popover .btn-complete:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* =============================================================================
+   Tasks Panel
+   ============================================================================= */
+
+.tasks-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--bg-panel);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+    overscroll-behavior: contain;
+}
+
+/* =============================================================================
+   Calendar Header
+   ============================================================================= */
+
+.calendar-header {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-default);
+    box-sizing: border-box;
+    height: 56px;
+}
+
+.calendar-title {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1;
+}
+
+.calendar-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =============================================================================
+   Task List Container & Header
+   ============================================================================= */
+
+.task-list-container {
+    position: relative;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+    padding: 1rem;
+    padding-top: 0;
+    background: var(--bg-panel);
+    /* GPU acceleration for smooth sticky header */
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    /* Subtle scrollbar - thin by default */
+    scrollbar-width: thin;  /* Firefox */
+    scrollbar-color: transparent transparent;  /* Firefox: thumb track */
+}
+
+/* Webkit scrollbar - invisible by default, appears on hover */
+.task-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.task-list-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.task-list-container::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+/* Show scrollbar on container hover */
+.task-list-container:hover::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.15);
+}
+
+.task-list-container:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.25);
+}
+
+/* Firefox - show on hover */
+.task-list-container:hover {
+    scrollbar-color: rgba(15, 23, 42, 0.15) transparent;
+}
+
+/* Dark mode scrollbar */
+[data-theme="dark"] .task-list-container:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .task-list-container:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="dark"] .task-list-container:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.task-list-scroll {
+    padding-top: 4px;
+}
+
+/* Task header - two-row command center */
+.task-list-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    will-change: transform;
+}
+
+/* Row 1: Title + Sort Columns + Gear — matches task-item grid */
+.header-row1 {
+    display: grid;
+    grid-template-columns: 1fr var(--col-clarity) var(--col-duration) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 6px 0 6px var(--rail-w);
+    min-height: 36px;  /* Match energy-pill row height across all views */
+}
+
+/* Cover rounded corner gaps when scrolling */
+.task-list-header::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: -16px;
+    right: -16px;
+    bottom: 0;
+    background: var(--glass-bg-strong);
+    z-index: -1;
+}
+
+/* Spectrum bar — gradient using clarity colors */
+.task-list-header::after {
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg,
+        var(--autopilot-color),
+        var(--normal-color),
+        var(--brainstorm-color)
+    );
+    opacity: 0.35;
+}
+
+/* =============================================================================
+   Settings Anchor & Gear Button (replaces kebab menu)
+   ============================================================================= */
+
+.settings-anchor {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 22px;
+    padding: 0;
+    margin: 0 -10px 0 0;
+    border: 1px solid var(--border-default);
+    background: rgba(109, 94, 246, 0.04);
+    border-radius: 4px;
+    color: rgba(15, 23, 42, 0.45);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.gear-btn:hover {
+    background: rgba(109, 94, 246, 0.08);
+    border-color: var(--border-strong);
+    color: rgba(15, 23, 42, 0.7);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.gear-btn:focus {
+    outline: none;
+    border-color: rgba(109, 94, 246, 0.4);
+    box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.1);
+}
+
+.gear-btn[aria-expanded="true"] {
+    background: var(--primary-tint);
+    border-color: rgba(109, 94, 246, 0.4);
+    color: var(--primary);
+}
+
+/* =============================================================================
+   Settings Panel — minimal dropdown (2 controls + 2 action links)
+   ============================================================================= */
+
+.settings-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: -4px;
+    z-index: 100;
+    width: 240px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settings-panel[hidden] {
+    display: none;
+}
+
+.sp-title {
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(15, 23, 42, 0.45);
+    margin-bottom: 2px;
+}
+
+.sp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 24px;
+}
+
+.sp-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.sp-seg {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sp-divider {
+    height: 1px;
+    background: var(--border-default);
+    margin: 4px 0;
+}
+
+.sp-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    transition: all 0.12s ease;
+}
+
+.sp-action:hover {
+    color: var(--text-primary);
+}
+
+/* Settings panel danger action (for trash) */
+.sp-action--danger:hover {
+    color: var(--danger, #DC2626);
+}
+
+/* =============================================================================
+   Toggle Switch — reused in settings panel
+   ============================================================================= */
+
+.option-toggle {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    padding: 0;
+    margin-bottom: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.toggle-track {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.15);
+    border-radius: 9px;
+    transition: background 0.15s ease;
+}
+
+.option-toggle.active .toggle-track {
+    background: var(--primary);
+}
+
+.toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    transition: transform 0.15s ease;
+}
+
+.option-toggle.active .toggle-thumb {
+    transform: translateX(14px);
+}
+
+/* Segmented Control — reused in settings panel */
+.seg-btn {
+    padding: 4px 8px;
+    border: none;
+    border-right: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+    font-size: 0.625rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+}
+
+.seg-btn:last-child {
+    border-right: none;
+}
+
+.seg-btn:hover {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+}
+
+.seg-btn.active {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* =============================================================================
+   Animated Section Collapse/Expand
+   ============================================================================= */
+
+.animated-section {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    max-height: 2000px;
+    opacity: 1;
+}
+
+.animated-section.collapsed {
+    max-height: 0;
+    opacity: 0;
+}
+
+/* Special Views - Header Elements */
+
+/* Switch header from grid to flex when in special view (centered title layout) */
+/* Subview mode: keep grid layout, overlay back-btn absolutely */
+.header-row1:has(> .header-back-btn:not([hidden])) {
+    position: relative;
+    /* Grid stays from base rule — same columns, same gap, same height */
+}
+
+/* Back button — absolute overlay, out of grid flow */
+.header-row1:has(> .header-back-btn:not([hidden])) .header-back-btn {
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+/* Sort buttons: non-interactive labels in subview (columns stay visible) */
+.header-row1:has(> .header-back-btn:not([hidden])) .header-sort {
+    pointer-events: none;
+    cursor: default;
+}
+.header-row1:has(> .header-back-btn:not([hidden])) .header-sort .sort-icon {
+    display: none;
+}
+.header-row1:has(> .header-back-btn:not([hidden])) .header-sort.active {
+    color: rgba(15, 23, 42, 0.38);  /* Same as non-active — no highlight */
+}
+[data-theme="dark"] .header-row1:has(> .header-back-btn:not([hidden])) .header-sort.active {
+    color: var(--text-muted);  /* Same as dark non-active */
+}
+
+.header-back-btn {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    margin-left: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--primary);
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.header-back-btn:hover {
+    background: var(--primary-tint);
+    color: var(--primary);
+}
+
+.header-back-btn[hidden] {
+    display: none;
+}
+
+.back-arrow {
+    font-size: 0.75rem;
+}
+
+.header-view-count {
+    display: flex;
+    align-items: center;
+    padding-left: 40px;  /* Clear absolute back arrow (btn is ~36px wide at left:4px) */
+}
+
+.header-view-count[hidden] {
+    display: none;
+}
+
+.header-view-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+
+.header-date-label {
+    margin-left: auto;  /* Push to right edge of 1fr column */
+    min-width: var(--col-date);
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(15, 23, 42, 0.38);  /* Same as .header-sort default */
+}
+
+.header-date-label[hidden] {
+    display: none;
+}
+
+/* Thoughts domain (no domain_id) — italic, muted */
+.project-group[data-domain-id="inbox"] .project-name {
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+
+.deleted-item.task-item {
+    background: var(--bg-surface);
+    border-left: 2px solid var(--border-default);
+}
+
+.deleted-item .task-text {
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.deleted-item .task-desc-preview {
+    display: block;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+/* Restore gutter - positioned inside task-content */
+.deleted-item .task-content {
+    position: relative;
+    padding-left: 32px;
+}
+
+.deleted-item .task-content .restore-gutter {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 1rem;
+    transition: all 0.12s ease;
+    padding: 0;
+    border-radius: 4px;
+}
+
+.deleted-item .task-content .restore-gutter:hover {
+    color: var(--impact-low);
+    background: rgba(26, 145, 96, 0.1);
+}
+
+.restore-icon {
+    font-size: 1rem;
+}
+
+.deleted-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+/* Completed Tasks View - normal styling (keep checkmark) */
+.completed-group .task-item {
+    opacity: 1 !important;
+}
+
+.completed-group .task-item .task-text,
+.completed-group .task-item.completed-today .task-text,
+.completed-group .task-item.completed-older .task-text {
+    text-decoration: none !important;
+    color: var(--text-primary) !important;
+}
+
+.completed-group .task-item::before {
+    opacity: 1 !important;  /* Impact rail at full opacity */
+}
+
+/* Override base completed dimming — subview tasks should look like active tasks */
+.completed-group .task-item .task-due {
+    color: var(--text-muted) !important;
+}
+
+/* Re-apply impact colors (base [data-completed="1"] .meta-impact dims to 50%) */
+.completed-group .meta-impact.impact-1 { color: var(--impact-p1) !important; }
+.completed-group .meta-impact.impact-2 { color: var(--impact-p2) !important; }
+.completed-group .meta-impact.impact-3 { color: var(--impact-p3) !important; }
+.completed-group .meta-impact.impact-4 { color: var(--impact-p4) !important; }
+
+/* Re-apply clarity colors */
+.completed-group .meta-clarity.clarity-autopilot { color: var(--autopilot-color) !important; }
+.completed-group .meta-clarity.clarity-normal { color: var(--normal-color) !important; }
+.completed-group .meta-clarity.clarity-brainstorm { color: var(--brainstorm-color) !important; }
+
+.completed-group .task-item[data-completed="1"] {
+    opacity: 1 !important;
+}
+
+.completed-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+/* Header meta - spans grid columns 2-4 via display:contents */
+.header-meta {
+    display: contents;
+}
+
+.header-meta[hidden] {
+    display: none;
+}
+
+.header-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Patch 27: Sortable Header Buttons - calmer, reduced contrast so ENERGY wins */
+.header-sort {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(15, 23, 42, 0.38);  /* Reduced from 0.55 */
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    transition: color 0.15s ease;
+}
+
+.header-sort:hover {
+    color: var(--text-primary);
+}
+
+/* Bugfix: Active sort - text color only, no border/background */
+.header-sort.active {
+    color: var(--text-primary);
+}
+
+.header-sort .sort-icon {
+    font-size: 0.5rem;
+    width: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.15s ease, width 0.15s ease;
+}
+
+.header-sort:hover .sort-icon,
+.header-sort.active .sort-icon {
+    width: auto;
+    margin-left: 2px;
+    opacity: 1;
+}
+
+/* Patch 29: Widths now handled by grid columns */
+.header-sort[data-sort="duration"],
+.header-sort[data-sort="impact"],
+.header-sort[data-sort="clarity"] {
+    width: auto;
+    justify-content: center;
+}
+
+/* =============================================================================
+   Project Groups (Foldable)
+   ============================================================================= */
+
+/* Patch 33: Tighter vertical rhythm */
+.project-group {
+    margin-bottom: 0.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.project-group:last-child {
+    margin-bottom: 0;
+}
+
+.project-group > summary {
+    list-style: none !important;
+    list-style-type: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
+}
+
+.project-group > summary::-webkit-details-marker {
+    display: none !important;
+    -webkit-appearance: none;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.project-group > summary::marker {
+    content: none !important;
+    font-size: 0;
+    color: transparent;
+}
+
+/* Override Pico CSS accordion chevron (injects via details summary::after) */
+.project-group > summary::after {
+    display: none !important;
+}
+
+/* Override Pico CSS margin on open details (adds margin-bottom: var(--pico-spacing)) */
+.project-group[open] > summary {
+    margin-bottom: 0 !important;
+}
+
+/* Patch 46: Domain header - tighter density */
+.project-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 6px 12px 6px 24px;  /* Reduced vertical padding for compact look */
+    margin: 0 !important;
+    min-height: 32px;  /* Match main view height (add-btn is 20px + 6px*2 padding) */
+    background: var(--bg-panel);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+
+.project-header:hover {
+    background: var(--dark-bg);
+}
+
+.project-header::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.project-group[open] .project-header::before {
+    transform: rotate(45deg);
+}
+
+.project-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+/* Spacer pushes + button to the right */
+.header-spacer {
+    flex: 1;
+}
+
+/* "+" button in domain header — hover-reveal, borderless icon */
+.domain-add-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    opacity: 0;
+    transition: all 0.15s ease;
+}
+
+.project-header:hover .domain-add-btn {
+    opacity: 0.6;
+}
+
+.domain-add-btn:hover {
+    opacity: 1 !important;
+    color: var(--primary);
+    background: rgba(109, 94, 246, 0.08);
+}
+
+.task-count {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: rgba(15, 23, 42, 0.05);
+    padding: 1px 6px;
+    border-radius: 9999px;
+    line-height: 1.4;
+}
+
+.task-count.filtered {
+    color: var(--primary, #6366f1);
+    opacity: 1;
+}
+
+/* =============================================================================
+   Section Separators (Scheduled / Completed flat sections)
+   ============================================================================= */
+
+/* Collapsible section group */
+.section-group {
+    margin-top: 4px;
+}
+
+.section-group > summary {
+    list-style: none !important;
+    list-style-type: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.section-group > summary::-webkit-details-marker {
+    display: none !important;
+    -webkit-appearance: none;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.section-group > summary::marker {
+    content: none !important;
+    font-size: 0;
+    color: transparent;
+}
+
+/* Disclosure triangle on section separator */
+.section-separator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 0;
+    padding: 6px 0 6px var(--rail-w);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+}
+
+.section-separator:hover {
+    background: var(--row-hover);
+}
+
+/* Left disclosure triangle (matches domain group pattern) */
+.section-separator::before {
+    content: "\25B6";
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+    opacity: 0.5;
+}
+
+.section-group[open] .section-separator::before {
+    transform: rotate(90deg);
+}
+
+/* Trailing line — transform/background-image overrides prevent Pico from
+   rotating this line with its details[open]>summary::after chevron rule */
+.section-separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    min-height: 1px;
+    max-height: 1px;
+    background: var(--border-default);
+    background-image: none !important;
+    transform: none !important;
+}
+
+.section-sep-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    white-space: nowrap;
+    line-height: 1;
+}
+
+/* Task count badge */
+.section-count {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.7;
+    line-height: 1;
+}
+
+.section-tasks {
+    /* Tasks inside the collapsible section */
+}
+
+/* SCHEDULED separator: grid layout matching task-item columns */
+.section-separator--sched {
+    display: grid;
+    grid-template-columns: 1fr var(--col-clarity) var(--col-duration) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 6px 0 6px var(--rail-w);
+    margin: 16px 0 0;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+}
+
+/* Suppress flex-based ::before triangle and ::after line from base .section-separator */
+.section-separator--sched::before { display: none; }
+.section-separator--sched::after { display: none; }
+
+.sched-label-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Disclosure triangle inside sched label group */
+.sched-label-group::before {
+    content: "\25B6";
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+    opacity: 0.5;
+}
+
+.section-group[open] .sched-label-group::before {
+    transform: rotate(90deg);
+}
+
+.sched-label-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-default);
+}
+
+/* Date label at right edge of 1fr cell — fixed width to align with .task-due in rows */
+.sched-label-group > .sep-col-label {
+    min-width: var(--col-date);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Scheduled header column labels */
+.section-separator--sched .sep-col-label {
+    position: static;
+    z-index: auto;
+    background: none;
+    padding: 0;
+    text-align: center;
+    font-size: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    opacity: 0.55;
+}
+
+.sep-col-spacer {
+    /* Occupies the --col-actions grid cell */
+}
+
+/* Plan My Day contextual banner */
+.pmd-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    margin: 6px 8px 4px;
+    background: linear-gradient(135deg,
+        rgba(22, 123, 255, 0.04),
+        rgba(109, 94, 246, 0.05),
+        rgba(160, 32, 192, 0.03));
+    border: 1px solid rgba(109, 94, 246, 0.12);
+    border-radius: 10px;
+}
+
+.pmd-banner[hidden] { display: none; }
+
+.pmd-banner-text {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.pmd-banner-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pmd-banner-sub {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}
+
+.pmd-banner-sub::before {
+    content: "\00B7";
+    margin-right: 8px;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.pmd-banner-btn {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.2);
+    transition: all 0.15s ease;
+}
+
+.pmd-banner-btn:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.3);
+}
+
+.pmd-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.pmd-banner-dismiss {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.pmd-banner-dismiss:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .pmd-banner-dismiss:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Plan My Day hero card — shown in empty calendars */
+.pmd-hero {
+    padding: 20px 16px;
+    margin: 8px;
+    background: linear-gradient(135deg,
+        rgba(22, 123, 255, 0.05),
+        rgba(109, 94, 246, 0.07),
+        rgba(160, 32, 192, 0.04));
+    border: 1px solid rgba(109, 94, 246, 0.1);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.pmd-hero[hidden] { display: none; }
+
+.pmd-hero-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.pmd-hero-stat {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.pmd-hero-sub {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.pmd-hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.2);
+    transition: all 0.15s ease;
+}
+
+.pmd-hero-btn:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.3);
+}
+
+/* =============================================================================
+   Task List & Subtasks
+   ============================================================================= */
+
+.task-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 0;  /* No gap - using dividers instead */
+}
+
+/* =============================================================================
+   Task Item
+   ============================================================================= */
+
+/* Patch 29+46: Task rows - grid layout, compact like Thoughts view */
+.task-item {
+    display: grid;
+    grid-template-columns: 1fr var(--col-clarity) var(--col-duration) var(--col-impact) var(--col-actions);
+    column-gap: var(--col-gap);
+    align-items: center;
+    padding: 11px 0 11px var(--rail-w);  /* Relaxed padding for breathing room */
+    min-height: 36px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    cursor: grab;
+    transition: all 0.15s ease;
+    position: relative;
+}
+
+/* Highlight pulse after in-place update */
+@keyframes task-highlight-pulse {
+    0%   { background-color: var(--task-highlight-bg, rgba(99, 102, 241, 0.15)); }
+    100% { background-color: transparent; }
+}
+.task-item.just-updated {
+    animation: task-highlight-pulse 1.2s ease-out;
+}
+[data-theme="dark"] .task-item.just-updated {
+    --task-highlight-bg: rgba(129, 140, 248, 0.12);
+}
+
+/* Actions cell in task rows - maintains grid alignment */
+.task-actions {
+    width: var(--col-actions);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 3;
+}
+
+/* Patch 58: Inset row dividers - starts after rail */
+.task-item::after {
+    content: "";
+    position: absolute;
+    left: var(--rail-w);
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--border-subtle);
+    pointer-events: none;
+}
+
+/* Patch 21: Impact rail as pseudo-element (no harsh edges) */
+.task-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--rail-w);
+    background: transparent;
+    border-radius: 0 2px 2px 0;
+    opacity: 0.6;
+}
+
+/* Last task row has no divider (before add-task-row) */
+.task-item:last-of-type::after {
+    display: none;
+}
+
+.task-item:active {
+    cursor: grabbing;
+}
+
+/* Impact: rail color via pseudo-element, no row wash */
+.task-item.impact-1 { background: transparent; }
+.task-item.impact-2 { background: transparent; }
+.task-item.impact-3 { background: transparent; }
+.task-item.impact-4 { background: transparent; }
+
+.task-item.impact-1::before { background: var(--impact-high-border); }
+.task-item.impact-2::before { background: var(--impact-medium); }
+.task-item.impact-3::before { background: var(--impact-low); }
+.task-item.impact-4::before { background: var(--impact-min); }
+
+/* Patch 45: Precision hover with inner glow */
+.task-item:hover {
+    background: rgba(15, 23, 42, 0.02) !important;
+    box-shadow: var(--shadow-inner-glow);
+}
+
+/* Meta columns - always readable */
+.task-item .meta-duration,
+.task-item .meta-impact,
+.task-item .meta-clarity {
+    opacity: 0.85;
+}
+
+/* Rail opacity on hover (stays 2px, just brightens) */
+.task-item::before {
+    transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.task-item:hover::before {
+    opacity: 1;
+}
+
+/* Selection stays purple */
+.task-item.is-selected {
+    background: var(--row-active) !important;
+}
+.task-item.is-selected::before {
+    background: var(--primary) !important;
+}
+
+/* Keyboard focus */
+.task-item:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+}
+
+/* =============================================================================
+   Completion Gutter Component
+   ============================================================================= */
+
+.complete-gutter {
+    width: 22px;
+    min-width: 22px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.complete-gutter:focus {
+    outline: none;
+}
+
+.complete-gutter:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+
+.complete-bar {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--bar-color, var(--impact-min));
+    transition: opacity 120ms ease;
+}
+
+.complete-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-default);
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 120ms ease, transform 120ms ease;
+    background: transparent;
+    color: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+/* Impact colors for the bar */
+.task-item.impact-1 .complete-bar { background: var(--impact-high-border); }
+.task-item.impact-2 .complete-bar { background: var(--impact-medium); }
+.task-item.impact-3 .complete-bar { background: var(--impact-low); }
+.task-item.impact-4 .complete-bar { background: var(--impact-min); }
+
+/* Hover-only variant (left task list) - no bar, check appears on hover */
+.complete-gutter--hover {
+    width: 36px;  /* 1.5x wider for easier click target, check centered */
+    min-width: 36px;
+    left: var(--rail-w);  /* Start after the 2px impact rail */
+}
+
+/* Dynamic padding for task items with hover gutter */
+.task-item:has(.complete-gutter--hover) {
+    padding-left: 38px; /* Aligns task text with domain name (rail + gutter) */
+}
+
+.complete-gutter--hover .complete-bar {
+    display: none;
+}
+
+.complete-gutter--hover .complete-check {
+    opacity: 0.65;
+    transform: scale(1);
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.task-item:hover .complete-gutter--hover .complete-check,
+.task-item:focus-within .complete-gutter--hover .complete-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Purple hover effect like FAB */
+.complete-gutter--hover:hover .complete-check {
+    background: rgba(109, 94, 246, 0.08);
+    border-color: rgba(109, 94, 246, 0.35);
+    color: var(--primary);
+}
+
+/* Completed state - base (purple per brand guidelines) */
+.task-item[data-completed="1"] .complete-check {
+    opacity: 1;
+    transform: scale(1);
+    background: rgba(109, 94, 246, 0.12);
+    border-color: rgba(109, 94, 246, 0.35);
+    color: var(--primary);
+}
+
+.task-item[data-completed="1"] .complete-bar {
+    opacity: 0.35;
+}
+
+.task-item[data-completed="1"] .task-text {
+    text-decoration: none;
+    color: rgba(15, 23, 42, 0.5);
+}
+
+/* Completed task - muted color for all meta elements (no strikethrough) */
+.task-item[data-completed="1"] .task-due,
+.task-item[data-completed="1"] .meta-duration,
+.task-item[data-completed="1"] .meta-impact,
+.task-item[data-completed="1"] .meta-clarity {
+    color: rgba(15, 23, 42, 0.5);
+}
+
+/* Completed task - muted dots */
+.task-item[data-completed="1"] .meta-impact::before {
+    opacity: 0.4;
+}
+
+.task-item[data-completed="1"] {
+    opacity: 0.65;
+}
+
+/* =============================================================================
+   Visual Aging - Completed Task Progressive Fade
+   Applied via completion_age_class from backend
+   ============================================================================= */
+
+/* Completed tasks - muted grey with strikethrough (overrides .scheduled) */
+.task-item.completed .task-text,
+.task-item.completed.scheduled .task-text {
+    color: rgba(15, 23, 42, 0.5);
+    text-decoration: none;
+}
+
+/* Completed task - consistent muted text (no strikethrough on meta) */
+.task-item.completed .task-due,
+.task-item.completed .meta-duration,
+.task-item.completed .meta-impact,
+.task-item.completed .meta-clarity,
+.task-item.completed.scheduled .task-due,
+.task-item.completed.scheduled .meta-duration,
+.task-item.completed.scheduled .meta-impact,
+.task-item.completed.scheduled .meta-clarity {
+    color: rgba(15, 23, 42, 0.5);
+}
+
+/* Completed task - muted dots */
+.task-item.completed .meta-impact::before,
+.task-item.completed.scheduled .meta-impact::before {
+    opacity: 0.4;
+}
+
+.task-item.completed::before,
+.task-item.completed.scheduled::before {
+    opacity: 0.5;
+}
+
+/* =============================================================================
+   Section Tasks — Completed/Scheduled visibility overrides
+   ============================================================================= */
+
+/* No strikethrough — the section header already says "Completed" */
+#section-done .task-item[data-completed="1"] .task-text,
+#section-done .task-item.completed .task-text,
+#section-done .task-item.completed.scheduled .task-text {
+    text-decoration: none;
+    color: var(--text-secondary);
+}
+
+/* Softer but not ghostly — 0.85 instead of default 0.65 */
+#section-done .task-item[data-completed="1"],
+#section-done .task-item.completed,
+#section-sched .task-item.completed {
+    opacity: 0.85;
+}
+
+/* Completed tasks in scheduled section — also secondary text, no strikethrough */
+#section-sched .task-item.completed .task-text {
+    text-decoration: none;
+    color: var(--text-secondary);
+}
+
+/* Meta stays at standard muted level (not double-dimmed) */
+#section-done .task-item[data-completed="1"] .task-due,
+#section-done .task-item[data-completed="1"] .meta-duration,
+#section-done .task-item[data-completed="1"] .meta-impact,
+#section-done .task-item[data-completed="1"] .meta-clarity,
+#section-done .task-item.completed .task-due,
+#section-done .task-item.completed .meta-duration,
+#section-done .task-item.completed .meta-impact,
+#section-done .task-item.completed .meta-clarity,
+#section-sched .task-item.completed .task-due,
+#section-sched .task-item.completed .meta-duration,
+#section-sched .task-item.completed .meta-impact,
+#section-sched .task-item.completed .meta-clarity {
+    color: var(--text-muted);
+}
+
+/* Impact rail — present but softer */
+#section-done .task-item[data-completed="1"]::before,
+#section-done .task-item.completed::before,
+#section-sched .task-item.completed::before {
+    opacity: 0.7;
+}
+
+/* =============================================================================
+   Calendar Checkbox + Flush-Left Domain Stripe
+   Full-height stripe attached to card edge, checkbox sits just right of it
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Geometry Tokens
+   ----------------------------------------------------------------------------- */
+
+:root {
+    --cal-rail-w: 2px;            /* Stripe width - matches old style */
+    --cal-rail-muted: 0.35;       /* Completed state opacity */
+    --cal-check-hit: 24px;        /* Checkbox hit area - fits 30px task with 1px border + 1px padding */
+    --cal-check-vis: 16px;        /* Checkbox visible size (smaller, tidier) */
+    --cal-action-slot: 36px;      /* Reserved right action column */
+}
+
+/* -----------------------------------------------------------------------------
+   Domain Stripe - flush left, full height
+   ----------------------------------------------------------------------------- */
+
+/* Reserve padding: left for rail, right for checkbox */
+/* Top/right/bottom = 1px so 30-min tasks have checkbox centered (equal spacing all sides) */
+.scheduled-task.calendar-item {
+    padding: 1px 1px 1px calc(var(--cal-rail-w) + 8px);
+}
+
+/* The stripe via ::before - flush left, full height */
+/* Rail radius inherits card radius for seamless integration */
+.scheduled-task.calendar-item::before,
+.date-only-task.calendar-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--cal-rail-w);
+    background: var(--domain-color, var(--impact-min));
+    z-index: 0;
+    transition: opacity 0.15s ease;
+}
+
+/* Timed blocks: 10px radius (matches .scheduled-task border-radius) */
+.scheduled-task.calendar-item::before {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+/* Anytime pills: 10px radius (matches .date-only-task border-radius) */
+.date-only-task.calendar-item::before {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+/* Completed: stripe quieter */
+.scheduled-task.calendar-item[data-completed="1"]::before,
+.date-only-task.calendar-item[data-completed="1"]::before {
+    opacity: var(--cal-rail-muted);
+}
+
+/* Ensure content stacks above stripe */
+.scheduled-task.calendar-item > *,
+.date-only-task.calendar-item > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Quick-action must be absolutely positioned on scheduled cards
+   (overrides > * rule which forces position: relative) */
+.scheduled-task.calendar-item > .calendar-quick-action {
+    position: absolute;
+    z-index: 2;
+}
+
+/* -----------------------------------------------------------------------------
+   Domain Color Mappings (fallback via impact classes)
+   ----------------------------------------------------------------------------- */
+
+.calendar-item.impact-1 { --domain-color: var(--impact-high-border); }
+.calendar-item.impact-2 { --domain-color: var(--impact-medium); }
+.calendar-item.impact-3 { --domain-color: var(--impact-low); }
+.calendar-item.impact-4 { --domain-color: var(--impact-min); }
+
+/* -----------------------------------------------------------------------------
+   Checkbox Gutter - right action slot
+   ----------------------------------------------------------------------------- */
+
+/* Calendar items use block layout for text wrapping around checkbox */
+.scheduled-task.calendar-item {
+    display: block;
+}
+
+/* Calendar items: checkbox to top-right with equal spacing */
+.scheduled-task.calendar-item .complete-gutter {
+    float: right;
+    position: relative;
+    width: var(--cal-check-hit);
+    height: var(--cal-check-hit);
+    min-width: var(--cal-check-hit);
+    margin: 1px 1px 0 0;  /* 1px top + 1px right for equal spacing from edges */
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 5;
+    border-radius: 5px;
+    transition: background 0.15s ease;
+}
+
+/* Anytime pills: add padding for absolute checkbox */
+.date-only-task.calendar-item {
+    padding-right: calc(var(--cal-check-hit) + 8px);
+}
+
+/* Anytime pills: checkbox absolutely positioned on right */
+.date-only-task.calendar-item .complete-gutter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: 4px;
+    margin: auto 0;
+    width: var(--cal-check-hit);
+    height: var(--cal-check-hit);
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 5;
+    border-radius: 5px;
+    transition: background 0.15s ease;
+}
+
+/* Hide checkbox in short duration blocks (< 30m) - too cramped */
+.scheduled-task.calendar-item.duration-short .complete-gutter {
+    display: none;
+}
+
+/* No right padding needed for short blocks without checkbox */
+.scheduled-task.calendar-item.duration-short {
+    padding-right: 8px;
+}
+
+/* Hide the bar element - stripe replaces it */
+.calendar-item .complete-gutter .complete-bar {
+    display: none;
+}
+
+/* Gutter hover feedback */
+.calendar-item .complete-gutter:hover {
+    background: rgba(15, 23, 42, 0.05);
+}
+
+/* -----------------------------------------------------------------------------
+   Checkbox Icon - 18px visual, unified states
+   ----------------------------------------------------------------------------- */
+
+.calendar-item .complete-check {
+    width: var(--cal-check-vis);
+    height: var(--cal-check-vis);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Override base opacity:0 - always visible in calendar */
+    opacity: 1;
+    transform: none;
+    position: relative;
+    z-index: 1;
+    /* Incomplete: subtle neutral fill, no heavy shadow */
+    background: #FAFBFC;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+    color: transparent;
+    transition:
+        transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+/* -----------------------------------------------------------------------------
+   Checkbox Hover States
+   ----------------------------------------------------------------------------- */
+
+/* Card hover - subtle tint for discoverability */
+.calendar-item:hover .complete-check {
+    background: #F3F4F6;
+    border-color: rgba(15, 23, 42, 0.2);
+}
+
+/* Direct checkbox hover - faint tinted background (no purple border) */
+.calendar-item .complete-gutter:hover .complete-check {
+    background: #E8ECF0;
+    border-color: rgba(15, 23, 42, 0.25);
+}
+
+/* Focus-visible for accessibility */
+.calendar-item .complete-gutter:focus-visible .complete-check {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------------------
+   Completed State - purple tint per brand guidelines (not green)
+   ----------------------------------------------------------------------------- */
+
+.calendar-item[data-completed="1"] .complete-check {
+    background: rgba(15, 23, 42, 0.06);
+    border-color: rgba(15, 23, 42, 0.15);
+    color: rgba(15, 23, 42, 0.4);
+}
+
+.calendar-item[data-completed="1"]:hover .complete-check,
+.calendar-item[data-completed="1"] .complete-gutter:hover .complete-check {
+    background: rgba(15, 23, 42, 0.08);
+    border-color: rgba(15, 23, 42, 0.2);
+}
+
+/* -----------------------------------------------------------------------------
+   Pop Animation - gentle feedback
+   ----------------------------------------------------------------------------- */
+
+.calendar-item .complete-check.pop {
+    animation: completion-pulse 0.25s ease-out;
+}
+
+/* Task list checkbox pop animation */
+.task-item .complete-check.pop {
+    animation: completion-pulse 0.25s ease-out;
+}
+
+@keyframes checkboxPop {
+    0% { transform: scale(0.95); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .calendar-item .complete-check.pop,
+    .task-item .complete-check.pop {
+        animation: none;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Completed Card Styling - dim text + rail only, card stays full opacity
+   ----------------------------------------------------------------------------- */
+
+/* Card background stays normal for scanability - no opacity reduction */
+
+/* Dim text only */
+.calendar-item[data-completed="1"] .scheduled-task-text,
+.calendar-item[data-completed="1"] .date-only-task-text {
+    text-decoration: none;
+    color: rgba(15, 23, 42, 0.5);
+}
+
+.calendar-item[data-completed="1"] .scheduled-task-time,
+.calendar-item[data-completed="1"] .scheduled-task-duration,
+.calendar-item[data-completed="1"] .date-only-task-duration {
+    color: var(--text-muted);
+}
+
+/* Visual aging for calendar items */
+
+/* Completed tasks - muted grey with strikethrough */
+.calendar-item.completed .scheduled-task-text,
+.calendar-item.completed .date-only-task-text {
+    color: rgba(15, 23, 42, 0.5);
+    text-decoration: none;
+}
+
+/* Clean add-task row (no dashed border) */
+.add-task-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 6px 18px;
+    margin: 4px 8px 6px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.add-task-row:hover {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.03);
+}
+
+.add-task-icon {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    opacity: 0.6;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+.add-task-text {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.6;
+    transition: all 0.15s ease;
+}
+
+.add-task-row:hover .add-task-icon,
+.add-task-row:hover .add-task-text {
+    opacity: 1;
+    color: var(--primary);
+}
+
+.task-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-left: 0;  /* Aligns with domain name in header */
+}
+
+.task-text {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.subtask-badge {
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg-inset);
+    border: 1px solid var(--border-subtle);
+    padding: 1px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Subtask container — collapsible nested children ── */
+.subtask-container {
+    border-left: 2px solid var(--border-subtle, #e2e8f0);
+    margin-left: 16px;
+    padding-left: 12px;
+}
+
+.subtask-container .task-item {
+    font-size: 0.92em;
+}
+
+.expand-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    margin: 2px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: background 0.1s ease;
+}
+
+.expand-toggle:hover {
+    background: var(--bg-inset, rgba(0, 0, 0, 0.04));
+}
+
+.expand-toggle .chevron-icon {
+    transition: transform 0.15s ease;
+    transform: rotate(90deg);
+}
+
+.expand-toggle[aria-expanded="false"] .chevron-icon {
+    transform: rotate(0deg);
+}
+
+.expand-toggle[aria-expanded="false"] + .subtask-list {
+    display: none;
+}
+
+.subtask-summary {
+    color: var(--text-muted);
+}
+
+.add-subtask-row {
+    margin-left: 0;
+}
+
+[data-theme="dark"] .subtask-container {
+    border-left-color: var(--border-default, #334155);
+}
+
+.task-due {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--col-date);
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    height: 22px;
+    line-height: 22px;
+}
+
+.recurring-icon {
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    line-height: 1;
+    color: var(--text-muted);
+}
+
+/* Temporal date coloring */
+.task-due.overdue { color: var(--impact-p1); }
+.task-due.today { color: var(--primary); font-weight: 600; }
+
+/* =============================================================================
+   Task Metadata Tags (quiet, color via dot only)
+   ============================================================================= */
+
+/* Patch 29: Task meta - spans grid columns 2-4 */
+.task-meta {
+    display: contents;  /* Children become direct grid items */
+}
+
+/* Base tag style - transparent, quiet */
+.task-meta > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 999px;
+    line-height: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+}
+
+/* Patch 54: Column separators - header only, rows clean */
+.meta-duration,
+.meta-impact,
+.meta-clarity {
+    position: relative;
+    padding-left: 12px;
+}
+
+/* Rows lose separators - cleaner look */
+.meta-duration::before,
+.meta-duration::after,
+.meta-impact::after {
+    display: none !important;
+}
+
+/* Bugfix: Header separators - centered in column gap */
+.header-sort {
+    position: relative;
+}
+
+/* Dividers between header columns removed for visual symmetry */
+
+.task-meta > span:hover {
+    background: var(--chip-bg);
+    border-color: var(--border-subtle);
+}
+
+.task-meta > span:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+}
+
+/* Patch 27: Duration/time columns - tabular nums for clean alignment */
+/* Patch 29: Width now handled by grid */
+.meta-duration {
+    font-variant-numeric: tabular-nums;
+    color: rgba(15, 23, 42, 0.60);
+    justify-content: center;
+}
+
+/* Impact labels - semantic text in color (no dot) */
+/* Patch 29: Width now handled by grid */
+.meta-impact {
+    justify-content: center;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+.meta-impact::before {
+    display: none;  /* Remove dot */
+}
+.meta-impact.impact-1 { color: var(--impact-p1); }
+.meta-impact.impact-2 { color: var(--impact-p2); }
+.meta-impact.impact-3 { color: var(--impact-p3); }
+.meta-impact.impact-4 { color: var(--impact-p4); }
+
+/* Clarity indicator - colored text label per task row */
+.meta-clarity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.meta-clarity.clarity-autopilot { color: var(--autopilot-color); }
+.meta-clarity.clarity-normal { color: var(--normal-color); }
+.meta-clarity.clarity-brainstorm { color: var(--brainstorm-color); }
+
+/* =============================================================================
+   Energy/Mode-based Task Filtering
+   ============================================================================= */
+
+/* Zombie mode: only autopilot tasks */
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="normal"],
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] {
+    display: none !important;
+}
+/* Hide subtask containers when parent is filtered by zombie mode */
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="normal"] + .subtask-container,
+body[data-energy-level="1"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] + .subtask-container {
+    display: none !important;
+}
+
+/* Normal mode: autopilot + normal (hide brainstorm) */
+body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] {
+    display: none !important;
+}
+/* Hide subtask containers when parent is filtered by normal mode */
+body[data-energy-level="2"] .task-item:not(.deleted-item):not(.scheduled-item)[data-clarity="brainstorm"] + .subtask-container {
+    display: none !important;
+}
+
+/* Focus mode: all tasks visible */
+
+/* Hide projects with no visible tasks */
+.project-group:not(:has(.task-item:not([style*="display: none"]))) {
+    display: none;
+}
+
+/* Hide projects where all tasks are hidden by energy filter */
+body[data-energy-level="1"] .project-group:not(:has(.task-item[data-clarity="autopilot"])) {
+    display: none;
+}
+
+body[data-energy-level="2"] .project-group:not(:has(.task-item[data-clarity="autopilot"], .task-item[data-clarity="normal"])) {
+    display: none;
+}
+
+body[data-energy-level="3"] .project-group:not(:has(.task-item[data-clarity="autopilot"], .task-item[data-clarity="normal"], .task-item[data-clarity="brainstorm"])) {
+    display: none;
+}
+
+/* Deleted/scheduled groups always visible (items excluded via :not() above) */
+body[data-energy-level] .deleted-group.project-group,
+body[data-energy-level] .scheduled-group.project-group {
+    display: block !important;
+}
+
+/* =============================================================================
+   Calendar Panel
+   ============================================================================= */
+
+.calendar-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--bg-panel);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Go to Today floating button */
+.go-to-today-btn {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 20px;
+    color: var(--text-primary);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.go-to-today-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.go-to-today-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Calendar toolbar (Today + zoom) */
+.calendar-toolbar {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.calendar-toolbar .go-to-today-btn {
+    position: static;
+    transform: none;
+}
+
+/* Zoom controls */
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 20px;
+    padding: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.zoom-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.15s ease;
+}
+
+.zoom-btn:hover {
+    background: var(--bg-hover);
+}
+
+/* Horizontal carousel container */
+.calendar-carousel {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.calendar-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.day-calendar {
+    flex: 0 0 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--bg-surface);
+    overflow: hidden;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
+
+/* Past days: slightly dimmed */
+.day-calendar.past {
+    opacity: 0.7;
+}
+
+/* Today: full prominence with subtle purple tint */
+.day-calendar.today {
+    opacity: 1;
+    background: rgba(109, 94, 246, 0.02);
+}
+
+/* Future days: slightly dimmed */
+.day-calendar.future {
+    opacity: 0.85;
+}
+
+/* Calendar actions - center the button horizontally */
+.calendar-actions {
+    justify-content: center;
+}
+
+.calendar-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: inherit;
+    height: 26px;
+    box-sizing: border-box;
+}
+
+.calendar-action-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.calendar-action-btn.active {
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 8px rgba(109, 94, 246, 0.3);
+}
+
+.action-emoji {
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
+.action-name {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+/* All Day Events */
+.all-day-section {
+    padding: 0.5rem;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.all-day-section:empty,
+.all-day-section:not(:has(.all-day-event)) {
+    display: none;
+}
+
+.all-day-event {
+    background: var(--defined-tint);
+    border: 1px solid var(--defined-color);
+    border-left: 3px solid var(--defined-color);
+    border-radius: 4px;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.all-day-event:last-child {
+    margin-bottom: 0;
+}
+
+/* =============================================================================
+   Shared Day Header (fixed above carousel — date nav + Plan button)
+   ============================================================================= */
+
+.calendar-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 7.5px 0.75rem;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);
+    line-height: 1;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+/* Legacy .day-header kept for compatibility but no longer rendered */
+.day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 7.5px 0.75rem;  /* Match task-list-header 41px height */
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-default);  /* Match task-list-header border */
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+.day-header-date {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+/* Day header navigation - inline with date */
+.day-header-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.day-nav-btn {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    margin: 0;  /* Override PICO */
+    opacity: 0.6;
+}
+
+.day-nav-btn:hover {
+    background: rgba(109, 94, 246, 0.08);
+    color: var(--primary);
+    opacity: 1;
+}
+
+.day-nav-btn:active {
+    background: rgba(109, 94, 246, 0.15);
+    color: var(--primary);
+    opacity: 1;
+    transform: scale(0.92);
+    transition: all 0.05s ease;
+}
+
+.day-nav-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Dark mode day nav */
+[data-theme="dark"] .day-nav-btn {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .day-nav-btn:hover {
+    background: rgba(139, 124, 247, 0.12);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .day-nav-btn:active {
+    background: rgba(139, 124, 247, 0.2);
+    color: var(--primary);
+}
+
+/* Patch 50: Plan button - THE main CTA with subtle purple presence */
+.plan-day-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    margin: 0;
+    background: rgba(109, 94, 246, 0.04);
+    border: 1px solid rgba(109, 94, 246, 0.12);
+    border-radius: 8px;
+    color: #5B4CD4;
+    font-size: 0.65rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1;
+    box-shadow: 0 0 8px rgba(109, 94, 246, 0.08);
+}
+
+.plan-day-btn:hover {
+    background: rgba(109, 94, 246, 0.12);
+    border-color: rgba(109, 94, 246, 0.35);
+    color: var(--primary);
+    box-shadow: 0 0 16px rgba(109, 94, 246, 0.25),
+                0 2px 8px rgba(109, 94, 246, 0.12);
+    transform: translateY(-1px);
+}
+
+/* Active state (Plan mode on) */
+.plan-day-btn.active {
+    background: rgba(201, 80, 90, 0.08);
+    color: var(--impact-high);
+    border-color: rgba(201, 80, 90, 0.18);
+}
+
+.plan-day-btn.active:hover {
+    background: rgba(201, 80, 90, 0.12);
+    border-color: rgba(201, 80, 90, 0.22);
+}
+
+.plan-day-btn .action-emoji {
+    font-size: 0.8rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plan-day-btn .action-name {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1;
+}
+
+/* =============================================================================
+   Date-Only Tasks Banner (tasks with date but no time)
+   ============================================================================= */
+
+/* Patch 57: Anytime lane - tray style */
+/* Height shows 2.5 tasks - cut-off 3rd task hints at more content */
+.date-only-banner {
+    display: flex;
+    align-items: flex-start;
+    height: 82px;  /* Shows 2.5 tasks - partial 3rd makes overflow obvious */
+    background: rgba(15, 23, 42, 0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    margin: 4px;
+}
+
+.date-only-label {
+    width: 48px;
+    flex-shrink: 0;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.5rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    text-align: right;
+    white-space: nowrap;
+    opacity: 0.7;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+}
+
+.date-only-tasks {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.125rem;
+    padding: 0.25rem 0.5rem 0.25rem 0;
+    height: 100%;
+    align-items: flex-start;
+    align-content: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Subtle scrollbar - invisible by default */
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+/* Webkit scrollbar - invisible by default, appears on hover */
+.date-only-tasks::-webkit-scrollbar {
+    width: 4px;
+}
+
+.date-only-tasks::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.date-only-tasks::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 2px;
+}
+
+/* Show scrollbar on hover */
+.date-only-tasks:hover::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.15);
+}
+
+.date-only-tasks:hover {
+    scrollbar-color: rgba(15, 23, 42, 0.15) transparent;
+}
+
+/* Dark mode */
+[data-theme="dark"] .date-only-tasks:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .date-only-tasks:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* Drop target styling - subtle highlight on entire banner */
+.date-only-banner.drag-over,
+.date-only-banner.drop-hint {
+    background: var(--drop-bg);
+    border-bottom-color: var(--drop-border);
+}
+
+/* Patch 24+57: Anytime pills - white cards in tray */
+.date-only-task {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    padding-left: calc(0.625rem + var(--rail-w));
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    font-size: 0.7rem;
+    color: var(--text-primary);
+    cursor: grab;
+    transition: all 0.15s ease;
+    width: calc(100% - 0.5rem);
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Patch 21: Impact rail as pseudo-element */
+.date-only-task::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--rail-w);
+    background: transparent;
+    border-radius: 10px 0 0 10px;
+}
+
+.date-only-task:hover {
+    background: rgba(109, 94, 246, 0.05);
+    border-color: rgba(109, 94, 246, 0.16);
+}
+
+.date-only-task:active {
+    cursor: grabbing;
+    transform: translateY(0);
+}
+
+.date-only-task.dragging {
+    opacity: 0.4;
+}
+
+.date-only-task-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+    font-weight: 400;
+}
+
+.date-only-task-duration {
+    width: 26px;
+    flex-shrink: 0;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    opacity: 0.7;
+}
+
+/* Patch 57: Impact via rail only - white cards in tray */
+.date-only-task.impact-1,
+.date-only-task.impact-2,
+.date-only-task.impact-3,
+.date-only-task.impact-4 { background: rgba(255, 255, 255, 0.92); }
+
+.date-only-task.impact-1::before { background: var(--impact-high-border); }
+.date-only-task.impact-2::before { background: var(--impact-medium); }
+.date-only-task.impact-3::before { background: var(--impact-low); }
+.date-only-task.impact-4::before { background: var(--impact-min); }
+
+/* Mobile responsive */
+@media (max-width: 900px) {
+    .date-only-banner {
+        min-height: 40px;
+    }
+
+    .date-only-label {
+        width: 40px;
+        padding: 0.25rem 0.375rem;
+        font-size: 0.7rem;
+    }
+
+    .date-only-tasks {
+        min-height: 40px;
+        padding: 0.125rem 0.25rem 0.125rem 0;
+    }
+
+    .date-only-tasks:empty {
+        min-height: 40px;
+    }
+
+    .date-only-task {
+        padding: 0.125rem 0.375rem;
+        font-size: 0.8rem;
+    }
+
+    .date-only-task-duration {
+        font-size: 0.7rem;
+    }
+
+    .day-header {
+        padding: 0.5rem 0.5rem 0.375rem 0.5rem;
+    }
+
+    .day-header-date {
+        font-size: 0.7rem;
+    }
+
+    .plan-day-btn .action-emoji {
+        font-size: 0.6rem;
+    }
+
+    .plan-day-btn .action-name {
+        font-size: 0.67rem;
+    }
+}
+
+/* Hour Grid */
+.hour-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;  /* For time selection overlay positioning */
+    background: var(--bg-surface);
+    isolation: isolate;  /* Create stacking context so task z-index works across rows */
+    /* Subtle scrollbar - thin by default */
+    scrollbar-width: thin;  /* Firefox */
+    scrollbar-color: transparent transparent;  /* Firefox: thumb track */
+}
+
+/* Webkit scrollbar - invisible by default, appears on hover */
+.hour-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.hour-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.hour-grid::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+}
+
+/* Show scrollbar on container hover */
+.hour-grid:hover::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.15);
+}
+
+.hour-grid:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.25);
+}
+
+/* Firefox - show on hover */
+.hour-grid:hover {
+    scrollbar-color: rgba(15, 23, 42, 0.15) transparent;
+}
+
+/* Dark mode scrollbar */
+[data-theme="dark"] .hour-grid:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .hour-grid:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="dark"] .hour-grid:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.hour-grid.collapsed {
+    /* No longer collapsed - same scrolling behavior */
+}
+
+/* Patch 55: Hour rows - major hour lines for scan aid */
+.hour-row {
+    display: flex;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+    min-height: var(--cal-hour-height, 60px);
+    background: transparent;
+    overflow: visible; /* Allow tasks to extend beyond row */
+}
+
+/* Patch 47+55: Alternate banding + stronger lines every 2nd hour */
+.hour-row:nth-child(even) {
+    background: rgba(15, 23, 42, 0.015);
+}
+
+.hour-row:nth-child(2n) {
+    border-bottom-color: rgba(15, 23, 42, 0.075);
+}
+
+.hour-row:nth-child(odd) {
+    background: transparent;
+}
+
+.hour-row:last-child {
+    border-bottom: none;
+}
+
+/* Patch 56: Hour labels - instrument-like gutter, reduced opacity for less noise */
+.hour-label {
+    width: 54px;
+    flex-shrink: 0;
+    padding: 0.375rem 10px 0.375rem 0;
+    font-size: 0.65rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: rgba(15, 23, 42, 0.4);
+    text-align: right;
+}
+
+.hour-row:hover .hour-label {
+    color: rgba(15, 23, 42, 0.58);
+}
+
+/* Patch 56: Hour slot with breathing room after labels */
+/* Bugfix: min-width: 0 prevents flex from expanding with long task text */
+.hour-slot {
+    flex: 1;
+    min-width: 0;
+    padding: 0.25rem 0.5rem 0.25rem 6px;
+    min-height: var(--cal-hour-height, 60px);
+    position: relative;
+    overflow: visible;
+}
+
+.hour-slot[data-droppable="true"] {
+    transition: background 0.15s ease;
+}
+
+.hour-slot[data-droppable="true"]:hover {
+    background: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+/* Adjacent day hours (previous evening / next morning) */
+.hour-row.adjacent-day {
+    background: var(--bg-panel);
+    box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.hour-row.adjacent-day .hour-label {
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.hour-row.adjacent-day .hour-slot {
+    background: var(--bg-panel);
+}
+
+.hour-row.adjacent-day:hover {
+    opacity: 0.9;
+}
+
+/* Patch 51: Day separator - line + pill label (not a slab) */
+/* Bugfix: negative margin so tasks can span across without gap */
+.day-separator {
+    display: grid;
+    place-items: center;
+    height: 34px;
+    margin-top: -17px;
+    margin-bottom: -17px;
+    background: transparent !important;
+    position: relative;
+    z-index: 15;
+    pointer-events: none;
+}
+
+/* Horizontal line */
+.day-separator::before {
+    content: "";
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 50%;
+    height: 1px;
+    background: rgba(15, 23, 42, 0.08);
+    transform: translateY(-50%);
+}
+
+/* Pill label */
+.day-separator-label {
+    position: relative;
+    z-index: 1;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--bg-surface);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    color: rgba(15, 23, 42, 0.42);
+    text-transform: uppercase;
+    pointer-events: auto;
+}
+
+.day-separator.day-start,
+.day-separator.day-end {
+    position: static;
+    height: 34px;
+}
+
+.day-separator.day-start .day-separator-label,
+.day-separator.day-end .day-separator-label {
+    background: var(--bg-panel);
+}
+
+/* Patch 22: Now indicator - thicker with subtle glow */
+.now-line {
+    position: absolute;
+    left: 50px; /* Width of hour label */
+    right: 0;
+    height: 2px;
+    background: var(--now);
+    z-index: 50;
+    pointer-events: none;
+    box-shadow: 0 0 8px rgba(var(--now), 0.4);
+}
+
+.now-line::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: -4px;
+    width: 10px;
+    height: 10px;
+    background: var(--now-dot);
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18), 0 0 12px rgba(109, 94, 246, 0.3);
+}
+
+/* Patch 23: Calendar events - subtle gradient, rounded corners */
+.calendar-event {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 5%), var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    padding: 3px 0.5rem;
+    padding-left: calc(0.5rem + var(--rail-w));
+    font-size: 0.65rem;
+    line-height: 1.2;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 4;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* Calendar event rail */
+.calendar-event::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--rail-w);
+    background: var(--text-muted);
+    border-radius: 6px 0 0 6px;
+}
+
+.event-left {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 32px;
+}
+
+/* Event meta - matches scheduled-task styling */
+.event-time {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.event-duration {
+    color: var(--text-muted);
+}
+
+/* Event title - matches scheduled-task-text styling */
+.event-title {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--text-primary);
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+/* Duration-based line clamping for calendar events */
+.calendar-event.duration-short .event-title {
+    -webkit-line-clamp: 1;
+}
+
+.calendar-event.duration-medium .event-title {
+    -webkit-line-clamp: 2;
+}
+
+.calendar-event.duration-long .event-title {
+    -webkit-line-clamp: unset;
+}
+
+/* =============================================================================
+   All-day Events (neutral grey like calendar events)
+   ============================================================================= */
+
+.all-day-event {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--text-muted);
+}
+
+/* Drag and Drop styles moved to components/drag-drop.css */
+
+/* =============================================================================
+   Empty State & Responsive
+   ============================================================================= */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+}
+
+.empty-state p {
+    margin: 0.25rem 0;
+}
+
+@media (max-width: 900px) {
+    .tasks-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 3fr 2fr;  /* Tasks slightly larger */
+        height: calc(100vh - 40px - 1rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        gap: 0.25rem;
+        padding: 0 0.125rem;
+        margin-bottom: 1rem;
+    }
+
+    .tasks-panel {
+        width: 100%;
+        border-radius: 6px;
+    }
+
+    .calendar-panel {
+        width: 100%;
+        border-radius: 6px;
+    }
+
+    /* Compact calendar header */
+    .calendar-header {
+        padding: 0.25rem 0.375rem;
+        gap: 0.125rem;
+    }
+
+    .calendar-title {
+        font-size: 0.67rem;
+    }
+
+    .calendar-action-btn {
+        padding: 0.25rem 0.375rem;
+        gap: 0.25rem;
+    }
+
+    .action-emoji {
+        font-size: 0.875rem;
+    }
+
+    .action-name {
+        font-size: 0.67rem;
+    }
+
+    /* Smaller hour rows for mobile */
+    .calendar-panel {
+        --cal-hour-height: 40px;
+    }
+
+    .hour-row {
+        min-height: var(--cal-hour-height, 40px);
+    }
+
+    .hour-label {
+        width: 44px;
+        padding: 0.25rem 0.375rem;
+        font-size: 0.67rem;
+    }
+
+    .hour-slot {
+        min-height: var(--cal-hour-height, 40px);
+        padding: 0.125rem 0.25rem;
+    }
+
+    /* Compact task list */
+    .task-list-container {
+        padding: 0.25rem;
+        padding-top: 0;
+    }
+
+    .task-list-header {
+        padding: 0.25rem 0.25rem 0.125rem 0.25rem;
+    }
+
+    .header-sort {
+        font-size: 0.5rem;
+    }
+
+    /* Patch 29: Mobile grid - smaller columns (clarity, duration, impact, actions) */
+    .header-row1,
+    .task-item {
+        grid-template-columns: 1fr 42px 36px 34px 24px;
+        column-gap: 6px;
+    }
+
+    .task-list-scroll {
+        padding-top: 0;
+    }
+
+    /* Compact project groups */
+    .project-group {
+        margin-bottom: 0.25rem;
+        border-radius: 6px;
+    }
+
+    .project-header {
+        padding: 0.25rem 0.375rem;
+        gap: 0.25rem;
+    }
+
+    .project-name {
+        font-size: 0.87rem;
+    }
+
+    .task-count {
+        font-size: 0.73rem;
+        padding: 0.0625rem 0.25rem;
+    }
+
+    /* Compact task items */
+    .task-list {
+        padding: 0.125rem;
+        gap: 0.125rem;
+    }
+
+    .task-item {
+        padding: 0.25rem 0.25rem;
+        gap: 0.25rem;
+        border-radius: 4px;
+    }
+
+    .task-content {
+        gap: 0.25rem;
+    }
+
+    .task-text {
+        font-size: 0.75rem;
+    }
+
+    .task-due {
+        font-size: 0.55rem;
+    }
+
+    .task-meta {
+        gap: 0.125rem;
+    }
+
+    .task-meta > span {
+        height: 16px;
+        font-size: 0.55rem;
+        padding: 0 0.25rem;
+    }
+
+    /* Plan helper tooltip */
+    .plan-helper {
+        top: 3rem;
+        right: 0.375rem;
+        font-size: 0.67rem;
+        padding: 0.375rem 0.5rem;
+    }
+
+    /* Scheduled tasks and events - smaller on mobile */
+    .calendar-event,
+    .scheduled-task {
+        font-size: 0.67rem;
+        padding: 1px 0.25rem;
+    }
+
+    .event-left,
+    .scheduled-task-left {
+        width: 32px;
+        white-space: nowrap;
+    }
+
+    .event-time,
+    .scheduled-task-time {
+        white-space: nowrap;
+    }
+}
+
+/* Compact labels for narrow screens (< 580px) */
+@media (max-width: 580px) {
+    /* Patch 29: Narrower grid columns for very small screens (clarity, duration, impact, actions) */
+    .header-row1,
+    .task-item {
+        grid-template-columns: 1fr 36px 28px 24px 20px;
+        column-gap: 4px;
+    }
+
+    /* Hide column separators on narrow screens */
+    .meta-duration::before,
+    .meta-duration::after,
+    .meta-impact::after,
+    .header-sort[data-sort="duration"]::before,
+    .header-sort[data-sort="duration"]::after,
+    .header-sort[data-sort="impact"]::after {
+        display: none;
+    }
+
+    /* Headers: hide text, show abbreviations */
+    .header-duration,
+    .header-impact,
+    .header-clarity {
+        color: transparent;
+        position: relative;
+    }
+    .header-duration::after,
+    .header-impact::after,
+    .header-clarity::after {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        color: var(--text-secondary);  /* Use secondary for better dark mode visibility */
+    }
+    .header-duration::after { content: 'DUR'; }
+    .header-impact::after { content: 'IMPCT'; }
+    .header-clarity::after { content: 'CLRT'; }
+}
+
+/* Plan Mode styles moved to components/plan-mode.css */
+
+/* =============================================================================
+   CMPCT Mode - Mobile Responsive (<768px)
+   ============================================================================= */
+
+/* Default: hide compact labels */
+.label-compact {
+    display: none;
+}
+
+.label-full {
+    display: inline;
+}
+
+/* Mobile: swap label visibility */
+@media (max-width: 767px) {
+    .label-full {
+        display: none;
+    }
+
+    .label-compact {
+        display: inline;
+    }
+
+    /* Touch-friendly tap targets (min 44px) */
+    .task-item {
+        min-height: 44px;
+    }
+
+    .commit-action-btn {
+        min-height: 44px;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Project/Domain headers */
+    .project-header {
+        min-height: 44px;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Add task FAB - larger on mobile */
+    .add-task-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+
+    /* Hamburger menu toggle (shown via base.html) */
+    .hamburger-toggle {
+        display: flex;
+    }
+
+    /* Empty state */
+    .empty-state kbd {
+        padding: 0.25rem 0.5rem;
+        background: var(--bg-secondary, #f3f4f6);
+        border-radius: 4px;
+        font-family: inherit;
+    }
+}
+
+/* Desktop: hide hamburger */
+@media (min-width: 768px) {
+    .hamburger-toggle {
+        display: none;
+    }
+}
+
+/* Trash Bin styles moved to components/drag-drop.css */
+
+/* =============================================================================
+   Dark Mode Support
+   ============================================================================= */
+
+[data-theme="dark"] .tasks-panel {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .task-list-container {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .task-list-header {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .energy-label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .gear-btn {
+    border-color: var(--border-default);
+    background: rgba(109, 94, 246, 0.08);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .gear-btn:hover {
+    background: rgba(109, 94, 246, 0.12);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .settings-panel {
+    background: var(--bg-elevated);
+    border-color: var(--border-default);
+    box-shadow: var(--shadow-overlay);
+}
+
+[data-theme="dark"] .sp-title {
+    color: var(--text-muted);
+}
+
+/* Task rows */
+[data-theme="dark"] .task-row {
+    background: var(--bg-surface);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .task-row:hover {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .task-row.scheduled {
+    background: var(--bg-panel);
+}
+
+/* Task titles - softer than pure white to reduce eye strain in dark mode */
+[data-theme="dark"] .task-title {
+    color: rgba(248, 250, 252, 0.75);  /* Toned down from 0.80 */
+}
+
+[data-theme="dark"] .task-title-text {
+    color: inherit;
+}
+
+[data-theme="dark"] .task-row:hover .task-title {
+    color: rgba(248, 250, 252, 0.85);
+}
+
+[data-theme="dark"] .task-domain-badge {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+/* Column headers - use text-secondary for readability (48% opacity too faint) */
+[data-theme="dark"] .col-head,
+[data-theme="dark"] .col-hd {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .col-head:hover,
+[data-theme="dark"] .col-hd:hover {
+    color: var(--text-primary);
+}
+
+/* Sorting headers - match TASKS/ENERGY header label hierarchy in dark mode */
+[data-theme="dark"] .header-sort {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .header-sort:hover {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .header-sort.active {
+    color: var(--text-secondary);  /* Slightly brighter than inactive */
+}
+
+[data-theme="dark"] .header-date-label {
+    color: var(--text-muted);  /* Match dark mode header-sort */
+}
+
+/* Task chips */
+[data-theme="dark"] .task-duration,
+[data-theme="dark"] .task-impact,
+[data-theme="dark"] .task-clarity {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+/* Calendar panel */
+[data-theme="dark"] .calendar-panel {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .calendar-header {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .calendar-title {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .today-btn {
+    border-color: var(--border-default);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .today-btn:hover {
+    background: var(--interactive-hover);
+    color: var(--text-primary);
+}
+
+/* Calendar grid */
+[data-theme="dark"] .calendar-body {
+    background: var(--bg-surface);
+}
+
+[data-theme="dark"] .hour-slot {
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .hour-label {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .day-separator {
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .day-separator-label {
+    color: var(--text-muted);
+    border-color: var(--border-default);
+}
+
+/* Events */
+[data-theme="dark"] .calendar-event {
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .calendar-event.gcal-event {
+    background: var(--bg-panel);
+}
+
+[data-theme="dark"] .event-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .event-time {
+    color: var(--text-secondary);
+}
+
+/* Plan My Day button - THE main CTA, make it shine */
+[data-theme="dark"] .plan-day-btn {
+    background: rgba(109, 94, 246, 0.12);
+    border: 1px solid rgba(109, 94, 246, 0.3);
+    color: #A599F7;
+    box-shadow: 0 0 12px rgba(109, 94, 246, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .plan-day-btn:hover {
+    background: rgba(109, 94, 246, 0.18);
+    border-color: rgba(109, 94, 246, 0.45);
+    color: #B8AEF9;
+    box-shadow: 0 0 16px rgba(109, 94, 246, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .plan-day-btn.active {
+    background: rgba(201, 80, 90, 0.15);
+    border-color: rgba(201, 80, 90, 0.4);
+    color: #E8A0A6;
+    box-shadow: 0 0 12px rgba(201, 80, 90, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .plan-day-btn.active:hover {
+    background: rgba(201, 80, 90, 0.2);
+    border-color: rgba(201, 80, 90, 0.5);
+    color: #F0B8BD;
+    box-shadow: 0 0 16px rgba(201, 80, 90, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Selection overlay */
+[data-theme="dark"] .selection-overlay {
+    background: rgba(109, 94, 246, 0.15);
+    border-color: rgba(109, 94, 246, 0.4);
+}
+
+/* Anytime tasks */
+[data-theme="dark"] .anytime-section {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .anytime-header {
+    background: var(--bg-surface);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .anytime-task {
+    background: var(--bg-panel);  /* Match calendar events */
+    border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .anytime-task:hover {
+    background: var(--bg-surface);
+}
+
+/* Date-only (anytime) tasks in calendar - override white background */
+[data-theme="dark"] .date-only-task,
+[data-theme="dark"] .date-only-task.impact-1,
+[data-theme="dark"] .date-only-task.impact-2,
+[data-theme="dark"] .date-only-task.impact-3,
+[data-theme="dark"] .date-only-task.impact-4 {
+    background: var(--bg-panel);
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .date-only-task:hover {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .date-only-task-text {
+    color: rgba(248, 250, 252, 0.80);  /* Match task titles */
+}
+
+[data-theme="dark"] .date-only-task-duration {
+    color: var(--text-muted);
+}
+
+/* Drop zones dark mode - moved to components/drag-drop.css */
+
+/* Icon buttons */
+[data-theme="dark"] .icon-btn {
+    border-color: var(--border-subtle);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .icon-btn:hover {
+    background: var(--interactive-hover);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .task-count {
+    background: rgba(248, 250, 252, 0.08);
+}
+
+/* Trash bin dark mode - moved to components/drag-drop.css */
+
+/* Completed tasks in main list - dark mode (override hardcoded rgba(15,23,42,0.5)) */
+[data-theme="dark"] .task-item[data-completed="1"] .task-text,
+[data-theme="dark"] .task-item[data-completed="1"] .task-due,
+[data-theme="dark"] .task-item.completed-today .task-text,
+[data-theme="dark"] .task-item.completed-today .task-due,
+[data-theme="dark"] .task-item.completed-older .task-text,
+[data-theme="dark"] .task-item.completed-older .task-due {
+    color: var(--text-muted) !important;  /* 48% - softer for completed */
+}
+
+[data-theme="dark"] .task-item[data-completed="1"] .meta-duration,
+[data-theme="dark"] .task-item[data-completed="1"] .meta-impact,
+[data-theme="dark"] .task-item[data-completed="1"] .meta-clarity,
+[data-theme="dark"] .task-item.completed-today .meta-duration,
+[data-theme="dark"] .task-item.completed-today .meta-impact,
+[data-theme="dark"] .task-item.completed-today .meta-clarity,
+[data-theme="dark"] .task-item.completed-older .meta-duration,
+[data-theme="dark"] .task-item.completed-older .meta-impact,
+[data-theme="dark"] .task-item.completed-older .meta-clarity {
+    color: var(--text-secondary) !important;  /* 72% - keep metadata readable */
+}
+
+[data-theme="dark"] .task-item[data-completed="1"],
+[data-theme="dark"] .task-item.completed-today,
+[data-theme="dark"] .task-item.completed-older {
+    opacity: 0.7 !important;  /* Toned down further */
+}
+
+
+/* Completed subview - dark mode: undo completed dimming */
+[data-theme="dark"] .completed-group .task-item .task-text {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .completed-group .task-item .task-due {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .completed-group .task-item[data-completed="1"] {
+    opacity: 1 !important;
+}
+
+/* Calendar checkbox - override white background */
+[data-theme="dark"] .calendar-item .complete-check {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .calendar-item:hover .complete-check {
+    background: var(--bg-panel);
+    border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .calendar-item .complete-gutter:hover .complete-check {
+    background: var(--primary-tint);
+    border-color: var(--primary);
+}
+
+/* Completed checkmark - subtle neutral, not attention-grabbing */
+[data-theme="dark"] .calendar-item[data-completed="1"] .complete-check {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .calendar-item[data-completed="1"]:hover .complete-check,
+[data-theme="dark"] .calendar-item[data-completed="1"] .complete-gutter:hover .complete-check {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Calendar completed tasks - match Tasks view styling */
+[data-theme="dark"] .calendar-item[data-completed="1"] .event-title,
+[data-theme="dark"] .calendar-item[data-completed="1"] .date-only-task-text,
+[data-theme="dark"] .calendar-item[data-completed="1"] .scheduled-task-text {
+    color: var(--text-muted) !important;  /* 48% - match Tasks view */
+}
+
+[data-theme="dark"] .calendar-item[data-completed="1"] .scheduled-task-time,
+[data-theme="dark"] .calendar-item[data-completed="1"] .scheduled-task-duration,
+[data-theme="dark"] .calendar-item[data-completed="1"] .date-only-task-duration {
+    color: var(--text-secondary) !important;  /* 72% - metadata stays readable */
+}
+
+[data-theme="dark"] .calendar-item[data-completed="1"] {
+    opacity: 0.7 !important;  /* Match Tasks view */
+}
+
+/* Section tasks — dark mode */
+[data-theme="dark"] #section-done .task-item[data-completed="1"],
+[data-theme="dark"] #section-done .task-item.completed,
+[data-theme="dark"] #section-sched .task-item.completed {
+    opacity: 0.85 !important;
+}
+
+[data-theme="dark"] #section-done .task-item[data-completed="1"] .task-text,
+[data-theme="dark"] #section-done .task-item.completed .task-text,
+[data-theme="dark"] #section-sched .task-item.completed .task-text {
+    color: var(--text-secondary) !important;
+    text-decoration: none !important;
+}
+
+/* =============================================================================
+   Skipped Instance Styling
+   ============================================================================= */
+
+/* Task list: skipped instances look distinctly muted (not just completed) */
+.task-item.skipped .task-text {
+    color: rgba(15, 23, 42, 0.35);
+    text-decoration: line-through;
+    font-style: italic;
+}
+
+.task-item.skipped .task-due,
+.task-item.skipped .meta-duration,
+.task-item.skipped .meta-impact,
+.task-item.skipped .meta-clarity {
+    color: rgba(15, 23, 42, 0.3);
+}
+
+.task-item.skipped::before {
+    opacity: 0.3;
+}
+
+/* Calendar: skipped instances */
+.calendar-item.skipped .scheduled-task-text,
+.calendar-item.skipped .date-only-task-text {
+    color: rgba(15, 23, 42, 0.35);
+    text-decoration: line-through;
+    font-style: italic;
+}
+
+.calendar-item.skipped {
+    opacity: 0.4;
+}
+
+/* Dark mode skipped */
+[data-theme="dark"] .task-item.skipped .task-text {
+    color: var(--text-muted) !important;
+    font-style: italic;
+}
+
+[data-theme="dark"] .task-item.skipped .task-due,
+[data-theme="dark"] .task-item.skipped .meta-duration,
+[data-theme="dark"] .task-item.skipped .meta-impact,
+[data-theme="dark"] .task-item.skipped .meta-clarity {
+    color: var(--text-secondary) !important;
+    opacity: 0.5;
+}
+
+[data-theme="dark"] .calendar-item.skipped {
+    opacity: 0.35 !important;
+}
+
+[data-theme="dark"] .calendar-quick-action {
+    color: var(--text-secondary);
+}
+
+/* =============================================================================
+   Actions Context Menu
+   ============================================================================= */
+
+.actions-menu {
+    position: fixed;
+    z-index: 9999;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    padding: 4px;
+    min-width: 160px;
+    animation: actions-menu-in 0.12s ease-out;
+}
+
+@keyframes actions-menu-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.actions-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.actions-menu-item:hover {
+    background: var(--bg-hover);
+}
+
+.actions-menu-item .actions-menu-icon {
+    font-size: 0.875rem;
+    opacity: 0.7;
+    width: 1em;
+    text-align: center;
+}
+
+.actions-menu-separator {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--border-subtle);
+}
+
+.actions-menu-item--danger {
+    color: var(--color-danger, #e53e3e);
+}
+
+.actions-menu-item--danger:hover {
+    background: rgba(229, 62, 62, 0.08);
+}
+
+/* Kebab button for task actions */
+.kebab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.15s ease, background 0.1s ease;
+}
+
+.kebab-btn svg {
+    pointer-events: none;
+}
+
+.task-item:hover .kebab-btn {
+    opacity: 0.6;
+}
+
+.kebab-btn:hover {
+    opacity: 1 !important;
+    background: var(--bg-hover);
+}
+
+/* Quick-action button on calendar cards (skip / unschedule) */
+.calendar-quick-action {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+    opacity: 0;
+    z-index: 2;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s ease, background 0.1s ease;
+}
+
+.calendar-quick-action svg {
+    width: 14px;
+    height: 14px;
+}
+
+.calendar-item:hover .calendar-quick-action {
+    opacity: 0.6;
+}
+
+.calendar-quick-action:hover {
+    opacity: 1 !important;
+    background: var(--bg-hover);
+}
+
+/* Non-short tasks: position quick action to left of checkbox */
+.scheduled-task.calendar-item:not(.duration-short) .calendar-quick-action {
+    right: calc(var(--cal-check-hit) + 4px);
+}
+
+/* Short tasks: compact quick-action instead of hiding entirely */
+.duration-short .calendar-quick-action {
+    width: 16px;
+    height: 16px;
+    top: 2px;
+    right: 2px;
+    transform: none;
+}
+
+.duration-short .calendar-quick-action svg {
+    width: 11px;
+    height: 11px;
+}
+
+/* Date-only: static position in flex row */
+.date-only-task .calendar-quick-action {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* Universal "task leaving list" animation (completion, scheduling, deletion) */
+.task-item.departing {
+    transform: translateY(20px);
+    opacity: 0;
+    max-height: 0 !important;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
+    overflow: hidden;
+    transition:
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.25s ease,
+        max-height 0.35s ease 0.05s,
+        padding 0.35s ease 0.05s,
+        margin 0.35s ease 0.05s;
+}
+
+/* =============================================================================
+   Touch Device Support (must be after base rules to win cascade)
+   ============================================================================= */
+
+/* Hover-revealed controls are invisible on touch — show at reduced opacity */
+@media (hover: none) {
+    .kebab-btn {
+        opacity: 0.4;
+    }
+    .calendar-quick-action {
+        opacity: 0.4;
+    }
+    .domain-add-btn {
+        opacity: 0.4;
+    }
+}

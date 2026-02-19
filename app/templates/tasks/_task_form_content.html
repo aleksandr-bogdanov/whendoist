@@ -1,0 +1,161 @@
+{#
+  Task Form Content - Shared partial for sheet and full-page editor
+
+  Variables:
+    - task: Task object (None for create)
+    - mode: "create" | "edit"
+    - domains: list of Domain objects
+    - prefill_domain_id: int | None (for create mode)
+    - errors: dict of field -> error message
+#}
+
+<!-- Basics -->
+<div class="form-section">
+  <input type="text"
+         name="title"
+         class="task-title-input"
+         placeholder="Task name"
+         value="{{ task.title if task else '' }}"
+         required
+         autofocus>
+  {% if errors.title %}
+  <span class="field-error">{{ errors.title }}</span>
+  {% endif %}
+
+  <select name="domain_id" class="domain-select" required>
+    {% for domain in domains %}
+    <option value="{{ domain.id }}"
+            {% if (task and task.domain_id == domain.id) or (not task and prefill_domain_id == domain.id) %}selected{% elif not task and not prefill_domain_id and loop.first %}selected{% endif %}>
+      {{ domain.icon or '' }} {{ domain.name }}
+    </option>
+    {% endfor %}
+  </select>
+
+  <textarea name="description"
+            class="task-desc-input"
+            placeholder="Description"
+            rows="2">{{ task.description if task and task.description else '' }}</textarea>
+</div>
+
+<!-- Impact -->
+<div class="form-section">
+  <label class="section-label">IMPACT</label>
+  <div class="impact-pills">
+    {% set current_impact = task.impact if task else 4 %}
+    <button type="button" class="impact-pill{% if current_impact == 1 %} active{% endif %}" data-impact="1" title="Life-changing">High</button>
+    <button type="button" class="impact-pill{% if current_impact == 2 %} active{% endif %}" data-impact="2" title="Useful">Mid</button>
+    <button type="button" class="impact-pill{% if current_impact == 3 %} active{% endif %}" data-impact="3" title="Nice to have">Low</button>
+    <button type="button" class="impact-pill{% if current_impact == 4 %} active{% endif %}" data-impact="4" title="Maintenance">Min</button>
+  </div>
+  <input type="hidden" name="impact" value="{{ current_impact }}">
+</div>
+
+<!-- Mode -->
+<div class="form-section">
+  <label class="section-label">MODE</label>
+  <div class="mode-chips">
+    {% set current_clarity = task.clarity if task else 'normal' %}
+    <button type="button" class="mode-chip{% if current_clarity == 'autopilot' %} active{% endif %}" data-clarity="autopilot" title="Mindless — can do when tired">🧟 Autopilot</button>
+    <button type="button" class="mode-chip{% if current_clarity == 'brainstorm' %} active{% endif %}" data-clarity="brainstorm" title="Needs deep thinking">🧠 Brainstorm</button>
+  </div>
+  <input type="hidden" name="clarity" value="{{ current_clarity }}">
+</div>
+
+<!-- When: Schedule / Due / Duration chips -->
+<div class="form-section">
+  <label class="section-label">WHEN</label>
+  <div class="when-chips">
+    <button type="button"
+            class="when-chip{% if task and task.scheduled_date %} active{% endif %}"
+            data-chip="schedule"
+            aria-expanded="{% if task and task.scheduled_date %}true{% else %}false{% endif %}">
+      <span class="chip-icon">&#128197;</span>
+      <span class="chip-text">{% if task and task.scheduled_date %}{{ task.scheduled_date }}{% else %}Schedule{% endif %}</span>
+    </button>
+    <button type="button"
+            class="when-chip{% if task and task.due_date %} active{% endif %}"
+            data-chip="due"
+            aria-expanded="{% if task and task.due_date %}true{% else %}false{% endif %}">
+      <span class="chip-icon">&#127919;</span>
+      <span class="chip-text">{% if task and task.due_date %}{{ task.due_date }}{% else %}Due{% endif %}</span>
+    </button>
+    <button type="button"
+            class="when-chip{% if task and task.duration_minutes %} active{% endif %}"
+            data-chip="duration"
+            aria-expanded="{% if task and task.duration_minutes %}true{% else %}false{% endif %}">
+      <span class="chip-icon">&#9201;</span>
+      <span class="chip-text">{% if task and task.duration_minutes %}{% if task.duration_minutes >= 60 %}{{ task.duration_minutes // 60 }}h{% else %}{{ task.duration_minutes }}m{% endif %}{% else %}Duration{% endif %}</span>
+    </button>
+  </div>
+
+  <!-- Schedule expand -->
+  <div class="chip-expand" id="expand-schedule" {% if not (task and task.scheduled_date) %}hidden{% endif %}>
+    <input type="date"
+           name="scheduled_date"
+           class="inline-input"
+           value="{{ task.scheduled_date if task and task.scheduled_date else '' }}">
+    <input type="time"
+           name="scheduled_time"
+           class="inline-input"
+           value="{{ task.scheduled_time.strftime('%H:%M') if task and task.scheduled_time else '' }}">
+    <small class="timezone-notice" style="display: none; color: var(--pico-muted-color); font-size: 0.85rem; margin-top: 0.25rem;">
+      Times are in UTC. If you're not in the UTC timezone, recurring task times may appear offset.
+    </small>
+  </div>
+
+  <!-- Due expand -->
+  <div class="chip-expand" id="expand-due" {% if not (task and task.due_date) %}hidden{% endif %}>
+    <input type="date"
+           name="due_date"
+           class="inline-input"
+           value="{{ task.due_date if task and task.due_date else '' }}">
+  </div>
+
+  <!-- Duration expand -->
+  <div class="chip-expand" id="expand-duration" {% if not (task and task.duration_minutes) %}hidden{% endif %}>
+    <div class="duration-picker">
+      {% set current_duration = task.duration_minutes if task else None %}
+      <button type="button" class="duration-btn{% if current_duration == 15 %} active{% endif %}" data-duration="15">15m</button>
+      <button type="button" class="duration-btn{% if current_duration == 30 %} active{% endif %}" data-duration="30">30m</button>
+      <button type="button" class="duration-btn{% if current_duration == 60 %} active{% endif %}" data-duration="60">1h</button>
+      <button type="button" class="duration-btn{% if current_duration == 120 %} active{% endif %}" data-duration="120">2h</button>
+      <button type="button" class="duration-btn{% if current_duration == 240 %} active{% endif %}" data-duration="240">4h</button>
+      <input type="number"
+             name="duration_minutes"
+             placeholder="min"
+             min="5"
+             max="480"
+             class="duration-custom"
+             value="{{ current_duration if current_duration else '' }}">
+    </div>
+  </div>
+</div>
+
+<!-- Recurrence (gated by schedule/due) -->
+<div class="form-section" id="recurrence-section" {% if not (task and (task.scheduled_date or task.due_date)) %}hidden{% endif %}>
+  <label class="section-label">RECURRENCE</label>
+  <div class="recurrence-picker" id="recurrence-picker">
+    <!-- Populated by recurrence-picker.js -->
+  </div>
+  <input type="hidden" name="is_recurring" value="{{ 'true' if task and task.is_recurring else 'false' }}">
+  <input type="hidden" name="recurrence_rule" value="{{ task.recurrence_rule | tojson if task and task.recurrence_rule else '' }}">
+</div>
+
+{% if mode == 'edit' and task %}
+<!-- Edit mode actions -->
+<div class="form-section form-actions-secondary">
+  {% if task.is_recurring %}
+  <button type="button" class="btn-action btn-skip" data-action="skip">
+    ⏭ Skip instance
+  </button>
+  {% endif %}
+  {% if task.scheduled_date and task.scheduled_time %}
+  <button type="button" class="btn-action btn-unschedule" data-action="unschedule">
+    Unschedule
+  </button>
+  {% endif %}
+  <button type="button" class="btn-action btn-delete" data-action="delete">
+    Delete
+  </button>
+</div>
+{% endif %}

@@ -1,0 +1,370 @@
+/* =============================================================================
+   Thoughts Page — Minimal Chat-Style Layout
+   ============================================================================= */
+
+/* 1) Page wrapper — fills viewport below header */
+.thoughts-page {
+    max-width: 600px;
+    margin: 0 auto;
+    height: calc(100vh - var(--header-height));
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+/* 2) Title + Subtitle — hidden for minimal look */
+.thoughts-title,
+.thoughts-subtitle {
+    display: none;
+}
+
+/* 3) Chat container — fills remaining space */
+.thoughts-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* 4) Scroll area — bubbles gravity to bottom */
+.scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.scroll-spacer {
+    flex: 1;
+}
+
+.bubble-list {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 8px;
+}
+
+/* 5) Time separator — hidden, dates are inline */
+.time-sep {
+    display: none;
+}
+
+/* 6) Bubble row — left-aligned bubble with right-pinned actions */
+.bubble-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+/* Visual break between date groups */
+.bubble-row.first-in-group {
+    margin-top: 6px;
+}
+
+.bubble-content {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px 14px 14px 4px;
+    padding: 8px 14px;
+    max-width: 80%;
+}
+
+.bubble-text {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* 7) Actions — right-pinned, hidden until hover on desktop */
+.bubble-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-instant) var(--ease-default);
+    flex-shrink: 0;
+}
+
+.bubble-row:hover .bubble-actions,
+.bubble-row:focus-within .bubble-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Inline date label — subtle, always visible */
+.bubble-date {
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    opacity: 0.5;
+    white-space: nowrap;
+    /* Visible even when actions are hidden */
+    pointer-events: none;
+}
+
+/* Icon buttons in bubble actions */
+.thoughts-page .icon-btn {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: var(--radius-sm);
+}
+
+.thoughts-page .icon-btn svg,
+.thoughts-page .icon-btn .icon {
+    width: 13px;
+    height: 13px;
+    display: block;
+    flex-shrink: 0;
+}
+
+/* Light mode — override Pico CSS blue button styles */
+html:not([data-theme="dark"]) .bubble-actions .icon-btn.promote,
+html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete {
+    background: var(--bg-surface) !important;
+    border-color: var(--border-default) !important;
+    color: var(--text-secondary) !important;
+}
+
+html:not([data-theme="dark"]) .bubble-actions .icon-btn.promote:hover {
+    background: var(--bg-panel) !important;
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    color: var(--primary) !important;
+}
+
+html:not([data-theme="dark"]) .bubble-actions .icon-btn.delete:hover {
+    background: var(--bg-panel) !important;
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    color: #C9505A !important;
+}
+
+/* Override Pico CSS button margin */
+.bubble-actions button {
+    margin-bottom: 0 !important;
+}
+
+/* 8) Bottom bar — minimal, no border */
+.bottom-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0 16px;
+    flex-shrink: 0;
+}
+
+.bottom-bar-input {
+    flex: 1;
+    height: 40px;
+    padding: 0 16px;
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    background: var(--bg-surface);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    box-sizing: border-box;
+}
+
+.bottom-bar-input::placeholder {
+    color: var(--text-muted);
+}
+
+.bottom-bar-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.1);
+}
+
+/* Submit button — solid purple circle with white arrow */
+.bottom-bar-btn {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--primary);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+
+.bottom-bar-btn:hover {
+    background: var(--primary-hover);
+}
+
+/* Hide text label, show arrow icon */
+.bottom-bar-btn .submit-label {
+    display: none;
+}
+
+.bottom-bar-btn .submit-icon {
+    display: block;
+    width: 16px;
+    height: 16px;
+    stroke: #fff;
+}
+
+.bottom-bar-btn:hover .submit-icon {
+    stroke: #fff;
+}
+
+/* 9) Slide-up animation for new bubbles */
+@keyframes slide-up-fade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bubble-row.is-new {
+    animation: slide-up-fade 400ms var(--ease-out);
+}
+
+/* 10) Responsive — actions always visible below 600px */
+@media (max-width: 600px) {
+    .bubble-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .bubble-content {
+        max-width: 85%;
+    }
+}
+
+/* =============================================================================
+   Dark Mode
+   ============================================================================= */
+
+[data-theme="dark"] .bubble-content {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .bottom-bar-input {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+}
+
+[data-theme="dark"] .bottom-bar-input::placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .bottom-bar-btn {
+    background: var(--primary);
+}
+
+[data-theme="dark"] .bottom-bar-btn:hover {
+    background: var(--primary-hover);
+}
+
+/* Dark mode icon buttons */
+[data-theme="dark"] .thoughts-page .icon-btn,
+[data-theme="dark"] .bubble-actions .icon-btn {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .thoughts-page .icon-btn svg,
+[data-theme="dark"] .bubble-actions .icon-btn svg {
+    stroke: var(--text-secondary);
+}
+
+[data-theme="dark"] .thoughts-page .icon-btn:hover,
+[data-theme="dark"] .bubble-actions .icon-btn:hover {
+    background: var(--bg-panel);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .thoughts-page .icon-btn:hover svg,
+[data-theme="dark"] .bubble-actions .icon-btn:hover svg {
+    stroke: var(--text-primary);
+}
+
+[data-theme="dark"] .bubble-actions .icon-btn.promote:hover {
+    color: var(--primary);
+}
+
+[data-theme="dark"] .bubble-actions .icon-btn.promote:hover svg {
+    stroke: var(--primary);
+}
+
+[data-theme="dark"] .bubble-actions .icon-btn.delete:hover {
+    color: #C9505A;
+}
+
+[data-theme="dark"] .bubble-actions .icon-btn.delete:hover svg {
+    stroke: #C9505A;
+}
+
+/* =============================================================================
+   Reduced Motion
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .bubble-row.is-new {
+        animation: none;
+    }
+
+    .thought-empty-state .empty-state-illustration {
+        animation: none;
+    }
+}
+
+/* =============================================================================
+   Empty State
+   ============================================================================= */
+
+.thought-empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.thought-empty-state .empty-state-illustration {
+    opacity: 0.85;
+    animation: float 3s ease-in-out infinite;
+}
+
+.thought-empty-state .empty-state-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2);
+}
+
+.thought-empty-state .empty-state-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 280px;
+}

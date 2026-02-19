@@ -1,0 +1,2604 @@
+/* =============================================================================
+   WhenWizard - First-Run Onboarding (Modern Redesign v0.10)
+   Glassmorphism + Gradient Background + Refined Typography
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Backdrop & Panel (Mobile-First)
+   ----------------------------------------------------------------------------- */
+
+.wizard-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    /* Mobile: gradient background matching login */
+    background: var(--gradient-bg-login);
+    overflow: hidden;
+}
+
+/* Decorative gradient orbs for wizard */
+.wizard-backdrop::before,
+.wizard-backdrop::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.5;
+    pointer-events: none;
+    animation: wizardFloatOrb 25s ease-in-out infinite;
+}
+
+.wizard-backdrop::before {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(109, 94, 246, 0.3) 0%, transparent 70%);
+    top: -150px;
+    right: -150px;
+}
+
+.wizard-backdrop::after {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(139, 124, 247, 0.25) 0%, transparent 70%);
+    bottom: -200px;
+    left: -200px;
+    animation-delay: -12s;
+}
+
+@keyframes wizardFloatOrb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -30px) scale(1.08); }
+    66% { transform: translate(-30px, 30px) scale(0.92); }
+}
+
+@media (min-width: 600px) {
+    .wizard-backdrop {
+        background: rgba(15, 23, 42, 0.35);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .wizard-backdrop::before,
+    .wizard-backdrop::after {
+        display: none;
+    }
+}
+
+.wizard-panel {
+    /* Mobile: full screen */
+    position: fixed;
+    inset: 0;
+    background: var(--glass-bg-strong);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    /* PWA safe areas */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+
+@media (min-width: 600px) {
+    .wizard-panel {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        max-width: 560px;
+        min-height: 460px;
+        max-height: calc(100vh - 48px);
+
+        /* Glassmorphism */
+        background: var(--glass-bg-strong);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        box-shadow: var(--shadow-elevated);
+        padding-top: 0;
+        padding-bottom: 40px; /* Push content higher within panel */
+
+        /* Entrance animation */
+        animation: wizardPanelIn 0.4s ease-out;
+    }
+
+    @keyframes wizardPanelIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+}
+
+@media (min-width: 900px) {
+    .wizard-panel {
+        max-width: 620px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wizard-backdrop::before,
+    .wizard-backdrop::after {
+        animation: none;
+    }
+    .wizard-panel {
+        animation: none;
+    }
+}
+
+/* Completion animation */
+.wizard-panel.completing {
+    animation: wizardComplete 400ms ease-out forwards;
+}
+
+@keyframes wizardComplete {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+}
+
+@media (min-width: 600px) {
+    @keyframes wizardComplete {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(0.95);
+            opacity: 0;
+        }
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Content Area (Scrollable)
+   ----------------------------------------------------------------------------- */
+
+.wizard-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+
+    /* Mobile padding - extra bottom for button shadow overflow */
+    padding: 36px 24px 48px;
+
+    /* Flex for vertical centering of content */
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 600px) {
+    .wizard-content {
+        padding: 48px 40px 16px;  /* Reduced top space for better balance */
+        scrollbar-gutter: stable;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Step Transitions
+   ----------------------------------------------------------------------------- */
+
+.wizard-step-content {
+    opacity: 1;
+    transform: translateX(0);
+    /* Crossfade transition - smoother than slide */
+    transition: opacity 300ms ease-out;
+
+    /* Fill available space and use flex to position progress at bottom */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Crossfade exit states */
+.wizard-step-content.exit-left,
+.wizard-step-content.exit-right {
+    opacity: 0;
+}
+
+/* Crossfade enter states */
+.wizard-step-content.enter-right,
+.wizard-step-content.enter-left {
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wizard-step-content {
+        transition: opacity 200ms ease-out;
+    }
+
+    .wizard-step-content.exit-left,
+    .wizard-step-content.exit-right,
+    .wizard-step-content.enter-left,
+    .wizard-step-content.enter-right {
+        transform: none;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Navigation
+   ----------------------------------------------------------------------------- */
+
+.wizard-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+
+    /* Mobile: fixed at bottom with safe area */
+    padding: 18px 24px;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--glass-border);
+
+    position: sticky;
+    bottom: 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-nav {
+        padding: 4px 40px 0;
+        border-top: none;
+        position: relative;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+/* Hide nav when keyboard is open */
+body.keyboard-open .wizard-nav {
+    display: none;
+}
+
+/* Nav spacer for single-button layouts */
+.wizard-nav-spacer {
+    flex: 1;
+}
+
+/* -----------------------------------------------------------------------------
+   Buttons
+   ----------------------------------------------------------------------------- */
+
+.wizard-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    /* Touch-friendly sizing */
+    height: 52px;
+    padding: 0 28px;
+    min-width: 130px;
+
+    /* Gradient background */
+    background: var(--gradient-primary);
+    color: var(--text-inverse);
+    border: none;
+    border-radius: 12px;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s ease;
+
+    /* Compact diffused glow */
+    box-shadow:
+        0 2px 8px rgba(109, 94, 246, 0.25),
+        0 4px 16px rgba(109, 94, 246, 0.20),
+        0 8px 24px rgba(109, 94, 246, 0.12);
+}
+
+.wizard-btn-primary:hover {
+    background: var(--gradient-primary-hover);
+    /* Compact glow on hover */
+    box-shadow:
+        0 3px 10px rgba(109, 94, 246, 0.30),
+        0 6px 20px rgba(109, 94, 246, 0.24),
+        0 10px 30px rgba(109, 94, 246, 0.15);
+    transform: translateY(-1px);
+}
+
+.wizard-btn-primary:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(109, 94, 246, 0.25);
+}
+
+.wizard-btn-primary:disabled {
+    background: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.wizard-btn-primary:disabled:active {
+    transform: none;
+}
+
+@media (min-width: 600px) {
+    .wizard-btn-primary {
+        height: 46px;
+        padding: 0 26px;
+        font-size: 0.85rem;
+    }
+
+    .wizard-btn-primary:active {
+        transform: none;
+    }
+}
+
+.wizard-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 52px;
+    padding: 0 26px;
+
+    /* Subtle glass effect */
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-muted);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+
+    font-size: 0.88rem;
+    font-weight: 500;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s ease;
+}
+
+.wizard-btn-secondary:hover {
+    background: var(--glass-bg-strong);
+    border-color: var(--border-strong);
+    color: var(--text);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-1px);
+}
+
+.wizard-btn-secondary:active {
+    background: var(--glass-bg-strong);
+    transform: scale(0.98);
+}
+
+@media (min-width: 600px) {
+    .wizard-btn-secondary {
+        height: 46px;
+        font-size: 0.85rem;
+    }
+
+    .wizard-btn-secondary:active {
+        transform: none;
+    }
+}
+
+.wizard-btn-ghost {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+
+    /* Touch target */
+    padding: 12px 16px;
+    margin: -12px -16px;
+
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wizard-btn-ghost:hover {
+    color: var(--text);
+}
+
+.wizard-btn-ghost:active {
+    color: var(--text);
+}
+
+@media (min-width: 600px) {
+    .wizard-btn-ghost {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+        margin: -8px -12px;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Progress Indicator (Dots only, no text)
+   ----------------------------------------------------------------------------- */
+
+.wizard-progress-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    margin-top: 20px;  /* Balanced spacing from content above */
+}
+
+@media (min-width: 600px) {
+    .wizard-progress-container {
+        padding: 8px 0;
+        margin-top: 16px;  /* Tighter spacing to card above */
+    }
+}
+
+.wizard-progress {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+}
+
+/* No connecting line - just standalone dots */
+
+@media (min-width: 600px) {
+    .wizard-progress {
+        gap: 8px;
+    }
+}
+
+/* Hidden - dots only */
+.wizard-progress-text {
+    display: none;
+}
+
+.wizard-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    z-index: 2; /* Above the connecting line */
+    background: var(--border);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Touch target wrapper */
+    position: relative;
+}
+
+.wizard-progress-dot::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+}
+
+.wizard-progress-dot.completed {
+    background: var(--primary);
+}
+
+.wizard-progress-dot.current {
+    background: var(--primary);
+    box-shadow: 0 0 0 3px rgba(109, 94, 246, 0.2);
+}
+
+.wizard-progress-dot.optional {
+    border: 2px solid var(--border);
+    background: transparent;
+    width: 8px;
+    height: 8px;
+    box-sizing: border-box;
+}
+
+.wizard-progress-dot.optional.completed {
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+@media (min-width: 600px) {
+    .wizard-progress-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    .wizard-progress-dot.optional {
+        width: 6px;
+        height: 6px;
+    }
+
+    .wizard-progress-dot.current {
+        box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.2);
+    }
+}
+
+/* Dot completing animation */
+.wizard-progress-dot.completing {
+    animation: dotPulse 0.3s ease-out;
+}
+
+@keyframes dotPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* -----------------------------------------------------------------------------
+   Swipe Hint (Touch Devices Only)
+   ----------------------------------------------------------------------------- */
+
+.wizard-swipe-hint {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Only show on touch devices, hide on desktop */
+@media (hover: none) and (pointer: coarse) {
+    .wizard-swipe-hint {
+        display: flex;
+    }
+}
+
+@media (min-width: 900px) {
+    .wizard-swipe-hint {
+        display: none;
+    }
+}
+
+.wizard-swipe-icon {
+    width: 20px;
+    height: 20px;
+    animation: swipeHint 2s ease-in-out infinite;
+}
+
+@keyframes swipeHint {
+    0%, 100% { transform: translateX(0); opacity: 0.5; }
+    50% { transform: translateX(-8px); opacity: 1; }
+}
+
+/* -----------------------------------------------------------------------------
+   Typography (Refined - reduced letter-spacing, less all-caps)
+   ----------------------------------------------------------------------------- */
+
+.wizard-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    text-align: center;
+    margin: 0 0 6px 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-title {
+        font-size: 1.7rem;
+    }
+}
+
+.wizard-subtitle {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+}
+
+@media (min-width: 600px) {
+    .wizard-subtitle {
+        font-size: 0.88rem;
+        margin-bottom: 22px;
+    }
+}
+
+.wizard-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Cards & Options
+   ----------------------------------------------------------------------------- */
+
+.wizard-card {
+    /* Glassmorphism */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 600px) {
+    .wizard-card {
+        padding: 18px;
+    }
+}
+
+.wizard-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    /* Touch-friendly sizing */
+    min-height: 56px;
+    padding: 12px 14px;
+
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-option:last-child {
+    margin-bottom: 0;
+}
+
+.wizard-option:active {
+    transform: scale(0.98);
+    background: var(--row-hover);
+}
+
+.wizard-option.selected {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.04);
+}
+
+@media (min-width: 600px) {
+    .wizard-option {
+        min-height: 48px;
+    }
+
+    .wizard-option:hover {
+        background: var(--row-hover);
+        border-color: var(--border-strong);
+    }
+
+    .wizard-option:active {
+        transform: none;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Checkboxes
+   ----------------------------------------------------------------------------- */
+
+.wizard-checkbox {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+
+    border: 2px solid var(--border);
+    border-radius: 6px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.15s ease;
+}
+
+@media (min-width: 600px) {
+    .wizard-checkbox {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        border-radius: 4px;
+    }
+}
+
+.wizard-checkbox.checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.wizard-checkbox.checked::after {
+    content: "\2713";
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+@media (min-width: 600px) {
+    .wizard-checkbox.checked::after {
+        font-size: 0.7rem;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   Inputs
+   ----------------------------------------------------------------------------- */
+
+.wizard-input {
+    width: 100%;
+
+    /* Touch-friendly height */
+    height: 52px;
+    padding: 0 16px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-surface);
+
+    font-size: 16px;  /* Prevents iOS zoom on focus */
+    color: var(--text);
+
+    -webkit-appearance: none;
+
+    transition: all 0.15s ease;
+}
+
+@media (min-width: 600px) {
+    .wizard-input {
+        height: 44px;
+        padding: 0 14px;
+    }
+}
+
+.wizard-input:focus {
+    border-color: rgba(109, 94, 246, 0.5) !important;
+    box-shadow: none !important;
+    outline: none !important;
+    filter: drop-shadow(0 0 4px rgba(109, 94, 246, 0.4)) !important;
+    position: relative;
+    z-index: 1;
+}
+
+.wizard-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* -----------------------------------------------------------------------------
+   Step 1: Welcome (Redesigned)
+   ----------------------------------------------------------------------------- */
+
+.wizard-step-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: 0;
+}
+
+/* Welcome Hero with Logo and Sparkles */
+.wizard-welcome-hero {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+/* Welcome Greeting */
+.wizard-welcome-greeting {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin: 0 0 16px 0;
+    letter-spacing: 0.01em;
+}
+
+@media (min-width: 600px) {
+    .wizard-welcome-greeting {
+        font-size: 1.15rem;
+        margin-bottom: 20px;
+    }
+}
+
+/* Wordmark styles - duplicated from typography.css to prevent FOUC
+   (Flash of Unstyled Content) due to @import loading delay */
+.wizard-welcome-hero .wm.lg {
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
+}
+
+.wizard-welcome-hero .wm.lg.font-ready {
+    opacity: 1;
+}
+
+.wizard-welcome-hero .wm.lg svg {
+    width: 42px;
+    height: 37px;
+    margin-bottom: 5px;
+    margin-right: 2px;
+}
+
+.wizard-welcome-hero .wm.lg > span:first-of-type {
+    font-size: 3rem;
+    font-family: 'Quicksand', sans-serif;  /* Wordmark stays Quicksand */
+    display: inline-block;
+    min-width: 170px;  /* Fixed width to prevent horizontal shift on font load */
+}
+
+.wizard-welcome-logo {
+    animation: logoFloat 3s ease-in-out infinite;
+}
+
+.wizard-welcome-logo img {
+    display: block;
+    height: 56px;
+    width: auto;
+    object-fit: contain;
+}
+
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+/* Sparkles around logo */
+.wizard-welcome-sparkles {
+    position: absolute;
+    inset: -16px;
+    pointer-events: none;
+}
+
+.wizard-sparkle {
+    position: absolute;
+    color: var(--primary);
+    font-size: 0.75rem;
+    opacity: 0;
+    animation: sparkle 2s ease-in-out infinite;
+}
+
+.wizard-sparkle-1 {
+    top: 0;
+    right: 4px;
+    animation-delay: 0s;
+}
+
+.wizard-sparkle-2 {
+    bottom: 8px;
+    left: 0;
+    animation-delay: 0.7s;
+}
+
+.wizard-sparkle-3 {
+    top: 50%;
+    right: -8px;
+    animation-delay: 1.4s;
+}
+
+@keyframes sparkle {
+    0%, 100% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wizard-welcome-logo {
+        animation: none;
+    }
+    .wizard-sparkle {
+        animation: none;
+        opacity: 0.6;
+    }
+}
+
+@media (min-width: 600px) {
+    .wizard-welcome-logo img {
+        height: 64px;
+        width: auto;
+    }
+
+    .wizard-welcome-sparkles {
+        inset: -20px;
+    }
+
+    .wizard-sparkle {
+        font-size: 0.85rem;
+    }
+}
+
+/* Emphasis on "when" in punchline */
+.wizard-welcome-punchline em {
+    color: var(--primary);
+    font-style: normal;
+    font-weight: 700;
+}
+
+.wizard-welcome-title {
+    font-size: 1.4rem;
+    line-height: 1.2;
+    margin-bottom: 16px;
+}
+
+@media (min-width: 600px) {
+    .wizard-welcome-title {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+}
+
+.wizard-welcome-card {
+    /* Glassmorphism */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 0;  /* Progress dots handle their own spacing */
+    max-width: 360px;
+    box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 600px) {
+    .wizard-welcome-card {
+        padding: 22px 28px;
+        max-width: 380px;
+    }
+}
+
+.wizard-welcome-line {
+    margin: 0 0 8px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.wizard-welcome-line:last-child {
+    margin-bottom: 0;
+}
+
+.wizard-welcome-punchline {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Centered button for welcome slide */
+.wizard-btn-centered {
+    margin: 0 auto;
+}
+
+/* -----------------------------------------------------------------------------
+   Step 2: Energy Modes
+   ----------------------------------------------------------------------------- */
+
+.wizard-mode-cards {
+    display: flex;
+    gap: 10px;
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-cards {
+        gap: 14px;
+    }
+}
+
+.wizard-mode-card {
+    flex: 1;
+    padding: 14px 8px;
+    min-width: 0;
+
+    /* Glassmorphism */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 2px solid var(--glass-border);
+    border-radius: 14px;
+    text-align: center;
+
+    /* Compact soft shadow */
+    box-shadow:
+        0 2px 6px rgba(15, 23, 42, 0.05),
+        0 4px 12px rgba(15, 23, 42, 0.04),
+        0 6px 18px rgba(15, 23, 42, 0.03);
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s ease;
+}
+
+.wizard-mode-card:active {
+    transform: scale(0.97);
+}
+
+.wizard-mode-card.selected {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.08);
+    /* Compact purple glow */
+    box-shadow:
+        0 2px 6px rgba(109, 94, 246, 0.18),
+        0 4px 12px rgba(109, 94, 246, 0.14),
+        0 6px 18px rgba(109, 94, 246, 0.08);
+    animation: selectedPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes selectedPulse {
+    0%, 100% {
+        box-shadow:
+            0 2px 6px rgba(109, 94, 246, 0.18),
+            0 4px 12px rgba(109, 94, 246, 0.14),
+            0 6px 18px rgba(109, 94, 246, 0.08);
+    }
+    50% {
+        box-shadow:
+            0 2px 8px rgba(109, 94, 246, 0.24),
+            0 5px 16px rgba(109, 94, 246, 0.18),
+            0 8px 24px rgba(109, 94, 246, 0.10);
+    }
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-card {
+        padding: 16px 12px;
+    }
+
+    .wizard-mode-card:hover {
+        border-color: var(--border-strong);
+        background: rgba(255, 255, 255, 0.95);
+        transform: translateY(-2px);
+        /* Compact shadow on hover */
+        box-shadow:
+            0 3px 8px rgba(15, 23, 42, 0.06),
+            0 6px 16px rgba(15, 23, 42, 0.05),
+            0 10px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .wizard-mode-card:active {
+        transform: none;
+    }
+}
+
+.wizard-mode-emoji {
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-emoji {
+        font-size: 1.75rem;
+        margin-bottom: 8px;
+    }
+}
+
+.wizard-mode-name {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+    color: var(--text);
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-name {
+        font-size: 0.62rem;
+        letter-spacing: 0.14em;
+        margin-bottom: 6px;
+    }
+}
+
+.wizard-mode-description {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (min-width: 600px) {
+    .wizard-mode-description {
+        font-size: 0.75rem;
+        line-height: 1.4;
+        -webkit-line-clamp: 3;
+    }
+}
+
+/* Tap hint for mobile */
+.wizard-tap-hint {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 12px 0 0 0;
+}
+
+@media (hover: hover) {
+    .wizard-tap-hint {
+        display: none;
+    }
+}
+
+/* Task Preview */
+.wizard-preview-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 16px 0;
+}
+
+.wizard-preview-task {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px 8px calc(10px + 2px);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    position: relative;
+    transition: opacity 0.25s ease, max-height 0.25s ease;
+}
+
+.wizard-preview-task::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary);
+}
+
+.wizard-preview-task.hidden {
+    opacity: 0;
+    max-height: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.wizard-preview-task-title {
+    flex: 1;
+    font-size: 0.8rem;
+}
+
+.wizard-preview-task-duration {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* Mode colors for preview */
+.wizard-preview-task.clarity-autopilot::before {
+    background: #22c55e; /* Green - mindless work */
+}
+
+.wizard-preview-task.clarity-normal::before {
+    background: #3b82f6; /* Blue - routine */
+}
+
+.wizard-preview-task.clarity-brainstorm::before {
+    background: #f59e0b; /* Amber - deep thinking */
+}
+
+/* -----------------------------------------------------------------------------
+   Step 3: Connect Calendar (Redesigned with event preview)
+   ----------------------------------------------------------------------------- */
+
+.wizard-connection-card {
+    /* Glassmorphism */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: var(--shadow-card);
+}
+
+.wizard-connection-card.connected {
+    padding-bottom: 16px;
+}
+
+@media (min-width: 600px) {
+    .wizard-connection-card {
+        padding: 20px;
+    }
+}
+
+.wizard-connection-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Google Calendar icon wrapper with connected state */
+.wizard-gcal-icon-wrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-panel);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.wizard-gcal-icon-wrap.connected {
+    background: rgba(109, 94, 246, 0.08);
+}
+
+.wizard-gcal-logo {
+    flex-shrink: 0;
+}
+
+/* Purple check badge for connected state */
+.wizard-gcal-check {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-surface);
+}
+
+.wizard-connection-name.connected {
+    color: var(--primary);
+}
+
+/* Success message when connected */
+.wizard-connection-success {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+}
+
+.wizard-connection-success-text {
+    font-size: 0.82rem;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.wizard-connection-info {
+    flex: 1;
+}
+
+.wizard-connection-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.wizard-connection-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.wizard-connection-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+}
+
+.wizard-connection-dot.connected {
+    background: var(--primary);
+}
+
+.wizard-connection-email {
+    color: var(--text-muted);
+}
+
+/* Event preview when connected */
+.wizard-event-preview {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.wizard-event-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 0.8rem;
+}
+
+.wizard-event-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.wizard-event-title {
+    flex: 1;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wizard-event-time {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Connect button when not connected */
+.wizard-connect-btn {
+    width: 100%;
+    margin-top: 16px;
+}
+
+.wizard-connection-privacy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 20px;
+}
+
+.wizard-connection-privacy svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+/* -----------------------------------------------------------------------------
+   Step 4: Calendar Selection
+   ----------------------------------------------------------------------------- */
+
+.wizard-calendar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    min-height: 54px;
+    padding: 12px 16px;
+
+    /* Glassmorphism */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow-sm);
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s ease;
+}
+
+.wizard-calendar-row:active {
+    background: rgba(255, 255, 255, 0.98);
+}
+
+/* Selected state: subtle highlight */
+.wizard-calendar-row.selected {
+    border-color: rgba(109, 94, 246, 0.3);
+    background: rgba(255, 255, 255, 0.98);
+}
+
+@media (min-width: 600px) {
+    .wizard-calendar-row {
+        min-height: 50px;
+    }
+
+    .wizard-calendar-row:hover {
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: var(--shadow-card);
+        transform: translateY(-1px);
+    }
+}
+
+.wizard-calendar-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.wizard-calendar-name {
+    flex: 1;
+    font-size: 0.85rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Helper Links */
+.wizard-helper-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 12px;
+    font-size: 0.75rem;
+}
+
+.wizard-helper-link {
+    color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+}
+
+.wizard-helper-link:hover {
+    color: var(--primary);
+}
+
+/* -----------------------------------------------------------------------------
+   Step 5: Todoist Import
+   ----------------------------------------------------------------------------- */
+
+/* 5a: Source Selection */
+.wizard-import-source {
+    /* Glassmorphism */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 600px) {
+    .wizard-import-source {
+        padding: 28px 24px;
+    }
+}
+
+.wizard-import-logo {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 12px;
+}
+
+@media (min-width: 600px) {
+    .wizard-import-logo {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* Todoist logo SVG */
+.wizard-todoist-logo {
+    margin: 0 auto 12px;
+    display: block;
+}
+
+@media (min-width: 600px) {
+    .wizard-todoist-logo {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* Success badge for connected state */
+.wizard-import-success-badge {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+    background: rgba(109, 94, 246, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--primary);
+}
+
+.wizard-import-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.wizard-import-description {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.wizard-import-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.wizard-import-divider::before,
+.wizard-import-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle);
+}
+
+/* Summary Bar */
+.wizard-import-summary {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 16px;
+}
+
+.wizard-import-summary strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* 5c: Progress */
+.wizard-import-progress {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.wizard-import-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: wizardSpin 1s linear infinite;
+}
+
+@keyframes wizardSpin {
+    to { transform: rotate(360deg); }
+}
+
+.wizard-import-progress-count {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+}
+
+.wizard-import-progress-bar {
+    width: 200px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0 auto 16px;
+}
+
+.wizard-import-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.wizard-import-progress-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 5d: Complete */
+.wizard-import-complete {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.wizard-import-success-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    background: rgba(109, 94, 246, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.wizard-stat-cards {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 24px 0;
+}
+
+@media (min-width: 600px) {
+    .wizard-stat-cards {
+        gap: 16px;
+    }
+}
+
+.wizard-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 16px 20px;
+    min-width: 90px;
+
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+@media (min-width: 600px) {
+    .wizard-stat-card {
+        padding: 16px 24px;
+        min-width: 100px;
+    }
+}
+
+.wizard-stat-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+
+@media (min-width: 600px) {
+    .wizard-stat-value {
+        font-size: 2.5rem;
+    }
+}
+
+.wizard-stat-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+@media (min-width: 600px) {
+    .wizard-stat-label {
+        font-size: 0.7rem;
+    }
+}
+
+.wizard-import-complete-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 16px;
+}
+
+/* 5e: Error State */
+.wizard-error-illustration {
+    margin-bottom: 16px;
+}
+
+.wizard-error-illustration img {
+    width: 72px;
+    height: 72px;
+    opacity: 0.85;
+}
+
+@media (min-width: 600px) {
+    .wizard-error-illustration img {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+.wizard-error-message {
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--red-600, #DC2626);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.wizard-error-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+@media (min-width: 600px) {
+    .wizard-error-actions {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+/* Fresh Start (Empty Import) State */
+.wizard-import-fresh-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    animation: seedlingGrow 0.6s ease-out;
+}
+
+@keyframes seedlingGrow {
+    from {
+        transform: scale(0) translateY(10px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wizard-import-fresh-icon {
+        animation: none;
+    }
+}
+
+.wizard-import-fresh-message {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+/* -----------------------------------------------------------------------------
+   Step 6: Domains
+   ----------------------------------------------------------------------------- */
+
+/* Chip Grid (Fresh Start) */
+.wizard-domain-chips {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+@media (min-width: 600px) {
+    .wizard-domain-chips {
+        gap: 12px;
+    }
+}
+
+.wizard-domain-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+
+    padding: 16px 10px;
+
+    /* Glassmorphism */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 2px solid var(--glass-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s ease;
+}
+
+.wizard-domain-chip:active {
+    transform: scale(0.96);
+}
+
+.wizard-domain-chip.selected {
+    border-color: var(--primary);
+    background: rgba(109, 94, 246, 0.08);
+    box-shadow: var(--shadow-glow-sm);
+}
+
+@media (min-width: 600px) {
+    .wizard-domain-chip {
+        padding: 18px 14px;
+    }
+
+    .wizard-domain-chip:hover {
+        border-color: var(--border-strong);
+        background: rgba(255, 255, 255, 0.98);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .wizard-domain-chip:active {
+        transform: none;
+    }
+}
+
+.wizard-domain-emoji {
+    font-size: 1.25rem;
+}
+
+@media (min-width: 600px) {
+    .wizard-domain-emoji {
+        font-size: 1.5rem;
+    }
+}
+
+.wizard-domain-name {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 600px) {
+    .wizard-domain-name {
+        font-size: 0.75rem;
+    }
+}
+
+/* Checkmark text removed - border only signals selection */
+.wizard-domain-check {
+    display: none;
+}
+
+/* Add your own chip - dashed border */
+.wizard-domain-chip-add {
+    border-style: dashed;
+    border-color: var(--border);
+    background: transparent;
+}
+
+.wizard-domain-add-icon {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.wizard-domain-chip-add .wizard-domain-name {
+    color: var(--text-muted);
+}
+
+.wizard-domain-chip-add:hover {
+    border-color: var(--primary);
+    border-style: solid;
+    background: rgba(109, 94, 246, 0.04);
+}
+
+.wizard-domain-chip-add:hover .wizard-domain-add-icon,
+.wizard-domain-chip-add:hover .wizard-domain-name {
+    color: var(--primary);
+}
+
+/* Custom domain input row (below grid) */
+.wizard-custom-domain-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    position: relative;
+}
+
+@media (min-width: 600px) {
+    .wizard-custom-domain-row {
+        gap: 12px;
+        padding: 16px 18px;
+    }
+}
+
+.wizard-custom-domain-row .wizard-domain-input {
+    flex: 1;
+    height: 38px;
+    margin-bottom: 0;
+}
+
+.wizard-custom-domain-row .wizard-btn-sm {
+    height: 38px;
+    padding: 0 16px;
+    min-width: auto;
+}
+
+.wizard-custom-domain-row .wizard-btn-ghost {
+    padding: 8px 12px;
+    margin: 0;
+    text-decoration: none;
+}
+
+
+/* Legacy - Add Custom Trigger (can be removed if not used) */
+.wizard-add-domain-trigger {
+    display: none; /* Hidden - using grid chip now */
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    margin-top: 12px;
+
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+
+    color: var(--text-muted);
+    font-size: 0.85rem;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.wizard-add-domain-trigger:hover {
+    border-color: var(--primary);
+    border-style: solid;
+    color: var(--primary);
+}
+
+/* Add Domain Form */
+.wizard-add-domain-section {
+    margin-top: 12px;
+}
+
+.wizard-add-domain-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-panel);
+}
+
+.wizard-add-domain-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.wizard-domain-input {
+    flex: 1;
+    font-size: 0.9rem !important;
+}
+
+.wizard-add-domain-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+}
+
+/* Emoji Picker for Custom Domain */
+.wizard-emoji-picker-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.wizard-emoji-btn {
+    all: unset;
+    box-sizing: border-box;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.wizard-emoji-btn:hover {
+    border-color: var(--primary);
+    background: var(--bg-panel);
+}
+
+.wizard-emoji-popover {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    padding: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    z-index: 1100;
+    display: none;
+    flex-wrap: wrap;
+    width: 220px;
+    gap: 2px;
+}
+
+.wizard-emoji-popover.open {
+    display: flex;
+}
+
+.wizard-emoji-option {
+    all: unset;
+    box-sizing: border-box;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.wizard-emoji-option:hover {
+    background: var(--bg-panel);
+    transform: scale(1.15);
+}
+
+.wizard-btn-sm {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    height: auto;
+}
+
+/* Domain Summary - removed, selection shown via border only */
+
+/* -----------------------------------------------------------------------------
+   Step 7: Security
+   ----------------------------------------------------------------------------- */
+
+/* Collapsible Section */
+.wizard-security-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wizard-security-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text);
+}
+
+.wizard-security-toggle-icon {
+    font-size: 1rem;
+}
+
+.wizard-security-toggle-chevron {
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+}
+
+.wizard-security-toggle.expanded .wizard-security-toggle-chevron {
+    transform: rotate(180deg);
+}
+
+.wizard-security-description {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 12px;
+    padding: 0 16px;
+}
+
+/* Expanded Content */
+.wizard-security-content {
+    display: none;
+    margin-top: 16px;
+    padding: 20px 16px;
+
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.wizard-security-content.expanded {
+    display: block;
+}
+
+/* Warning Box */
+.wizard-security-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+}
+
+.wizard-security-warning-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #B45309;
+    margin-bottom: 10px;
+}
+
+.wizard-security-warning ul {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text);
+}
+
+@media (min-width: 600px) {
+    .wizard-security-warning ul {
+        padding-left: 18px;
+    }
+}
+
+.wizard-security-warning li {
+    margin-bottom: 2px;
+}
+
+/* Strength Meter */
+.wizard-strength-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+@media (min-width: 600px) {
+    .wizard-strength-container {
+        gap: 10px;
+    }
+}
+
+.wizard-strength-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.wizard-strength-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.wizard-strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.2s ease, background 0.2s ease;
+}
+
+.wizard-strength-fill.weak { width: 25%; background: #DC2626; }
+.wizard-strength-fill.fair { width: 50%; background: #F59E0B; }
+.wizard-strength-fill.good { width: 75%; background: #10B981; }
+.wizard-strength-fill.strong { width: 100%; background: #059669; }
+
+.wizard-strength-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 50px;
+}
+
+.wizard-strength-text.weak { color: #DC2626; }
+.wizard-strength-text.fair { color: #F59E0B; }
+.wizard-strength-text.good { color: #10B981; }
+.wizard-strength-text.strong { color: #059669; }
+
+/* Passkey Card */
+.wizard-passkey-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+@media (min-width: 600px) {
+    .wizard-passkey-card {
+        padding: 24px 20px;
+    }
+}
+
+.wizard-passkey-icon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.wizard-passkey-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.wizard-passkey-description {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.wizard-passkey-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 12px;
+}
+
+.wizard-passkey-status.saved {
+    color: var(--primary);
+}
+
+/* Acknowledgment Checkbox */
+.wizard-acknowledgment {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    padding: 16px;
+    margin-top: 20px;
+
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wizard-acknowledgment:active {
+    background: rgba(15, 23, 42, 0.04);
+}
+
+@media (min-width: 600px) {
+    .wizard-acknowledgment {
+        padding: 14px 16px;
+    }
+
+    .wizard-acknowledgment:hover {
+        background: rgba(15, 23, 42, 0.04);
+    }
+}
+
+.wizard-acknowledgment-check {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+
+    border: 2px solid var(--border-strong);
+    border-radius: 6px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.15s ease;
+}
+
+@media (min-width: 600px) {
+    .wizard-acknowledgment-check {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        border-radius: 4px;
+    }
+}
+
+.wizard-acknowledgment.checked .wizard-acknowledgment-check {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.wizard-acknowledgment.checked .wizard-acknowledgment-check::after {
+    content: "\2713";
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+@media (min-width: 600px) {
+    .wizard-acknowledgment.checked .wizard-acknowledgment-check::after {
+        font-size: 0.7rem;
+    }
+}
+
+.wizard-acknowledgment-text {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+.wizard-security-enable-btn {
+    margin-top: 16px;
+}
+
+/* Encryption Enabled State */
+.wizard-encryption-enabled {
+    text-align: center;
+    padding: 28px;
+    background: linear-gradient(135deg, rgba(109, 94, 246, 0.1), rgba(109, 94, 246, 0.05));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(109, 94, 246, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(109, 94, 246, 0.08);
+}
+
+.wizard-encryption-enabled-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+}
+
+.wizard-encryption-enabled-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.wizard-encryption-enabled-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* -----------------------------------------------------------------------------
+   Step 7: Ready (Completion - Redesigned)
+   ----------------------------------------------------------------------------- */
+
+.wizard-step-ready {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: 16px;
+}
+
+.wizard-step-ready .wizard-title {
+    margin-bottom: 4px;
+}
+
+.wizard-step-ready .wizard-subtitle {
+    margin-bottom: 16px;
+}
+
+/* Success illustration */
+.wizard-ready-illustration {
+    margin-bottom: 16px;
+}
+
+.wizard-ready-illustration img {
+    width: 100px;
+    height: 100px;
+    opacity: 0.9;
+}
+
+@media (min-width: 600px) {
+    .wizard-ready-illustration img {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+/* Celebration emoji */
+.wizard-ready-celebration {
+    margin-bottom: 12px;
+}
+
+.wizard-ready-emoji {
+    font-size: 3rem;
+    display: inline-block;
+    animation: wizardBounce 0.6s ease-out;
+}
+
+@keyframes wizardBounce {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wizard-ready-emoji {
+        animation: none;
+    }
+}
+
+.wizard-recap-list {
+    /* Glassmorphism */
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 14px 24px;
+    margin-bottom: 36px;
+    max-width: 300px;
+    box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 600px) {
+    .wizard-recap-list {
+        padding: 16px 28px;
+        max-width: 340px;
+        margin-bottom: 44px;
+    }
+}
+
+.wizard-recap-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+@media (min-width: 600px) {
+    .wizard-recap-item {
+        padding: 3px 0;
+        font-size: 0.75rem;
+    }
+}
+
+.wizard-recap-check {
+    font-size: 0.85rem;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+/* Final CTA container */
+.wizard-final-cta {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Final step button - prominent with glow pulse */
+.wizard-btn-final {
+    width: 280px;
+    height: 58px !important;
+    font-size: 1.05rem !important;
+    font-weight: 600;
+    animation: finalPulse 2.5s ease-in-out infinite;
+}
+
+@media (min-width: 600px) {
+    .wizard-btn-final {
+        width: 320px;
+        height: 54px !important;
+    }
+}
+
+@keyframes finalPulse {
+    0%, 100% {
+        box-shadow:
+            0 2px 8px rgba(109, 94, 246, 0.25),
+            0 4px 16px rgba(109, 94, 246, 0.20),
+            0 8px 24px rgba(109, 94, 246, 0.12);
+    }
+    50% {
+        /* Compact expanding glow */
+        box-shadow:
+            0 3px 12px rgba(109, 94, 246, 0.32),
+            0 6px 22px rgba(109, 94, 246, 0.26),
+            0 12px 32px rgba(109, 94, 246, 0.16);
+    }
+}
+
+/* =============================================================================
+   Reduced Motion - Additional Animations
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    /* Progress dot pulse */
+    .wizard-progress-dot.completing {
+        animation: none;
+    }
+
+    /* Swipe hint movement */
+    .wizard-swipe-icon {
+        animation: none;
+        opacity: 0.7;
+    }
+
+    /* Selected card pulse */
+    .wizard-mode-card.selected {
+        animation: none;
+        /* Keep static glow */
+        box-shadow:
+            0 2px 6px rgba(109, 94, 246, 0.18),
+            0 4px 12px rgba(109, 94, 246, 0.14),
+            0 6px 18px rgba(109, 94, 246, 0.08);
+    }
+
+    /* Import spinner */
+    .wizard-import-spinner {
+        animation: none;
+        /* Show static ring */
+        border-color: var(--primary);
+        border-top-color: transparent;
+    }
+
+    /* Final button pulse */
+    .wizard-btn-final {
+        animation: none;
+        /* Keep static shadow */
+        box-shadow:
+            0 2px 8px rgba(109, 94, 246, 0.25),
+            0 4px 16px rgba(109, 94, 246, 0.20),
+            0 8px 24px rgba(109, 94, 246, 0.12);
+    }
+}
+
+/* =============================================================================
+   Dark Mode Overrides
+   ============================================================================= */
+
+/* Mode cards (Step 2) - fix bright hover in dark theme */
+[data-theme="dark"] .wizard-mode-card:hover {
+    background: var(--interactive-hover);
+    border-color: var(--border-strong);
+}
+
+/* Calendar rows (Step 4) - fix bright backgrounds in dark theme */
+[data-theme="dark"] .wizard-calendar-row:active {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .wizard-calendar-row.selected {
+    background: var(--interactive-hover);
+}
+
+[data-theme="dark"] .wizard-calendar-row:hover {
+    background: var(--interactive-hover);
+}
+
+/* Domain chips (Step 6) - fix bright hover in dark theme */
+[data-theme="dark"] .wizard-domain-chip:hover {
+    background: var(--interactive-hover);
+}

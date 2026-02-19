@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>{% block title %}Whendoist{% endblock %}</title>
+
+    <!-- PWA / Add to Home Screen -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#6D5EF6">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Whendoist">
+    <!-- Apple Touch Icons (multiple sizes for different devices) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon-180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/static/img/apple-touch-icon-167.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/img/apple-touch-icon-152.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/static/img/apple-touch-icon-120.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/static/img/apple-touch-icon-76.png">
+    <!-- Fallback for older iOS -->
+    <link rel="apple-touch-icon" href="/static/img/apple-touch-icon-180.png">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="/static/img/brand/favicon.svg">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/img/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16.png">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Whendoist">
+    <meta property="og:title" content="{% block og_title %}Whendoist - When do I do my tasks?{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Schedule your tasks alongside your calendar. Whendoist answers the question: WHEN do I do my tasks?{% endblock %}">
+    <meta property="og:image" content="/static/img/og-image-1200x630.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Whendoist - When do I do my tasks?">
+    <meta name="twitter:description" content="Schedule your tasks alongside your calendar.">
+    <meta name="twitter:image" content="/static/img/twitter-card-1200x600.png">
+
+    <!-- Brand Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSRF Token for JavaScript -->
+    <meta name="csrf-token" content="{{ csrf_token|default('') }}">
+
+    <!-- Theme initialization (must be before CSS to prevent flash) -->
+    <script src="/static/js/theme.js?v={{ app_version|default('') }}"></script>
+
+    <!-- PWA viewport height fix — must run before CSS layout.
+         On iOS PWA standalone, innerHeight/100dvh can underreport by
+         safe-area-inset-top (59px). screen.height is always correct.
+         See docs/PWA-VIEWPORT-FIX.md -->
+    <script>
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+        document.documentElement.style.setProperty('--app-height', screen.height + 'px');
+    }
+    </script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/vendor/pico.min.css">
+    <link rel="stylesheet" href="/static/vendor/air-datepicker.css">
+    <!-- Design tokens (single source of truth) -->
+    <link rel="stylesheet" href="/static/css/tokens.css?v={{ app_version|default('') }}"
+          onerror="document.documentElement.classList.add('css-error')">
+    <!-- Component system -->
+    <link rel="stylesheet" href="/static/css/components/index.css?v={{ app_version|default('') }}">
+    <link rel="stylesheet" href="/static/css/components/shortcuts.css?v={{ app_version|default('') }}">
+    <link rel="stylesheet" href="/static/css/app.css?v={{ app_version|default('') }}">
+    <link rel="stylesheet" href="/static/css/brand.css?v={{ app_version|default('') }}">
+    <link rel="stylesheet" href="/static/css/mobile.css?v={{ app_version|default('') }}">
+    <!-- CSS Error Boundary - fallback styles if tokens.css fails -->
+    <style>
+        .css-error {
+            --bg-canvas: #F8FAFC;
+            --bg-panel: #F1F5F9;
+            --bg-surface: #FFFFFF;
+            --text-primary: #0B1220;
+            --text-secondary: rgba(15, 23, 42, 0.64);
+            --border-default: rgba(15, 23, 42, 0.085);
+            --primary: #6D5EF6;
+        }
+        .css-error::before {
+            content: "Some styles failed to load. Please refresh.";
+            display: block;
+            background: #FEF2F2;
+            color: #B91C1C;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+    {% if show_wizard %}
+    <link rel="stylesheet" href="/static/css/wizard.css?v={{ app_version|default('') }}">
+    {% endif %}
+    {% block extra_css %}{% endblock %}
+    <script src="/static/vendor/htmx.min.js"></script>
+    <script src="/static/vendor/air-datepicker.js"></script>
+    <script src="/static/js/toast.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/error-handler.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/shortcuts.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/crypto.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/passkey.js?v={{ app_version|default('') }}"></script>
+    <!-- Mobile utilities -->
+    <script src="/static/js/device-detection.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/haptics.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/mobile-sheet.js?v={{ app_version|default('') }}"></script>
+    <script src="/static/js/mobile-core.js?v={{ app_version|default('') }}"></script>
+    <!-- Global config for encryption state (must be before crypto.js usage) -->
+    <script>
+    window.WHENDOIST = {
+        encryptionEnabled: {{ encryption_enabled|default(false)|tojson }},
+        encryptionSalt: {{ encryption_salt|default(none)|tojson }},
+        encryptionTestValue: {{ encryption_test_value|default(none)|tojson }},
+        hasPasskeys: {{ has_passkeys|default(false)|tojson }},
+        passkeyCount: {{ passkey_count|default(0)|tojson }},
+        unlockMethod: {{ unlock_method|default('passphrase')|tojson }},
+        // Wizard state
+        showWizard: {{ show_wizard|default(false)|tojson }},
+        calendarConnected: {{ calendar_connected|default(false)|tojson }},
+        todoistConnected: {{ todoist_connected|default(false)|tojson }},
+        userName: {{ user_name|default('')|tojson }},
+        userEmail: {{ user_email|default('')|tojson }},
+        // Timezone
+        userTimezone: {{ user_timezone|default('')|tojson }},
+        // Demo mode
+        isDemoUser: {{ is_demo_user|default(false)|tojson }}
+    };
+
+    // Auto-detect timezone on first visit (silent, no toast)
+    if (!window.WHENDOIST.userTimezone && window.WHENDOIST.userEmail) {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        fetch('/api/v1/preferences', {
+            method: 'PUT',
+            headers: window.getCSRFHeaders ? window.getCSRFHeaders({ 'Content-Type': 'application/json' }) : { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timezone: detected })
+        }).then(() => {
+            window.WHENDOIST.userTimezone = detected;
+        }).catch(() => {}); // Fire-and-forget, don't block page
+    }
+    </script>
+</head>
+<body>
+    <!-- Accessibility: Screen reader announcements -->
+    <div id="a11y-announcer" aria-live="polite" class="sr-only"></div>
+
+    <!-- Inline SVG Sprite for iOS Safari compatibility (external <use> refs don't work) -->
+    {% include '_svg_sprites.html' %}
+    <script>
+    // Rewrite SVG <use> hrefs from external URLs to local #id refs (iOS Safari fix)
+    (function() {
+        function rewriteUse(use) {
+            var href = use.getAttribute('href');
+            if (href && href.indexOf('/') !== -1 && href.indexOf('#') !== -1) {
+                use.setAttribute('href', href.substring(href.indexOf('#')));
+            }
+        }
+        function rewriteAll(root) {
+            (root || document).querySelectorAll('use[href*="/"]').forEach(rewriteUse);
+        }
+        // MutationObserver to catch <use> elements as they're added to DOM
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                m.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) {
+                        if (node.tagName && node.tagName.toLowerCase() === 'use') rewriteUse(node);
+                        if (node.querySelectorAll) rewriteAll(node);
+                    }
+                });
+            });
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        // Also rewrite any already-parsed elements and handle HTMX
+        document.addEventListener('DOMContentLoaded', function() { rewriteAll(); });
+        document.body && document.body.addEventListener('htmx:afterSwap', function(e) { rewriteAll(e.detail.target); });
+    })();
+    </script>
+
+    <!-- Skip to main content link for keyboard navigation -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="brand brand-icon" aria-label="Whendoist">
+                <svg viewBox="38 40 180 160" aria-hidden="true">
+                    <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF" transform="rotate(-8 62 120)"/>
+                    <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                    <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0" transform="rotate(8 194 120)"/>
+                </svg>
+            </a>
+            {% if user %}
+            <!-- Spacer to push right-side elements -->
+            <div class="header-spacer"></div>
+            <!-- Page Navigation -->
+            <nav class="header-nav">
+                <a href="/thoughts" class="nav-item{% if request.url.path == '/thoughts' %} active{% endif %}">Thoughts</a>
+                <a href="/dashboard" class="nav-item{% if request.url.path == '/dashboard' %} active{% endif %}">Tasks</a>
+                <a href="/analytics" class="nav-item{% if request.url.path == '/analytics' %} active{% endif %}">Analytics</a>
+                <a href="/settings" class="nav-item{% if request.url.path == '/settings' %} active{% endif %}">Settings</a>
+            </nav>
+            <!-- Mobile search button (Telegram-style, non-functional) -->
+            <button type="button" class="header-search-btn" aria-label="Search">
+                <svg class="icon" width="18" height="18" aria-hidden="true">
+                    <use href="#search"></use>
+                </svg>
+            </button>
+            <a href="/auth/logout" class="btn-logout" title="Logout">
+                <svg class="icon" width="18" height="18" aria-hidden="true">
+                    <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#logout"></use>
+                </svg>
+            </a>
+            <!-- Mobile Hamburger Menu -->
+            <button type="button" class="hamburger-toggle" aria-label="Menu" onclick="toggleMobileNav()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            {% endif %}
+        </div>
+    </header>
+    {% if user %}
+    <!-- Mobile Navigation Drawer -->
+    <nav class="mobile-nav" id="mobile-nav">
+        <a href="/thoughts" class="{% if request.url.path == '/thoughts' %}active{% endif %}">Thoughts</a>
+        <a href="/dashboard" class="{% if request.url.path == '/dashboard' %}active{% endif %}">Tasks</a>
+        <a href="/analytics" class="{% if request.url.path == '/analytics' %}active{% endif %}">Analytics</a>
+        <a href="/settings" class="{% if request.url.path == '/settings' %}active{% endif %}">Settings</a>
+        <a href="/auth/logout">Logout</a>
+    </nav>
+    <script>
+    function toggleMobileNav() {
+        const nav = document.getElementById('mobile-nav');
+        const btn = document.querySelector('.hamburger-toggle');
+        nav.classList.toggle('open');
+        btn.classList.toggle('active');
+    }
+    </script>
+    {% endif %}
+    <main id="main-content" class="container-fluid" role="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Encryption Unlock Modal (passkey or passphrase) -->
+    {% if encryption_enabled %}
+    <div id="passphrase-modal" class="passphrase-modal" style="display: none;">
+        <div class="passphrase-modal__backdrop"></div>
+        <div class="passphrase-modal__content">
+            <div class="passphrase-modal__header">
+                <svg class="icon icon-lg" aria-hidden="true">
+                    <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#lock"></use>
+                </svg>
+                <h3>Unlock Your Data</h3>
+            </div>
+            <p class="passphrase-modal__desc">
+                Your data is encrypted. Unlock to continue.
+            </p>
+
+            <!-- Passkey unlock section (shown if passkeys registered) -->
+            <div id="passkey-unlock-section" style="display: none;">
+                <button type="button" class="passphrase-modal__btn passphrase-modal__btn--passkey" onclick="unlockWithPasskey()">
+                    <svg class="icon" aria-hidden="true">
+                        <use href="{{ url_for('static', path='img/icons/ui-icons.svg') }}#key"></use>
+                    </svg>
+                    Unlock with Passkey
+                </button>
+                <div class="passphrase-modal__divider">
+                    <span>or use passphrase</span>
+                </div>
+            </div>
+
+            <!-- Passphrase input (always available as fallback) -->
+            <div id="passphrase-unlock-section">
+                <input type="password" id="unlock-passphrase" class="passphrase-modal__input" placeholder="Enter your passphrase" autocomplete="current-password" aria-label="Encryption passphrase">
+                <button type="button" class="passphrase-modal__btn" onclick="unlockEncryption()">Unlock</button>
+            </div>
+
+            <div id="unlock-error" class="passphrase-modal__error" style="display: none;"></div>
+        </div>
+    </div>
+    <style>
+    .passphrase-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .passphrase-modal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+    }
+    .passphrase-modal__content {
+        position: relative;
+        background: #fff;
+        border-radius: 16px;
+        padding: 28px 32px;
+        max-width: 360px;
+        width: 90%;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    }
+    .passphrase-modal__header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .passphrase-modal__header svg {
+        color: var(--primary);
+    }
+    .passphrase-modal__header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .passphrase-modal__desc {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+    }
+    .passphrase-modal__input {
+        width: 100%;
+        height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-bottom: 16px;
+    }
+    .passphrase-modal__input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(109, 94, 246, 0.15);
+    }
+    .passphrase-modal__error {
+        color: var(--danger);
+        font-size: 0.8125rem;
+        margin: -8px 0 12px;
+    }
+    .passphrase-modal__btn {
+        width: 100%;
+        height: 44px;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .passphrase-modal__btn:hover {
+        background: var(--primary-hover);
+    }
+    .passphrase-modal__btn--passkey {
+        background: #1a1a2e;
+        margin-bottom: 16px;
+    }
+    .passphrase-modal__btn--passkey:hover {
+        background: #2a2a4e;
+    }
+    .passphrase-modal__btn--passkey svg {
+        flex-shrink: 0;
+    }
+    .passphrase-modal__divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        color: var(--text-muted);
+        font-size: 0.8125rem;
+    }
+    .passphrase-modal__divider::before,
+    .passphrase-modal__divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+    </style>
+    <script>
+    // Encryption unlock check
+    (function() {
+        if (window.WHENDOIST?.encryptionEnabled && typeof Crypto !== 'undefined') {
+            // Check if key is already stored
+            if (!Crypto.hasStoredKey()) {
+                // Show unlock modal
+                document.getElementById('passphrase-modal').style.display = 'flex';
+
+                // Show passkey section if user has passkeys registered
+                if (window.WHENDOIST.hasPasskeys && Passkey.isSupported()) {
+                    document.getElementById('passkey-unlock-section').style.display = 'block';
+                }
+
+                setTimeout(() => {
+                    document.getElementById('unlock-passphrase').focus();
+                }, 100);
+            }
+        }
+    })();
+
+    async function unlockEncryption() {
+        const passphrase = document.getElementById('unlock-passphrase').value;
+        const errorEl = document.getElementById('unlock-error');
+
+        if (!passphrase) {
+            errorEl.textContent = 'Please enter your passphrase';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            // Use the Crypto API to unlock - it uses window.WHENDOIST for salt/testValue
+            const success = await Crypto.unlockEncryption(passphrase);
+
+            if (success) {
+                document.getElementById('passphrase-modal').style.display = 'none';
+                // Reload to decrypt data
+                window.location.reload();
+            } else {
+                errorEl.textContent = 'Incorrect passphrase. Please try again.';
+                errorEl.style.display = 'block';
+                document.getElementById('unlock-passphrase').select();
+            }
+        } catch (e) {
+            errorEl.textContent = 'Error: ' + e.message;
+            errorEl.style.display = 'block';
+        }
+    }
+
+    async function unlockWithPasskey() {
+        const errorEl = document.getElementById('unlock-error');
+        const btn = document.querySelector('.passphrase-modal__btn--passkey');
+
+        // Disable button while authenticating
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="spinner" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg> Authenticating...';
+
+        try {
+            const result = await Passkey.unlockWithPasskey();
+
+            if (result.success) {
+                document.getElementById('passphrase-modal').style.display = 'none';
+                // Reload to decrypt data
+                window.location.reload();
+            } else {
+                errorEl.textContent = result.error || 'Passkey authentication failed. Try again or use passphrase.';
+                errorEl.style.display = 'block';
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-1V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="1"/></svg> Unlock with Passkey';
+            }
+        } catch (e) {
+            errorEl.textContent = 'Error: ' + e.message;
+            errorEl.style.display = 'block';
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-1V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="1"/></svg> Unlock with Passkey';
+        }
+    }
+
+    // Enter key to unlock
+    document.getElementById('unlock-passphrase')?.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            unlockEncryption();
+        }
+    });
+    </script>
+    {% endif %}
+
+    <!-- Wizard Overlay -->
+    {% if show_wizard %}
+    <div id="wizard-backdrop" class="wizard-backdrop">
+        <div class="wizard-panel">
+            <div class="wizard-content" id="wizard-content">
+                <!-- Steps rendered by wizard.js -->
+            </div>
+            <nav class="wizard-nav" id="wizard-nav">
+                <!-- Nav buttons rendered by wizard.js -->
+            </nav>
+        </div>
+    </div>
+    <script src="/static/js/wizard.js?v={{ app_version|default('') }}"></script>
+    {% endif %}
+
+    {% block scripts %}{% endblock %}
+
+    <!-- Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                .then(registration => {
+                    console.log('[SW] Registered:', registration.scope);
+
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New version available
+                                if (window.Toast) {
+                                    window.Toast.show('Update available. Refresh to update.', 'info', {
+                                        duration: 10000,
+                                        action: {
+                                            label: 'Refresh',
+                                            callback: () => window.location.reload()
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(err => {
+                    console.error('[SW] Registration failed:', err);
+                });
+        });
+    }
+    </script>
+
+    {% if is_demo_user is defined and is_demo_user %}
+    <!-- Demo mode floating pill -->
+    <div class="demo-pill" id="demo-pill">
+        <span class="demo-pill__label">Demo</span>
+        <div class="demo-pill__actions" id="demo-pill-actions" hidden>
+            <form action="/auth/demo/reset" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="demo-pill__btn demo-pill__btn--reset">Reset data</button>
+            </form>
+            <button type="button" class="demo-pill__btn demo-pill__btn--dismiss" id="demo-pill-dismiss">Dismiss</button>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var pill = document.getElementById('demo-pill');
+        if (!pill) return;
+        if (localStorage.getItem('demo-pill-dismissed')) {
+            pill.style.display = 'none';
+            return;
+        }
+        var actions = document.getElementById('demo-pill-actions');
+        pill.addEventListener('click', function(e) {
+            if (e.target.closest('.demo-pill__btn')) return;
+            actions.hidden = !actions.hidden;
+        });
+        document.getElementById('demo-pill-dismiss').addEventListener('click', function() {
+            localStorage.setItem('demo-pill-dismissed', '1');
+            pill.style.display = 'none';
+        });
+    })();
+    </script>
+    {% endif %}
+
+    {% if user %}
+    <!-- Keyboard shortcuts hint (desktop only, dismissible) -->
+    <div class="shortcuts-hint" id="shortcuts-hint" role="complementary" aria-label="Keyboard shortcuts tip">
+        <span class="shortcuts-hint__text">
+            <kbd>?</kbd> Keyboard shortcuts
+        </span>
+        <button type="button"
+                class="shortcuts-hint__dismiss"
+                id="shortcuts-hint-dismiss"
+                aria-label="Dismiss keyboard shortcuts hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+    <script>
+    (function() {
+        var hint = document.getElementById('shortcuts-hint');
+        if (!hint) return;
+
+        // Don't show on mobile (no keyboard) or if already dismissed
+        var isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        if (isMobile || localStorage.getItem('shortcuts-hint-dismissed')) {
+            hint.remove();
+            return;
+        }
+
+        // Show with entrance animation
+        hint.classList.add('visible');
+
+        // Dismiss button
+        document.getElementById('shortcuts-hint-dismiss').addEventListener('click', function() {
+            hint.classList.add('hiding');
+            localStorage.setItem('shortcuts-hint-dismissed', '1');
+            hint.addEventListener('animationend', function() {
+                hint.remove();
+            });
+        });
+
+        // Also dismiss when user opens shortcuts help (they discovered it)
+        document.addEventListener('keydown', function onKey(e) {
+            if (e.key === '?' && hint.parentNode) {
+                localStorage.setItem('shortcuts-hint-dismissed', '1');
+                hint.classList.add('hiding');
+                hint.addEventListener('animationend', function() {
+                    hint.remove();
+                });
+                document.removeEventListener('keydown', onKey);
+            }
+        });
+    })();
+    </script>
+    {% endif %}
+
+</body>
+</html>

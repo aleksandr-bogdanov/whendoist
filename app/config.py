@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # Demo login (bypasses Google OAuth for testing/previews)
     demo_login_enabled: bool = False
 
+    # Legacy frontend toggle (serve Jinja2 templates instead of React SPA)
+    serve_legacy_frontend: bool = False
+
     # Sentry debug endpoint (only enable temporarily for testing)
     sentry_debug_enabled: bool = False
 

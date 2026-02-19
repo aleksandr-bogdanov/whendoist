@@ -1,0 +1,811 @@
+{% extends "base.html" %}
+
+{% block title %}UI Showcase - Whendoist{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Showcase page styles */
+.showcase-page {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.showcase-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+}
+
+.showcase-section {
+    margin-bottom: 48px;
+}
+
+.showcase-section-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
+}
+
+.showcase-section-desc {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.showcase-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.showcase-card__label {
+    padding: 12px 16px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+}
+
+.showcase-card__preview {
+    padding: 20px;
+    min-height: 200px;
+}
+
+.showcase-card__notes {
+    padding: 12px 16px;
+    background: rgba(109, 94, 246, 0.04);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* =============================================================================
+   OPTION 1: Separate Capture Card (Original, refined)
+   ============================================================================= */
+.opt1-capture-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.opt1-capture-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 14px;
+    margin: 0 !important;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-panel);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    box-sizing: border-box;
+}
+
+.opt1-capture-input::placeholder {
+    color: var(--text-muted);
+}
+
+.opt1-capture-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* =============================================================================
+   OPTION 2: First Row Placeholder
+   ============================================================================= */
+.opt2-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.opt2-header {
+    padding: 10px 14px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.opt2-ghost-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-panel);
+    cursor: text;
+    transition: background 0.15s ease;
+}
+
+.opt2-ghost-row:hover {
+    background: rgba(109, 94, 246, 0.04);
+}
+
+.opt2-ghost-row:focus-within {
+    background: var(--bg-surface);
+}
+
+.opt2-ghost-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-default);
+    flex-shrink: 0;
+}
+
+.opt2-ghost-row:hover .opt2-ghost-dot {
+    background: var(--primary);
+}
+
+.opt2-ghost-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    outline: none;
+    padding: 0;
+    margin: 0 !important;
+}
+
+.opt2-ghost-input::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.opt2-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.opt2-row:last-child {
+    border-bottom: none;
+}
+
+.opt2-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--slate-300);
+    flex-shrink: 0;
+}
+
+.opt2-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* =============================================================================
+   OPTION 3: Floating Action Button (FAB)
+   ============================================================================= */
+.opt3-container {
+    position: relative;
+    min-height: 220px;
+}
+
+.opt3-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.opt3-header {
+    padding: 10px 14px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.opt3-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.opt3-row:last-child {
+    border-bottom: none;
+}
+
+.opt3-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--slate-300);
+    flex-shrink: 0;
+}
+
+.opt3-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.opt3-fab {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(109, 94, 246, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.opt3-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(109, 94, 246, 0.4);
+}
+
+/* FAB expanded state */
+.opt3-fab-input-wrap {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.opt3-fab-input-wrap.open {
+    display: block;
+}
+
+.opt3-fab-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px;
+    margin: 0 !important;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    background: var(--bg-panel);
+}
+
+/* =============================================================================
+   OPTION 5: Slim Bar Above List
+   ============================================================================= */
+.opt5-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.opt5-header {
+    padding: 10px 14px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.opt5-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: rgba(109, 94, 246, 0.03);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.opt5-input {
+    flex: 1;
+    height: 32px;
+    padding: 0 12px;
+    margin: 0 !important;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+}
+
+.opt5-input::placeholder {
+    color: var(--text-muted);
+}
+
+.opt5-input:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+.opt5-hint {
+    font-size: 0.5625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.opt5-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.opt5-row:last-child {
+    border-bottom: none;
+}
+
+.opt5-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--slate-300);
+    flex-shrink: 0;
+}
+
+.opt5-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* =============================================================================
+   ENERGY SELECTOR OPTIONS
+   ============================================================================= */
+
+.energy-showcase-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+/* Option A: Sticky bar */
+.energy-opt-a {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+}
+
+.energy-opt-a__pills {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 9999px;
+    padding: 3px;
+}
+
+.energy-opt-a__pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    margin: 0 !important;
+    border: none;
+    border-radius: 9999px;
+    background: transparent;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.energy-opt-a__pill.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Option B: In panel header */
+.energy-opt-b-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.energy-opt-b-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.energy-opt-b-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.energy-opt-b__pills {
+    display: flex;
+    gap: 2px;
+}
+
+.energy-opt-b__pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 22px;
+    margin: 0 !important;
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    background: transparent;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.energy-opt-b__pill:hover {
+    background: var(--interactive-hover);
+    border-color: var(--border-default);
+}
+
+.energy-opt-b__pill.active {
+    background: var(--primary-tint);
+    border-color: rgba(109, 94, 246, 0.35);
+}
+
+.energy-opt-b-body {
+    padding: 12px 14px;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+/* Option C: In site header (simulated) */
+.energy-opt-c-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+}
+
+.energy-opt-c-logo {
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.energy-opt-c-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.energy-opt-c-link {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.energy-opt-c__pills {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 2px;
+}
+
+.energy-opt-c__pill {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px;
+    margin: 0 !important;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.energy-opt-c__pill.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Option D: Floating corner */
+.energy-opt-d-container {
+    position: relative;
+    min-height: 150px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.energy-opt-d-content {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+.energy-opt-d__float {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    gap: 2px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    padding: 3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.energy-opt-d__pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 24px;
+    margin: 0 !important;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.energy-opt-d__pill.active {
+    background: var(--primary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="showcase-page">
+    <h1 class="showcase-title">UI Component Showcase</h1>
+
+    <!-- Quick Add Input Options -->
+    <section class="showcase-section">
+        <h2 class="showcase-section-title">Quick Add Input Options</h2>
+        <p class="showcase-section-desc">Different approaches for the Thoughts page capture input</p>
+
+        <div class="showcase-grid">
+            <!-- Option 1: Separate Card -->
+            <div class="showcase-card">
+                <div class="showcase-card__label">Option 1: Separate Capture Card</div>
+                <div class="showcase-card__preview">
+                    <div class="opt1-capture-card">
+                        <input type="text" class="opt1-capture-input" placeholder="What's on your mind?">
+                        <div class="opt1-capture-hint">
+                            <span class="keycap">Enter</span>
+                            <span>to capture</span>
+                        </div>
+                    </div>
+                    <div class="opt2-panel">
+                        <div class="opt2-header">3 Thoughts</div>
+                        <div class="opt2-row"><div class="opt2-dot"></div><span class="opt2-text">Review project proposal</span></div>
+                        <div class="opt2-row"><div class="opt2-dot"></div><span class="opt2-text">Call dentist</span></div>
+                        <div class="opt2-row"><div class="opt2-dot"></div><span class="opt2-text">Research vacation spots</span></div>
+                    </div>
+                </div>
+                <div class="showcase-card__notes">
+                    Clear visual hierarchy. Input is distinct from list. Familiar pattern.
+                </div>
+            </div>
+
+            <!-- Option 2: First Row Placeholder -->
+            <div class="showcase-card">
+                <div class="showcase-card__label">Option 2: First Row Placeholder</div>
+                <div class="showcase-card__preview">
+                    <div class="opt2-panel">
+                        <div class="opt2-header">3 Thoughts</div>
+                        <div class="opt2-ghost-row">
+                            <div class="opt2-ghost-dot"></div>
+                            <input type="text" class="opt2-ghost-input" placeholder="Type to capture a thought...">
+                        </div>
+                        <div class="opt2-row"><div class="opt2-dot"></div><span class="opt2-text">Review project proposal</span></div>
+                        <div class="opt2-row"><div class="opt2-dot"></div><span class="opt2-text">Call dentist</span></div>
+                        <div class="opt2-row"><div class="opt2-dot"></div><span class="opt2-text">Research vacation spots</span></div>
+                    </div>
+                </div>
+                <div class="showcase-card__notes">
+                    Minimal. Input blends with list. Feels like adding inline. Very clean.
+                </div>
+            </div>
+
+            <!-- Option 3: FAB -->
+            <div class="showcase-card">
+                <div class="showcase-card__label">Option 3: Floating Action Button</div>
+                <div class="showcase-card__preview">
+                    <div class="opt3-container">
+                        <div class="opt3-panel">
+                            <div class="opt3-header">3 Thoughts</div>
+                            <div class="opt3-row"><div class="opt3-dot"></div><span class="opt3-text">Review project proposal</span></div>
+                            <div class="opt3-row"><div class="opt3-dot"></div><span class="opt3-text">Call dentist</span></div>
+                            <div class="opt3-row"><div class="opt3-dot"></div><span class="opt3-text">Research vacation spots</span></div>
+                        </div>
+                        <button class="opt3-fab" onclick="this.style.display='none'; this.nextElementSibling.classList.add('open')">+</button>
+                        <div class="opt3-fab-input-wrap">
+                            <input type="text" class="opt3-fab-input" placeholder="Capture a thought..." autofocus>
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-card__notes">
+                    Mobile-friendly. Clean list view. Action is obvious. Click to reveal input.
+                </div>
+            </div>
+
+            <!-- Option 5: Slim Bar -->
+            <div class="showcase-card">
+                <div class="showcase-card__label">Option 5: Slim Bar Above List</div>
+                <div class="showcase-card__preview">
+                    <div class="opt5-panel">
+                        <div class="opt5-header">3 Thoughts</div>
+                        <div class="opt5-input-bar">
+                            <input type="text" class="opt5-input" placeholder="Capture a thought...">
+                            <span class="opt5-hint">Enter</span>
+                        </div>
+                        <div class="opt5-row"><div class="opt5-dot"></div><span class="opt5-text">Review project proposal</span></div>
+                        <div class="opt5-row"><div class="opt5-dot"></div><span class="opt5-text">Call dentist</span></div>
+                        <div class="opt5-row"><div class="opt5-dot"></div><span class="opt5-text">Research vacation spots</span></div>
+                    </div>
+                </div>
+                <div class="showcase-card__notes">
+                    Integrated but distinct. Input has its own row. Subtle tinted background.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Energy Selector Options -->
+    <section class="showcase-section">
+        <h2 class="showcase-section-title">Energy Selector Options</h2>
+        <p class="showcase-section-desc">Different placements for the energy mode filter</p>
+
+        <div class="showcase-grid">
+            <!-- Option A: Sticky Bar -->
+            <div class="showcase-card">
+                <div class="showcase-card__label">Option A: Sticky Bar Below Header</div>
+                <div class="showcase-card__preview">
+                    <div class="energy-opt-a">
+                        <div class="energy-opt-a__pills">
+                            <button class="energy-opt-a__pill">🧟 Zombie</button>
+                            <button class="energy-opt-a__pill active">☕ Normal</button>
+                            <button class="energy-opt-a__pill">🧠 Focus</button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px; padding: 16px; background: var(--bg-surface); border-radius: var(--radius-md); color: var(--text-muted); font-size: 0.8125rem;">
+                        Task list content below...
+                    </div>
+                </div>
+                <div class="showcase-card__notes">
+                    Always visible. Takes vertical space. Good for discoverability.
+                </div>
+            </div>
+
+            <!-- Option B: In Panel Header -->
+            <div class="showcase-card">
+                <div class="showcase-card__label">Option B: In Task Panel Header</div>
+                <div class="showcase-card__preview">
+                    <div class="energy-opt-b-panel">
+                        <div class="energy-opt-b-header">
+                            <span class="energy-opt-b-label">Tasks</span>
+                            <div class="energy-opt-b__pills">
+                                <button class="energy-opt-b__pill">🧟</button>
+                                <button class="energy-opt-b__pill active">☕</button>
+                                <button class="energy-opt-b__pill">🧠</button>
+                            </div>
+                        </div>
+                        <div class="energy-opt-b-body">
+                            Task list content...
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-card__notes">
+                    Contextual. No extra space. Filter is near what it affects. Compact.
+                </div>
+            </div>
+
+            <!-- Option C: In Site Header -->
+            <div class="showcase-card">
+                <div class="showcase-card__label">Option C: In Site Header</div>
+                <div class="showcase-card__preview">
+                    <div class="energy-opt-c-header">
+                        <span class="energy-opt-c-logo">Whendoist</span>
+                        <div class="energy-opt-c-nav">
+                            <a href="#" class="energy-opt-c-link">Tasks</a>
+                            <a href="#" class="energy-opt-c-link">Thoughts</a>
+                            <div class="energy-opt-c__pills">
+                                <button class="energy-opt-c__pill">🧟</button>
+                                <button class="energy-opt-c__pill active">☕</button>
+                                <button class="energy-opt-c__pill">🧠</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-card__notes">
+                    Global position. Always accessible. Mixes nav with filtering.
+                </div>
+            </div>
+
+            <!-- Option D: Floating Corner -->
+            <div class="showcase-card">
+                <div class="showcase-card__label">Option D: Floating Corner</div>
+                <div class="showcase-card__preview">
+                    <div class="energy-opt-d-container">
+                        <div class="energy-opt-d-content">
+                            Task list content here...<br><br>
+                            The energy selector floats in the corner, always visible but out of the way.
+                        </div>
+                        <div class="energy-opt-d__float">
+                            <button class="energy-opt-d__pill">🧟</button>
+                            <button class="energy-opt-d__pill active">☕</button>
+                            <button class="energy-opt-d__pill">🧠</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="showcase-card__notes">
+                    Out of the way. Always visible. May feel disconnected from tasks.
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
