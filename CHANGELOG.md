@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.2 — 2026-02-19
+
+### Fixed
+- **Desktop calendar swipe**: Replaced unreliable drag-based swipe with horizontal wheel detection — trackpad two-finger horizontal swipe now navigates between days; touch swipe still works on mobile
+
+---
+
 ## v0.51.1 — 2026-02-19
 
 ### Fixed
