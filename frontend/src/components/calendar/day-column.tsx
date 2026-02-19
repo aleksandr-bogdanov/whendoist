@@ -37,6 +37,8 @@ interface DayColumnProps {
   hourHeight: number;
   calendarColors: Map<string, string>;
   onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
+  /** Panel position in carousel — namespaces droppable IDs to avoid conflicts */
+  panelId?: "prev" | "center" | "next";
 }
 
 export function DayColumn({
@@ -47,6 +49,7 @@ export function DayColumn({
   hourHeight,
   calendarColors,
   onTaskClick,
+  panelId = "center",
 }: DayColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
   const prevDate = addDays(centerDate, -1);
@@ -61,17 +64,17 @@ export function DayColumn({
     return d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   }, [centerDate]);
 
-  // 3 stacked droppable zones
+  // 3 stacked droppable zones (namespaced by panelId for carousel uniqueness)
   const { setNodeRef: setPrevRef, isOver: isPrevOver } = useDroppable({
-    id: `calendar-${prevDate}`,
+    id: `calendar-${panelId}-${prevDate}`,
     data: { type: "calendar", dateStr: prevDate, startHour: PREV_DAY_START_HOUR },
   });
   const { setNodeRef: setCurrentRef, isOver: isCurrentOver } = useDroppable({
-    id: `calendar-${centerDate}`,
+    id: `calendar-${panelId}-${centerDate}`,
     data: { type: "calendar", dateStr: centerDate, startHour: 0 },
   });
   const { setNodeRef: setNextRef, isOver: isNextOver } = useDroppable({
-    id: `calendar-${nextDate}`,
+    id: `calendar-${panelId}-${nextDate}`,
     data: { type: "calendar", dateStr: nextDate, startHour: 0 },
   });
 
@@ -121,9 +124,9 @@ export function DayColumn({
     onDragOver(event) {
       const overId = event.over?.id ? String(event.over.id) : null;
       const isOurZone =
-        overId === `calendar-${prevDate}` ||
-        overId === `calendar-${centerDate}` ||
-        overId === `calendar-${nextDate}`;
+        overId === `calendar-${panelId}-${prevDate}` ||
+        overId === `calendar-${panelId}-${centerDate}` ||
+        overId === `calendar-${panelId}-${nextDate}`;
 
       if (isOurZone && columnRef.current) {
         const rect = columnRef.current.getBoundingClientRect();

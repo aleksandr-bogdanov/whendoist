@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.4 — 2026-02-19
+
+### Added
+- **Calendar carousel swipe**: 3-panel transform-based carousel with real-time visual drag feedback — desktop pointer drag, touch swipe, and trackpad horizontal scroll all physically move day panels left/right before snapping, matching the legacy scroll-snap carousel UX
+
+---
+
 ## v0.51.3 — 2026-02-19
 
 ### Fixed
