@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.3 — 2026-02-19
+
+### Fixed
+- **Desktop calendar swipe**: Ported legacy pointer-event drag-to-swipe — mouse drag > 25% of container width navigates to prev/next day, vertical drag falls through to scroll (matches legacy `dashboard.html` behavior exactly)
+
+---
+
 ## v0.51.2 — 2026-02-19
 
 ### Fixed
