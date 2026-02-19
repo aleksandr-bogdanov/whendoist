@@ -54,7 +54,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const prevDate = addDays(calendarCenterDate, -1);
   const nextDate = addDays(calendarCenterDate, 1);
 
-  // Data fetch range: prevDay-1 to nextDay+1 (wider range to cover carousel panels)
+  // Data fetch range: wider to cover all carousel panels' extended timelines
   const startDate = addDays(calendarCenterDate, -2);
   const endDate = addDays(calendarCenterDate, 3);
 
@@ -113,7 +113,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, []);
 
-  // Navigate dates (used by header buttons — no carousel animation)
+  // Navigate dates (used by header buttons)
   const goToPrev = useCallback(() => {
     saveScroll();
     setCalendarCenterDate(addDays(calendarCenterDate, -1));
@@ -128,7 +128,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     setCalendarCenterDate(todayString());
   }, [setCalendarCenterDate]);
 
-  // Zoom controls — button stepping
+  // Zoom controls
   const zoomIn = useCallback(() => {
     setCalendarHourHeight(getNextZoomStep(calendarHourHeight, "in"));
   }, [calendarHourHeight, setCalendarHourHeight]);
@@ -141,12 +141,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const targetZoomRef = useRef(calendarHourHeight);
   const saveZoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep targetZoomRef in sync when zoom changes from buttons or server sync
   useEffect(() => {
     targetZoomRef.current = calendarHourHeight;
   }, [calendarHourHeight]);
 
-  // ── Carousel ──────────────────────────────────────────────────────────────
+  // ── Carousel (scroll-snap based) ──────────────────────────────────────────
   const [isDndDragging, setIsDndDragging] = useState(false);
   const pendingReset = useRef(false);
 
@@ -169,43 +168,35 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     disabled: isDndDragging,
   });
 
-  // Reset carousel position after date changes from navigation
-  // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate triggers carousel reset after navigation
+  // After date update from carousel navigation, recenter instantly
+  // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate triggers carousel recenter
   useLayoutEffect(() => {
     if (pendingReset.current) {
       pendingReset.current = false;
-      carousel.resetToCenter();
+      carousel.scrollToCenter();
     }
   }, [calendarCenterDate]);
 
-  // Wheel handler: Ctrl+wheel = zoom, horizontal = carousel swipe
+  // Ctrl+wheel zoom (horizontal wheel is handled natively by the carousel scroll)
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        // Continuous smooth zoom
         targetZoomRef.current = Math.max(
           ZOOM_STEPS[0],
           Math.min(ZOOM_STEPS[ZOOM_STEPS.length - 1], targetZoomRef.current - e.deltaY * 0.2),
         );
         setCalendarHourHeight(Math.round(targetZoomRef.current));
 
-        // Debounced snap to nearest step for persistence
         if (saveZoomTimer.current) clearTimeout(saveZoomTimer.current);
         saveZoomTimer.current = setTimeout(() => {
           const snapped = snapToZoomStep(targetZoomRef.current);
           targetZoomRef.current = snapped;
           setCalendarHourHeight(snapped);
         }, 500);
-        return;
-      }
-
-      // Horizontal swipe → carousel visual feedback
-      if (Math.abs(e.deltaX) > 0 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        carousel.applyWheelDelta(e.deltaX);
       }
     },
-    [setCalendarHourHeight, carousel],
+    [setCalendarHourHeight],
   );
 
   // Scroll to current time on first render
@@ -213,15 +204,13 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   useEffect(() => {
     if (scrollRef.current) {
       const now = new Date();
-      // In the extended view: offset = (PREV_DAY_HOURS + now.getHours()) * hourHeight
-      // Scroll so current time is ~1 hour above viewport center
       const targetOffset = (PREV_DAY_HOURS + now.getHours() - 1) * initialHourHeight.current;
       scrollRef.current.scrollTop = Math.max(0, targetOffset);
     }
   }, []);
 
   // Restore scroll position after date navigation
-  // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate triggers scroll restore on navigation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate triggers scroll restore
   useEffect(() => {
     if (savedScrollTop.current !== null && scrollRef.current) {
       scrollRef.current.scrollTop = savedScrollTop.current;
@@ -235,7 +224,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   useDndMonitor({
     onDragStart() {
       setIsDndDragging(true);
-
       const loop = () => {
         if (!scrollRef.current) return;
         autoScrollRaf.current = requestAnimationFrame(loop);
@@ -244,7 +232,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     },
     onDragOver(event) {
       if (!scrollRef.current) return;
-
       const container = scrollRef.current;
       const rect = container.getBoundingClientRect();
 
@@ -259,7 +246,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       }
       const pointerY = clientY + (event.delta?.y ?? 0);
 
-      // Auto-scroll near edges
       const EDGE_ZONE = 60;
       const SCROLL_SPEED = 8;
       const distFromTop = pointerY - rect.top;
@@ -283,16 +269,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
 
   // Hour labels for the time ruler
   const hourLabels = useMemo(() => getExtendedHourLabels(calendarHourHeight), [calendarHourHeight]);
-
   const totalHeight = EXTENDED_TOTAL_HOURS * calendarHourHeight;
-
-  // Carousel transform style
-  const carouselTransform = `translateX(${-33.333 + carousel.offsetPercent}%)`;
-  const carouselTransition = carousel.isDragging
-    ? "none"
-    : carousel.isAnimating
-      ? "transform 300ms ease-out"
-      : "none";
 
   return (
     <div className="relative flex flex-col flex-1 min-h-0 border-l">
@@ -368,7 +345,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       )}
 
-      {/* Calendar body — single vertical scroll container */}
+      {/* Calendar body — vertical scroll wrapper */}
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto overflow-x-hidden"
@@ -381,7 +358,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         onWheel={handleWheel}
       >
         <div className="flex" style={{ height: `${totalHeight}px` }}>
-          {/* Time ruler — stays fixed while carousel scrolls */}
+          {/* Time ruler */}
           <div className="flex-shrink-0 w-12 z-10 bg-background">
             <div className="relative" style={{ height: `${totalHeight}px` }}>
               {hourLabels.map((hl) => (
@@ -398,20 +375,23 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             </div>
           </div>
 
-          {/* Carousel container — clips horizontal overflow */}
-          <div ref={carouselRef} className="flex-1 overflow-hidden relative">
-            {/* Carousel track — 3 panels, translateX-driven */}
-            <div
-              className="flex h-full"
-              style={{
-                width: "300%",
-                transform: carouselTransform,
-                transition: carouselTransition,
-                willChange: carousel.isDragging ? "transform" : "auto",
-              }}
-              {...carousel.handlers}
-            >
-              <div className="h-full" style={{ flex: "0 0 33.333%" }}>
+          {/* Scroll-snap carousel */}
+          <div
+            ref={carouselRef}
+            className="flex-1 overflow-x-auto overflow-y-hidden"
+            style={{
+              scrollSnapType: "x mandatory",
+              overscrollBehaviorX: "contain",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            <div className="flex h-full" style={{ width: "300%" }}>
+              <div
+                className="h-full"
+                style={{ flex: "0 0 33.333%", scrollSnapAlign: "start", scrollSnapStop: "always" }}
+              >
                 <DayColumn
                   centerDate={prevDate}
                   events={safeEvents}
@@ -423,7 +403,10 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                   panelId="prev"
                 />
               </div>
-              <div className="h-full" style={{ flex: "0 0 33.333%" }}>
+              <div
+                className="h-full"
+                style={{ flex: "0 0 33.333%", scrollSnapAlign: "start", scrollSnapStop: "always" }}
+              >
                 <DayColumn
                   centerDate={calendarCenterDate}
                   events={safeEvents}
@@ -435,7 +418,10 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                   panelId="center"
                 />
               </div>
-              <div className="h-full" style={{ flex: "0 0 33.333%" }}>
+              <div
+                className="h-full"
+                style={{ flex: "0 0 33.333%", scrollSnapAlign: "start", scrollSnapStop: "always" }}
+              >
                 <DayColumn
                   centerDate={nextDate}
                   events={safeEvents}

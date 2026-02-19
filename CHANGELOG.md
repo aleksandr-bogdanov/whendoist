@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.6 — 2026-02-19
+
+### Changed
+- **Calendar carousel**: Replaced transform-based carousel with native CSS scroll-snap — touch handled 100% by browser (zero JS), desktop pointer-drag manipulates `scrollLeft` directly (matching legacy `dashboard.html` exactly), eliminated the fragile phase state machine that caused stuck states
+
+---
+
 ## v0.51.5 — 2026-02-19
 
 ### Fixed
