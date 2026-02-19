@@ -185,10 +185,10 @@ export function DayColumn({
     },
   });
 
-  // Generate hour grid lines for all 44 hours
+  // Generate hour grid lines for extended timeline
   const hourLines = useMemo(() => {
     const lines: { key: string; offset: number; isAdjacent: boolean }[] = [];
-    // Prev: 21-23
+    // Prev: 22-23
     for (let h = PREV_DAY_START_HOUR; h <= 23; h++) {
       lines.push({
         key: `prev-${h}`,
@@ -200,7 +200,7 @@ export function DayColumn({
     for (let h = 0; h <= 23; h++) {
       lines.push({ key: `cur-${h}`, offset: (PREV_DAY_HOURS + h) * hourHeight, isAdjacent: false });
     }
-    // Next: 0-16
+    // Next: 0-4
     for (let h = 0; h < NEXT_DAY_END_HOUR; h++) {
       lines.push({
         key: `next-${h}`,

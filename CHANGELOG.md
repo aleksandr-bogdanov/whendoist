@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.1 — 2026-02-19
+
+### Fixed
+- **Calendar timeline range**: Corrected from 9PM-5PM (44h) to 10PM-5AM (31h) as intended
+- **Desktop swipe navigation**: Lowered swipe velocity/distance thresholds so mouse drag reliably triggers day navigation
+
+---
+
 ## v0.51.0 — 2026-02-19
 
 ### Changed

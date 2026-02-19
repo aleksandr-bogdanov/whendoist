@@ -197,7 +197,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       }
     },
     {
-      swipe: { distance: 50, velocity: 0.3 },
+      swipe: { distance: 30, velocity: 0.1 },
       filterTaps: true,
       axis: "x",
     },
