@@ -1,5 +1,15 @@
 import type { AxiosRequestConfig } from "axios";
 import Axios from "axios";
+import { toast } from "sonner";
+import {
+  AuthError,
+  CSRFError,
+  NetworkError,
+  NotFoundError,
+  RateLimitError,
+  ServerError,
+  ValidationError,
+} from "./errors";
 
 export const axios = Axios.create({
   baseURL: "",
@@ -30,6 +40,17 @@ async function getCsrfToken(): Promise<string> {
   return csrfFetchPromise;
 }
 
+// Reject requests immediately when offline
+axios.interceptors.request.use((config) => {
+  if (!navigator.onLine) {
+    toast.error("No internet connection. Changes will fail while offline.", {
+      id: "offline-guard",
+    });
+    throw new NetworkError("Browser is offline");
+  }
+  return config;
+});
+
 // Inject X-CSRF-Token header on state-changing requests
 axios.interceptors.request.use(async (config) => {
   const method = (config.method ?? "GET").toUpperCase();
@@ -44,17 +65,74 @@ axios.interceptors.request.use(async (config) => {
 // and tasks/domains/preferences queries all fail at once)
 let isRedirecting = false;
 
+/** Show a countdown toast for rate limiting */
+function showRateLimitCountdown(seconds: number) {
+  let remaining = seconds;
+  toast.error(`Too many requests. Try again in ${remaining}s.`, {
+    id: "rate-limit",
+    duration: seconds * 1000 + 500,
+  });
+  const interval = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      toast.dismiss("rate-limit");
+      return;
+    }
+    toast.error(`Too many requests. Try again in ${remaining}s.`, {
+      id: "rate-limit",
+      duration: remaining * 1000 + 500,
+    });
+  }, 1000);
+}
+
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !isRedirecting) {
+    // Network errors (no response received)
+    if (!error.response) {
+      const networkError = new NetworkError(error.message || "Network request failed");
+      return Promise.reject(networkError);
+    }
+
+    const status = error.response.status;
+
+    if (status === 401 && !isRedirecting) {
       isRedirecting = true;
       window.location.href = "/login";
+      return Promise.reject(new AuthError("Session expired"));
     }
-    // If CSRF token was rejected, clear cache so next request re-fetches
-    if (error.response?.status === 403) {
+
+    if (status === 403) {
+      // Clear CSRF cache so next request re-fetches
       csrfToken = null;
+      return Promise.reject(new CSRFError("CSRF token rejected"));
     }
+
+    if (status === 400) {
+      const msg = error.response.data?.detail || "Invalid request. Check your input.";
+      toast.error(msg, { id: "validation-error" });
+      return Promise.reject(new ValidationError(msg));
+    }
+
+    if (status === 404) {
+      toast.error("Resource not found.", { id: "not-found" });
+      return Promise.reject(new NotFoundError("Resource not found"));
+    }
+
+    if (status === 429) {
+      const retryAfter = Number.parseInt(error.response.headers?.["retry-after"] ?? "", 10) || 30;
+      showRateLimitCountdown(retryAfter);
+      return Promise.reject(new RateLimitError("Rate limited", retryAfter));
+    }
+
+    if (status >= 500) {
+      toast.error("Something went wrong. Please try again.", {
+        id: "server-error",
+      });
+      return Promise.reject(new ServerError(error.message || "Server error"));
+    }
+
     return Promise.reject(error);
   },
 );

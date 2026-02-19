@@ -184,9 +184,9 @@ function DashboardPage() {
               {
                 onSuccess: () => {
                   queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-                  toast.success("Task toggled", { duration: 3000 });
+                  toast.success("Task toggled", { id: `complete-${sel}`, duration: 3000 });
                 },
-                onError: () => toast.error("Failed to update task"),
+                onError: () => toast.error("Failed to update task", { id: `complete-err-${sel}` }),
               },
             );
           },
@@ -253,11 +253,11 @@ function DashboardPage() {
               {
                 onSuccess: () => {
                   queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-                  toast.success(`Deleted "${task.title}"`, { duration: 5000 });
+                  toast.success(`Deleted "${task.title}"`, { id: `delete-${sel}`, duration: 5000 });
                 },
                 onError: () => {
                   selectTask(sel);
-                  toast.error("Failed to delete task");
+                  toast.error("Failed to delete task", { id: `delete-err-${sel}` });
                 },
               },
             );

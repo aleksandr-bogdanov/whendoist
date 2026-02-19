@@ -23,6 +23,7 @@ import {
   getListTasksApiV1TasksGetQueryKey,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
+import { announce } from "@/components/live-announcer";
 import { offsetToTime } from "@/lib/calendar-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskDragOverlay } from "./task-drag-overlay";
@@ -196,11 +197,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-              toast.success("Task scheduled");
+              announce("Task scheduled");
+              toast.success("Task scheduled", { id: `schedule-${activeId}` });
             },
             onError: () => {
               queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-              toast.error("Failed to schedule task");
+              toast.error("Failed to schedule task", { id: `schedule-err-${activeId}` });
             },
           },
         );
@@ -211,6 +213,9 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       if (overId.startsWith("task-list-")) {
         const task = findTask(active.id);
         if (task?.scheduled_date) {
+          const prevDate = task.scheduled_date;
+          const prevTime = task.scheduled_time ?? null;
+
           const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
             getListTasksApiV1TasksGetQueryKey(),
           );
@@ -232,11 +237,32 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             {
               onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-                toast.success("Task unscheduled");
+                announce("Task unscheduled");
+                toast.success("Task unscheduled", {
+                  id: `unschedule-${activeId}`,
+                  action: {
+                    label: "Undo",
+                    onClick: () => {
+                      updateTask.mutate(
+                        {
+                          taskId: activeId,
+                          data: { scheduled_date: prevDate, scheduled_time: prevTime },
+                        },
+                        {
+                          onSuccess: () =>
+                            queryClient.invalidateQueries({
+                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            }),
+                        },
+                      );
+                    },
+                  },
+                  duration: 5000,
+                });
               },
               onError: () => {
                 queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-                toast.error("Failed to unschedule task");
+                toast.error("Failed to unschedule task", { id: `unschedule-err-${activeId}` });
               },
             },
           );
@@ -278,11 +304,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-              toast.success("Task moved as subtask");
+              toast.success("Task moved as subtask", { id: `reparent-${activeId}` });
             },
             onError: () => {
               queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-              toast.error("Failed to reparent task");
+              toast.error("Failed to reparent task", { id: `reparent-err-${activeId}` });
             },
           },
         );

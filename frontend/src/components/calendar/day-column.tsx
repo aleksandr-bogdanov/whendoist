@@ -345,11 +345,11 @@ function InstanceCard({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success("Instance completed");
+          toast.success("Instance completed", { id: `complete-inst-${instance.id}` });
         },
         onError: () => {
           queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
-          toast.error("Failed to complete instance");
+          toast.error("Failed to complete instance", { id: `complete-inst-err-${instance.id}` });
         },
       },
     );
@@ -371,11 +371,11 @@ function InstanceCard({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success("Instance skipped");
+          toast.success("Instance skipped", { id: `skip-inst-${instance.id}` });
         },
         onError: () => {
           queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
-          toast.error("Failed to skip instance");
+          toast.error("Failed to skip instance", { id: `skip-inst-err-${instance.id}` });
         },
       },
     );

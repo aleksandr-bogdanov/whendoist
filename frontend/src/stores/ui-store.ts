@@ -22,6 +22,7 @@ interface UIState {
   quickAddOpen: boolean;
   calendarHourHeight: number;
   calendarCenterDate: string;
+  justUpdatedId: number | null;
 }
 
 interface UIActions {
@@ -38,6 +39,7 @@ interface UIActions {
   setQuickAddOpen: (open: boolean) => void;
   setCalendarHourHeight: (height: number) => void;
   setCalendarCenterDate: (date: string) => void;
+  flashUpdatedTask: (taskId: number) => void;
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -56,6 +58,7 @@ export const useUIStore = create<UIState & UIActions>()(
       mobileTab: "tasks",
       quickAddOpen: false,
       calendarHourHeight: 60,
+      justUpdatedId: null,
       calendarCenterDate: (() => {
         const now = new Date();
         if (now.getHours() >= 20) {
@@ -113,6 +116,15 @@ export const useUIStore = create<UIState & UIActions>()(
       setCalendarHourHeight: (height) =>
         set({ calendarHourHeight: Math.max(30, Math.min(100, height)) }),
       setCalendarCenterDate: (date) => set({ calendarCenterDate: date }),
+      flashUpdatedTask: (taskId) => {
+        set({ justUpdatedId: taskId });
+        setTimeout(() => {
+          document
+            .querySelector(`[data-task-id="${taskId}"]`)
+            ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }, 100);
+        setTimeout(() => set({ justUpdatedId: null }), 1500);
+      },
     }),
     {
       name: "whendoist-ui",

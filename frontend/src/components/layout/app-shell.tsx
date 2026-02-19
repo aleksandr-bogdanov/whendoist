@@ -1,5 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 import type { DomainResponse } from "@/api/model";
+import { DemoPill } from "@/components/demo-pill";
+import { LiveAnnouncer } from "@/components/live-announcer";
 import { Header } from "./header";
 import { MobileNav } from "./mobile-nav";
 import { Sidebar } from "./sidebar";
@@ -21,6 +23,8 @@ export function AppShell({ userName, userEmail, domains }: AppShellProps) {
         </main>
       </div>
       <MobileNav />
+      <DemoPill />
+      <LiveAnnouncer />
     </div>
   );
 }

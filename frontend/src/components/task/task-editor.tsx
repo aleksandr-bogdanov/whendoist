@@ -20,6 +20,7 @@ import {
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
+import { announce } from "@/components/live-announcer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,6 +49,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useCrypto } from "@/hooks/use-crypto";
 import { IMPACT_COLORS } from "@/lib/task-utils";
+import { useUIStore } from "@/stores/ui-store";
 import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
 
 const DURATION_PRESETS = [15, 30, 60, 120, 240] as const;
@@ -80,6 +82,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   const isEdit = !!task;
   const queryClient = useQueryClient();
   const { encryptTaskFields } = useCrypto();
+  const flashUpdatedTask = useUIStore((s) => s.flashUpdatedTask);
   const titleRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -213,12 +216,14 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         { taskId: task.id, data },
         {
           onSuccess: () => {
-            toast.success("Task updated");
+            announce("Task updated");
+            toast.success("Task updated", { id: `save-${task.id}` });
             invalidateQueries();
+            flashUpdatedTask(task.id);
             setDirty(false);
             onOpenChange(false);
           },
-          onError: () => toast.error("Failed to update task"),
+          onError: () => toast.error("Failed to update task", { id: `save-err-${task.id}` }),
         },
       );
     } else {
@@ -243,6 +248,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         { data },
         {
           onSuccess: () => {
+            announce("Task created");
             toast.success("Task created");
             invalidateQueries();
             setDirty(false);
@@ -261,6 +267,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       {
         onSuccess: () => {
           toast.success("Task deleted", {
+            id: `delete-${task.id}`,
             action: {
               label: "Undo",
               onClick: () => {
@@ -268,7 +275,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                   { taskId: task.id },
                   {
                     onSuccess: () => {
-                      toast.success("Task restored");
+                      toast.success("Task restored", { id: `restore-${task.id}` });
                       invalidateQueries();
                     },
                   },
@@ -280,7 +287,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
           setShowDeleteConfirm(false);
           onOpenChange(false);
         },
-        onError: () => toast.error("Failed to delete task"),
+        onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),
       },
     );
   };
@@ -307,6 +314,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         onSuccess: () => {
           invalidateQueries();
           toast.success(wasCompleted ? "Task reopened" : "Task completed", {
+            id: `complete-${task.id}`,
             action: {
               label: "Undo",
               onClick: () => {
@@ -320,7 +328,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
           });
           onOpenChange(false);
         },
-        onError: () => toast.error("Failed to update task"),
+        onError: () => toast.error("Failed to update task", { id: `complete-err-${task.id}` }),
       },
     );
   };

@@ -7,6 +7,20 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.7 — 2026-02-19
+
+### Added
+- **Undo toast for unschedule**: unscheduling a task (calendar card or drag-to-list) shows 5s undo toast to restore the previous schedule
+- **Demo pill widget**: floating purple "Demo" badge for demo users with reset data and dismiss actions
+- **Just-updated pulse animation**: tasks briefly highlight with a ring pulse after being edited or rescheduled
+- **Scroll-to-task after mutation**: edited tasks scroll into view after re-sorting to a new position
+- **Reduced motion support**: `body.reduced-motion` CSS suppresses all animations/transitions; Sonner toasts get infinite duration
+- **Aria-live announcer**: screen reader announcements for task completion, deletion, scheduling, unscheduling, and sorting
+- **API client error handling**: structured error classes, offline guard, rate limit countdown, 400/404/429/5xx toast handling
+- **Toast deduplication**: all toast calls now use stable `id` props to prevent duplicate toasts on rapid actions
+
+---
+
 ## v0.49.6 — 2026-02-19
 
 ### Added
