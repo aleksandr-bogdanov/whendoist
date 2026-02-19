@@ -112,24 +112,24 @@ export function formatHourLabel(hour: number): string {
   return `${h}${ampm}`;
 }
 
-// ─── Extended Timeline (44-hour view) ────────────────────────────────────────
+// ─── Extended Timeline (31-hour view) ────────────────────────────────────────
 
 export type DaySection = "prev" | "current" | "next";
 
-/** Previous day starts at 9PM */
-export const PREV_DAY_START_HOUR = 21;
-/** Previous day contributes 3 hours (21:00-23:59) */
-export const PREV_DAY_HOURS = 3;
+/** Previous day starts at 10PM */
+export const PREV_DAY_START_HOUR = 22;
+/** Previous day contributes 2 hours (22:00-23:59) */
+export const PREV_DAY_HOURS = 2;
 /** Current day contributes all 24 hours */
 export const CURRENT_DAY_HOURS = 24;
-/** Next day ends at 5PM (exclusive) */
-export const NEXT_DAY_END_HOUR = 17;
-/** Next day contributes 17 hours (00:00-16:59) */
-export const NEXT_DAY_HOURS = 17;
+/** Next day ends at 5AM (exclusive) */
+export const NEXT_DAY_END_HOUR = 5;
+/** Next day contributes 5 hours (00:00-04:59) */
+export const NEXT_DAY_HOURS = 5;
 /** Total hours in the extended timeline */
-export const EXTENDED_TOTAL_HOURS = PREV_DAY_HOURS + CURRENT_DAY_HOURS + NEXT_DAY_HOURS; // 44
+export const EXTENDED_TOTAL_HOURS = PREV_DAY_HOURS + CURRENT_DAY_HOURS + NEXT_DAY_HOURS; // 31
 
-/** Convert hour+minutes in a section to pixel offset on the 44h timeline */
+/** Convert hour+minutes in a section to pixel offset on the 31h timeline */
 export function extendedTimeToOffset(
   hour: number,
   minutes: number,
@@ -173,11 +173,11 @@ export interface ExtendedHourLabel {
   isAdjacentDay: boolean;
 }
 
-/** Get hour labels for all 44 hours of the extended timeline */
+/** Get hour labels for all hours of the extended timeline */
 export function getExtendedHourLabels(hourHeight: number): ExtendedHourLabel[] {
   const labels: ExtendedHourLabel[] = [];
 
-  // Prev day: hours 21-23
+  // Prev day: hours 22-23
   for (let h = PREV_DAY_START_HOUR; h <= 23; h++) {
     labels.push({
       hour: h,
