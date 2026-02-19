@@ -136,6 +136,12 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Reduced motion: suppress animations globally */
+body.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}
+
 /* PWA standalone viewport fix */
 @media (display-mode: standalone) {
   html,

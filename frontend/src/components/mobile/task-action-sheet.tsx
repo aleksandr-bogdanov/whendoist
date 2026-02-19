@@ -102,6 +102,7 @@ export function TaskActionSheet({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success(isCompleted ? "Task reopened" : "Task completed", {
+            id: `complete-${task.id}`,
             action: {
               label: "Undo",
               onClick: () => {
@@ -121,7 +122,7 @@ export function TaskActionSheet({
         },
         onError: () => {
           queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-          toast.error("Failed to update task");
+          toast.error("Failed to update task", { id: `complete-err-${task.id}` });
         },
       },
     );
@@ -153,6 +154,7 @@ export function TaskActionSheet({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success(`Deleted "${task.title}"`, {
+            id: `delete-${task.id}`,
             action: {
               label: "Undo",
               onClick: () => {
@@ -163,9 +165,10 @@ export function TaskActionSheet({
                       queryClient.invalidateQueries({
                         queryKey: getListTasksApiV1TasksGetQueryKey(),
                       });
-                      toast.success("Task restored");
+                      toast.success("Task restored", { id: `restore-${task.id}` });
                     },
-                    onError: () => toast.error("Failed to restore task"),
+                    onError: () =>
+                      toast.error("Failed to restore task", { id: `restore-err-${task.id}` }),
                   },
                 );
               },
@@ -174,7 +177,7 @@ export function TaskActionSheet({
           });
         },
         onError: () => {
-          toast.error("Failed to delete task");
+          toast.error("Failed to delete task", { id: `delete-err-${task.id}` });
         },
       },
     );
@@ -211,9 +214,12 @@ export function TaskActionSheet({
                     queryClient.invalidateQueries({
                       queryKey: getListTasksApiV1TasksGetQueryKey(),
                     });
-                    toast.success("Instance skipped");
+                    toast.success("Instance skipped", { id: `skip-inst-${todayInstance.id}` });
                   },
-                  onError: () => toast.error("Failed to skip instance"),
+                  onError: () =>
+                    toast.error("Failed to skip instance", {
+                      id: `skip-inst-err-${todayInstance.id}`,
+                    }),
                 },
               );
             }}

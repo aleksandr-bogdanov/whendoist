@@ -115,6 +115,7 @@ export function DomainGroup({
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
             toast.success(isCompleted ? "Task reopened" : "Task completed", {
+              id: `complete-${task.id}`,
               action: {
                 label: "Undo",
                 onClick: () => {
@@ -134,7 +135,7 @@ export function DomainGroup({
           },
           onError: () => {
             queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-            toast.error("Failed to update task");
+            toast.error("Failed to update task", { id: `complete-err-${task.id}` });
           },
         },
       );

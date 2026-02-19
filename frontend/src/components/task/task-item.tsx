@@ -23,6 +23,7 @@ import {
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
 } from "@/api/queries/tasks/tasks";
+import { announce } from "@/components/live-announcer";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -50,8 +51,15 @@ interface TaskItemProps {
 }
 
 export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: TaskItemProps) {
-  const { selectedTaskId, selectTask, expandedSubtasks, toggleExpandedSubtask, setMobileTab } =
-    useUIStore();
+  const {
+    selectedTaskId,
+    selectTask,
+    expandedSubtasks,
+    toggleExpandedSubtask,
+    setMobileTab,
+    justUpdatedId,
+  } = useUIStore();
+  const isJustUpdated = justUpdatedId === task.id;
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
@@ -111,6 +119,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          announce(isCompleted ? "Task reopened" : "Task completed");
           toast.success(isCompleted ? "Task reopened" : "Task completed", {
             id: `complete-${task.id}`,
             action: {
@@ -200,6 +209,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          announce("Task deleted");
           toast.success(`Deleted "${task.title}"`, {
             id: `delete-${task.id}`,
             action: {
@@ -278,6 +288,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
             isCompleted && "opacity-60",
             isDragging && "opacity-30",
             isDropTarget && "ring-2 ring-primary bg-primary/10",
+            isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
           )}
           style={{ paddingLeft: `${depth * 24 + 8}px` }}
         >

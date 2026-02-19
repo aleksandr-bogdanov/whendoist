@@ -30,9 +30,9 @@ export function DeletedSection() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          toast.success(`Restored "${title}"`);
+          toast.success(`Restored "${title}"`, { id: `restore-${taskId}` });
         },
-        onError: () => toast.error("Failed to restore task"),
+        onError: () => toast.error("Failed to restore task", { id: `restore-err-${taskId}` }),
       },
     );
   };

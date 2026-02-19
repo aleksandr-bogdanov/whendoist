@@ -9,6 +9,7 @@ import {
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
+import { announce } from "@/components/live-announcer";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 
@@ -47,15 +48,42 @@ export function ScheduledTaskCard({
 
   const handleUnschedule = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Capture previous schedule for undo
+    const tasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+    );
+    const prev = tasks?.find((t) => t.id === taskId);
+    const prevDate = prev?.scheduled_date ?? null;
+    const prevTime = prev?.scheduled_time ?? null;
+
     updateTask.mutate(
       { taskId, data: { scheduled_date: null, scheduled_time: null } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          toast.success("Task unscheduled");
+          announce("Task unscheduled");
+          toast.success("Task unscheduled", {
+            id: `unschedule-${taskId}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                updateTask.mutate(
+                  { taskId, data: { scheduled_date: prevDate, scheduled_time: prevTime } },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                  },
+                );
+              },
+            },
+            duration: 5000,
+          });
           setShowActions(false);
         },
-        onError: () => toast.error("Failed to unschedule task"),
+        onError: () => toast.error("Failed to unschedule task", { id: `unschedule-err-${taskId}` }),
       },
     );
   };
@@ -89,11 +117,12 @@ export function ScheduledTaskCard({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          toast.success("Task completed");
+          announce("Task completed");
+          toast.success("Task completed", { id: `complete-${taskId}` });
         },
         onError: () => {
           queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-          toast.error("Failed to complete task");
+          toast.error("Failed to complete task", { id: `complete-err-${taskId}` });
         },
       },
     );

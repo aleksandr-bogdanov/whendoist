@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { announce } from "@/components/live-announcer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -24,7 +25,16 @@ export function SortControls() {
             variant={isActive ? "secondary" : "ghost"}
             size="sm"
             className={cn("h-6 text-[11px] px-2 gap-0.5", isActive && "font-medium")}
-            onClick={() => toggleSort(opt.field)}
+            onClick={() => {
+              toggleSort(opt.field);
+              const dir =
+                sortField === opt.field
+                  ? sortDirection === "asc"
+                    ? "descending"
+                    : "ascending"
+                  : "ascending";
+              announce(`Sorted by ${opt.label} ${dir}`);
+            }}
           >
             {opt.label}
             {isActive && <Icon className="h-3 w-3" />}
