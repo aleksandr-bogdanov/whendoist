@@ -7,6 +7,19 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.50.3 — 2026-02-19
+
+### Fixed
+- **Duplicate "Today" columns**: `toDateString` used UTC (`toISOString`) but `parseDate` used local time, causing `addDays` to return wrong dates in positive UTC offsets
+- **Task list scroll**: Made `<main>` a flex column container so dashboard fills it properly
+- **Calendar header**: Redesigned to match legacy site — center date between arrows (`< THURSDAY, FEB 19 >`), prominent "Plan My Day" button on right
+
+### Changed
+- **Navbar layout**: Nav tabs right-aligned (after W logo), increased header height from 44px to 56px for breathing room
+- **Calendar floating controls**: Removed redundant "Today" button, kept only zoom +/- in bottom-right corner
+
+---
+
 ## v0.50.2 — 2026-02-19
 
 ### Fixed

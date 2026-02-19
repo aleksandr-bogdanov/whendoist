@@ -16,8 +16,8 @@ import {
   DAY_START_HOUR,
   formatTime,
   getNextZoomStep,
+  parseDate,
   TOTAL_HOURS,
-  todayString,
 } from "@/lib/calendar-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { DayColumn } from "./day-column";
@@ -41,6 +41,15 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   // Visible date range: center +/- 1 day (3 days on desktop)
   const dates = useMemo(() => {
     return [addDays(calendarCenterDate, -1), calendarCenterDate, addDays(calendarCenterDate, 1)];
+  }, [calendarCenterDate]);
+
+  // Header label: "THURSDAY, FEB 19"
+  const centerDateLabel = useMemo(() => {
+    const d = parseDate(calendarCenterDate);
+    const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
+    const month = d.toLocaleDateString("en-US", { month: "short" });
+    const day = d.getDate();
+    return `${weekday}, ${month} ${day}`.toUpperCase();
   }, [calendarCenterDate]);
 
   // Fetch events for the visible range
@@ -95,11 +104,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   }, []);
 
   // Navigate dates
-  const goToToday = useCallback(() => {
-    saveScroll();
-    setCalendarCenterDate(todayString());
-  }, [setCalendarCenterDate, saveScroll]);
-
   const goToPrev = useCallback(() => {
     saveScroll();
     setCalendarCenterDate(addDays(calendarCenterDate, -1));
@@ -282,8 +286,8 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   return (
     <div className="relative flex flex-col flex-1 min-h-0 border-l">
       {/* Calendar header */}
-      <div className="flex items-center justify-between gap-2 px-2 sm:px-3 py-2 border-b">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2 px-2 sm:px-3 py-2 border-b">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="icon"
@@ -292,6 +296,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
+          <span className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap">
+            {centerDateLabel}
+          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -302,15 +309,15 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           </Button>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="ml-auto">
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
-            className="h-7 text-xs gap-1"
+            className="h-8 text-xs gap-1.5 font-semibold"
             onClick={() => setPlanModeOpen(true)}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            Plan
+            Plan My Day
           </Button>
         </div>
       </div>
@@ -366,15 +373,8 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       </div>
 
-      {/* Floating controls */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
-        <button
-          type="button"
-          onClick={goToToday}
-          className="px-3 py-1 text-xs font-semibold rounded-full bg-card border border-border shadow-sm hover:bg-primary hover:text-primary-foreground transition-colors"
-        >
-          Today
-        </button>
+      {/* Floating zoom controls */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
         <div className="flex items-center rounded-full bg-card border border-border shadow-sm overflow-hidden">
           <button
             type="button"
