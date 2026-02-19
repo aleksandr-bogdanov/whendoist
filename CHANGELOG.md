@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.50.6 — 2026-02-19
+
+### Fixed
+- **Task list scrolling**: Replaced Radix ScrollArea with native `overflow-y-auto` — ScrollArea's Viewport wasn't receiving a definite height in the flex layout chain, preventing scroll on desktop
+- **Calendar pinch-to-zoom**: Lowered zoom accumulator threshold from 50px to 10px — trackpad pinch events produce very small deltas (~1-5px each) that never reached the old threshold
+
+---
+
 ## v0.50.5 — 2026-02-19
 
 ### Fixed

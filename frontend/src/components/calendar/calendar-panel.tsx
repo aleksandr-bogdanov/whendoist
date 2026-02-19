@@ -124,9 +124,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     setCalendarHourHeight(getNextZoomStep(calendarHourHeight, "out"));
   }, [calendarHourHeight, setCalendarHourHeight]);
 
-  // Ctrl+Scroll wheel zoom — accumulate delta to tame macOS trackpad sensitivity
+  // Ctrl+Scroll wheel zoom — accumulate delta before stepping
   const zoomAccumulator = useRef(0);
-  const ZOOM_THRESHOLD = 50; // px of accumulated delta before stepping
+  const ZOOM_THRESHOLD = 10; // low threshold for trackpad pinch responsiveness
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
