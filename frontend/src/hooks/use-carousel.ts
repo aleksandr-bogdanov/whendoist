@@ -49,14 +49,12 @@ export function useCarousel({
     const panelWidth = el.offsetWidth;
     el.style.scrollBehavior = "auto";
     el.scrollLeft = panelWidth; // panel 1 (center)
+    el.style.scrollBehavior = ""; // Restore immediately so next swipe isn't blocked
     currentPanel.current = 1;
     onVisiblePanelChangeRef.current?.(1);
-    // Clear guard after the scroll event fires (next frame)
+    // Single rAF guard — just long enough for the browser to process the scroll event
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        isProgrammatic.current = false;
-        if (el) el.style.scrollBehavior = "";
-      });
+      isProgrammatic.current = false;
     });
   }, [containerRef]);
 
@@ -66,8 +64,19 @@ export function useCarousel({
     if (!el) return;
 
     let debounce: ReturnType<typeof setTimeout> | null = null;
-
     let lastReportedPanel = currentPanel.current;
+
+    const commitIfNeeded = () => {
+      if (isProgrammatic.current) return;
+      const panelWidth = el.offsetWidth;
+      if (panelWidth === 0) return;
+      const panelIndex = Math.round(el.scrollLeft / panelWidth);
+      if (panelIndex !== currentPanel.current) {
+        const dir = panelIndex > currentPanel.current ? "next" : "prev";
+        currentPanel.current = panelIndex;
+        onNavigateRef.current(dir);
+      }
+    };
 
     const onScroll = () => {
       if (isProgrammatic.current) return;
@@ -82,24 +91,26 @@ export function useCarousel({
         }
       }
 
-      // Debounced navigation commit (after scroll-snap settles)
+      // Debounced fallback for browsers without scrollend support
       if (debounce) clearTimeout(debounce);
-      debounce = setTimeout(() => {
-        if (isProgrammatic.current) return;
-        const pw = el.offsetWidth;
-        if (pw === 0) return;
-        const panelIndex = Math.round(el.scrollLeft / pw);
-        if (panelIndex !== currentPanel.current) {
-          const dir = panelIndex > currentPanel.current ? "next" : "prev";
-          currentPanel.current = panelIndex;
-          onNavigateRef.current(dir);
-        }
-      }, 80);
+      debounce = setTimeout(commitIfNeeded, 150);
+    };
+
+    // scrollend fires the instant the scroll-snap animation settles — much faster
+    // than a debounced scroll handler. Supported in Chrome 114+, Firefox 109+, Safari 18+.
+    const onScrollEnd = () => {
+      if (debounce) {
+        clearTimeout(debounce);
+        debounce = null;
+      }
+      commitIfNeeded();
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("scrollend", onScrollEnd, { passive: true });
     return () => {
       el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("scrollend", onScrollEnd);
       if (debounce) clearTimeout(debounce);
     };
   }, [containerRef]);

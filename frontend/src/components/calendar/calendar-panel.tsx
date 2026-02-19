@@ -157,6 +157,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     (direction: "prev" | "next") => {
       pendingReset.current = true;
       saveScroll();
+      // Reset visiblePanel to center BEFORE updating the date — React 18 batches both
+      // state updates into one render, so displayDate never shows the wrong day.
+      setVisiblePanel(1);
       if (direction === "next") {
         setCalendarCenterDate(addDays(calendarCenterDate, 1));
       } else {

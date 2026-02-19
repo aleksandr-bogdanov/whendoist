@@ -7,6 +7,14 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.8 — 2026-02-19
+
+### Fixed
+- **Carousel flicker on day switch**: Reset `visiblePanel` in `commitNavigation` so React batches it with the date update — eliminates the one-frame flash where the header showed the wrong day
+- **Fast consecutive swipes**: Replaced 80ms debounce with `scrollend` event (fires the instant scroll-snap settles), shortened `isProgrammatic` guard from double-rAF to single-rAF, and restored `scrollBehavior` immediately after programmatic recenter — the carousel is ready for the next swipe ~16ms after recentering instead of ~110ms
+
+---
+
 ## v0.51.7 — 2026-02-19
 
 ### Fixed
