@@ -145,7 +145,13 @@ export interface PositionedItem {
   endMinutes: number;
   column: number;
   totalColumns: number;
+  isAdjacentClone?: boolean;
+  adjacentLabel?: string;
 }
+
+/** Hour threshold for showing tasks in adjacent day columns */
+export const LATE_EVENING_HOUR = 21;
+const EARLY_MORNING_HOUR = DAY_START_HOUR;
 
 const MAX_OVERLAP_COLUMNS = 3;
 
@@ -255,6 +261,101 @@ export function calculateOverlaps(
   flushGroup();
 
   return positioned;
+}
+
+// ─── Adjacent Day Clones ────────────────────────────────────────────────────
+
+/**
+ * Get tasks/events from adjacent days that spill into this day's visible range.
+ * Tasks after 9pm appear faded in the next day; tasks before 6am in the previous day.
+ */
+export function getAdjacentDayItems(
+  tasks: AppRoutersTasksTaskResponse[],
+  events: EventResponse[],
+  dateStr: string,
+  hourHeight: number,
+): PositionedItem[] {
+  const prevDate = addDays(dateStr, -1);
+  const nextDate = addDays(dateStr, 1);
+  const items: PositionedItem[] = [];
+
+  // Late-evening tasks from PREVIOUS day (after 9pm) → show at top of this day
+  for (const task of tasks) {
+    if (task.scheduled_date !== prevDate || !task.scheduled_time) continue;
+    const range = taskToTimeRange(task);
+    if (!range) continue;
+    const startHour = Math.floor(range.startMinutes / 60);
+    if (startHour < LATE_EVENING_HOUR) continue;
+
+    const top = timeToOffset(startHour, range.startMinutes % 60, hourHeight);
+    const duration = range.endMinutes - range.startMinutes;
+    const height = durationToHeight(Math.max(duration, 15), hourHeight);
+    items.push({
+      id: `adj-prev-${task.id}`,
+      type: "task",
+      top,
+      height,
+      startMinutes: range.startMinutes,
+      endMinutes: range.endMinutes,
+      column: 0,
+      totalColumns: 1,
+      isAdjacentClone: true,
+      adjacentLabel: "from yesterday",
+    });
+  }
+
+  // Late-evening events from PREVIOUS day
+  for (const event of events) {
+    if (event.all_day) continue;
+    const eventDate = new Date(event.start).toISOString().split("T")[0];
+    if (eventDate !== prevDate) continue;
+    const range = eventToTimeRange(event);
+    const startHour = Math.floor(range.startMinutes / 60);
+    if (startHour < LATE_EVENING_HOUR) continue;
+
+    const top = timeToOffset(startHour, range.startMinutes % 60, hourHeight);
+    const duration = range.endMinutes - range.startMinutes;
+    const height = durationToHeight(Math.max(duration, 15), hourHeight);
+    items.push({
+      id: `adj-prev-evt-${event.id}`,
+      type: "event",
+      top,
+      height,
+      startMinutes: range.startMinutes,
+      endMinutes: range.endMinutes,
+      column: 0,
+      totalColumns: 1,
+      isAdjacentClone: true,
+      adjacentLabel: "from yesterday",
+    });
+  }
+
+  // Early-morning tasks from NEXT day (before 6am) → show at bottom of this day
+  for (const task of tasks) {
+    if (task.scheduled_date !== nextDate || !task.scheduled_time) continue;
+    const range = taskToTimeRange(task);
+    if (!range) continue;
+    const startHour = Math.floor(range.startMinutes / 60);
+    if (startHour >= EARLY_MORNING_HOUR) continue;
+
+    const top = timeToOffset(startHour, range.startMinutes % 60, hourHeight);
+    const duration = range.endMinutes - range.startMinutes;
+    const height = durationToHeight(Math.max(duration, 15), hourHeight);
+    items.push({
+      id: `adj-next-${task.id}`,
+      type: "task",
+      top,
+      height,
+      startMinutes: range.startMinutes,
+      endMinutes: range.endMinutes,
+      column: 0,
+      totalColumns: 1,
+      isAdjacentClone: true,
+      adjacentLabel: "from tomorrow",
+    });
+  }
+
+  return items;
 }
 
 // ─── Plan Mode: Auto-Scheduling ─────────────────────────────────────────────
