@@ -21,6 +21,15 @@
     <link rel="apple-touch-icon" sizes="167x167" href="/icons/apple-touch-icon-167.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
 
+    <!-- Prevent pinch-to-zoom on desktop (macOS trackpad) -->
+    <script>
+      document.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) e.preventDefault();
+      }, { passive: false });
+      document.addEventListener('gesturestart', (e) => { e.preventDefault(); });
+      document.addEventListener('gesturechange', (e) => { e.preventDefault(); });
+    </script>
+
     <!-- iOS PWA viewport fix: screen.height is always correct -->
     <script>
       if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {

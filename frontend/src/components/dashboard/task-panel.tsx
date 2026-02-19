@@ -162,10 +162,10 @@ export function TaskPanel({
           </div>
         </div>
 
-        {/* Row 2: sort controls grid-aligned + filter toggles */}
+        {/* Row 2: filter toggles + sort controls (right-aligned to match task columns) */}
         <div className="flex items-center justify-between gap-2">
-          <SortControls />
           <FilterBar />
+          <SortControls />
         </div>
       </div>
 
