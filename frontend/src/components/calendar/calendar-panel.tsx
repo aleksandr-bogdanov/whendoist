@@ -141,6 +141,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     targetZoomRef.current = calendarHourHeight;
   }, [calendarHourHeight]);
 
+  // Horizontal wheel accumulator for swipe-to-navigate
+  const swipeAccumulator = useRef(0);
+  const swipeResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const SWIPE_THRESHOLD = 80;
+
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -159,9 +164,29 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           targetZoomRef.current = snapped;
           setCalendarHourHeight(snapped);
         }, 500);
+        return;
+      }
+
+      // Horizontal swipe → day navigation (trackpad two-finger horizontal swipe)
+      if (Math.abs(e.deltaX) > 0 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        swipeAccumulator.current += e.deltaX;
+        if (swipeResetTimer.current) clearTimeout(swipeResetTimer.current);
+        swipeResetTimer.current = setTimeout(() => {
+          swipeAccumulator.current = 0;
+        }, 300);
+
+        if (swipeAccumulator.current > SWIPE_THRESHOLD) {
+          swipeAccumulator.current = 0;
+          saveScroll();
+          goToNext();
+        } else if (swipeAccumulator.current < -SWIPE_THRESHOLD) {
+          swipeAccumulator.current = 0;
+          saveScroll();
+          goToPrev();
+        }
       }
     },
-    [setCalendarHourHeight],
+    [setCalendarHourHeight, saveScroll, goToNext, goToPrev],
   );
 
   // Scroll to current time on first render
@@ -185,14 +210,16 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, [calendarCenterDate]);
 
-  // Swipe gesture for day navigation
+  // Touch swipe gesture for mobile day navigation
   const bindSwipe = useDrag(
     ({ swipe: [swipeX], event }) => {
       if (swipeX === -1) {
         event.preventDefault();
+        saveScroll();
         goToNext();
       } else if (swipeX === 1) {
         event.preventDefault();
+        saveScroll();
         goToPrev();
       }
     },
@@ -200,6 +227,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       swipe: { distance: 30, velocity: 0.1 },
       filterTaps: true,
       axis: "x",
+      pointer: { touch: true },
     },
   );
 
