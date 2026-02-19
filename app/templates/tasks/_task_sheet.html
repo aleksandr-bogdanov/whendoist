@@ -1,0 +1,228 @@
+{#
+  Task Sheet - HTMX fragment for right-side sheet editor
+
+  Variables:
+    - task: Task object (None for create)
+    - mode: "create" | "edit"
+    - domains: list of Domain objects
+    - prefill_domain_id: int | None
+    - errors: dict of field -> error message
+#}
+<div class="sheet-header">
+  <div class="sheet-title">{{ "New task" if mode == "create" else "Edit task" }}</div>
+  <button type="button" class="icon-btn" data-sheet-close aria-label="Close">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  </button>
+</div>
+
+<form id="task-form"
+      class="task-form"
+      hx-{{ "post" if mode == "create" else "put" }}="{{ '/api/v1/tasks' if mode == 'create' else '/api/v1/tasks/' ~ task.id }}"
+      hx-target="#task-sheet"
+      hx-swap="innerHTML"
+      hx-indicator="#task-sheet-spinner"
+      hx-disabled-elt="button[type='submit']">
+
+  <div class="sheet-body">
+    {% include "tasks/_task_form_content.html" %}
+  </div>
+
+  <div class="sheet-footer">
+    <button type="button" class="btn btn-ghost" data-sheet-close>Cancel</button>
+    <button type="submit" class="btn btn-primary">{{ "Add task" if mode == "create" else "Save" }}</button>
+  </div>
+</form>
+
+<div id="task-sheet-spinner" class="htmx-indicator sheet-spinner">
+  <span>Saving...</span>
+</div>
+
+<script>
+// Initialize form interactivity after swap
+(function() {
+  const sheet = document.getElementById('task-sheet');
+  if (!sheet) return;
+
+  // Impact pill clicks
+  sheet.querySelectorAll('.impact-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sheet.querySelectorAll('.impact-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sheet.querySelector('input[name="impact"]').value = btn.dataset.impact;
+    });
+  });
+
+  // Mode chip clicks (toggle: click active → normal, click inactive → activate it)
+  sheet.querySelectorAll('.mode-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isActive = btn.classList.contains('active');
+      sheet.querySelectorAll('.mode-chip').forEach(b => b.classList.remove('active'));
+      if (isActive) {
+        // Deactivate → set to normal
+        sheet.querySelector('input[name="clarity"]').value = 'normal';
+      } else {
+        // Activate this chip
+        btn.classList.add('active');
+        sheet.querySelector('input[name="clarity"]').value = btn.dataset.clarity;
+      }
+    });
+  });
+
+  // When chip toggles
+  sheet.querySelectorAll('.when-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const type = chip.dataset.chip;
+      const expand = sheet.querySelector(`#expand-${type}`);
+      if (!expand) return;
+
+      const isOpen = !expand.hidden;
+
+      // Close all
+      sheet.querySelectorAll('.chip-expand').forEach(el => el.hidden = true);
+      sheet.querySelectorAll('.when-chip').forEach(c => {
+        c.classList.remove('active');
+        c.setAttribute('aria-expanded', 'false');
+      });
+
+      // Toggle this one
+      if (!isOpen) {
+        expand.hidden = false;
+        chip.classList.add('active');
+        chip.setAttribute('aria-expanded', 'true');
+
+        // Show recurrence section when schedule or due is set
+        if (type === 'schedule' || type === 'due') {
+          const recurrenceSection = sheet.querySelector('#recurrence-section');
+          if (recurrenceSection) recurrenceSection.hidden = false;
+        }
+      }
+    });
+  });
+
+  // Duration preset clicks
+  sheet.querySelectorAll('.duration-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const duration = btn.dataset.duration;
+      sheet.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sheet.querySelector('input[name="duration_minutes"]').value = duration;
+
+      // Update chip text
+      const chipText = sheet.querySelector('.when-chip[data-chip="duration"] .chip-text');
+      if (chipText) {
+        chipText.textContent = parseInt(duration) >= 60 ? `${parseInt(duration)/60}h` : `${duration}m`;
+      }
+    });
+  });
+
+  // Custom duration input
+  const customDuration = sheet.querySelector('.duration-custom');
+  if (customDuration) {
+    customDuration.addEventListener('input', () => {
+      sheet.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+      const val = customDuration.value;
+      if (val) {
+        const chipText = sheet.querySelector('.when-chip[data-chip="duration"] .chip-text');
+        if (chipText) {
+          chipText.textContent = parseInt(val) >= 60 ? `${parseInt(val)/60}h` : `${val}m`;
+        }
+      }
+    });
+  }
+
+  // Action buttons (unschedule, delete)
+  sheet.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const action = btn.dataset.action;
+      const taskId = {{ task.id if task else 'null' }};
+
+      if (action === 'unschedule' && taskId) {
+        if (!confirm('Remove schedule from this task?')) return;
+        try {
+          const resp = await safeFetch(`/api/v1/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scheduled_date: null, scheduled_time: null })
+          });
+          if (resp.ok) {
+            document.body.dispatchEvent(new CustomEvent('taskSaved', {
+              detail: { task_id: taskId, action: 'unschedule' }
+            }));
+          }
+        } catch (e) {
+          console.error('Unschedule failed:', e);
+        }
+      }
+
+      if (action === 'skip' && taskId) {
+        // Find the instance ID from the task element on the page
+        const taskEl = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+        const instanceId = taskEl?.dataset.instanceId;
+        if (!instanceId) {
+          if (window.Toast) window.Toast.show('No instance to skip');
+          return;
+        }
+        try {
+          const resp = await safeFetch(`/api/v1/instances/${instanceId}/skip`, {
+            method: 'POST',
+          });
+          if (resp.ok) {
+            // Update all UI representations
+            document.querySelectorAll(`[data-instance-id="${instanceId}"]`).forEach(el => {
+              el.classList.add('skipped');
+              el.dataset.completed = '1';
+            });
+            if (taskEl) {
+              taskEl.classList.add('skipped');
+              taskEl.dataset.completed = '1';
+            }
+            document.body.dispatchEvent(new CustomEvent('taskSaved', {
+              detail: { task_id: taskId, action: 'skip' }
+            }));
+            if (window.Toast) window.Toast.show('Skipped for today');
+          }
+        } catch (e) {
+          console.error('Skip failed:', e);
+          if (window.Toast) window.Toast.show('Failed to skip instance');
+        }
+      }
+
+      if (action === 'delete' && taskId) {
+        if (!confirm('Delete this task?')) return;
+        try {
+          const resp = await safeFetch(`/api/v1/tasks/${taskId}`, { method: 'DELETE' });
+          if (resp.ok || resp.status === 204) {
+            document.body.dispatchEvent(new CustomEvent('taskSaved', {
+              detail: { task_id: taskId, action: 'delete' }
+            }));
+          }
+        } catch (e) {
+          console.error('Delete failed:', e);
+        }
+      }
+    });
+  });
+
+  // Initialize recurrence picker if available
+  if (window.RecurrencePicker) {
+    const picker = sheet.querySelector('#recurrence-picker');
+    if (picker) {
+      window.RecurrencePicker.init(picker);
+      {% if task and task.is_recurring and task.recurrence_rule %}
+      window.RecurrencePicker.setRule({{ task.recurrence_rule | tojson }});
+      window.RecurrencePicker.setBounds(
+        {{ (task.recurrence_start.isoformat() | tojson) if task.recurrence_start else 'null' }},
+        {{ (task.recurrence_end.isoformat() | tojson) if task.recurrence_end else 'null' }}
+      );
+      {% endif %}
+    }
+  }
+
+  // Focus title input
+  const titleInput = sheet.querySelector('.task-title-input');
+  if (titleInput) titleInput.focus();
+})();
+</script>

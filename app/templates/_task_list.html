@@ -1,0 +1,228 @@
+{# Task List Partial - used by dashboard and HTMX refreshes #}
+
+{# ── Task item macro ── #}
+{% macro render_task_item(task_item, today, encryption_enabled) %}
+{% set task = task_item.task %}
+{% set is_completed = task.status == 'completed' or task_item.instance_completed_at %}
+{% set completed_at = task_item.instance_completed_at or task.completed_at %}
+<div class="task-item impact-{{ task.impact }}{% if task.scheduled_date %} scheduled{% endif %}{% if task_item.completion_age_class %} {{ task_item.completion_age_class }}{% endif %}"
+     aria-roledescription="swipeable task"
+     data-clarity="{{ task.clarity }}"
+     data-impact="{{ task.impact or 4 }}"
+     data-task-id="{{ task.id }}"
+     data-completed="{{ '1' if is_completed else '0' }}"
+     data-completed-at="{{ completed_at.isoformat() if completed_at else '' }}"
+     data-duration="{{ task.duration_minutes or '' }}"
+     {% if task.is_recurring and task_item.instance_completed_at %}
+     data-scheduled-date="{{ today.isoformat() }}"
+     {% else %}
+     data-scheduled-date="{{ (task_item.next_occurrence or task.scheduled_date).isoformat() if (task_item.next_occurrence or task.scheduled_date) else '' }}"
+     {% endif %}
+     data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}"
+     {% if task_item.next_instance_id %}data-instance-id="{{ task_item.next_instance_id }}"{% endif %}
+     data-title="{{ task.title }}"
+     data-domain-id="{{ task.domain_id or '' }}"
+     data-subtask-count="{{ task_item.subtask_count or 0 }}"
+     {% if task.parent_id %}data-parent-id="{{ task.parent_id }}"{% endif %}
+     {% if not task.scheduled_date and not task_item.subtask_count %}draggable="true"{% endif %}>
+    <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Complete task" aria-pressed="{{ 'true' if is_completed else 'false' }}">
+        <span class="complete-bar"></span>
+        <span class="complete-check" aria-hidden="true">✓</span>
+    </button>
+    <div class="task-content">
+        <span class="task-text">{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
+        {% if task_item.subtask_count and not task.parent_id %}
+        <span class="subtask-badge">{{ task_item.subtask_count }}</span>
+        {% endif %}
+        {% if task.is_recurring %}
+        {% set sched_date = task_item.next_occurrence or task.scheduled_date %}
+        <span class="task-due{% if sched_date and sched_date < today %} overdue{% elif sched_date and sched_date == today %} today{% endif %}">
+            <span class="recurring-icon" title="Recurring task">↻</span>
+            {% if task_item.instance_completed_at %}
+                Today ✓
+            {% elif task_item.next_occurrence %}
+                {{ task_item.next_occurrence.strftime('%b %d') }}
+            {% elif task.scheduled_date %}
+                {{ task.scheduled_date.strftime('%b %d') }}
+            {% endif %}
+        </span>
+        {% elif task_item.next_occurrence or task.scheduled_date %}
+        {% set sched_date = task_item.next_occurrence or task.scheduled_date %}
+        <span class="task-due{% if sched_date < today %} overdue{% elif sched_date == today %} today{% endif %}">
+            {{ sched_date.strftime('%b %d') }}
+        </span>
+        {% endif %}
+    </div>
+    <div class="task-meta">
+        <span class="meta-clarity clarity-{{ task.clarity }}">
+            {% if task.clarity == 'autopilot' %}Autopilot
+            {% elif task.clarity == 'brainstorm' %}Brainstorm
+            {% endif %}
+        </span>
+        <span class="meta-duration">
+            {% if task.duration_minutes %}
+                {% if task.duration_minutes >= 60 %}
+                {{ task.duration_minutes // 60 }}h{% if task.duration_minutes % 60 %}{{ task.duration_minutes % 60 }}m{% endif %}
+                {% else %}
+                {{ task.duration_minutes }}m
+                {% endif %}
+            {% else %}—{% endif %}
+        </span>
+        <span class="meta-impact impact-{{ task.impact }}">
+            {% if task.impact == 1 %}High
+            {% elif task.impact == 2 %}Mid
+            {% elif task.impact == 3 %}Low
+            {% else %}Min{% endif %}
+        </span>
+    </div>
+    <span class="task-actions">
+        <button class="kebab-btn" type="button" aria-label="Task actions"><svg width="16" height="16"><use href="/static/img/icons/ui-icons.svg#menu-dots-stroke"/></svg></button>
+    </span>
+</div>
+{# ── Subtask container (only for parent tasks with children) ── #}
+{% if task_item.subtask_count > 0 and not task.parent_id %}
+<div class="subtask-container" data-parent-id="{{ task.id }}">
+    <button class="expand-toggle" aria-expanded="true" aria-label="Toggle subtasks">
+        <svg class="chevron-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 2 8 6 4 10"/></svg>
+        <span class="subtask-summary">{{ task_item.subtask_count }} subtask{{ 's' if task_item.subtask_count > 1 else '' }}</span>
+    </button>
+    <div class="subtask-list">
+        {% for sub in task_item.subtasks %}
+        {{ render_task_item(sub, today, encryption_enabled) }}
+        {% endfor %}
+        <div class="add-task-row add-subtask-row" data-parent-id="{{ task.id }}">
+            <span class="add-task-icon">+</span>
+            <span class="add-task-text">Add subtask</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{# ── Plan My Day contextual banner ── #}
+<div class="pmd-banner" id="pmd-banner" hidden>
+    <div class="pmd-banner-text">
+        <span class="pmd-banner-title" id="pmd-banner-title">Plan tomorrow?</span>
+        <span class="pmd-banner-sub" id="pmd-banner-sub"></span>
+    </div>
+    <div class="pmd-banner-actions">
+        <button type="button" class="pmd-banner-btn" id="pmd-banner-btn">Plan</button>
+        <button type="button" class="pmd-banner-dismiss" id="pmd-banner-dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+</div>
+
+{# ── Active tasks — grouped by domain ── #}
+{% if domain_groups %}
+    {% for domain_item in domain_groups %}
+    <details class="project-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
+        <summary class="project-header">
+            <span class="project-name">
+                {% if domain_item.domain %}
+                    {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}<span class="domain-name-text">{% if encryption_enabled %}🔒{% else %}{{ domain_item.domain.name }}{% endif %}</span>
+                {% else %}
+                    Thoughts
+                {% endif %}
+            </span>
+            <span class="task-count">{{ domain_item.tasks|length }}</span>
+            <span class="header-spacer"></span>
+            <button type="button" class="domain-add-btn" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}" aria-label="Add task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#plus"/></svg></button>
+        </summary>
+        <div class="task-list">
+            {% for task_item in domain_item.tasks %}
+            {{ render_task_item(task_item, today, encryption_enabled) }}
+            {% endfor %}
+            <div class="add-task-row" data-domain-id="{{ domain_item.domain.id if domain_item.domain else '' }}">
+                <span class="add-task-icon">+</span>
+                <span class="add-task-text">Add task</span>
+            </div>
+        </div>
+    </details>
+    {% endfor %}
+{% else %}
+<div class="empty-state">
+    <img src="/static/img/illustrations/empty-tasks.svg" alt="" class="empty-state-illustration" width="120" height="120" aria-hidden="true">
+    <p>No tasks with domains yet.</p>
+    <p>Create a domain in Settings, then promote thoughts to tasks.</p>
+</div>
+{% endif %}
+
+{# ── Scheduled tasks — collapsible section ── #}
+{% if scheduled_tasks %}
+<details class="section-group" id="section-sched"{% if user_prefs.show_scheduled_in_list %} open{% endif %}>
+    <summary class="section-separator section-separator--sched">
+        <span class="sched-label-group">
+            <span class="section-sep-label">Scheduled</span>
+            <span class="section-count">{{ scheduled_tasks|length }}</span>
+            <span class="past-badge" id="past-badge" hidden></span>
+            <span class="sched-label-line"></span>
+            <span class="sep-col-label">Date</span>
+        </span>
+        <span class="sep-col-label">Clarity</span>
+        <span class="sep-col-label">Dur</span>
+        <span class="sep-col-label">Impact</span>
+        <span class="sep-col-spacer"></span>
+    </summary>
+    <div class="section-tasks">
+        {% for task_item in scheduled_tasks %}
+        {{ render_task_item(task_item, today, encryption_enabled) }}
+        {% endfor %}
+    </div>
+</details>
+{% endif %}
+
+{# ── Completed tasks — collapsible section ── #}
+{% if completed_tasks %}
+<details class="section-group" id="section-done"{% if user_prefs.show_completed_in_list %} open{% endif %}>
+    <summary class="section-separator">
+        <span class="section-sep-label">Completed</span>
+        <span class="section-count">{{ completed_tasks|length }}</span>
+    </summary>
+    <div class="section-tasks">
+        {% for task_item in completed_tasks %}
+        {{ render_task_item(task_item, today, encryption_enabled) }}
+        {% endfor %}
+    </div>
+</details>
+{% endif %}
+
+{# ── Expand/collapse JavaScript ── #}
+<script>
+(function() {
+    var STORAGE_KEY = 'subtask-collapsed';
+
+    function getCollapsedState() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+        catch (e) { return {}; }
+    }
+
+    // Restore collapsed state on load
+    document.querySelectorAll('.expand-toggle').forEach(function(toggle) {
+        var container = toggle.closest('.subtask-container');
+        if (!container) return;
+        var parentId = container.dataset.parentId;
+        var state = getCollapsedState();
+        if (state[parentId]) {
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    // Toggle on click
+    document.addEventListener('click', function(e) {
+        var toggle = e.target.closest('.expand-toggle');
+        if (!toggle) return;
+        e.preventDefault();
+        var expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        var container = toggle.closest('.subtask-container');
+        if (!container) return;
+        var parentId = container.dataset.parentId;
+        var state = getCollapsedState();
+        if (expanded) {
+            state[parentId] = true;
+        } else {
+            delete state[parentId];
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    });
+})();
+</script>

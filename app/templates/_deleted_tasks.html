@@ -1,0 +1,128 @@
+{# Deleted Tasks Partial - shows archived tasks with restore option #}
+{# Note: Header elements (back button, count) are in the main header, toggled by JS #}
+{% if domains_with_tasks %}
+    {% for domain_item in domains_with_tasks %}
+    <details class="project-group deleted-group" open data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
+        <summary class="project-header">
+            <span class="project-name">
+                {% if domain_item.domain %}
+                    {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}<span class="domain-name-text">{% if encryption_enabled %}🔒{% else %}{{ domain_item.domain.name }}{% endif %}</span>
+                {% else %}
+                    Thoughts
+                {% endif %}
+            </span>
+        </summary>
+        <div class="task-list deleted-list">
+            {% for task_item in domain_item.tasks %}
+            {% set task = task_item.task %}
+            <div class="task-item deleted-item impact-{{ task.impact }}" data-task-id="{{ task.id }}">
+                <div class="task-content">
+                    <button class="restore-gutter" type="button" title="Restore task">
+                        <span class="restore-icon">&#8635;</span>
+                    </button>
+                    <span class="task-text" {% if encryption_enabled %}data-encrypted-title="{{ task.title }}"{% endif %}>{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
+                    {% if task.description %}
+                    <span class="task-desc-preview" {% if encryption_enabled %}data-encrypted-desc="{{ task.description }}"{% endif %}>{% if encryption_enabled %}🔒{% else %}{{ task.description[:50] }}{% if task.description|length > 50 %}...{% endif %}{% endif %}</span>
+                    {% endif %}
+                </div>
+                <div class="task-meta">
+                    <span class="meta-clarity clarity-{{ task.clarity }}">
+                        {% if task.clarity == 'autopilot' %}Autopilot
+                        {% elif task.clarity == 'brainstorm' %}Brainstorm
+                        {% endif %}
+                    </span>
+                    <span class="meta-duration">
+                        {% if task.duration_minutes %}
+                            {% if task.duration_minutes >= 60 %}
+                            {{ task.duration_minutes // 60 }}h{% if task.duration_minutes % 60 %}{{ task.duration_minutes % 60 }}m{% endif %}
+                            {% else %}
+                            {{ task.duration_minutes }}m
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </span>
+                    <span class="meta-impact impact-{{ task.impact }}">
+                        {% if task.impact == 1 %}High
+                        {% elif task.impact == 2 %}Mid
+                        {% elif task.impact == 3 %}Low
+                        {% else %}Min{% endif %}
+                    </span>
+                </div>
+                <span class="task-actions"></span>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endfor %}
+{% else %}
+<div class="empty-state deleted-empty">
+    <p>No deleted tasks.</p>
+    <p>Tasks you delete will appear here for recovery.</p>
+</div>
+{% endif %}
+
+{# Hidden element to pass total_count to JS #}
+<script>
+    (function() {
+        // Update header with deleted count
+        const titleEl = document.getElementById('header-view-title');
+        if (titleEl) {
+            titleEl.textContent = 'Deleted (' + {{ total_count }} + ')';
+        }
+        // Hide date label — deleted tasks have no date column
+        const dateLabel = document.getElementById('header-date-label');
+        if (dateLabel) dateLabel.hidden = true;
+    })();
+</script>
+
+{% if encryption_enabled %}
+<script>
+(async function() {
+    if (!window.Crypto || !Crypto.canCrypto()) return;
+
+    // Decrypt task titles
+    const taskTexts = document.querySelectorAll('.deleted-group .task-text[data-encrypted-title]');
+    for (const el of taskTexts) {
+        const encrypted = el.dataset.encryptedTitle;
+        if (!encrypted) continue;
+        try {
+            const decrypted = await Crypto.decryptField(encrypted);
+            if (decrypted) el.textContent = decrypted;
+        } catch (e) {
+            console.error('Failed to decrypt task title:', e);
+        }
+    }
+
+    // Decrypt task descriptions
+    const descTexts = document.querySelectorAll('.deleted-group .task-desc-preview[data-encrypted-desc]');
+    for (const el of descTexts) {
+        const encrypted = el.dataset.encryptedDesc;
+        if (!encrypted) continue;
+        try {
+            const decrypted = await Crypto.decryptField(encrypted);
+            if (decrypted) {
+                // Show truncated preview like non-encrypted version
+                el.textContent = decrypted.length > 50 ? decrypted.slice(0, 50) + '...' : decrypted;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt task description:', e);
+        }
+    }
+
+    // Decrypt domain names
+    const domainElements = document.querySelectorAll('.deleted-group[data-domain-name]');
+    for (const el of domainElements) {
+        const name = el.dataset.domainName;
+        if (!name) continue;
+        try {
+            const decrypted = await Crypto.decryptField(name);
+            if (decrypted) {
+                const nameText = el.querySelector('.domain-name-text');
+                if (nameText) nameText.textContent = decrypted;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt domain name:', e);
+        }
+    }
+})();
+</script>
+{% endif %}

@@ -1,0 +1,461 @@
+/**
+ * Task Swipe Handler
+ * Enables swipe-to-complete and swipe-to-schedule gestures on task items.
+ *
+ * Gestures:
+ * - Swipe right: Complete task
+ * - Swipe left: Switch to calendar tab and enter manual plan mode
+ *
+ * Features:
+ * - Conflict resolution with scroll
+ * - Visual feedback during swipe (peek → commit phases)
+ * - Haptic feedback
+ */
+
+class SwipeGestureHandler {
+    constructor(options = {}) {
+        this.threshold = options.threshold || 130;
+        this.velocityThreshold = options.velocityThreshold || 0.4;
+        this.maxSwipe = options.maxSwipe || 150;
+        this.swipeDisabled = false;
+        this.isVerticalScroll = false;
+        this.startX = 0;
+        this.startY = 0;
+        this.startTime = 0;
+    }
+
+    onTouchStart(e, element) {
+        // CRITICAL: Ignore multi-touch (pinch-to-zoom)
+        if (e.touches.length > 1) {
+            this.swipeDisabled = true;
+            return false;
+        }
+
+        // Check for swipe-blocking containers
+        const noSwipeParent = e.target.closest('[data-no-swipe], .overflow-x-auto, .heatmap-container, .stats-row');
+        if (noSwipeParent) {
+            this.swipeDisabled = true;
+            return false;
+        }
+
+        // Check for interactive elements
+        if (e.target.closest('button, input, select, a, [role="button"], .task-checkbox')) {
+            this.swipeDisabled = true;
+            return false;
+        }
+
+        this.swipeDisabled = false;
+        this.isVerticalScroll = false;
+        this.startX = e.touches[0].clientX;
+        this.startY = e.touches[0].clientY;
+        this.startTime = Date.now();
+
+        return true;
+    }
+
+    onTouchMove(e) {
+        if (this.swipeDisabled) return { action: 'none' };
+
+        // Cancel if multi-touch detected (pinch-to-zoom)
+        if (e.touches.length > 1) {
+            this.swipeDisabled = true;
+            return { action: 'none' };
+        }
+
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const deltaX = currentX - this.startX;
+        const deltaY = currentY - this.startY;
+
+        // First 50ms: determine gesture direction
+        if (Date.now() - this.startTime < 50) {
+            if (Math.abs(deltaY) > Math.abs(deltaX) * 1.5) {
+                this.isVerticalScroll = true;
+            }
+        }
+
+        if (this.isVerticalScroll) {
+            return { action: 'scroll' };
+        }
+
+        // Horizontal swipe detected - only prevent default if significant movement
+        if (Math.abs(deltaX) > 10) {
+            e.preventDefault();
+        }
+
+        const clampedDelta = Math.max(-this.maxSwipe, Math.min(this.maxSwipe, deltaX));
+        return {
+            action: 'swipe',
+            deltaX: clampedDelta,
+            progress: Math.abs(clampedDelta) / this.threshold
+        };
+    }
+
+    onTouchEnd(deltaX) {
+        if (this.swipeDisabled || this.isVerticalScroll) {
+            return { action: 'none' };
+        }
+
+        const deltaTime = Date.now() - this.startTime;
+        const velocity = Math.abs(deltaX) / deltaTime;
+        const triggered = Math.abs(deltaX) > this.threshold || velocity > this.velocityThreshold;
+
+        if (triggered) {
+            return {
+                action: deltaX > 0 ? 'swipe-right' : 'swipe-left',
+                velocity
+            };
+        }
+
+        return { action: 'cancel' };
+    }
+}
+
+class TaskSwipeHandler {
+    constructor() {
+        this.gestureHandler = new SwipeGestureHandler({
+            threshold: 130,
+            maxSwipe: 150,
+            velocityThreshold: 0.4
+        });
+        this.init();
+    }
+
+    init() {
+        // Only enable on touch devices
+        if (!window.DeviceCapabilities?.prefersTouch && !window.DeviceCapabilities?.hasTouch) {
+            return;
+        }
+
+        // Attach to existing tasks
+        this.attachToAll();
+
+        // Re-attach after HTMX swaps
+        document.body.addEventListener('htmx:afterSwap', () => {
+            this.attachToAll();
+        });
+
+        // Re-attach after DOM changes
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.addedNodes.length) {
+                    this.attachToAll();
+                    break;
+                }
+            }
+        });
+
+        const taskList = document.querySelector('.task-list-container');
+        if (taskList) {
+            observer.observe(taskList, { childList: true, subtree: true });
+        }
+    }
+
+    attachToAll() {
+        document.querySelectorAll('.task-item:not([data-swipe-attached])').forEach(task => {
+            this.attachSwipe(task);
+            task.dataset.swipeAttached = 'true';
+        });
+    }
+
+    attachSwipe(task) {
+        let deltaX = 0;
+        let isActive = false;
+
+        // Add swipe indicator elements if not present
+        if (!task.querySelector('.swipe-indicator')) {
+            const completeIndicator = document.createElement('div');
+            completeIndicator.className = 'swipe-indicator swipe-indicator--complete';
+            const scheduleIndicator = document.createElement('div');
+            scheduleIndicator.className = 'swipe-indicator swipe-indicator--schedule';
+            task.appendChild(completeIndicator);
+            task.appendChild(scheduleIndicator);
+        }
+
+        task.addEventListener('touchstart', (e) => {
+            if (!this.gestureHandler.onTouchStart(e, task)) return;
+            isActive = true;
+            task.style.transition = 'none';
+            document.body.classList.add('is-swiping');
+        }, { passive: true });
+
+        task.addEventListener('touchmove', (e) => {
+            if (!isActive) return;
+
+            const result = this.gestureHandler.onTouchMove(e);
+
+            if (result.action === 'swipe') {
+                deltaX = result.deltaX;
+                task.style.transform = `translateX(${deltaX}px)`;
+
+                // Update visual feedback classes based on phases
+                task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-schedule', 'swipe-almost');
+
+                if (deltaX > 40) {
+                    task.classList.add('swiping-right');
+                    if (result.progress >= 1) {
+                        task.classList.add('swipe-complete');
+                    } else if (Math.abs(deltaX) > 100) {
+                        task.classList.add('swipe-almost');
+                    }
+                } else if (deltaX < -40) {
+                    task.classList.add('swiping-left');
+                    if (result.progress >= 1) {
+                        task.classList.add('swipe-schedule');
+                    } else if (Math.abs(deltaX) > 100) {
+                        task.classList.add('swipe-almost');
+                    }
+                }
+            }
+        }, { passive: false });
+
+        task.addEventListener('touchend', async () => {
+            if (!isActive) return;
+            isActive = false;
+
+            const result = this.gestureHandler.onTouchEnd(deltaX);
+            task.style.transition = 'transform 0.2s ease';
+            document.body.classList.remove('is-swiping');
+
+            if (result.action === 'swipe-right') {
+                await this.completeTask(task);
+            } else if (result.action === 'swipe-left') {
+                await this.scheduleTask(task);
+            }
+
+            // Reset
+            task.style.transform = '';
+            task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-schedule', 'swipe-almost');
+            deltaX = 0;
+        }, { passive: true });
+
+        task.addEventListener('touchcancel', () => {
+            if (!isActive) return;
+            isActive = false;
+            task.style.transition = 'transform 0.2s ease';
+            task.style.transform = '';
+            task.classList.remove('swiping-left', 'swiping-right', 'swipe-complete', 'swipe-schedule', 'swipe-almost');
+            document.body.classList.remove('is-swiping');
+            deltaX = 0;
+        }, { passive: true });
+    }
+
+    async completeTask(task) {
+        // Check network status before any UI changes
+        if (typeof isNetworkOnline === 'function' && !isNetworkOnline()) {
+            if (window.Toast && typeof Toast.warning === 'function') {
+                Toast.warning("You're offline — changes won't be saved until you reconnect.");
+            }
+            return;
+        }
+
+        const taskId = task.dataset.taskId;
+
+        // Haptic feedback
+        if (window.HapticEngine) {
+            window.HapticEngine.trigger('success');
+        }
+
+        // Optimistic UI update
+        task.classList.add('departing');
+
+        try {
+            // Toggle completion via TaskComplete module
+            if (window.TaskComplete && window.TaskComplete.toggle) {
+                const instanceId = task.dataset.instanceId || null;
+                const isCompleted = task.dataset.completed === '1';
+                const isRecurring = task.dataset.isRecurring === 'true';
+                await window.TaskComplete.toggle(task, taskId, instanceId, !isCompleted, isRecurring);
+            } else {
+                // Fallback to direct API call
+                const isCompleted = task.dataset.completed === '1';
+                const endpoint = isCompleted
+                    ? `/api/v1/tasks/${taskId}/uncomplete`
+                    : `/api/v1/tasks/${taskId}/complete`;
+
+                await safeFetch(endpoint, {
+                    method: 'POST',
+                });
+
+                // Reload task list
+                const taskList = document.querySelector('[hx-get*="/dashboard"]');
+                if (taskList && window.htmx) {
+                    window.htmx.trigger(taskList, 'refresh');
+                }
+            }
+        } catch (err) {
+            task.classList.remove('departing');
+            handleError(err, 'Failed to complete task', {
+                component: 'task-swipe',
+                action: 'completeTask'
+            });
+        }
+    }
+
+    /**
+     * Swipe-left: switch to calendar tab and enter manual plan mode.
+     * No auto-scheduling — user picks the slot themselves.
+     */
+    async scheduleTask(task) {
+        // Haptic feedback - light for non-destructive action
+        if (window.HapticEngine) {
+            window.HapticEngine.trigger('light');
+        }
+
+        // Reset swipe animation immediately
+        task.style.transform = '';
+        task.classList.remove('swiping-left', 'swipe-almost', 'swipe-schedule');
+
+        // Switch to calendar tab (use getInstance, not the class)
+        var tabs = typeof window.getMobileTabs === 'function' ? window.getMobileTabs() : null;
+        if (tabs && typeof tabs.switchTo === 'function') {
+            tabs.switchTo('schedule');
+        }
+
+        // After tab switch animation settles, enter plan mode
+        setTimeout(function() {
+            var todayCal = document.getElementById('today-calendar');
+            if (todayCal && window.PlanTasks && typeof window.PlanTasks.enterPlanMode === 'function') {
+                window.PlanTasks.enterPlanMode(todayCal);
+            }
+        }, 600);
+    }
+
+    async undoSchedule(task, taskId, originalDate) {
+        try {
+            await safeFetch(`/api/v1/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scheduled_date: originalDate }),
+            });
+
+            // Refresh the task list to restore the task
+            const taskList = document.querySelector('[hx-get*="/dashboard"]');
+            if (taskList && window.htmx) {
+                window.htmx.trigger(taskList, 'refresh');
+            }
+
+            if (window.Toast) {
+                window.Toast.success('Schedule reverted');
+            }
+        } catch (err) {
+            handleError(err, 'Failed to undo schedule', {
+                component: 'task-swipe',
+                action: 'undoSchedule'
+            });
+        }
+    }
+}
+
+// Long Press Handler for context menu
+class LongPressHandler {
+    constructor(options = {}) {
+        this.duration = options.duration || 400;
+        this.onLongPress = options.onLongPress || null;
+    }
+
+    attach(element) {
+        let timer = null;
+        let triggered = false;
+        let startX = 0;
+        let startY = 0;
+
+        element.addEventListener('touchstart', (e) => {
+            triggered = false;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+
+            timer = setTimeout(() => {
+                triggered = true;
+
+                // Haptic feedback
+                if (window.HapticEngine) {
+                    window.HapticEngine.trigger('longPress');
+                }
+
+                if (this.onLongPress) {
+                    this.onLongPress(element, e);
+                }
+            }, this.duration);
+        }, { passive: true });
+
+        element.addEventListener('touchmove', (e) => {
+            // Cancel if moved more than 10px
+            const deltaX = Math.abs(e.touches[0].clientX - startX);
+            const deltaY = Math.abs(e.touches[0].clientY - startY);
+            if (deltaX > 10 || deltaY > 10) {
+                clearTimeout(timer);
+            }
+        }, { passive: true });
+
+        element.addEventListener('touchend', (e) => {
+            clearTimeout(timer);
+            if (triggered) {
+                e.preventDefault(); // Prevent click after long-press
+            }
+        });
+
+        element.addEventListener('touchcancel', () => {
+            clearTimeout(timer);
+        }, { passive: true });
+
+        // Prevent context menu on touch devices
+        element.addEventListener('contextmenu', (e) => {
+            if (window.DeviceCapabilities?.prefersTouch) {
+                e.preventDefault();
+            }
+        });
+    }
+}
+
+// Initialize task swipe handler
+let taskSwipeHandler = null;
+
+function initTaskSwipe() {
+    if (taskSwipeHandler) return;
+    taskSwipeHandler = new TaskSwipeHandler();
+
+    // Also attach long-press handlers for action sheet.
+    // 300ms beats iOS text-selection / Siri Intelligence (~400ms threshold).
+    const longPress = new LongPressHandler({
+        duration: 300,
+        onLongPress: (element) => {
+            const actionSheet = window.getTaskActionSheet?.();
+            if (actionSheet) {
+                actionSheet.open(element);
+            }
+        }
+    });
+
+    document.querySelectorAll('.task-item').forEach(task => {
+        longPress.attach(task);
+    });
+
+    // Attach to new tasks
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1 && node.classList?.contains('task-item')) {
+                    longPress.attach(node);
+                }
+            });
+        }
+    });
+
+    const taskList = document.querySelector('.task-list-container');
+    if (taskList) {
+        observer.observe(taskList, { childList: true, subtree: true });
+    }
+}
+
+// Initialize on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTaskSwipe);
+} else {
+    initTaskSwipe();
+}
+
+// Export
+window.TaskSwipeHandler = TaskSwipeHandler;
+window.SwipeGestureHandler = SwipeGestureHandler;
+window.LongPressHandler = LongPressHandler;

@@ -1,0 +1,123 @@
+{# Completed Tasks Partial - shows only completed tasks #}
+{# Note: Header elements (back button, count) are in the main header, toggled by JS #}
+{% if domains_with_tasks %}
+    {% for domain_item in domains_with_tasks %}
+    <details class="project-group completed-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
+        <summary class="project-header">
+            <span class="project-name">
+                {% if domain_item.domain %}
+                    {% if domain_item.domain.icon %}{{ domain_item.domain.icon }} {% endif %}<span class="domain-name-text">{% if encryption_enabled %}🔒{% else %}{{ domain_item.domain.name }}{% endif %}</span>
+                {% else %}
+                    Thoughts
+                {% endif %}
+            </span>
+        </summary>
+        <div class="task-list completed-list">
+            {% for task_item in domain_item.tasks %}
+            {% set task = task_item.task %}
+            <div class="task-item completed-item impact-{{ task.impact }} {{ task_item.completion_age_class or 'completed-older' }}"
+                 data-clarity="{{ task.clarity }}"
+                 data-impact="{{ task.impact or 4 }}"
+                 data-task-id="{{ task.id }}"
+                 data-completed="1"
+                 data-duration="{{ task.duration_minutes or '' }}"
+                 data-scheduled-date="{{ task.scheduled_date.isoformat() if task.scheduled_date else '' }}"
+                 data-is-recurring="{{ 'true' if task.is_recurring else 'false' }}">
+                <button class="complete-gutter complete-gutter--hover" type="button" aria-label="Uncomplete task" aria-pressed="true">
+                    <span class="complete-bar"></span>
+                    <span class="complete-check" aria-hidden="true">✓</span>
+                </button>
+                <div class="task-content">
+                    <span class="task-text" {% if encryption_enabled %}data-encrypted-title="{{ task.title }}"{% endif %}>{% if encryption_enabled %}🔒{% else %}{{ task.title }}{% endif %}</span>
+                    {% if task.completed_at %}
+                    <span class="task-due">
+                        {{ task.completed_at.strftime('%b %d') }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="task-meta">
+                    <span class="meta-clarity clarity-{{ task.clarity }}">
+                        {% if task.clarity == 'autopilot' %}Autopilot
+                        {% elif task.clarity == 'brainstorm' %}Brainstorm
+                        {% endif %}
+                    </span>
+                    <span class="meta-duration">
+                        {% if task.duration_minutes %}
+                            {% if task.duration_minutes >= 60 %}
+                            {{ task.duration_minutes // 60 }}h{% if task.duration_minutes % 60 %}{{ task.duration_minutes % 60 }}m{% endif %}
+                            {% else %}
+                            {{ task.duration_minutes }}m
+                            {% endif %}
+                        {% else %}—{% endif %}
+                    </span>
+                    <span class="meta-impact impact-{{ task.impact }}">
+                        {% if task.impact == 1 %}High
+                        {% elif task.impact == 2 %}Mid
+                        {% elif task.impact == 3 %}Low
+                        {% else %}Min{% endif %}
+                    </span>
+                </div>
+                <span class="task-actions"></span>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endfor %}
+{% else %}
+<div class="empty-state completed-empty">
+    <p>No completed tasks.</p>
+    <p>Complete tasks by clicking the left rail.</p>
+</div>
+{% endif %}
+
+{# Hidden element to pass total_count to JS #}
+<script>
+    (function() {
+        // Update header with completed count
+        const titleEl = document.getElementById('header-view-title');
+        if (titleEl) {
+            titleEl.textContent = 'Completed (' + {{ total_count }} + ')';
+        }
+        // Re-initialize task completion handlers
+        if (window.TaskComplete && typeof window.TaskComplete.init === 'function') {
+            window.TaskComplete.init();
+        }
+    })();
+</script>
+
+{% if encryption_enabled %}
+<script>
+(async function() {
+    if (!window.Crypto || !Crypto.canCrypto()) return;
+
+    // Decrypt task titles
+    const taskTexts = document.querySelectorAll('.completed-group .task-text[data-encrypted-title]');
+    for (const el of taskTexts) {
+        const encrypted = el.dataset.encryptedTitle;
+        if (!encrypted) continue;
+        try {
+            const decrypted = await Crypto.decryptField(encrypted);
+            if (decrypted) el.textContent = decrypted;
+        } catch (e) {
+            console.error('Failed to decrypt task title:', e);
+        }
+    }
+
+    // Decrypt domain names
+    const domainElements = document.querySelectorAll('.completed-group[data-domain-name]');
+    for (const el of domainElements) {
+        const name = el.dataset.domainName;
+        if (!name) continue;
+        try {
+            const decrypted = await Crypto.decryptField(name);
+            if (decrypted) {
+                const nameText = el.querySelector('.domain-name-text');
+                if (nameText) nameText.textContent = decrypted;
+            }
+        } catch (e) {
+            console.error('Failed to decrypt domain name:', e);
+        }
+    }
+})();
+</script>
+{% endif %}

@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.49.8 — 2026-02-19
+
+### Added
+- **Legacy frontend toggle**: `SERVE_LEGACY_FRONTEND=true` env var serves the Jinja2 templates instead of the React SPA, allowing both versions to run in parallel on Railway sharing the same database
+
+---
+
 ## v0.49.7 — 2026-02-19
 
 ### Added
