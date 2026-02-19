@@ -7,6 +7,7 @@ interface CalendarEventProps {
   summary: string;
   timeLabel: string;
   backgroundColor?: string;
+  dimmed?: boolean;
 }
 
 export function CalendarEventCard({
@@ -15,6 +16,7 @@ export function CalendarEventCard({
   summary,
   timeLabel,
   backgroundColor,
+  dimmed,
 }: CalendarEventProps) {
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
@@ -37,7 +39,7 @@ export function CalendarEventCard({
         left,
         backgroundColor: backgroundColor ?? "hsl(var(--muted))",
         color: backgroundColor ? "#fff" : undefined,
-        opacity: 0.9,
+        opacity: dimmed ? 0.5 : 0.9,
       }}
       title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
     >

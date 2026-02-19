@@ -21,6 +21,7 @@ interface ScheduledTaskCardProps {
   durationMinutes: number | null;
   timeLabel: string;
   onClick?: () => void;
+  dimmed?: boolean;
 }
 
 export function ScheduledTaskCard({
@@ -31,6 +32,7 @@ export function ScheduledTaskCard({
   durationMinutes,
   timeLabel,
   onClick,
+  dimmed,
 }: ScheduledTaskCardProps) {
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
@@ -133,7 +135,7 @@ export function ScheduledTaskCard({
     <button
       ref={setNodeRef}
       type="button"
-      className={`absolute rounded-[10px] px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""}`}
+      className={`absolute rounded-[10px] px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
       style={{
         top: `${item.top}px`,
         height: `${Math.max(item.height, 18)}px`,

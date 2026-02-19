@@ -170,7 +170,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         const columnTop = rect.top;
         const offsetY = pointerY - columnTop;
 
-        const { hour, minutes } = offsetToTime(offsetY, calendarHourHeight);
+        const startHour = (over.data?.current as { startHour?: number })?.startHour;
+        const { hour, minutes } = offsetToTime(offsetY, calendarHourHeight, startHour);
         const scheduledTime = `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
 
         // Optimistic update

@@ -12,13 +12,14 @@ import { Button } from "@/components/ui/button";
 import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
 import {
   addDays,
-  DAY_START_HOUR,
-  formatDayHeader,
-  formatTime,
+  EXTENDED_TOTAL_HOURS,
+  getExtendedHourLabels,
   getNextZoomStep,
+  PREV_DAY_HOURS,
   parseDate,
-  TOTAL_HOURS,
+  snapToZoomStep,
   todayString,
+  ZOOM_STEPS,
 } from "@/lib/calendar-utils";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -39,11 +40,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const savedScrollTop = useRef<number | null>(null);
   const [planModeOpen, setPlanModeOpen] = useState(false);
 
-  // Visible date range: center +/- 1 day (3 days on desktop)
-  const dates = useMemo(() => {
-    return [addDays(calendarCenterDate, -1), calendarCenterDate, addDays(calendarCenterDate, 1)];
-  }, [calendarCenterDate]);
-
   // Header label: "THURSDAY, FEB 19"
   const centerDateLabel = useMemo(() => {
     const d = parseDate(calendarCenterDate);
@@ -53,9 +49,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     return `${weekday}, ${month} ${day}`.toUpperCase();
   }, [calendarCenterDate]);
 
-  // Fetch events for the visible range
-  const startDate = dates[0];
-  const endDate = addDays(dates[dates.length - 1], 1);
+  // Data fetch range: prevDay to nextDay+1 (for full coverage)
+  const startDate = addDays(calendarCenterDate, -1);
+  const endDate = addDays(calendarCenterDate, 2);
+
+  // Fetch events
   const { data: events } = useGetEventsApiV1EventsGet(
     { start_date: startDate, end_date: endDate },
     { query: { staleTime: 60_000 } },
@@ -76,7 +74,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     return map;
   }, [calendars]);
 
-  // Fetch recurring task instances for the visible range
+  // Fetch recurring task instances
   const { data: instances } = useListInstancesApiV1InstancesGet(
     { start_date: startDate, end_date: endDate },
     { query: { staleTime: 60_000 } },
@@ -91,13 +89,19 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     [tasks],
   );
 
-  // Date-only scheduled tasks (no specific time)
+  // Anytime tasks for the center date (date-only, no time, not completed)
   const anytimeTasks = useMemo(
-    () => tasks.filter((t) => t.scheduled_date && !t.scheduled_time && t.status !== "completed"),
-    [tasks],
+    () =>
+      tasks.filter(
+        (t) =>
+          t.scheduled_date === calendarCenterDate && !t.scheduled_time && t.status !== "completed",
+      ),
+    [tasks, calendarCenterDate],
   );
 
-  // Save scroll position before navigating (Item 2)
+  const isNotToday = calendarCenterDate !== todayString();
+
+  // Save scroll position before navigating
   const saveScroll = useCallback(() => {
     if (scrollRef.current) {
       savedScrollTop.current = scrollRef.current.scrollTop;
@@ -115,7 +119,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     setCalendarCenterDate(addDays(calendarCenterDate, 1));
   }, [calendarCenterDate, setCalendarCenterDate, saveScroll]);
 
-  // Zoom controls
+  const goToToday = useCallback(() => {
+    setCalendarCenterDate(todayString());
+  }, [setCalendarCenterDate]);
+
+  // Zoom controls — button stepping
   const zoomIn = useCallback(() => {
     setCalendarHourHeight(getNextZoomStep(calendarHourHeight, "in"));
   }, [calendarHourHeight, setCalendarHourHeight]);
@@ -124,23 +132,36 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     setCalendarHourHeight(getNextZoomStep(calendarHourHeight, "out"));
   }, [calendarHourHeight, setCalendarHourHeight]);
 
-  // Ctrl+Scroll wheel zoom — accumulate delta before stepping
-  const zoomAccumulator = useRef(0);
-  const ZOOM_THRESHOLD = 10; // low threshold for trackpad pinch responsiveness
+  // Smooth continuous zoom via Ctrl+wheel
+  const targetZoomRef = useRef(calendarHourHeight);
+  const saveZoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep targetZoomRef in sync when zoom changes from buttons or server sync
+  useEffect(() => {
+    targetZoomRef.current = calendarHourHeight;
+  }, [calendarHourHeight]);
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        zoomAccumulator.current += e.deltaY;
-        if (Math.abs(zoomAccumulator.current) >= ZOOM_THRESHOLD) {
-          const direction = zoomAccumulator.current > 0 ? "out" : "in";
-          setCalendarHourHeight(getNextZoomStep(calendarHourHeight, direction));
-          zoomAccumulator.current = 0;
-        }
+        // Continuous smooth zoom
+        targetZoomRef.current = Math.max(
+          ZOOM_STEPS[0],
+          Math.min(ZOOM_STEPS[ZOOM_STEPS.length - 1], targetZoomRef.current - e.deltaY * 0.2),
+        );
+        setCalendarHourHeight(Math.round(targetZoomRef.current));
+
+        // Debounced snap to nearest step for persistence
+        if (saveZoomTimer.current) clearTimeout(saveZoomTimer.current);
+        saveZoomTimer.current = setTimeout(() => {
+          const snapped = snapToZoomStep(targetZoomRef.current);
+          targetZoomRef.current = snapped;
+          setCalendarHourHeight(snapped);
+        }, 500);
       }
     },
-    [calendarHourHeight, setCalendarHourHeight],
+    [setCalendarHourHeight],
   );
 
   // Scroll to current time on first render
@@ -148,12 +169,14 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   useEffect(() => {
     if (scrollRef.current) {
       const now = new Date();
-      const targetOffset = (now.getHours() - DAY_START_HOUR - 1) * initialHourHeight.current;
+      // In the extended view: offset = (PREV_DAY_HOURS + now.getHours()) * hourHeight
+      // Scroll so current time is ~1 hour above viewport center
+      const targetOffset = (PREV_DAY_HOURS + now.getHours() - 1) * initialHourHeight.current;
       scrollRef.current.scrollTop = Math.max(0, targetOffset);
     }
   }, []);
 
-  // Restore scroll position after date navigation (Item 2)
+  // Restore scroll position after date navigation
   // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate triggers scroll restore on navigation
   useEffect(() => {
     if (savedScrollTop.current !== null && scrollRef.current) {
@@ -162,7 +185,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, [calendarCenterDate]);
 
-  // Swipe gesture for day navigation (touch + desktop mouse drag)
+  // Swipe gesture for day navigation
   const bindSwipe = useDrag(
     ({ swipe: [swipeX], event }) => {
       if (swipeX === -1) {
@@ -180,16 +203,14 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     },
   );
 
-  // Auto-scroll during drag near top/bottom edges (Item 3) + cross-day drag nav (Item 5)
+  // Auto-scroll during drag near top/bottom edges
   const autoScrollRaf = useRef<number>(0);
-  const edgeNavTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDraggingRef = useRef(false);
 
   useDndMonitor({
     onDragStart() {
       isDraggingRef.current = true;
 
-      // Start auto-scroll loop
       const loop = () => {
         if (!isDraggingRef.current || !scrollRef.current) return;
         autoScrollRaf.current = requestAnimationFrame(loop);
@@ -202,7 +223,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       const container = scrollRef.current;
       const rect = container.getBoundingClientRect();
 
-      // Get current pointer Y
       let clientY: number;
       if (event.activatorEvent instanceof TouchEvent) {
         clientY =
@@ -214,7 +234,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       }
       const pointerY = clientY + (event.delta?.y ?? 0);
 
-      // Auto-scroll near edges (Item 3)
+      // Auto-scroll near edges
       const EDGE_ZONE = 60;
       const SCROLL_SPEED = 8;
       const distFromTop = pointerY - rect.top;
@@ -225,59 +245,19 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       } else if (distFromBottom < EDGE_ZONE && distFromBottom > 0) {
         container.scrollTop += SCROLL_SPEED * (1 - distFromBottom / EDGE_ZONE);
       }
-
-      // Cross-day edge navigation (Item 5)
-      let clientX: number;
-      if (event.activatorEvent instanceof TouchEvent) {
-        clientX =
-          event.activatorEvent.touches[0]?.clientX ??
-          event.activatorEvent.changedTouches[0]?.clientX ??
-          0;
-      } else {
-        clientX = (event.activatorEvent as PointerEvent).clientX;
-      }
-      const pointerX = clientX + (event.delta?.x ?? 0);
-
-      const EDGE_X_ZONE = 40;
-      const distFromLeft = pointerX - rect.left;
-      const distFromRight = rect.right - pointerX;
-
-      if (distFromLeft < EDGE_X_ZONE && distFromLeft >= 0) {
-        if (!edgeNavTimer.current) {
-          edgeNavTimer.current = setTimeout(() => {
-            goToPrev();
-            edgeNavTimer.current = null;
-          }, 500);
-        }
-      } else if (distFromRight < EDGE_X_ZONE && distFromRight >= 0) {
-        if (!edgeNavTimer.current) {
-          edgeNavTimer.current = setTimeout(() => {
-            goToNext();
-            edgeNavTimer.current = null;
-          }, 500);
-        }
-      } else if (edgeNavTimer.current) {
-        clearTimeout(edgeNavTimer.current);
-        edgeNavTimer.current = null;
-      }
     },
     onDragEnd() {
       isDraggingRef.current = false;
       cancelAnimationFrame(autoScrollRaf.current);
-      if (edgeNavTimer.current) {
-        clearTimeout(edgeNavTimer.current);
-        edgeNavTimer.current = null;
-      }
     },
     onDragCancel() {
       isDraggingRef.current = false;
       cancelAnimationFrame(autoScrollRaf.current);
-      if (edgeNavTimer.current) {
-        clearTimeout(edgeNavTimer.current);
-        edgeNavTimer.current = null;
-      }
     },
   });
+
+  // Hour labels for the time ruler
+  const hourLabels = useMemo(() => getExtendedHourLabels(calendarHourHeight), [calendarHourHeight]);
 
   return (
     <div className="relative flex flex-col flex-1 min-h-0 border-l">
@@ -303,6 +283,16 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+          {isNotToday && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] font-semibold ml-1"
+              onClick={goToToday}
+            >
+              Today
+            </Button>
+          )}
         </div>
 
         <div className="ml-auto">
@@ -318,53 +308,30 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       </div>
 
-      {/* Day headers row (outside scroll for time-slot alignment) */}
-      <div className="flex border-b flex-shrink-0">
-        <div className="w-12 flex-shrink-0" />
-        <div className="flex flex-1 divide-x divide-border/40">
-          {dates.map((dateStr) => {
-            const { dayName, dateLabel } = formatDayHeader(dateStr);
-            const isToday = dateStr === todayString();
-            const dayAnytime = anytimeTasks.filter((t) => t.scheduled_date === dateStr);
-            return (
-              <div
-                key={dateStr}
-                className={`flex-1 min-w-[140px] ${isToday ? "bg-primary/5" : ""}`}
+      {/* Anytime section */}
+      {anytimeTasks.length > 0 && (
+        <div className="border-b px-3 py-1.5 flex items-start gap-2 max-h-[82px] overflow-auto flex-shrink-0">
+          <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] mt-1 flex-shrink-0">
+            ANYTIME
+          </span>
+          <div className="flex flex-wrap gap-1 min-w-0">
+            {anytimeTasks.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className="text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-accent/50 cursor-pointer bg-card border border-border/40 max-w-[180px]"
+                style={{
+                  borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
+                }}
+                onClick={() => onTaskClick?.(t)}
+                title={t.title}
               >
-                <div className="flex flex-col items-center py-1.5">
-                  <span
-                    className={`text-xs font-semibold ${isToday ? "text-primary" : "text-muted-foreground"}`}
-                  >
-                    {dayName}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">{dateLabel}</span>
-                </div>
-                {dayAnytime.length > 0 && (
-                  <div className="border-t px-1 py-1 space-y-0.5">
-                    <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide px-0.5">
-                      Anytime
-                    </span>
-                    {dayAnytime.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        className="w-full text-left text-[11px] truncate rounded px-1 py-0.5 hover:bg-accent/50 cursor-pointer"
-                        style={{
-                          borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
-                        }}
-                        onClick={() => onTaskClick?.(t)}
-                        title={t.title}
-                      >
-                        {t.title}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                {t.title}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Calendar body */}
       <div
@@ -380,36 +347,37 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         {...bindSwipe()}
       >
         <div className="flex">
-          {/* Time ruler — aligned with day column grids */}
+          {/* Time ruler */}
           <div className="flex-shrink-0 w-12 sticky left-0 z-10 bg-background">
-            <div className="relative" style={{ height: `${TOTAL_HOURS * calendarHourHeight}px` }}>
-              {Array.from({ length: TOTAL_HOURS }, (_, i) => DAY_START_HOUR + i).map((hour) => (
+            <div
+              className="relative"
+              style={{ height: `${EXTENDED_TOTAL_HOURS * calendarHourHeight}px` }}
+            >
+              {hourLabels.map((hl) => (
                 <div
-                  key={hour}
-                  className="absolute w-full text-right pr-1.5 text-[10px] text-muted-foreground -translate-y-1/2"
-                  style={{ top: `${(hour - DAY_START_HOUR) * calendarHourHeight}px` }}
+                  key={`${hl.section}-${hl.hour}`}
+                  className={`absolute w-full text-right pr-1.5 text-[10px] -translate-y-1/2 ${
+                    hl.isAdjacentDay ? "text-muted-foreground/70 italic" : "text-muted-foreground"
+                  }`}
+                  style={{ top: `${hl.offset}px` }}
                 >
-                  {formatTime(hour, 0).replace(":00 ", "")}
+                  {hl.label}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Day columns (grid only — headers rendered above) */}
-          <div className="flex flex-1 divide-x divide-border/40">
-            {dates.map((dateStr) => (
-              <DayColumn
-                key={dateStr}
-                dateStr={dateStr}
-                events={safeEvents}
-                tasks={scheduledTasks}
-                instances={safeInstances}
-                hourHeight={calendarHourHeight}
-                calendarColors={calendarColors}
-                onTaskClick={onTaskClick}
-                hideHeader
-              />
-            ))}
+          {/* Single day column */}
+          <div className="flex flex-1">
+            <DayColumn
+              centerDate={calendarCenterDate}
+              events={safeEvents}
+              tasks={scheduledTasks}
+              instances={safeInstances}
+              hourHeight={calendarHourHeight}
+              calendarColors={calendarColors}
+              onTaskClick={onTaskClick}
+            />
           </div>
         </div>
       </div>

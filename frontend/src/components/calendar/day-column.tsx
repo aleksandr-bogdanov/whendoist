@@ -12,15 +12,17 @@ import {
 import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import {
-  calculateOverlaps,
-  DAY_START_HOUR,
+  addDays,
+  CURRENT_DAY_HOURS,
+  calculateExtendedOverlaps,
   durationToHeight,
-  formatDayHeader,
+  EXTENDED_TOTAL_HOURS,
+  extendedTimeToOffset,
   formatTime,
-  getAdjacentDayItems,
-  offsetToTime,
-  TOTAL_HOURS,
-  timeToOffset,
+  getSectionBoundaries,
+  NEXT_DAY_END_HOUR,
+  PREV_DAY_HOURS,
+  PREV_DAY_START_HOUR,
   todayString,
 } from "@/lib/calendar-utils";
 import { IMPACT_COLORS } from "@/lib/task-utils";
@@ -28,43 +30,57 @@ import { CalendarEventCard } from "./calendar-event";
 import { ScheduledTaskCard } from "./scheduled-task-card";
 
 interface DayColumnProps {
-  dateStr: string;
+  centerDate: string;
   events: EventResponse[];
   tasks: AppRoutersTasksTaskResponse[];
-  anytimeTasks?: AppRoutersTasksTaskResponse[];
-  instances?: InstanceResponse[];
+  instances: InstanceResponse[];
   hourHeight: number;
   calendarColors: Map<string, string>;
   onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
-  hideHeader?: boolean;
 }
 
-const HOUR_LABELS = Array.from({ length: TOTAL_HOURS }, (_, i) => DAY_START_HOUR + i);
-
 export function DayColumn({
-  dateStr,
+  centerDate,
   events,
   tasks,
-  anytimeTasks,
   instances,
   hourHeight,
   calendarColors,
   onTaskClick,
-  hideHeader,
 }: DayColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
-  const { dayName, dateLabel } = formatDayHeader(dateStr);
-  const isToday = dateStr === todayString();
+  const prevDate = addDays(centerDate, -1);
+  const nextDate = addDays(centerDate, 1);
+  const isToday = centerDate === todayString();
+  const totalHeight = EXTENDED_TOTAL_HOURS * hourHeight;
+  const boundaries = useMemo(() => getSectionBoundaries(hourHeight), [hourHeight]);
 
-  // Make the entire day column a droppable target for scheduling
-  const { setNodeRef, isOver } = useDroppable({
-    id: `calendar-${dateStr}`,
-    data: { type: "calendar", dateStr },
+  // Day name for separators (e.g., "FRIDAY")
+  const centerDayName = useMemo(() => {
+    const d = new Date(`${centerDate}T00:00:00`);
+    return d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+  }, [centerDate]);
+
+  // 3 stacked droppable zones
+  const { setNodeRef: setPrevRef, isOver: isPrevOver } = useDroppable({
+    id: `calendar-${prevDate}`,
+    data: { type: "calendar", dateStr: prevDate, startHour: PREV_DAY_START_HOUR },
+  });
+  const { setNodeRef: setCurrentRef, isOver: isCurrentOver } = useDroppable({
+    id: `calendar-${centerDate}`,
+    data: { type: "calendar", dateStr: centerDate, startHour: 0 },
+  });
+  const { setNodeRef: setNextRef, isOver: isNextOver } = useDroppable({
+    id: `calendar-${nextDate}`,
+    data: { type: "calendar", dateStr: nextDate, startHour: 0 },
   });
 
+  const isOver = isPrevOver || isCurrentOver || isNextOver;
+
+  // Positioned items across all 3 days
   const positioned = useMemo(
-    () => calculateOverlaps(events, tasks, dateStr, hourHeight, instances),
-    [events, tasks, dateStr, hourHeight, instances],
+    () => calculateExtendedOverlaps(events, tasks, instances, centerDate, hourHeight),
+    [events, tasks, instances, centerDate, hourHeight],
   );
 
   // Current time indicator — update every 60s
@@ -74,8 +90,9 @@ export function DayColumn({
     const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, [isToday]);
+
   const currentTimeOffset = isToday
-    ? (now.getHours() - DAY_START_HOUR + now.getMinutes() / 60) * hourHeight
+    ? extendedTimeToOffset(now.getHours(), now.getMinutes(), "current", hourHeight)
     : -1;
 
   const getTimeLabel = useCallback((startMinutes: number, endMinutes: number) => {
@@ -86,12 +103,6 @@ export function DayColumn({
     return `${formatTime(sh, sm)} - ${formatTime(eh, em)}`;
   }, []);
 
-  // Date-only tasks for this day
-  const dayAnytimeTasks = useMemo(
-    () => (anytimeTasks ?? []).filter((t) => t.scheduled_date === dateStr),
-    [anytimeTasks, dateStr],
-  );
-
   // Find task by ID for click handling
   const taskMap = useMemo(() => {
     const m = new Map<string, AppRoutersTasksTaskResponse>();
@@ -101,20 +112,20 @@ export function DayColumn({
     return m;
   }, [tasks]);
 
-  // Adjacent-day clones (Item 6)
-  const adjacentItems = useMemo(
-    () => getAdjacentDayItems(tasks, events, dateStr, hourHeight),
-    [tasks, events, dateStr, hourHeight],
-  );
-
-  // Phantom card for drag-to-schedule preview (Item 4)
-  const [phantomTime, setPhantomTime] = useState<{ hour: number; minutes: number } | null>(null);
+  // Phantom card for drag-to-schedule preview
+  const [phantomOffset, setPhantomOffset] = useState<number | null>(null);
   const [phantomDuration, setPhantomDuration] = useState(30);
+  const [phantomTimeLabel, setPhantomTimeLabel] = useState("");
 
   useDndMonitor({
     onDragOver(event) {
       const overId = event.over?.id ? String(event.over.id) : null;
-      if (overId === `calendar-${dateStr}` && columnRef.current) {
+      const isOurZone =
+        overId === `calendar-${prevDate}` ||
+        overId === `calendar-${centerDate}` ||
+        overId === `calendar-${nextDate}`;
+
+      if (isOurZone && columnRef.current) {
         const rect = columnRef.current.getBoundingClientRect();
         let clientY: number;
         if (event.activatorEvent instanceof TouchEvent) {
@@ -127,87 +138,112 @@ export function DayColumn({
         }
         const pointerY = clientY + (event.delta?.y ?? 0);
         const offsetY = pointerY - rect.top;
-        const time = offsetToTime(offsetY, hourHeight);
-        setPhantomTime(time);
 
-        // Try to get the dragged task's duration
+        // Snap to 15-min grid on the extended timeline
+        const totalMinutes = (offsetY / hourHeight) * 60;
+        const snappedMinutes = Math.round(totalMinutes / 15) * 15;
+        const snappedOffset = (snappedMinutes / 60) * hourHeight;
+        setPhantomOffset(snappedOffset);
+
+        // Determine the display time based on absolute minutes
+        const absMinutes = snappedMinutes;
+        let hour: number;
+        let minutes: number;
+        if (absMinutes < PREV_DAY_HOURS * 60) {
+          // Prev section
+          hour = PREV_DAY_START_HOUR + Math.floor(absMinutes / 60);
+          minutes = absMinutes % 60;
+        } else if (absMinutes < (PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60) {
+          // Current section
+          const sectionMin = absMinutes - PREV_DAY_HOURS * 60;
+          hour = Math.floor(sectionMin / 60);
+          minutes = sectionMin % 60;
+        } else {
+          // Next section
+          const sectionMin = absMinutes - (PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60;
+          hour = Math.floor(sectionMin / 60);
+          minutes = sectionMin % 60;
+        }
+        setPhantomTimeLabel(formatTime(Math.min(hour, 23), minutes));
+
+        // Get the dragged task's duration
         const activeId =
           typeof event.active.id === "string"
             ? Number.parseInt(event.active.id, 10)
             : Number(event.active.id);
         const draggedTask = tasks.find((t) => t.id === activeId);
         setPhantomDuration(draggedTask?.duration_minutes ?? 30);
-      } else if (overId !== `calendar-${dateStr}`) {
-        setPhantomTime(null);
+      } else if (!isOurZone) {
+        setPhantomOffset(null);
       }
     },
     onDragEnd() {
-      setPhantomTime(null);
+      setPhantomOffset(null);
     },
     onDragCancel() {
-      setPhantomTime(null);
+      setPhantomOffset(null);
     },
   });
 
+  // Generate hour grid lines for all 44 hours
+  const hourLines = useMemo(() => {
+    const lines: { key: string; offset: number; isAdjacent: boolean }[] = [];
+    // Prev: 21-23
+    for (let h = PREV_DAY_START_HOUR; h <= 23; h++) {
+      lines.push({
+        key: `prev-${h}`,
+        offset: (h - PREV_DAY_START_HOUR) * hourHeight,
+        isAdjacent: true,
+      });
+    }
+    // Current: 0-23
+    for (let h = 0; h <= 23; h++) {
+      lines.push({ key: `cur-${h}`, offset: (PREV_DAY_HOURS + h) * hourHeight, isAdjacent: false });
+    }
+    // Next: 0-16
+    for (let h = 0; h < NEXT_DAY_END_HOUR; h++) {
+      lines.push({
+        key: `next-${h}`,
+        offset: (PREV_DAY_HOURS + CURRENT_DAY_HOURS + h) * hourHeight,
+        isAdjacent: true,
+      });
+    }
+    return lines;
+  }, [hourHeight]);
+
   return (
-    <div className="flex flex-col flex-1 min-w-[140px]">
-      {!hideHeader && (
-        <>
-          {/* Day header */}
-          <div
-            className={`sticky top-0 z-10 flex flex-col items-center py-1.5 border-b bg-background/95 backdrop-blur-sm ${
-              isToday ? "bg-primary/5" : ""
-            }`}
-          >
-            <span
-              className={`text-xs font-semibold ${isToday ? "text-primary" : "text-muted-foreground"}`}
-            >
-              {dayName}
-            </span>
-            <span className="text-[10px] text-muted-foreground">{dateLabel}</span>
-          </div>
+    <div className="flex flex-col flex-1 min-w-0">
+      {/* Time grid — single 44-hour column */}
+      <div ref={columnRef} className="relative flex-1" style={{ height: `${totalHeight}px` }}>
+        {/* Background regions */}
+        {/* Prev evening — dimmed */}
+        <div
+          className="absolute left-0 right-0 bg-muted/30"
+          style={{ top: 0, height: `${boundaries.prevEnd}px` }}
+        />
+        {/* Current day — normal background */}
+        <div
+          className="absolute left-0 right-0 bg-background"
+          style={{
+            top: `${boundaries.currentStart}px`,
+            height: `${boundaries.currentEnd - boundaries.currentStart}px`,
+          }}
+        />
+        {/* Next morning — dimmed */}
+        <div
+          className="absolute left-0 right-0 bg-muted/30"
+          style={{
+            top: `${boundaries.nextStart}px`,
+            height: `${boundaries.nextEnd - boundaries.nextStart}px`,
+          }}
+        />
 
-          {/* Anytime tasks (date-only, no specific time) */}
-          {dayAnytimeTasks.length > 0 && (
-            <div className="border-b px-1 py-1 space-y-0.5">
-              <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide px-0.5">
-                Anytime
-              </span>
-              {dayAnytimeTasks.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  className="w-full text-left text-[11px] truncate rounded px-1 py-0.5 hover:bg-accent/50 cursor-pointer"
-                  style={{
-                    borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
-                  }}
-                  onClick={() => onTaskClick?.(t)}
-                  title={t.title}
-                >
-                  {t.title}
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Time grid — droppable zone */}
-      <div
-        ref={(node) => {
-          // Merge refs: dnd-kit droppable + our local ref
-          setNodeRef(node);
-          (columnRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-        }}
-        className={`relative flex-1 transition-colors ${isOver ? "bg-primary/5" : ""}`}
-        style={{ height: `${TOTAL_HOURS * hourHeight}px` }}
-      >
         {/* Hour grid lines */}
-        {HOUR_LABELS.map((hour) => (
+        {hourLines.map((line) => (
           <div
-            key={hour}
-            className="absolute w-full border-b border-border/40"
-            style={{ top: `${(hour - DAY_START_HOUR) * hourHeight}px`, height: `${hourHeight}px` }}
+            key={line.key}
+            className={`absolute w-full border-b ${line.isAdjacent ? "border-border/20" : "border-border/40"}`}
+            style={{ top: `${line.offset}px`, height: `${hourHeight}px` }}
           >
             {/* 30-minute subdivision */}
             <div
@@ -217,13 +253,42 @@ export function DayColumn({
           </div>
         ))}
 
+        {/* Day separator: START OF {DAY} */}
+        <DaySeparator label={`START OF ${centerDayName}`} offset={boundaries.currentStart} />
+
+        {/* Day separator: END OF {DAY} */}
+        <DaySeparator label={`END OF ${centerDayName}`} offset={boundaries.currentEnd} />
+
+        {/* Droppable zones (invisible, stacked) */}
+        <div
+          ref={setPrevRef}
+          className="absolute left-0 right-0 z-[1]"
+          style={{ top: 0, height: `${boundaries.prevEnd}px` }}
+        />
+        <div
+          ref={setCurrentRef}
+          className="absolute left-0 right-0 z-[1]"
+          style={{
+            top: `${boundaries.currentStart}px`,
+            height: `${boundaries.currentEnd - boundaries.currentStart}px`,
+          }}
+        />
+        <div
+          ref={setNextRef}
+          className="absolute left-0 right-0 z-[1]"
+          style={{
+            top: `${boundaries.nextStart}px`,
+            height: `${boundaries.nextEnd - boundaries.nextStart}px`,
+          }}
+        />
+
         {/* Drop indicator when dragging over */}
         {isOver && (
           <div className="absolute inset-0 border-2 border-dashed border-primary/40 rounded-md pointer-events-none z-30" />
         )}
 
         {/* Current time indicator */}
-        {currentTimeOffset >= 0 && currentTimeOffset <= TOTAL_HOURS * hourHeight && (
+        {currentTimeOffset >= 0 && currentTimeOffset <= totalHeight && (
           <div
             className="absolute w-full z-20 pointer-events-none"
             style={{ top: `${currentTimeOffset}px` }}
@@ -236,40 +301,24 @@ export function DayColumn({
         )}
 
         {/* Phantom card preview during drag-to-schedule */}
-        {phantomTime && (
+        {phantomOffset !== null && (
           <div
             className="absolute left-0.5 right-0.5 rounded-md bg-primary/15 border border-dashed border-primary/40 pointer-events-none z-20 flex items-center px-1.5 text-[10px] text-primary font-medium"
             style={{
-              top: `${timeToOffset(phantomTime.hour, phantomTime.minutes, hourHeight)}px`,
+              top: `${phantomOffset}px`,
               height: `${Math.max(durationToHeight(phantomDuration, hourHeight), 18)}px`,
             }}
           >
-            {formatTime(phantomTime.hour, phantomTime.minutes)}
+            {phantomTimeLabel}
           </div>
         )}
-
-        {/* Adjacent-day clone items (faded) */}
-        {adjacentItems.map((item) => (
-          <div
-            key={item.id}
-            className="absolute left-0.5 right-0.5 rounded-md px-1.5 py-0.5 overflow-hidden text-xs opacity-30 pointer-events-none"
-            style={{
-              top: `${item.top}px`,
-              height: `${Math.max(item.height, 18)}px`,
-              backgroundColor: "hsl(var(--muted))",
-              borderLeft: "3px solid hsl(var(--muted-foreground) / 0.3)",
-            }}
-          >
-            <div className="truncate text-muted-foreground text-[10px] italic">
-              {item.adjacentLabel}
-            </div>
-          </div>
-        ))}
 
         {/* Rendered items */}
         <div className="absolute inset-0 pl-0.5 pr-0.5">
           {positioned.map((item) => {
             const timeLabel = getTimeLabel(item.startMinutes, item.endMinutes);
+            const isDimmed = item.daySection === "prev" || item.daySection === "next";
+
             if (item.type === "event") {
               const event = events.find((e) => e.id === item.id);
               return (
@@ -280,14 +329,21 @@ export function DayColumn({
                   summary={event?.summary ?? ""}
                   timeLabel={timeLabel}
                   backgroundColor={event ? calendarColors.get(event.calendar_id) : undefined}
+                  dimmed={isDimmed}
                 />
               );
             }
             if (item.type === "instance") {
-              const inst = instances?.find((i) => `inst-${i.id}` === item.id);
+              const inst = instances.find((i) => `inst-${i.id}` === item.id);
               if (!inst) return null;
               return (
-                <InstanceCard key={item.id} item={item} instance={inst} timeLabel={timeLabel} />
+                <InstanceCard
+                  key={item.id}
+                  item={item}
+                  instance={inst}
+                  timeLabel={timeLabel}
+                  dimmed={isDimmed}
+                />
               );
             }
             const task = taskMap.get(item.id);
@@ -302,6 +358,7 @@ export function DayColumn({
                 durationMinutes={task.duration_minutes}
                 timeLabel={timeLabel}
                 onClick={() => onTaskClick?.(task)}
+                dimmed={isDimmed}
               />
             );
           })}
@@ -311,14 +368,35 @@ export function DayColumn({
   );
 }
 
+// ─── Day Separator Pill ──────────────────────────────────────────────────────
+
+function DaySeparator({ label, offset }: { label: string; offset: number }) {
+  return (
+    <div
+      className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
+      style={{ top: `${offset}px`, transform: "translateY(-50%)" }}
+    >
+      <div className="flex-1 h-px bg-border/40" />
+      <span className="mx-2 rounded-full text-[11px] font-semibold tracking-[0.10em] uppercase text-muted-foreground bg-background border border-border/40 px-3 py-0.5 whitespace-nowrap">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-border/40" />
+    </div>
+  );
+}
+
+// ─── Instance Card ───────────────────────────────────────────────────────────
+
 function InstanceCard({
   item,
   instance,
   timeLabel,
+  dimmed,
 }: {
   item: PositionedItem;
   instance: InstanceResponse;
   timeLabel: string;
+  dimmed?: boolean;
 }) {
   const queryClient = useQueryClient();
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
@@ -393,7 +471,7 @@ function InstanceCard({
       type="button"
       className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow ${
         isCompleted || isSkipped ? "opacity-50" : ""
-      }`}
+      } ${dimmed ? "opacity-60" : ""}`}
       style={{
         top: `${item.top}px`,
         height: `${item.height}px`,
