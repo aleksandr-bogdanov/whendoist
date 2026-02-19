@@ -112,6 +112,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success(isCompleted ? "Task reopened" : "Task completed", {
+            id: `complete-${task.id}`,
             action: {
               label: "Undo",
               onClick: () => {
@@ -133,7 +134,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         onError: () => {
           // Rollback
           queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-          toast.error("Failed to update task");
+          toast.error("Failed to update task", { id: `complete-err-${task.id}` });
         },
       },
     );
@@ -180,7 +181,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         },
         onError: () => {
           queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-          toast.error("Failed to update task");
+          toast.error("Failed to update task", { id: `complete-err-${task.id}` });
         },
       },
     );
@@ -200,6 +201,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success(`Deleted "${task.title}"`, {
+            id: `delete-${task.id}`,
             action: {
               label: "Undo",
               onClick: () => {
@@ -217,7 +219,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
             duration: 5000,
           });
         },
-        onError: () => toast.error("Failed to delete task"),
+        onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),
       },
     );
     setMenuOpen(false);
@@ -289,7 +291,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
           {/* Checkbox */}
           <button
             type="button"
-            className="flex-shrink-0 cursor-pointer relative z-10"
+            className="flex-shrink-0 cursor-pointer relative z-10 [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
             onClick={handleToggleComplete}
             title={isCompleted ? "Mark as pending" : "Mark as complete"}
           >
@@ -301,7 +303,11 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                   : "border-muted-foreground/40 hover:border-primary hover:bg-primary/10",
               )}
             >
-              {isCompleted && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+              {isCompleted ? (
+                <Check className="h-2.5 w-2.5 text-primary-foreground" />
+              ) : (
+                <Check className="h-2.5 w-2.5 text-muted-foreground/20" />
+              )}
             </div>
           </button>
 
@@ -314,7 +320,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
           >
             <span
               className={cn(
-                "text-sm truncate block",
+                "text-sm line-clamp-2",
                 isCompleted && "line-through text-muted-foreground",
               )}
             >
@@ -495,7 +501,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
         },
         onError: () => {
           queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
-          toast.error("Failed to update task");
+          toast.error("Failed to update task", { id: `complete-err-${subtask.id}` });
         },
       },
     );
@@ -525,7 +531,11 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
               : "border-muted-foreground/30 hover:border-primary hover:bg-primary/10",
           )}
         >
-          {isCompleted && <Check className="h-2 w-2 text-primary-foreground" />}
+          {isCompleted ? (
+            <Check className="h-2 w-2 text-primary-foreground" />
+          ) : (
+            <Check className="h-2 w-2 text-muted-foreground/20" />
+          )}
         </div>
       </button>
 
@@ -536,7 +546,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
       >
         <span
           className={cn(
-            "text-sm truncate block",
+            "text-sm line-clamp-2",
             isCompleted && "line-through text-muted-foreground",
           )}
         >

@@ -51,7 +51,8 @@ export function Header({ userName, userEmail }: HeaderProps) {
   const ThemeIcon = themeIcons[theme];
 
   return (
-    <header className="flex h-14 items-center justify-between border-b px-4">
+    <header className="relative flex h-14 items-center justify-between px-4 backdrop-blur-md bg-background/80">
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
       <Link to="/dashboard" className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white font-bold text-sm">
           W

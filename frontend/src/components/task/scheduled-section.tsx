@@ -2,6 +2,7 @@ import { CalendarClock, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { todayString } from "@/lib/calendar-utils";
 import { groupScheduledByDate } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -45,27 +46,35 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
 
       <CollapsibleContent>
         <div className="space-y-2 pt-1">
-          {dateGroups.map((group) => (
-            <div key={group.date}>
-              <div className="px-3 py-1 text-xs font-medium text-muted-foreground">
-                {group.label}
+          {dateGroups.map((group) => {
+            const isToday = group.date === todayString();
+            return (
+              <div key={group.date}>
+                <div
+                  className={cn(
+                    "px-3 py-1 text-xs font-medium",
+                    isToday ? "text-primary font-medium" : "text-muted-foreground",
+                  )}
+                >
+                  {group.label}
+                </div>
+                <AnimatePresence initial={false}>
+                  {group.tasks.map((task) => (
+                    <motion.div
+                      key={task.id}
+                      layout
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
-              <AnimatePresence initial={false}>
-                {group.tasks.map((task) => (
-                  <motion.div
-                    key={task.id}
-                    layout
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CollapsibleContent>
     </Collapsible>
