@@ -7,6 +7,13 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.52.1 — 2026-02-20
+
+### Fixed
+- **Stable event ordering on carousel swipe**: Added deterministic sort tiebreaker (by id) in `calculateExtendedOverlaps` and `calculateOverlaps` — prevents visible reorder flash when `keepPreviousData` placeholder is replaced by fresh query data
+
+---
+
 ## v0.52.0 — 2026-02-19
 
 ### Fixed
