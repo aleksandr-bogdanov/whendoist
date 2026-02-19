@@ -9,17 +9,13 @@ interface UseCarouselOptions {
 interface UseCarouselReturn {
   /** Offset in percent added to the base -33.333% translateX. 0 = center visible. */
   offsetPercent: number;
-  /** Whether the user is actively dragging */
+  /** Whether the user is actively dragging (suppress CSS transition) */
   isDragging: boolean;
   /** Whether the snap animation is playing */
   isAnimating: boolean;
-  /** Bind to carousel container */
+  /** Bind to the carousel track element */
   handlers: {
     onPointerDown: (e: React.PointerEvent) => void;
-    onTouchStart: (e: React.TouchEvent) => void;
-    onTouchMove: (e: React.TouchEvent) => void;
-    onTouchEnd: (e: React.TouchEvent) => void;
-    onTransitionEnd: () => void;
   };
   /** Reset offset to 0 instantly (no transition). Call after navigation commit. */
   resetToCenter: () => void;
@@ -28,23 +24,61 @@ interface UseCarouselReturn {
 }
 
 const DRAG_THRESHOLD = 8;
-const NAVIGATE_RATIO = 0.25; // 25% of container width triggers navigation
+const NAVIGATE_RATIO = 0.25;
 const PANEL_PERCENT = 33.333;
 const WHEEL_DEBOUNCE_MS = 200;
+const ANIMATION_MS = 300;
 
-type Phase = "idle" | "dragging" | "animating";
-
+/**
+ * All mutable state lives in refs to avoid stale closures and re-render churn.
+ * Only `offsetPercent` and `phase` are React state (they drive the DOM).
+ */
 export function useCarousel({
   onNavigate,
   containerRef,
   disabled,
 }: UseCarouselOptions): UseCarouselReturn {
   const [offsetPercent, setOffsetPercent] = useState(0);
-  const [phase, setPhase] = useState<Phase>("idle");
-  const isResetting = useRef(false);
+  const [phase, setPhase] = useState<"idle" | "dragging" | "animating">("idle");
 
-  // Navigation direction pending commit after animation
+  // Refs for values needed in document-level listeners (avoid stale closures)
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
+  const onNavigateRef = useRef(onNavigate);
+  onNavigateRef.current = onNavigate;
+
   const pendingNav = useRef<"prev" | "next" | null>(null);
+  const animTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Commit animation (called by timeout, not transitionend) ───────────────
+  const commitAnimation = useCallback(() => {
+    if (animTimer.current) {
+      clearTimeout(animTimer.current);
+      animTimer.current = null;
+    }
+    const dir = pendingNav.current;
+    pendingNav.current = null;
+    if (dir) {
+      // Parent will call resetToCenter() in useLayoutEffect after re-render
+      onNavigateRef.current(dir);
+    } else {
+      // Snap-back complete
+      setPhase("idle");
+    }
+  }, []);
+
+  /** Start the snap animation to a target offset, with a setTimeout to commit. */
+  const startAnimation = useCallback(
+    (targetOffset: number, direction: "prev" | "next" | null) => {
+      pendingNav.current = direction;
+      setOffsetPercent(targetOffset);
+      setPhase("animating");
+      // Timeout fallback — don't rely on transitionend
+      if (animTimer.current) clearTimeout(animTimer.current);
+      animTimer.current = setTimeout(commitAnimation, ANIMATION_MS + 50);
+    },
+    [commitAnimation],
+  );
 
   // ── Pointer drag (desktop mouse/pen) ──────────────────────────────────────
   const ptrState = useRef({
@@ -52,32 +86,27 @@ export function useCarousel({
     isDragging: false,
     startX: 0,
     startY: 0,
-    startOffset: 0,
   });
 
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (disabled) return;
-      if (e.pointerType === "touch") return;
-      if (e.button !== 0) return;
-      const target = e.target as HTMLElement;
-      if (target.closest("button, a, input, select, [draggable='true']")) return;
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (disabledRef.current) return;
+    if (e.pointerType === "touch") return;
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, a, input, select, [draggable='true']")) return;
 
-      ptrState.current = {
-        isDown: true,
-        isDragging: false,
-        startX: e.pageX,
-        startY: e.pageY,
-        startOffset: offsetPercent,
-      };
-    },
-    [disabled, offsetPercent],
-  );
+    ptrState.current = {
+      isDown: true,
+      isDragging: false,
+      startX: e.pageX,
+      startY: e.pageY,
+    };
+  }, []);
 
   useEffect(() => {
     const onPointerMove = (e: PointerEvent) => {
       const ps = ptrState.current;
-      if (!ps.isDown || e.pointerType === "touch" || disabled) return;
+      if (!ps.isDown || e.pointerType === "touch" || disabledRef.current) return;
 
       const dx = e.pageX - ps.startX;
       const dy = e.pageY - ps.startY;
@@ -97,7 +126,7 @@ export function useCarousel({
       e.preventDefault();
       const containerWidth = containerRef.current?.offsetWidth ?? 400;
       const pct = (dx / containerWidth) * PANEL_PERCENT;
-      setOffsetPercent(Math.max(-PANEL_PERCENT, Math.min(PANEL_PERCENT, ps.startOffset + pct)));
+      setOffsetPercent(Math.max(-PANEL_PERCENT, Math.min(PANEL_PERCENT, pct)));
     };
 
     const onPointerUp = (e: PointerEvent) => {
@@ -113,16 +142,10 @@ export function useCarousel({
         const dx = e.pageX - ps.startX;
         const containerWidth = containerRef.current?.offsetWidth ?? 400;
         if (Math.abs(dx) > containerWidth * NAVIGATE_RATIO) {
-          // Navigate
           const dir = dx > 0 ? "prev" : "next";
-          pendingNav.current = dir;
-          setOffsetPercent(dir === "prev" ? PANEL_PERCENT : -PANEL_PERCENT);
-          setPhase("animating");
+          startAnimation(dir === "prev" ? PANEL_PERCENT : -PANEL_PERCENT, dir);
         } else {
-          // Snap back
-          pendingNav.current = null;
-          setOffsetPercent(0);
-          setPhase("animating");
+          startAnimation(0, null);
         }
       }
     };
@@ -133,98 +156,80 @@ export function useCarousel({
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
     };
-  }, [containerRef, disabled]);
+  }, [containerRef, startAnimation]);
 
   // ── Touch swipe (mobile) ──────────────────────────────────────────────────
-  const touchState = useRef({
-    active: false,
-    locked: false,
-    axis: "" as "" | "x" | "y",
-    startX: 0,
-    startY: 0,
-    startOffset: 0,
-  });
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      if (disabled || phase !== "idle") return;
+    let active = false;
+    let locked = false;
+    let axis: "" | "x" | "y" = "";
+    let startX = 0;
+    let startY = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (disabledRef.current) return;
       const t = e.touches[0];
       if (!t) return;
-      touchState.current = {
-        active: true,
-        locked: false,
-        axis: "",
-        startX: t.pageX,
-        startY: t.pageY,
-        startOffset: offsetPercent,
-      };
-    },
-    [disabled, phase, offsetPercent],
-  );
+      active = true;
+      locked = false;
+      axis = "";
+      startX = t.pageX;
+      startY = t.pageY;
+    };
 
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
-      const ts = touchState.current;
-      if (!ts.active || disabled) return;
+    const onTouchMove = (e: TouchEvent) => {
+      if (!active || disabledRef.current) return;
       const t = e.touches[0];
       if (!t) return;
 
-      const dx = t.pageX - ts.startX;
-      const dy = t.pageY - ts.startY;
+      const dx = t.pageX - startX;
+      const dy = t.pageY - startY;
 
-      if (!ts.locked) {
+      if (!locked) {
         if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
-        ts.locked = true;
-        ts.axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
-        if (ts.axis === "x") {
-          setPhase("dragging");
-        }
+        locked = true;
+        axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+        if (axis === "x") setPhase("dragging");
       }
 
-      if (ts.axis !== "x") return;
+      if (axis !== "x") return;
 
       e.preventDefault();
-      const containerWidth = containerRef.current?.offsetWidth ?? 400;
+      const containerWidth = el.offsetWidth || 400;
       const pct = (dx / containerWidth) * PANEL_PERCENT;
-      setOffsetPercent(Math.max(-PANEL_PERCENT, Math.min(PANEL_PERCENT, ts.startOffset + pct)));
-    },
-    [containerRef, disabled],
-  );
+      setOffsetPercent(Math.max(-PANEL_PERCENT, Math.min(PANEL_PERCENT, pct)));
+    };
 
-  const handleTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      const ts = touchState.current;
-      if (!ts.active) return;
-      ts.active = false;
-
-      if (ts.axis !== "x") {
-        setPhase("idle");
-        return;
-      }
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!active) return;
+      active = false;
+      if (axis !== "x") return;
 
       const t = e.changedTouches[0];
-      if (!t) {
-        setOffsetPercent(0);
-        setPhase("animating");
-        return;
-      }
-
-      const dx = t.pageX - ts.startX;
-      const containerWidth = containerRef.current?.offsetWidth ?? 400;
+      const dx = t ? t.pageX - startX : 0;
+      const containerWidth = el.offsetWidth || 400;
 
       if (Math.abs(dx) > containerWidth * NAVIGATE_RATIO) {
         const dir = dx > 0 ? "prev" : "next";
-        pendingNav.current = dir;
-        setOffsetPercent(dir === "prev" ? PANEL_PERCENT : -PANEL_PERCENT);
-        setPhase("animating");
+        startAnimation(dir === "prev" ? PANEL_PERCENT : -PANEL_PERCENT, dir);
       } else {
-        pendingNav.current = null;
-        setOffsetPercent(0);
-        setPhase("animating");
+        startAnimation(0, null);
       }
-    },
-    [containerRef],
-  );
+    };
+
+    // Use { passive: false } so we can preventDefault on touchmove
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [containerRef, startAnimation]);
 
   // ── Trackpad horizontal wheel ─────────────────────────────────────────────
   const wheelAccum = useRef(0);
@@ -232,14 +237,19 @@ export function useCarousel({
 
   const applyWheelDelta = useCallback(
     (deltaX: number) => {
-      if (disabled || phase === "animating") return;
+      if (disabledRef.current) return;
+      // Allow wheel even during animating — interrupt and restart
+      if (animTimer.current) {
+        clearTimeout(animTimer.current);
+        animTimer.current = null;
+        pendingNav.current = null;
+      }
 
       wheelAccum.current += deltaX;
       const containerWidth = containerRef.current?.offsetWidth ?? 400;
       const pct = (-wheelAccum.current / containerWidth) * PANEL_PERCENT;
       setOffsetPercent(Math.max(-PANEL_PERCENT, Math.min(PANEL_PERCENT, pct)));
-
-      if (phase !== "dragging") setPhase("dragging");
+      setPhase("dragging");
 
       if (wheelTimer.current) clearTimeout(wheelTimer.current);
       wheelTimer.current = setTimeout(() => {
@@ -248,47 +258,32 @@ export function useCarousel({
 
         if (Math.abs(accum) > containerWidth * NAVIGATE_RATIO) {
           const dir = accum > 0 ? "next" : "prev";
-          pendingNav.current = dir;
-          setOffsetPercent(dir === "prev" ? PANEL_PERCENT : -PANEL_PERCENT);
-          setPhase("animating");
+          startAnimation(dir === "prev" ? PANEL_PERCENT : -PANEL_PERCENT, dir);
         } else {
-          pendingNav.current = null;
-          setOffsetPercent(0);
-          setPhase("animating");
+          startAnimation(0, null);
         }
       }, WHEEL_DEBOUNCE_MS);
     },
-    [containerRef, disabled, phase],
+    [containerRef, startAnimation],
   );
-
-  // ── Transition end → commit navigation ────────────────────────────────────
-  const handleTransitionEnd = useCallback(() => {
-    if (phase !== "animating") return;
-    if (pendingNav.current) {
-      const dir = pendingNav.current;
-      pendingNav.current = null;
-      onNavigate(dir);
-      // The parent will call resetToCenter() in useLayoutEffect after re-render
-    } else {
-      setPhase("idle");
-    }
-  }, [phase, onNavigate]);
 
   // ── Reset (called by parent after calendarCenterDate changes) ─────────────
   const resetToCenter = useCallback(() => {
-    isResetting.current = true;
+    if (animTimer.current) {
+      clearTimeout(animTimer.current);
+      animTimer.current = null;
+    }
+    pendingNav.current = null;
+    // Batch these — React will apply both before paint
     setOffsetPercent(0);
     setPhase("idle");
-    // Clear resetting flag after one frame so next render doesn't use transition
-    requestAnimationFrame(() => {
-      isResetting.current = false;
-    });
   }, []);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
       if (wheelTimer.current) clearTimeout(wheelTimer.current);
+      if (animTimer.current) clearTimeout(animTimer.current);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
@@ -296,14 +291,10 @@ export function useCarousel({
 
   return {
     offsetPercent,
-    isDragging: phase === "dragging" || isResetting.current,
+    isDragging: phase === "dragging",
     isAnimating: phase === "animating",
     handlers: {
       onPointerDown: handlePointerDown,
-      onTouchStart: handleTouchStart,
-      onTouchMove: handleTouchMove,
-      onTouchEnd: handleTouchEnd,
-      onTransitionEnd: handleTransitionEnd,
     },
     resetToCenter,
     applyWheelDelta,

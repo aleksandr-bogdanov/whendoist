@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.51.5 — 2026-02-19
+
+### Fixed
+- **Carousel stuck after swipe**: Replaced unreliable `transitionend` with `setTimeout` fallback for animation commit — carousel no longer gets stuck in "animating" phase after 1-2 swipes
+- **Touch handled natively**: Moved touch listeners to native `addEventListener` inside the hook (avoids React re-render churn and stale closure issues)
+- **Wheel interrupts animation**: Trackpad swipe now interrupts a running animation instead of being blocked by it
+
+---
+
 ## v0.51.4 — 2026-02-19
 
 ### Added
