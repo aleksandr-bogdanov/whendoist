@@ -7,6 +7,18 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.52.2 — 2026-02-20
+
+### Fixed
+- **Subtask metadata grid alignment**: Subtask rows now use proper fixed-width columns (clarity, duration, impact) matching parent task grid
+- **Remove clock icon from task durations**: Clock symbol removed from regular task and subtask duration columns; kept only for parent task aggregated time display
+
+### Changed
+- **Full header labels**: Sort controls show "Clarity", "Duration", "Impact" instead of abbreviated "CLR", "DUR", "IMP"
+- **Column widths**: Duration column widened to 58px (from 50px), impact to 48px (from 40px) to accommodate full labels
+
+---
+
 ## v0.52.1 — 2026-02-20
 
 ### Fixed
