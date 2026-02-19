@@ -62,17 +62,17 @@ export function Header({ userName: _userName, userEmail: _userEmail }: HeaderPro
   const ThemeIcon = themeIcons[theme];
 
   return (
-    <header className="relative flex h-11 items-center px-4 bg-background">
+    <header className="relative flex h-14 items-center px-4 sm:px-6 bg-background">
       {/* Gradient bar at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
 
       {/* W Icon */}
-      <Link to="/dashboard" className="mr-4 flex items-center" aria-label="Home">
-        <WIcon />
+      <Link to="/dashboard" className="flex items-center" aria-label="Home">
+        <WIcon className="h-[22px] w-[24px]" />
       </Link>
 
-      {/* Navigation tabs */}
-      <nav className="flex items-center gap-1">
+      {/* Navigation tabs — right aligned */}
+      <nav className="ml-auto flex items-center gap-1">
         {navTabs.map((tab) => {
           const isActive = currentPath.startsWith(tab.to);
           return (
@@ -80,9 +80,9 @@ export function Header({ userName: _userName, userEmail: _userEmail }: HeaderPro
               key={tab.to}
               to={tab.to}
               className={cn(
-                "px-2.5 py-1.5 text-[0.6875rem] font-semibold tracking-[0.06em] transition-colors",
+                "px-3 py-1.5 text-[0.6875rem] font-semibold tracking-[0.06em] rounded-md transition-colors",
                 isActive
-                  ? "text-foreground border-b-2 border-foreground"
+                  ? "text-foreground bg-muted"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -93,7 +93,7 @@ export function Header({ userName: _userName, userEmail: _userEmail }: HeaderPro
       </nav>
 
       {/* Right side actions */}
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-3 flex items-center gap-1">
         <button
           type="button"
           onClick={() => setTheme(themeCycle[theme])}
