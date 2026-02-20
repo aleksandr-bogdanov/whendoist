@@ -1,6 +1,6 @@
 import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, SkipForward } from "lucide-react";
+import { Check, Pencil, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, EventResponse, InstanceResponse } from "@/api/model";
@@ -10,6 +10,12 @@ import {
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
 } from "@/api/queries/instances/instances";
 import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import {
   addDays,
@@ -33,6 +39,8 @@ interface DayColumnProps {
   centerDate: string;
   events: EventResponse[];
   tasks: AppRoutersTasksTaskResponse[];
+  /** All tasks (including anytime) — used for phantom card duration lookup during drag */
+  allTasks?: AppRoutersTasksTaskResponse[];
   instances: InstanceResponse[];
   hourHeight: number;
   calendarColors: Map<string, string>;
@@ -45,6 +53,7 @@ export function DayColumn({
   centerDate,
   events,
   tasks,
+  allTasks,
   instances,
   hourHeight,
   calendarColors,
@@ -115,6 +124,24 @@ export function DayColumn({
     return m;
   }, [tasks]);
 
+  // Lookup for phantom card — includes allTasks if provided (for anytime drag)
+  const allTasksLookup = useMemo(() => {
+    const lookup = allTasks ?? tasks;
+    return lookup;
+  }, [allTasks, tasks]);
+
+  // Handle "Edit series" for recurring instances — look up parent task
+  const handleEditSeries = useCallback(
+    (taskId: number) => {
+      // Look up the parent task from allTasks or tasks
+      const parentTask = allTasksLookup.find((t) => t.id === taskId);
+      if (parentTask && onTaskClick) {
+        onTaskClick(parentTask);
+      }
+    },
+    [allTasksLookup, onTaskClick],
+  );
+
   // Phantom card for drag-to-schedule preview
   const [phantomOffset, setPhantomOffset] = useState<number | null>(null);
   const [phantomDuration, setPhantomDuration] = useState(30);
@@ -169,12 +196,12 @@ export function DayColumn({
         }
         setPhantomTimeLabel(formatTime(Math.min(hour, 23), minutes));
 
-        // Get the dragged task's duration
-        const activeId =
-          typeof event.active.id === "string"
-            ? Number.parseInt(event.active.id, 10)
-            : Number(event.active.id);
-        const draggedTask = tasks.find((t) => t.id === activeId);
+        // Get the dragged task's duration — parse ID to handle anytime-task- prefix
+        const activeIdStr = String(event.active.id);
+        const numericId = activeIdStr.startsWith("anytime-task-")
+          ? Number.parseInt(activeIdStr.replace("anytime-task-", ""), 10)
+          : Number.parseInt(activeIdStr, 10);
+        const draggedTask = allTasksLookup.find((t) => t.id === numericId);
         setPhantomDuration(draggedTask?.duration_minutes ?? 30);
       } else if (!isOurZone) {
         setPhantomOffset(null);
@@ -346,6 +373,7 @@ export function DayColumn({
                   instance={inst}
                   timeLabel={timeLabel}
                   dimmed={isDimmed}
+                  onEditSeries={() => handleEditSeries(inst.task_id)}
                 />
               );
             }
@@ -359,6 +387,7 @@ export function DayColumn({
                 title={task.title}
                 impact={task.impact}
                 durationMinutes={task.duration_minutes}
+                isCompleted={task.status === "completed"}
                 timeLabel={timeLabel}
                 onClick={() => onTaskClick?.(task)}
                 dimmed={isDimmed}
@@ -395,21 +424,23 @@ function InstanceCard({
   instance,
   timeLabel,
   dimmed,
+  onEditSeries,
 }: {
   item: PositionedItem;
   instance: InstanceResponse;
   timeLabel: string;
   dimmed?: boolean;
+  onEditSeries?: () => void;
 }) {
   const queryClient = useQueryClient();
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
-  const [showActions, setShowActions] = useState(false);
 
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const isCompleted = instance.status === "completed";
   const isSkipped = instance.status === "skipped";
+  const isPending = instance.status === "pending";
   const impactColor = IMPACT_COLORS[instance.impact] ?? IMPACT_COLORS[4];
 
   const invalidateAll = () => {
@@ -417,9 +448,7 @@ function InstanceCard({
     queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
   };
 
-  const handleComplete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
+  const handleComplete = () => {
     const previousInstances = queryClient.getQueryData(getListInstancesApiV1InstancesGetQueryKey());
     queryClient.setQueryData(
       getListInstancesApiV1InstancesGetQueryKey(),
@@ -440,12 +469,9 @@ function InstanceCard({
         },
       },
     );
-    setShowActions(false);
   };
 
-  const handleSkip = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
+  const handleSkip = () => {
     const previousInstances = queryClient.getQueryData(getListInstancesApiV1InstancesGetQueryKey());
     queryClient.setQueryData(
       getListInstancesApiV1InstancesGetQueryKey(),
@@ -466,53 +492,52 @@ function InstanceCard({
         },
       },
     );
-    setShowActions(false);
   };
 
   return (
-    <button
-      type="button"
-      className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow ${
-        isCompleted || isSkipped ? "opacity-50" : ""
-      } ${dimmed ? "opacity-60" : ""}`}
-      style={{
-        top: `${item.top}px`,
-        height: `${item.height}px`,
-        width,
-        left,
-        backgroundColor: `${impactColor}15`,
-        borderLeftColor: impactColor,
-      }}
-      title={`${instance.task_title} (recurring)`}
-      onClick={() => setShowActions((v) => !v)}
-    >
-      <div className="flex items-center gap-1">
-        <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
-        <span className="truncate font-medium" style={{ color: impactColor }}>
-          {instance.task_title}
-        </span>
-      </div>
-      {item.height > 28 && (
-        <div className="text-[10px] text-muted-foreground truncate">{timeLabel}</div>
-      )}
-      {showActions && instance.status === "pending" && (
-        <div className="flex gap-1 mt-0.5">
-          <button
-            type="button"
-            className="flex items-center gap-0.5 rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 hover:bg-green-500/30"
-            onClick={handleComplete}
-          >
-            <Check className="h-2.5 w-2.5" /> Done
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/80"
-            onClick={handleSkip}
-          >
-            <SkipForward className="h-2.5 w-2.5" /> Skip
-          </button>
-        </div>
-      )}
-    </button>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <button
+          type="button"
+          className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow ${
+            isCompleted || isSkipped ? "opacity-50" : ""
+          } ${dimmed ? "opacity-60" : ""}`}
+          style={{
+            top: `${item.top}px`,
+            height: `${item.height}px`,
+            width,
+            left,
+            backgroundColor: `${impactColor}15`,
+            borderLeftColor: impactColor,
+          }}
+          title={`${instance.task_title} (recurring)`}
+          onClick={() => onEditSeries?.()}
+        >
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
+            <span className="truncate font-medium" style={{ color: impactColor }}>
+              {instance.task_title}
+            </span>
+          </div>
+          {item.height > 28 && (
+            <div className="text-[10px] text-muted-foreground truncate">{timeLabel}</div>
+          )}
+        </button>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="min-w-[160px]">
+        <ContextMenuItem onClick={handleSkip} disabled={!isPending}>
+          <SkipForward className="h-3.5 w-3.5 mr-2" />
+          Skip
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleComplete} disabled={!isPending}>
+          <Check className="h-3.5 w-3.5 mr-2" />
+          Complete
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onEditSeries?.()}>
+          <Pencil className="h-3.5 w-3.5 mr-2" />
+          Edit series
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
