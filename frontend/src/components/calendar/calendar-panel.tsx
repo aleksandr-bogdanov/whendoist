@@ -343,9 +343,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             </Button>
           )}
           <Button
-            variant="default"
+            variant="cta"
             size="sm"
-            className="h-8 text-xs gap-1.5 font-semibold"
+            className="h-8 text-xs gap-1.5"
             onClick={() => setPlanModeOpen(true)}
           >
             <Sparkles className="h-3.5 w-3.5" />
@@ -438,7 +438,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
 
       {/* Floating zoom controls */}
       <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
-        <div className="flex items-center rounded-full bg-card border border-border shadow-sm overflow-hidden">
+        <div className="flex items-center rounded-full bg-card border border-border shadow-[var(--shadow-card)] overflow-hidden">
           <button
             type="button"
             onClick={zoomOut}
