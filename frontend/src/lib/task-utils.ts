@@ -193,6 +193,22 @@ export function formatDate(dateStr: string | null): string {
 }
 
 /**
+ * Format a schedule target for toast messages.
+ * Examples: "Today", "Tomorrow at 2:30 PM", "Feb 25 at 10:00 AM"
+ */
+export function formatScheduleTarget(dateStr: string, timeStr?: string | null): string {
+  const dateLabel = formatDate(dateStr);
+  if (!timeStr) return dateLabel;
+  const [hStr, mStr] = timeStr.split(":");
+  const hour = Number.parseInt(hStr, 10);
+  const minutes = Number.parseInt(mStr, 10);
+  const h = hour % 12 || 12;
+  const ampm = hour < 12 ? "AM" : "PM";
+  const m = minutes.toString().padStart(2, "0");
+  return `${dateLabel} at ${h}:${m} ${ampm}`;
+}
+
+/**
  * Check if a date is overdue.
  */
 export function isOverdue(dateStr: string | null): boolean {

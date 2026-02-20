@@ -114,7 +114,7 @@ export function DomainGroup({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-            toast.success(isCompleted ? "Task reopened" : "Task completed", {
+            toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
               id: `complete-${task.id}`,
               action: {
                 label: "Undo",

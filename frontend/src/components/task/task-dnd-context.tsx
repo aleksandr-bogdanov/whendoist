@@ -16,7 +16,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
 import { offsetToTime, PREV_DAY_START_HOUR } from "@/lib/calendar-utils";
+import { formatScheduleTarget } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskDragOverlay } from "./task-drag-overlay";
 
@@ -32,7 +33,7 @@ export interface DragState {
   activeId: UniqueIdentifier | null;
   activeTask: AppRoutersTasksTaskResponse | null;
   overId: UniqueIdentifier | null;
-  overType: "task" | "calendar" | "task-list" | "anytime" | null;
+  overType: "task" | "calendar" | "task-list" | "anytime" | "date-group" | null;
 }
 
 interface TaskDndContextProps {
@@ -58,7 +59,9 @@ const customCollisionDetection: CollisionDetection = (args) => {
   // precise position-based dropping.
   const pointerCollisions = pointerWithin(args);
   if (pointerCollisions.length > 0) {
-    // Priority order: anytime → calendar → task-list → other
+    // Priority order: date-group → anytime → calendar → task-list → other
+    const dateGroupHit = pointerCollisions.find((c) => String(c.id).startsWith("date-group-"));
+    if (dateGroupHit) return [dateGroupHit];
     const anytimeHit = pointerCollisions.find((c) => String(c.id).startsWith("anytime-drop-"));
     if (anytimeHit) return [anytimeHit];
     const calendarHit = pointerCollisions.find((c) => String(c.id).startsWith("calendar-"));
@@ -84,6 +87,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const { calendarHourHeight } = useUIStore();
+
+  // Track real pointer position for accurate calendar drops (bypasses dnd-kit delta drift)
+  const lastPointerRef = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    };
+    document.addEventListener("pointermove", handler);
+    return () => document.removeEventListener("pointermove", handler);
+  }, []);
 
   const [dragState, setDragState] = useState<DragState>({
     activeId: null,
@@ -123,9 +136,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   );
 
   const getOverType = useCallback(
-    (over: Over | null): "task" | "calendar" | "task-list" | "anytime" | null => {
+    (over: Over | null): "task" | "calendar" | "task-list" | "anytime" | "date-group" | null => {
       if (!over) return null;
       const id = String(over.id);
+      if (id.startsWith("date-group-")) return "date-group";
       if (id.startsWith("anytime-drop-")) return "anytime";
       if (id.startsWith("calendar-")) return "calendar";
       if (id.startsWith("task-list-")) return "task-list";
@@ -203,8 +217,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
               const taskTitle = task?.title ?? "Task";
-              announce("Task scheduled for anytime");
-              toast.success(`Scheduled "${taskTitle}" for anytime`, {
+              announce("Task scheduled");
+              toast.success(`Scheduled "${taskTitle}" for ${formatScheduleTarget(dateStr)}`, {
                 id: `anytime-${activeId}`,
                 action: {
                   label: "Undo",
@@ -235,6 +249,73 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         return;
       }
 
+      // --- Drop onto a date-group header: reschedule to that date (date-only) ---
+      if (overId.startsWith("date-group-")) {
+        const dateStr = String(over.data.current?.dateStr ?? "");
+        const task = findTask(active.id);
+        const prevDate = task?.scheduled_date ?? null;
+        const prevTime = task?.scheduled_time ?? null;
+
+        if (prevDate === dateStr && !prevTime) return;
+
+        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(),
+        );
+        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(),
+          (old) =>
+            old?.map((t) =>
+              t.id === activeId ? { ...t, scheduled_date: dateStr, scheduled_time: null } : t,
+            ),
+        );
+
+        const taskTitle = task?.title ?? "Task";
+        updateTask.mutate(
+          { taskId: activeId, data: { scheduled_date: dateStr, scheduled_time: null } },
+          {
+            onSuccess: () => {
+              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              announce("Task rescheduled");
+              toast.success(`Rescheduled "${taskTitle}" to ${formatScheduleTarget(dateStr)}`, {
+                id: `reschedule-${activeId}`,
+                action: {
+                  label: "Undo",
+                  onClick: () => {
+                    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                      getListTasksApiV1TasksGetQueryKey(),
+                      (old) =>
+                        old?.map((t) =>
+                          t.id === activeId
+                            ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
+                            : t,
+                        ),
+                    );
+                    updateTask.mutate(
+                      {
+                        taskId: activeId,
+                        data: { scheduled_date: prevDate, scheduled_time: prevTime },
+                      },
+                      {
+                        onSuccess: () =>
+                          queryClient.invalidateQueries({
+                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          }),
+                      },
+                    );
+                  },
+                },
+                duration: 5000,
+              });
+            },
+            onError: () => {
+              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+              toast.error("Failed to reschedule task", { id: `reschedule-err-${activeId}` });
+            },
+          },
+        );
+        return;
+      }
+
       // --- Drop onto calendar: schedule the task ---
       if (overId.startsWith("calendar-")) {
         const isReschedule = active.data.current?.type === "scheduled-task";
@@ -253,17 +334,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         const liveRect = droppableData.getColumnRect?.();
         const columnTop = liveRect?.top ?? over.rect.top;
 
-        // Calculate time from pointer Y position relative to the droppable
-        let clientY: number;
-        if (event.activatorEvent instanceof TouchEvent) {
-          clientY =
-            event.activatorEvent.touches[0]?.clientY ??
-            event.activatorEvent.changedTouches[0]?.clientY ??
-            0;
-        } else {
-          clientY = (event.activatorEvent as PointerEvent).clientY;
-        }
-        const pointerY = clientY + (event.delta?.y ?? 0);
+        // Use tracked pointer position for accurate drops (immune to dnd-kit delta drift)
+        const pointerY = lastPointerRef.current.y;
         const offsetY = pointerY - columnTop;
 
         // Determine which date section the pointer is in based on Y offset
@@ -326,50 +398,56 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               const taskTitle = task?.title ?? "Task";
               if (isReschedule) {
                 announce("Task rescheduled");
-                toast.success(`Rescheduled "${taskTitle}"`, {
-                  id: `reschedule-${activeId}`,
-                  action: {
-                    label: "Undo",
-                    onClick: () => {
-                      updateTask.mutate(
-                        {
-                          taskId: activeId,
-                          data: { scheduled_date: prevDate, scheduled_time: prevTime },
-                        },
-                        {
-                          onSuccess: () =>
-                            queryClient.invalidateQueries({
-                              queryKey: getListTasksApiV1TasksGetQueryKey(),
-                            }),
-                        },
-                      );
+                toast.success(
+                  `Rescheduled "${taskTitle}" to ${formatScheduleTarget(dateStr, scheduledTime)}`,
+                  {
+                    id: `reschedule-${activeId}`,
+                    action: {
+                      label: "Undo",
+                      onClick: () => {
+                        updateTask.mutate(
+                          {
+                            taskId: activeId,
+                            data: { scheduled_date: prevDate, scheduled_time: prevTime },
+                          },
+                          {
+                            onSuccess: () =>
+                              queryClient.invalidateQueries({
+                                queryKey: getListTasksApiV1TasksGetQueryKey(),
+                              }),
+                          },
+                        );
+                      },
                     },
+                    duration: 5000,
                   },
-                  duration: 5000,
-                });
+                );
               } else {
                 announce("Task scheduled");
-                toast.success(`Scheduled "${taskTitle}"`, {
-                  id: `schedule-${activeId}`,
-                  action: {
-                    label: "Undo",
-                    onClick: () => {
-                      updateTask.mutate(
-                        {
-                          taskId: activeId,
-                          data: { scheduled_date: prevDate, scheduled_time: prevTime },
-                        },
-                        {
-                          onSuccess: () =>
-                            queryClient.invalidateQueries({
-                              queryKey: getListTasksApiV1TasksGetQueryKey(),
-                            }),
-                        },
-                      );
+                toast.success(
+                  `Scheduled "${taskTitle}" for ${formatScheduleTarget(dateStr, scheduledTime)}`,
+                  {
+                    id: `schedule-${activeId}`,
+                    action: {
+                      label: "Undo",
+                      onClick: () => {
+                        updateTask.mutate(
+                          {
+                            taskId: activeId,
+                            data: { scheduled_date: prevDate, scheduled_time: prevTime },
+                          },
+                          {
+                            onSuccess: () =>
+                              queryClient.invalidateQueries({
+                                queryKey: getListTasksApiV1TasksGetQueryKey(),
+                              }),
+                          },
+                        );
+                      },
                     },
+                    duration: 5000,
                   },
-                  duration: 5000,
-                });
+                );
               }
             },
             onError: () => {
@@ -477,7 +555,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-              toast.success("Task moved as subtask", { id: `reparent-${activeId}` });
+              toast.success(
+                `Moved "${activeTask?.title ?? "Task"}" as subtask of "${overTask?.title ?? "Task"}"`,
+                { id: `reparent-${activeId}` },
+              );
             },
             onError: () => {
               queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);

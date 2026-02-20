@@ -11,12 +11,17 @@ import {
   EllipsisVertical,
   Pencil,
   Repeat,
+  SkipForward,
   Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, SubtaskResponse } from "@/api/model";
+import type { AppRoutersTasksTaskResponse, InstanceResponse, SubtaskResponse } from "@/api/model";
+import {
+  getListInstancesApiV1InstancesGetQueryKey,
+  useSkipInstanceApiV1InstancesInstanceIdSkipPost,
+} from "@/api/queries/instances/instances";
 import {
   getListTasksApiV1TasksGetQueryKey,
   getTaskApiV1TasksTaskIdGet,
@@ -60,9 +65,18 @@ interface TaskItemProps {
   onSelect?: (taskId: number) => void;
   onEdit?: (task: AppRoutersTasksTaskResponse) => void;
   isDropTarget?: boolean;
+  /** Overdue pending instance for recurring tasks — enables "Skip this one" menu item */
+  pendingInstance?: InstanceResponse;
 }
 
-export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: TaskItemProps) {
+export function TaskItem({
+  task,
+  depth = 0,
+  onSelect,
+  onEdit,
+  isDropTarget,
+  pendingInstance,
+}: TaskItemProps) {
   const {
     selectedTaskId,
     selectTask,
@@ -77,6 +91,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
+  const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
   const isSelected = selectedTaskId === task.id;
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
@@ -135,7 +150,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           announce(isCompleted ? "Task reopened" : "Task completed");
-          toast.success(isCompleted ? "Task reopened" : "Task completed", {
+          toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
             id: `complete-${task.id}`,
             action: {
               label: "Undo",
@@ -268,6 +283,34 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
     setMenuOpen(false);
   }, [task, updateTask, queryClient]);
 
+  const handleMenuSkip = useCallback(() => {
+    if (!pendingInstance) return;
+    const previousInstances = queryClient.getQueryData(getListInstancesApiV1InstancesGetQueryKey());
+    queryClient.setQueryData(
+      getListInstancesApiV1InstancesGetQueryKey(),
+      (old: InstanceResponse[] | undefined) =>
+        old?.map((i) => (i.id === pendingInstance.id ? { ...i, status: "skipped" as const } : i)),
+    );
+    skipInstance.mutate(
+      { instanceId: pendingInstance.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          announce("Instance skipped");
+          toast.success(`Skipped instance of "${task.title}"`, {
+            id: `skip-inst-${pendingInstance.id}`,
+          });
+        },
+        onError: () => {
+          queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
+          toast.error("Failed to skip instance", { id: `skip-inst-err-${pendingInstance.id}` });
+        },
+      },
+    );
+    setMenuOpen(false);
+  }, [task, pendingInstance, skipInstance, queryClient]);
+
   const handleMenuDelete = useCallback(() => {
     deleteTask.mutate(
       { taskId: task.id },
@@ -333,6 +376,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         <Check className="h-3.5 w-3.5 mr-2" />
         {isCompleted ? "Reopen" : "Complete"}
       </ContextMenuItem>
+      {pendingInstance && (
+        <ContextMenuItem onClick={handleMenuSkip}>
+          <SkipForward className="h-3.5 w-3.5 mr-2" />
+          Skip this one
+        </ContextMenuItem>
+      )}
       {!task.scheduled_date && (
         <ContextMenuItem onClick={handleMenuSchedule}>
           <CalendarPlus className="h-3.5 w-3.5 mr-2" />
@@ -581,6 +630,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                   <Check className="h-3.5 w-3.5 mr-2" />
                   {isCompleted ? "Reopen" : "Complete"}
                 </DropdownMenuItem>
+                {pendingInstance && (
+                  <DropdownMenuItem onClick={handleMenuSkip}>
+                    <SkipForward className="h-3.5 w-3.5 mr-2" />
+                    Skip this one
+                  </DropdownMenuItem>
+                )}
                 {!task.scheduled_date && (
                   <DropdownMenuItem onClick={handleMenuSchedule}>
                     <CalendarPlus className="h-3.5 w-3.5 mr-2" />

@@ -313,7 +313,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       {
         onSuccess: () => {
           invalidateQueries();
-          toast.success(wasCompleted ? "Task reopened" : "Task completed", {
+          toast.success(wasCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
             id: `complete-${task.id}`,
             action: {
               label: "Undo",
