@@ -682,10 +682,10 @@ export function TaskItem({
             style={{ overflow: "hidden" }}
             className="relative"
           >
-            {/* Subtask connector line */}
+            {/* Subtask connector line — centered under parent checkbox */}
             <div
               className="absolute top-0 bottom-4 border-l-2 border-border/40"
-              style={{ left: `${(depth + 1) * 24 + 18}px` }}
+              style={{ left: `${depth * 24 + 19}px` }}
             />
             <SubtaskTree
               subtasks={task.subtasks!}
@@ -793,7 +793,8 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
         isDragging && "opacity-50",
       )}
       style={{
-        paddingLeft: `${depth * 24 + 8}px`,
+        marginLeft: `${depth * 24}px`,
+        paddingLeft: 8,
         borderLeftWidth: 2,
         borderLeftColor: impactColor,
         borderLeftStyle: "solid",

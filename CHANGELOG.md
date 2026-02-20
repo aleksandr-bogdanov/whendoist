@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.4 — 2026-02-20
+
+### Subtask Layout Fixes
+- **Subtask card indentation**: Subtask cards now shift right via `marginLeft` instead of extra `paddingLeft`, so the left border sits close to the checkbox (same gap as regular tasks)
+- **Vertical connector line**: Repositioned directly under the parent task's checkbox center instead of overlapping with subtask cards
+
 ## v0.54.3 — 2026-02-20
 
 ### Design Parity Iteration 2 — Post-Audit Refinements
