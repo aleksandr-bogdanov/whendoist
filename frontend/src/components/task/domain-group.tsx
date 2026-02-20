@@ -175,7 +175,7 @@ export function DomainGroup({
         data-domain-name={domain?.name ?? "Thoughts"}
         data-domain-count={String(tasks.length)}
         data-domain-color={domain?.color ?? ""}
-        className="rounded-[10px] border bg-card overflow-hidden shadow-[var(--shadow-card)]"
+        className="rounded-[12px] border border-l-2 border-l-[#6D5EF6]/20 bg-card overflow-hidden shadow-[var(--shadow-card)]"
       >
         <CollapsibleTrigger asChild>
           <button
@@ -183,7 +183,7 @@ export function DomainGroup({
             data-domain-trigger
             className={cn(
               "flex w-full items-center gap-2 px-3 py-1.5 text-sm font-bold",
-              "bg-muted/50 hover:bg-muted/80 transition-colors",
+              "bg-muted/50 hover:bg-muted/70 transition-colors",
             )}
           >
             {/* Disclosure chevron */}

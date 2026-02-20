@@ -22,7 +22,7 @@ export function SortControls() {
             key={opt.field}
             type="button"
             className={cn(
-              "flex items-center justify-center gap-0.5 text-[0.6875rem] font-semibold tracking-[0.06em] transition-colors",
+              "flex items-center justify-center gap-0.5 text-[0.6875rem] font-semibold tracking-[0.06em] uppercase transition-colors",
               isActive ? "text-foreground" : "text-foreground/38 hover:text-foreground",
             )}
             style={{ width: `var(${opt.colVar})` }}

@@ -24,7 +24,7 @@ const themeCycle: Record<string, "light" | "dark" | "system"> = {
 
 function WIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="38 40 180 160" width="17" height="15" className={className} aria-hidden="true">
+    <svg viewBox="38 40 180 160" width="24" height="21" className={className} aria-hidden="true">
       <rect
         x="48"
         y="40"

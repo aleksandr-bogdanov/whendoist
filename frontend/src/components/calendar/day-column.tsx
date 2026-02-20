@@ -239,13 +239,13 @@ export function DayColumn({
     <div className="flex flex-col flex-1 min-w-0">
       {/* Time grid — single 44-hour column */}
       <div ref={columnRef} className="relative flex-1" style={{ height: `${totalHeight}px` }}>
-        {/* Background regions */}
-        {/* Prev evening — dimmed */}
+        {/* Background regions — graduated dimming (prev: 0.7, today: 1.0, next: 0.85) */}
+        {/* Prev evening — stronger dim */}
         <div
-          className="absolute left-0 right-0 bg-muted/30"
-          style={{ top: 0, height: `${boundaries.prevEnd}px` }}
+          className="absolute left-0 right-0 bg-muted/40"
+          style={{ top: 0, height: `${boundaries.prevEnd}px`, opacity: 0.7 }}
         />
-        {/* Current day — normal background */}
+        {/* Current day — full opacity, clean background */}
         <div
           className="absolute left-0 right-0 bg-background"
           style={{
@@ -253,12 +253,13 @@ export function DayColumn({
             height: `${boundaries.currentEnd - boundaries.currentStart}px`,
           }}
         />
-        {/* Next morning — dimmed */}
+        {/* Next morning — lighter dim */}
         <div
           className="absolute left-0 right-0 bg-muted/30"
           style={{
             top: `${boundaries.nextStart}px`,
             height: `${boundaries.nextEnd - boundaries.nextStart}px`,
+            opacity: 0.85,
           }}
         />
 

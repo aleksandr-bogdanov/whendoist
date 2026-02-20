@@ -304,9 +304,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   });
 
   return (
-    <div className="relative flex flex-col flex-1 min-h-0 border-l md:border md:rounded-xl md:shadow-[var(--shadow-card)]">
+    <div className="relative flex flex-col flex-1 min-h-0 border-l md:border md:rounded-[12px] md:shadow-[var(--shadow-card)]">
       {/* Calendar header */}
-      <div className="flex items-center gap-1.5 px-2 sm:px-4 py-2 border-b bg-muted/30 md:rounded-t-xl">
+      <div className="flex items-center gap-1.5 px-2 sm:px-4 py-2 border-b bg-muted/30 md:rounded-t-[12px]">
         {/* Navigation: arrows + date label (can shrink) */}
         <div className="flex items-center gap-0.5 min-w-0">
           <Button
@@ -442,7 +442,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           <button
             type="button"
             onClick={zoomOut}
-            className="px-2 py-1 text-xs hover:bg-muted transition-colors"
+            className="px-2 py-1 text-xs hover:bg-[rgba(109,94,246,0.06)] transition-colors"
           >
             <Minus className="h-3.5 w-3.5" />
           </button>
@@ -450,7 +450,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           <button
             type="button"
             onClick={zoomIn}
-            className="px-2 py-1 text-xs hover:bg-muted transition-colors"
+            className="px-2 py-1 text-xs hover:bg-[rgba(109,94,246,0.06)] transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>

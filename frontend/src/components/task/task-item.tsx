@@ -419,7 +419,7 @@ export function TaskItem({
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <div
                 className={cn(
-                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 sm:py-2 transition-colors border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)]",
+                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 sm:py-2 transition-colors border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
                   isSelected && "bg-[rgba(109,94,246,0.08)]",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
@@ -514,7 +514,7 @@ export function TaskItem({
                     type="button"
                     onClick={() => toggleExpandedSubtask(task.id)}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="flex-shrink-0 p-0.5 rounded hover:bg-accent relative z-10"
+                    className="flex-shrink-0 p-0.5 rounded hover:bg-[rgba(109,94,246,0.06)] relative z-10"
                   >
                     {isExpanded ? (
                       <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -620,7 +620,7 @@ export function TaskItem({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="hidden sm:flex flex-shrink-0 p-0.5 rounded hover:bg-accent relative z-10 opacity-0 group-hover:opacity-100 transition-opacity w-[var(--col-actions)] justify-center"
+                    className="hidden sm:flex flex-shrink-0 p-0.5 rounded hover:bg-[rgba(109,94,246,0.06)] relative z-10 opacity-0 group-hover:opacity-100 transition-opacity w-[var(--col-actions)] justify-center"
                     title="Task actions"
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
@@ -680,7 +680,13 @@ export function TaskItem({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
+            className="relative"
           >
+            {/* Subtask connector line */}
+            <div
+              className="absolute top-0 bottom-4 border-l-2 border-border/40"
+              style={{ left: `${(depth + 1) * 24 + 18}px` }}
+            />
             <SubtaskTree
               subtasks={task.subtasks!}
               depth={depth + 1}
@@ -781,7 +787,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
       ref={setNodeRef}
       className={cn(
         "group flex items-center gap-[var(--col-gap)] py-1 transition-colors border-b border-border/20 cursor-grab active:cursor-grabbing",
-        "hover:bg-[rgba(109,94,246,0.04)]",
+        "hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
         isSelected && "bg-[rgba(109,94,246,0.08)]",
         isCompleted && "opacity-60",
         isDragging && "opacity-50",
