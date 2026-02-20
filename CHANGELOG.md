@@ -7,6 +7,16 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.6 — 2026-02-20
+
+### Fixed
+- **Calendar drop zones broken**: Tasks couldn't be dropped onto calendar timeslots because dnd-kit's Rect measurement breaks inside nested scroll containers (carouselRef + scrollRef). Moved the calendar droppable outside the scroll containers as an overlay sibling, matching the architecture of the working anytime drop zone. See [docs/CALENDAR-DND.md](docs/CALENDAR-DND.md).
+- **Duplicate draggable IDs**: Scheduled tasks appeared in both the task panel (`TaskItem`) and the calendar (`ScheduledTaskCard`) with the same dnd-kit draggable ID, causing activeNodeRect to be measured from the wrong DOM node. Prefixed calendar card IDs with `scheduled-task-` (matching the existing `anytime-task-` pattern).
+- **DragOverlay position drift**: Overlay card drifted away from the pointer when dragging from inside scroll containers. Added a modifier that uses algebraic cancellation — `activeNodeRect` in the modifier cancels with `initialRect` in PositionedOverlay, making the visual position independent of scroll-adjusted rect values.
+- **DragOverlay proportional sizing**: The compact overlay card (`max-w-xs`) is narrower than calendar cards (~650px). Grab offset in absolute pixels placed the pointer past the overlay's edge. Now captures grab position as a ratio of the original card and applies it to the overlay content's actual dimensions via a ref.
+- **Phantom card position off by hours**: The phantom card preview used `event.delta` (which includes dnd-kit's scroll adjustment) combined with `getBoundingClientRect()` (which already accounts for scroll), double-counting the scroll offset. Now tracks the real pointer position via a `pointermove` listener.
+- **Phantom card not updating continuously**: With a single large overlay droppable, `onDragOver` only fired once on entry. Switched to `onDragMove` for continuous phantom card and auto-scroll updates.
+
 ## v0.53.5 — 2026-02-20
 
 ### Fixed

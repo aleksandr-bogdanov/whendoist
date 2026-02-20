@@ -1,4 +1,4 @@
-import { useDndMonitor, useDroppable } from "@dnd-kit/core";
+import { useDndMonitor } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Pencil, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/context-menu";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import {
-  addDays,
   CURRENT_DAY_HOURS,
   calculateExtendedOverlaps,
   durationToHeight,
@@ -45,8 +44,8 @@ interface DayColumnProps {
   hourHeight: number;
   calendarColors: Map<string, string>;
   onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
-  /** Panel position in carousel — namespaces droppable IDs to avoid conflicts */
-  panelId?: string;
+  /** Whether this panel is the currently visible/active one (receives drop events) */
+  isActivePanel?: boolean;
 }
 
 export function DayColumn({
@@ -58,11 +57,9 @@ export function DayColumn({
   hourHeight,
   calendarColors,
   onTaskClick,
-  panelId = "center",
+  isActivePanel = false,
 }: DayColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
-  const prevDate = addDays(centerDate, -1);
-  const nextDate = addDays(centerDate, 1);
   const isToday = centerDate === todayString();
   const totalHeight = EXTENDED_TOTAL_HOURS * hourHeight;
   const boundaries = useMemo(() => getSectionBoundaries(hourHeight), [hourHeight]);
@@ -72,22 +69,6 @@ export function DayColumn({
     const d = new Date(`${centerDate}T00:00:00`);
     return d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   }, [centerDate]);
-
-  // Callback to get a live column rect (avoids stale dnd-kit over.rect in scroll containers)
-  const getColumnRect = useCallback(() => columnRef.current?.getBoundingClientRect() ?? null, []);
-
-  // Single full-column droppable zone (namespaced by panelId for carousel uniqueness)
-  const { setNodeRef: setDropRef, isOver } = useDroppable({
-    id: `calendar-${panelId}-${centerDate}`,
-    data: {
-      type: "calendar",
-      centerDate,
-      prevDate,
-      nextDate,
-      boundaries,
-      getColumnRect,
-    },
-  });
 
   // Positioned items across all 3 days
   const positioned = useMemo(
@@ -142,28 +123,32 @@ export function DayColumn({
     [allTasksLookup, onTaskClick],
   );
 
+  // Track real pointer position for phantom card (bypasses dnd-kit delta which
+  // includes scroll adjustment that double-counts with getBoundingClientRect)
+  const lastPointerRef = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    };
+    document.addEventListener("pointermove", handler);
+    return () => document.removeEventListener("pointermove", handler);
+  }, []);
+
   // Phantom card for drag-to-schedule preview
   const [phantomOffset, setPhantomOffset] = useState<number | null>(null);
   const [phantomDuration, setPhantomDuration] = useState(30);
   const [phantomTimeLabel, setPhantomTimeLabel] = useState("");
+  const [isCalendarOver, setIsCalendarOver] = useState(false);
 
   useDndMonitor({
-    onDragOver(event) {
+    onDragMove(event) {
       const overId = event.over?.id ? String(event.over.id) : null;
-      const isOurZone = overId === `calendar-${panelId}-${centerDate}`;
+      const isOurZone = overId?.startsWith("calendar-overlay-") && isActivePanel;
 
       if (isOurZone && columnRef.current) {
+        setIsCalendarOver(true);
         const rect = columnRef.current.getBoundingClientRect();
-        let clientY: number;
-        if (event.activatorEvent instanceof TouchEvent) {
-          clientY =
-            event.activatorEvent.touches[0]?.clientY ??
-            event.activatorEvent.changedTouches[0]?.clientY ??
-            0;
-        } else {
-          clientY = (event.activatorEvent as PointerEvent).clientY;
-        }
-        const pointerY = clientY + (event.delta?.y ?? 0);
+        const pointerY = lastPointerRef.current.y;
         const offsetY = pointerY - rect.top;
 
         // Snap to 15-min grid on the extended timeline
@@ -193,22 +178,27 @@ export function DayColumn({
         }
         setPhantomTimeLabel(formatTime(Math.min(hour, 23), minutes));
 
-        // Get the dragged task's duration — parse ID to handle anytime-task- prefix
+        // Get the dragged task's duration — parse ID to handle prefixed IDs
         const activeIdStr = String(event.active.id);
         const numericId = activeIdStr.startsWith("anytime-task-")
           ? Number.parseInt(activeIdStr.replace("anytime-task-", ""), 10)
-          : Number.parseInt(activeIdStr, 10);
+          : activeIdStr.startsWith("scheduled-task-")
+            ? Number.parseInt(activeIdStr.replace("scheduled-task-", ""), 10)
+            : Number.parseInt(activeIdStr, 10);
         const draggedTask = allTasksLookup.find((t) => t.id === numericId);
         setPhantomDuration(draggedTask?.duration_minutes ?? 30);
       } else if (!isOurZone) {
         setPhantomOffset(null);
+        setIsCalendarOver(false);
       }
     },
     onDragEnd() {
       setPhantomOffset(null);
+      setIsCalendarOver(false);
     },
     onDragCancel() {
       setPhantomOffset(null);
+      setIsCalendarOver(false);
     },
   });
 
@@ -286,11 +276,8 @@ export function DayColumn({
         {/* Day separator: END OF {DAY} */}
         <DaySeparator label={`END OF ${centerDayName}`} offset={boundaries.currentEnd} />
 
-        {/* Single full-column droppable zone */}
-        <div ref={setDropRef} className="absolute inset-0 z-[1]" />
-
         {/* Drop indicator when dragging over */}
-        {isOver && (
+        {isCalendarOver && (
           <div className="absolute inset-0 border-2 border-dashed border-primary/40 rounded-md pointer-events-none z-30" />
         )}
 
