@@ -123,6 +123,17 @@ export function DayColumn({
     [allTasksLookup, onTaskClick],
   );
 
+  // Track real pointer position for phantom card (bypasses dnd-kit delta which
+  // includes scroll adjustment that double-counts with getBoundingClientRect)
+  const lastPointerRef = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    };
+    document.addEventListener("pointermove", handler);
+    return () => document.removeEventListener("pointermove", handler);
+  }, []);
+
   // Phantom card for drag-to-schedule preview
   const [phantomOffset, setPhantomOffset] = useState<number | null>(null);
   const [phantomDuration, setPhantomDuration] = useState(30);
@@ -137,16 +148,7 @@ export function DayColumn({
       if (isOurZone && columnRef.current) {
         setIsCalendarOver(true);
         const rect = columnRef.current.getBoundingClientRect();
-        let clientY: number;
-        if (event.activatorEvent instanceof TouchEvent) {
-          clientY =
-            event.activatorEvent.touches[0]?.clientY ??
-            event.activatorEvent.changedTouches[0]?.clientY ??
-            0;
-        } else {
-          clientY = (event.activatorEvent as PointerEvent).clientY;
-        }
-        const pointerY = clientY + (event.delta?.y ?? 0);
+        const pointerY = lastPointerRef.current.y;
         const offsetY = pointerY - rect.top;
 
         // Snap to 15-min grid on the extended timeline
