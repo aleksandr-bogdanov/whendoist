@@ -27,7 +27,7 @@ def generate_state() -> str:
 async def exchange_code(code: str) -> str:
     """Exchange authorization code for access token. Returns access token."""
     settings = get_settings()
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         response = await client.post(
             TODOIST_TOKEN_URL,
             data={

@@ -53,7 +53,7 @@ def generate_state() -> str:
 async def exchange_code(code: str) -> dict:
     """Exchange authorization code for tokens. Returns dict with access_token, refresh_token, expires_in."""
     settings = get_settings()
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         response = await client.post(
             GOOGLE_TOKEN_URL,
             data={
@@ -126,7 +126,7 @@ async def refresh_access_token(refresh_token: str) -> dict:
 
 async def get_user_email(access_token: str) -> str:
     """Get user email from Google userinfo endpoint."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         response = await client.get(
             GOOGLE_USERINFO_URL,
             headers={"Authorization": f"Bearer {access_token}"},
@@ -138,7 +138,7 @@ async def get_user_email(access_token: str) -> str:
 
 async def get_user_info(access_token: str) -> dict:
     """Get user info (email, name, picture) from Google userinfo endpoint."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         response = await client.get(
             GOOGLE_USERINFO_URL,
             headers={"Authorization": f"Bearer {access_token}"},

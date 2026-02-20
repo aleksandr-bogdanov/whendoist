@@ -9,76 +9,100 @@
  * Uses derivedKey from crypto-store.
  */
 
+import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
 import { decrypt, encrypt, looksEncrypted } from "@/lib/crypto";
 import { useCryptoStore } from "@/stores/crypto-store";
 
 /**
  * Decrypt a single string field if it looks encrypted.
+ * Returns [decryptedValue, didFail] tuple.
  */
 async function decryptFieldIfNeeded(
   value: string | null | undefined,
   key: CryptoKey,
-): Promise<string | null | undefined> {
-  if (!value || !looksEncrypted(value)) return value;
+): Promise<[string | null | undefined, boolean]> {
+  if (!value || !looksEncrypted(value)) return [value, false];
   try {
-    return await decrypt(key, value);
+    return [await decrypt(key, value), false];
   } catch {
-    return value; // Return original on failure
+    return [value, true]; // Return original on failure
   }
 }
 
 /**
  * Decrypt task title, description, and subtask titles.
+ * Returns [decryptedTask, failureCount].
  */
 export async function decryptTask(
   task: AppRoutersTasksTaskResponse,
   key: CryptoKey,
-): Promise<AppRoutersTasksTaskResponse> {
-  const [title, description] = await Promise.all([
+): Promise<[AppRoutersTasksTaskResponse, number]> {
+  let failures = 0;
+  const [[title, titleFailed], [description, descFailed]] = await Promise.all([
     decryptFieldIfNeeded(task.title, key),
     decryptFieldIfNeeded(task.description, key),
   ]);
+  if (titleFailed) failures++;
+  if (descFailed) failures++;
 
   let subtasks = task.subtasks;
   if (subtasks?.length) {
     subtasks = await Promise.all(
-      subtasks.map(async (st) => ({
-        ...st,
-        title: (await decryptFieldIfNeeded(st.title, key)) ?? st.title,
-      })),
+      subtasks.map(async (st) => {
+        const [decrypted, failed] = await decryptFieldIfNeeded(st.title, key);
+        if (failed) failures++;
+        return { ...st, title: decrypted ?? st.title };
+      }),
     );
   }
 
-  return {
-    ...task,
-    title: title ?? task.title,
-    description: description ?? task.description ?? null,
-    subtasks,
-  };
+  return [
+    {
+      ...task,
+      title: title ?? task.title,
+      description: description ?? task.description ?? null,
+      subtasks,
+    },
+    failures,
+  ];
 }
 
 /**
  * Decrypt domain name.
+ * Returns [decryptedDomain, failureCount].
  */
 export async function decryptDomain(
   domain: DomainResponse,
   key: CryptoKey,
-): Promise<DomainResponse> {
-  const name = await decryptFieldIfNeeded(domain.name, key);
-  return {
-    ...domain,
-    name: name ?? domain.name,
-  };
+): Promise<[DomainResponse, number]> {
+  const [name, failed] = await decryptFieldIfNeeded(domain.name, key);
+  return [{ ...domain, name: name ?? domain.name }, failed ? 1 : 0];
 }
 
 /**
  * Hook providing decrypt/encrypt helpers bound to the current crypto state.
  */
 export function useCrypto() {
-  const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
+  const {
+    derivedKey,
+    encryptionEnabled,
+    isUnlocked,
+    decryptionFailures,
+    incrementDecryptionFailures,
+  } = useCryptoStore();
 
   const canDecrypt = encryptionEnabled && isUnlocked && derivedKey !== null;
+
+  const reportFailures = (count: number) => {
+    if (count > 0) {
+      incrementDecryptionFailures();
+      // Show toast only on the first failure batch (not per field)
+      if (decryptionFailures === 0) {
+        toast.warning("Some data couldn't be decrypted. Try re-entering your passphrase.");
+      }
+    }
+  };
 
   return {
     canDecrypt,
@@ -90,7 +114,10 @@ export function useCrypto() {
       tasks: AppRoutersTasksTaskResponse[],
     ): Promise<AppRoutersTasksTaskResponse[]> => {
       if (!canDecrypt || !derivedKey) return tasks;
-      return Promise.all(tasks.map((t) => decryptTask(t, derivedKey)));
+      const results = await Promise.all(tasks.map((t) => decryptTask(t, derivedKey)));
+      const totalFailures = results.reduce((sum, [, f]) => sum + f, 0);
+      reportFailures(totalFailures);
+      return results.map(([task]) => task);
     },
 
     /**
@@ -100,7 +127,9 @@ export function useCrypto() {
       task: AppRoutersTasksTaskResponse,
     ): Promise<AppRoutersTasksTaskResponse> => {
       if (!canDecrypt || !derivedKey) return task;
-      return decryptTask(task, derivedKey);
+      const [decrypted, failures] = await decryptTask(task, derivedKey);
+      reportFailures(failures);
+      return decrypted;
     },
 
     /**
@@ -108,7 +137,10 @@ export function useCrypto() {
      */
     decryptDomains: async (domains: DomainResponse[]): Promise<DomainResponse[]> => {
       if (!canDecrypt || !derivedKey) return domains;
-      return Promise.all(domains.map((d) => decryptDomain(d, derivedKey)));
+      const results = await Promise.all(domains.map((d) => decryptDomain(d, derivedKey)));
+      const totalFailures = results.reduce((sum, [, f]) => sum + f, 0);
+      reportFailures(totalFailures);
+      return results.map(([domain]) => domain);
     },
 
     /**

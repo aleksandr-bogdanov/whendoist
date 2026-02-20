@@ -36,12 +36,15 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
     try {
       const success = await unlockEncryption(passphrase, salt, testValue);
       if (success) {
+        setPassphrase("");
         await restoreKey();
         toast.success("Encryption unlocked");
       } else {
+        setPassphrase("");
         setError("Incorrect passphrase. Please try again.");
       }
     } catch {
+      setPassphrase("");
       setError("Failed to unlock encryption. Please try again.");
     } finally {
       setLoading(false);
@@ -55,12 +58,15 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
     try {
       const result = await unlockWithPasskey(testValue);
       if (result.success) {
+        setPassphrase("");
         await restoreKey();
         toast.success("Encryption unlocked with passkey");
       } else {
+        setPassphrase("");
         setError(result.error ?? "Passkey authentication failed");
       }
     } catch {
+      setPassphrase("");
       setError("Passkey unlock failed. Try your passphrase instead.");
     } finally {
       setLoading(false);

@@ -11,6 +11,7 @@ from datetime import date, datetime, time
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import (
@@ -659,6 +660,7 @@ class BatchUpdateTasksResponse(BaseModel):
 
     updated_count: int
     total_requested: int
+    failed_ids: list[int] | None = None
     errors: list[BatchUpdateError] | None = None
 
 
@@ -819,22 +821,27 @@ async def batch_update_tasks(
         - total_requested: Total tasks in request
         - errors: List of {id, error} for failed tasks (only if any failed)
     """
-    service = TaskService(db, user.id)
     updated_count = 0
     errors: list[BatchUpdateError] = []
     batch_size = 25
 
-    for i, item in enumerate(data.tasks):
+    # Pre-fetch all requested tasks in a single query (M2: avoid N+1)
+    task_ids = [item.id for item in data.tasks]
+    result = await db.execute(select(Task).where(Task.id.in_(task_ids), Task.user_id == user.id))
+    tasks_by_id = {t.id: t for t in result.scalars().all()}
+
+    # Build lookup for update data
+    updates_by_id = {item.id: item for item in data.tasks}
+
+    for i, task_id in enumerate(task_ids):
         try:
-            task = await service.get_task(item.id)
+            task = tasks_by_id.get(task_id)
             if not task:
                 continue
 
-            await service.update_task(
-                task_id=item.id,
-                title=item.title,
-                description=item.description,
-            )
+            update_data = updates_by_id[task_id]
+            task.title = update_data.title
+            task.description = update_data.description
             updated_count += 1
 
             # Commit every batch_size items to keep transactions short
@@ -843,14 +850,16 @@ async def batch_update_tasks(
                 logger.debug(f"Batch update: committed {i + 1}/{len(data.tasks)} tasks")
         except Exception as e:
             await db.rollback()
-            errors.append(BatchUpdateError(id=item.id, error="Update failed"))
-            logger.warning(f"Failed to update task {item.id}: {e}")
+            errors.append(BatchUpdateError(id=task_id, error="Update failed"))
+            logger.warning(f"Failed to update task {task_id}: {e}")
 
     # Final commit for remaining items
     await db.commit()
 
+    failed_ids = [e.id for e in errors] if errors else None
     return BatchUpdateTasksResponse(
         updated_count=updated_count,
         total_requested=len(data.tasks),
+        failed_ids=failed_ids,
         errors=errors if errors else None,
     )

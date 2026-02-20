@@ -76,6 +76,7 @@ class TodoistClient:
         self._client = httpx.AsyncClient(
             base_url=TODOIST_API_URL,
             headers={"Authorization": f"Bearer {self.access_token}"},
+            timeout=httpx.Timeout(30.0),
         )
         return self
 
