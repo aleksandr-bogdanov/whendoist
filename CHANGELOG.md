@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.1 — 2026-02-20
+
+### Design Parity Phase 2 — CTA & Depth
+- **Plan My Day button**: Gradient CTA treatment with purple glow shadow (`linear-gradient(135deg, #6D5EF6, #8B7CF7, #A78BFA)`)
+- **Glass blur headers**: Main header and task panel header now use `backdrop-blur-md` for premium glass feel
+- **Shadow system**: Added brand 3-tier shadow system (`--shadow-card`, `--shadow-raised`, `--shadow-cta`) with dark mode variants, applied to domain group cards and floating controls
+- **Calendar card radius**: Scheduled task cards reduced from 10px to 6px for professional look
+
+---
+
 ## v0.54.0 — 2026-02-20
 
 ### Design Parity Phase 1 — Brand Foundation

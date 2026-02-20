@@ -138,7 +138,7 @@ export function TaskPanel({
       {/* Panel header with controls */}
       <div
         data-task-panel-header
-        className="relative flex flex-col gap-2 px-2 sm:px-3 py-2 border-b"
+        className="relative flex flex-col gap-2 px-2 sm:px-3 py-2 border-b backdrop-blur-md bg-background/90"
       >
         {/* Spectrum bar */}
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />

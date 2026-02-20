@@ -175,7 +175,7 @@ export function DomainGroup({
         data-domain-name={domain?.name ?? "Thoughts"}
         data-domain-count={String(tasks.length)}
         data-domain-color={domain?.color ?? ""}
-        className="rounded-[10px] border bg-card overflow-hidden"
+        className="rounded-[10px] border bg-card overflow-hidden shadow-[var(--shadow-card)]"
       >
         <CollapsibleTrigger asChild>
           <button

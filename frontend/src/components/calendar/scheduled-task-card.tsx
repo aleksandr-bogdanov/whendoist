@@ -204,7 +204,7 @@ export function ScheduledTaskCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-[10px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
+          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${Math.max(item.height, 18)}px`,
