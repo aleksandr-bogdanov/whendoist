@@ -204,18 +204,24 @@ export function DayColumn({
 
   // Generate hour grid lines for extended timeline
   const hourLines = useMemo(() => {
-    const lines: { key: string; offset: number; isAdjacent: boolean }[] = [];
+    const lines: { key: string; offset: number; isAdjacent: boolean; banded: boolean }[] = [];
     // Prev: 22-23
     for (let h = PREV_DAY_START_HOUR; h <= 23; h++) {
       lines.push({
         key: `prev-${h}`,
         offset: (h - PREV_DAY_START_HOUR) * hourHeight,
         isAdjacent: true,
+        banded: false,
       });
     }
-    // Current: 0-23
+    // Current: 0-23 — alternating banding on even hours
     for (let h = 0; h <= 23; h++) {
-      lines.push({ key: `cur-${h}`, offset: (PREV_DAY_HOURS + h) * hourHeight, isAdjacent: false });
+      lines.push({
+        key: `cur-${h}`,
+        offset: (PREV_DAY_HOURS + h) * hourHeight,
+        isAdjacent: false,
+        banded: h % 2 === 0,
+      });
     }
     // Next: 0-4
     for (let h = 0; h < NEXT_DAY_END_HOUR; h++) {
@@ -223,6 +229,7 @@ export function DayColumn({
         key: `next-${h}`,
         offset: (PREV_DAY_HOURS + CURRENT_DAY_HOURS + h) * hourHeight,
         isAdjacent: true,
+        banded: false,
       });
     }
     return lines;
@@ -260,7 +267,11 @@ export function DayColumn({
           <div
             key={line.key}
             className={`absolute w-full border-b ${line.isAdjacent ? "border-border/20" : "border-border/40"}`}
-            style={{ top: `${line.offset}px`, height: `${hourHeight}px` }}
+            style={{
+              top: `${line.offset}px`,
+              height: `${hourHeight}px`,
+              backgroundColor: line.banded ? "rgba(15, 23, 42, 0.015)" : undefined,
+            }}
           >
             {/* 30-minute subdivision */}
             <div

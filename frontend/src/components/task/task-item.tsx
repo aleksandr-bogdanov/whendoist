@@ -419,7 +419,7 @@ export function TaskItem({
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <div
                 className={cn(
-                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 transition-colors border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)]",
+                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 sm:py-2 transition-colors border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)]",
                   isSelected && "bg-[rgba(109,94,246,0.08)]",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
@@ -450,6 +450,7 @@ export function TaskItem({
                     aria-label={isCompleted ? "Completed" : "Not completed"}
                     className={cn(
                       "h-[18px] w-[18px] transition-colors",
+                      isCompleted && "animate-[completion-pulse_0.35s_ease-out]",
                       !isCompleted && "group/cb",
                     )}
                   >

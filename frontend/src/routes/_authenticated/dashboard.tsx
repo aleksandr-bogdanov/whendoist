@@ -347,7 +347,7 @@ function DashboardPage() {
         </div>
 
         {/* Main content: split pane on desktop, tab-switched on mobile */}
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 min-h-0 md:gap-1">
           {/* Task panel */}
           <div
             className={`flex flex-col min-w-0 min-h-0 ${

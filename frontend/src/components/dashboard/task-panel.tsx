@@ -138,7 +138,7 @@ export function TaskPanel({
       {/* Panel header with controls */}
       <div
         data-task-panel-header
-        className="relative flex flex-col gap-2 px-2 sm:px-3 py-2 border-b backdrop-blur-md bg-background/90"
+        className="relative flex flex-col gap-2 px-2 sm:px-4 py-2 border-b backdrop-blur-md bg-muted/30"
       >
         {/* Spectrum bar */}
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
@@ -174,7 +174,7 @@ export function TaskPanel({
       <div ref={pullRefreshRef} className="flex-1 min-h-0 flex flex-col relative">
         <div className="flex-1 min-h-0 overflow-y-auto relative" data-task-scroll-area>
           <StickyDomainHeader />
-          <div className="p-2 sm:p-3 space-y-2">
+          <div className="p-2 sm:p-4 space-y-2">
             <PendingPastBanner />
             <TaskList groups={pendingGroups} onEditTask={onEditTask} />
             <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />

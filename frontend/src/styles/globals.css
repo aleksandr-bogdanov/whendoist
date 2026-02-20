@@ -182,6 +182,19 @@ body.reduced-motion * {
   transition-duration: 0.01ms !important;
 }
 
+/* Completion pulse animation for checkbox */
+@keyframes completion-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* PWA standalone viewport fix */
 @media (display-mode: standalone) {
   html,
