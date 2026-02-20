@@ -214,6 +214,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Toast System](docs/TOAST-SYSTEM.md) | Typed notifications with queuing, actions, and backward compatibility |
 | [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with content-hash dedup, storage tradeoffs |
 | [In-Place Mutations](docs/IN-PLACE-MUTATIONS.md) | TaskMutations module — no-reload DOM updates for task operations |
+| [Calendar DnD](docs/CALENDAR-DND.md) | dnd-kit in nested scroll containers — bugs, failed approaches, and working patterns |
 | [PWA Viewport Fix](docs/PWA-VIEWPORT-FIX.md) | iOS viewport shrinking bug from overflow:hidden — diagnosis and workaround |
 | [React SPA Migration](docs/plans/2026-02-17-react-spa-migration.md) | Migration plan from Jinja2/HTMX to React + TypeScript SPA |
 | **Brand & Design** | |
