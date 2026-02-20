@@ -609,17 +609,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
   // Modifier: preserve proportional grab offset, immune to scroll drift.
   // dnd-kit measures activeNodeRect from the draggable DOM node, but the DragOverlay
-  // renders a compact card with different dimensions. This modifier captures the
-  // grab position as a RATIO of the original card, then applies that ratio to the
-  // overlay's actual dimensions (via overlayNodeRect). The activeNodeRect values
-  // cancel out algebraically so scroll drift doesn't affect the visual position.
-  // We wait for overlayNodeRect before applying (identity transform until then).
+  // renders a compact card (TaskDragOverlay) inside a wrapper sized to the original
+  // card. We measure the actual content width via overlayContentRef and use it for
+  // proportional positioning. The activeNodeRect values cancel out algebraically
+  // so scroll drift doesn't affect the visual position.
   const grabRatioRef = useRef<{ x: number; y: number } | null>(null);
+  const overlayContentRef = useRef<HTMLDivElement>(null);
   const overlayModifiers = useMemo<Modifier[]>(
     () => [
-      ({ transform, activatorEvent, activeNodeRect, overlayNodeRect }) => {
-        // Wait for overlay to render so we get its actual dimensions
-        if (!activeNodeRect || !activatorEvent || !overlayNodeRect) return transform;
+      ({ transform, activatorEvent, activeNodeRect }) => {
+        if (!activeNodeRect || !activatorEvent) return transform;
         const ev = activatorEvent as PointerEvent;
         // Capture grab position as ratio of original card (no scroll drift yet)
         if (!grabRatioRef.current) {
@@ -628,9 +627,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             y: (ev.clientY - activeNodeRect.top) / (activeNodeRect.height || 1),
           };
         }
-        // Apply ratio to overlay dimensions so proportional position is preserved
-        const offsetX = grabRatioRef.current.x * overlayNodeRect.width;
-        const offsetY = grabRatioRef.current.y * overlayNodeRect.height;
+        // Use actual content dimensions if available, otherwise fall back to original card
+        const contentEl = overlayContentRef.current;
+        const contentW = contentEl?.offsetWidth ?? activeNodeRect.width;
+        const contentH = contentEl?.offsetHeight ?? activeNodeRect.height;
+        const offsetX = grabRatioRef.current.x * contentW;
+        const offsetY = grabRatioRef.current.y * contentH;
         const currentX = ev.clientX + transform.x;
         const currentY = ev.clientY + transform.y;
         // visual = activeNodeRect.left + result.x = currentX - offsetX
@@ -656,12 +658,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       autoScroll={false}
     >
       {children}
-      <DragOverlay
-        dropAnimation={null}
-        modifiers={overlayModifiers}
-        style={{ width: "auto", height: "auto" }}
-      >
-        {dragState.activeTask ? <TaskDragOverlay task={dragState.activeTask} /> : null}
+      <DragOverlay dropAnimation={null} modifiers={overlayModifiers}>
+        {dragState.activeTask ? (
+          <div ref={overlayContentRef}>
+            <TaskDragOverlay task={dragState.activeTask} />
+          </div>
+        ) : null}
       </DragOverlay>
     </DndContext>
   );
