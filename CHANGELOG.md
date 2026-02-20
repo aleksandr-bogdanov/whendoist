@@ -7,6 +7,24 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.4 — 2026-02-20
+
+### Fixed
+- **HTTP timeouts on OAuth**: Added explicit `timeout=httpx.Timeout(10.0)` to Google and Todoist OAuth token exchange and userinfo calls, preventing indefinite worker hangs during upstream outages
+- **HTTP timeout on Todoist API client**: Added `timeout=httpx.Timeout(30.0)` to Todoist import client, matching the Google Calendar client's timeout
+- **Passphrase cleared after unlock**: Encryption unlock dialog now clears the passphrase from React state immediately after success, failure, or error — prevents exposure via DevTools
+- **N+1 queries in batch-update**: Task and domain batch-update endpoints now pre-fetch all items with a single `WHERE id IN (...)` query instead of one query per item
+- **Decryption failure warning**: If decryption fails (wrong key, corrupted data), a toast warns the user to re-enter their passphrase instead of silently showing ciphertext
+- **Batch update failed_ids**: Batch-update response now includes a `failed_ids` list so the frontend knows which tasks to retry
+- **Diagnostic console.log**: Passkey flow diagnostic log gated behind `import.meta.env.DEV`
+- **Error boundary logging**: Full stack traces only logged in development; production logs only `error.message`
+- **setTimeout leak in UI store**: `flashUpdatedTask` now clears previous timeouts before setting new ones
+
+### Added
+- **Composite database index**: Added `ix_task_user_parent(user_id, parent_id)` index for faster subtask queries
+
+---
+
 ## v0.53.3 — 2026-02-20
 
 ### Added

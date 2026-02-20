@@ -344,6 +344,7 @@ class Task(Base):
         Index("ix_task_user_scheduled", "user_id", "scheduled_date"),
         Index("ix_task_user_domain", "user_id", "domain_id"),
         Index("ix_task_parent", "parent_id"),
+        Index("ix_task_user_parent", "user_id", "parent_id"),
     )
 
 

@@ -9,11 +9,12 @@ import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import DOMAIN_NAME_MAX_LENGTH
 from app.database import get_db
-from app.models import User
+from app.models import Domain, User
 from app.routers.auth import require_user
 from app.services.task_service import TaskService
 
@@ -204,23 +205,29 @@ async def batch_update_domains(
     Commits after each item to prevent connection timeouts.
     Returns count of domains updated.
     """
-    service = TaskService(db, user.id)
     updated_count = 0
     errors = []
 
-    for item in data.domains:
+    # Pre-fetch all requested domains in a single query (M2: avoid N+1)
+    domain_ids = [item.id for item in data.domains]
+    db_result = await db.execute(select(Domain).where(Domain.id.in_(domain_ids), Domain.user_id == user.id))
+    domains_by_id = {d.id: d for d in db_result.scalars().all()}
+
+    updates_by_id = {item.id: item for item in data.domains}
+
+    for domain_id in domain_ids:
         try:
-            domain = await service.get_domain(item.id)
+            domain = domains_by_id.get(domain_id)
             if not domain:
                 continue
 
-            await service.update_domain(domain_id=item.id, name=item.name)
+            domain.name = updates_by_id[domain_id].name
             updated_count += 1
             await db.commit()
         except Exception as e:
             await db.rollback()
-            errors.append({"id": item.id, "error": "Update failed"})
-            logger.warning(f"Failed to update domain {item.id}: {e}")
+            errors.append({"id": domain_id, "error": "Update failed"})
+            logger.warning(f"Failed to update domain {domain_id}: {e}")
 
     result: dict[str, int | list[dict[str, str]]] = {
         "updated_count": updated_count,

@@ -94,7 +94,11 @@ class AppErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("App error boundary caught:", error, errorInfo);
+    if (import.meta.env.DEV) {
+      console.error("App error boundary caught:", error, errorInfo);
+    } else {
+      console.error("App error boundary caught:", error.message);
+    }
   }
 
   render() {

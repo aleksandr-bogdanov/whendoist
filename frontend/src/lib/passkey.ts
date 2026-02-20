@@ -417,7 +417,8 @@ export async function unlockWithPasskey(encryptionTestValue: string): Promise<Pa
       masterKey = await unwrapMasterKey(wrappingKey, wrapped_key);
     } catch {
       // Credential might be different than first passkey — look up correct data
-      console.log("Initial unwrap failed, looking up credential-specific data...");
+      if (import.meta.env.DEV)
+        console.log("Initial unwrap failed, looking up credential-specific data...");
 
       const lookupRes = await axios.get(
         `/api/v1/passkeys/by-credential/${encodeURIComponent(credentialId)}`,

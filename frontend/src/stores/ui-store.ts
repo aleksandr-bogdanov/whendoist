@@ -42,6 +42,9 @@ interface UIActions {
   flashUpdatedTask: (taskId: number) => void;
 }
 
+let flashScrollTimer: ReturnType<typeof setTimeout>;
+let flashClearTimer: ReturnType<typeof setTimeout>;
+
 export const useUIStore = create<UIState & UIActions>()(
   persist(
     (set, get) => ({
@@ -117,13 +120,15 @@ export const useUIStore = create<UIState & UIActions>()(
         set({ calendarHourHeight: Math.max(30, Math.min(100, height)) }),
       setCalendarCenterDate: (date) => set({ calendarCenterDate: date }),
       flashUpdatedTask: (taskId) => {
+        clearTimeout(flashScrollTimer);
+        clearTimeout(flashClearTimer);
         set({ justUpdatedId: taskId });
-        setTimeout(() => {
+        flashScrollTimer = setTimeout(() => {
           document
             .querySelector(`[data-task-id="${taskId}"]`)
             ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }, 100);
-        setTimeout(() => set({ justUpdatedId: null }), 1500);
+        flashClearTimer = setTimeout(() => set({ justUpdatedId: null }), 1500);
       },
     }),
     {

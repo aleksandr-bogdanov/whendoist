@@ -12,6 +12,8 @@ interface CryptoState {
   salt: string | null;
   /** Encrypted test value for passphrase verification */
   testValue: string | null;
+  /** Count of fields that failed decryption since last unlock */
+  decryptionFailures: number;
 }
 
 interface CryptoActions {
@@ -23,6 +25,10 @@ interface CryptoActions {
   setEnabled: (enabled: boolean, salt?: string | null, testValue?: string | null) => void;
   /** Restore key from sessionStorage on app load */
   restoreKey: () => Promise<void>;
+  /** Increment decryption failure counter */
+  incrementDecryptionFailures: () => void;
+  /** Reset decryption failure counter */
+  resetDecryptionFailures: () => void;
 }
 
 export const useCryptoStore = create<CryptoState & CryptoActions>((set) => ({
@@ -31,10 +37,11 @@ export const useCryptoStore = create<CryptoState & CryptoActions>((set) => ({
   isUnlocked: false,
   salt: null,
   testValue: null,
+  decryptionFailures: 0,
 
   setKey: async (key) => {
     await storeKey(key);
-    set({ derivedKey: key, isUnlocked: true });
+    set({ derivedKey: key, isUnlocked: true, decryptionFailures: 0 });
   },
 
   clearKey: () => {
@@ -46,10 +53,18 @@ export const useCryptoStore = create<CryptoState & CryptoActions>((set) => ({
     set({ encryptionEnabled: enabled, salt, testValue });
   },
 
+  incrementDecryptionFailures: () => {
+    set((state) => ({ decryptionFailures: state.decryptionFailures + 1 }));
+  },
+
+  resetDecryptionFailures: () => {
+    set({ decryptionFailures: 0 });
+  },
+
   restoreKey: async () => {
     const key = await getStoredKey();
     if (key) {
-      set({ derivedKey: key, isUnlocked: true });
+      set({ derivedKey: key, isUnlocked: true, decryptionFailures: 0 });
     }
   },
 }));
