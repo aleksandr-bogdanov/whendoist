@@ -32,7 +32,7 @@ export function TaskList({ groups, onSelectTask, onEditTask, dragOverTaskId }: T
   return (
     <div ref={setNodeRef} className={`space-y-1 ${isOver ? "bg-accent/30 rounded-md" : ""}`}>
       {groups.map((group) => (
-        <motion.div key={group.domain?.id ?? "inbox"} layout transition={{ duration: 0.2 }}>
+        <motion.div key={group.domain?.id ?? "thoughts"} layout transition={{ duration: 0.2 }}>
           <DomainGroup
             domain={group.domain}
             tasks={group.tasks}

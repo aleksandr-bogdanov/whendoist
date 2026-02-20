@@ -137,7 +137,7 @@ class TaskService:
         Get tasks with optional filtering.
 
         Args:
-            domain_id: Filter by domain (None = no domain / inbox)
+            domain_id: Filter by domain (None = no domain / thoughts)
             parent_id: Filter by parent task (for subtasks)
             status: Filter by status (pending/completed/archived)
             scheduled_date: Filter by scheduled date
@@ -145,7 +145,7 @@ class TaskService:
             clarity: Filter by clarity (autopilot/normal/brainstorm)
             include_subtasks: Eager load subtasks
             top_level_only: Only return top-level tasks (parent_id is None)
-            has_domain: True = only tasks WITH a domain, False = only tasks WITHOUT (inbox)
+            has_domain: True = only tasks WITH a domain, False = only tasks WITHOUT (thoughts)
             exclude_statuses: List of statuses to exclude (e.g., ["deleted", "archived"])
         """
         query = select(Task).where(Task.user_id == self.user_id)
@@ -561,7 +561,7 @@ class TaskService:
         """
         Get all tasks grouped by domain for dashboard display.
 
-        Returns a dict with domain_id as key (None for inbox) and tasks as value.
+        Returns a dict with domain_id as key (None for thoughts) and tasks as value.
         """
         tasks = await self.get_tasks(status=status, top_level_only=True)
 

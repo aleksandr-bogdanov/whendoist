@@ -789,7 +789,7 @@
 }
 
 /* Thoughts domain (no domain_id) — italic, muted */
-.project-group[data-domain-id="inbox"] .project-name {
+.project-group[data-domain-id="thoughts"] .project-name {
     font-style: italic;
     color: var(--text-muted);
 }

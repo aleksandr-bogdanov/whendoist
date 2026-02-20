@@ -96,7 +96,9 @@ export function TaskPanel({
 
   // Process tasks: categorize -> filter -> sort -> group
   const { pendingGroups, scheduledTasks, completedTasks } = useMemo(() => {
-    const { pending, scheduled, completed } = categorizeTasks(decryptedTasks);
+    // Exclude thoughts (domain_id=null) from dashboard — they belong on the Thoughts page
+    const dashboardTasks = decryptedTasks.filter((t) => t.domain_id !== null);
+    const { pending, scheduled, completed } = categorizeTasks(dashboardTasks);
 
     // Filter by energy level
     const filteredPending = filterByEnergy(pending, energyLevel);

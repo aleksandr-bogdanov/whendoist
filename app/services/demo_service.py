@@ -138,7 +138,7 @@ class DemoService:
         # --- Completed tasks (direct insertion for custom timestamps) ---
         await self._seed_completed_tasks(domains, today, user_id)
 
-        # --- Inbox/Thoughts (no domain) ---
+        # --- Thoughts (no domain) ---
         await self._seed_thoughts(task_service)
 
     async def _seed_domains(self, task_service: TaskService) -> dict[str, Domain]:
@@ -542,7 +542,7 @@ class DemoService:
             self.db.add(task)
 
     async def _seed_thoughts(self, task_service: TaskService) -> None:
-        """Create inbox/thought items (tasks with no domain)."""
+        """Create thought items (tasks with no domain)."""
         await task_service.create_task(
             title="Research vacation spots for March",
             impact=4,

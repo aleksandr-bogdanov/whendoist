@@ -187,7 +187,7 @@ async def preview_todoist_import(
             for task in tasks:
                 project_task_counts[task.project_id] = project_task_counts.get(task.project_id, 0) + 1
 
-            # Build project list (exclude Inbox)
+            # Build project list (exclude Todoist Inbox — maps to thoughts)
             project_list = []
             for p in projects:
                 if p.name.lower() != "inbox":

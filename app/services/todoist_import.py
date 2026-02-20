@@ -174,7 +174,7 @@ class TodoistImportService:
         existing_by_ext_id = {d.external_id: d for d in existing.scalars().all()}
 
         for project in projects:
-            # Skip "Inbox" project - we use domain_id=None for inbox
+            # Skip Todoist "Inbox" project — maps to thoughts (domain_id=None)
             if project.name.lower() == "inbox":
                 continue
 
@@ -254,7 +254,7 @@ class TodoistImportService:
 
             # Map domain
             domain_id = domain_map.get(task.project_id)
-            # Note: domain_id can be None for Inbox tasks
+            # Note: domain_id can be None for thoughts (Todoist Inbox tasks)
 
             # Resolve parent_id: flatten to root ancestor for depth-1
             local_parent_id = None

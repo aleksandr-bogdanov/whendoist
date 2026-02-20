@@ -114,7 +114,7 @@
 {# ── Active tasks — grouped by domain ── #}
 {% if domain_groups %}
     {% for domain_item in domain_groups %}
-    <details class="project-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'inbox' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
+    <details class="project-group" {% if domain_item.domain %}open{% endif %} data-domain-id="{{ domain_item.domain.id if domain_item.domain else 'thoughts' }}"{% if domain_item.domain %} data-domain-name="{{ domain_item.domain.name }}"{% endif %}>
         <summary class="project-header">
             <span class="project-name">
                 {% if domain_item.domain %}

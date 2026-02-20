@@ -74,7 +74,7 @@ function ThoughtsPage() {
 
   const domains = (domainsQuery.data ?? []).filter((d: DomainResponse) => !d.is_archived);
 
-  // Filter for tasks without a domain (thoughts/inbox)
+  // Filter for thoughts (tasks without a domain)
   const allTasks = tasksQuery.data ?? [];
   const thoughts = allTasks.filter((t) => t.domain_id === null && t.parent_id === null);
 

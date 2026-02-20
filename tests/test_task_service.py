@@ -214,16 +214,16 @@ class TestTaskDomainRelation:
 
         await task_service.create_task(title="Task in D1", domain_id=domain1.id)
         await task_service.create_task(title="Task in D2", domain_id=domain2.id)
-        await task_service.create_task(title="Inbox Task")  # No domain
+        await task_service.create_task(title="Thought Task")  # No domain
         await pg_session.commit()
 
         d1_tasks = await task_service.get_tasks(domain_id=domain1.id)
         assert len(d1_tasks) == 1
         assert d1_tasks[0].title == "Task in D1"
 
-        inbox_tasks = await task_service.get_tasks(has_domain=False)
-        assert len(inbox_tasks) == 1
-        assert inbox_tasks[0].title == "Inbox Task"
+        thought_tasks = await task_service.get_tasks(has_domain=False)
+        assert len(thought_tasks) == 1
+        assert thought_tasks[0].title == "Thought Task"
 
 
 @pytest.mark.integration
