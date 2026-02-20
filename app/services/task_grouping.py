@@ -181,7 +181,7 @@ def group_tasks_by_domain(
                 "tasks": domain_tasks,
             }
         )
-    # Sort: named domains alphabetically, Inbox (None) last
+    # Sort: named domains alphabetically, Thoughts (None) last
     domain_groups.sort(key=lambda d: (d["domain"] is None, d["domain"].name.lower() if d["domain"] else "zzz"))
 
     return {

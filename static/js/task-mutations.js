@@ -174,7 +174,7 @@
      * @param {string|number} newDomainId
      */
     function moveBetweenDomainGroups(taskEl, newDomainId) {
-        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (newDomainId || 'inbox') + '"]');
+        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (newDomainId || 'thoughts') + '"]');
         if (!targetGroup) {
             // Domain group doesn't exist — fallback to full refresh
             if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
@@ -375,7 +375,7 @@
             } else {
                 // ── Top-level task insertion ──
                 var domainId = taskEl.dataset.domainId || '';
-                var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
+                var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'thoughts') + '"]');
 
                 if (!targetGroup) {
                     if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
@@ -595,7 +595,7 @@
             return;
         }
 
-        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
+        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'thoughts') + '"]');
         if (!targetGroup) {
             // Domain group not in DOM — fallback
             if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
@@ -638,7 +638,7 @@
             }
         }
 
-        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
+        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'thoughts') + '"]');
         if (!targetGroup) {
             if (window.TaskComplete && typeof TaskComplete.refreshTaskList === 'function') {
                 TaskComplete.refreshTaskList();
@@ -773,7 +773,7 @@
         var domainId = taskData.domain_id || taskEl.dataset.domainId || '';
         taskEl.dataset.domainId = domainId;
 
-        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'inbox') + '"]');
+        var targetGroup = document.querySelector('.project-group[data-domain-id="' + (domainId || 'thoughts') + '"]');
         if (targetGroup) {
             var taskList = targetGroup.querySelector('.task-list');
             if (taskList) {

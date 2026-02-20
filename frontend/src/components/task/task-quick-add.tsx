@@ -117,7 +117,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
                 <SelectValue placeholder="No domain" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No domain (Inbox)</SelectItem>
+                <SelectItem value="none">Thought (no domain)</SelectItem>
                 {domains
                   .filter((d) => !d.is_archived)
                   .map((d) => (

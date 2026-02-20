@@ -7,6 +7,15 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.52.3 — 2026-02-20
+
+### Changed
+- **Inbox → Thoughts**: Renamed "Inbox" to "Thoughts" throughout all views, backend comments, tests, and legacy code
+- **Thoughts hidden from Tasks page**: Tasks without a domain (thoughts) no longer appear on the dashboard — they belong exclusively on the Thoughts page
+- **Domain picker labels**: "No domain (Inbox)" → "Thought (no domain)" in task editor and quick-add
+
+---
+
 ## v0.52.2 — 2026-02-20
 
 ### Fixed

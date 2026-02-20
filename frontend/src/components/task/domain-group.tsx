@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Inbox, Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -172,7 +172,7 @@ export function DomainGroup({
         onOpenChange={handleToggle}
         data-domain-group
         data-domain-icon={domain?.icon ?? ""}
-        data-domain-name={domain?.name ?? "Inbox"}
+        data-domain-name={domain?.name ?? "Thoughts"}
         data-domain-count={String(tasks.length)}
         data-domain-color={domain?.color ?? ""}
         className="rounded-[10px] border bg-card overflow-hidden"
@@ -208,10 +208,9 @@ export function DomainGroup({
                 <span className="text-left truncate text-[0.95rem]">{domain.name}</span>
               </>
             ) : (
-              <>
-                <Inbox className="h-4 w-4 text-muted-foreground" />
-                <span className="text-left truncate text-[0.95rem]">Inbox</span>
-              </>
+              <span className="text-left truncate text-[0.95rem] text-muted-foreground">
+                Thoughts
+              </span>
             )}
 
             {/* Task count pill — next to name, not pushed to edge */}

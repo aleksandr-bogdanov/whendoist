@@ -57,8 +57,8 @@ class TestHasDomainFilter:
         assert tasks[0].title == "Task with domain"
         assert tasks[0].domain_id == domain.id
 
-    async def test_has_domain_false_returns_inbox_tasks(self, db_session, test_user):
-        """has_domain=False should only return tasks without a domain (inbox)."""
+    async def test_has_domain_false_returns_thoughts(self, db_session, test_user):
+        """has_domain=False should only return tasks without a domain (thoughts)."""
         # Create a domain
         domain = Domain(user_id=test_user.id, name="Work", position=1)
         db_session.add(domain)

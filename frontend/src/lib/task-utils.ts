@@ -97,21 +97,17 @@ export interface DomainGroup {
 
 /**
  * Group tasks by domain, preserving domain sort order.
- * Tasks with no domain are grouped as "Inbox" (domain=null).
+ * Thoughts (domain_id=null) are excluded — they belong on the Thoughts page.
  */
 export function groupByDomain(
   tasks: AppRoutersTasksTaskResponse[],
   domains: DomainResponse[],
 ): DomainGroup[] {
-  const domainMap = new Map<number, DomainResponse>();
-  for (const d of domains) {
-    domainMap.set(d.id, d);
-  }
-
   const groups = new Map<number | null, AppRoutersTasksTaskResponse[]>();
 
   for (const task of tasks) {
     const key = task.domain_id;
+    if (key === null) continue; // Skip thoughts (no domain)
     const arr = groups.get(key);
     if (arr) {
       arr.push(task);
@@ -120,18 +116,12 @@ export function groupByDomain(
     }
   }
 
-  // Sort domain groups by domain position, inbox (null) at end
+  // Sort domain groups by domain position
   const sortedDomains = [...domains]
     .filter((d) => !d.is_archived)
     .sort((a, b) => a.position - b.position);
 
   const result: DomainGroup[] = [];
-
-  // Inbox (no domain) first if it has tasks
-  const inboxTasks = groups.get(null);
-  if (inboxTasks?.length) {
-    result.push({ domain: null, tasks: inboxTasks });
-  }
 
   for (const domain of sortedDomains) {
     const domainTasks = groups.get(domain.id);

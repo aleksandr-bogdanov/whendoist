@@ -674,17 +674,17 @@ async def thoughts(
     db: AsyncSession = Depends(get_db),
     user: User | None = Depends(get_current_user),
 ):
-    """Thoughts page - inbox tasks without a domain."""
+    """Thoughts page - tasks without a domain."""
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
     task_service = TaskService(db, user.id)
 
-    # Get tasks without a domain (inbox/thoughts) - use SQL filter
-    inbox_tasks = await task_service.get_tasks(status="pending", top_level_only=True, has_domain=False)
+    # Get thoughts (tasks without a domain)
+    thought_tasks = await task_service.get_tasks(status="pending", top_level_only=True, has_domain=False)
 
     # Build task items sorted by created_at ASC (oldest first = chat order)
-    task_items = [build_native_task_item(t) for t in inbox_tasks]
+    task_items = [build_native_task_item(t) for t in thought_tasks]
     task_items.sort(key=lambda t: t["task"].created_at)
 
     # Group by date in user timezone

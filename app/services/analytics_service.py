@@ -236,7 +236,7 @@ class AnalyticsService:
 
         by_domain = []
         for domain_id, count in sorted(domain_counts.items(), key=lambda x: -x[1]):
-            # Skip Inbox (domain_id is None)
+            # Skip thoughts (domain_id is None)
             if domain_id is None:
                 continue
             domain = domains_map.get(domain_id)
