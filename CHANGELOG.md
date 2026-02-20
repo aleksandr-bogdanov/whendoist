@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.8 — 2026-02-20
+
+### Fixed
+- **Subtasks not draggable**: `SubtaskItem` was missing `useDraggable` — subtasks couldn't be dragged to the calendar for scheduling. Added drag support matching the parent `TaskItem` pattern.
+
 ## v0.53.7 — 2026-02-20
 
 ### Fixed
