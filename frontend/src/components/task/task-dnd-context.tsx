@@ -149,6 +149,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
+      grabOffsetRef.current = null; // Reset so next modifier call captures fresh offset
       const task = findTask(event.active.id);
       setDragState({
         activeId: event.active.id,
@@ -603,26 +604,33 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     setDragState({ activeId: null, activeTask: null, overId: null, overType: null });
   }, []);
 
-  // Modifier: position overlay at the pointer, immune to scroll drift.
-  // dnd-kit's Rect getters adjust for scroll changes in ancestors, which causes
-  // the overlay's CSS top/left to drift when the active element is inside scroll
-  // containers (calendar carousel + vertical scroll). This modifier computes
-  // the current pointer position and adjusts the transform so the overlay stays
-  // centered on the pointer regardless of scroll drift.
+  // Modifier: preserve grab offset, immune to scroll drift.
+  // dnd-kit's Rect getters adjust top/left for scroll changes in ancestors,
+  // causing the overlay to drift when the active element is inside scroll
+  // containers. This modifier captures the pointer-to-card offset on the first
+  // call (before any scroll changes) and uses it throughout the drag. The
+  // drifted activeNodeRect values cancel out algebraically.
+  const grabOffsetRef = useRef<{ x: number; y: number } | null>(null);
   const overlayModifiers = useMemo<Modifier[]>(
     () => [
       ({ transform, activatorEvent, activeNodeRect }) => {
         if (!activeNodeRect || !activatorEvent) return transform;
         const ev = activatorEvent as PointerEvent;
+        // Capture grab offset on first call (no scroll drift yet)
+        if (!grabOffsetRef.current) {
+          grabOffsetRef.current = {
+            x: ev.clientX - activeNodeRect.left,
+            y: ev.clientY - activeNodeRect.top,
+          };
+        }
         const currentX = ev.clientX + transform.x;
         const currentY = ev.clientY + transform.y;
-        // PositionedOverlay renders at: position:fixed; top: activeNodeRect.top; left: activeNodeRect.left
-        // Visual = activeNodeRect.top + result.y.  We want visual = currentY - 10 (pointer near top).
-        // result.y = currentY - 10 - activeNodeRect.top  (drift in activeNodeRect.top cancels out)
+        // visual = activeNodeRect.left + result.x = currentX - grabOffset.x
+        // (activeNodeRect.left cancels out, so scroll drift doesn't matter)
         return {
           ...transform,
-          x: currentX - activeNodeRect.left - (activeNodeRect.width ?? 200) / 2,
-          y: currentY - activeNodeRect.top - 10,
+          x: currentX - activeNodeRect.left - grabOffsetRef.current.x,
+          y: currentY - activeNodeRect.top - grabOffsetRef.current.y,
         };
       },
     ],
