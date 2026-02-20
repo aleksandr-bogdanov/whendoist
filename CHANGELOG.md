@@ -7,6 +7,21 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.0 — 2026-02-20
+
+### Added
+- **Calendar context menus**: Right-click on scheduled tasks shows Unschedule, Complete/Reopen, Edit, Delete; right-click on recurring instances shows Skip, Complete, Edit series
+- **Anytime drop zone**: Drag tasks to the Anytime section to schedule date-only (no specific time)
+- **Draggable anytime pills**: Anytime tasks can be dragged to calendar time grid or back to task list
+- **Reschedule undo**: In-calendar task rescheduling now shows "Task rescheduled" toast with Undo action
+- **No-op detection**: Dropping a task at its current time/date is ignored (no unnecessary API calls)
+
+### Changed
+- **Collision detection hardened**: Calendar drop zones now use rect-intersection fallback for more reliable drops
+- **Left-click opens editor**: Calendar task cards and recurring instances open the task editor on left-click (previously toggled inline action buttons)
+
+---
+
 ## v0.52.3 — 2026-02-20
 
 ### Changed

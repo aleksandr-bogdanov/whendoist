@@ -1,4 +1,4 @@
-import { useDndMonitor } from "@dnd-kit/core";
+import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { keepPreviousData } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -22,8 +22,8 @@ import {
   todayString,
   ZOOM_STEPS,
 } from "@/lib/calendar-utils";
-import { IMPACT_COLORS } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
+import { AnytimeTaskPill } from "./anytime-task-pill";
 import { DayColumn } from "./day-column";
 import { PlanMode } from "./plan-mode";
 
@@ -328,35 +328,12 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       </div>
 
-      {/* Anytime section — fixed height, horizontal scroll */}
-      <div className="border-b px-3 py-1.5 flex items-center gap-2 h-[34px] flex-shrink-0">
-        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] flex-shrink-0">
-          ANYTIME
-        </span>
-        <div
-          className="flex gap-1 min-w-0 overflow-x-auto overflow-y-hidden"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {anytimeTasks.length > 0 ? (
-            anytimeTasks.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className="text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-accent/50 cursor-pointer bg-card border border-border/40 max-w-[180px] flex-shrink-0"
-                style={{
-                  borderLeft: `3px solid ${IMPACT_COLORS[t.impact] ?? IMPACT_COLORS[4]}`,
-                }}
-                onClick={() => onTaskClick?.(t)}
-                title={t.title}
-              >
-                {t.title}
-              </button>
-            ))
-          ) : (
-            <span className="text-[10px] text-muted-foreground/50">No tasks</span>
-          )}
-        </div>
-      </div>
+      {/* Anytime section — droppable drop zone, horizontal scroll */}
+      <AnytimeSection
+        displayDate={displayDate}
+        anytimeTasks={anytimeTasks}
+        onTaskClick={onTaskClick}
+      />
 
       {/* Calendar body — vertical scroll wrapper */}
       <div
@@ -415,6 +392,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                     centerDate={date}
                     events={safeEvents}
                     tasks={scheduledTasks}
+                    allTasks={tasks}
                     instances={safeInstances}
                     hourHeight={calendarHourHeight}
                     calendarColors={calendarColors}
@@ -457,6 +435,50 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         events={safeEvents}
         centerDate={calendarCenterDate}
       />
+    </div>
+  );
+}
+
+// ─── Anytime Section (droppable + draggable pills) ──────────────────────────
+
+function AnytimeSection({
+  displayDate,
+  anytimeTasks,
+  onTaskClick,
+}: {
+  displayDate: string;
+  anytimeTasks: AppRoutersTasksTaskResponse[];
+  onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `anytime-drop-${displayDate}`,
+    data: { type: "anytime", dateStr: displayDate },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`border-b px-3 py-1.5 flex items-center gap-2 h-[34px] flex-shrink-0 transition-colors ${
+        isOver ? "bg-primary/10 border-b-primary/40" : ""
+      }`}
+    >
+      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] flex-shrink-0">
+        ANYTIME
+      </span>
+      <div
+        className="flex gap-1 min-w-0 overflow-x-auto overflow-y-hidden flex-1"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {anytimeTasks.length > 0 ? (
+          anytimeTasks.map((t) => (
+            <AnytimeTaskPill key={t.id} task={t} onClick={() => onTaskClick?.(t)} />
+          ))
+        ) : (
+          <span className="text-[10px] text-muted-foreground/50">
+            {isOver ? "Drop here for anytime" : "No tasks"}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

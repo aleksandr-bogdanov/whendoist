@@ -1,15 +1,23 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarOff, Check, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { CalendarOff, Check, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
+  useDeleteTaskApiV1TasksTaskIdDelete,
+  useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 
@@ -19,6 +27,7 @@ interface ScheduledTaskCardProps {
   title: string;
   impact: number;
   durationMinutes: number | null;
+  isCompleted?: boolean;
   timeLabel: string;
   onClick?: () => void;
   dimmed?: boolean;
@@ -30,6 +39,7 @@ export function ScheduledTaskCard({
   title,
   impact,
   durationMinutes,
+  isCompleted,
   timeLabel,
   onClick,
   dimmed,
@@ -37,7 +47,8 @@ export function ScheduledTaskCard({
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
-  const [showActions, setShowActions] = useState(false);
+  const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
+  const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: String(taskId),
@@ -48,10 +59,7 @@ export function ScheduledTaskCard({
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const impactColor = IMPACT_COLORS[impact] ?? IMPACT_COLORS[4];
 
-  const handleUnschedule = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Capture previous schedule for undo
+  const handleUnschedule = () => {
     const tasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
@@ -83,17 +91,13 @@ export function ScheduledTaskCard({
             },
             duration: 5000,
           });
-          setShowActions(false);
         },
         onError: () => toast.error("Failed to unschedule task", { id: `unschedule-err-${taskId}` }),
       },
     );
   };
 
-  const handleComplete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Optimistic update
+  const handleComplete = () => {
     const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
@@ -106,8 +110,8 @@ export function ScheduledTaskCard({
           t.id === taskId
             ? {
                 ...t,
-                status: "completed" as const,
-                completed_at: new Date().toISOString(),
+                status: isCompleted ? ("pending" as const) : ("completed" as const),
+                completed_at: isCompleted ? null : new Date().toISOString(),
               }
             : t,
         );
@@ -119,8 +123,10 @@ export function ScheduledTaskCard({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          announce("Task completed");
-          toast.success("Task completed", { id: `complete-${taskId}` });
+          announce(isCompleted ? "Task reopened" : "Task completed");
+          toast.success(isCompleted ? "Task reopened" : "Task completed", {
+            id: `complete-${taskId}`,
+          });
         },
         onError: () => {
           queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
@@ -128,66 +134,89 @@ export function ScheduledTaskCard({
         },
       },
     );
-    setShowActions(false);
+  };
+
+  const handleDelete = () => {
+    deleteTask.mutate(
+      { taskId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          announce("Task deleted");
+          toast.success(`Deleted "${title}"`, {
+            id: `delete-${taskId}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                restoreTask.mutate(
+                  { taskId },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                  },
+                );
+              },
+            },
+            duration: 5000,
+          });
+        },
+        onError: () => toast.error("Failed to delete task", { id: `delete-err-${taskId}` }),
+      },
+    );
   };
 
   return (
-    <button
-      ref={setNodeRef}
-      type="button"
-      className={`absolute rounded-[10px] px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
-      style={{
-        top: `${item.top}px`,
-        height: `${Math.max(item.height, 18)}px`,
-        width,
-        left,
-        borderLeft: `2px solid ${impactColor}`,
-      }}
-      onClick={() => {
-        if (showActions) {
-          setShowActions(false);
-        } else {
-          onClick?.();
-        }
-      }}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        setShowActions((v) => !v);
-      }}
-      title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
-      {...listeners}
-      {...attributes}
-    >
-      <div className="flex items-center gap-1 truncate">
-        <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-primary" />
-        <span className="truncate font-medium">{title}</span>
-      </div>
-      {item.height > 30 && !showActions && (
-        <div className="truncate opacity-70 text-[10px]">
-          {timeLabel}
-          {durationMinutes ? ` - ${durationMinutes}m` : ""}
-        </div>
-      )}
-      {showActions && (
-        <div className="flex gap-1 mt-0.5">
-          <button
-            type="button"
-            className="flex items-center gap-0.5 rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 hover:bg-green-500/30 disabled:opacity-50"
-            onClick={handleComplete}
-            disabled={updateTask.isPending || toggleComplete.isPending}
-          >
-            <Check className="h-2.5 w-2.5" /> Done
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/80 disabled:opacity-50"
-            onClick={handleUnschedule}
-            disabled={updateTask.isPending || toggleComplete.isPending}
-          >
-            <CalendarOff className="h-2.5 w-2.5" /> Unsched
-          </button>
-        </div>
-      )}
-    </button>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <button
+          ref={setNodeRef}
+          type="button"
+          className={`absolute rounded-[10px] px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
+          style={{
+            top: `${item.top}px`,
+            height: `${Math.max(item.height, 18)}px`,
+            width,
+            left,
+            borderLeft: `2px solid ${impactColor}`,
+          }}
+          onClick={() => onClick?.()}
+          title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
+          {...listeners}
+          {...attributes}
+        >
+          <div className="flex items-center gap-1 truncate">
+            <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-primary" />
+            <span className="truncate font-medium">{title}</span>
+          </div>
+          {item.height > 30 && (
+            <div className="truncate opacity-70 text-[10px]">
+              {timeLabel}
+              {durationMinutes ? ` - ${durationMinutes}m` : ""}
+            </div>
+          )}
+        </button>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="min-w-[160px]">
+        <ContextMenuItem onClick={() => onClick?.()}>
+          <Pencil className="h-3.5 w-3.5 mr-2" />
+          Edit
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleUnschedule}>
+          <CalendarOff className="h-3.5 w-3.5 mr-2" />
+          Unschedule
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleComplete}>
+          <Check className="h-3.5 w-3.5 mr-2" />
+          {isCompleted ? "Reopen" : "Complete"}
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+          <Trash2 className="h-3.5 w-3.5 mr-2" />
+          Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
