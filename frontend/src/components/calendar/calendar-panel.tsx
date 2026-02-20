@@ -304,9 +304,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   });
 
   return (
-    <div className="relative flex flex-col flex-1 min-h-0 border-l">
+    <div className="relative flex flex-col flex-1 min-h-0 border-l md:border md:rounded-xl md:shadow-[var(--shadow-card)]">
       {/* Calendar header */}
-      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-2 border-b">
+      <div className="flex items-center gap-1.5 px-2 sm:px-4 py-2 border-b bg-muted/30 md:rounded-t-xl">
         {/* Navigation: arrows + date label (can shrink) */}
         <div className="flex items-center gap-0.5 min-w-0">
           <Button

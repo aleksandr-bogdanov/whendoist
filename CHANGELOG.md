@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.2 — 2026-02-20
+
+### Design Parity Phase 3 — Polish
+- **Desktop spacing**: Increased padding on task list container and panel headers for better breathing room on desktop (`sm:p-4`)
+- **Calendar panel card treatment**: Calendar panel now renders as a card on desktop with rounded corners, border, and brand shadow system
+- **Panel header backgrounds**: Task panel header and calendar header use subtle `bg-muted/30` tint for visual depth
+- **Completion animation**: Checkbox pulses with a scale animation when marking tasks complete
+- **Hour grid banding**: Alternating subtle background tint on even hours in the calendar day view for improved readability
+- **Task row padding**: Slightly more vertical padding on desktop (`sm:py-2`) for readability
+
+---
+
 ## v0.54.1 — 2026-02-20
 
 ### Design Parity Phase 2 — CTA & Depth
