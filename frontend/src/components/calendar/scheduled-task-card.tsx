@@ -173,7 +173,7 @@ export function ScheduledTaskCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-[10px] px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
+          className={`absolute rounded-[10px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${Math.max(item.height, 18)}px`,
@@ -181,21 +181,24 @@ export function ScheduledTaskCard({
             left,
             borderLeft: `2px solid ${impactColor}`,
           }}
-          onClick={() => onClick?.()}
           title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
-          {...listeners}
-          {...attributes}
+          onClick={() => onClick?.()}
         >
-          <div className="flex items-center gap-1 truncate">
-            <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-primary" />
-            <span className="truncate font-medium">{title}</span>
-          </div>
-          {item.height > 30 && (
-            <div className="truncate opacity-70 text-[10px]">
-              {timeLabel}
-              {durationMinutes ? ` - ${durationMinutes}m` : ""}
+          {/* Drag handle — covers entire card, receives pointer events for dnd-kit */}
+          <div className="absolute inset-0" {...listeners} {...attributes} />
+          {/* Content — pointer-events-none so clicks/drags pass through to drag handle */}
+          <div className="relative pointer-events-none px-1.5 py-0.5">
+            <div className="flex items-center gap-1 truncate">
+              <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-primary" />
+              <span className="truncate font-medium">{title}</span>
             </div>
-          )}
+            {item.height > 30 && (
+              <div className="truncate opacity-70 text-[10px]">
+                {timeLabel}
+                {durationMinutes ? ` - ${durationMinutes}m` : ""}
+              </div>
+            )}
+          </div>
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">

@@ -298,7 +298,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <div
                 className={cn(
-                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 transition-colors border-b border-border/40",
+                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 transition-colors border-b border-border/40 cursor-grab active:cursor-grabbing",
                   isSelected && "bg-accent",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
@@ -311,19 +311,15 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                   borderLeftColor: isParent ? "var(--border)" : impactColor,
                   borderLeftStyle: "solid",
                 }}
+                {...attributes}
+                {...listeners}
               >
-                {/* Drag handle */}
-                <div
-                  className="absolute inset-0 cursor-grab active:cursor-grabbing"
-                  {...attributes}
-                  {...listeners}
-                />
-
                 {/* Checkbox — brand circle */}
                 <button
                   type="button"
                   className="flex-shrink-0 cursor-pointer relative z-10 [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
                   onClick={handleToggleComplete}
+                  onPointerDown={(e) => e.stopPropagation()}
                   title={isCompleted ? "Mark as pending" : "Mark as complete"}
                 >
                   <svg
@@ -378,6 +374,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                   data-task-title-btn
                   className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 relative z-10"
                   onClick={handleTitleClick}
+                  onPointerDown={(e) => e.stopPropagation()}
                 >
                   <span
                     className={cn(
@@ -394,6 +391,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                   <button
                     type="button"
                     onClick={() => toggleExpandedSubtask(task.id)}
+                    onPointerDown={(e) => e.stopPropagation()}
                     className="flex-shrink-0 p-0.5 rounded hover:bg-accent relative z-10"
                   >
                     {isExpanded ? (
@@ -503,6 +501,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                     className="hidden sm:flex flex-shrink-0 p-0.5 rounded hover:bg-accent relative z-10 opacity-0 group-hover:opacity-100 transition-opacity w-[var(--col-actions)] justify-center"
                     title="Task actions"
                     onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
                   >
                     <EllipsisVertical className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
