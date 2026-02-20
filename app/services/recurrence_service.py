@@ -315,7 +315,7 @@ class RecurrenceService:
     async def schedule_instance(
         self,
         instance_id: int,
-        scheduled_datetime: datetime,
+        scheduled_datetime: datetime | None,
     ) -> TaskInstance | None:
         """Reschedule a specific instance."""
         result = await self.db.execute(

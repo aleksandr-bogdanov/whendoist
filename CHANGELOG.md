@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.5 — 2026-02-20
+
+### Recurring Instance Drag & Unschedule
+- **Draggable instances**: Recurring task instances in the calendar view are now draggable — drag to a time slot to reschedule, drag to the anytime section to unschedule
+- **Unschedule context menu**: Right-click menu on scheduled instances now includes "Unschedule" (clears time, moves to anytime on the instance's natural day)
+- **Series time change fix**: Editing a recurring task's scheduled time now regenerates all pending instances (previously only recurrence rule changes triggered regeneration)
+
 ## v0.54.4 — 2026-02-20
 
 ### Subtask Layout Fixes
