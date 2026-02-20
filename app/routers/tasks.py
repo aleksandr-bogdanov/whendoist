@@ -231,13 +231,9 @@ class TaskUpdate(BaseModel):
             raise ValueError("Clarity must be autopilot, normal, or brainstorm")
         return v
 
-    @model_validator(mode="after")
-    def ensure_duration_with_time(self) -> "TaskUpdate":
-        """If scheduled_time is being set, ensure duration_minutes has a value."""
-        if self.scheduled_time is not None and self.duration_minutes is None:
-            # Only auto-fill if scheduled_time was explicitly provided in the request
-            self.duration_minutes = GCAL_SYNC_DEFAULT_DURATION_MINUTES
-        return self
+    # NOTE: No ensure_duration_with_time validator here (unlike TaskCreate).
+    # The update endpoint handles duration defaulting with access to the
+    # current task state — see the "auto-fill duration" block in update_task().
 
 
 class SubtaskResponse(BaseModel):
@@ -540,6 +536,17 @@ async def update_task(
     # Get only fields that were explicitly set in the request
     # This allows us to distinguish between "not provided" and "set to null"
     update_data = data.model_dump(exclude_unset=True)
+
+    # Auto-fill duration when scheduling a task that has no duration yet.
+    # Only applies when the client explicitly sets scheduled_time but not
+    # duration_minutes, AND the task doesn't already have a duration.
+    if (
+        "scheduled_time" in update_data
+        and update_data["scheduled_time"] is not None
+        and "duration_minutes" not in update_data
+        and current.duration_minutes is None
+    ):
+        update_data["duration_minutes"] = GCAL_SYNC_DEFAULT_DURATION_MINUTES
 
     # Auto-populate scheduled_date for recurring tasks
     is_recurring = update_data.get("is_recurring", current.is_recurring)
