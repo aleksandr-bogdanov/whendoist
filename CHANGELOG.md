@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.0 — 2026-02-20
+
+### Design Parity Phase 1 — Brand Foundation
+- **Canvas background**: Changed from pure white (#FFFFFF) to brand warm (#F8FAFC) for depth
+- **Focus rings**: All focus rings now use brand purple (#6D5EF6) instead of generic zinc
+- **Task row hovers**: Purple-tinted hover states (`rgba(109,94,246,0.04)`) instead of generic gray
+- **Now-line**: Calendar current time indicator changed from red to brand purple
+- **Impact rail rounding**: Task items have rounded left edge (`4px 0 0 4px`) matching legacy design
+- **Calendar events**: Restyled from solid colored blocks to elegant outlined cards with colored left rail, dark text on light background — the single biggest visual improvement
+
+---
+
 ## v0.53.9 — 2026-02-20
 
 ### Changed

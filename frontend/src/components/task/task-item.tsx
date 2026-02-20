@@ -419,8 +419,8 @@ export function TaskItem({
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <div
                 className={cn(
-                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 transition-colors border-b border-border/40 cursor-grab active:cursor-grabbing",
-                  isSelected && "bg-accent",
+                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 transition-colors border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)]",
+                  isSelected && "bg-[rgba(109,94,246,0.08)]",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
                   isDropTarget && "ring-2 ring-primary bg-primary/10",
@@ -431,6 +431,7 @@ export function TaskItem({
                   borderLeftWidth: 2,
                   borderLeftColor: isParent ? "var(--border)" : impactColor,
                   borderLeftStyle: "solid",
+                  borderRadius: isParent ? undefined : "4px 0 0 4px",
                 }}
                 {...attributes}
                 {...listeners}
@@ -779,8 +780,8 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
       ref={setNodeRef}
       className={cn(
         "group flex items-center gap-[var(--col-gap)] py-1 transition-colors border-b border-border/20 cursor-grab active:cursor-grabbing",
-        "hover:bg-accent/50",
-        isSelected && "bg-accent",
+        "hover:bg-[rgba(109,94,246,0.04)]",
+        isSelected && "bg-[rgba(109,94,246,0.08)]",
         isCompleted && "opacity-60",
         isDragging && "opacity-50",
       )}
@@ -789,6 +790,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
         borderLeftWidth: 2,
         borderLeftColor: impactColor,
         borderLeftStyle: "solid",
+        borderRadius: "4px 0 0 4px",
       }}
       {...listeners}
       {...attributes}
