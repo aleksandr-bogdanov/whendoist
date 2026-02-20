@@ -7,6 +7,12 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.7 — 2026-02-20
+
+### Fixed
+- **DnD reschedule overwrites duration**: Calendar-to-calendar drag-and-drop reset task duration to 30 minutes because the `TaskUpdate` Pydantic validator auto-filled `duration_minutes` whenever `scheduled_time` was set. Moved the defaulting logic into the endpoint where it only applies when the task has no existing duration.
+- **Parent tasks hidden by energy filter**: Parent tasks with subtasks were filtered by their own mode/clarity, hiding the entire container if it didn't match. Now parent tasks pass through the energy filter based on their subtasks' clarity values — a parent shows if any subtask matches the energy level.
+
 ## v0.53.6 — 2026-02-20
 
 ### Fixed

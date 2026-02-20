@@ -80,14 +80,29 @@ export function sortTasks(
  * Level 1 (Zombie): only autopilot
  * Level 2 (Normal): autopilot + normal
  * Level 3 (Deep Focus): all tasks
+ *
+ * Parent tasks (with subtasks) are exempt — they show if any subtask
+ * matches the energy level, so containers aren't accidentally hidden.
  */
 export function filterByEnergy(
   tasks: AppRoutersTasksTaskResponse[],
   energyLevel: 1 | 2 | 3,
 ): AppRoutersTasksTaskResponse[] {
   if (energyLevel === 3) return tasks;
-  if (energyLevel === 2) return tasks.filter((t) => t.clarity !== "brainstorm");
-  return tasks.filter((t) => t.clarity === "autopilot");
+
+  const matchesEnergy = (clarity: string | null | undefined): boolean => {
+    const c = clarity ?? "normal";
+    if (energyLevel === 2) return c !== "brainstorm";
+    return c === "autopilot";
+  };
+
+  return tasks.filter((t) => {
+    // Parent tasks: show if any subtask matches
+    if (t.subtasks && t.subtasks.length > 0) {
+      return t.subtasks.some((st) => matchesEnergy(st.clarity));
+    }
+    return matchesEnergy(t.clarity);
+  });
 }
 
 export interface DomainGroup {
