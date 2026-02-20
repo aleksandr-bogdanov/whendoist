@@ -73,13 +73,6 @@
       <span class="chip-text">{% if task and task.scheduled_date %}{{ task.scheduled_date }}{% else %}Schedule{% endif %}</span>
     </button>
     <button type="button"
-            class="when-chip{% if task and task.due_date %} active{% endif %}"
-            data-chip="due"
-            aria-expanded="{% if task and task.due_date %}true{% else %}false{% endif %}">
-      <span class="chip-icon">&#127919;</span>
-      <span class="chip-text">{% if task and task.due_date %}{{ task.due_date }}{% else %}Due{% endif %}</span>
-    </button>
-    <button type="button"
             class="when-chip{% if task and task.duration_minutes %} active{% endif %}"
             data-chip="duration"
             aria-expanded="{% if task and task.duration_minutes %}true{% else %}false{% endif %}">
@@ -103,14 +96,6 @@
     </small>
   </div>
 
-  <!-- Due expand -->
-  <div class="chip-expand" id="expand-due" {% if not (task and task.due_date) %}hidden{% endif %}>
-    <input type="date"
-           name="due_date"
-           class="inline-input"
-           value="{{ task.due_date if task and task.due_date else '' }}">
-  </div>
-
   <!-- Duration expand -->
   <div class="chip-expand" id="expand-duration" {% if not (task and task.duration_minutes) %}hidden{% endif %}>
     <div class="duration-picker">
@@ -132,7 +117,7 @@
 </div>
 
 <!-- Recurrence (gated by schedule/due) -->
-<div class="form-section" id="recurrence-section" {% if not (task and (task.scheduled_date or task.due_date)) %}hidden{% endif %}>
+<div class="form-section" id="recurrence-section" {% if not (task and task.scheduled_date) %}hidden{% endif %}>
   <label class="section-label">RECURRENCE</label>
   <div class="recurrence-picker" id="recurrence-picker">
     <!-- Populated by recurrence-picker.js -->

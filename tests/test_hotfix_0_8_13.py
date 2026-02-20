@@ -185,8 +185,6 @@ def _create_mock_task(is_recurring: bool = False, instances: list | None = None)
     task.duration_minutes = 30
     task.impact = 2
     task.clarity = "normal"
-    task.due_date = None
-    task.due_time = None
     task.scheduled_date = None
     task.scheduled_time = None
     task.is_recurring = is_recurring

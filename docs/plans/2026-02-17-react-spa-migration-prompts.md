@@ -482,7 +482,7 @@ The frontend/ has the full foundation from PR 1 (React, routing, API hooks with 
 ## Context: Data Shape
 
 Read app/routers/v1/tasks.py to understand the task response shape, especially:
-- TaskResponse: all fields (title, description, domain_id, parent_id, duration_minutes, impact, clarity, due_date, scheduled_date, status, completed_at, subtasks[], etc.)
+- TaskResponse: all fields (title, description, domain_id, parent_id, duration_minutes, impact, clarity, scheduled_date, status, completed_at, subtasks[], etc.) — note: due_date was removed in v0.54.6
 - How subtasks are returned (nested in parent's `subtasks` array)
 
 Read app/routers/v1/domains.py for DomainResponse shape.

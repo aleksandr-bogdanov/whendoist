@@ -271,20 +271,14 @@ class TodoistImportService:
             # Invert to match visual labels: P1→1, P2→2, P3→3, P4→4
             impact = 5 - task.priority  # priority 4 → impact 1, priority 1 → impact 4
 
-            # Parse due date
-            due_date = None
-            due_time = None
+            # Parse due date → scheduled_date (we don't use due_date)
             scheduled_date = None
             scheduled_time = None
 
             if task.due:
-                due_date = task.due.date
-                # Always set scheduled_date from due_date (appears in Anytime or calendar)
-                scheduled_date = due_date
+                scheduled_date = task.due.date
                 if task.due.datetime_:
-                    due_time = task.due.datetime_.time()
-                    # Also use time as scheduled if specific time provided
-                    scheduled_time = due_time
+                    scheduled_time = task.due.datetime_.time()
 
             # Determine clarity from labels; parent tasks default to "autopilot"
             clarity = self._parse_clarity_from_labels(task.labels)
@@ -315,8 +309,6 @@ class TodoistImportService:
                 duration_minutes=duration_minutes,
                 impact=impact,
                 clarity=clarity,
-                due_date=due_date,
-                due_time=due_time,
                 scheduled_date=scheduled_date,
                 scheduled_time=scheduled_time,
                 is_recurring=is_recurring,

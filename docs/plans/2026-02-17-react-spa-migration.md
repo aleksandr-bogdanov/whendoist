@@ -285,7 +285,7 @@ frontend/src/
 │       └── task-panel.tsx        # Left panel: domain groups + sections
 ```
 
-**Task metadata chips:** duration (formatted), impact (P1-P4 colored), clarity icon, due date, recurring badge, subtask count.
+**Task metadata chips:** duration (formatted), impact (P1-P4 colored), clarity icon, scheduled date, recurring badge, subtask count.
 
 **Encryption:** Components receive plaintext from TanStack Query cache (decrypted in Phase 2's middleware). No `looksEncrypted()` checks anywhere.
 
