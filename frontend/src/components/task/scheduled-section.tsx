@@ -1,7 +1,9 @@
+import { useDroppable } from "@dnd-kit/core";
 import { AlertTriangle, CalendarClock, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
+import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { todayString } from "@/lib/calendar-utils";
 import { groupScheduledByDate } from "@/lib/task-utils";
@@ -34,6 +36,28 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
     }
     return { overdueGroups: overdue, upcomingGroups: upcoming };
   }, [tasks, today]);
+
+  // Fetch instances for overdue recurring tasks (single query, not N+1)
+  const hasOverdueRecurring = overdueGroups.some((g) => g.tasks.some((t) => t.is_recurring));
+  const oldestOverdueDate = overdueGroups.length > 0 ? overdueGroups[0].date : null;
+  const instancesQuery = useListInstancesApiV1InstancesGet(
+    { start_date: oldestOverdueDate ?? today, end_date: today },
+    { query: { enabled: hasOverdueRecurring && !!oldestOverdueDate } },
+  );
+
+  // Map task_id → earliest pending overdue instance
+  const pendingInstanceMap = useMemo(() => {
+    const map = new Map<number, InstanceResponse>();
+    const instances = instancesQuery.data ?? [];
+    for (const inst of instances) {
+      if (inst.status === "pending" && inst.instance_date < today) {
+        if (!map.has(inst.task_id)) {
+          map.set(inst.task_id, inst);
+        }
+      }
+    }
+    return map;
+  }, [instancesQuery.data, today]);
 
   if (tasks.length === 0) return null;
 
@@ -74,9 +98,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
               </div>
               {overdueGroups.map((group) => (
                 <div key={group.date}>
-                  <div className="px-3 py-0.5 text-[11px] font-medium text-destructive/70">
-                    {group.label}
-                  </div>
+                  <DateGroupHeader date={group.date} label={group.label} variant="overdue" />
                   <AnimatePresence initial={false}>
                     {group.tasks.map((task) => (
                       <motion.div
@@ -87,7 +109,12 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                        <TaskItem
+                          task={task}
+                          onSelect={onSelectTask}
+                          onEdit={onEditTask}
+                          pendingInstance={pendingInstanceMap.get(task.id)}
+                        />
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -101,14 +128,11 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
             const isToday = group.date === today;
             return (
               <div key={group.date}>
-                <div
-                  className={cn(
-                    "px-3 py-1 text-xs font-medium",
-                    isToday ? "text-primary font-medium" : "text-muted-foreground",
-                  )}
-                >
-                  {group.label}
-                </div>
+                <DateGroupHeader
+                  date={group.date}
+                  label={group.label}
+                  variant={isToday ? "today" : "default"}
+                />
                 <AnimatePresence initial={false}>
                   {group.tasks.map((task) => (
                     <motion.div
@@ -129,5 +153,37 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
         </div>
       </CollapsibleContent>
     </Collapsible>
+  );
+}
+
+// ─── Droppable Date Group Header ──────────────────────────────────────────────
+
+function DateGroupHeader({
+  date,
+  label,
+  variant,
+}: {
+  date: string;
+  label: string;
+  variant: "overdue" | "today" | "default";
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `date-group-${date}`,
+    data: { type: "date-group", dateStr: date },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "px-3 py-1 text-xs font-medium transition-colors rounded-sm",
+        variant === "overdue" && "text-destructive/70 text-[11px] py-0.5",
+        variant === "today" && "text-primary",
+        variant === "default" && "text-muted-foreground",
+        isOver && "bg-primary/10 ring-1 ring-primary/30",
+      )}
+    >
+      {label}
+    </div>
   );
 }

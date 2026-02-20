@@ -177,14 +177,19 @@ function DashboardPage() {
           category: "Actions",
           excludeInputs: true,
           handler: () => {
-            const { selectedTaskId: sel, isModalOpen: modal } = stateRef.current;
+            const { selectedTaskId: sel, isModalOpen: modal, tasks: allTasks } = stateRef.current;
             if (modal || sel === null) return;
+            const t = allTasks?.find((t) => t.id === sel);
             toggleComplete.mutate(
               { taskId: sel, data: null },
               {
                 onSuccess: () => {
                   queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-                  toast.success("Task toggled", { id: `complete-${sel}`, duration: 3000 });
+                  const label =
+                    t?.status === "completed"
+                      ? `Reopened "${t.title}"`
+                      : `Completed "${t?.title ?? "Task"}"`;
+                  toast.success(label, { id: `complete-${sel}`, duration: 3000 });
                 },
                 onError: () => toast.error("Failed to update task", { id: `complete-err-${sel}` }),
               },

@@ -438,7 +438,9 @@ function InstanceCard({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success("Instance completed", { id: `complete-inst-${instance.id}` });
+          toast.success(`Completed instance of "${instance.task_title}"`, {
+            id: `complete-inst-${instance.id}`,
+          });
         },
         onError: () => {
           queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
@@ -461,7 +463,9 @@ function InstanceCard({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success("Instance skipped", { id: `skip-inst-${instance.id}` });
+          toast.success(`Skipped instance of "${instance.task_title}"`, {
+            id: `skip-inst-${instance.id}`,
+          });
         },
         onError: () => {
           queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);

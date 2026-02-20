@@ -101,7 +101,7 @@ export function TaskActionSheet({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          toast.success(isCompleted ? "Task reopened" : "Task completed", {
+          toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
             id: `complete-${task.id}`,
             action: {
               label: "Undo",
@@ -214,7 +214,9 @@ export function TaskActionSheet({
                     queryClient.invalidateQueries({
                       queryKey: getListTasksApiV1TasksGetQueryKey(),
                     });
-                    toast.success("Instance skipped", { id: `skip-inst-${todayInstance.id}` });
+                    toast.success(`Skipped instance of "${task.title}"`, {
+                      id: `skip-inst-${todayInstance.id}`,
+                    });
                   },
                   onError: () =>
                     toast.error("Failed to skip instance", {

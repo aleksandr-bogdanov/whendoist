@@ -7,6 +7,19 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.3 — 2026-02-20
+
+### Added
+- **Drag to date-group headers**: Drag overdue tasks onto date group headers ("Today", "Tomorrow", etc.) in the Scheduled section to reschedule them
+- **"Skip this one" context menu**: Right-click overdue recurring tasks in the Scheduled section to skip the pending instance
+- **Date/time in schedule toasts**: Toasts now show where a task was scheduled (e.g., `Scheduled "Task" for Today at 2:30 PM` instead of just `Scheduled "Task"`)
+
+### Fixed
+- **Task names in all toasts**: Complete, reopen, reparent, and instance toasts now include task/instance names
+- **Calendar time slot drop accuracy**: Uses real pointer position tracking instead of dnd-kit delta calculation, fixing drift when auto-scrolling during drag
+
+---
+
 ## v0.53.2 — 2026-02-20
 
 ### Fixed

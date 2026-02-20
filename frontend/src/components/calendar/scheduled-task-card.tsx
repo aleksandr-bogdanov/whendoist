@@ -149,7 +149,7 @@ export function ScheduledTaskCard({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           announce(isCompleted ? "Task reopened" : "Task completed");
-          toast.success(isCompleted ? "Task reopened" : "Task completed", {
+          toast.success(isCompleted ? `Reopened "${title}"` : `Completed "${title}"`, {
             id: `complete-${taskId}`,
           });
         },
