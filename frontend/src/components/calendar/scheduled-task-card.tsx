@@ -51,7 +51,7 @@ export function ScheduledTaskCard({
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: String(taskId),
+    id: `scheduled-task-${taskId}`,
     data: { type: "scheduled-task", taskId },
   });
 

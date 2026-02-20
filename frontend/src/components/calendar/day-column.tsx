@@ -176,11 +176,13 @@ export function DayColumn({
         }
         setPhantomTimeLabel(formatTime(Math.min(hour, 23), minutes));
 
-        // Get the dragged task's duration — parse ID to handle anytime-task- prefix
+        // Get the dragged task's duration — parse ID to handle prefixed IDs
         const activeIdStr = String(event.active.id);
         const numericId = activeIdStr.startsWith("anytime-task-")
           ? Number.parseInt(activeIdStr.replace("anytime-task-", ""), 10)
-          : Number.parseInt(activeIdStr, 10);
+          : activeIdStr.startsWith("scheduled-task-")
+            ? Number.parseInt(activeIdStr.replace("scheduled-task-", ""), 10)
+            : Number.parseInt(activeIdStr, 10);
         const draggedTask = allTasksLookup.find((t) => t.id === numericId);
         setPhantomDuration(draggedTask?.duration_minutes ?? 30);
       } else if (!isOurZone) {
