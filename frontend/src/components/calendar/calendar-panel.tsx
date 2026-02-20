@@ -237,7 +237,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       };
       autoScrollRaf.current = requestAnimationFrame(loop);
     },
-    onDragOver(event) {
+    onDragMove(event) {
       if (!scrollRef.current) return;
       const container = scrollRef.current;
       const rect = container.getBoundingClientRect();

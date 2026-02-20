@@ -130,7 +130,7 @@ export function DayColumn({
   const [isCalendarOver, setIsCalendarOver] = useState(false);
 
   useDndMonitor({
-    onDragOver(event) {
+    onDragMove(event) {
       const overId = event.over?.id ? String(event.over.id) : null;
       const isOurZone = overId?.startsWith("calendar-overlay-") && isActivePanel;
 
