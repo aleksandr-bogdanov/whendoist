@@ -180,7 +180,7 @@ app.add_middleware(CSRFMiddleware)
 # Proxy headers middleware (trust X-Forwarded-Proto from Railway)
 # Must be last so it runs first on request, making url_for() use https://
 if is_production:
-    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["127.0.0.1"])
 
 
 # Global exception handler for unexpected errors only

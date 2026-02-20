@@ -7,6 +7,17 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.5 — 2026-02-20
+
+### Fixed
+- **Rate limit key function**: Fixed `get_user_or_ip` to check `request.session.get("user_id")` instead of never-set `request.state.user`, so authenticated endpoints now rate-limit per-user instead of always falling back to IP
+- **ProxyHeadersMiddleware trusted_hosts**: Restricted from `["*"]` to `["127.0.0.1"]` — Railway's proxy connects locally to the app container
+- **Secret key fail-safe**: Added model validator that raises `ValueError` if `SECRET_KEY` is left as default `"changeme"` in production (HTTPS base_url)
+- **HSTS header**: Added `Strict-Transport-Security: max-age=31536000; includeSubDomains` for HTTPS responses to prevent SSL stripping
+- **Undo mutation error handling**: Added `onError` callbacks to all 7 undo mutations across task-dnd-context, task-item, and scheduled-task-card — undo failures now show error toast and invalidate cache
+- **Instance sync user_id filter**: Added `Task.user_id` join to fire-and-forget instance sync query for defense-in-depth
+- **Console.error in production**: Gated 6 `console.error` calls in passkey.ts and crypto.ts behind `import.meta.env.DEV`
+
 ## v0.53.4 — 2026-02-20
 
 ### Fixed

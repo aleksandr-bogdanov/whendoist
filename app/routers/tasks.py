@@ -87,7 +87,9 @@ async def _fire_and_forget_sync_instance(instance_id: int, task_id: int, user_id
             task_service = TaskService(db, user_id)
             task = await task_service.get_task(task_id)
 
-            result = await db.execute(sa_select(TaskInstance).where(TaskInstance.id == instance_id))
+            result = await db.execute(
+                sa_select(TaskInstance).join(Task).where(TaskInstance.id == instance_id, Task.user_id == user_id)
+            )
             instance = result.scalar_one_or_none()
 
             if task and instance:
