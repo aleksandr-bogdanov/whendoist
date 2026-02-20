@@ -724,6 +724,11 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
   const isCompleted = subtask.status === "completed";
   const impactColor = IMPACT_COLORS[subtask.impact] ?? IMPACT_COLORS[4];
 
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: String(subtask.id),
+    data: { type: "task", task: subtask },
+  });
+
   const handleClick = async () => {
     selectTask(subtask.id);
     onSelect?.(subtask.id);
@@ -771,11 +776,13 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
 
   return (
     <div
+      ref={setNodeRef}
       className={cn(
-        "group flex items-center gap-[var(--col-gap)] py-1 transition-colors border-b border-border/20",
+        "group flex items-center gap-[var(--col-gap)] py-1 transition-colors border-b border-border/20 cursor-grab active:cursor-grabbing",
         "hover:bg-accent/50",
         isSelected && "bg-accent",
         isCompleted && "opacity-60",
+        isDragging && "opacity-50",
       )}
       style={{
         paddingLeft: `${depth * 24 + 8}px`,
@@ -783,11 +790,14 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
         borderLeftColor: impactColor,
         borderLeftStyle: "solid",
       }}
+      {...listeners}
+      {...attributes}
     >
       <button
         type="button"
         className="flex-shrink-0 cursor-pointer group/cb"
         onClick={handleToggleComplete}
+        onPointerDown={(e) => e.stopPropagation()}
         title={isCompleted ? "Mark as pending" : "Mark as complete"}
       >
         <svg
