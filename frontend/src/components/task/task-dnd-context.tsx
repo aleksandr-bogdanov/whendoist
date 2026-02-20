@@ -202,8 +202,9 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              const taskTitle = task?.title ?? "Task";
               announce("Task scheduled for anytime");
-              toast.success("Scheduled for anytime", {
+              toast.success(`Scheduled "${taskTitle}" for anytime`, {
                 id: `anytime-${activeId}`,
                 action: {
                   label: "Undo",
@@ -244,8 +245,13 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           prevDate: string;
           nextDate: string;
           boundaries: { prevEnd: number; currentStart: number; currentEnd: number };
+          getColumnRect?: () => DOMRect | null;
         };
-        const rect = over.rect;
+
+        // Use live column rect (getBoundingClientRect) to handle scroll offset correctly.
+        // over.rect is a stale layout rect that doesn't update when the scroll container scrolls.
+        const liveRect = droppableData.getColumnRect?.();
+        const columnTop = liveRect?.top ?? over.rect.top;
 
         // Calculate time from pointer Y position relative to the droppable
         let clientY: number;
@@ -258,7 +264,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           clientY = (event.activatorEvent as PointerEvent).clientY;
         }
         const pointerY = clientY + (event.delta?.y ?? 0);
-        const columnTop = rect.top;
         const offsetY = pointerY - columnTop;
 
         // Determine which date section the pointer is in based on Y offset
@@ -318,9 +323,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              const taskTitle = task?.title ?? "Task";
               if (isReschedule) {
                 announce("Task rescheduled");
-                toast.success("Task rescheduled", {
+                toast.success(`Rescheduled "${taskTitle}"`, {
                   id: `reschedule-${activeId}`,
                   action: {
                     label: "Undo",
@@ -343,7 +349,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 });
               } else {
                 announce("Task scheduled");
-                toast.success("Task scheduled", {
+                toast.success(`Scheduled "${taskTitle}"`, {
                   id: `schedule-${activeId}`,
                   action: {
                     label: "Undo",
@@ -403,8 +409,9 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             {
               onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+                const taskTitle = task?.title ?? "Task";
                 announce("Task unscheduled");
-                toast.success("Task unscheduled", {
+                toast.success(`Unscheduled "${taskTitle}"`, {
                   id: `unschedule-${activeId}`,
                   action: {
                     label: "Undo",

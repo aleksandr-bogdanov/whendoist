@@ -7,6 +7,17 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.2 — 2026-02-20
+
+### Fixed
+- **Unschedule undo from calendar context menu**: Clicking Undo on the "Unscheduled" toast now immediately restores the task on the calendar (optimistic update instead of waiting for refetch)
+- **Task name in toasts**: Schedule, reschedule, and unschedule toasts now include the task title (e.g., `Scheduled "My Task"` instead of `Task scheduled`)
+- **Drag from task title**: Removed `stopPropagation` on task title so the entire task row is draggable — title, metadata, and empty space all initiate drag
+- **Calendar time slot drop accuracy**: Drop handler now uses a live `getBoundingClientRect()` instead of stale `over.rect`, fixing incorrect time calculations when the calendar is scrolled
+- **Unschedule from task list context menu**: Added "Unschedule" option to right-click and kebab menus for scheduled tasks, with optimistic update and undo support
+
+---
+
 ## v0.53.1 — 2026-02-20
 
 ### Fixed

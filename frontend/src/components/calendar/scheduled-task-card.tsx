@@ -67,17 +67,39 @@ export function ScheduledTaskCard({
     const prevDate = prev?.scheduled_date ?? null;
     const prevTime = prev?.scheduled_time ?? null;
 
+    // Optimistic update — immediately remove from calendar
+    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+    );
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+      (old) =>
+        old?.map((t) =>
+          t.id === taskId ? { ...t, scheduled_date: null, scheduled_time: null } : t,
+        ),
+    );
+
     updateTask.mutate(
       { taskId, data: { scheduled_date: null, scheduled_time: null } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           announce("Task unscheduled");
-          toast.success("Task unscheduled", {
+          toast.success(`Unscheduled "${title}"`, {
             id: `unschedule-${taskId}`,
             action: {
               label: "Undo",
               onClick: () => {
+                // Optimistic undo — immediately restore on calendar
+                queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                  getListTasksApiV1TasksGetQueryKey(),
+                  (old) =>
+                    old?.map((t) =>
+                      t.id === taskId
+                        ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
+                        : t,
+                    ),
+                );
                 updateTask.mutate(
                   { taskId, data: { scheduled_date: prevDate, scheduled_time: prevTime } },
                   {
@@ -92,7 +114,10 @@ export function ScheduledTaskCard({
             duration: 5000,
           });
         },
-        onError: () => toast.error("Failed to unschedule task", { id: `unschedule-err-${taskId}` }),
+        onError: () => {
+          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          toast.error("Failed to unschedule task", { id: `unschedule-err-${taskId}` });
+        },
       },
     );
   };
