@@ -6,6 +6,7 @@ import {
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
+  type Modifier,
   type Over,
   PointerSensor,
   pointerWithin,
@@ -16,7 +17,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
@@ -602,6 +603,32 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     setDragState({ activeId: null, activeTask: null, overId: null, overType: null });
   }, []);
 
+  // Modifier: position overlay at the pointer, immune to scroll drift.
+  // dnd-kit's Rect getters adjust for scroll changes in ancestors, which causes
+  // the overlay's CSS top/left to drift when the active element is inside scroll
+  // containers (calendar carousel + vertical scroll). This modifier computes
+  // the current pointer position and adjusts the transform so the overlay stays
+  // centered on the pointer regardless of scroll drift.
+  const overlayModifiers = useMemo<Modifier[]>(
+    () => [
+      ({ transform, activatorEvent, activeNodeRect }) => {
+        if (!activeNodeRect || !activatorEvent) return transform;
+        const ev = activatorEvent as PointerEvent;
+        const currentX = ev.clientX + transform.x;
+        const currentY = ev.clientY + transform.y;
+        // PositionedOverlay renders at: position:fixed; top: activeNodeRect.top; left: activeNodeRect.left
+        // Visual = activeNodeRect.top + result.y.  We want visual = currentY - 10 (pointer near top).
+        // result.y = currentY - 10 - activeNodeRect.top  (drift in activeNodeRect.top cancels out)
+        return {
+          ...transform,
+          x: currentX - activeNodeRect.left - (activeNodeRect.width ?? 200) / 2,
+          y: currentY - activeNodeRect.top - 10,
+        };
+      },
+    ],
+    [],
+  );
+
   return (
     <DndContext
       sensors={sensors}
@@ -613,7 +640,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       autoScroll={false}
     >
       {children}
-      <DragOverlay dropAnimation={null}>
+      <DragOverlay dropAnimation={null} modifiers={overlayModifiers}>
         {dragState.activeTask ? <TaskDragOverlay task={dragState.activeTask} /> : null}
       </DragOverlay>
     </DndContext>
