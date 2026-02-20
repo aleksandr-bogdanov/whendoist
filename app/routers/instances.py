@@ -28,7 +28,7 @@ router = APIRouter(prefix="/instances", tags=["instances"])
 class InstanceSchedule(BaseModel):
     """Request body for rescheduling an instance."""
 
-    scheduled_datetime: datetime
+    scheduled_datetime: datetime | None
 
 
 class InstanceResponse(BaseModel):

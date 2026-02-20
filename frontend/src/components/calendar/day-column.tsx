@@ -1,12 +1,13 @@
-import { useDndMonitor } from "@dnd-kit/core";
+import { useDndMonitor, useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Pencil, SkipForward } from "lucide-react";
+import { CalendarOff, Check, Pencil, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, EventResponse, InstanceResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
+  useScheduleInstanceApiV1InstancesInstanceIdSchedulePut,
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
 } from "@/api/queries/instances/instances";
 import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
@@ -178,15 +179,21 @@ export function DayColumn({
         }
         setPhantomTimeLabel(formatTime(Math.min(hour, 23), minutes));
 
-        // Get the dragged task's duration — parse ID to handle prefixed IDs
+        // Get the dragged item's duration — parse ID to handle prefixed IDs
         const activeIdStr = String(event.active.id);
-        const numericId = activeIdStr.startsWith("anytime-task-")
-          ? Number.parseInt(activeIdStr.replace("anytime-task-", ""), 10)
-          : activeIdStr.startsWith("scheduled-task-")
-            ? Number.parseInt(activeIdStr.replace("scheduled-task-", ""), 10)
-            : Number.parseInt(activeIdStr, 10);
-        const draggedTask = allTasksLookup.find((t) => t.id === numericId);
-        setPhantomDuration(draggedTask?.duration_minutes ?? 30);
+        if (activeIdStr.startsWith("instance-")) {
+          const instanceId = Number.parseInt(activeIdStr.replace("instance-", ""), 10);
+          const draggedInstance = instances.find((i) => i.id === instanceId);
+          setPhantomDuration(draggedInstance?.duration_minutes ?? 30);
+        } else {
+          const numericId = activeIdStr.startsWith("anytime-task-")
+            ? Number.parseInt(activeIdStr.replace("anytime-task-", ""), 10)
+            : activeIdStr.startsWith("scheduled-task-")
+              ? Number.parseInt(activeIdStr.replace("scheduled-task-", ""), 10)
+              : Number.parseInt(activeIdStr, 10);
+          const draggedTask = allTasksLookup.find((t) => t.id === numericId);
+          setPhantomDuration(draggedTask?.duration_minutes ?? 30);
+        }
       } else if (!isOurZone) {
         setPhantomOffset(null);
         setIsCalendarOver(false);
@@ -411,6 +418,12 @@ function InstanceCard({
   const queryClient = useQueryClient();
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
+  const scheduleInstance = useScheduleInstanceApiV1InstancesInstanceIdSchedulePut();
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `instance-${instance.id}`,
+    data: { type: "instance", instanceId: instance.id, instance },
+  });
 
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
@@ -418,10 +431,58 @@ function InstanceCard({
   const isSkipped = instance.status === "skipped";
   const isPending = instance.status === "pending";
   const impactColor = IMPACT_COLORS[instance.impact] ?? IMPACT_COLORS[4];
+  const hasScheduledTime = !!instance.scheduled_datetime;
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
     queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+  };
+
+  const handleUnschedule = () => {
+    const prevDatetime = instance.scheduled_datetime;
+
+    // Optimistic update — remove scheduled_datetime so it moves to anytime
+    const previousInstances = queryClient.getQueryData(getListInstancesApiV1InstancesGetQueryKey());
+    queryClient.setQueryData(
+      getListInstancesApiV1InstancesGetQueryKey(),
+      (old: InstanceResponse[] | undefined) =>
+        old?.map((i) => (i.id === instance.id ? { ...i, scheduled_datetime: null } : i)),
+    );
+
+    scheduleInstance.mutate(
+      { instanceId: instance.id, data: { scheduled_datetime: null } },
+      {
+        onSuccess: () => {
+          invalidateAll();
+          toast.success(`Unscheduled "${instance.task_title}"`, {
+            id: `unschedule-inst-${instance.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                queryClient.setQueryData(
+                  getListInstancesApiV1InstancesGetQueryKey(),
+                  (old: InstanceResponse[] | undefined) =>
+                    old?.map((i) =>
+                      i.id === instance.id ? { ...i, scheduled_datetime: prevDatetime } : i,
+                    ),
+                );
+                scheduleInstance.mutate(
+                  { instanceId: instance.id, data: { scheduled_datetime: prevDatetime } },
+                  { onSuccess: () => invalidateAll() },
+                );
+              },
+            },
+            duration: 5000,
+          });
+        },
+        onError: () => {
+          queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
+          toast.error("Failed to unschedule instance", {
+            id: `unschedule-inst-err-${instance.id}`,
+          });
+        },
+      },
+    );
   };
 
   const handleComplete = () => {
@@ -478,10 +539,11 @@ function InstanceCard({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <button
+          ref={setNodeRef}
           type="button"
-          className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 cursor-pointer hover:ring-1 hover:ring-primary/50 transition-shadow ${
+          className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow ${
             isCompleted || isSkipped ? "opacity-50" : ""
-          } ${dimmed ? "opacity-60" : ""}`}
+          } ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${item.height}px`,
@@ -493,18 +555,29 @@ function InstanceCard({
           title={`${instance.task_title} (recurring)`}
           onClick={() => onEditSeries?.()}
         >
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
-            <span className="truncate font-medium" style={{ color: impactColor }}>
-              {instance.task_title}
-            </span>
+          {/* Drag handle — covers entire card */}
+          <div className="absolute inset-0" {...listeners} {...attributes} />
+          {/* Content — pointer-events-none so clicks/drags pass through */}
+          <div className="relative pointer-events-none">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
+              <span className="truncate font-medium" style={{ color: impactColor }}>
+                {instance.task_title}
+              </span>
+            </div>
+            {item.height > 28 && (
+              <div className="text-[10px] text-muted-foreground truncate">{timeLabel}</div>
+            )}
           </div>
-          {item.height > 28 && (
-            <div className="text-[10px] text-muted-foreground truncate">{timeLabel}</div>
-          )}
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
+        {hasScheduledTime && (
+          <ContextMenuItem onClick={handleUnschedule} disabled={!isPending}>
+            <CalendarOff className="h-3.5 w-3.5 mr-2" />
+            Unschedule
+          </ContextMenuItem>
+        )}
         <ContextMenuItem onClick={handleSkip} disabled={!isPending}>
           <SkipForward className="h-3.5 w-3.5 mr-2" />
           Skip

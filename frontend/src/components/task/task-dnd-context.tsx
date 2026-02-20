@@ -19,7 +19,11 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
+import {
+  getListInstancesApiV1InstancesGetQueryKey,
+  useScheduleInstanceApiV1InstancesInstanceIdSchedulePut,
+} from "@/api/queries/instances/instances";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useUpdateTaskApiV1TasksTaskIdPut,
@@ -33,6 +37,7 @@ import { TaskDragOverlay } from "./task-drag-overlay";
 export interface DragState {
   activeId: UniqueIdentifier | null;
   activeTask: AppRoutersTasksTaskResponse | null;
+  activeInstance: InstanceResponse | null;
   overId: UniqueIdentifier | null;
   overType: "task" | "calendar" | "task-list" | "anytime" | "date-group" | null;
 }
@@ -88,6 +93,7 @@ const customCollisionDetection: CollisionDetection = (args) => {
 export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
+  const scheduleInstance = useScheduleInstanceApiV1InstancesInstanceIdSchedulePut();
   const { calendarHourHeight } = useUIStore();
 
   // Track real pointer position for accurate calendar drops (bypasses dnd-kit delta drift)
@@ -103,6 +109,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   const [dragState, setDragState] = useState<DragState>({
     activeId: null,
     activeTask: null,
+    activeInstance: null,
     overId: null,
     overType: null,
   });
@@ -153,10 +160,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
       grabRatioRef.current = null; // Reset so next modifier call captures fresh ratio
-      const task = findTask(event.active.id);
+      const activeIdStr = String(event.active.id);
+      const isInstance = activeIdStr.startsWith("instance-");
+      const task = isInstance ? null : findTask(event.active.id);
+      const instance = isInstance
+        ? ((event.active.data.current?.instance as InstanceResponse | null) ?? null)
+        : null;
       setDragState({
         activeId: event.active.id,
         activeTask: task,
+        activeInstance: instance,
         overId: null,
         overType: null,
       });
@@ -176,12 +189,200 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     [getOverType],
   );
 
+  const handleInstanceDrop = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over) return false;
+
+      const activeIdStr = String(active.id);
+      if (!activeIdStr.startsWith("instance-")) return false;
+
+      const instanceId = Number.parseInt(activeIdStr.replace("instance-", ""), 10);
+      const instance = active.data.current?.instance as InstanceResponse | undefined;
+      const overId = String(over.id);
+
+      const invalidateInstances = () => {
+        queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+      };
+
+      // --- Instance drop onto anytime: unschedule (clear time) ---
+      if (overId.startsWith("anytime-drop-")) {
+        const prevDatetime = instance?.scheduled_datetime ?? null;
+        if (!prevDatetime) return true; // Already unscheduled, no-op
+
+        const previousInstances = queryClient.getQueryData(
+          getListInstancesApiV1InstancesGetQueryKey(),
+        );
+        queryClient.setQueryData(
+          getListInstancesApiV1InstancesGetQueryKey(),
+          (old: InstanceResponse[] | undefined) =>
+            old?.map((i) => (i.id === instanceId ? { ...i, scheduled_datetime: null } : i)),
+        );
+
+        scheduleInstance.mutate(
+          { instanceId, data: { scheduled_datetime: null } },
+          {
+            onSuccess: () => {
+              invalidateInstances();
+              announce("Instance unscheduled");
+              toast.success(`Unscheduled "${instance?.task_title ?? "Instance"}"`, {
+                id: `unschedule-inst-${instanceId}`,
+                action: {
+                  label: "Undo",
+                  onClick: () => {
+                    queryClient.setQueryData(
+                      getListInstancesApiV1InstancesGetQueryKey(),
+                      (old: InstanceResponse[] | undefined) =>
+                        old?.map((i) =>
+                          i.id === instanceId ? { ...i, scheduled_datetime: prevDatetime } : i,
+                        ),
+                    );
+                    scheduleInstance.mutate(
+                      { instanceId, data: { scheduled_datetime: prevDatetime } },
+                      { onSuccess: () => invalidateInstances() },
+                    );
+                  },
+                },
+                duration: 5000,
+              });
+            },
+            onError: () => {
+              queryClient.setQueryData(
+                getListInstancesApiV1InstancesGetQueryKey(),
+                previousInstances,
+              );
+              toast.error("Failed to unschedule instance", {
+                id: `unschedule-inst-err-${instanceId}`,
+              });
+            },
+          },
+        );
+        return true;
+      }
+
+      // --- Instance drop onto calendar: reschedule to specific time ---
+      if (overId.startsWith("calendar-overlay-")) {
+        const droppableData = over.data.current as {
+          centerDate: string;
+          prevDate: string;
+          nextDate: string;
+          boundaries: { prevEnd: number; currentStart: number; currentEnd: number };
+          getScrollTop: () => number;
+          getCalendarRect?: () => DOMRect | null;
+        };
+
+        const calRect = droppableData.getCalendarRect?.();
+        const calTop = calRect?.top ?? over.rect.top;
+        const scrollTop = droppableData.getScrollTop();
+        const pointerY = lastPointerRef.current.y;
+        const offsetY = pointerY - calTop + scrollTop;
+
+        let dateStr: string;
+        let startHour: number;
+        if (offsetY < droppableData.boundaries.prevEnd) {
+          dateStr = droppableData.prevDate;
+          startHour = PREV_DAY_START_HOUR;
+        } else if (offsetY < droppableData.boundaries.currentEnd) {
+          dateStr = droppableData.centerDate;
+          startHour = 0;
+        } else {
+          dateStr = droppableData.nextDate;
+          startHour = 0;
+        }
+
+        const sectionTop =
+          offsetY < droppableData.boundaries.prevEnd
+            ? 0
+            : offsetY < droppableData.boundaries.currentEnd
+              ? droppableData.boundaries.currentStart
+              : droppableData.boundaries.currentEnd;
+        const sectionOffsetY = offsetY - sectionTop;
+
+        const { hour, minutes } = offsetToTime(sectionOffsetY, calendarHourHeight, startHour);
+        const scheduledTime = `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+        const scheduledDatetime = `${dateStr}T${scheduledTime}`;
+
+        const prevDatetime = instance?.scheduled_datetime ?? null;
+
+        // No-op if same datetime
+        if (prevDatetime === scheduledDatetime) return true;
+
+        const previousInstances = queryClient.getQueryData(
+          getListInstancesApiV1InstancesGetQueryKey(),
+        );
+        queryClient.setQueryData(
+          getListInstancesApiV1InstancesGetQueryKey(),
+          (old: InstanceResponse[] | undefined) =>
+            old?.map((i) =>
+              i.id === instanceId ? { ...i, scheduled_datetime: scheduledDatetime } : i,
+            ),
+        );
+
+        scheduleInstance.mutate(
+          { instanceId, data: { scheduled_datetime: scheduledDatetime } },
+          {
+            onSuccess: () => {
+              invalidateInstances();
+              announce("Instance rescheduled");
+              toast.success(
+                `Rescheduled "${instance?.task_title ?? "Instance"}" to ${formatScheduleTarget(dateStr, scheduledTime)}`,
+                {
+                  id: `reschedule-inst-${instanceId}`,
+                  action: {
+                    label: "Undo",
+                    onClick: () => {
+                      queryClient.setQueryData(
+                        getListInstancesApiV1InstancesGetQueryKey(),
+                        (old: InstanceResponse[] | undefined) =>
+                          old?.map((i) =>
+                            i.id === instanceId ? { ...i, scheduled_datetime: prevDatetime } : i,
+                          ),
+                      );
+                      scheduleInstance.mutate(
+                        { instanceId, data: { scheduled_datetime: prevDatetime } },
+                        { onSuccess: () => invalidateInstances() },
+                      );
+                    },
+                  },
+                  duration: 5000,
+                },
+              );
+            },
+            onError: () => {
+              queryClient.setQueryData(
+                getListInstancesApiV1InstancesGetQueryKey(),
+                previousInstances,
+              );
+              toast.error("Failed to reschedule instance", {
+                id: `reschedule-inst-err-${instanceId}`,
+              });
+            },
+          },
+        );
+        return true;
+      }
+
+      return false; // Instance dropped on unsupported zone
+    },
+    [queryClient, scheduleInstance, calendarHourHeight],
+  );
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
-      setDragState({ activeId: null, activeTask: null, overId: null, overType: null });
+      setDragState({
+        activeId: null,
+        activeTask: null,
+        activeInstance: null,
+        overId: null,
+        overType: null,
+      });
 
       if (!over || !active) return;
+
+      // Handle instance drops first
+      if (handleInstanceDrop(event)) return;
 
       const activeId = parseTaskId(active.id);
       const overId = String(over.id);
@@ -600,7 +801,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         );
       }
     },
-    [findTask, queryClient, updateTask, calendarHourHeight],
+    [findTask, queryClient, updateTask, calendarHourHeight, handleInstanceDrop],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -662,6 +863,17 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         {dragState.activeTask ? (
           <div ref={overlayContentRef}>
             <TaskDragOverlay task={dragState.activeTask} />
+          </div>
+        ) : dragState.activeInstance ? (
+          <div ref={overlayContentRef}>
+            <TaskDragOverlay
+              task={
+                {
+                  ...dragState.activeInstance,
+                  title: dragState.activeInstance.task_title,
+                } as unknown as AppRoutersTasksTaskResponse
+              }
+            />
           </div>
         ) : null}
       </DragOverlay>

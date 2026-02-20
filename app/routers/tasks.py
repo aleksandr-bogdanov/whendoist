@@ -532,6 +532,7 @@ async def update_task(
 
     old_rule = current.recurrence_rule
     old_is_recurring = current.is_recurring
+    old_scheduled_time = current.scheduled_time
 
     # Get only fields that were explicitly set in the request
     # This allows us to distinguish between "not provided" and "set to null"
@@ -564,8 +565,8 @@ async def update_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # Regenerate instances if recurrence changed
-    if task.is_recurring and task.recurrence_rule != old_rule:
+    # Regenerate instances if recurrence rule or scheduled time changed
+    if task.is_recurring and (task.recurrence_rule != old_rule or task.scheduled_time != old_scheduled_time):
         recurrence = RecurrenceService(db, user.id, timezone=timezone)
         await recurrence.regenerate_instances(task)
 
