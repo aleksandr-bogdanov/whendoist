@@ -172,7 +172,10 @@ export function TaskPanel({
 
       {/* Task list */}
       <div ref={pullRefreshRef} className="flex-1 min-h-0 flex flex-col relative">
-        <div className="flex-1 min-h-0 overflow-y-auto relative" data-task-scroll-area>
+        <div
+          className="flex-1 min-h-0 overflow-y-auto relative sm:px-2 lg:px-4"
+          data-task-scroll-area
+        >
           <StickyDomainHeader />
           <div className="p-2 sm:p-4 space-y-2">
             <PendingPastBanner />

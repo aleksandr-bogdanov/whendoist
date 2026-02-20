@@ -38,7 +38,6 @@ export function CalendarEventCard({
         width,
         left,
         ...(backgroundColor && {
-          backgroundColor: `${backgroundColor}10`,
           borderLeftColor: backgroundColor,
         }),
         opacity: dimmed ? 0.5 : 0.95,
@@ -50,7 +49,7 @@ export function CalendarEventCard({
         <span className="truncate font-medium">{summary}</span>
         <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
       </div>
-      {item.height > 30 && (
+      {item.height > 32 && (
         <div className="truncate text-muted-foreground text-[10px]">{timeLabel}</div>
       )}
     </button>

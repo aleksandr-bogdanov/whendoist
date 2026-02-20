@@ -70,7 +70,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
           type="button"
           className={cn(
             "flex w-full items-center gap-2 px-3 py-2 text-sm font-medium",
-            "rounded-md hover:bg-accent/50 transition-colors",
+            "rounded-md hover:bg-[rgba(109,94,246,0.04)] transition-colors",
             "border-t border-border mt-2 pt-3",
           )}
         >

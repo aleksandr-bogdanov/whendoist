@@ -4,6 +4,25 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.3 — 2026-02-20
+
+### Design Parity Iteration 2 — Post-Audit Refinements
+- **Button font-weight**: All buttons now use `font-semibold` (600) matching brand spec
+- **Primary button gradient sheen**: Dark primary buttons get a subtle top-to-bottom white gradient for depth
+- **Sort headers uppercase**: Column sort labels (Clarity, Duration, Impact) now uppercase to match all other app labels
+- **Purple-tinted hovers**: Replaced all remaining zinc `hover:bg-accent` with brand purple-tinted hovers across task rows, section toggles, calendar zoom controls, and anytime pills
+- **Task row inner glow**: Hover state adds a subtle purple inset shadow for a premium feel (matches legacy)
+- **Calendar event cleanup**: Removed body tint on events — clean white cards with color from left rail only; compact mode hides time range for short events (<32px)
+- **W icon medium size**: Header W icon bumped from 17×15 to 24×21 (brand spec "medium") for more visual presence
+- **Consistent 12px card radius**: Domain groups and calendar panel now both use `rounded-[12px]` matching brand spec `--radius-lg`
+- **Domain group left accent**: Subtle 2px purple left border on domain group cards reinforcing brand's "left rail" pattern
+- **Desktop task list padding**: Added horizontal padding (`sm:px-2 lg:px-4`) on the task scroll area for breathing room
+- **Subtask connector line**: Vertical connector line bridges parent to children when subtasks are expanded
+- **Calendar day graduated dimming**: Previous evening (opacity 0.7) and next morning (opacity 0.85) for graduated depth — today pops more
+- **Strikethrough animation keyframe**: Added `strikethrough-reveal` CSS animation for future use
+
+---
+
 ## v0.54.2 — 2026-02-20
 
 ### Design Parity Phase 3 — Polish

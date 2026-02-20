@@ -44,7 +44,7 @@ export function DeletedSection() {
           type="button"
           className={cn(
             "flex w-full items-center gap-2 px-3 py-2 text-sm font-medium",
-            "rounded-md hover:bg-accent/50 transition-colors",
+            "rounded-md hover:bg-[rgba(109,94,246,0.04)] transition-colors",
             "border-t border-border mt-2 pt-3",
           )}
         >
@@ -77,7 +77,7 @@ export function DeletedSection() {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-accent/30">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[rgba(109,94,246,0.03)]">
                     <span className="text-sm text-muted-foreground line-through truncate flex-1">
                       {task.title}
                     </span>
