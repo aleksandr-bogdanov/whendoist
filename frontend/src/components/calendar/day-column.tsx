@@ -73,6 +73,9 @@ export function DayColumn({
     return d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   }, [centerDate]);
 
+  // Callback to get a live column rect (avoids stale dnd-kit over.rect in scroll containers)
+  const getColumnRect = useCallback(() => columnRef.current?.getBoundingClientRect() ?? null, []);
+
   // Single full-column droppable zone (namespaced by panelId for carousel uniqueness)
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `calendar-${panelId}-${centerDate}`,
@@ -82,6 +85,7 @@ export function DayColumn({
       prevDate,
       nextDate,
       boundaries,
+      getColumnRect,
     },
   });
 

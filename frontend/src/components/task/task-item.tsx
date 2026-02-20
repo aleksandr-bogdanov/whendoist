@@ -2,6 +2,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Calendar,
+  CalendarOff,
   CalendarPlus,
   Check,
   ChevronDown,
@@ -22,6 +23,7 @@ import {
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
+  useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +74,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
   const isJustUpdated = justUpdatedId === task.id;
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
+  const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
   const isSelected = selectedTaskId === task.id;
@@ -208,6 +211,63 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
     setMenuOpen(false);
   }, [task.id, selectTask, setMobileTab]);
 
+  const handleMenuUnschedule = useCallback(() => {
+    const prevDate = task.scheduled_date;
+    const prevTime = task.scheduled_time ?? null;
+
+    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+    );
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+      (old) =>
+        old?.map((t) =>
+          t.id === task.id ? { ...t, scheduled_date: null, scheduled_time: null } : t,
+        ),
+    );
+    updateTask.mutate(
+      { taskId: task.id, data: { scheduled_date: null, scheduled_time: null } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          announce("Task unscheduled");
+          toast.success(`Unscheduled "${task.title}"`, {
+            id: `unschedule-${task.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                  getListTasksApiV1TasksGetQueryKey(),
+                  (old) =>
+                    old?.map((t) =>
+                      t.id === task.id
+                        ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
+                        : t,
+                    ),
+                );
+                updateTask.mutate(
+                  { taskId: task.id, data: { scheduled_date: prevDate, scheduled_time: prevTime } },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                  },
+                );
+              },
+            },
+            duration: 5000,
+          });
+        },
+        onError: () => {
+          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          toast.error("Failed to unschedule task", { id: `unschedule-err-${task.id}` });
+        },
+      },
+    );
+    setMenuOpen(false);
+  }, [task, updateTask, queryClient]);
+
   const handleMenuDelete = useCallback(() => {
     deleteTask.mutate(
       { taskId: task.id },
@@ -277,6 +337,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
         <ContextMenuItem onClick={handleMenuSchedule}>
           <CalendarPlus className="h-3.5 w-3.5 mr-2" />
           Schedule
+        </ContextMenuItem>
+      )}
+      {task.scheduled_date && (
+        <ContextMenuItem onClick={handleMenuUnschedule}>
+          <CalendarOff className="h-3.5 w-3.5 mr-2" />
+          Unschedule
         </ContextMenuItem>
       )}
       <ContextMenuSeparator />
@@ -368,13 +434,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                   </svg>
                 </button>
 
-                {/* Title */}
+                {/* Title — no stopPropagation so drag works from title too */}
                 <button
                   type="button"
                   data-task-title-btn
                   className="flex-1 min-w-0 text-left cursor-pointer hover:opacity-80 relative z-10"
                   onClick={handleTitleClick}
-                  onPointerDown={(e) => e.stopPropagation()}
                 >
                   <span
                     className={cn(
@@ -520,6 +585,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, isDropTarget }: Ta
                   <DropdownMenuItem onClick={handleMenuSchedule}>
                     <CalendarPlus className="h-3.5 w-3.5 mr-2" />
                     Schedule
+                  </DropdownMenuItem>
+                )}
+                {task.scheduled_date && (
+                  <DropdownMenuItem onClick={handleMenuUnschedule}>
+                    <CalendarOff className="h-3.5 w-3.5 mr-2" />
+                    Unschedule
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
