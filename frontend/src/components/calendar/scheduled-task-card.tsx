@@ -180,6 +180,12 @@ export function ScheduledTaskCard({
                       queryClient.invalidateQueries({
                         queryKey: getListTasksApiV1TasksGetQueryKey(),
                       }),
+                    onError: () => {
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      });
+                      toast.error("Undo failed");
+                    },
                   },
                 );
               },

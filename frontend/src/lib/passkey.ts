@@ -343,7 +343,7 @@ export async function registerPasskey(name: string): Promise<PasskeyResult> {
 
     return { success: true };
   } catch (error) {
-    console.error("Passkey registration failed:", error);
+    if (import.meta.env.DEV) console.error("Passkey registration failed:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Registration failed",
@@ -443,7 +443,7 @@ export async function unlockWithPasskey(encryptionTestValue: string): Promise<Pa
         throw new Error("Key verification failed - decrypted value mismatch");
       }
     } catch (verifyError) {
-      console.error("Key verification failed:", verifyError);
+      if (import.meta.env.DEV) console.error("Key verification failed:", verifyError);
       throw new Error("Invalid passkey - unable to decrypt data");
     }
 
@@ -457,7 +457,7 @@ export async function unlockWithPasskey(encryptionTestValue: string): Promise<Pa
 
     return { success: true };
   } catch (error) {
-    console.error("Passkey authentication failed:", error);
+    if (import.meta.env.DEV) console.error("Passkey authentication failed:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Authentication failed",

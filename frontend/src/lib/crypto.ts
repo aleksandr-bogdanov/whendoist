@@ -300,7 +300,7 @@ export async function decryptField(value: string | null, key: CryptoKey): Promis
   try {
     return await decrypt(key, value);
   } catch (e) {
-    console.error("Decryption failed:", e);
+    if (import.meta.env.DEV) console.error("Decryption failed:", e);
     return value;
   }
 }
@@ -358,7 +358,7 @@ export async function decryptAllData(
           description: task.description ? await decrypt(key, task.description) : null,
         };
       } catch (e) {
-        console.error(`Failed to decrypt task ${task.id}:`, e);
+        if (import.meta.env.DEV) console.error(`Failed to decrypt task ${task.id}:`, e);
         return task;
       }
     }),
@@ -372,7 +372,7 @@ export async function decryptAllData(
           name: await decrypt(key, domain.name),
         };
       } catch (e) {
-        console.error(`Failed to decrypt domain ${domain.id}:`, e);
+        if (import.meta.env.DEV) console.error(`Failed to decrypt domain ${domain.id}:`, e);
         return domain;
       }
     }),

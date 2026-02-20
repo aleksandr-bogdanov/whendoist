@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     passkey_rp_name: str = "Whendoist"
 
     @model_validator(mode="after")
+    def validate_secret_key(self) -> "Settings":
+        """Fail-safe: refuse to start with default secret_key in production."""
+        if self.base_url.startswith("https://") and self.secret_key == "changeme":
+            raise ValueError("SECRET_KEY must be set in production")
+        return self
+
+    @model_validator(mode="after")
     def derive_passkey_rp_id(self) -> "Settings":
         """Derive passkey_rp_id from base_url if not explicitly set."""
         if not self.passkey_rp_id:

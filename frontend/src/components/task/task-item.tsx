@@ -330,6 +330,12 @@ export function TaskItem({
                       queryClient.invalidateQueries({
                         queryKey: getListTasksApiV1TasksGetQueryKey(),
                       }),
+                    onError: () => {
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      });
+                      toast.error("Undo failed");
+                    },
                   },
                 );
               },

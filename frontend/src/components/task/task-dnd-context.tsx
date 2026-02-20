@@ -53,11 +53,19 @@ function parseTaskId(id: UniqueIdentifier): number {
 /**
  * Custom collision detection that checks pointer position first (for calendar
  * drop zones) then falls back to closest-center (for sortable list).
+ *
+ * Calendar droppables live inside nested scroll containers (vertical scrollRef +
+ * horizontal carousel). dnd-kit's Rect class tracks scroll offsets via dynamic
+ * getters, but the carousel's scroll-snap and large scrollLeft can cause the
+ * scroll-adjusted coordinates to drift from the element's actual viewport
+ * position. When pointerWithin misses a calendar droppable, we fall back to a
+ * fresh getBoundingClientRect check on the DOM nodes directly.
  */
 const customCollisionDetection: CollisionDetection = (args) => {
   // First, try pointer-within — great for the calendar grid where we want
   // precise position-based dropping.
   const pointerCollisions = pointerWithin(args);
+
   if (pointerCollisions.length > 0) {
     // Priority order: date-group → anytime → calendar → task-list → other
     const dateGroupHit = pointerCollisions.find((c) => String(c.id).startsWith("date-group-"));
@@ -69,6 +77,27 @@ const customCollisionDetection: CollisionDetection = (args) => {
     const taskListHit = pointerCollisions.find((c) => String(c.id).startsWith("task-list-"));
     if (taskListHit) return [taskListHit];
     return pointerCollisions;
+  }
+
+  // pointerWithin found nothing — calendar droppables inside nested scroll
+  // containers may have stale Rect coordinates. Do a live getBoundingClientRect
+  // check directly on the DOM nodes.
+  if (args.pointerCoordinates) {
+    const { x, y } = args.pointerCoordinates;
+    for (const container of args.droppableContainers) {
+      if (!String(container.id).startsWith("calendar-")) continue;
+      const node = container.node.current;
+      if (!node) continue;
+      const rect = node.getBoundingClientRect();
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        return [
+          {
+            id: container.id,
+            data: { droppableContainer: container, value: 0 },
+          },
+        ];
+      }
+    }
   }
 
   // Fall back to rect intersection — also check for calendar zones here
@@ -233,6 +262,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                           queryClient.invalidateQueries({
                             queryKey: getListTasksApiV1TasksGetQueryKey(),
                           }),
+                        onError: () => {
+                          queryClient.invalidateQueries({
+                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          });
+                          toast.error("Undo failed");
+                        },
                       },
                     );
                   },
@@ -300,6 +335,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                           queryClient.invalidateQueries({
                             queryKey: getListTasksApiV1TasksGetQueryKey(),
                           }),
+                        onError: () => {
+                          queryClient.invalidateQueries({
+                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          });
+                          toast.error("Undo failed");
+                        },
                       },
                     );
                   },
@@ -415,6 +456,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                               queryClient.invalidateQueries({
                                 queryKey: getListTasksApiV1TasksGetQueryKey(),
                               }),
+                            onError: () => {
+                              queryClient.invalidateQueries({
+                                queryKey: getListTasksApiV1TasksGetQueryKey(),
+                              });
+                              toast.error("Undo failed");
+                            },
                           },
                         );
                       },
@@ -441,6 +488,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                               queryClient.invalidateQueries({
                                 queryKey: getListTasksApiV1TasksGetQueryKey(),
                               }),
+                            onError: () => {
+                              queryClient.invalidateQueries({
+                                queryKey: getListTasksApiV1TasksGetQueryKey(),
+                              });
+                              toast.error("Undo failed");
+                            },
                           },
                         );
                       },
@@ -504,6 +557,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                             queryClient.invalidateQueries({
                               queryKey: getListTasksApiV1TasksGetQueryKey(),
                             }),
+                          onError: () => {
+                            queryClient.invalidateQueries({
+                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            });
+                            toast.error("Undo failed");
+                          },
                         },
                       );
                     },
@@ -583,6 +642,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
+      autoScroll={false}
     >
       {children}
       <DragOverlay dropAnimation={null}>

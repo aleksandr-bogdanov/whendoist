@@ -20,10 +20,10 @@ def get_user_or_ip(request: Request) -> str:
     For authenticated endpoints, this ensures rate limits apply per-user,
     not per-IP (preventing one user from affecting others behind NAT).
     """
-    # Try to get user_id from request state (set by auth middleware)
-    user = getattr(request.state, "user", None)
-    if user and hasattr(user, "id"):
-        return f"user:{user.id}"
+    # Use session user_id for authenticated requests
+    user_id = request.session.get("user_id") if hasattr(request, "session") else None
+    if user_id:
+        return f"user:{user_id}"
 
     # Fall back to IP for unauthenticated requests
     return get_remote_address(request)

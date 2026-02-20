@@ -146,12 +146,12 @@ class TestPasskeyRPIDDerivation:
         settings = Settings(base_url="http://localhost:8000", passkey_rp_id="")
         assert settings.passkey_rp_id == "localhost"
 
-        # Test with production domain
-        settings = Settings(base_url="https://whendoist.up.railway.app", passkey_rp_id="")
+        # Test with production domain (secret_key required for https)
+        settings = Settings(base_url="https://whendoist.up.railway.app", passkey_rp_id="", secret_key="test-secret")
         assert settings.passkey_rp_id == "whendoist.up.railway.app"
 
         # Test with custom domain
-        settings = Settings(base_url="https://app.example.com", passkey_rp_id="")
+        settings = Settings(base_url="https://app.example.com", passkey_rp_id="", secret_key="test-secret")
         assert settings.passkey_rp_id == "app.example.com"
 
     def test_explicit_rp_id_not_overwritten(self):
@@ -160,7 +160,9 @@ class TestPasskeyRPIDDerivation:
         """
         from app.config import Settings
 
-        settings = Settings(base_url="https://whendoist.up.railway.app", passkey_rp_id="custom-rp-id")
+        settings = Settings(
+            base_url="https://whendoist.up.railway.app", passkey_rp_id="custom-rp-id", secret_key="test-secret"
+        )
         assert settings.passkey_rp_id == "custom-rp-id", (
             "Explicitly set passkey_rp_id should not be overwritten by derivation"
         )
