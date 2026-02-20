@@ -266,10 +266,13 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     onDragEnd() {
       setIsDndDragging(false);
       cancelAnimationFrame(autoScrollRaf.current);
+      // Re-center carousel after drag — it may have drifted off-center
+      requestAnimationFrame(() => carousel.scrollToCenter());
     },
     onDragCancel() {
       setIsDndDragging(false);
       cancelAnimationFrame(autoScrollRaf.current);
+      requestAnimationFrame(() => carousel.scrollToCenter());
     },
   });
 

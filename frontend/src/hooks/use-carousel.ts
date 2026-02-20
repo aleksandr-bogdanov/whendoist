@@ -67,7 +67,7 @@ export function useCarousel({
     let lastReportedPanel = currentPanel.current;
 
     const commitIfNeeded = () => {
-      if (isProgrammatic.current) return;
+      if (isProgrammatic.current || disabledRef.current) return;
       const panelWidth = el.offsetWidth;
       if (panelWidth === 0) return;
       const panelIndex = Math.round(el.scrollLeft / panelWidth);
@@ -79,7 +79,7 @@ export function useCarousel({
     };
 
     const onScroll = () => {
-      if (isProgrammatic.current) return;
+      if (isProgrammatic.current || disabledRef.current) return;
 
       // Report visible panel immediately (no debounce) for live header updates
       const panelWidth = el.offsetWidth;

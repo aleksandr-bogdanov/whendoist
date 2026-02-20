@@ -7,6 +7,18 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.1 — 2026-02-20
+
+### Fixed
+- **Undo on initial task scheduling**: Dragging a task from the task list to a calendar time slot now shows "Task scheduled" toast with Undo action (previously only reschedule had undo)
+- **Carousel scroll during drag**: Calendar carousel no longer scrolls wildly when dnd-kit drag is active — scroll and scrollend events are suppressed while dragging
+- **Drop zone reliability**: Replaced 3 stacked droppable zones per day column with a single full-column droppable — date section is computed from Y offset, making drops far more reliable
+- **Calendar stuck between days after drag**: Carousel now recenters to the current panel on drag end, preventing it from getting stuck between two days
+- **Task drag handle coverage**: Moved dnd-kit drag listeners from a background z-0 overlay to the outer row element — the entire task row is now draggable, not just tiny gaps between interactive elements
+- **Right-click context menu on calendar cards**: Separated dnd-kit drag listeners (inner overlay) from Radix ContextMenuTrigger (outer button) so right-click menus work reliably on scheduled task cards
+
+---
+
 ## v0.53.0 — 2026-02-20
 
 ### Added

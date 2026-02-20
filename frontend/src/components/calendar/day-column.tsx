@@ -73,21 +73,17 @@ export function DayColumn({
     return d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   }, [centerDate]);
 
-  // 3 stacked droppable zones (namespaced by panelId for carousel uniqueness)
-  const { setNodeRef: setPrevRef, isOver: isPrevOver } = useDroppable({
-    id: `calendar-${panelId}-${prevDate}`,
-    data: { type: "calendar", dateStr: prevDate, startHour: PREV_DAY_START_HOUR },
-  });
-  const { setNodeRef: setCurrentRef, isOver: isCurrentOver } = useDroppable({
+  // Single full-column droppable zone (namespaced by panelId for carousel uniqueness)
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `calendar-${panelId}-${centerDate}`,
-    data: { type: "calendar", dateStr: centerDate, startHour: 0 },
+    data: {
+      type: "calendar",
+      centerDate,
+      prevDate,
+      nextDate,
+      boundaries,
+    },
   });
-  const { setNodeRef: setNextRef, isOver: isNextOver } = useDroppable({
-    id: `calendar-${panelId}-${nextDate}`,
-    data: { type: "calendar", dateStr: nextDate, startHour: 0 },
-  });
-
-  const isOver = isPrevOver || isCurrentOver || isNextOver;
 
   // Positioned items across all 3 days
   const positioned = useMemo(
@@ -150,10 +146,7 @@ export function DayColumn({
   useDndMonitor({
     onDragOver(event) {
       const overId = event.over?.id ? String(event.over.id) : null;
-      const isOurZone =
-        overId === `calendar-${panelId}-${prevDate}` ||
-        overId === `calendar-${panelId}-${centerDate}` ||
-        overId === `calendar-${panelId}-${nextDate}`;
+      const isOurZone = overId === `calendar-${panelId}-${centerDate}`;
 
       if (isOurZone && columnRef.current) {
         const rect = columnRef.current.getBoundingClientRect();
@@ -289,28 +282,8 @@ export function DayColumn({
         {/* Day separator: END OF {DAY} */}
         <DaySeparator label={`END OF ${centerDayName}`} offset={boundaries.currentEnd} />
 
-        {/* Droppable zones (invisible, stacked) */}
-        <div
-          ref={setPrevRef}
-          className="absolute left-0 right-0 z-[1]"
-          style={{ top: 0, height: `${boundaries.prevEnd}px` }}
-        />
-        <div
-          ref={setCurrentRef}
-          className="absolute left-0 right-0 z-[1]"
-          style={{
-            top: `${boundaries.currentStart}px`,
-            height: `${boundaries.currentEnd - boundaries.currentStart}px`,
-          }}
-        />
-        <div
-          ref={setNextRef}
-          className="absolute left-0 right-0 z-[1]"
-          style={{
-            top: `${boundaries.nextStart}px`,
-            height: `${boundaries.nextEnd - boundaries.nextStart}px`,
-          }}
-        />
+        {/* Single full-column droppable zone */}
+        <div ref={setDropRef} className="absolute inset-0 z-[1]" />
 
         {/* Drop indicator when dragging over */}
         {isOver && (

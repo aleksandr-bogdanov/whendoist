@@ -1,201 +1,111 @@
 ---
-version: v0.53.0
-pr:
+version: v0.53.1
+pr: 375
 created: 2026-02-20
 ---
 
-# Calendar Drag-and-Drop & Context Menus Upgrade
+# Calendar Drag-and-Drop & Context Menus — Handoff
 
 ## Context
 
-The legacy Jinja2/JS calendar had rich interactions: right-click context menus on all calendar cards (Unschedule, Complete, Edit, Delete for tasks; Skip, Complete, Edit Series for recurring instances), full drag-and-drop between task list, time slots, and anytime section, plus reliable in-calendar rescheduling. The React rewrite currently has:
-- Minimal inline Done/Unsched buttons (toggle on click/right-click) instead of proper context menus
-- No drag-to-anytime or drag-from-anytime
-- Unreliable in-calendar rescheduling (collision detection gaps)
-
-This plan brings the React calendar to feature parity with the legacy implementation. No backend changes needed — all API endpoints exist.
+PR #375 (v0.53.0) was merged adding context menus on calendar cards, anytime drop zone, draggable anytime pills, and reschedule undo. However, the user found **6 critical bugs** during testing that need to be fixed in a follow-up PR.
 
 ---
 
-## Phase 1: Context Menus on Calendar Cards
+## What Was Completed (PR #375)
 
-Replace inline action toggles with proper Radix ContextMenu (same pattern as `task-item.tsx`). Left-click opens task editor; right-click opens context menu.
-
-### 1a. `scheduled-task-card.tsx`
-
-- Remove `showActions` state and inline Done/Unsched buttons
-- Remove `onContextMenu` handler (Radix handles natively)
-- Wrap card in `<ContextMenu>` / `<ContextMenuTrigger asChild>` / `<ContextMenuContent>`
-- Simplify `onClick` — always calls `onClick?.()` (opens editor)
-- Add `onEdit` prop (for Edit menu item — same as onClick)
-- Add `handleDelete` (copy pattern from task-item.tsx: `useDeleteTaskApiV1TasksTaskIdDelete` + restore undo toast)
-- Menu items: **Unschedule** | **Complete/Reopen** | **Edit** | separator | **Delete** (destructive)
-
-### 1b. `InstanceCard` (in `day-column.tsx`)
-
-- Remove `showActions` state and inline Done/Skip buttons
-- Add `onTaskClick` prop (for left-click → opens parent task in editor)
-- Add `onEditSeries` callback (for Edit Series menu item → looks up parent task by `instance.task_id`)
-- Wrap in `<ContextMenu>` pattern
-- Menu items: **Skip** (disabled if not pending) | **Complete** (disabled if not pending) | **Edit series**
-- No Delete/Unschedule — instances are auto-generated from recurrence rules
-
-### 1c. `day-column.tsx` prop threading
-
-- Pass `onTaskClick` through to InstanceCard
-- For InstanceCard's `onEditSeries`: look up parent task via `taskMap.get(String(instance.task_id))` and call `onTaskClick`
-- Pass `onEdit` (same as `onClick`) to ScheduledTaskCard
-
-**Files:** `scheduled-task-card.tsx`, `day-column.tsx`
+1. **Context menus** on `ScheduledTaskCard` (Unschedule, Complete/Reopen, Edit, Delete) and `InstanceCard` (Skip, Complete, Edit series) using Radix ContextMenu
+2. **Anytime drop zone** — `AnytimeSection` component in `calendar-panel.tsx` with `useDroppable` ID `anytime-drop-{dateStr}`
+3. **Draggable anytime pills** — new `anytime-task-pill.tsx` with `useDraggable` ID `anytime-task-{taskId}`
+4. **Reschedule undo** — differentiated "Task rescheduled" toast with Undo when dragging calendar cards
+5. **Collision detection hardening** — priority: `anytime-drop-` → `calendar-` → `task-list-` → other, with rect-intersection fallback
 
 ---
 
-## Phase 2: Anytime Drop Zone
+## Bugs Found During Testing (6 issues)
 
-Make the anytime section a dnd-kit droppable so tasks can be dragged there to schedule date-only.
+### Bug 1: No undo on "Task scheduled" toast
+- **Severity:** Critical
+- **Where:** `task-dnd-context.tsx` — calendar drop handler (~line 297)
+- **Problem:** When dragging a task from the task list to a calendar time slot, the toast says "Task scheduled" but has no Undo action. Only reschedule (re-dropping an already scheduled task) shows undo.
+- **Fix:** Add undo action to the initial schedule toast too, capturing `prevDate=null, prevTime=null` as the undo state. Also ensure rapid successive operations don't break undo — each undo closure must capture the correct previous state at the moment of the drag, not a stale reference.
 
-### 2a. `calendar-panel.tsx`
+### Bug 2: Carousel scrolls wildly when starting to drag from task list
+- **Severity:** Critical
+- **Where:** `calendar-panel.tsx` and `use-carousel.ts`
+- **Problem:** When the user starts dragging a task from the task list, the calendar carousel starts auto-scrolling at enormous speed, jumping to different days. The carousel's `isDndDragging` flag is set on `onDragStart`, but the carousel scroll-snap may have already been triggered by the pointer movement before dnd-kit's drag activation (8px distance threshold). The carousel's pointer-drag handler fires first, interpreting the horizontal component of the drag as a carousel swipe.
+- **Root cause:** The carousel's `pointerdown` → `pointermove` → scroll handler runs before dnd-kit activates (requires 8px movement). During those first 8px, the carousel interprets motion as a carousel drag.
+- **Fix:** Either (a) disable carousel pointer-drag entirely when pointer starts over the task list area, or (b) add a guard that checks if a dnd-kit drag is about to activate before carousel starts scrolling.
 
-- Add `useDroppable({ id: \`anytime-${displayDate}\`, data: { type: "anytime", dateStr: displayDate } })`
-- Apply `setNodeRef` to the anytime wrapper div
-- Add visual feedback: `isAnytimeOver && "bg-primary/10 border-primary/40"`
+### Bug 3: Drop zones are too selective / hard to hit
+- **Severity:** Critical
+- **Where:** `day-column.tsx` — droppable zone setup (lines 77-88) + collision detection
+- **Problem:** When dragging a task to the calendar, it's very hard to find a valid drop zone. The three stacked droppable zones (prev/current/next day sections) use `pointerWithin` collision detection, which requires the pointer to be precisely inside the zone rect. Since the zones are invisible `div`s positioned absolutely within a scroll container, their viewport rects shift as the user scrolls, causing unreliable detection.
+- **Fix:** Consider using a single full-column droppable zone instead of 3 stacked ones, and compute which date section (prev/current/next) from the pointer Y offset and section boundaries.
 
-### 2b. `task-dnd-context.tsx` — new drop handler
+### Bug 4: Calendar breaks after drag — stuck between two days
+- **Severity:** High
+- **Where:** `calendar-panel.tsx` carousel recentering + `use-carousel.ts`
+- **Problem:** After a drag operation, the carousel gets stuck between two panels (scroll-snap doesn't re-center). The carousel's `scrollToCenter()` is called in a `useLayoutEffect` on `calendarCenterDate` change, but if the date didn't change (drag to same day), it doesn't recenter. The carousel may have been scrolled off-center during the drag.
+- **Fix:** Call `carousel.scrollToCenter()` when `isDndDragging` transitions from `true` to `false` (i.e., on drag end), regardless of whether the date changed.
 
-Add handler BEFORE the `calendar-` check in `handleDragEnd`:
+### Bug 5: Can only drag task by clicking task title area
+- **Severity:** Medium
+- **Where:** `task-item.tsx` lines 315-320
+- **Problem:** The drag handle is an `absolute inset-0` div with `{...attributes} {...listeners}`, but interactive elements on top (checkbox, title button, kebab menu) have `relative z-10` which blocks the drag overlay underneath. The user expects to be able to grab anywhere on the task row header (not just the narrow gaps between interactive elements).
+- **Fix:** The drag listeners should be on the outer wrapper, not a background overlay. Alternatively, make the drag handle area larger or use a dedicated drag handle icon. The current approach of putting a z-0 overlay behind z-10 interactive elements means the drag handle only works in the tiny gaps between those elements.
 
-```
-if (overId.startsWith("anytime-")) {
-  PUT /api/v1/tasks/{id} with { scheduled_date: dateStr, scheduled_time: null }
-  Toast "Scheduled for anytime" with undo (restores previous date+time)
-}
-```
-
-### 2c. Collision detection update
-
-In `customCollisionDetection`, add `anytime-` priority after checking `calendar-` hits:
-```
-const anytimeHit = pointerCollisions.find(c => String(c.id).startsWith("anytime-"));
-if (anytimeHit) return [anytimeHit];
-```
-
-### 2d. DragState type update
-
-Add `"anytime"` to `overType` union in DragState and `getOverType`.
-
-**Files:** `calendar-panel.tsx`, `task-dnd-context.tsx`
-
----
-
-## Phase 3: Draggable Anytime Tasks
-
-Make anytime task pills draggable. Can drag to: calendar grid (schedule with time), task list (unschedule), or different day's anytime section.
-
-### 3a. New component: `anytime-task-pill.tsx`
-
-Extract from inline button in calendar-panel.tsx. Key detail: draggable ID = `anytime-task-${task.id}` (namespaced to avoid collision with task-item's `String(task.id)` and scheduled-task-card's `String(taskId)`).
-
-```tsx
-const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-  id: `anytime-task-${task.id}`,
-  data: { type: "anytime-task", taskId: task.id },
-});
-```
-
-### 3b. `calendar-panel.tsx` — swap in component
-
-Replace inline `<button>` with `<AnytimeTaskPill>`. Also pass the full `tasks` array (not just `scheduledTasks`) to DayColumn via a new `allTasks` prop so the phantom card can resolve anytime task duration/title.
-
-### 3c. `task-dnd-context.tsx` — handle `anytime-task-*` IDs
-
-Update `findTask` and `handleDragEnd` ID parsing:
-```
-const activeIdStr = String(active.id);
-let activeId: number;
-if (activeIdStr.startsWith("anytime-task-")) {
-  activeId = parseInt(activeIdStr.replace("anytime-task-", ""), 10);
-} else {
-  activeId = parseInt(activeIdStr, 10);
-}
-```
-
-All existing drop handlers (calendar, anytime, task-list) work unchanged — they all use the parsed numeric `activeId`.
-
-### 3d. `day-column.tsx` — phantom card for anytime drags
-
-The phantom card preview looks up the dragged task by ID from the `tasks` prop. Since DayColumn currently only receives `scheduledTasks`, the phantom card won't find anytime tasks. Fix: accept a broader `allTasks` prop (or union of scheduled + anytime) for the phantom lookup.
-
-**Files:** new `anytime-task-pill.tsx`, `calendar-panel.tsx`, `task-dnd-context.tsx`, `day-column.tsx`
+### Bug 6: Right-click context menu not working on calendar cards
+- **Severity:** High
+- **Where:** `scheduled-task-card.tsx` and `day-column.tsx` InstanceCard
+- **Problem:** Despite implementing Radix ContextMenu, right-click doesn't show the menu. The card element has dnd-kit `{...listeners} {...attributes}` which attach `onPointerDown` handlers. These may be interfering with Radix ContextMenuTrigger's event handling. The `asChild` pattern merges both sets of event handlers, but dnd-kit's pointer sensor may be capturing and preventing the contextmenu event.
+- **Fix:** Investigate the interaction between dnd-kit's PointerSensor listeners and Radix ContextMenuTrigger. May need to split: use the outer ContextMenuTrigger div for right-click, and an inner drag-handle element for dnd-kit listeners (separate the two interaction surfaces).
 
 ---
 
-## Phase 4: Fix Calendar-to-Calendar Reschedule
+## Key Files
 
-Improve reliability of in-calendar rescheduling and add undo support.
+| File | Role |
+|------|------|
+| `frontend/src/components/task/task-dnd-context.tsx` | Central DnD orchestration — collision detection, all drop handlers, ID parsing |
+| `frontend/src/components/calendar/calendar-panel.tsx` | Calendar layout, carousel, anytime section droppable |
+| `frontend/src/components/calendar/day-column.tsx` | Day column with 3 stacked droppable zones, phantom card, InstanceCard |
+| `frontend/src/components/calendar/scheduled-task-card.tsx` | Draggable scheduled task card with ContextMenu |
+| `frontend/src/components/calendar/anytime-task-pill.tsx` | Draggable anytime task pill |
+| `frontend/src/components/task/task-item.tsx` | Task list item with drag handle overlay |
+| `frontend/src/hooks/use-carousel.ts` | Scroll-snap carousel hook (conflicts with drag) |
+| `frontend/src/lib/calendar-utils.ts` | Time calculations, overlap detection, `offsetToTime()` |
+| `frontend/src/stores/ui-store.ts` | Zustand store with `calendarHourHeight`, `calendarCenterDate` |
 
-### 4a. Collision detection hardening
+## Drag/Drop ID Scheme
 
-Update `customCollisionDetection` to also check `rectIntersection` for calendar hits:
-```tsx
-const rectCollisions = rectIntersection(args);
-if (rectCollisions.length > 0) {
-  const calendarHit = rectCollisions.find(c => String(c.id).startsWith("calendar-"));
-  if (calendarHit) return [calendarHit];
-  return rectCollisions;
-}
+| Source | ID Format | Type |
+|--------|-----------|------|
+| Task list items | `String(task.id)` e.g. `"123"` | `"task"` |
+| Anytime pills | `anytime-task-{id}` e.g. `"anytime-task-123"` | `"anytime-task"` |
+| Scheduled task cards | `String(taskId)` e.g. `"123"` | `"scheduled-task"` |
+| Anytime drop zone | `anytime-drop-{dateStr}` | droppable |
+| Calendar zones (3 per column) | `calendar-{panelId}-{dateStr}` | droppable |
+| Task list zone | `task-list-{sectionId}` | droppable (referenced but may not exist) |
+
+## Collision Detection Priority (task-dnd-context.tsx)
+
+1. `pointerWithin`: `anytime-drop-` → `calendar-` → `task-list-` → other
+2. `rectIntersection`: `calendar-` priority
+3. `closestCenter`: last resort
+
+## API Endpoints (all exist, no backend changes needed)
+
+- `PUT /api/v1/tasks/{id}` — schedule/reschedule/unschedule (`scheduled_date`, `scheduled_time`)
+- `DELETE /api/v1/tasks/{id}` — delete task
+- `POST /api/v1/tasks/{id}/toggle-complete` — complete/reopen
+- `POST /api/v1/tasks/{id}/restore` — restore deleted task
+- `POST /api/v1/instances/{id}/skip` — skip recurring instance
+- `POST /api/v1/instances/{id}/toggle-complete` — complete recurring instance
+
+## Sensors Config
+
 ```
-
-### 4b. Reschedule with undo in `handleDragEnd`
-
-Detect reschedule via `active.data.current?.type === "scheduled-task"`:
-- Capture previous `scheduled_date` + `scheduled_time` before mutation
-- Skip no-op if same time + same date
-- Toast "Task rescheduled" with undo action restoring previous schedule
-
-### 4c. Calendar drag already works technically
-
-The scheduled-task-card already has `useDraggable`. The drop zone detects it. The time calculation works. The main improvements are: (a) more robust collision detection fallback, (b) differentiated "rescheduled" toast with undo vs "scheduled" toast, (c) no-op detection to avoid unnecessary API calls.
-
-**Files:** `task-dnd-context.tsx`
-
----
-
-## Implementation Order
-
-**Phase 1 → Phase 4 → Phase 2 → Phase 3**
-
-- Phase 1 is zero-risk, highest user impact (proper context menus)
-- Phase 4 is a focused fix in one file (collision + undo)
-- Phases 2 + 3 are closely related (anytime = new drop zone + new draggable)
-
-Each phase is independently shippable and testable.
-
----
-
-## Verification
-
-After each phase:
-1. `cd frontend && npx tsc --noEmit && npx biome check .` — type + lint
-2. `cd frontend && npm run build` — production build
-3. Manual testing:
-   - **Phase 1:** Right-click scheduled task card → see Unschedule/Complete/Edit/Delete. Right-click instance card → see Skip/Complete/Edit series. Left-click opens editor. All actions work.
-   - **Phase 4:** Drag scheduled task to new time slot → rescheduled. Drag to different day → rescheduled with new date. "Task rescheduled" toast with undo.
-   - **Phase 2:** Drag unscheduled task from task list to anytime section → scheduled date-only. Visual highlight on hover.
-   - **Phase 3:** Drag anytime pill to calendar grid → scheduled with time. Drag anytime pill to task list → unscheduled. Phantom preview appears during drag.
-
-Backend checks (no changes expected, but verify):
-```bash
-uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
+PointerSensor: { distance: 8 }        // 8px threshold for mouse
+TouchSensor: { delay: 250, tolerance: 5 }  // 250ms for touch
 ```
-
----
-
-## Files Summary
-
-| File | Phases | Role |
-|------|--------|------|
-| `frontend/src/components/calendar/scheduled-task-card.tsx` | 1 | Radix ContextMenu, delete handler |
-| `frontend/src/components/calendar/day-column.tsx` | 1, 3 | InstanceCard context menu, allTasks prop for phantom |
-| `frontend/src/components/calendar/calendar-panel.tsx` | 2, 3 | Anytime droppable, AnytimeTaskPill, pass allTasks |
-| `frontend/src/components/calendar/anytime-task-pill.tsx` | 3 | **New** — draggable anytime task pill |
-| `frontend/src/components/task/task-dnd-context.tsx` | 2, 3, 4 | Anytime handler, ID parsing, collision, reschedule undo |

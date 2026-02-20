@@ -24,7 +24,7 @@ import {
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
-import { offsetToTime } from "@/lib/calendar-utils";
+import { offsetToTime, PREV_DAY_START_HOUR } from "@/lib/calendar-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskDragOverlay } from "./task-drag-overlay";
 
@@ -238,8 +238,13 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       if (overId.startsWith("calendar-")) {
         const isReschedule = active.data.current?.type === "scheduled-task";
 
-        // Droppable data carries the date; IDs are namespaced (calendar-{panelId}-{date})
-        const dateStr = String(over.data.current?.dateStr ?? "");
+        // Single full-column droppable carries all 3 dates + section boundaries
+        const droppableData = over.data.current as {
+          centerDate: string;
+          prevDate: string;
+          nextDate: string;
+          boundaries: { prevEnd: number; currentStart: number; currentEnd: number };
+        };
         const rect = over.rect;
 
         // Calculate time from pointer Y position relative to the droppable
@@ -256,8 +261,29 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         const columnTop = rect.top;
         const offsetY = pointerY - columnTop;
 
-        const startHour = (over.data?.current as { startHour?: number })?.startHour;
-        const { hour, minutes } = offsetToTime(offsetY, calendarHourHeight, startHour);
+        // Determine which date section the pointer is in based on Y offset
+        let dateStr: string;
+        let startHour: number;
+        if (offsetY < droppableData.boundaries.prevEnd) {
+          dateStr = droppableData.prevDate;
+          startHour = PREV_DAY_START_HOUR;
+        } else if (offsetY < droppableData.boundaries.currentEnd) {
+          dateStr = droppableData.centerDate;
+          startHour = 0;
+        } else {
+          dateStr = droppableData.nextDate;
+          startHour = 0;
+        }
+
+        const sectionTop =
+          offsetY < droppableData.boundaries.prevEnd
+            ? 0
+            : offsetY < droppableData.boundaries.currentEnd
+              ? droppableData.boundaries.currentStart
+              : droppableData.boundaries.currentEnd;
+        const sectionOffsetY = offsetY - sectionTop;
+
+        const { hour, minutes } = offsetToTime(sectionOffsetY, calendarHourHeight, startHour);
         const scheduledTime = `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
 
         // Capture previous state for reschedule undo
@@ -317,7 +343,27 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 });
               } else {
                 announce("Task scheduled");
-                toast.success("Task scheduled", { id: `schedule-${activeId}` });
+                toast.success("Task scheduled", {
+                  id: `schedule-${activeId}`,
+                  action: {
+                    label: "Undo",
+                    onClick: () => {
+                      updateTask.mutate(
+                        {
+                          taskId: activeId,
+                          data: { scheduled_date: prevDate, scheduled_time: prevTime },
+                        },
+                        {
+                          onSuccess: () =>
+                            queryClient.invalidateQueries({
+                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            }),
+                        },
+                      );
+                    },
+                  },
+                  duration: 5000,
+                });
               }
             },
             onError: () => {
