@@ -51,64 +51,33 @@ function parseTaskId(id: UniqueIdentifier): number {
 }
 
 /**
- * Custom collision detection that checks pointer position first (for calendar
- * drop zones) then falls back to closest-center (for sortable list).
- *
- * Calendar droppables live inside nested scroll containers (vertical scrollRef +
- * horizontal carousel). dnd-kit's Rect class tracks scroll offsets via dynamic
- * getters, but the carousel's scroll-snap and large scrollLeft can cause the
- * scroll-adjusted coordinates to drift from the element's actual viewport
- * position. When pointerWithin misses a calendar droppable, we fall back to a
- * fresh getBoundingClientRect check on the DOM nodes directly.
+ * Custom collision detection: pointer-within first, then rect intersection,
+ * then closest-center. The calendar overlay droppable sits outside scroll
+ * containers so dnd-kit's Rect measurement works correctly.
  */
 const customCollisionDetection: CollisionDetection = (args) => {
-  // First, try pointer-within — great for the calendar grid where we want
-  // precise position-based dropping.
   const pointerCollisions = pointerWithin(args);
 
   if (pointerCollisions.length > 0) {
-    // Priority order: date-group → anytime → calendar → task-list → other
+    // Priority: date-group → anytime → calendar-overlay → task-list → other
     const dateGroupHit = pointerCollisions.find((c) => String(c.id).startsWith("date-group-"));
     if (dateGroupHit) return [dateGroupHit];
     const anytimeHit = pointerCollisions.find((c) => String(c.id).startsWith("anytime-drop-"));
     if (anytimeHit) return [anytimeHit];
-    const calendarHit = pointerCollisions.find((c) => String(c.id).startsWith("calendar-"));
+    const calendarHit = pointerCollisions.find((c) => String(c.id).startsWith("calendar-overlay-"));
     if (calendarHit) return [calendarHit];
     const taskListHit = pointerCollisions.find((c) => String(c.id).startsWith("task-list-"));
     if (taskListHit) return [taskListHit];
     return pointerCollisions;
   }
 
-  // pointerWithin found nothing — calendar droppables inside nested scroll
-  // containers may have stale Rect coordinates. Do a live getBoundingClientRect
-  // check directly on the DOM nodes.
-  if (args.pointerCoordinates) {
-    const { x, y } = args.pointerCoordinates;
-    for (const container of args.droppableContainers) {
-      if (!String(container.id).startsWith("calendar-")) continue;
-      const node = container.node.current;
-      if (!node) continue;
-      const rect = node.getBoundingClientRect();
-      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-        return [
-          {
-            id: container.id,
-            data: { droppableContainer: container, value: 0 },
-          },
-        ];
-      }
-    }
-  }
-
-  // Fall back to rect intersection — also check for calendar zones here
   const rectCollisions = rectIntersection(args);
   if (rectCollisions.length > 0) {
-    const calendarHit = rectCollisions.find((c) => String(c.id).startsWith("calendar-"));
+    const calendarHit = rectCollisions.find((c) => String(c.id).startsWith("calendar-overlay-"));
     if (calendarHit) return [calendarHit];
     return rectCollisions;
   }
 
-  // Last resort: closest center
   return closestCenter(args);
 };
 
@@ -170,7 +139,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       const id = String(over.id);
       if (id.startsWith("date-group-")) return "date-group";
       if (id.startsWith("anytime-drop-")) return "anytime";
-      if (id.startsWith("calendar-")) return "calendar";
+      if (id.startsWith("calendar-overlay-")) return "calendar";
       if (id.startsWith("task-list-")) return "task-list";
       return "task";
     },
@@ -358,26 +327,25 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       }
 
       // --- Drop onto calendar: schedule the task ---
-      if (overId.startsWith("calendar-")) {
+      if (overId.startsWith("calendar-overlay-")) {
         const isReschedule = active.data.current?.type === "scheduled-task";
 
-        // Single full-column droppable carries all 3 dates + section boundaries
+        // Overlay droppable sits outside scroll containers with stable rect measurement
         const droppableData = over.data.current as {
           centerDate: string;
           prevDate: string;
           nextDate: string;
           boundaries: { prevEnd: number; currentStart: number; currentEnd: number };
-          getColumnRect?: () => DOMRect | null;
+          getScrollTop: () => number;
+          getCalendarRect?: () => DOMRect | null;
         };
 
-        // Use live column rect (getBoundingClientRect) to handle scroll offset correctly.
-        // over.rect is a stale layout rect that doesn't update when the scroll container scrolls.
-        const liveRect = droppableData.getColumnRect?.();
-        const columnTop = liveRect?.top ?? over.rect.top;
-
-        // Use tracked pointer position for accurate drops (immune to dnd-kit delta drift)
+        // Compute absolute Y in the timeline: pointer relative to visible area + scroll offset
+        const calRect = droppableData.getCalendarRect?.();
+        const calTop = calRect?.top ?? over.rect.top;
+        const scrollTop = droppableData.getScrollTop();
         const pointerY = lastPointerRef.current.y;
-        const offsetY = pointerY - columnTop;
+        const offsetY = pointerY - calTop + scrollTop;
 
         // Determine which date section the pointer is in based on Y offset
         let dateStr: string;

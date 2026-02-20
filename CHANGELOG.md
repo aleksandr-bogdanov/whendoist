@@ -7,6 +7,11 @@ Iterative UI polish runs are collapsed into grouped entries — see git history 
 
 ---
 
+## v0.53.6 — 2026-02-20
+
+### Fixed
+- **Calendar drag-and-drop**: Fixed tasks not being droppable onto calendar timeslots — moved the calendar droppable zone outside nested scroll containers (carouselRef + scrollRef) where dnd-kit's Rect measurement was broken. The overlay droppable now sits as a sibling of the scroll container, matching the architecture of the working anytime drop zone.
+
 ## v0.53.5 — 2026-02-20
 
 ### Fixed

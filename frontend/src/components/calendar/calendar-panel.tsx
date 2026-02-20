@@ -16,6 +16,7 @@ import {
   EXTENDED_TOTAL_HOURS,
   getExtendedHourLabels,
   getNextZoomStep,
+  getSectionBoundaries,
   PREV_DAY_HOURS,
   parseDate,
   snapToZoomStep,
@@ -280,6 +281,28 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const hourLabels = useMemo(() => getExtendedHourLabels(calendarHourHeight), [calendarHourHeight]);
   const totalHeight = EXTENDED_TOTAL_HOURS * calendarHourHeight;
 
+  // Drop overlay for calendar body — sits OUTSIDE scroll containers so dnd-kit
+  // measures the rect correctly. Calendar droppables inside nested scroll containers
+  // (carouselRef + scrollRef) have broken coordinate math in dnd-kit's Rect class.
+  const overlayBoundaries = useMemo(
+    () => getSectionBoundaries(calendarHourHeight),
+    [calendarHourHeight],
+  );
+  const getScrollTop = useCallback(() => scrollRef.current?.scrollTop ?? 0, []);
+  const getCalendarRect = useCallback(() => scrollRef.current?.getBoundingClientRect() ?? null, []);
+  const { setNodeRef: setOverlayDropRef } = useDroppable({
+    id: `calendar-overlay-${displayDate}`,
+    data: {
+      type: "calendar-overlay",
+      centerDate: calendarCenterDate,
+      prevDate: addDays(calendarCenterDate, -1),
+      nextDate: addDays(calendarCenterDate, 1),
+      boundaries: overlayBoundaries,
+      getScrollTop,
+      getCalendarRect,
+    },
+  });
+
   return (
     <div className="relative flex flex-col flex-1 min-h-0 border-l">
       {/* Calendar header */}
@@ -338,75 +361,79 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         onTaskClick={onTaskClick}
       />
 
-      {/* Calendar body — vertical scroll wrapper */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden"
-        style={{
-          maskImage:
-            "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
-        }}
-        onWheel={handleWheel}
-      >
-        <div className="flex" style={{ height: `${totalHeight}px` }}>
-          {/* Time ruler */}
-          <div className="flex-shrink-0 w-12 z-10 bg-background">
-            <div className="relative" style={{ height: `${totalHeight}px` }}>
-              {hourLabels.map((hl) => (
-                <div
-                  key={`${hl.section}-${hl.hour}`}
-                  className={`absolute w-full text-right pr-1.5 text-[10px] -translate-y-1/2 ${
-                    hl.isAdjacentDay ? "text-muted-foreground/70 italic" : "text-muted-foreground"
-                  }`}
-                  style={{ top: `${hl.offset}px` }}
-                >
-                  {hl.label}
-                </div>
-              ))}
+      {/* Calendar body — wrapper for scroll + drop overlay */}
+      <div className="relative flex-1 min-h-0">
+        <div
+          ref={scrollRef}
+          className="absolute inset-0 overflow-y-auto overflow-x-hidden"
+          style={{
+            maskImage:
+              "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent)",
+          }}
+          onWheel={handleWheel}
+        >
+          <div className="flex" style={{ height: `${totalHeight}px` }}>
+            {/* Time ruler */}
+            <div className="flex-shrink-0 w-12 z-10 bg-background">
+              <div className="relative" style={{ height: `${totalHeight}px` }}>
+                {hourLabels.map((hl) => (
+                  <div
+                    key={`${hl.section}-${hl.hour}`}
+                    className={`absolute w-full text-right pr-1.5 text-[10px] -translate-y-1/2 ${
+                      hl.isAdjacentDay ? "text-muted-foreground/70 italic" : "text-muted-foreground"
+                    }`}
+                    style={{ top: `${hl.offset}px` }}
+                  >
+                    {hl.label}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Scroll-snap carousel (5 panels) */}
-          <div
-            ref={carouselRef}
-            className="flex-1 overflow-x-auto overflow-y-hidden"
-            style={{
-              scrollSnapType: "x mandatory",
-              overscrollBehaviorX: "contain",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            <div className="flex h-full" style={{ width: "500%" }}>
-              {panelDates.map((date, i) => (
-                <div
-                  key={PANEL_OFFSETS[i]}
-                  className="h-full"
-                  style={{
-                    flex: "0 0 20%",
-                    scrollSnapAlign: "start",
-                    scrollSnapStop: "always",
-                  }}
-                >
-                  <DayColumn
-                    centerDate={date}
-                    events={safeEvents}
-                    tasks={scheduledTasks}
-                    allTasks={tasks}
-                    instances={safeInstances}
-                    hourHeight={calendarHourHeight}
-                    calendarColors={calendarColors}
-                    onTaskClick={onTaskClick}
-                    panelId={`p${i}`}
-                  />
-                </div>
-              ))}
+            {/* Scroll-snap carousel (5 panels) */}
+            <div
+              ref={carouselRef}
+              className="flex-1 overflow-x-auto overflow-y-hidden"
+              style={{
+                scrollSnapType: "x mandatory",
+                overscrollBehaviorX: "contain",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              <div className="flex h-full" style={{ width: "500%" }}>
+                {panelDates.map((date, i) => (
+                  <div
+                    key={PANEL_OFFSETS[i]}
+                    className="h-full"
+                    style={{
+                      flex: "0 0 20%",
+                      scrollSnapAlign: "start",
+                      scrollSnapStop: "always",
+                    }}
+                  >
+                    <DayColumn
+                      centerDate={date}
+                      events={safeEvents}
+                      tasks={scheduledTasks}
+                      allTasks={tasks}
+                      instances={safeInstances}
+                      hourHeight={calendarHourHeight}
+                      calendarColors={calendarColors}
+                      onTaskClick={onTaskClick}
+                      isActivePanel={i === CENTER_INDEX}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
+        {/* Drop overlay — outside scroll containers so dnd-kit rect measurement works */}
+        <div ref={setOverlayDropRef} className="absolute inset-0 pointer-events-none z-[5]" />
       </div>
 
       {/* Floating zoom controls */}
