@@ -206,17 +206,13 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, headers |
 | [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption details |
 | [Demo Login](docs/DEMO-LOGIN.md) | Demo accounts for testing and previews |
-| [Error Handling](docs/ERROR-HANDLING.md) | Production error recovery, safeFetch() usage, typed errors |
 | **Architecture** | |
-| [Subtasks](docs/SUBTASKS.md) | Parent-child philosophy: three-level hierarchy, container model, enforced constraints |
+| [Subtasks](docs/SUBTASKS.md) | Three-level hierarchy, container model, enforced constraints |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
-| [Toast System](docs/TOAST-SYSTEM.md) | Typed notifications with queuing, actions, and backward compatibility |
-| [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with content-hash dedup, storage tradeoffs |
-| [In-Place Mutations](docs/IN-PLACE-MUTATIONS.md) | TaskMutations module — no-reload DOM updates for task operations |
-| [Calendar DnD](docs/CALENDAR-DND.md) | dnd-kit in nested scroll containers — bugs, failed approaches, and working patterns |
-| [PWA Viewport Fix](docs/PWA-VIEWPORT-FIX.md) | iOS viewport shrinking bug from overflow:hidden — diagnosis and workaround |
-| [React SPA Migration](docs/plans/2026-02-17-react-spa-migration.md) | Migration plan from Jinja2/HTMX to React + TypeScript SPA |
+| [Calendar DnD](docs/CALENDAR-DND.md) | dnd-kit in nested scroll containers — bugs and working patterns |
+| [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with content-hash dedup |
+| [PWA Viewport Fix](docs/PWA-VIEWPORT-FIX.md) | iOS viewport shrinking bug — diagnosis and workaround |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
 | [Color System](docs/brand/COLOR-SYSTEM.md) | Complete color palette |
