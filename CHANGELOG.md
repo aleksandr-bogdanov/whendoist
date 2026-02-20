@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.6 — 2026-02-21
+
+### Remove due_date, Fix Overdue & Calendar Bugs
+- **Remove due_date/due_time**: Eliminated unused `due_date` and `due_time` fields from the data model, API, and UI — `scheduled_date` is the single source of truth for task timing
+- **Consistent overdue display**: Task overdue badges now use `scheduled_date` (same as the section header), fixing the confusing mismatch where blocks showed "4d overdue" but tasks inside showed "9d overdue"
+- **Skip updates overdue count**: Skipping a recurring instance now correctly invalidates the overdue count cache, so the count refreshes immediately
+- **Calendar anytime context menu**: Anytime task pills in the calendar now have a right-click menu with Edit, Unschedule, Complete, and Delete actions
+- **Todoist import simplified**: Todoist `due.date` now maps directly to `scheduled_date` instead of populating a redundant `due_date`
+- **DB migration**: Drops `due_date` and `due_time` columns from the tasks table
+
 ## v0.54.5 — 2026-02-20
 
 ### Recurring Instance Drag & Unschedule

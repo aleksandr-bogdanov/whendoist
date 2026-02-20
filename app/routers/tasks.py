@@ -138,8 +138,6 @@ class TaskCreate(BaseModel):
     duration_minutes: int | None = Field(None, ge=1, le=1440)
     impact: int = Field(default=4, ge=1, le=4)
     clarity: str = "normal"  # Default to "normal" - autopilot/normal/brainstorm
-    due_date: date | None = None
-    due_time: time | None = None
     scheduled_date: date | None = None
     scheduled_time: time | None = None
     is_recurring: bool = False
@@ -192,8 +190,6 @@ class TaskUpdate(BaseModel):
     duration_minutes: int | None = Field(None, ge=1, le=1440)
     impact: int | None = Field(None, ge=1, le=4)
     clarity: str | None = None
-    due_date: date | None = None
-    due_time: time | None = None
     scheduled_date: date | None = None
     scheduled_time: time | None = None
     is_recurring: bool | None = None
@@ -247,7 +243,6 @@ class SubtaskResponse(BaseModel):
     duration_minutes: int | None
     impact: int
     clarity: str | None
-    due_date: date | None
     scheduled_date: date | None
     status: str
     position: int
@@ -267,8 +262,6 @@ class TaskResponse(BaseModel):
     duration_minutes: int | None
     impact: int
     clarity: str | None
-    due_date: date | None
-    due_time: time | None
     scheduled_date: date | None
     scheduled_time: time | None
     is_recurring: bool
@@ -310,8 +303,6 @@ def _task_to_response(task: Task, user_today: date | None = None) -> TaskRespons
         duration_minutes=task.duration_minutes,
         impact=task.impact,
         clarity=task.clarity,
-        due_date=task.due_date,
-        due_time=task.due_time,
         scheduled_date=task.scheduled_date,
         scheduled_time=task.scheduled_time,
         is_recurring=task.is_recurring,
@@ -330,7 +321,6 @@ def _task_to_response(task: Task, user_today: date | None = None) -> TaskRespons
                 duration_minutes=s.duration_minutes,
                 impact=s.impact,
                 clarity=s.clarity,
-                due_date=s.due_date,
                 scheduled_date=s.scheduled_date,
                 status=s.status,
                 position=s.position,
@@ -477,8 +467,6 @@ async def create_task(
             duration_minutes=data.duration_minutes,
             impact=data.impact,
             clarity=data.clarity,
-            due_date=data.due_date,
-            due_time=data.due_time,
             scheduled_date=scheduled_date,
             scheduled_time=data.scheduled_time,
             is_recurring=data.is_recurring,

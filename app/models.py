@@ -301,9 +301,7 @@ class Task(Base):
         String(20), nullable=False, server_default="normal"
     )  # autopilot/normal/brainstorm
 
-    # Scheduling (non-recurring)
-    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    due_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    # Scheduling
     scheduled_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     scheduled_time: Mapped[time | None] = mapped_column(Time, nullable=True)
 

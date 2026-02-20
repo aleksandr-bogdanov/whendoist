@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, InstanceResponse, SubtaskResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
+  getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey,
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
 } from "@/api/queries/instances/instances";
 import {
@@ -297,6 +298,9 @@ export function TaskItem({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({
+            queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
+          });
           announce("Instance skipped");
           toast.success(`Skipped instance of "${task.title}"`, {
             id: `skip-inst-${pendingInstance.id}`,
@@ -349,8 +353,8 @@ export function TaskItem({
     setMenuOpen(false);
   }, [task, deleteTask, restoreTask, queryClient]);
 
-  const dueDate = task.due_date;
-  const overdue = isOverdue(dueDate) && !isCompleted;
+  const scheduledDate = task.scheduled_date;
+  const overdue = isOverdue(scheduledDate) && !isCompleted;
   const impactColor = IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4];
   const isParent = hasSubtasks;
 
@@ -536,8 +540,8 @@ export function TaskItem({
                   <Repeat className="hidden sm:block h-3 w-3 text-muted-foreground flex-shrink-0" />
                 )}
 
-                {/* Due date */}
-                {dueDate && (
+                {/* Scheduled date */}
+                {scheduledDate && (
                   <span
                     className={cn(
                       "hidden sm:flex items-center gap-0.5 text-[11px] flex-shrink-0",
@@ -545,7 +549,7 @@ export function TaskItem({
                     )}
                   >
                     <Calendar className="h-3 w-3" />
-                    {formatDate(dueDate)}
+                    {formatDate(scheduledDate)}
                   </span>
                 )}
 

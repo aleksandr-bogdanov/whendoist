@@ -94,7 +94,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   const [clarity, setClarity] = useState("normal");
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [customDuration, setCustomDuration] = useState("");
-  const [dueDate, setDueDate] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
@@ -115,7 +114,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       setClarity(task.clarity ?? "normal");
       setDurationMinutes(task.duration_minutes);
       setCustomDuration(task.duration_minutes ? String(task.duration_minutes) : "");
-      setDueDate(task.due_date ?? "");
       setScheduledDate(task.scheduled_date ?? "");
       setScheduledTime(task.scheduled_time ?? "");
       setIsRecurring(task.is_recurring);
@@ -133,7 +131,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       setClarity("normal");
       setDurationMinutes(null);
       setCustomDuration("");
-      setDueDate("");
       setScheduledDate("");
       setScheduledTime("");
       setIsRecurring(false);
@@ -203,7 +200,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         impact,
         clarity,
         duration_minutes: durationMinutes,
-        due_date: dueDate || null,
         scheduled_date: scheduledDate || null,
         scheduled_time: scheduledTime || null,
         is_recurring: isRecurring,
@@ -235,7 +231,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         impact,
         clarity,
         duration_minutes: durationMinutes,
-        due_date: dueDate || null,
         scheduled_date: scheduledDate || null,
         scheduled_time: scheduledTime || null,
         is_recurring: isRecurring,
@@ -579,48 +574,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                     onClick={() => {
                       setScheduledDate("");
                       setScheduledTime("");
-                      markDirty();
-                    }}
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Due date */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Due Date</Label>
-              <Input
-                type="date"
-                value={dueDate}
-                onChange={(e) => {
-                  setDueDate(e.target.value);
-                  markDirty();
-                }}
-                className="h-8 text-xs"
-              />
-              <div className="flex gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-[10px] px-2"
-                  onClick={() => {
-                    setDueDate(new Date().toISOString().split("T")[0]);
-                    markDirty();
-                  }}
-                >
-                  Today
-                </Button>
-                {dueDate && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-[10px] px-2 text-muted-foreground"
-                    onClick={() => {
-                      setDueDate("");
                       markDirty();
                     }}
                   >

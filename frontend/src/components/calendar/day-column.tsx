@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, EventResponse, InstanceResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
+  getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey,
   useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
   useScheduleInstanceApiV1InstancesInstanceIdSchedulePut,
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
@@ -436,6 +437,9 @@ function InstanceCard({
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
     queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    queryClient.invalidateQueries({
+      queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
+    });
   };
 
   const handleUnschedule = () => {

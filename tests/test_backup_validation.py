@@ -321,8 +321,6 @@ class TestExportImportRoundTrip:
             duration_minutes=45,
             scheduled_date=date(2025, 6, 15),
             scheduled_time=time(10, 30),
-            due_date=date(2025, 6, 20),
-            due_time=time(17, 0),
             is_recurring=True,
             recurrence_rule={"type": "weekly", "interval": 1},
             recurrence_start=date(2025, 6, 1),
@@ -377,8 +375,6 @@ class TestExportImportRoundTrip:
         assert t.duration_minutes == 45
         assert t.scheduled_date == date(2025, 6, 15)
         assert t.scheduled_time == time(10, 30)
-        assert t.due_date == date(2025, 6, 20)
-        assert t.due_time == time(17, 0)
         assert t.is_recurring is True
         assert t.recurrence_rule == {"type": "weekly", "interval": 1}
         assert t.recurrence_start == date(2025, 6, 1)

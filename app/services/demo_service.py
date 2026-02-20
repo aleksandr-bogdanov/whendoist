@@ -210,7 +210,7 @@ class DemoService:
             domain_id=p.id,
             impact=3,
             clarity="normal",
-            due_date=today + timedelta(days=2),
+            scheduled_date=today + timedelta(days=2),
             duration_minutes=20,
         )
         await task_service.create_task(
@@ -239,7 +239,7 @@ class DemoService:
             domain_id=f.id,
             impact=4,
             clarity="autopilot",
-            due_date=today + timedelta(days=3),
+            scheduled_date=today + timedelta(days=3),
         )
         await task_service.create_task(
             title="Research 5K training plans",
@@ -276,7 +276,7 @@ class DemoService:
             domain_id=h.id,
             impact=2,
             clarity="autopilot",
-            due_date=today,
+            scheduled_date=today,
             duration_minutes=5,
         )
         await task_service.create_task(
@@ -324,7 +324,7 @@ class DemoService:
             domain_id=s.id,
             impact=2,
             clarity="normal",
-            due_date=today + timedelta(days=5),
+            scheduled_date=today + timedelta(days=5),
             duration_minutes=60,
         )
 

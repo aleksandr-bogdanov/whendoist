@@ -444,18 +444,6 @@ class TestScheduling:
         assert task.scheduled_date == date(2025, 3, 15)
         assert task.scheduled_time == time(10, 30)
 
-    async def test_task_with_due_date(self, pg_session: AsyncSession, task_service: TaskService):
-        """Create task with due date and time."""
-        task = await task_service.create_task(
-            title="Due Task",
-            due_date=date(2025, 3, 20),
-            due_time=time(17, 0),
-        )
-        await pg_session.commit()
-
-        assert task.due_date == date(2025, 3, 20)
-        assert task.due_time == time(17, 0)
-
     async def test_get_scheduled_tasks_for_range(self, pg_session: AsyncSession, task_service: TaskService):
         """Get tasks scheduled within a date range."""
         await task_service.create_task(

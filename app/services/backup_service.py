@@ -65,8 +65,6 @@ class BackupTaskSchema(BaseModel):
     duration_minutes: int | None = None
     scheduled_date: str | None = None
     scheduled_time: str | None = None
-    due_date: str | None = None
-    due_time: str | None = None
     is_recurring: bool = False
     recurrence_rule: dict | None = None
     recurrence_start: str | None = None
@@ -304,8 +302,6 @@ class BackupService:
                     duration_minutes=task_data.duration_minutes,
                     scheduled_date=self._parse_date(task_data.scheduled_date),
                     scheduled_time=self._parse_time(task_data.scheduled_time),
-                    due_date=self._parse_date(task_data.due_date),
-                    due_time=self._parse_time(task_data.due_time),
                     is_recurring=task_data.is_recurring,
                     recurrence_rule=task_data.recurrence_rule,
                     recurrence_start=self._parse_date(task_data.recurrence_start),
@@ -435,8 +431,6 @@ class BackupService:
             "duration_minutes": task.duration_minutes,
             "scheduled_date": task.scheduled_date.isoformat() if task.scheduled_date else None,
             "scheduled_time": task.scheduled_time.isoformat() if task.scheduled_time else None,
-            "due_date": task.due_date.isoformat() if task.due_date else None,
-            "due_time": task.due_time.isoformat() if task.due_time else None,
             "is_recurring": task.is_recurring,
             "recurrence_rule": task.recurrence_rule,
             "recurrence_start": task.recurrence_start.isoformat() if task.recurrence_start else None,
