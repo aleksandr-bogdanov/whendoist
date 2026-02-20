@@ -149,7 +149,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
-      grabOffsetRef.current = null; // Reset so next modifier call captures fresh offset
+      grabRatioRef.current = null; // Reset so next modifier call captures fresh ratio
       const task = findTask(event.active.id);
       setDragState({
         activeId: event.active.id,
@@ -604,33 +604,39 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     setDragState({ activeId: null, activeTask: null, overId: null, overType: null });
   }, []);
 
-  // Modifier: preserve grab offset, immune to scroll drift.
+  // Modifier: preserve proportional grab offset, immune to scroll drift.
   // dnd-kit's Rect getters adjust top/left for scroll changes in ancestors,
   // causing the overlay to drift when the active element is inside scroll
-  // containers. This modifier captures the pointer-to-card offset on the first
-  // call (before any scroll changes) and uses it throughout the drag. The
-  // drifted activeNodeRect values cancel out algebraically.
-  const grabOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  // containers. This modifier captures the grab position as a RATIO of the
+  // original card dimensions, then applies that ratio to the overlay's actual
+  // dimensions. This handles both scroll drift and size differences between
+  // the original card and the compact DragOverlay.
+  const grabRatioRef = useRef<{ x: number; y: number } | null>(null);
   const overlayModifiers = useMemo<Modifier[]>(
     () => [
-      ({ transform, activatorEvent, activeNodeRect }) => {
+      ({ transform, activatorEvent, activeNodeRect, overlayNodeRect }) => {
         if (!activeNodeRect || !activatorEvent) return transform;
         const ev = activatorEvent as PointerEvent;
-        // Capture grab offset on first call (no scroll drift yet)
-        if (!grabOffsetRef.current) {
-          grabOffsetRef.current = {
-            x: ev.clientX - activeNodeRect.left,
-            y: ev.clientY - activeNodeRect.top,
+        // Capture grab position as ratio of original card (no scroll drift yet)
+        if (!grabRatioRef.current) {
+          grabRatioRef.current = {
+            x: (ev.clientX - activeNodeRect.left) / (activeNodeRect.width || 1),
+            y: (ev.clientY - activeNodeRect.top) / (activeNodeRect.height || 1),
           };
         }
+        // Apply ratio to overlay dimensions so proportional position is preserved
+        const overlayW = overlayNodeRect?.width ?? activeNodeRect.width;
+        const overlayH = overlayNodeRect?.height ?? activeNodeRect.height;
+        const offsetX = grabRatioRef.current.x * overlayW;
+        const offsetY = grabRatioRef.current.y * overlayH;
         const currentX = ev.clientX + transform.x;
         const currentY = ev.clientY + transform.y;
-        // visual = activeNodeRect.left + result.x = currentX - grabOffset.x
+        // visual = activeNodeRect.left + result.x = currentX - offsetX
         // (activeNodeRect.left cancels out, so scroll drift doesn't matter)
         return {
           ...transform,
-          x: currentX - activeNodeRect.left - grabOffsetRef.current.x,
-          y: currentY - activeNodeRect.top - grabOffsetRef.current.y,
+          x: currentX - activeNodeRect.left - offsetX,
+          y: currentY - activeNodeRect.top - offsetY,
         };
       },
     ],
