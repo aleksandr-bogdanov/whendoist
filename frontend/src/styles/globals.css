@@ -173,8 +173,17 @@
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* pb-nav-safe = h-14 (3.5rem) nav height + safe-area-inset-bottom */
+@utility pb-nav-safe {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Prevent macOS two-finger swipe back/forward navigation */
