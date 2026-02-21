@@ -66,9 +66,35 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
     return map;
   }, [instancesQuery.data]);
 
+  // Set of recurring task IDs that have a pending instance in the past
+  const recurringWithPastPending = useMemo(() => {
+    const set = new Set<number>();
+    const instances = instancesQuery.data ?? [];
+    for (const inst of instances) {
+      if (inst.status === "pending" && inst.instance_date < today) {
+        set.add(inst.task_id);
+      }
+    }
+    return set;
+  }, [instancesQuery.data, today]);
+
+  // Filter overdue groups: exclude recurring tasks with no pending past instances
+  const filteredOverdueGroups = useMemo(() => {
+    const result: typeof overdueGroups = [];
+    for (const group of overdueGroups) {
+      const filtered = group.tasks.filter(
+        (t) => !t.is_recurring || recurringWithPastPending.has(t.id),
+      );
+      if (filtered.length > 0) {
+        result.push({ ...group, tasks: filtered });
+      }
+    }
+    return result;
+  }, [overdueGroups, recurringWithPastPending]);
+
   if (tasks.length === 0) return null;
 
-  const overdueCount = overdueGroups.reduce((sum, g) => sum + g.tasks.length, 0);
+  const overdueCount = filteredOverdueGroups.reduce((sum, g) => sum + g.tasks.length, 0);
 
   return (
     <Collapsible open={showScheduled} onOpenChange={toggleShowScheduled}>
@@ -96,14 +122,14 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
       <CollapsibleContent>
         <div className="space-y-2 pt-1">
           {/* Overdue scheduled tasks */}
-          {overdueGroups.length > 0 && (
+          {filteredOverdueGroups.length > 0 && (
             <div className="rounded-md bg-destructive/5 border border-destructive/15 py-1">
               <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-destructive">
                 <AlertTriangle className="h-3 w-3" />
                 Overdue
                 <span className="text-destructive/60 font-normal tabular-nums">{overdueCount}</span>
               </div>
-              {overdueGroups.map((group) => (
+              {filteredOverdueGroups.map((group) => (
                 <div key={group.date}>
                   <DateGroupHeader date={group.date} label={group.label} variant="overdue" />
                   <AnimatePresence initial={false}>

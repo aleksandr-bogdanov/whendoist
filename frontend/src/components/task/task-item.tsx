@@ -354,7 +354,9 @@ export function TaskItem({
   }, [task, deleteTask, restoreTask, queryClient]);
 
   const scheduledDate = task.scheduled_date;
-  const overdue = isOverdue(scheduledDate) && !isCompleted;
+  // For recurring tasks with a pending instance, use instance date for overdue display
+  const displayDate = pendingInstance?.instance_date ?? scheduledDate;
+  const overdue = isOverdue(displayDate) && !isCompleted;
   const impactColor = IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4];
   const isParent = hasSubtasks;
 
@@ -540,8 +542,8 @@ export function TaskItem({
                   <Repeat className="hidden sm:block h-3 w-3 text-muted-foreground flex-shrink-0" />
                 )}
 
-                {/* Scheduled date */}
-                {scheduledDate && (
+                {/* Scheduled date (use instance date for recurring overdue) */}
+                {displayDate && (
                   <span
                     className={cn(
                       "hidden sm:flex items-center gap-0.5 text-[11px] flex-shrink-0",
@@ -549,7 +551,7 @@ export function TaskItem({
                     )}
                   >
                     <Calendar className="h-3 w-3" />
-                    {formatDate(scheduledDate)}
+                    {formatDate(displayDate)}
                   </span>
                 )}
 
