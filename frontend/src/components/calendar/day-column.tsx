@@ -546,7 +546,7 @@ function InstanceCard({
           ref={setNodeRef}
           type="button"
           className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow ${
-            isCompleted || isSkipped ? "opacity-50" : ""
+            isSkipped ? "opacity-50" : ""
           } ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
             top: `${item.top}px`,
@@ -565,7 +565,10 @@ function InstanceCard({
           <div className="relative pointer-events-none">
             <div className="flex items-center gap-1">
               <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
-              <span className="truncate font-medium" style={{ color: impactColor }}>
+              <span
+                className={`truncate font-medium ${isCompleted ? "line-through decoration-1 opacity-70" : ""}`}
+                style={{ color: impactColor }}
+              >
                 {instance.task_title}
               </span>
             </div>

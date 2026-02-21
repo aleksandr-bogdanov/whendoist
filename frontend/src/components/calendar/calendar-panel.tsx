@@ -225,53 +225,67 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, [calendarCenterDate]);
 
-  // Auto-scroll during dnd-kit drag near top/bottom edges
+  // Auto-scroll during dnd-kit drag near top/bottom edges.
+  // Uses real pointer position (not dnd-kit delta which drifts) and runs in a
+  // RAF loop so scrolling continues even when the pointer is held still.
   const autoScrollRaf = useRef<number>(0);
+  const dndPointerY = useRef<number>(0);
+  const isDndActive = useRef(false);
+
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      if (isDndActive.current) dndPointerY.current = e.clientY;
+    };
+    const touchHandler = (e: TouchEvent) => {
+      if (isDndActive.current && e.touches[0]) dndPointerY.current = e.touches[0].clientY;
+    };
+    document.addEventListener("pointermove", handler);
+    document.addEventListener("touchmove", touchHandler);
+    return () => {
+      document.removeEventListener("pointermove", handler);
+      document.removeEventListener("touchmove", touchHandler);
+    };
+  }, []);
 
   useDndMonitor({
-    onDragStart() {
+    onDragStart(event) {
       setIsDndDragging(true);
+      isDndActive.current = true;
+      // Seed initial pointer Y from the activator event
+      const ev = event.activatorEvent;
+      if (ev instanceof TouchEvent) {
+        dndPointerY.current = ev.touches[0]?.clientY ?? 0;
+      } else {
+        dndPointerY.current = (ev as PointerEvent).clientY;
+      }
+      const EDGE_ZONE = 60;
+      const SCROLL_SPEED = 8;
       const loop = () => {
-        if (!scrollRef.current) return;
+        if (!scrollRef.current || !isDndActive.current) return;
+        const container = scrollRef.current;
+        const rect = container.getBoundingClientRect();
+        const pointerY = dndPointerY.current;
+        const distFromTop = pointerY - rect.top;
+        const distFromBottom = rect.bottom - pointerY;
+        if (distFromTop < EDGE_ZONE && distFromTop > 0) {
+          container.scrollTop -= SCROLL_SPEED * (1 - distFromTop / EDGE_ZONE);
+        } else if (distFromBottom < EDGE_ZONE && distFromBottom > 0) {
+          container.scrollTop += SCROLL_SPEED * (1 - distFromBottom / EDGE_ZONE);
+        }
         autoScrollRaf.current = requestAnimationFrame(loop);
       };
       autoScrollRaf.current = requestAnimationFrame(loop);
     },
-    onDragMove(event) {
-      if (!scrollRef.current) return;
-      const container = scrollRef.current;
-      const rect = container.getBoundingClientRect();
-
-      let clientY: number;
-      if (event.activatorEvent instanceof TouchEvent) {
-        clientY =
-          event.activatorEvent.touches[0]?.clientY ??
-          event.activatorEvent.changedTouches[0]?.clientY ??
-          0;
-      } else {
-        clientY = (event.activatorEvent as PointerEvent).clientY;
-      }
-      const pointerY = clientY + (event.delta?.y ?? 0);
-
-      const EDGE_ZONE = 60;
-      const SCROLL_SPEED = 8;
-      const distFromTop = pointerY - rect.top;
-      const distFromBottom = rect.bottom - pointerY;
-
-      if (distFromTop < EDGE_ZONE && distFromTop > 0) {
-        container.scrollTop -= SCROLL_SPEED * (1 - distFromTop / EDGE_ZONE);
-      } else if (distFromBottom < EDGE_ZONE && distFromBottom > 0) {
-        container.scrollTop += SCROLL_SPEED * (1 - distFromBottom / EDGE_ZONE);
-      }
-    },
     onDragEnd() {
       setIsDndDragging(false);
+      isDndActive.current = false;
       cancelAnimationFrame(autoScrollRaf.current);
       // Re-center carousel after drag — it may have drifted off-center
       requestAnimationFrame(() => carousel.scrollToCenter());
     },
     onDragCancel() {
       setIsDndDragging(false);
+      isDndActive.current = false;
       cancelAnimationFrame(autoScrollRaf.current);
       requestAnimationFrame(() => carousel.scrollToCenter());
     },
