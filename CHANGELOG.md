@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.14 — 2026-02-21
+
+### Dark Mode Polish
+- **Lift dark backgrounds**: Canvas shifted from near-black (`oklch(0.141)` ≈ `#18202C`) to slate-800 level (`oklch(0.21)` ≈ `#1E293B`); card surfaces shifted similarly — softens overall contrast
+- **Clarity badge tints in dark mode**: Badges now use semi-transparent alpha tints (`rgba(..., 0.18)`) in dark mode instead of solid light-mode hex values, eliminating harsh bright patches
+- **Impact color rail**: 4px → 3px (better visual proportion)
+
 ## v0.54.13 — 2026-02-21
 
 ### Brand Rail Tweak

@@ -51,7 +51,6 @@ import {
 import {
   CLARITY_COLORS,
   CLARITY_LABELS,
-  CLARITY_TINTS,
   formatDate,
   formatDuration,
   IMPACT_COLORS,
@@ -687,7 +686,7 @@ export function TaskItem({
                             className="inline-block text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full"
                             style={{
                               color: CLARITY_COLORS[task.clarity] ?? CLARITY_COLORS.normal,
-                              backgroundColor: CLARITY_TINTS[task.clarity] ?? CLARITY_TINTS.normal,
+                              backgroundColor: `var(--${task.clarity ?? "normal"}-tint)`,
                             }}
                           >
                             {CLARITY_LABELS[task.clarity] ?? task.clarity}
@@ -977,7 +976,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
               className="inline-block text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full"
               style={{
                 color: CLARITY_COLORS[subtask.clarity] ?? CLARITY_COLORS.normal,
-                backgroundColor: CLARITY_TINTS[subtask.clarity] ?? CLARITY_TINTS.normal,
+                backgroundColor: `var(--${subtask.clarity ?? "normal"}-tint)`,
               }}
             >
               {CLARITY_LABELS[subtask.clarity] ?? subtask.clarity}
