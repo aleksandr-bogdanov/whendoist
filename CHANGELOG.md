@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.10 — 2026-02-21
+
+### Calendar DnD & Instance Fixes
+- **Fix DnD auto-scroll zone bias**: Auto-scroll now uses real pointer position (via `pointermove`/`touchmove` listeners) instead of dnd-kit delta which drifts, and runs in a RAF loop so scrolling continues when the pointer is held still
+- **Completed instances stay on calendar**: Completed recurring instances now remain visible with a strikethrough title instead of being dimmed to 50% opacity
+
 ## v0.54.9 — 2026-02-21
 
 ### Thoughts Page Scrollable
