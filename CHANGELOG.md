@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.17 — 2026-02-21
+
+### iOS PWA — Notch & Bottom Safe Area Fix
+- **Top notch**: Added `padding-top: env(safe-area-inset-top)` to the app shell — content no longer hides behind the iPhone notch/Dynamic Island in standalone mode
+- **Bottom safe area**: Updated main content bottom padding from fixed `64px` to `calc(3.5rem + env(safe-area-inset-bottom))` so content isn't clipped behind the home indicator area, resolving the extra blank space visible under the bottom nav
+
 ## v0.54.16 — 2026-02-21
 
 ### Dark Mode — Fix Primary Button Color
