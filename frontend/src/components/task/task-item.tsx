@@ -524,7 +524,7 @@ export function TaskItem({
                 )}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
-                  borderLeftWidth: 4,
+                  borderLeftWidth: 3,
                   borderLeftColor: isParent ? "var(--border)" : impactColor,
                   borderLeftStyle: "solid",
                   borderRadius: isParent ? undefined : "4px 0 0 4px",
@@ -894,7 +894,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
       style={{
         marginLeft: `${depth * 24}px`,
         paddingLeft: 8,
-        borderLeftWidth: 4,
+        borderLeftWidth: 3,
         borderLeftColor: impactColor,
         borderLeftStyle: "solid",
         borderRadius: "4px 0 0 4px",

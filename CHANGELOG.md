@@ -4,6 +4,11 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.13 — 2026-02-21
+
+### Brand Rail Tweak
+- **Impact color rail**: 4px → 3px (better visual proportion)
+
 ## v0.54.12 — 2026-02-21
 
 ### Brand Audit — UI Polish
