@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.8 — 2026-02-21
+
+### Recurring Tasks: Overdue Based on Instances
+- **Recurring tasks leave overdue when caught up**: Skipping/completing all past instances now removes the task from the overdue section — `scheduled_date` (recurrence start) no longer pins recurring tasks as permanently overdue
+- **Overdue badge shows instance date**: For recurring tasks, the overdue badge now shows the pending instance date (e.g., "2d overdue") instead of the static recurrence start date
+
 ## v0.54.7 — 2026-02-21
 
 ### Recurring Task Overdue Fixes
