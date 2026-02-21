@@ -1,9 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Check, Pencil, SkipForward, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
+  getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey,
+  useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
   useListInstancesApiV1InstancesGet,
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
 } from "@/api/queries/instances/instances";
@@ -23,6 +25,8 @@ interface TaskActionSheetProps {
   task: AppRoutersTasksTaskResponse | null;
   onEdit?: (task: AppRoutersTasksTaskResponse) => void;
   onSchedule?: (task: AppRoutersTasksTaskResponse) => void;
+  /** Pending instance for recurring tasks — enables skip/complete actions on the correct instance */
+  pendingInstance?: InstanceResponse;
 }
 
 /**
@@ -35,25 +39,29 @@ export function TaskActionSheet({
   task,
   onEdit,
   onSchedule,
+  pendingInstance: pendingInstanceProp,
 }: TaskActionSheetProps) {
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
+  const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
   const { trigger: haptic } = useHaptics();
 
-  // Fetch today's instances for the recurring task so we can skip it
+  // Fall back to today-only query when no pendingInstance prop is provided
   const today = new Date().toISOString().split("T")[0];
+  const needsFallback = !!task?.is_recurring && !pendingInstanceProp && open;
   const instancesQuery = useListInstancesApiV1InstancesGet(
     { start_date: today, end_date: today },
-    { query: { enabled: !!task?.is_recurring && open } },
+    { query: { enabled: needsFallback } },
   );
-  const todayInstance = task?.is_recurring
+  const fallbackInstance = needsFallback
     ? (instancesQuery.data ?? []).find(
         (inst) => inst.task_id === task.id && inst.status === "pending",
       )
     : undefined;
+  const pendingInstance = pendingInstanceProp ?? fallbackInstance;
 
   if (!task) return null;
 
@@ -62,6 +70,14 @@ export function TaskActionSheet({
 
   const close = () => onOpenChange(false);
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    queryClient.invalidateQueries({
+      queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
+    });
+  };
+
   const handleEdit = () => {
     close();
     onEdit?.(task);
@@ -69,6 +85,42 @@ export function TaskActionSheet({
 
   const handleToggleComplete = () => {
     close();
+
+    // For recurring tasks with a pending instance, complete the instance (not the parent)
+    if (task.is_recurring && pendingInstance) {
+      const previousInstances = queryClient.getQueryData(
+        getListInstancesApiV1InstancesGetQueryKey(),
+      );
+      queryClient.setQueryData(
+        getListInstancesApiV1InstancesGetQueryKey(),
+        (old: InstanceResponse[] | undefined) =>
+          old?.map((i) =>
+            i.id === pendingInstance.id ? { ...i, status: "completed" as const } : i,
+          ),
+      );
+      haptic("success");
+      completeInstance.mutate(
+        { instanceId: pendingInstance.id },
+        {
+          onSuccess: () => {
+            invalidateAll();
+            toast.success(`Completed instance of "${task.title}"`, {
+              id: `complete-inst-${pendingInstance.id}`,
+            });
+          },
+          onError: () => {
+            queryClient.setQueryData(
+              getListInstancesApiV1InstancesGetQueryKey(),
+              previousInstances,
+            );
+            toast.error("Failed to complete instance", {
+              id: `complete-inst-err-${pendingInstance.id}`,
+            });
+          },
+        },
+      );
+      return;
+    }
 
     const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
@@ -189,7 +241,7 @@ export function TaskActionSheet({
         <ActionButton icon={<Pencil className="h-5 w-5" />} label="Edit" onClick={handleEdit} />
         <ActionButton
           icon={isCompleted ? <Undo2 className="h-5 w-5" /> : <Check className="h-5 w-5" />}
-          label={isCompleted ? "Uncomplete" : "Complete"}
+          label={pendingInstance ? "Complete this one" : isCompleted ? "Uncomplete" : "Complete"}
           onClick={handleToggleComplete}
         />
         <ActionButton
@@ -197,7 +249,7 @@ export function TaskActionSheet({
           label="Schedule"
           onClick={handleSchedule}
         />
-        {task.is_recurring && todayInstance && (
+        {task.is_recurring && pendingInstance && (
           <ActionButton
             icon={<SkipForward className="h-5 w-5" />}
             label="Skip instance"
@@ -205,22 +257,17 @@ export function TaskActionSheet({
               close();
               haptic("light");
               skipInstance.mutate(
-                { instanceId: todayInstance.id },
+                { instanceId: pendingInstance.id },
                 {
                   onSuccess: () => {
-                    queryClient.invalidateQueries({
-                      queryKey: getListInstancesApiV1InstancesGetQueryKey(),
-                    });
-                    queryClient.invalidateQueries({
-                      queryKey: getListTasksApiV1TasksGetQueryKey(),
-                    });
+                    invalidateAll();
                     toast.success(`Skipped instance of "${task.title}"`, {
-                      id: `skip-inst-${todayInstance.id}`,
+                      id: `skip-inst-${pendingInstance.id}`,
                     });
                   },
                   onError: () =>
                     toast.error("Failed to skip instance", {
-                      id: `skip-inst-err-${todayInstance.id}`,
+                      id: `skip-inst-err-${pendingInstance.id}`,
                     }),
                 },
               );

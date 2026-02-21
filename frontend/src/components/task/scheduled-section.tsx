@@ -22,36 +22,31 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
 
   const today = todayString();
 
-  // Split date groups into overdue (past) and upcoming (today + future)
-  const { overdueGroups, upcomingGroups } = useMemo(() => {
-    const dateGroups = groupScheduledByDate(tasks);
-    const overdue: typeof dateGroups = [];
-    const upcoming: typeof dateGroups = [];
-    for (const group of dateGroups) {
-      if (group.date < today) {
-        overdue.push(group);
-      } else {
-        upcoming.push(group);
+  // Fetch instances for ALL recurring tasks (single query, not N+1)
+  // Range: min(oldest scheduled date, today) → 30 days out, so we cover overdue + upcoming
+  const hasAnyRecurring = tasks.some((t) => t.is_recurring);
+  const oldestScheduledDate = useMemo(() => {
+    let oldest: string | null = null;
+    for (const t of tasks) {
+      if (t.scheduled_date && (!oldest || t.scheduled_date < oldest)) {
+        oldest = t.scheduled_date;
       }
     }
-    return { overdueGroups: overdue, upcomingGroups: upcoming };
-  }, [tasks, today]);
-
-  // Fetch instances for overdue recurring tasks (single query, not N+1)
-  // Range extends 30 days past today so we always find the next pending instance
-  const hasOverdueRecurring = overdueGroups.some((g) => g.tasks.some((t) => t.is_recurring));
-  const oldestOverdueDate = overdueGroups.length > 0 ? overdueGroups[0].date : null;
+    return oldest;
+  }, [tasks]);
   const futureDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 30);
     return d.toISOString().split("T")[0];
   }, []);
+  const instanceStartDate =
+    oldestScheduledDate && oldestScheduledDate < today ? oldestScheduledDate : today;
   const instancesQuery = useListInstancesApiV1InstancesGet(
-    { start_date: oldestOverdueDate ?? today, end_date: futureDate },
-    { query: { enabled: hasOverdueRecurring && !!oldestOverdueDate } },
+    { start_date: instanceStartDate, end_date: futureDate },
+    { query: { enabled: hasAnyRecurring } },
   );
 
-  // Map task_id → earliest pending instance (for "Skip this one" menu item)
+  // Map task_id → earliest pending instance (for checkbox, skip, complete actions)
   const pendingInstanceMap = useMemo(() => {
     const map = new Map<number, InstanceResponse>();
     const instances = instancesQuery.data ?? [];
@@ -65,6 +60,31 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
     }
     return map;
   }, [instancesQuery.data]);
+
+  // Split date groups into overdue (past) and upcoming (today + future)
+  // For recurring tasks, override scheduled_date with instance date so they appear in the right group
+  const { overdueGroups, upcomingGroups } = useMemo(() => {
+    const adjustedTasks = tasks.map((t) => {
+      if (t.is_recurring) {
+        const inst = pendingInstanceMap.get(t.id);
+        if (inst) {
+          return { ...t, scheduled_date: inst.instance_date };
+        }
+      }
+      return t;
+    });
+    const dateGroups = groupScheduledByDate(adjustedTasks);
+    const overdue: typeof dateGroups = [];
+    const upcoming: typeof dateGroups = [];
+    for (const group of dateGroups) {
+      if (group.date < today) {
+        overdue.push(group);
+      } else {
+        upcoming.push(group);
+      }
+    }
+    return { overdueGroups: overdue, upcomingGroups: upcoming };
+  }, [tasks, today, pendingInstanceMap]);
 
   // Set of recurring task IDs that have a pending instance in the past
   const recurringWithPastPending = useMemo(() => {
@@ -176,7 +196,12 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                      <TaskItem
+                        task={task}
+                        onSelect={onSelectTask}
+                        onEdit={onEditTask}
+                        pendingInstance={pendingInstanceMap.get(task.id)}
+                      />
                     </motion.div>
                   ))}
                 </AnimatePresence>
