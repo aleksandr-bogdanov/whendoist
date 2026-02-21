@@ -21,6 +21,7 @@ import type { AppRoutersTasksTaskResponse, InstanceResponse, SubtaskResponse } f
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey,
+  useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
 } from "@/api/queries/instances/instances";
 import {
@@ -92,11 +93,20 @@ export function TaskItem({
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
+  const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
   const isSelected = selectedTaskId === task.id;
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
   const isExpanded = expandedSubtasks.has(task.id);
+
+  const invalidateAll = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    queryClient.invalidateQueries({
+      queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
+    });
+  }, [queryClient]);
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -119,7 +129,43 @@ export function TaskItem({
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // Optimistic update
+    // For recurring tasks with a pending instance, complete/uncomplete the instance (not the parent)
+    if (task.is_recurring && pendingInstance) {
+      const previousInstances = queryClient.getQueryData(
+        getListInstancesApiV1InstancesGetQueryKey(),
+      );
+      queryClient.setQueryData(
+        getListInstancesApiV1InstancesGetQueryKey(),
+        (old: InstanceResponse[] | undefined) =>
+          old?.map((i) =>
+            i.id === pendingInstance.id ? { ...i, status: "completed" as const } : i,
+          ),
+      );
+      completeInstance.mutate(
+        { instanceId: pendingInstance.id },
+        {
+          onSuccess: () => {
+            invalidateAll();
+            announce("Instance completed");
+            toast.success(`Completed instance of "${task.title}"`, {
+              id: `complete-inst-${pendingInstance.id}`,
+            });
+          },
+          onError: () => {
+            queryClient.setQueryData(
+              getListInstancesApiV1InstancesGetQueryKey(),
+              previousInstances,
+            );
+            toast.error("Failed to complete instance", {
+              id: `complete-inst-err-${pendingInstance.id}`,
+            });
+          },
+        },
+      );
+      return;
+    }
+
+    // Non-recurring task: toggle complete on the parent
     const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
@@ -172,7 +218,6 @@ export function TaskItem({
           });
         },
         onError: () => {
-          // Rollback
           queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
           toast.error("Failed to update task", { id: `complete-err-${task.id}` });
         },
@@ -186,6 +231,42 @@ export function TaskItem({
   }, [task, onEdit]);
 
   const handleMenuComplete = useCallback(() => {
+    // For recurring tasks with a pending instance, complete the instance (not the parent)
+    if (task.is_recurring && pendingInstance) {
+      const previousInstances = queryClient.getQueryData(
+        getListInstancesApiV1InstancesGetQueryKey(),
+      );
+      queryClient.setQueryData(
+        getListInstancesApiV1InstancesGetQueryKey(),
+        (old: InstanceResponse[] | undefined) =>
+          old?.map((i) =>
+            i.id === pendingInstance.id ? { ...i, status: "completed" as const } : i,
+          ),
+      );
+      completeInstance.mutate(
+        { instanceId: pendingInstance.id },
+        {
+          onSuccess: () => {
+            invalidateAll();
+            toast.success(`Completed instance of "${task.title}"`, {
+              id: `complete-inst-${pendingInstance.id}`,
+            });
+          },
+          onError: () => {
+            queryClient.setQueryData(
+              getListInstancesApiV1InstancesGetQueryKey(),
+              previousInstances,
+            );
+            toast.error("Failed to complete instance", {
+              id: `complete-inst-err-${pendingInstance.id}`,
+            });
+          },
+        },
+      );
+      setMenuOpen(false);
+      return;
+    }
+
     const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
@@ -219,7 +300,15 @@ export function TaskItem({
       },
     );
     setMenuOpen(false);
-  }, [task.id, isCompleted, queryClient, toggleComplete]);
+  }, [
+    task,
+    isCompleted,
+    pendingInstance,
+    queryClient,
+    toggleComplete,
+    completeInstance,
+    invalidateAll,
+  ]);
 
   const handleMenuSchedule = useCallback(() => {
     selectTask(task.id);
@@ -386,7 +475,7 @@ export function TaskItem({
       </ContextMenuItem>
       <ContextMenuItem onClick={handleMenuComplete}>
         <Check className="h-3.5 w-3.5 mr-2" />
-        {isCompleted ? "Reopen" : "Complete"}
+        {pendingInstance ? "Complete this one" : isCompleted ? "Reopen" : "Complete"}
       </ContextMenuItem>
       {pendingInstance && (
         <ContextMenuItem onClick={handleMenuSkip}>
@@ -400,7 +489,7 @@ export function TaskItem({
           Schedule
         </ContextMenuItem>
       )}
-      {task.scheduled_date && (
+      {task.scheduled_date && !task.is_recurring && (
         <ContextMenuItem onClick={handleMenuUnschedule}>
           <CalendarOff className="h-3.5 w-3.5 mr-2" />
           Unschedule
@@ -642,7 +731,7 @@ export function TaskItem({
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleMenuComplete}>
                   <Check className="h-3.5 w-3.5 mr-2" />
-                  {isCompleted ? "Reopen" : "Complete"}
+                  {pendingInstance ? "Complete this one" : isCompleted ? "Reopen" : "Complete"}
                 </DropdownMenuItem>
                 {pendingInstance && (
                   <DropdownMenuItem onClick={handleMenuSkip}>
@@ -656,7 +745,7 @@ export function TaskItem({
                     Schedule
                   </DropdownMenuItem>
                 )}
-                {task.scheduled_date && (
+                {task.scheduled_date && !task.is_recurring && (
                   <DropdownMenuItem onClick={handleMenuUnschedule}>
                     <CalendarOff className="h-3.5 w-3.5 mr-2" />
                     Unschedule

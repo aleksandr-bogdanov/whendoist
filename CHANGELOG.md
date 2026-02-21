@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.11 — 2026-02-21
+
+### Recurring Task Actions in Scheduled Section & Mobile
+- **Checkbox completes correct instance**: Recurring task checkbox now completes the actual overdue/pending instance instead of defaulting to today's date
+- **Instance-aware grouping**: Recurring tasks appear under their pending instance date, not recurrence start date
+- **Skip/complete for all recurring tasks**: "Skip this one" and "Complete this one" available for overdue, today, and upcoming recurring tasks (not just overdue)
+- **Hide unschedule for recurring tasks**: "Unschedule" option hidden for recurring tasks since it would modify the entire series
+- **Mobile action sheet fix**: Skip and complete actions on mobile now target the correct pending instance instead of only searching today's date
+
 ## v0.54.10 — 2026-02-21
 
 ### Calendar DnD & Instance Fixes
