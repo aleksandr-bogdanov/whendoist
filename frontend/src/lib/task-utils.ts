@@ -21,6 +21,14 @@ export const IMPACT_COLORS: Record<number, string> = {
   4: "#6B7385",
 };
 
+// Subtle background tints for task rows — one per impact level (brand spec)
+export const IMPACT_WASHES: Record<number, string> = {
+  1: "rgba(201, 80, 90, 0.030)",
+  2: "rgba(184, 134, 11, 0.022)",
+  3: "rgba(26, 145, 96, 0.030)",
+  4: "rgba(107, 115, 133, 0.018)",
+};
+
 export const CLARITY_COLORS: Record<string, string> = {
   autopilot: "#167BFF",
   normal: "#6D5EF6",

@@ -82,8 +82,8 @@ export function Header({ userName: _userName, userEmail: _userEmail }: HeaderPro
               className={cn(
                 "px-3 py-1.5 text-[0.6875rem] font-semibold tracking-[0.06em] rounded-md transition-colors",
                 isActive
-                  ? "text-foreground bg-muted"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "text-[#5B4CF0] bg-[rgba(109,94,246,0.08)]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-[rgba(109,94,246,0.04)]",
               )}
             >
               {tab.label}
