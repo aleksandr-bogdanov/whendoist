@@ -38,26 +38,33 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
   }, [tasks, today]);
 
   // Fetch instances for overdue recurring tasks (single query, not N+1)
+  // Range extends 30 days past today so we always find the next pending instance
   const hasOverdueRecurring = overdueGroups.some((g) => g.tasks.some((t) => t.is_recurring));
   const oldestOverdueDate = overdueGroups.length > 0 ? overdueGroups[0].date : null;
+  const futureDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split("T")[0];
+  }, []);
   const instancesQuery = useListInstancesApiV1InstancesGet(
-    { start_date: oldestOverdueDate ?? today, end_date: today },
+    { start_date: oldestOverdueDate ?? today, end_date: futureDate },
     { query: { enabled: hasOverdueRecurring && !!oldestOverdueDate } },
   );
 
-  // Map task_id → earliest pending overdue instance
+  // Map task_id → earliest pending instance (for "Skip this one" menu item)
   const pendingInstanceMap = useMemo(() => {
     const map = new Map<number, InstanceResponse>();
     const instances = instancesQuery.data ?? [];
     for (const inst of instances) {
-      if (inst.status === "pending" && inst.instance_date < today) {
-        if (!map.has(inst.task_id)) {
+      if (inst.status === "pending") {
+        const existing = map.get(inst.task_id);
+        if (!existing || inst.instance_date < existing.instance_date) {
           map.set(inst.task_id, inst);
         }
       }
     }
     return map;
-  }, [instancesQuery.data, today]);
+  }, [instancesQuery.data]);
 
   if (tasks.length === 0) return null;
 
