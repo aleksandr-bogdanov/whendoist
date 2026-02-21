@@ -51,7 +51,6 @@ import {
 import {
   CLARITY_COLORS,
   CLARITY_LABELS,
-  CLARITY_TINTS,
   formatDate,
   formatDuration,
   IMPACT_COLORS,
@@ -524,7 +523,7 @@ export function TaskItem({
                 )}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
-                  borderLeftWidth: 4,
+                  borderLeftWidth: 3,
                   borderLeftColor: isParent ? "var(--border)" : impactColor,
                   borderLeftStyle: "solid",
                   borderRadius: isParent ? undefined : "4px 0 0 4px",
@@ -687,7 +686,7 @@ export function TaskItem({
                             className="inline-block text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full"
                             style={{
                               color: CLARITY_COLORS[task.clarity] ?? CLARITY_COLORS.normal,
-                              backgroundColor: CLARITY_TINTS[task.clarity] ?? CLARITY_TINTS.normal,
+                              backgroundColor: `var(--${task.clarity ?? "normal"}-tint)`,
                             }}
                           >
                             {CLARITY_LABELS[task.clarity] ?? task.clarity}
@@ -894,7 +893,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
       style={{
         marginLeft: `${depth * 24}px`,
         paddingLeft: 8,
-        borderLeftWidth: 4,
+        borderLeftWidth: 3,
         borderLeftColor: impactColor,
         borderLeftStyle: "solid",
         borderRadius: "4px 0 0 4px",
@@ -977,7 +976,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
               className="inline-block text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full"
               style={{
                 color: CLARITY_COLORS[subtask.clarity] ?? CLARITY_COLORS.normal,
-                backgroundColor: CLARITY_TINTS[subtask.clarity] ?? CLARITY_TINTS.normal,
+                backgroundColor: `var(--${subtask.clarity ?? "normal"}-tint)`,
               }}
             >
               {CLARITY_LABELS[subtask.clarity] ?? subtask.clarity}
