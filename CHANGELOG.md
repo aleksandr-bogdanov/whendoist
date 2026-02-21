@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.18 — 2026-02-21
+
+### iOS PWA — Header notch fix & mobile header redesign
+- **Notch coverage**: Moved `pt-safe` (env safe-area-inset-top) inside the `<header>` element so the header background fills the notch/Dynamic Island area — no more blank gap before the header
+- **Mobile header slim-down**: Hid desktop nav tabs on mobile (hidden md:flex) — on mobile, navigation is handled by the bottom nav. Header now shows only the W logo + theme + logout
+- **Compact mobile padding**: Reduced header padding to `px-4` on mobile (was px-6/sm:px-12), and changed content row from `h-20` to `h-14` on mobile (`md:h-20` on desktop)
+
 ## v0.54.17 — 2026-02-21
 
 ### iOS PWA — Notch & Bottom Safe Area Fix
