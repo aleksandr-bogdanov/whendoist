@@ -4,11 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.54.14 — 2026-02-21
+## v0.54.16 — 2026-02-21
 
-### Dark Mode Polish
-- **Lift dark backgrounds**: Canvas shifted from near-black (`oklch(0.141)` ≈ `#18202C`) to slate-800 level (`oklch(0.21)` ≈ `#1E293B`); card surfaces shifted similarly — softens overall contrast
-- **Clarity badge tints in dark mode**: Badges now use semi-transparent alpha tints (`rgba(..., 0.18)`) in dark mode instead of solid light-mode hex values, eliminating harsh bright patches
+### Dark Mode — Fix Primary Button Color
+- **New Task button**: Dark mode `--primary` was near-white (`oklch(0.92...)`) making the button blend with the light theme. Now uses brand dark-mode purple `#8B7CF7` (`oklch(0.66 0.185 277)`) with white foreground text.
+
+## v0.54.15 — 2026-02-21
+
+### Dark Mode Polish — Fix Blue-Slate Chroma
+- **Fix dark mode chroma**: Previous fix lifted lightness but kept near-zero chroma (≈ neutral gray). Now uses proper blue-slate OKLch values matching brand hex: `--background` = slate-800 (`#1E293B`, `oklch(0.278 0.047 255)`), `--card` = slate-700 (`#334155`, `oklch(0.388 0.036 256)`), `--muted/accent/secondary` = slate-600 (`#475569`, `oklch(0.458 0.040 264)`)
+- **Clarity badge tints in dark mode**: Badges use semi-transparent alpha tints in dark mode, no harsh bright patches
+- **Impact color rail**: 4px → 3px
+
+## v0.54.14 — 2026-02-21
 - **Impact color rail**: 4px → 3px (better visual proportion)
 
 ## v0.54.13 — 2026-02-21
