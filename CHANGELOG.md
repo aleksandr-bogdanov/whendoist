@@ -4,6 +4,11 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.9 — 2026-02-21
+
+### Thoughts Page Scrollable
+- **Fix thoughts page scroll**: Added `min-h-0` to the thoughts page container so the ScrollArea can properly constrain its height and enable scrolling when content overflows
+
 ## v0.54.8 — 2026-02-21
 
 ### Recurring Tasks: Overdue Based on Instances
