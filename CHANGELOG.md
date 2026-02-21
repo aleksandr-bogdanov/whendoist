@@ -4,6 +4,11 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.16 — 2026-02-21
+
+### Dark Mode — Fix Primary Button Color
+- **New Task button**: Dark mode `--primary` was near-white (`oklch(0.92...)`) making the button blend with the light theme. Now uses brand dark-mode purple `#8B7CF7` (`oklch(0.66 0.185 277)`) with white foreground text.
+
 ## v0.54.15 — 2026-02-21
 
 ### Dark Mode Polish — Fix Blue-Slate Chroma

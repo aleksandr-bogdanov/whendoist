@@ -126,8 +126,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.388 0.036 256);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.196 0.052 263); /* slate-900 ≈ #0F172A — dark text on light btn */
+  --primary: oklch(0.66 0.185 277); /* #8B7CF7 — brand dark-mode primary (lighter purple) */
+  --primary-foreground: oklch(0.985 0 0); /* white text on purple button */
   --secondary: oklch(0.458 0.04 264); /* slate-600 ≈ #475569 */
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.458 0.04 264);
