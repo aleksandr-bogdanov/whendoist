@@ -308,8 +308,8 @@ export function DayColumn({
             style={{ top: `${currentTimeOffset}px` }}
           >
             <div className="flex items-center">
-              <div className="h-2.5 w-2.5 rounded-full bg-[#6D5EF6] -ml-1" />
-              <div className="flex-1 h-[2px] bg-[#6D5EF6]" />
+              <div className="h-2.5 w-2.5 rounded-full bg-[#167BFF] -ml-1" />
+              <div className="flex-1 h-[2px] bg-[#167BFF]" />
             </div>
           </div>
         )}

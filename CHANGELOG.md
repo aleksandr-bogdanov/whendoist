@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.12 — 2026-02-21
+
+### Brand Audit — UI Polish
+- **Impact color rail**: Left-edge task row bar widened 2px → 4px (matches brand spec) on both tasks and subtasks
+- **Impact row wash**: Task rows now have a subtle per-impact-level background tint (P1 red, P2 amber, P3 green, P4 gray) at brand-spec opacity
+- **Nav active state**: Active tab now uses purple text (#5B4CF0) + purple tint background instead of generic `bg-muted`, with tint-based hover on inactive tabs
+- **Current time indicator**: Calendar time-now line/dot changed from purple (#6D5EF6) to blue (#167BFF) — blue = time/executable per brand semantics
+- **Calendar panel separation**: Left edge of calendar panel now uses a border (`border-border/40`) instead of relying on layout gap — shadows reserved for overlays only per brand rules
+
 ## v0.54.11 — 2026-02-21
 
 ### Recurring Task Actions in Scheduled Section & Mobile

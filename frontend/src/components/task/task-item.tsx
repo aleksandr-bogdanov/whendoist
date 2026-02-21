@@ -56,6 +56,7 @@ import {
   formatDuration,
   IMPACT_COLORS,
   IMPACT_LABELS,
+  IMPACT_WASHES,
   isOverdue,
 } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
@@ -523,10 +524,13 @@ export function TaskItem({
                 )}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
-                  borderLeftWidth: 2,
+                  borderLeftWidth: 4,
                   borderLeftColor: isParent ? "var(--border)" : impactColor,
                   borderLeftStyle: "solid",
                   borderRadius: isParent ? undefined : "4px 0 0 4px",
+                  backgroundColor: isParent
+                    ? undefined
+                    : (IMPACT_WASHES[task.impact] ?? IMPACT_WASHES[4]),
                 }}
                 {...attributes}
                 {...listeners}
@@ -890,10 +894,11 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
       style={{
         marginLeft: `${depth * 24}px`,
         paddingLeft: 8,
-        borderLeftWidth: 2,
+        borderLeftWidth: 4,
         borderLeftColor: impactColor,
         borderLeftStyle: "solid",
         borderRadius: "4px 0 0 4px",
+        backgroundColor: IMPACT_WASHES[subtask.impact] ?? IMPACT_WASHES[4],
       }}
       {...listeners}
       {...attributes}
