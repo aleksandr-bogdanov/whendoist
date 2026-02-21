@@ -197,7 +197,7 @@ function ThoughtsPage() {
   );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col min-h-0">
       {/* Header */}
       <div className="border-b px-4 py-3">
         <h1 className="text-lg font-semibold">Thoughts</h1>
