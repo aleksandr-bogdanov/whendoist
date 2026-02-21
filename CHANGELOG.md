@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.7 — 2026-02-21
+
+### Recurring Task Overdue Fixes
+- **"Skip this one" now appears for overdue recurring tasks**: The instance query was too narrow (only fetched past instances); now fetches 30 days ahead to always find the next pending instance
+- **Unschedule works for recurring tasks**: Backend was auto-populating `scheduled_date` back to `recurrence_start` even when explicitly cleared — now respects explicit `null`
+
 ## v0.54.6 — 2026-02-21
 
 ### Remove due_date, Fix Overdue & Calendar Bugs
