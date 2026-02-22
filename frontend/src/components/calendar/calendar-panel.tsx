@@ -536,10 +536,10 @@ function AnytimeSection({
 // ─── Card Style Toggle ──────────────────────────────────────────────────────
 
 const CARD_STYLE_LABELS = {
-  default: "Default",
-  colored: "Colored",
-  "all-colored": "All Colored",
-  bordered: "Bordered",
+  outline: "Outline",
+  "full-border": "Full Border",
+  dashed: "Dashed",
+  strip: "Strip",
 } as const;
 
 function CardStyleToggle() {

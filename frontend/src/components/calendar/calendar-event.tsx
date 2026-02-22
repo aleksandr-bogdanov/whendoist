@@ -22,6 +22,7 @@ export function CalendarEventCard({
   const cardStyle = useUIStore((s) => s.cardStyle);
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
+  const calColor = backgroundColor ?? "#6B7385";
 
   const handleClick = () => {
     if (htmlLink) {
@@ -29,39 +30,116 @@ export function CalendarEventCard({
     }
   };
 
-  // Style variations per card style approach
-  const isDashed = cardStyle === "bordered";
-  const hasTintBg = cardStyle === "all-colored" && backgroundColor;
-  const isMuted = cardStyle === "colored" || cardStyle === "bordered";
+  // ── Style A: Outline — transparent bg, thin full border in calendar color ──
+  if (cardStyle === "outline") {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs cursor-pointer hover:shadow-sm transition-all text-left ${dimmed ? "opacity-50" : ""}`}
+        style={{
+          top: `${item.top}px`,
+          height: `${Math.max(item.height, 18)}px`,
+          width,
+          left,
+          border: `1.5px solid ${calColor}50`,
+          backgroundColor: "transparent",
+        }}
+        title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
+      >
+        <div className="flex items-center gap-1 truncate">
+          <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
+          <span className="truncate font-medium text-muted-foreground">{summary}</span>
+          <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
+        </div>
+        {item.height > 32 && (
+          <div className="truncate text-muted-foreground/70 text-[10px]">{timeLabel}</div>
+        )}
+      </button>
+    );
+  }
 
+  // ── Style B: Full-border box — subtle tint, border all sides, NO left accent ──
+  if (cardStyle === "full-border") {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs cursor-pointer hover:shadow-sm transition-all text-left ${dimmed ? "opacity-50" : ""}`}
+        style={{
+          top: `${item.top}px`,
+          height: `${Math.max(item.height, 18)}px`,
+          width,
+          left,
+          border: `1px solid ${calColor}40`,
+          backgroundColor: `${calColor}0A`,
+        }}
+        title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
+      >
+        <div className="flex items-center gap-1 truncate">
+          <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
+          <span className="truncate font-medium text-muted-foreground">{summary}</span>
+          <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
+        </div>
+        {item.height > 32 && (
+          <div className="truncate text-muted-foreground/70 text-[10px]">{timeLabel}</div>
+        )}
+      </button>
+    );
+  }
+
+  // ── Style C: Dashed left border — left accent but dashed, minimal tint ──
+  if (cardStyle === "dashed") {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs cursor-pointer hover:shadow-sm transition-all text-left ${dimmed ? "opacity-50" : ""}`}
+        style={{
+          top: `${item.top}px`,
+          height: `${Math.max(item.height, 18)}px`,
+          width,
+          left,
+          borderLeft: `3px dashed ${calColor}70`,
+          backgroundColor: `${calColor}08`,
+        }}
+        title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
+      >
+        <div className="flex items-center gap-1 truncate">
+          <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
+          <span className="truncate font-medium text-muted-foreground">{summary}</span>
+          <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
+        </div>
+        {item.height > 32 && (
+          <div className="truncate text-muted-foreground/70 text-[10px]">{timeLabel}</div>
+        )}
+      </button>
+    );
+  }
+
+  // ── Style D: Strip — top color stripe, compact, small radius, no left accent ──
   return (
     <button
       type="button"
       onClick={handleClick}
-      className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs cursor-pointer hover:shadow-sm transition-all text-left border border-border/60 border-l-[3px] ${hasTintBg ? "" : "bg-card"}`}
+      className={`absolute rounded-sm px-1.5 py-0.5 overflow-hidden text-xs cursor-pointer hover:shadow-sm transition-all text-left ${dimmed ? "opacity-50" : ""}`}
       style={{
         top: `${item.top}px`,
         height: `${Math.max(item.height, 18)}px`,
         width,
         left,
-        ...(backgroundColor && {
-          borderLeftColor: backgroundColor,
-          ...(isDashed && { borderLeftStyle: "dashed" }),
-        }),
-        ...(hasTintBg && { backgroundColor: `${backgroundColor}0F` }),
-        opacity: dimmed ? 0.5 : isMuted ? 0.85 : 0.95,
+        borderTop: `2px solid ${calColor}`,
+        backgroundColor: `${calColor}0A`,
       }}
       title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
     >
       <div className="flex items-center gap-1 truncate">
         <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-        <span className={`truncate font-medium ${isMuted ? "text-muted-foreground" : ""}`}>
-          {summary}
-        </span>
+        <span className="truncate font-medium text-muted-foreground">{summary}</span>
         <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
       </div>
       {item.height > 32 && (
-        <div className="truncate text-muted-foreground text-[10px]">{timeLabel}</div>
+        <div className="truncate text-muted-foreground/70 text-[10px]">{timeLabel}</div>
       )}
     </button>
   );

@@ -35,7 +35,6 @@ import {
   todayString,
 } from "@/lib/calendar-utils";
 import { IMPACT_COLORS } from "@/lib/task-utils";
-import { useUIStore } from "@/stores/ui-store";
 import { CalendarEventCard } from "./calendar-event";
 import { ScheduledTaskCard } from "./scheduled-task-card";
 
@@ -431,8 +430,6 @@ function InstanceCard({
     data: { type: "instance", instanceId: instance.id, instance },
   });
 
-  const cardStyle = useUIStore((s) => s.cardStyle);
-
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const isCompleted = instance.status === "completed";
@@ -440,9 +437,6 @@ function InstanceCard({
   const isPending = instance.status === "pending";
   const impactColor = IMPACT_COLORS[instance.impact] ?? IMPACT_COLORS[4];
   const hasScheduledTime = !!instance.scheduled_datetime;
-
-  // Stronger tint when "colored"/"all-colored" to differentiate from regular tasks
-  const bgOpacity = cardStyle === "colored" || cardStyle === "all-colored" ? "20" : "15";
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
@@ -595,7 +589,7 @@ function InstanceCard({
             height: `${item.height}px`,
             width,
             left,
-            backgroundColor: `${impactColor}${bgOpacity}`,
+            backgroundColor: `${impactColor}2A`,
             borderLeftColor: impactColor,
           }}
           title={`${instance.task_title} (recurring)`}

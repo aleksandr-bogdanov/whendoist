@@ -6,8 +6,8 @@ type EnergyLevel = 1 | 2 | 3;
 type SortField = "impact" | "duration" | "clarity";
 type SortDirection = "asc" | "desc";
 type MobileTab = "tasks" | "calendar";
-export type CardStyle = "default" | "colored" | "all-colored" | "bordered";
-const CARD_STYLES: CardStyle[] = ["default", "colored", "all-colored", "bordered"];
+export type CardStyle = "outline" | "full-border" | "dashed" | "strip";
+const CARD_STYLES: CardStyle[] = ["outline", "full-border", "dashed", "strip"];
 
 interface UIState {
   theme: Theme;
@@ -67,7 +67,7 @@ export const useUIStore = create<UIState & UIActions>()(
       quickAddOpen: false,
       calendarHourHeight: 60,
       justUpdatedId: null,
-      cardStyle: "default" as CardStyle,
+      cardStyle: "outline" as CardStyle,
       calendarCenterDate: (() => {
         const now = new Date();
         if (now.getHours() >= 20) {

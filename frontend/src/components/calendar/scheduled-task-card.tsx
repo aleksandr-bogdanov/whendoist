@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/context-menu";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import { IMPACT_COLORS } from "@/lib/task-utils";
-import { useUIStore } from "@/stores/ui-store";
 
 interface ScheduledTaskCardProps {
   item: PositionedItem;
@@ -50,7 +49,6 @@ export function ScheduledTaskCard({
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
-  const cardStyle = useUIStore((s) => s.cardStyle);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `scheduled-task-${taskId}`,
@@ -60,10 +58,6 @@ export function ScheduledTaskCard({
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const impactColor = IMPACT_COLORS[impact] ?? IMPACT_COLORS[4];
-
-  // Card style variations
-  const hasTintBg = cardStyle === "colored" || cardStyle === "all-colored";
-  const bgColor = hasTintBg ? `${impactColor}0D` : undefined; // ~5% opacity
 
   const handleUnschedule = () => {
     const tasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
@@ -238,14 +232,14 @@ export function ScheduledTaskCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 ${hasTintBg ? "" : "bg-card"} ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
+          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${Math.max(item.height, 18)}px`,
             width,
             left,
             borderLeft: `3px solid ${impactColor}`,
-            ...(bgColor && { backgroundColor: bgColor }),
+            backgroundColor: `${impactColor}1A`,
           }}
           title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
           onClick={() => onClick?.()}
