@@ -7,6 +7,7 @@ import type { AppRoutersTasksTaskResponse, DomainResponse, TaskCreate } from "@/
 import {
   getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
+  useDeleteTaskApiV1TasksTaskIdDelete,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
 } from "@/api/queries/tasks/tasks";
 import { TaskActionSheet } from "@/components/mobile/task-action-sheet";
@@ -46,30 +47,92 @@ export function DomainGroup({
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const addInputRef = useRef<HTMLInputElement>(null);
   const createTask = useCreateTaskApiV1TasksPost();
+  const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const { encryptTaskFields } = useCrypto();
 
   const handleInlineAdd = useCallback(async () => {
-    if (!newTaskTitle.trim()) return;
-    const encrypted = await encryptTaskFields({ title: newTaskTitle.trim() });
+    const trimmed = newTaskTitle.trim();
+    if (!trimmed) return;
+    const encrypted = await encryptTaskFields({ title: trimmed });
     const data: TaskCreate = {
       title: encrypted.title!,
       domain_id: domain?.id ?? null,
       impact: 4,
       clarity: "normal",
     };
+
+    // Optimistic: add placeholder task to cache immediately
+    const optimisticId = -Date.now();
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+      (old) =>
+        old
+          ? [
+              ...old,
+              {
+                id: optimisticId,
+                title: trimmed,
+                description: null,
+                domain_id: domain?.id ?? null,
+                domain_name: domain?.name ?? null,
+                parent_id: null,
+                duration_minutes: null,
+                impact: 4,
+                clarity: "normal",
+                scheduled_date: null,
+                scheduled_time: null,
+                is_recurring: false,
+                recurrence_rule: null as unknown as AppRoutersTasksTaskResponse["recurrence_rule"],
+                status: "pending",
+                position: 0,
+                created_at: new Date().toISOString(),
+                completed_at: null,
+                subtasks: [],
+              },
+            ]
+          : old,
+    );
+
+    // Clear input immediately for fast UX
+    setNewTaskTitle("");
+    addInputRef.current?.focus();
+
     createTask.mutate(
       { data },
       {
-        onSuccess: () => {
+        onSuccess: (created) => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-          toast.success("Task created");
-          setNewTaskTitle("");
-          addInputRef.current?.focus();
+          toast.success(`Created "${trimmed}"`, {
+            id: `create-${created.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                deleteTask.mutate(
+                  { taskId: created.id },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                    onError: () => toast.error("Undo failed"),
+                  },
+                );
+              },
+            },
+            duration: 5000,
+          });
         },
-        onError: () => toast.error("Failed to create task"),
+        onError: () => {
+          // Roll back optimistic task
+          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+            getListTasksApiV1TasksGetQueryKey(),
+            (old) => old?.filter((t) => t.id !== optimisticId),
+          );
+          toast.error("Failed to create task");
+        },
       },
     );
-  }, [newTaskTitle, domain, createTask, queryClient, encryptTaskFields]);
+  }, [newTaskTitle, domain, createTask, deleteTask, queryClient, encryptTaskFields]);
 
   // Action sheet state
   const [actionSheetOpen, setActionSheetOpen] = useState(false);

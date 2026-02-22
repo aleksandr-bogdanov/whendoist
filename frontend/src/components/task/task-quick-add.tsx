@@ -6,6 +6,7 @@ import type { DomainResponse, TaskCreate } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
+  useDeleteTaskApiV1TasksTaskIdDelete,
 } from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,11 +43,13 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
   const [domainId, setDomainId] = useState<string>("none");
 
   const createMutation = useCreateTaskApiV1TasksPost();
+  const deleteMutation = useDeleteTaskApiV1TasksTaskIdDelete();
 
   const handleSave = async () => {
-    if (!title.trim()) return;
+    const trimmed = title.trim();
+    if (!trimmed) return;
 
-    const encrypted = await encryptTaskFields({ title: title.trim() });
+    const encrypted = await encryptTaskFields({ title: trimmed });
 
     const data: TaskCreate = {
       title: encrypted.title!,
@@ -58,9 +61,27 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
     createMutation.mutate(
       { data },
       {
-        onSuccess: () => {
-          toast.success("Task created");
+        onSuccess: (created) => {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          toast.success(`Created "${trimmed}"`, {
+            id: `create-${created.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                deleteMutation.mutate(
+                  { taskId: created.id },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                    onError: () => toast.error("Undo failed"),
+                  },
+                );
+              },
+            },
+            duration: 5000,
+          });
           setTitle("");
           setDomainId("none");
           onOpenChange(false);

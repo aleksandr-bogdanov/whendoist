@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.31 — 2026-02-22
+
+### Fix inline add-task visibility + add undo toast
+- Add optimistic update when creating a task via "+Add task" — task appears instantly in the list instead of waiting for refetch
+- Add undo action to task creation toast (both inline add and Quick Add dialog) — clicking "Undo" deletes the newly created task
+- Clear input immediately on submit for faster UX
+
+---
+
 ## v0.54.30 — 2026-02-22
 
 ### Recurring tasks — Regenerate instances when start/end dates change
