@@ -1,7 +1,8 @@
+import { useDroppable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useRef, useState } from "react";
+import { Fragment, useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, DomainResponse, TaskCreate } from "@/api/model";
 import {
@@ -18,7 +19,33 @@ import { useDevice } from "@/hooks/use-device";
 import { useHaptics } from "@/hooks/use-haptics";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
+import { useDndState } from "./task-dnd-context";
 import { TaskItem } from "./task-item";
+
+function TaskInsertionZone({ id, isActive }: { id: string; isActive: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+    data: { type: "task-gap" },
+    disabled: !isActive,
+  });
+
+  if (!isActive) return null;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="relative -my-1 z-10 transition-all duration-150"
+      style={{ height: isOver ? 12 : 8 }}
+    >
+      {isOver && (
+        <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <div className="h-2 w-2 rounded-full bg-[#6D5EF6] shadow-[0_0_4px_rgba(109,94,246,0.5)]" />
+          <div className="flex-1 h-0.5 rounded-full bg-[#6D5EF6]" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface DomainGroupProps {
   domain: DomainResponse | null;
@@ -30,6 +57,8 @@ interface DomainGroupProps {
 export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainGroupProps) {
   const { collapsedDomains, toggleCollapsedDomain, setMobileTab, selectTask } = useUIStore();
   const { prefersTouch, hasTouch } = useDevice();
+  const dndState = useDndState();
+  const isSubtaskDrag = dndState.activeId != null && dndState.activeTask?.parent_id != null;
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const { trigger: haptic } = useHaptics();
@@ -243,29 +272,40 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
 
         <CollapsibleContent>
           <AnimatePresence initial={false}>
-            {tasks.map((task) => (
-              <motion.div
-                key={task.id}
-                layout
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, x: 40, height: 0 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-              >
-                {isTouchDevice ? (
-                  <div data-task-swipe-row>
-                    <TaskSwipeRow
-                      onSwipeRight={() => handleSwipeComplete(task)}
-                      onSwipeLeft={() => handleSwipeSchedule(task)}
-                      onLongPress={() => handleLongPress(task)}
-                    >
-                      <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
-                    </TaskSwipeRow>
-                  </div>
-                ) : (
-                  <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+            {tasks.map((task, i) => (
+              <Fragment key={task.id}>
+                {i === 0 && (
+                  <TaskInsertionZone
+                    id={`task-gap-${domain?.id ?? "thoughts"}-0`}
+                    isActive={isSubtaskDrag}
+                  />
                 )}
-              </motion.div>
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, x: 40, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                >
+                  {isTouchDevice ? (
+                    <div data-task-swipe-row>
+                      <TaskSwipeRow
+                        onSwipeRight={() => handleSwipeComplete(task)}
+                        onSwipeLeft={() => handleSwipeSchedule(task)}
+                        onLongPress={() => handleLongPress(task)}
+                      >
+                        <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                      </TaskSwipeRow>
+                    </div>
+                  ) : (
+                    <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                  )}
+                </motion.div>
+                <TaskInsertionZone
+                  id={`task-gap-${domain?.id ?? "thoughts"}-${i + 1}`}
+                  isActive={isSubtaskDrag}
+                />
+              </Fragment>
             ))}
           </AnimatePresence>
 

@@ -62,7 +62,15 @@ export interface DragState {
   activeTask: AppRoutersTasksTaskResponse | null;
   activeInstance: InstanceResponse | null;
   overId: UniqueIdentifier | null;
-  overType: "task" | "calendar" | "task-list" | "anytime" | "date-group" | "reparent" | null;
+  overType:
+    | "task"
+    | "calendar"
+    | "task-list"
+    | "anytime"
+    | "date-group"
+    | "reparent"
+    | "promote"
+    | null;
 }
 
 interface TaskDndContextProps {
@@ -105,6 +113,8 @@ const customCollisionDetection: CollisionDetection = (args) => {
     if (promoteHit) return [promoteHit];
     const taskDropHit = pointerCollisions.find((c) => String(c.id).startsWith("task-drop-"));
     if (taskDropHit) return [taskDropHit];
+    const taskGapHit = pointerCollisions.find((c) => String(c.id).startsWith("task-gap-"));
+    if (taskGapHit) return [taskGapHit];
     const taskListHit = pointerCollisions.find((c) => String(c.id).startsWith("task-list-"));
     if (taskListHit) return [taskListHit];
     return pointerCollisions;
@@ -181,13 +191,22 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   const getOverType = useCallback(
     (
       over: Over | null,
-    ): "task" | "calendar" | "task-list" | "anytime" | "date-group" | "reparent" | null => {
+    ):
+      | "task"
+      | "calendar"
+      | "task-list"
+      | "anytime"
+      | "date-group"
+      | "reparent"
+      | "promote"
+      | null => {
       if (!over) return null;
       const id = String(over.id);
       if (id.startsWith("date-group-")) return "date-group";
       if (id.startsWith("anytime-drop-")) return "anytime";
       if (id.startsWith("calendar-overlay-")) return "calendar";
       if (id.startsWith("task-drop-")) return "reparent";
+      if (id.startsWith("task-gap-")) return "promote";
       if (id === "task-list-promote") return "task-list";
       if (id.startsWith("task-list-")) return "task-list";
       return "task";
@@ -860,6 +879,78 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             },
           );
         }
+        return;
+      }
+
+      // --- Drop between tasks: promote subtask to standalone ---
+      if (overId.startsWith("task-gap-")) {
+        const task = findTask(active.id);
+        if (!task || task.parent_id == null) return; // Only subtasks can be promoted
+
+        const prevParentId = task.parent_id;
+        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(),
+        );
+
+        // Optimistic: remove from parent's subtasks, add as top-level task
+        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(),
+          (old) => {
+            if (!old) return old;
+            const promoted: AppRoutersTasksTaskResponse = {
+              ...task,
+              parent_id: null,
+              subtasks: [],
+            };
+            return [
+              ...old.map((t) =>
+                t.id === prevParentId
+                  ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== activeId) }
+                  : t,
+              ),
+              promoted,
+            ];
+          },
+        );
+
+        updateTask.mutate(
+          { taskId: activeId, data: { parent_id: null } },
+          {
+            onSuccess: () => {
+              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              announce("Subtask promoted to task");
+              toast.success(`Promoted "${task.title}" to standalone task`, {
+                id: `promote-${activeId}`,
+                action: {
+                  label: "Undo",
+                  onClick: () => {
+                    queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                    updateTask.mutate(
+                      { taskId: activeId, data: { parent_id: prevParentId } },
+                      {
+                        onSuccess: () =>
+                          queryClient.invalidateQueries({
+                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          }),
+                        onError: () => {
+                          queryClient.invalidateQueries({
+                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          });
+                          toast.error("Undo failed");
+                        },
+                      },
+                    );
+                  },
+                },
+                duration: 5000,
+              });
+            },
+            onError: () => {
+              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+              toast.error("Failed to promote task", { id: `promote-err-${activeId}` });
+            },
+          },
+        );
         return;
       }
 
