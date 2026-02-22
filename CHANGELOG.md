@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.21 — 2026-02-22
+
+### Fix pb-nav-safe border offset
+- **1px nav border fix**: `pb-nav-safe` now `calc(3.5rem + 1px + env(safe-area-inset-bottom))` to account for the nav`s `border-t` — debug confirmed nav-height was 91px (56px content + 34px safe-area + 1px border) but padding reserved only 90px
+- **Debug overlay**: nav-top mismatch tolerance relaxed to ±2px
+
 ## v0.54.20 — 2026-02-22
 
 ### PWA Layout Debug Overlay

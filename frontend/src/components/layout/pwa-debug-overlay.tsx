@@ -304,7 +304,10 @@ export function PwaDebugOverlay({ onClose }: { onClose?: () => void }) {
             nav-top:{" "}
             <b
               style={{
-                color: data.navTop !== data.mainContentH + data.headerTotalH ? "#ff3c00" : "#fff",
+                color:
+                  Math.abs(data.navTop - (data.mainContentH + data.headerTotalH)) > 2
+                    ? "#ff3c00"
+                    : "#fff",
               }}
             >
               {data.navTop}px
