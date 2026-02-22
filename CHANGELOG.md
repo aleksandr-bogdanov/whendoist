@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.35 — 2026-02-22
+
+### Recurring tasks — Sync recurrence_start when scheduled_date changes
+- Changing a recurring task's `scheduled_date` now auto-updates `recurrence_start` to match, triggering instance regeneration
+- Previously only changing `recurrence_start` directly would regenerate instances; changing `scheduled_date` alone had no effect
+
+---
+
 ## v0.54.34 — 2026-02-22
 
 ### Subtask-aware sorting
