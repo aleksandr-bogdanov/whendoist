@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.43 — 2026-02-22
+
+### Fix missing Undo in calendar instance toasts
+- Complete and Skip actions on recurring instances in the calendar view now show Undo in the toast
+- Toast text updated to `Completed "Task" · Feb 22` / `Skipped "Task" · Feb 22` format (consistent with task list)
+
+---
+
 ## v0.54.42 — 2026-02-22
 
 ### Fix three drag-and-drop subtask bugs

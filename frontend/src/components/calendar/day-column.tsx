@@ -10,6 +10,8 @@ import {
   useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
   useScheduleInstanceApiV1InstancesInstanceIdSchedulePut,
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
+  useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost,
+  useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
 import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import {
@@ -419,7 +421,9 @@ function InstanceCard({
 }) {
   const queryClient = useQueryClient();
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
+  const uncompleteInstance = useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
+  const unskipInstance = useUnskipInstanceApiV1InstancesInstanceIdUnskipPost();
   const scheduleInstance = useScheduleInstanceApiV1InstancesInstanceIdSchedulePut();
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -508,8 +512,24 @@ function InstanceCard({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success(`Completed instance of "${instance.task_title}"`, {
+          const dateHint = new Date(`${instance.instance_date}T00:00:00`).toLocaleDateString(
+            "en-US",
+            { month: "short", day: "numeric" },
+          );
+          toast.success(`Completed "${instance.task_title}" · ${dateHint}`, {
             id: `complete-inst-${instance.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                uncompleteInstance.mutate(
+                  { instanceId: instance.id },
+                  {
+                    onSuccess: () => invalidateAll(),
+                    onError: () => toast.error("Undo failed"),
+                  },
+                );
+              },
+            },
           });
         },
         onError: () => {
@@ -533,8 +553,24 @@ function InstanceCard({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success(`Skipped instance of "${instance.task_title}"`, {
+          const dateHint = new Date(`${instance.instance_date}T00:00:00`).toLocaleDateString(
+            "en-US",
+            { month: "short", day: "numeric" },
+          );
+          toast.success(`Skipped "${instance.task_title}" · ${dateHint}`, {
             id: `skip-inst-${instance.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                unskipInstance.mutate(
+                  { instanceId: instance.id },
+                  {
+                    onSuccess: () => invalidateAll(),
+                    onError: () => toast.error("Undo failed"),
+                  },
+                );
+              },
+            },
           });
         },
         onError: () => {
