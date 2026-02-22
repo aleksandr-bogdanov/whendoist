@@ -94,6 +94,11 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
       { data },
       {
         onSuccess: (created) => {
+          // Swap optimistic placeholder with real task before refetch to avoid flicker
+          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+            getListTasksApiV1TasksGetQueryKey(),
+            (old) => old?.map((t) => (t.id === optimisticId ? created : t)),
+          );
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success(`Created "${trimmed}"`, {
             id: `create-${created.id}`,
