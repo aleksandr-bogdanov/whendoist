@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.25 — 2026-02-22
+
+### Calendar — Tasks stay visible after completion (proper fix)
+- **Root cause**: backend `GET /api/v1/tasks` defaulted to `status=pending`, so `invalidateQueries` after completion wiped completed tasks from the cache
+- **Backend**: added `status=all` which returns pending + completed (excludes archived)
+- **CalendarPanel**: now fetches its own `status=all` query internally so completed/skipped tasks always remain visible regardless of the task-list query
+
 ## v0.54.24 — 2026-02-22
 
 ### Calendar — Completed scheduled tasks stay visible; undo on completion toast

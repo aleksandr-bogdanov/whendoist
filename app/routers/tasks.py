@@ -354,9 +354,13 @@ async def list_tasks(
     user_today = get_user_today(timezone)
 
     service = TaskService(db, user.id)
+    # "all" returns pending + completed (excludes archived)
+    effective_status = None if status == "all" else status
+    exclude_statuses = ["archived"] if status == "all" else None
     tasks = await service.get_tasks(
         domain_id=domain_id,
-        status=status,
+        status=effective_status,
+        exclude_statuses=exclude_statuses,
         scheduled_date=scheduled_date,
         is_recurring=is_recurring,
         clarity=clarity,
@@ -558,17 +562,17 @@ async def update_task(
         recurrence = RecurrenceService(db, user.id, timezone=timezone)
         await recurrence.regenerate_instances(task)
 
-    # Clean up instances when disabling recurrence
+    # Clean up ALL instances when disabling recurrence
     if not task.is_recurring and old_is_recurring:
         from sqlalchemy import delete as sa_delete
 
         from app.models import TaskInstance
 
-        # Delete future pending instances (completed/skipped are preserved)
+        # Delete all instances — completed/skipped ones from a now-non-recurring
+        # task would show as duplicates alongside the task itself on the calendar
         await db.execute(
             sa_delete(TaskInstance).where(
                 TaskInstance.task_id == task.id,
-                TaskInstance.status == "pending",
             )
         )
 
