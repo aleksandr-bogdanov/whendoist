@@ -543,11 +543,14 @@ async def update_task(
     ):
         update_data["duration_minutes"] = GCAL_SYNC_DEFAULT_DURATION_MINUTES
 
-    # Auto-populate scheduled_date for recurring tasks (only when not explicitly provided)
+    # Keep scheduled_date and recurrence_start in sync for recurring tasks
     is_recurring = update_data.get("is_recurring", current.is_recurring)
-    if is_recurring and "scheduled_date" not in update_data:
-        recurrence_start = update_data.get("recurrence_start", current.recurrence_start)
-        update_data["scheduled_date"] = recurrence_start or user_today
+    if is_recurring:
+        if "scheduled_date" not in update_data:
+            recurrence_start = update_data.get("recurrence_start", current.recurrence_start)
+            update_data["scheduled_date"] = recurrence_start or user_today
+        elif "recurrence_start" not in update_data:
+            update_data["recurrence_start"] = update_data["scheduled_date"]
 
     try:
         task = await service.update_task(
