@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.32 — 2026-02-22
+
+### Add undo toast for "Complete this one" and "Skip this one" on recurring instances
+- New `POST /api/v1/instances/{id}/unskip` backend endpoint (reverts skip → pending)
+- "Complete this one" toast now has Undo button (calls uncomplete instance)
+- "Skip this one" toast now has Undo button (calls unskip instance)
+- Applies to both desktop context menu / dropdown and mobile action sheet
+
+---
+
 ## v0.54.31 — 2026-02-22
 
 ### Fix inline add-task visibility + add undo toast

@@ -23,6 +23,8 @@ import {
   getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey,
   useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
+  useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost,
+  useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
 import {
   getListTasksApiV1TasksGetQueryKey,
@@ -94,7 +96,9 @@ export function TaskItem({
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
+  const uncompleteInstance = useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
+  const unskipInstance = useUnskipInstanceApiV1InstancesInstanceIdUnskipPost();
   const isSelected = selectedTaskId === task.id;
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
@@ -147,8 +151,20 @@ export function TaskItem({
           onSuccess: () => {
             invalidateAll();
             announce("Instance completed");
-            toast.success(`Completed instance of "${task.title}"`, {
+            toast.success(`Completed "${task.title}"`, {
               id: `complete-inst-${pendingInstance.id}`,
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  uncompleteInstance.mutate(
+                    { instanceId: pendingInstance.id },
+                    {
+                      onSuccess: () => invalidateAll(),
+                      onError: () => toast.error("Undo failed"),
+                    },
+                  );
+                },
+              },
             });
           },
           onError: () => {
@@ -248,8 +264,20 @@ export function TaskItem({
         {
           onSuccess: () => {
             invalidateAll();
-            toast.success(`Completed instance of "${task.title}"`, {
+            toast.success(`Completed "${task.title}"`, {
               id: `complete-inst-${pendingInstance.id}`,
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  uncompleteInstance.mutate(
+                    { instanceId: pendingInstance.id },
+                    {
+                      onSuccess: () => invalidateAll(),
+                      onError: () => toast.error("Undo failed"),
+                    },
+                  );
+                },
+              },
             });
           },
           onError: () => {
@@ -307,6 +335,7 @@ export function TaskItem({
     queryClient,
     toggleComplete,
     completeInstance,
+    uncompleteInstance,
     invalidateAll,
   ]);
 
@@ -391,8 +420,30 @@ export function TaskItem({
             queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
           });
           announce("Instance skipped");
-          toast.success(`Skipped instance of "${task.title}"`, {
+          toast.success(`Skipped "${task.title}"`, {
             id: `skip-inst-${pendingInstance.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                unskipInstance.mutate(
+                  { instanceId: pendingInstance.id },
+                  {
+                    onSuccess: () => {
+                      queryClient.invalidateQueries({
+                        queryKey: getListInstancesApiV1InstancesGetQueryKey(),
+                      });
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      });
+                      queryClient.invalidateQueries({
+                        queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
+                      });
+                    },
+                    onError: () => toast.error("Undo failed"),
+                  },
+                );
+              },
+            },
           });
         },
         onError: () => {
@@ -402,7 +453,7 @@ export function TaskItem({
       },
     );
     setMenuOpen(false);
-  }, [task, pendingInstance, skipInstance, queryClient]);
+  }, [task, pendingInstance, skipInstance, unskipInstance, queryClient]);
 
   const handleMenuDelete = useCallback(() => {
     deleteTask.mutate(

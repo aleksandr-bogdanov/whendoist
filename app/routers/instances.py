@@ -268,3 +268,18 @@ async def batch_past_instances(
         raise HTTPException(status_code=400, detail="Invalid action. Use 'complete' or 'skip'.")
     await db.commit()
     return {"affected_count": count}
+
+
+@router.post("/{instance_id}/unskip", response_model=InstanceStatusResponse, status_code=200)
+async def unskip_instance(
+    instance_id: int,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Unskip a specific instance (revert skip, mark as pending)."""
+    service = RecurrenceService(db, user.id)
+    instance = await service.unskip_instance(instance_id)
+    if not instance:
+        raise HTTPException(status_code=404, detail="Instance not found")
+    await db.commit()
+    return {"status": "pending", "instance_id": instance_id}
