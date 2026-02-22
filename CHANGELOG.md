@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.42 — 2026-02-22
+
+### Fix three drag-and-drop subtask bugs
+- Dragging a subtask onto its own parent no longer duplicates it (findTask now includes parent_id)
+- Badge says "Move here" instead of "Make subtask" when dragging an existing subtask to another parent
+- New "Drop to make standalone" bar appears when dragging a subtask, providing a clear promote target
+
+---
+
 ## v0.54.41 — 2026-02-22
 
 ### Fix recurring task duplicates on calendar and task list
