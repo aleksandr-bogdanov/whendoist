@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.36 — 2026-02-22
+
+### Fix add-task optimistic flicker
+- Swap optimistic placeholder (negative ID) with real task response before cache refetch, so AnimatePresence sees a stable key and doesn't re-animate
+
+---
+
 ## v0.54.35 — 2026-02-22
 
 ### Recurring tasks — Sync recurrence_start when scheduled_date changes
