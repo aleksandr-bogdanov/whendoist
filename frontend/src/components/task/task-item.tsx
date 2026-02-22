@@ -611,7 +611,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
         <div className="relative z-20 flex justify-center pointer-events-none">
           <span className="absolute -bottom-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#6D5EF6] text-white text-[10px] font-semibold shadow-lg whitespace-nowrap">
             <CornerDownRight className="h-3 w-3" />
-            {dndState.activeTask?.parent_id != null ? "Change parent" : "Make subtask"}
+            {dndState.activeTask?.parent_id != null ? "Change parent task" : "Make subtask"}
           </span>
         </div>
       )}

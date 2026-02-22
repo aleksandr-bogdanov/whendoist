@@ -109,7 +109,9 @@ const customCollisionDetection: CollisionDetection = (args) => {
     if (anytimeHit) return [anytimeHit];
     const calendarHit = pointerCollisions.find((c) => String(c.id).startsWith("calendar-overlay-"));
     if (calendarHit) return [calendarHit];
-    const promoteHit = pointerCollisions.find((c) => String(c.id) === "task-list-promote");
+    const promoteHit = pointerCollisions.find(
+      (c) => String(c.id) === "task-list-promote" || String(c.id).startsWith("task-gap-"),
+    );
     if (promoteHit) return [promoteHit];
     const taskDropHit = pointerCollisions.find((c) => String(c.id).startsWith("task-drop-"));
     if (taskDropHit) return [taskDropHit];
@@ -208,6 +210,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       if (id.startsWith("task-drop-")) return "reparent";
       if (id.startsWith("task-gap-")) return "promote";
       if (id === "task-list-promote") return "task-list";
+      if (id.startsWith("task-gap-")) return "task-list";
       if (id.startsWith("task-list-")) return "task-list";
       return "task";
     },
@@ -743,12 +746,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         return;
       }
 
-      // --- Drop onto task-list: promote subtask OR unschedule ---
-      if (overId.startsWith("task-list-")) {
+      // --- Drop onto task-list or gap: promote subtask OR unschedule ---
+      if (overId.startsWith("task-list-") || overId.startsWith("task-gap-")) {
         const task = findTask(active.id);
 
-        // If a subtask is dropped on task-list, promote to standalone
-        if (task?.parent_id != null) {
+        // Promote subtask — only on explicit promote zones (bar/gaps), not the general container
+        if (task?.parent_id != null && overId !== "task-list-drop") {
           const prevParentId = task.parent_id;
           const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
             getListTasksApiV1TasksGetQueryKey(),
