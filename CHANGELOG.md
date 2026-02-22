@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.30 — 2026-02-22
+
+### Recurring tasks — Regenerate instances when start/end dates change
+- Editing a recurring task's `recurrence_start` or `recurrence_end` now triggers instance regeneration
+- Previously only `recurrence_rule` and `scheduled_time` changes triggered regeneration, so changing the start date left stale instances in place
+
+---
+
 ## v0.54.29 — 2026-02-22
 
 ### Calendar — Fix anytime pills wrapping under label
