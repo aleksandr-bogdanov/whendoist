@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.51 — 2026-02-22
+
+### DnD: overlay visibility + gap zone hitboxes
+- Drag overlay fades to 40% opacity and scales down when hovering over a reparent target, so the target row and ghost placeholder are clearly visible
+- TaskInsertionZone hitbox increased from 8px to 28px — gap drop zones between tasks are much easier to target when promoting subtasks
+
+---
+
 ## v0.54.50 — 2026-02-22
 
 ### Fix 1px white line clipping card left borders

@@ -1145,14 +1145,21 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       <DndStateCtx.Provider value={dndStateValue}>{children}</DndStateCtx.Provider>
       <DragOverlay dropAnimation={null} modifiers={overlayModifiers}>
         {dragState.activeTask ? (
-          <div ref={overlayContentRef}>
+          <div
+            ref={overlayContentRef}
+            className={
+              dragState.overType === "reparent"
+                ? "opacity-40 scale-95 transition-all duration-150"
+                : "transition-all duration-150"
+            }
+          >
             <TaskDragOverlay
               task={dragState.activeTask}
               isReparenting={dragState.overType === "reparent"}
             />
           </div>
         ) : dragState.activeInstance ? (
-          <div ref={overlayContentRef}>
+          <div ref={overlayContentRef} className="transition-all duration-150">
             <TaskDragOverlay
               task={
                 {

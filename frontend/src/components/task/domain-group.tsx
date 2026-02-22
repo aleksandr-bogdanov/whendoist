@@ -34,8 +34,8 @@ function TaskInsertionZone({ id, isActive }: { id: string; isActive: boolean }) 
   return (
     <div
       ref={setNodeRef}
-      className="relative -my-1 z-10 transition-all duration-150"
-      style={{ height: isOver ? 12 : 8 }}
+      className="relative -my-3 z-10 transition-all duration-150"
+      style={{ height: isOver ? 32 : 28 }}
     >
       {isOver && (
         <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
