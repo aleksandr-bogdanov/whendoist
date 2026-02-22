@@ -218,6 +218,9 @@ export function categorizeTasks(tasks: AppRoutersTasksTaskResponse[]) {
     // Only top-level tasks (not subtasks)
     if (task.parent_id !== null) continue;
 
+    // Recurring parents are represented by their instances — skip them entirely
+    if (task.is_recurring) continue;
+
     if (task.status === "completed" || task.completed_at) {
       completed.push(task);
     } else if (task.scheduled_date) {
