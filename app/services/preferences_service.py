@@ -8,6 +8,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import UserPasskey, UserPreferences
+from app.services.data_version import bump_data_version
 
 
 class PreferencesService:
@@ -99,6 +100,7 @@ class PreferencesService:
             prefs.calendar_hour_height = max(30, min(100, calendar_hour_height))
 
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return prefs
 
     async def setup_encryption(self, salt: str, test_value: str) -> UserPreferences:

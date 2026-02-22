@@ -16,6 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from app.constants import get_user_today
 from app.models import Task, TaskInstance
+from app.services.data_version import bump_data_version
 
 logger = logging.getLogger("whendoist.recurrence")
 
@@ -252,6 +253,7 @@ class RecurrenceService:
             instance.status = "completed"
             instance.completed_at = datetime.now(UTC)
             await self.db.flush()
+            await bump_data_version(self.db, self.user_id)
 
         return instance
 
@@ -271,6 +273,7 @@ class RecurrenceService:
             instance.status = "pending"
             instance.completed_at = None
             await self.db.flush()
+            await bump_data_version(self.db, self.user_id)
 
         return instance
 
@@ -309,6 +312,7 @@ class RecurrenceService:
         if instance:
             instance.status = "skipped"
             await self.db.flush()
+            await bump_data_version(self.db, self.user_id)
 
         return instance
 
@@ -332,6 +336,7 @@ class RecurrenceService:
         if instance:
             instance.scheduled_datetime = scheduled_datetime
             await self.db.flush()
+            await bump_data_version(self.db, self.user_id)
 
         return instance
 
@@ -351,6 +356,8 @@ class RecurrenceService:
             inst.status = "completed"
             inst.completed_at = now
         await self.db.flush()
+        if instances:
+            await bump_data_version(self.db, self.user_id)
         return len(instances)
 
     async def count_pending_past_instances(self) -> int:
@@ -381,6 +388,8 @@ class RecurrenceService:
             inst.status = "completed"
             inst.completed_at = now
         await self.db.flush()
+        if instances:
+            await bump_data_version(self.db, self.user_id)
         return len(instances)
 
     async def batch_skip_all_past_instances(self) -> int:
@@ -397,6 +406,8 @@ class RecurrenceService:
         for inst in instances:
             inst.status = "skipped"
         await self.db.flush()
+        if instances:
+            await bump_data_version(self.db, self.user_id)
         return len(instances)
 
     async def get_next_instances_for_tasks(
@@ -571,5 +582,6 @@ class RecurrenceService:
         if instance:
             instance.status = "pending"
             await self.db.flush()
+            await bump_data_version(self.db, self.user_id)
 
         return instance

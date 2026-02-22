@@ -25,6 +25,7 @@ from sqlalchemy import (
     Time,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -70,6 +71,9 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Display name from Google
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    # Snapshot change tracking — bumped on user-initiated mutations only
+    data_version: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
 
     # Wizard tracking
     wizard_completed: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -503,6 +507,7 @@ class ExportSnapshot(Base):
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)  # SHA-256 hex
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)  # compressed size
     is_manual: Mapped[bool] = mapped_column(Boolean, default=False)
+    snapshot_data_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (Index("ix_snapshot_user_created", "user_id", "created_at"),)

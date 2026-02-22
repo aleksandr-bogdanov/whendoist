@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.54 — 2026-02-23
+
+### Snapshot scalability — `data_version` change tracking
+- Added `data_version` counter to User model, bumped only on user-initiated mutations (task/domain/preference CRUD, imports)
+- Snapshot loop now skips unchanged users via O(1) integer comparison instead of full data export + SHA-256 hash
+- Recurring task auto-materialization no longer triggers new snapshots for inactive users
+- Replaced N+1 per-user queries with single batch query to find due users
+- Content-hash dedup kept as safety net for edge cases
+- 11 new tests covering version bumping and materialization exclusion
+
 ## v0.54.53 — 2026-02-23
 
 ### GCal card redesign — recessive left-accent style

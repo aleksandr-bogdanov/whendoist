@@ -1,6 +1,6 @@
 # Export Snapshots
 
-Automated daily backups of user data stored in PostgreSQL, with content-hash deduplication.
+Automated daily backups of user data stored in PostgreSQL, with two-tier change detection: a `data_version` counter for O(1) skip of unchanged users, plus content-hash deduplication as a safety net.
 
 ## Why
 
@@ -9,14 +9,107 @@ Users need a safety net for rollback — accidental bulk deletes, bad syncs, bug
 ## How It Works
 
 1. User enables "Automatic Snapshots" in Settings > Backup (toggle)
-2. Background loop runs every 30 minutes, checks all enabled users
-3. For each user: if no snapshot exists in the last 24 hours, call `BackupService.export_all()`, compress with gzip, store in `export_snapshots` table
-4. Before storing, compute SHA-256 of the data (excluding volatile `exported_at`/`version` fields). If the hash matches the latest snapshot, skip — no new row created
+2. Background loop runs every 30 minutes
+3. **Single batch query** finds all enabled users who are due (>24h since last snapshot)
+4. For each candidate, **two-tier check**:
+   - **Fast path**: compare `user.data_version` with `latest_snapshot.snapshot_data_version` — if equal, skip entirely (zero DB reads, zero serialization)
+   - **Slow path**: versions differ (or legacy NULL) — full export, hash, compress, store
 5. After creating, enforce retention: keep the newest 10, delete the rest
 
 Users can also create manual snapshots ("Create Now"), download any snapshot as JSON, restore from any snapshot (replaces all data), or delete individual snapshots.
 
+## Change Detection: `data_version`
+
+### The problem with hash-only dedup
+
+The original design relied solely on content-hash deduplication. For each due user, it would:
+
+1. `export_all()` — load ALL domains, tasks, task instances, preferences from DB
+2. Serialize to JSON
+3. Compute SHA-256
+4. Compare to latest snapshot hash
+5. Skip if identical
+
+This is O(users x data_per_user) even when nothing changed. With recurring tasks making it worse: the materialization loop creates new `TaskInstance` records hourly (60-day horizon), changing the content hash even for completely inactive users.
+
+### How `data_version` solves it
+
+A monotonic integer counter on the `User` model, bumped via atomic SQL (`SET data_version = data_version + 1`) only on user-initiated mutations:
+
+| Bumped (user action) | NOT bumped (system action) |
+|---|---|
+| Create/update/delete task | Auto-materialize recurring instances |
+| Create/update/archive domain | Instance cleanup (old completed/skipped) |
+| Complete/skip/unskip instance | GCal sync metadata |
+| Update preferences | Passkey authentication |
+| Import data (backup or Todoist) | Snapshot creation itself |
+| Wipe user data | |
+
+The snapshot loop compares integers instead of doing full exports:
+
+```
+user.data_version == latest_snapshot.snapshot_data_version → skip (zero work)
+user.data_version != latest_snapshot.snapshot_data_version → full export + hash dedup
+```
+
+### Why keep content-hash dedup?
+
+The hash check is a safety net for edge cases where `data_version` was bumped but the exported data is actually identical — e.g., user renamed a domain then renamed it back. It prevents storing a duplicate snapshot in the rare case where versions diverge but data doesn't.
+
+### Recurring tasks and snapshots
+
+Recurring task materialization creates `TaskInstance` records automatically (hourly, 60-day horizon). These instances are included in snapshot data (for accurate point-in-time restore), but **materialization does NOT bump `data_version`**. This means:
+
+- Inactive user with recurring tasks: `data_version` stays the same → fast-path skip → zero export work
+- User completes a recurring instance: `data_version` bumps → next snapshot captures the completion + any new instances
+
+This is the key scalability win. Without it, every user with recurring tasks would get a new snapshot every day regardless of activity.
+
 ## Architecture
+
+### Two-Tier Snapshot Processing
+
+```
+┌─────────────────────────────────────────────┐
+│ Single batch query: find due users          │
+│ (snapshots_enabled=true, >24h since last)   │
+└────────────────┬────────────────────────────┘
+                 │
+    ┌────────────▼────────────┐
+    │ data_version == snapshot │──── yes ──── SKIP (fast path)
+    │ _data_version?          │              (zero work)
+    └────────────┬────────────┘
+                 │ no (or NULL)
+    ┌────────────▼────────────┐
+    │ Full export + hash      │
+    │ (slow path)             │
+    └────────────┬────────────┘
+                 │
+    ┌────────────▼────────────┐
+    │ content_hash == latest  │──── yes ──── SKIP (hash dedup)
+    │ snapshot hash?          │
+    └────────────┬────────────┘
+                 │ no
+    ┌────────────▼────────────┐
+    │ Compress + store +      │
+    │ enforce retention       │
+    └─────────────────────────┘
+```
+
+### Batch Query
+
+Instead of N+1 queries (one per user), a single query finds users who are both due and have changed data:
+
+```sql
+SELECT up.user_id, u.data_version, latest.snapshot_data_version
+FROM user_preferences up
+JOIN users u ON u.id = up.user_id
+LEFT JOIN (latest snapshot subquery) ON ...
+WHERE up.snapshots_enabled = TRUE
+  AND (no snapshot exists OR last snapshot > 24h ago)
+```
+
+For N users with snapshots enabled, this is one query regardless of N. The fast-path version check then filters in Python with zero additional DB access.
 
 ### Storage: PostgreSQL `LargeBinary`
 
@@ -24,20 +117,9 @@ Snapshots are gzip-compressed JSON stored as `bytea` in PostgreSQL. A typical us
 
 **Why not S3 or filesystem?** No extra infrastructure. No credentials, no bucket policies, no cleanup jobs. Everything stays in one system. The data is small enough that the simplicity wins.
 
-**Why not a separate backup database?** Same reason. If the primary database goes down, you have bigger problems than snapshot access. Phase 2 could add email delivery of snapshots for true disaster recovery (separate from the DB), but that's deferred.
-
-### Content-Hash Deduplication
-
-Every snapshot computes `SHA-256(json_dumps(data, sort_keys=True))` over the user's domains, tasks, and preferences — excluding `exported_at` and `version` which change every export. If the hash matches the most recent snapshot, automatic creation is silently skipped.
-
-This means:
-- A user who hasn't changed anything in 6 months generates zero new rows
-- The background loop can run frequently (every 30 min) without storage bloat
-- Manual snapshots bypass dedup — "Create Now" always creates
-
 ### Hardcoded Daily + 10 Retention
 
-Early implementation had per-user frequency (daily/weekly/monthly) and retention count (3-50) dropdowns. This was removed as overengineered — dedup makes daily cheap for everyone, and 10 snapshots covers two weeks of daily changes. No user needs to configure this.
+Early implementation had per-user frequency and retention dropdowns. This was removed as overengineered — dedup makes daily cheap for everyone, and 10 snapshots covers two weeks of daily changes. No user needs to configure this.
 
 ### Background Loop: In-Process `asyncio.Task`
 
@@ -48,13 +130,19 @@ Follows the same pattern as `app/tasks/recurring.py` (materialization loop):
 - Global task reference for clean shutdown via `stop_snapshot_background()`
 - Does NOT run on startup — first check after 30 min (snapshots aren't time-critical)
 
-**Why not Celery/Dagster/pg_cron?** The app is a single-process web server with dozens of users. A proper job orchestrator adds a broker (Redis), a worker process, deployment config, and monitoring — all for "run a function daily per user." The in-process loop has zero dependencies. If the process dies, Railway restarts it and the loop resumes. The snapshot timestamps themselves track "last run" state.
+**Why not Celery/Dagster/pg_cron?** The app is a single-process web server. A proper job orchestrator adds a broker, worker process, deployment config, and monitoring — all for "run a function daily per user." The in-process loop has zero dependencies.
 
 ### Restore Path
 
 Restore reuses `BackupService.import_all(data, clear_existing=True)` — the same code path as manual backup restore. This means snapshot data is always compatible with the existing format, and the restore logic (validation, ID remapping, cycle detection) is battle-tested.
 
 ## Data Model
+
+### `User` column
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `data_version` | `Integer` (default 0) | Monotonic counter, bumped on user-initiated mutations |
 
 ### `ExportSnapshot` table
 
@@ -66,6 +154,7 @@ Restore reuses `BackupService.import_all(data, clear_existing=True)` — the sam
 | `content_hash` | `String(64)` | SHA-256 hex for dedup |
 | `size_bytes` | `Integer` | Compressed size |
 | `is_manual` | `Boolean` | True for "Create Now" snapshots |
+| `snapshot_data_version` | `Integer` (nullable) | User's `data_version` at snapshot time |
 | `created_at` | `DateTime` | Server-default `now()` |
 
 Index: `(user_id, created_at)` for efficient listing and "latest snapshot" queries.
@@ -75,6 +164,28 @@ Index: `(user_id, created_at)` for efficient listing and "latest snapshot" queri
 | Column | Type | Description |
 |--------|------|-------------|
 | `snapshots_enabled` | `Boolean` | Toggle for automatic snapshots |
+
+## Backward Compatibility
+
+Existing snapshots have `snapshot_data_version = NULL`. On the first cycle after migration, NULL triggers the slow path (full export + hash comparison). If data changed, a new snapshot is stored with `snapshot_data_version = 0` (matching the user's initial `data_version`). From then on, the fast path kicks in.
+
+## `data_version` Bump Locations
+
+The bump is called via `await bump_data_version(db, user_id)` after a successful flush. All call sites:
+
+**Services:**
+- `TaskService`: `create_domain`, `update_domain`, `archive_domain`, `create_task`, `update_task`, `complete_task`, `uncomplete_task`, `archive_task`, `restore_task`, `delete_task`
+- `RecurrenceService`: `complete_instance`, `uncomplete_instance`, `skip_instance`, `unskip_instance`, `schedule_instance`, `batch_complete_instances`, `batch_complete_all_past_instances`, `batch_skip_all_past_instances`
+- `PreferencesService`: `update_preferences`
+- `BackupService`: `import_all`
+- `TodoistImportService`: `wipe_user_data`, `import_all`
+
+**Routers** (direct DB mutations not going through services):
+- `import_data.py`: `wipe_user_data`
+- `tasks.py`: `batch_update_tasks`
+- `domains.py`: `batch_update_domains`
+
+If you add a new mutation endpoint or service method that modifies user data (tasks, domains, instances, preferences), add a `bump_data_version` call.
 
 ## API Endpoints
 
@@ -93,9 +204,11 @@ All under `/api/v1/backup/snapshots`, rate-limited at 5/minute per user.
 
 | File | Purpose |
 |------|---------|
+| `app/models.py` | `User.data_version`, `ExportSnapshot.snapshot_data_version` |
+| `app/services/data_version.py` | `bump_data_version()` — atomic SQL increment utility |
 | `app/services/snapshot_service.py` | Core service: create, list, dedup, restore, retention |
-| `app/tasks/snapshots.py` | Background loop (30-min interval) |
-| `app/routers/backup.py` | API endpoints (added to existing router) |
-| `app/templates/settings.html` | UI: toggle, create, list, download/restore/delete |
-| `static/css/pages/settings.css` | Snapshot list styles |
-| `tests/test_snapshots.py` | 14 service-layer tests |
+| `app/services/backup_service.py` | Full export/import (used by snapshot service) |
+| `app/tasks/snapshots.py` | Background loop with batch query + version fast-path |
+| `app/routers/backup.py` | API endpoints |
+| `tests/test_snapshots.py` | 16 service-layer tests (including `data_version` storage) |
+| `tests/test_data_version.py` | 9 tests for version bumping and materialization exclusion |

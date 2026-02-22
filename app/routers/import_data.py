@@ -25,6 +25,7 @@ from app.models import (
     UserPreferences,
 )
 from app.routers.auth import get_current_user
+from app.services.data_version import bump_data_version
 from app.services.gcal import GoogleCalendarClient
 from app.services.todoist import TodoistClient
 from app.services.todoist_import import TodoistImportService
@@ -133,6 +134,7 @@ async def wipe_user_data(
     domain_result = await db.execute(delete(Domain).where(Domain.user_id == user.id))
     domains_deleted: int = domain_result.rowcount  # type: ignore[assignment]
 
+    await bump_data_version(db, user.id)
     await db.commit()
 
     logger.info(

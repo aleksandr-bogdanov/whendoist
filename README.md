@@ -238,7 +238,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
 | [Calendar DnD](docs/CALENDAR-DND.md) | dnd-kit in nested scroll containers — bugs and working patterns |
-| [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with content-hash dedup |
+| [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with `data_version` change tracking |
 | [PWA Viewport Fix](docs/PWA-VIEWPORT-FIX.md) | iOS viewport shrinking bug — diagnosis and workaround |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |
