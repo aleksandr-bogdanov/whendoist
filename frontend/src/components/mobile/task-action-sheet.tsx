@@ -188,7 +188,6 @@ export function TaskActionSheet({
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {
@@ -244,7 +243,6 @@ export function TaskActionSheet({
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {

@@ -149,7 +149,6 @@ function ThoughtsPage() {
                   );
                 },
               },
-              duration: 5000,
             });
           },
           onError: () => toast.error("Failed to delete thought"),

@@ -23,7 +23,6 @@ export function useNetworkStatus() {
         wasOfflineRef.current = false;
         toast.success("Back online", {
           id: "network-status",
-          duration: 3000,
         });
       }
     };

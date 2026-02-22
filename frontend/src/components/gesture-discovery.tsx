@@ -49,7 +49,7 @@ export function GestureDiscovery() {
       localStorage.setItem(LONGPRESS_HINT_KEY, "1");
 
       longPressTimerRef.current = window.setTimeout(() => {
-        toast.info("Tip: long-press any task for quick actions", { duration: 4000 });
+        toast.info("Tip: long-press any task for quick actions");
       }, 500);
     };
 

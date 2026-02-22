@@ -113,7 +113,6 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => toast.error("Failed to create task"),
@@ -180,7 +179,6 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
                   );
                 },
               },
-              duration: 5000,
             });
           },
           onError: () => {

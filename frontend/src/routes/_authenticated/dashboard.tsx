@@ -189,7 +189,7 @@ function DashboardPage() {
                     t?.status === "completed"
                       ? `Reopened "${t.title}"`
                       : `Completed "${t?.title ?? "Task"}"`;
-                  toast.success(label, { id: `complete-${sel}`, duration: 3000 });
+                  toast.success(label, { id: `complete-${sel}` });
                 },
                 onError: () => toast.error("Failed to update task", { id: `complete-err-${sel}` }),
               },
@@ -258,7 +258,7 @@ function DashboardPage() {
               {
                 onSuccess: () => {
                   queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-                  toast.success(`Deleted "${task.title}"`, { id: `delete-${sel}`, duration: 5000 });
+                  toast.success(`Deleted "${task.title}"`, { id: `delete-${sel}` });
                 },
                 onError: () => {
                   selectTask(sel);
@@ -294,7 +294,6 @@ function DashboardPage() {
     if (isMobile) return;
     const timer = setTimeout(() => {
       toast.info("Press ? to view keyboard shortcuts", {
-        duration: 8000,
         action: {
           label: "Show",
           onClick: () => setShortcutsHelpOpen(true),

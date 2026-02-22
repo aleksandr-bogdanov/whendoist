@@ -111,7 +111,6 @@ export function ScheduledTaskCard({
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {
@@ -178,7 +177,6 @@ export function ScheduledTaskCard({
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {
@@ -218,7 +216,6 @@ export function ScheduledTaskCard({
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => toast.error("Failed to delete task", { id: `delete-err-${taskId}` }),
@@ -232,14 +229,14 @@ export function ScheduledTaskCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
+          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${Math.max(item.height, 18)}px`,
             width,
             left,
             borderLeft: `3px solid ${impactColor}`,
-            backgroundColor: `${impactColor}1A`,
+            backgroundColor: `${impactColor}2A`,
           }}
           title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
           onClick={() => onClick?.()}
@@ -252,6 +249,7 @@ export function ScheduledTaskCard({
               <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-primary" />
               <span
                 className={`truncate font-medium ${isCompleted ? "line-through decoration-1" : ""}`}
+                style={{ color: impactColor }}
               >
                 {title}
               </span>

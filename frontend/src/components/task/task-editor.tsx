@@ -319,7 +319,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                 );
               },
             },
-            duration: 5000,
           });
           onOpenChange(false);
         },

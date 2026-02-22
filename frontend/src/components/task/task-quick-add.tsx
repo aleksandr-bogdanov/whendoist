@@ -80,7 +80,6 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
                 );
               },
             },
-            duration: 5000,
           });
           setTitle("");
           setDomainId("none");
