@@ -210,7 +210,7 @@ export function ScheduledTaskCard({
             height: `${Math.max(item.height, 18)}px`,
             width,
             left,
-            borderLeft: `2px solid ${impactColor}`,
+            borderLeft: `3px solid ${impactColor}`,
           }}
           title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
           onClick={() => onClick?.()}

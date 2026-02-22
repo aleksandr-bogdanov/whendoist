@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.23 — 2026-02-22
+
+### Calendar — Keep completed/skipped instances visible
+- Completed and skipped recurring instances remain visible in the calendar instead of disappearing
+- Visual treatment: `opacity-50` + strikethrough on both completed and skipped instance cards
+- Anytime task pills: completed tasks stay in the day header with strikethrough + opacity; context menu shows "Reopen" instead of "Complete"
+
+## v0.54.22 — 2026-02-22
+
+### Calendar — Thicker task card rail
+- Increased left border on scheduled task cards from 2px to 3px to match Google Calendar event rail thickness
+
 ## v0.54.21 — 2026-02-22
 
 ### iOS PWA — Remove safe-area-bottom from nav (no blank zone below icons)

@@ -107,12 +107,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     [tasks],
   );
 
-  // Anytime tasks for the displayed date (date-only, no time, not completed)
+  // Anytime tasks for the displayed date (date-only, no time)
   const anytimeTasks = useMemo(
-    () =>
-      tasks.filter(
-        (t) => t.scheduled_date === displayDate && !t.scheduled_time && t.status !== "completed",
-      ),
+    () => tasks.filter((t) => t.scheduled_date === displayDate && !t.scheduled_time),
     [tasks, displayDate],
   );
 

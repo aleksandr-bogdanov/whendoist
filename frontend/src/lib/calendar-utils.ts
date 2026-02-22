@@ -297,7 +297,6 @@ export function calculateOverlaps(
   if (instances) {
     for (const inst of instances) {
       if (inst.instance_date !== dateStr) continue;
-      if (inst.status === "skipped") continue;
       let range: TimeRange;
       if (inst.scheduled_datetime) {
         const dt = new Date(inst.scheduled_datetime);
@@ -453,7 +452,6 @@ export function calculateExtendedOverlaps(
     // Instances
     for (const inst of instances) {
       if (inst.instance_date !== dateStr) continue;
-      if (inst.status === "skipped") continue;
       let range: TimeRange;
       if (inst.scheduled_datetime) {
         const dt = new Date(inst.scheduled_datetime);

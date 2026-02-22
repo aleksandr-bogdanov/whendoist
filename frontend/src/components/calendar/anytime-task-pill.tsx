@@ -26,6 +26,7 @@ interface AnytimeTaskPillProps {
 }
 
 export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
+  const isCompleted = task.status === "completed";
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
@@ -150,7 +151,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
         <button
           ref={setNodeRef}
           type="button"
-          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing bg-card border border-border/40 max-w-[180px] flex-shrink-0 ${isDragging ? "opacity-30" : ""}`}
+          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing bg-card border border-border/40 max-w-[180px] flex-shrink-0 ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""}`}
           style={{
             borderLeft: `3px solid ${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}`,
           }}
@@ -159,7 +160,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
           {...listeners}
           {...attributes}
         >
-          {task.title}
+          <span className={isCompleted ? "line-through decoration-1" : ""}>{task.title}</span>
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
@@ -173,7 +174,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
         </ContextMenuItem>
         <ContextMenuItem onClick={handleComplete}>
           <Check className="h-3.5 w-3.5 mr-2" />
-          Complete
+          {isCompleted ? "Reopen" : "Complete"}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
