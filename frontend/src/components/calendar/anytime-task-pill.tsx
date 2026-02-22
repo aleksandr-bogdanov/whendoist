@@ -19,6 +19,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { IMPACT_COLORS } from "@/lib/task-utils";
+import { useUIStore } from "@/stores/ui-store";
 
 interface AnytimeTaskPillProps {
   task: AppRoutersTasksTaskResponse;
@@ -27,6 +28,7 @@ interface AnytimeTaskPillProps {
 
 export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
   const isCompleted = task.status === "completed";
+  const cardStyle = useUIStore((s) => s.cardStyle);
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
@@ -179,9 +181,12 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
         <button
           ref={setNodeRef}
           type="button"
-          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing bg-card border border-border/40 max-w-[180px] flex-shrink-0 ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""}`}
+          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing border border-border/40 max-w-[180px] flex-shrink-0 ${cardStyle === "colored" || cardStyle === "all-colored" ? "" : "bg-card"} ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""}`}
           style={{
             borderLeft: `3px solid ${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}`,
+            ...(cardStyle === "colored" || cardStyle === "all-colored"
+              ? { backgroundColor: `${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}0D` }
+              : {}),
           }}
           onClick={onClick}
           title={task.title}

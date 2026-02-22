@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.37 — 2026-02-22
+
+### Calendar card style toggle — A/B test 3 approaches
+- Add toggleable card style approaches to visually distinguish regular tasks, recurring instances, and Google Calendar events
+- **Default**: Current look (white cards + left border accent)
+- **Colored**: Regular tasks get impact-colored tint backgrounds; Google Calendar events stay white/muted
+- **All Colored**: All card types get colored backgrounds at different opacity levels
+- **Bordered**: Google Calendar events use dashed left borders + muted text
+- Floating palette toggle button next to zoom controls to cycle between styles
+- Setting persists in localStorage
+
+---
+
 ## v0.54.36 — 2026-02-22
 
 ### Fix add-task optimistic flicker
