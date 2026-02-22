@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.44 — 2026-02-22
+
+### DnD UX: drop-between-tasks promote, badge text, softer visual
+- Drag subtask BETWEEN tasks to promote to standalone (insertion zones with purple line indicator)
+- Badge text: "Change parent" when reparenting subtask, "Make subtask" when nesting standalone
+- Softer reparent target visual: subtle indent + wash instead of harsh ring+glow
+
+---
+
 ## v0.54.43 — 2026-02-22
 
 ### Fix missing Undo in calendar instance toasts

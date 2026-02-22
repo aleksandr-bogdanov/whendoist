@@ -611,7 +611,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
         <div className="relative z-20 flex justify-center pointer-events-none">
           <span className="absolute -bottom-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#6D5EF6] text-white text-[10px] font-semibold shadow-lg whitespace-nowrap">
             <CornerDownRight className="h-3 w-3" />
-            {dndState.activeTask?.parent_id != null ? "Move here" : "Make subtask"}
+            {dndState.activeTask?.parent_id != null ? "Change parent" : "Make subtask"}
           </span>
         </div>
       )}
@@ -627,7 +627,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   isDragging && "opacity-30",
                   isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
                   isReparentTarget &&
-                    "ring-2 ring-[#6D5EF6] bg-[#6D5EF6]/12 shadow-[0_0_0_2px_#6D5EF6,inset_0_0_12px_rgba(109,94,246,0.15)] scale-[1.01] rounded-lg",
+                    "bg-[#6D5EF6]/8 translate-x-4 rounded-lg shadow-sm ring-1 ring-[#6D5EF6]/25",
                 )}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
