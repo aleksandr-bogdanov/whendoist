@@ -101,6 +101,8 @@ const customCollisionDetection: CollisionDetection = (args) => {
     if (anytimeHit) return [anytimeHit];
     const calendarHit = pointerCollisions.find((c) => String(c.id).startsWith("calendar-overlay-"));
     if (calendarHit) return [calendarHit];
+    const promoteHit = pointerCollisions.find((c) => String(c.id) === "task-list-promote");
+    if (promoteHit) return [promoteHit];
     const taskDropHit = pointerCollisions.find((c) => String(c.id).startsWith("task-drop-"));
     if (taskDropHit) return [taskDropHit];
     const taskListHit = pointerCollisions.find((c) => String(c.id).startsWith("task-list-"));
@@ -162,7 +164,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           for (const st of task.subtasks) {
             if (st.id === numId) {
               // Return subtask as a partial task response for drag purposes
-              return { ...st, subtasks: [] } as unknown as AppRoutersTasksTaskResponse;
+              return {
+                ...st,
+                parent_id: task.id,
+                subtasks: [],
+              } as unknown as AppRoutersTasksTaskResponse;
             }
           }
         }
@@ -182,6 +188,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       if (id.startsWith("anytime-drop-")) return "anytime";
       if (id.startsWith("calendar-overlay-")) return "calendar";
       if (id.startsWith("task-drop-")) return "reparent";
+      if (id === "task-list-promote") return "task-list";
       if (id.startsWith("task-list-")) return "task-list";
       return "task";
     },
