@@ -510,11 +510,12 @@ function AnytimeSection({
       className={`border-b px-3 py-1.5 flex-shrink-0 transition-colors ${
         isOver ? "bg-primary/10 border-b-primary/40" : ""
       }`}
+      style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: "0.5rem", alignItems: "start" }}
     >
-      <div className="flex flex-wrap gap-1 items-center min-h-[22px]">
-        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] flex-shrink-0">
-          ANYTIME
-        </span>
+      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] leading-[22px]">
+        ANYTIME
+      </span>
+      <div className="flex flex-wrap gap-1 min-h-[22px] items-center">
         {anytimeTasks.length > 0 ? (
           anytimeTasks.map((t) => (
             <AnytimeTaskPill key={t.id} task={t} onClick={() => onTaskClick?.(t)} />
