@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.40 — 2026-02-22
+
+### Energy filter applies to subtasks
+- Subtasks are now filtered by energy level, not just parents
+- Zombie mode shows only autopilot subtasks; Normal hides brainstorm subtasks
+- Parent with 3 subtasks (autopilot/normal/brainstorm) shows 1, 2, or 3 depending on energy level
+
+---
+
 ## v0.54.39 — 2026-02-22
 
 ### Show instance date in Complete/Skip toast
