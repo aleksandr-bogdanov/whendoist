@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.28 — 2026-02-22
+
+### Calendar — Anytime pills stay right of label on wrap
+- Use CSS grid (`grid-template-columns: auto 1fr`) to pin ANYTIME label to the left and constrain all pill rows to the right column
+
+---
+
 ## v0.54.27 — 2026-02-22
 
 ### Calendar — Anytime section wraps tasks vertically
