@@ -339,9 +339,9 @@ export function DayColumn({
                 <CalendarEventCard
                   key={`event-${item.id}`}
                   item={item}
-                  eventId={item.id}
                   summary={event?.summary ?? ""}
                   timeLabel={timeLabel}
+                  htmlLink={event?.html_link}
                   backgroundColor={event ? calendarColors.get(event.calendar_id) : undefined}
                   dimmed={isDimmed}
                 />

@@ -16,4 +16,5 @@ export interface EventResponse {
   end: string;
   all_day: boolean;
   calendar_id: string;
+  html_link: string | null;
 }

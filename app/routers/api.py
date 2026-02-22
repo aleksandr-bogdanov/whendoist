@@ -49,6 +49,7 @@ class EventResponse(BaseModel):
     end: datetime
     all_day: bool
     calendar_id: str
+    html_link: str | None
 
 
 class CalendarResponse(BaseModel):
@@ -145,6 +146,7 @@ async def get_events(
             end=e.end,
             all_day=e.all_day,
             calendar_id=e.calendar_id,
+            html_link=e.html_link,
         )
         for e in all_events
     ]
