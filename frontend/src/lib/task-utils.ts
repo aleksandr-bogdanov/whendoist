@@ -149,13 +149,18 @@ export function filterByEnergy(
     return c === "autopilot";
   };
 
-  return tasks.filter((t) => {
-    // Parent tasks: show if any subtask matches
+  const result: AppRoutersTasksTaskResponse[] = [];
+  for (const t of tasks) {
     if (t.subtasks && t.subtasks.length > 0) {
-      return t.subtasks.some((st) => matchesEnergy(st.clarity));
+      const filtered = t.subtasks.filter((st) => matchesEnergy(st.clarity));
+      if (filtered.length > 0) {
+        result.push({ ...t, subtasks: filtered });
+      }
+    } else if (matchesEnergy(t.clarity)) {
+      result.push(t);
     }
-    return matchesEnergy(t.clarity);
-  });
+  }
+  return result;
 }
 
 export interface DomainGroup {
