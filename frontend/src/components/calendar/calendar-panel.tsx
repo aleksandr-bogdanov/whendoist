@@ -507,17 +507,14 @@ function AnytimeSection({
   return (
     <div
       ref={setNodeRef}
-      className={`border-b px-3 py-1.5 flex items-center gap-2 h-[34px] flex-shrink-0 transition-colors ${
+      className={`border-b px-3 py-1.5 flex-shrink-0 transition-colors ${
         isOver ? "bg-primary/10 border-b-primary/40" : ""
       }`}
     >
-      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] flex-shrink-0">
-        ANYTIME
-      </span>
-      <div
-        className="flex gap-1 min-w-0 overflow-x-auto overflow-y-hidden flex-1"
-        style={{ scrollbarWidth: "none" }}
-      >
+      <div className="flex flex-wrap gap-1 items-center min-h-[22px]">
+        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] flex-shrink-0">
+          ANYTIME
+        </span>
         {anytimeTasks.length > 0 ? (
           anytimeTasks.map((t) => (
             <AnytimeTaskPill key={t.id} task={t} onClick={() => onTaskClick?.(t)} />
