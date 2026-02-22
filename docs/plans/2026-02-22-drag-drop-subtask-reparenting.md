@@ -1,6 +1,6 @@
 ---
-version:
-pr:
+version: v0.54.33
+pr: 417
 created: 2026-02-22
 ---
 
