@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.38 — 2026-02-22
+
+### Fix add-task flicker
+- Drop optimistic placeholder approach — append real task from API response to cache instead
+- Stable key from the start (real ID), so AnimatePresence never re-animates
+
+---
+
 ## v0.54.37 — 2026-02-22
 
 ### Calendar card style toggle — A/B test 3 approaches
