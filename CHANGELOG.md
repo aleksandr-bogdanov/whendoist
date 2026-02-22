@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.49 — 2026-02-22
+
+### Reparent visual: ghost placeholder instead of misleading indent
+- Removed `translate-x-4` indent on reparent target (was implying the target becomes the child)
+- Target now gets subtle purple glow only — stays in place
+- Ghost placeholder with dashed border opens below target showing where the dragged task will land
+- Badge grammar fix: "Make a subtask" (with article)
+
+---
+
 ## v0.54.48 — 2026-02-22
 
 ### Consistent 3px left borders + GCal event text contrast

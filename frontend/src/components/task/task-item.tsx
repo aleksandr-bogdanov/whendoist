@@ -611,7 +611,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
         <div className="relative z-20 flex justify-center pointer-events-none">
           <span className="absolute -bottom-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#6D5EF6] text-white text-[10px] font-semibold shadow-lg whitespace-nowrap">
             <CornerDownRight className="h-3 w-3" />
-            {dndState.activeTask?.parent_id != null ? "Change parent task" : "Make subtask"}
+            {dndState.activeTask?.parent_id != null ? "Change parent task" : "Make a subtask"}
           </span>
         </div>
       )}
@@ -626,8 +626,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
                   isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
-                  isReparentTarget &&
-                    "bg-[#6D5EF6]/8 translate-x-4 rounded-lg shadow-sm ring-1 ring-[#6D5EF6]/25",
+                  isReparentTarget && "bg-[#6D5EF6]/8 shadow-[-4px_0_12px_rgba(109,94,246,0.15)]",
                 )}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
@@ -876,6 +875,32 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
         </ContextMenuTrigger>
         <ContextMenuContent className="min-w-[140px]">{contextMenuItems}</ContextMenuContent>
       </ContextMenu>
+
+      {/* Ghost placeholder — shows where the dragged task will land as a subtask */}
+      {isReparentTarget && dndState.activeTask && (
+        <div
+          className="flex items-center gap-2 border-2 border-dashed border-[#6D5EF6]/30 rounded-lg bg-[#6D5EF6]/[0.03]"
+          style={{ marginLeft: `${(depth + 1) * 24}px`, padding: "6px 10px" }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            role="img"
+            aria-label="Placeholder"
+            className="h-[15px] w-[15px] flex-shrink-0"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="text-[#6D5EF6]/25"
+            />
+          </svg>
+          <span className="text-sm text-[#6D5EF6]/50 truncate">{dndState.activeTask.title}</span>
+        </div>
+      )}
 
       {/* Expanded subtasks */}
       <AnimatePresence initial={false}>
