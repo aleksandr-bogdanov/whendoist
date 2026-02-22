@@ -95,6 +95,32 @@ Filter tasks by how much energy they require:
 
 ---
 
+## 🔁 Recurring Tasks
+
+Set any task to repeat on a schedule — daily, weekly, monthly, or a custom interval (e.g. every 4 days).
+
+### How it works
+
+- When you create a recurring task, Whendoist generates **individual instances** for each upcoming occurrence (up to 60 days ahead).
+- Each instance can be **completed** or **skipped** independently — completing Monday's instance doesn't affect Wednesday's.
+
+### Editing a recurring task
+
+There are two different things you can change, and they work differently:
+
+| What you do | What happens |
+|-------------|--------------|
+| **Complete / skip an instance** | Only that one occurrence is affected. The rest of the schedule stays the same. |
+| **Edit the parent task** (change the scheduled date, repeat rule, or start date) | The entire schedule resets. All future instances are deleted and regenerated from the new settings. Completed and skipped instances stay in history. |
+
+**In short:** completing or skipping touches one instance. Editing the task card resets the whole series.
+
+### Drag and drop
+
+Dragging a task in the calendar reschedules that **single instance** — the rest of the series is untouched.
+
+---
+
 ## 🔐 Optional: End-to-End Encryption
 
 Your task titles, descriptions, and project names can be encrypted so only you can read them.
@@ -207,6 +233,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption details |
 | [Demo Login](docs/DEMO-LOGIN.md) | Demo accounts for testing and previews |
 | **Architecture** | |
+| [Recurring Tasks](#-recurring-tasks) | How repeating tasks, instances, and editing work |
 | [Subtasks](docs/SUBTASKS.md) | Three-level hierarchy, container model, enforced constraints |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
