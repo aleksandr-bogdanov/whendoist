@@ -141,6 +141,16 @@ See [docs/PWA-VIEWPORT-FIX.md](docs/PWA-VIEWPORT-FIX.md) for full details.
 - **State**: Zustand stores (`frontend/src/stores/`) for client-side state, TanStack Query for server state
 - **Routing**: TanStack Router with file-based routes (`frontend/src/routes/`)
 
+### 10. Toasts: Single duration, no hardcoding
+All toasts use **10 seconds** duration, defined once in `frontend/src/lib/toast.ts` (`TOAST_DURATION`)
+and applied globally via the `<Toaster>` component in `main.tsx`.
+
+**Rules:**
+- **Never hardcode `duration`** in individual `toast.*()` calls — the global default handles it
+- Only two exceptions: `Number.POSITIVE_INFINITY` for persistent toasts (e.g. offline notice),
+  and dynamic countdowns (e.g. rate-limit timer)
+- To change the duration, edit `TOAST_DURATION` in `frontend/src/lib/toast.ts` — one place, everywhere
+
 ---
 
 ## Plan Files

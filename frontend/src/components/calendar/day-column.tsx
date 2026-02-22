@@ -330,7 +330,7 @@ export function DayColumn({
         )}
 
         {/* Rendered items */}
-        <div className="absolute inset-0 pr-0.5">
+        <div className="absolute inset-y-0 left-px right-0 pr-0.5">
           {positioned.map((item) => {
             const timeLabel = getTimeLabel(item.startMinutes, item.endMinutes);
             const isDimmed = item.daySection === "prev" || item.daySection === "next";
@@ -480,7 +480,6 @@ function InstanceCard({
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {
@@ -581,7 +580,7 @@ function InstanceCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow ${
+          className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${
             isSkipped || isCompleted ? "opacity-50" : ""
           } ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
@@ -589,7 +588,7 @@ function InstanceCard({
             height: `${item.height}px`,
             width,
             left,
-            backgroundColor: `${impactColor}2A`,
+            backgroundColor: `${impactColor}1A`,
             borderLeft: `3px solid ${impactColor}`,
           }}
           title={`${instance.task_title} (recurring)`}
@@ -603,7 +602,6 @@ function InstanceCard({
               <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
               <span
                 className={`truncate font-medium ${isCompleted || isSkipped ? "line-through decoration-1" : ""}`}
-                style={{ color: impactColor }}
               >
                 {instance.task_title}
               </span>

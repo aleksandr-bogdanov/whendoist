@@ -304,7 +304,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                     );
                   },
                 },
-                duration: 5000,
               });
             },
             onError: () => {
@@ -405,7 +404,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                       );
                     },
                   },
-                  duration: 5000,
                 },
               );
             },
@@ -507,7 +505,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                     );
                   },
                 },
-                duration: 5000,
               });
             },
             onError: () => {
@@ -580,7 +577,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                     );
                   },
                 },
-                duration: 5000,
               });
             },
             onError: () => {
@@ -700,7 +696,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                         );
                       },
                     },
-                    duration: 5000,
                   },
                 );
               } else {
@@ -732,7 +727,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                         );
                       },
                     },
-                    duration: 5000,
                   },
                 );
               }
@@ -807,7 +801,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                       );
                     },
                   },
-                  duration: 5000,
                 });
               },
               onError: () => {
@@ -872,7 +865,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                       );
                     },
                   },
-                  duration: 5000,
                 });
               },
               onError: () => {
@@ -945,7 +937,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                     );
                   },
                 },
-                duration: 5000,
               });
             },
             onError: () => {
@@ -1060,7 +1051,6 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                     );
                   },
                 },
-                duration: 5000,
               });
             },
             onError: () => {

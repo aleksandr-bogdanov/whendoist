@@ -270,7 +270,6 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {
@@ -433,7 +432,6 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {
@@ -531,7 +529,6 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),

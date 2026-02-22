@@ -4,6 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import { queryClient } from "@/lib/query-client";
+import { TOAST_DURATION } from "@/lib/toast";
 import { routeTree } from "./routeTree.gen";
 import "@/styles/globals.css";
 
@@ -15,17 +16,11 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-      <Toaster
-        richColors
-        position="bottom-right"
-        toastOptions={prefersReducedMotion ? { duration: undefined } : undefined}
-      />
+      <Toaster richColors position="bottom-right" toastOptions={{ duration: TOAST_DURATION }} />
     </QueryClientProvider>
   </StrictMode>,
 );

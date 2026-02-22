@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.52 — 2026-02-23
+
+### Unified toast duration
+- All toasts now use a single 10-second duration via `TOAST_DURATION` constant in `frontend/src/lib/toast.ts`
+- Removed 40+ hardcoded `duration` values across 14 files
+- Global default set on the `<Toaster>` component — individual toast calls no longer specify duration
+- Added rule #10 to CLAUDE.md to enforce this going forward
+
+---
+
 ## v0.54.51 — 2026-02-22
 
 ### DnD: overlay visibility + gap zone hitboxes

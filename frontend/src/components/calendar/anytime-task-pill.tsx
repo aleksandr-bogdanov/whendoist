@@ -69,7 +69,6 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {
@@ -130,7 +129,6 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => {
@@ -165,7 +163,6 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
                 );
               },
             },
-            duration: 5000,
           });
         },
         onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),
