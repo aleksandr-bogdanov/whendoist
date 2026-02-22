@@ -8,7 +8,7 @@ Development history of Whendoist. Per-patch details in git history.
 
 ### Fix subtask DnD: no-op on same parent, gap drop zones, label tweak
 - Dragging subtask to same parent is now truly a no-op (no longer accidentally promotes)
-- Drop zones between tasks in each domain group for promoting subtasks to standalone
+- Drop zones between tasks in each domain group wired into collision detection for promote
 - Badge text says "Change parent task" when reparenting an existing subtask
 
 ---
