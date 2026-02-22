@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.47 — 2026-02-22
+
+### Fix calendar card left border clipping + refine outline GCal style
+- Remove `pl-0.5` left padding from items container so card left borders sit flush against column edge
+- Outline GCal style: white (`bg-card`) background instead of transparent, thicker `2px` colored border
+
+---
+
 ## v0.54.46 — 2026-02-22
 
 ### Stronger task tints + GCal event style picker (4 approaches)

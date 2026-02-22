@@ -30,20 +30,19 @@ export function CalendarEventCard({
     }
   };
 
-  // ── Style A: Outline — transparent bg, thin full border in calendar color ──
+  // ── Style A: Outline — card bg, colored border all sides ──
   if (cardStyle === "outline") {
     return (
       <button
         type="button"
         onClick={handleClick}
-        className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs cursor-pointer hover:shadow-sm transition-all text-left ${dimmed ? "opacity-50" : ""}`}
+        className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs cursor-pointer hover:shadow-sm transition-all text-left bg-card ${dimmed ? "opacity-50" : ""}`}
         style={{
           top: `${item.top}px`,
           height: `${Math.max(item.height, 18)}px`,
           width,
           left,
-          border: `1.5px solid ${calColor}50`,
-          backgroundColor: "transparent",
+          border: `2px solid ${calColor}60`,
         }}
         title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
       >

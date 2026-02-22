@@ -330,7 +330,7 @@ export function DayColumn({
         )}
 
         {/* Rendered items */}
-        <div className="absolute inset-0 pl-0.5 pr-0.5">
+        <div className="absolute inset-0 pr-0.5">
           {positioned.map((item) => {
             const timeLabel = getTimeLabel(item.startMinutes, item.endMinutes);
             const isDimmed = item.daySection === "prev" || item.daySection === "next";
