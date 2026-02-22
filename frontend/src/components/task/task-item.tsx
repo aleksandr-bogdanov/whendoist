@@ -1,4 +1,4 @@
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Calendar,
@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  CornerDownRight,
   EllipsisVertical,
   Pencil,
   Repeat,
@@ -62,25 +63,18 @@ import {
 } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
+import { useDndState } from "./task-dnd-context";
 
 interface TaskItemProps {
   task: AppRoutersTasksTaskResponse;
   depth?: number;
   onSelect?: (taskId: number) => void;
   onEdit?: (task: AppRoutersTasksTaskResponse) => void;
-  isDropTarget?: boolean;
   /** Overdue pending instance for recurring tasks — enables "Skip this one" menu item */
   pendingInstance?: InstanceResponse;
 }
 
-export function TaskItem({
-  task,
-  depth = 0,
-  onSelect,
-  onEdit,
-  isDropTarget,
-  pendingInstance,
-}: TaskItemProps) {
+export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }: TaskItemProps) {
   const {
     selectedTaskId,
     selectTask,
@@ -114,11 +108,54 @@ export function TaskItem({
 
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // --- Drag-and-drop: draggable + droppable (for reparenting) ---
+  const dndState = useDndState();
+  const activeTaskData = dndState.activeTask;
+
+  // Determine if this task can accept a dropped child
+  const canReceiveChild = useMemo(() => {
+    if (!dndState.activeId || !activeTaskData) return false;
+    const activeNumId =
+      typeof dndState.activeId === "string"
+        ? Number.parseInt(dndState.activeId, 10)
+        : Number(dndState.activeId);
+    if (activeNumId === task.id) return false;
+    if (task.parent_id != null) return false;
+    if (task.is_recurring) return false;
+    if ((activeTaskData.subtasks?.length ?? 0) > 0) return false;
+    if (activeTaskData.subtasks?.some((st) => st.id === task.id)) return false;
+    if (activeTaskData.parent_id === task.id) return false;
+    return true;
+  }, [dndState.activeId, activeTaskData, task]);
+
   // Make task draggable
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    isDragging,
+  } = useDraggable({
     id: String(task.id),
     data: { type: "task", task },
   });
+
+  // Make task a drop target for reparenting
+  const { setNodeRef: setDropRef, isOver: isDropOver } = useDroppable({
+    id: `task-drop-${task.id}`,
+    data: { type: "reparent", taskId: task.id },
+    disabled: !canReceiveChild,
+  });
+
+  // Merge drag + drop refs
+  const mergedRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDragRef(node);
+      setDropRef(node);
+    },
+    [setDragRef, setDropRef],
+  );
+
+  const isReparentTarget = isDropOver && canReceiveChild;
 
   const handleTitleClick = () => {
     if (hasSubtasks) {
@@ -558,19 +595,29 @@ export function TaskItem({
   );
 
   return (
-    <div ref={setNodeRef} data-task-id={task.id}>
+    <div ref={mergedRef} data-task-id={task.id}>
+      {/* Reparent indicator badge */}
+      {isReparentTarget && (
+        <div className="relative z-20 flex justify-center pointer-events-none">
+          <span className="absolute -bottom-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#6D5EF6] text-white text-[10px] font-semibold shadow-lg whitespace-nowrap">
+            <CornerDownRight className="h-3 w-3" />
+            Make subtask
+          </span>
+        </div>
+      )}
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div>
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <div
                 className={cn(
-                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 sm:py-2 transition-colors border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
+                  "group relative flex items-center gap-[var(--col-gap)] py-1.5 sm:py-2 transition-all duration-150 border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
                   isSelected && "bg-[rgba(109,94,246,0.08)]",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
-                  isDropTarget && "ring-2 ring-primary bg-primary/10",
                   isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
+                  isReparentTarget &&
+                    "ring-2 ring-[#6D5EF6] bg-[#6D5EF6]/12 shadow-[0_0_0_2px_#6D5EF6,inset_0_0_12px_rgba(109,94,246,0.15)] scale-[1.01] rounded-lg",
                 )}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
@@ -838,6 +885,7 @@ export function TaskItem({
             />
             <SubtaskTree
               subtasks={task.subtasks!}
+              parentId={task.id}
               depth={depth + 1}
               onSelect={onSelect}
               onEdit={onEdit}
@@ -851,16 +899,24 @@ export function TaskItem({
 
 interface SubtaskTreeProps {
   subtasks: SubtaskResponse[];
+  parentId: number;
   depth: number;
   onSelect?: (taskId: number) => void;
   onEdit?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-function SubtaskTree({ subtasks, depth, onSelect, onEdit }: SubtaskTreeProps) {
+function SubtaskTree({ subtasks, parentId, depth, onSelect, onEdit }: SubtaskTreeProps) {
   return (
     <div>
       {subtasks.map((st) => (
-        <SubtaskItem key={st.id} subtask={st} depth={depth} onSelect={onSelect} onEdit={onEdit} />
+        <SubtaskItem
+          key={st.id}
+          subtask={st}
+          parentId={parentId}
+          depth={depth}
+          onSelect={onSelect}
+          onEdit={onEdit}
+        />
       ))}
     </div>
   );
@@ -868,12 +924,13 @@ function SubtaskTree({ subtasks, depth, onSelect, onEdit }: SubtaskTreeProps) {
 
 interface SubtaskItemProps {
   subtask: SubtaskResponse;
+  parentId: number;
   depth: number;
   onSelect?: (taskId: number) => void;
   onEdit?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
+function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItemProps) {
   const { selectedTaskId, selectTask } = useUIStore();
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
@@ -883,7 +940,7 @@ function SubtaskItem({ subtask, depth, onSelect, onEdit }: SubtaskItemProps) {
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: String(subtask.id),
-    data: { type: "task", task: subtask },
+    data: { type: "subtask", task: subtask, parentId },
   });
 
   const handleClick = async () => {

@@ -25,16 +25,9 @@ interface DomainGroupProps {
   tasks: AppRoutersTasksTaskResponse[];
   onSelectTask?: (taskId: number) => void;
   onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
-  dragOverTaskId?: string | null;
 }
 
-export function DomainGroup({
-  domain,
-  tasks,
-  onSelectTask,
-  onEditTask,
-  dragOverTaskId,
-}: DomainGroupProps) {
+export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainGroupProps) {
   const { collapsedDomains, toggleCollapsedDomain, setMobileTab, selectTask } = useUIStore();
   const { prefersTouch, hasTouch } = useDevice();
   const queryClient = useQueryClient();
@@ -301,21 +294,11 @@ export function DomainGroup({
                       onSwipeLeft={() => handleSwipeSchedule(task)}
                       onLongPress={() => handleLongPress(task)}
                     >
-                      <TaskItem
-                        task={task}
-                        onSelect={onSelectTask}
-                        onEdit={onEditTask}
-                        isDropTarget={dragOverTaskId === String(task.id)}
-                      />
+                      <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
                     </TaskSwipeRow>
                   </div>
                 ) : (
-                  <TaskItem
-                    task={task}
-                    onSelect={onSelectTask}
-                    onEdit={onEditTask}
-                    isDropTarget={dragOverTaskId === String(task.id)}
-                  />
+                  <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
                 )}
               </motion.div>
             ))}

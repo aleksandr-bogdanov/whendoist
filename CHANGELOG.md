@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.33 — 2026-02-22
+
+### Drag-and-drop subtask reparenting
+- Drag a task onto another task to make it a subtask (distinct purple glow + "Make subtask" badge)
+- Drag a subtask onto a different parent task to reparent it
+- Drag a subtask to the task list empty area to promote it to a standalone task
+- Drag overlay shows arrow icon when hovering over a valid reparent target
+- All operations support undo via toast
+- Proper optimistic updates: tasks move instantly between parent/child lists
+- Auto-expands parent's subtask list after nesting
+- Invalid targets (recurring, subtasks, tasks with children) are automatically disabled
+
+---
+
 ## v0.54.32 — 2026-02-22
 
 ### Add undo toast for "Complete this one" and "Skip this one" on recurring instances

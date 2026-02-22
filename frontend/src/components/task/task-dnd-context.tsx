@@ -17,9 +17,17 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
+import type { AppRoutersTasksTaskResponse, InstanceResponse, SubtaskResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   useScheduleInstanceApiV1InstancesInstanceIdSchedulePut,
@@ -34,12 +42,27 @@ import { formatScheduleTarget } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskDragOverlay } from "./task-drag-overlay";
 
+// --- DnD state context (shared with TaskItem for drop-target validation) ---
+interface DndStateContextValue {
+  activeId: UniqueIdentifier | null;
+  activeTask: AppRoutersTasksTaskResponse | null;
+}
+
+const DndStateCtx = createContext<DndStateContextValue>({
+  activeId: null,
+  activeTask: null,
+});
+
+export function useDndState() {
+  return useContext(DndStateCtx);
+}
+
 export interface DragState {
   activeId: UniqueIdentifier | null;
   activeTask: AppRoutersTasksTaskResponse | null;
   activeInstance: InstanceResponse | null;
   overId: UniqueIdentifier | null;
-  overType: "task" | "calendar" | "task-list" | "anytime" | "date-group" | null;
+  overType: "task" | "calendar" | "task-list" | "anytime" | "date-group" | "reparent" | null;
 }
 
 interface TaskDndContextProps {
@@ -47,7 +70,7 @@ interface TaskDndContextProps {
   children: React.ReactNode;
 }
 
-/** Parse a draggable ID to extract the numeric task ID. Handles prefixed IDs like "anytime-task-123" and "scheduled-task-123". */
+/** Parse a draggable/droppable ID to extract the numeric task ID. Handles prefixed IDs. */
 function parseTaskId(id: UniqueIdentifier): number {
   const s = String(id);
   if (s.startsWith("anytime-task-")) {
@@ -55,6 +78,9 @@ function parseTaskId(id: UniqueIdentifier): number {
   }
   if (s.startsWith("scheduled-task-")) {
     return Number.parseInt(s.replace("scheduled-task-", ""), 10);
+  }
+  if (s.startsWith("task-drop-")) {
+    return Number.parseInt(s.replace("task-drop-", ""), 10);
   }
   return typeof id === "string" ? Number.parseInt(id, 10) : Number(id);
 }
@@ -68,13 +94,15 @@ const customCollisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
 
   if (pointerCollisions.length > 0) {
-    // Priority: date-group → anytime → calendar-overlay → task-list → other
+    // Priority: date-group → anytime → calendar-overlay → task-drop (reparent) → task-list → other
     const dateGroupHit = pointerCollisions.find((c) => String(c.id).startsWith("date-group-"));
     if (dateGroupHit) return [dateGroupHit];
     const anytimeHit = pointerCollisions.find((c) => String(c.id).startsWith("anytime-drop-"));
     if (anytimeHit) return [anytimeHit];
     const calendarHit = pointerCollisions.find((c) => String(c.id).startsWith("calendar-overlay-"));
     if (calendarHit) return [calendarHit];
+    const taskDropHit = pointerCollisions.find((c) => String(c.id).startsWith("task-drop-"));
+    if (taskDropHit) return [taskDropHit];
     const taskListHit = pointerCollisions.find((c) => String(c.id).startsWith("task-list-"));
     if (taskListHit) return [taskListHit];
     return pointerCollisions;
@@ -145,12 +173,15 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   );
 
   const getOverType = useCallback(
-    (over: Over | null): "task" | "calendar" | "task-list" | "anytime" | "date-group" | null => {
+    (
+      over: Over | null,
+    ): "task" | "calendar" | "task-list" | "anytime" | "date-group" | "reparent" | null => {
       if (!over) return null;
       const id = String(over.id);
       if (id.startsWith("date-group-")) return "date-group";
       if (id.startsWith("anytime-drop-")) return "anytime";
       if (id.startsWith("calendar-overlay-")) return "calendar";
+      if (id.startsWith("task-drop-")) return "reparent";
       if (id.startsWith("task-list-")) return "task-list";
       return "task";
     },
@@ -686,9 +717,80 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         return;
       }
 
-      // --- Drop onto task-list: unschedule if task was scheduled ---
+      // --- Drop onto task-list: promote subtask OR unschedule ---
       if (overId.startsWith("task-list-")) {
         const task = findTask(active.id);
+
+        // If a subtask is dropped on task-list, promote to standalone
+        if (task?.parent_id != null) {
+          const prevParentId = task.parent_id;
+          const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+            getListTasksApiV1TasksGetQueryKey(),
+          );
+
+          // Optimistic: remove from parent's subtasks, add as top-level task
+          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+            getListTasksApiV1TasksGetQueryKey(),
+            (old) => {
+              if (!old) return old;
+              const promoted: AppRoutersTasksTaskResponse = {
+                ...task,
+                parent_id: null,
+                subtasks: [],
+              };
+              return [
+                ...old.map((t) =>
+                  t.id === prevParentId
+                    ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== activeId) }
+                    : t,
+                ),
+                promoted,
+              ];
+            },
+          );
+
+          updateTask.mutate(
+            { taskId: activeId, data: { parent_id: null } },
+            {
+              onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+                announce("Subtask promoted to task");
+                toast.success(`Promoted "${task.title}" to standalone task`, {
+                  id: `promote-${activeId}`,
+                  action: {
+                    label: "Undo",
+                    onClick: () => {
+                      queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                      updateTask.mutate(
+                        { taskId: activeId, data: { parent_id: prevParentId } },
+                        {
+                          onSuccess: () =>
+                            queryClient.invalidateQueries({
+                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            }),
+                          onError: () => {
+                            queryClient.invalidateQueries({
+                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            });
+                            toast.error("Undo failed");
+                          },
+                        },
+                      );
+                    },
+                  },
+                  duration: 5000,
+                });
+              },
+              onError: () => {
+                queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                toast.error("Failed to promote task", { id: `promote-err-${activeId}` });
+              },
+            },
+          );
+          return;
+        }
+
+        // Otherwise unschedule if task was scheduled
         if (task?.scheduled_date) {
           const prevDate = task.scheduled_date;
           const prevTime = task.scheduled_time ?? null;
@@ -755,43 +857,110 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       }
 
       // --- Drop onto another task: reparent (make subtask) ---
-      const overTaskId = Number.parseInt(overId, 10);
-      if (!Number.isNaN(overTaskId) && overTaskId !== activeId) {
+      if (overId.startsWith("task-drop-")) {
+        const overTaskId = Number.parseInt(overId.replace("task-drop-", ""), 10);
+        if (Number.isNaN(overTaskId) || overTaskId === activeId) return;
+
         const activeTask = findTask(active.id);
         const overTask = findTask(over.id);
+        if (!activeTask || !overTask) return;
 
-        // Prevent circular: don't drop a parent onto its own subtask
-        if (activeTask && overTask) {
-          const isChildOfActive = activeTask.subtasks?.some((st) => st.id === overTaskId);
-          if (isChildOfActive) {
-            toast.error("Cannot make a parent into its own subtask");
-            return;
-          }
+        // Already a subtask of this parent — no-op
+        if (activeTask.parent_id === overTaskId) return;
+
+        // Client-side validations (droppable should be disabled but double-check)
+        if (overTask.parent_id != null) return;
+        if (overTask.is_recurring) return;
+        if ((activeTask.subtasks?.length ?? 0) > 0) {
+          toast.error("A task with subtasks cannot become a subtask");
+          return;
         }
 
+        // Prevent circular: don't drop parent onto its own child
+        const isChildOfActive = activeTask.subtasks?.some((st) => st.id === overTaskId);
+        if (isChildOfActive) {
+          toast.error("Cannot make a parent into its own subtask");
+          return;
+        }
+
+        const prevParentId = activeTask.parent_id;
         const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
           getListTasksApiV1TasksGetQueryKey(),
         );
+
+        // Optimistic: move task into target's subtasks array
+        const newSubtask: SubtaskResponse = {
+          id: activeTask.id,
+          title: activeTask.title,
+          description: activeTask.description ?? null,
+          duration_minutes: activeTask.duration_minutes ?? null,
+          impact: activeTask.impact,
+          clarity: activeTask.clarity ?? null,
+          scheduled_date: activeTask.scheduled_date ?? null,
+          status: activeTask.status ?? "pending",
+          position: 9999,
+        };
+
         queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
           getListTasksApiV1TasksGetQueryKey(),
           (old) => {
             if (!old) return old;
-            return old.map((t) => (t.id === activeId ? { ...t, parent_id: overTaskId } : t));
+            return old
+              .filter((t) => t.id !== activeTask.id) // Remove from top-level
+              .map((t) => {
+                // Remove from old parent's subtasks (if reparenting between parents)
+                if (prevParentId && t.id === prevParentId) {
+                  return {
+                    ...t,
+                    subtasks: t.subtasks?.filter((st) => st.id !== activeTask.id),
+                  };
+                }
+                // Add to new parent's subtasks
+                if (t.id === overTaskId) {
+                  return {
+                    ...t,
+                    subtasks: [...(t.subtasks ?? []), newSubtask],
+                  };
+                }
+                return t;
+              });
           },
         );
 
+        // Auto-expand the target parent
+        useUIStore.getState().expandSubtask(overTaskId);
+
         updateTask.mutate(
-          {
-            taskId: activeId,
-            data: { parent_id: overTaskId },
-          },
+          { taskId: activeId, data: { parent_id: overTaskId } },
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
-              toast.success(
-                `Moved "${activeTask?.title ?? "Task"}" as subtask of "${overTask?.title ?? "Task"}"`,
-                { id: `reparent-${activeId}` },
-              );
+              announce("Task nested as subtask");
+              toast.success(`Made "${activeTask.title}" a subtask of "${overTask.title}"`, {
+                id: `reparent-${activeId}`,
+                action: {
+                  label: "Undo",
+                  onClick: () => {
+                    queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                    updateTask.mutate(
+                      { taskId: activeId, data: { parent_id: prevParentId } },
+                      {
+                        onSuccess: () =>
+                          queryClient.invalidateQueries({
+                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          }),
+                        onError: () => {
+                          queryClient.invalidateQueries({
+                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          });
+                          toast.error("Undo failed");
+                        },
+                      },
+                    );
+                  },
+                },
+                duration: 5000,
+              });
             },
             onError: () => {
               queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
@@ -805,7 +974,13 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   );
 
   const handleDragCancel = useCallback(() => {
-    setDragState({ activeId: null, activeTask: null, overId: null, overType: null });
+    setDragState({
+      activeId: null,
+      activeTask: null,
+      activeInstance: null,
+      overId: null,
+      overType: null,
+    });
   }, []);
 
   // Modifier: preserve proportional grab offset, immune to scroll drift.
@@ -848,6 +1023,14 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     [],
   );
 
+  const dndStateValue = useMemo<DndStateContextValue>(
+    () => ({
+      activeId: dragState.activeId,
+      activeTask: dragState.activeTask,
+    }),
+    [dragState.activeId, dragState.activeTask],
+  );
+
   return (
     <DndContext
       sensors={sensors}
@@ -858,11 +1041,14 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       onDragCancel={handleDragCancel}
       autoScroll={false}
     >
-      {children}
+      <DndStateCtx.Provider value={dndStateValue}>{children}</DndStateCtx.Provider>
       <DragOverlay dropAnimation={null} modifiers={overlayModifiers}>
         {dragState.activeTask ? (
           <div ref={overlayContentRef}>
-            <TaskDragOverlay task={dragState.activeTask} />
+            <TaskDragOverlay
+              task={dragState.activeTask}
+              isReparenting={dragState.overType === "reparent"}
+            />
           </div>
         ) : dragState.activeInstance ? (
           <div ref={overlayContentRef}>
