@@ -8,6 +8,7 @@ import {
   useGetEventsApiV1EventsGet,
 } from "@/api/queries/api/api";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
+import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
 import { useCarousel } from "@/hooks/use-carousel";
 import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
@@ -101,16 +102,23 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   const safeEvents = events ?? [];
   const safeInstances = instances ?? [];
 
+  // Fetch all tasks (pending + completed) for calendar display — so completed tasks stay visible
+  const { data: allStatusTasks } = useListTasksApiV1TasksGet(
+    { status: "all" },
+    { query: { staleTime: 60_000, placeholderData: keepPreviousData } },
+  );
+  const safeAllStatusTasks = allStatusTasks ?? tasks;
+
   // Scheduled tasks with a specific time
   const scheduledTasks = useMemo(
-    () => tasks.filter((t) => t.scheduled_date && t.scheduled_time),
-    [tasks],
+    () => safeAllStatusTasks.filter((t) => t.scheduled_date && t.scheduled_time),
+    [safeAllStatusTasks],
   );
 
   // Anytime tasks for the displayed date (date-only, no time)
   const anytimeTasks = useMemo(
-    () => tasks.filter((t) => t.scheduled_date === displayDate && !t.scheduled_time),
-    [tasks, displayDate],
+    () => safeAllStatusTasks.filter((t) => t.scheduled_date === displayDate && !t.scheduled_time),
+    [safeAllStatusTasks, displayDate],
   );
 
   const isNotToday = displayDate !== todayString();
@@ -430,7 +438,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                       centerDate={date}
                       events={safeEvents}
                       tasks={scheduledTasks}
-                      allTasks={tasks}
+                      allTasks={safeAllStatusTasks}
                       instances={safeInstances}
                       hourHeight={calendarHourHeight}
                       calendarColors={calendarColors}
