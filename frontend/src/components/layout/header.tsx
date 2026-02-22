@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -51,15 +52,31 @@ function WIcon({ className }: { className?: string }) {
 interface HeaderProps {
   userName?: string;
   userEmail?: string;
+  onDebugToggle?: () => void;
 }
 
-export function Header({ userName: _userName, userEmail: _userEmail }: HeaderProps) {
+export function Header({ userName: _userName, userEmail: _userEmail, onDebugToggle }: HeaderProps) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ThemeIcon = themeIcons[theme];
+
+  function handleLogoPress() {
+    if (!onDebugToggle) return;
+    longPressTimer.current = setTimeout(() => {
+      onDebugToggle();
+    }, 3000);
+  }
+
+  function handleLogoRelease() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
 
   return (
     <header className="relative flex flex-col backdrop-blur-md bg-background/85">
@@ -71,8 +88,17 @@ export function Header({ userName: _userName, userEmail: _userEmail }: HeaderPro
         {/* Gradient bar at bottom of content row */}
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
 
-        {/* W Icon */}
-        <Link to="/dashboard" className="flex items-center" aria-label="Home">
+        {/* W Icon — long press 3s to toggle layout debug overlay */}
+        <Link
+          to="/dashboard"
+          className="flex items-center"
+          aria-label="Home"
+          onTouchStart={handleLogoPress}
+          onTouchEnd={handleLogoRelease}
+          onMouseDown={handleLogoPress}
+          onMouseUp={handleLogoRelease}
+          onMouseLeave={handleLogoRelease}
+        >
           <WIcon className="h-[28px] w-[30px]" />
         </Link>
 

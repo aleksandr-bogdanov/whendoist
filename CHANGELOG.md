@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.20 — 2026-02-22
+
+### PWA Layout Debug Overlay
+- **New debug tool**: acid-color bands for every layout zone (notch spacer, header row, main content, pb-nav-safe padding, nav bar) plus pixel measurements panel
+- **Activation**: long-press the W logo for 3 seconds (works in PWA with no address bar); press OFF to deactivate; persists in sessionStorage
+- **Gap detector**: highlights unaccounted gap between layout zones
+
 ## v0.54.19 — 2026-02-22
 
 ### iOS PWA — Header side padding & settings blank space
