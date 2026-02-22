@@ -103,6 +103,34 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
           announce(isCompleted ? "Task reopened" : "Task completed");
           toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
             id: `complete-${task.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                  getListTasksApiV1TasksGetQueryKey(),
+                  (old) =>
+                    old?.map((t) =>
+                      t.id === task.id
+                        ? {
+                            ...t,
+                            status: isCompleted ? ("completed" as const) : ("pending" as const),
+                            completed_at: isCompleted ? new Date().toISOString() : null,
+                          }
+                        : t,
+                    ),
+                );
+                toggleComplete.mutate(
+                  { taskId: task.id, data: null },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                  },
+                );
+              },
+            },
+            duration: 5000,
           });
         },
         onError: () => {

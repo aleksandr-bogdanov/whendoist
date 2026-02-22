@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.24 — 2026-02-22
+
+### Calendar — Completed scheduled tasks stay visible; undo on completion toast
+- Completed scheduled task cards remain on the calendar with `opacity-50` + strikethrough
+- Undo action added to the completion toast for both scheduled task cards and anytime task pills
+
 ## v0.54.23 — 2026-02-22
 
 ### Calendar — Keep completed/skipped instances visible
