@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.39 — 2026-02-22
+
+### Show instance date in Complete/Skip toast
+- "Completed" and "Skipped" toasts now include the instance date (e.g. "Completed 'Task' · Feb 16")
+- Applies to checkbox, context menu, dropdown, and mobile action sheet
+
+---
+
 ## v0.54.38 — 2026-02-22
 
 ### Fix add-task flicker
