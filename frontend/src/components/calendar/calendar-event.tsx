@@ -3,18 +3,18 @@ import type { PositionedItem } from "@/lib/calendar-utils";
 
 interface CalendarEventProps {
   item: PositionedItem;
-  eventId: string;
   summary: string;
   timeLabel: string;
+  htmlLink?: string | null;
   backgroundColor?: string;
   dimmed?: boolean;
 }
 
 export function CalendarEventCard({
   item,
-  eventId,
   summary,
   timeLabel,
+  htmlLink,
   backgroundColor,
   dimmed,
 }: CalendarEventProps) {
@@ -22,9 +22,9 @@ export function CalendarEventCard({
   const left = `${(item.column / item.totalColumns) * 100}%`;
 
   const handleClick = () => {
-    // Google Calendar event URL from event ID
-    const gcalUrl = `https://www.google.com/calendar/event?eid=${btoa(eventId)}`;
-    window.open(gcalUrl, "_blank", "noopener,noreferrer");
+    if (htmlLink) {
+      window.open(htmlLink, "_blank", "noopener,noreferrer");
+    }
   };
 
   return (

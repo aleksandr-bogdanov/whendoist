@@ -57,6 +57,7 @@ class GoogleEvent:
     end: datetime
     all_day: bool
     calendar_id: str
+    html_link: str | None = None
 
 
 class GoogleCalendarClient:
@@ -344,6 +345,7 @@ class GoogleCalendarClient:
                 end=end_dt,
                 all_day=all_day,
                 calendar_id=calendar_id,
+                html_link=item.get("htmlLink"),
             )
         except (KeyError, ValueError) as e:
             logger.warning(f"Failed to parse event {item.get('id')}: {e}")

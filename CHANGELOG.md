@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.26 — 2026-02-22
+
+### Calendar — Fix Google Calendar event click (400 error)
+- **Root cause**: click handler used `btoa(eventId)` to construct the Google Calendar URL, but the `eid` parameter requires `base64(eventId + " " + calendarEmail)` — wrong format → 400
+- **Fix**: pass Google's own `htmlLink` field through the API (`GoogleEvent.html_link`, `EventResponse.html_link`) and use it directly; events without a link are non-clickable
+
+---
+
 ## v0.54.25 — 2026-02-22
 
 ### Calendar — Tasks stay visible after completion (proper fix)
