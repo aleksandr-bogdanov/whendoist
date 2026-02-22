@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.41 — 2026-02-22
+
+### Fix recurring task duplicates on calendar and task list
+- Recurring parent tasks no longer appear on the calendar or in Scheduled/Pending sections — only their instances do
+- Root cause: frontend included recurring parents alongside instances, causing duplicates whenever `scheduled_date` was set on the parent
+
+---
+
 ## v0.54.40 — 2026-02-22
 
 ### Energy filter applies to subtasks

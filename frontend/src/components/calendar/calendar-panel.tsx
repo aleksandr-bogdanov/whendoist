@@ -109,15 +109,18 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   );
   const safeAllStatusTasks = allStatusTasks ?? tasks;
 
-  // Scheduled tasks with a specific time
+  // Scheduled tasks with a specific time (exclude recurring parents — their instances render instead)
   const scheduledTasks = useMemo(
-    () => safeAllStatusTasks.filter((t) => t.scheduled_date && t.scheduled_time),
+    () => safeAllStatusTasks.filter((t) => t.scheduled_date && t.scheduled_time && !t.is_recurring),
     [safeAllStatusTasks],
   );
 
-  // Anytime tasks for the displayed date (date-only, no time)
+  // Anytime tasks for the displayed date (exclude recurring parents)
   const anytimeTasks = useMemo(
-    () => safeAllStatusTasks.filter((t) => t.scheduled_date === displayDate && !t.scheduled_time),
+    () =>
+      safeAllStatusTasks.filter(
+        (t) => t.scheduled_date === displayDate && !t.scheduled_time && !t.is_recurring,
+      ),
     [safeAllStatusTasks, displayDate],
   );
 
