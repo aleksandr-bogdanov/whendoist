@@ -181,9 +181,9 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* pb-nav-safe = h-14 (3.5rem) nav height + safe-area-inset-bottom */
+/* pb-nav-safe = h-14 (3.5rem) nav height + 1px border-t */
 @utility pb-nav-safe {
-  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(3.5rem + 1px);
 }
 
 /* Prevent macOS two-finger swipe back/forward navigation */
