@@ -8,11 +8,10 @@ interface TaskListProps {
   groups: DomainGroupType[];
   onSelectTask?: (taskId: number) => void;
   onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
-  dragOverTaskId?: string | null;
 }
 
-export function TaskList({ groups, onSelectTask, onEditTask, dragOverTaskId }: TaskListProps) {
-  // Make the entire task list a drop zone for unscheduling
+export function TaskList({ groups, onSelectTask, onEditTask }: TaskListProps) {
+  // Make the entire task list a drop zone for unscheduling / promoting subtasks
   const { setNodeRef, isOver } = useDroppable({
     id: "task-list-drop",
     data: { type: "task-list" },
@@ -38,7 +37,6 @@ export function TaskList({ groups, onSelectTask, onEditTask, dragOverTaskId }: T
             tasks={group.tasks}
             onSelectTask={onSelectTask}
             onEditTask={onEditTask}
-            dragOverTaskId={dragOverTaskId}
           />
         </motion.div>
       ))}

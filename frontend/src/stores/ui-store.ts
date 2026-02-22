@@ -33,6 +33,7 @@ interface UIActions {
   toggleShowCompleted: () => void;
   toggleCollapsedDomain: (domainId: number) => void;
   toggleExpandedSubtask: (taskId: number) => void;
+  expandSubtask: (taskId: number) => void;
   selectTask: (taskId: number | null) => void;
   selectDomain: (domainId: number | null) => void;
   setMobileTab: (tab: MobileTab) => void;
@@ -106,6 +107,14 @@ export const useUIStore = create<UIState & UIActions>()(
           } else {
             next.add(taskId);
           }
+          return { expandedSubtasks: next };
+        }),
+
+      expandSubtask: (taskId) =>
+        set((state) => {
+          if (state.expandedSubtasks.has(taskId)) return state;
+          const next = new Set(state.expandedSubtasks);
+          next.add(taskId);
           return { expandedSubtasks: next };
         }),
 
