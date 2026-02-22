@@ -151,6 +151,34 @@ export function ScheduledTaskCard({
           announce(isCompleted ? "Task reopened" : "Task completed");
           toast.success(isCompleted ? `Reopened "${title}"` : `Completed "${title}"`, {
             id: `complete-${taskId}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                  getListTasksApiV1TasksGetQueryKey(),
+                  (old) =>
+                    old?.map((t) =>
+                      t.id === taskId
+                        ? {
+                            ...t,
+                            status: isCompleted ? ("completed" as const) : ("pending" as const),
+                            completed_at: isCompleted ? new Date().toISOString() : null,
+                          }
+                        : t,
+                    ),
+                );
+                toggleComplete.mutate(
+                  { taskId, data: null },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                  },
+                );
+              },
+            },
+            duration: 5000,
           });
         },
         onError: () => {
@@ -204,7 +232,7 @@ export function ScheduledTaskCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
+          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow border border-border/40 bg-card ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${Math.max(item.height, 18)}px`,
@@ -221,7 +249,11 @@ export function ScheduledTaskCard({
           <div className="relative pointer-events-none px-1.5 py-0.5">
             <div className="flex items-center gap-1 truncate">
               <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-primary" />
-              <span className="truncate font-medium">{title}</span>
+              <span
+                className={`truncate font-medium ${isCompleted ? "line-through decoration-1" : ""}`}
+              >
+                {title}
+              </span>
             </div>
             {item.height > 30 && (
               <div className="truncate opacity-70 text-[10px]">
