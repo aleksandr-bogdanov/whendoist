@@ -330,7 +330,7 @@ export function DayColumn({
         )}
 
         {/* Rendered items */}
-        <div className="absolute inset-y-0 left-px right-0 pr-0.5">
+        <div className="absolute inset-y-0 left-px right-0 pr-0.5 z-[1]">
           {positioned.map((item) => {
             const timeLabel = getTimeLabel(item.startMinutes, item.endMinutes);
             const isDimmed = item.daySection === "prev" || item.daySection === "next";
@@ -599,9 +599,10 @@ function InstanceCard({
           {/* Content — pointer-events-none so clicks/drags pass through */}
           <div className="relative pointer-events-none">
             <div className="flex items-center gap-1">
-              <span className="text-[10px] text-muted-foreground">&#x21BB;</span>
+              <span className="text-xs text-muted-foreground">&#x21BB;</span>
               <span
                 className={`truncate font-medium ${isCompleted || isSkipped ? "line-through decoration-1" : ""}`}
+                style={{ color: impactColor }}
               >
                 {instance.task_title}
               </span>

@@ -1,6 +1,6 @@
 import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { keepPreviousData } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Minus, Palette, Plus, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { AppRoutersTasksTaskResponse } from "@/api/model";
 import {
@@ -458,9 +458,8 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         <div ref={setOverlayDropRef} className="absolute inset-0 pointer-events-none z-[5]" />
       </div>
 
-      {/* Floating controls: card style toggle + zoom */}
+      {/* Floating controls: zoom */}
       <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
-        <CardStyleToggle />
         <div className="flex items-center rounded-full bg-card border border-border shadow-[var(--shadow-card)] overflow-hidden">
           <button
             type="button"
@@ -533,27 +532,3 @@ function AnytimeSection({
   );
 }
 
-// ─── Card Style Toggle ──────────────────────────────────────────────────────
-
-const CARD_STYLE_LABELS = {
-  outline: "Outline",
-  "full-border": "Full Border",
-  dashed: "Dashed",
-  strip: "Strip",
-} as const;
-
-function CardStyleToggle() {
-  const { cardStyle, cycleCardStyle } = useUIStore();
-
-  return (
-    <button
-      type="button"
-      onClick={cycleCardStyle}
-      className="flex items-center gap-1.5 rounded-full bg-card border border-border shadow-[var(--shadow-card)] px-2.5 py-1 text-[10px] font-medium hover:bg-[rgba(109,94,246,0.06)] transition-colors"
-      title={`Card style: ${CARD_STYLE_LABELS[cardStyle]}\nClick to cycle`}
-    >
-      <Palette className="h-3 w-3 text-muted-foreground" />
-      <span>{CARD_STYLE_LABELS[cardStyle]}</span>
-    </button>
-  );
-}

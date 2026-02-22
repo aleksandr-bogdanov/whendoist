@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.53 — 2026-02-23
+
+### GCal card redesign — recessive left-accent style
+- GCal events now use a thin 3px left-accent border (matching task card border width) with 1% calColor tint background
+- Removed card style selector and 4 experimental styles (outline, neutral, dashed, ghost) — hardcoded left-accent
+- Fixed pixel-eating bug: added z-[1] to cards container so hour grid backgrounds don't clip left borders on date scroll
+- Instance (recurring) card titles now use impact color instead of black, matching regular task cards
+- Balanced icon sizes: recurrent icon 10px→12px, task checkbox 12px→10px
+
+---
+
 ## v0.54.52 — 2026-02-23
 
 ### Unified toast duration

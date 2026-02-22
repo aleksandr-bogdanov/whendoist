@@ -246,7 +246,7 @@ export function ScheduledTaskCard({
           {/* Content — pointer-events-none so clicks/drags pass through to drag handle */}
           <div className="relative pointer-events-none px-1.5 py-0.5">
             <div className="flex items-center gap-1 truncate">
-              <CheckCircle2 className="h-3 w-3 flex-shrink-0 text-primary" />
+              <CheckCircle2 className="h-2.5 w-2.5 flex-shrink-0 text-primary" />
               <span
                 className={`truncate font-medium ${isCompleted ? "line-through decoration-1" : ""}`}
                 style={{ color: impactColor }}
