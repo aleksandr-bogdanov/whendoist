@@ -507,9 +507,10 @@ function AnytimeSection({
   return (
     <div
       ref={setNodeRef}
-      className={`border-b px-3 py-1.5 grid grid-cols-[auto_1fr] gap-x-2 items-start flex-shrink-0 transition-colors ${
+      className={`border-b px-3 py-1.5 flex-shrink-0 transition-colors ${
         isOver ? "bg-primary/10 border-b-primary/40" : ""
       }`}
+      style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: "0.5rem", alignItems: "start" }}
     >
       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] leading-[22px]">
         ANYTIME
