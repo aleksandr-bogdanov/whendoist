@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.34 — 2026-02-22
+
+### Subtask-aware sorting
+- Sort controls (clarity, duration, impact) now propagate into subtasks
+- Subtasks reorder within their parent by the active sort field (pending first, completed last)
+- Parent tasks rank by their best pending subtask's value — a parent with a P1 subtask outranks one with only P3/P4 subtasks
+- Standalone tasks (no subtasks) behave unchanged
+
+---
+
 ## v0.54.33 — 2026-02-22
 
 ### Drag-and-drop subtask reparenting
