@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.46 — 2026-02-22
+
+### Stronger task tints + GCal event style picker (4 approaches)
+- Tasks always get impact-colored backgrounds: regular ~10%, recurring ~16% (stronger than before)
+- Anytime pills also tinted with impact color
+- GCal events now have 4 toggleable visual treatments (floating palette button):
+  - **Outline**: Transparent bg, thin calendar-color border on all sides
+  - **Full Border**: Subtle tint, thin border on all sides, no left accent
+  - **Dashed**: Minimal tint, dashed left accent border
+  - **Strip**: Top color stripe, compact appearance, small radius
+
+---
+
 ## v0.54.45 — 2026-02-22
 
 ### Fix subtask DnD: no-op on same parent, gap drop zones, label tweak
