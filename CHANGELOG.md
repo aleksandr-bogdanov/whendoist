@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.21 — 2026-02-22
+
+### iOS PWA — Remove safe-area-bottom from nav (no blank zone below icons)
+- **Root cause fixed**: Removed `safe-area-bottom` class from `MobileNav` — it was adding 34px of empty padding below the nav icons (the home indicator zone), visible as a wasted blank strip below the nav
+- **Updated `pb-nav-safe`**: Now `calc(3.5rem + 1px)` — reserves exactly nav height (h-14) plus the 1px border-t; no `env(safe-area-inset-bottom)` since the nav no longer reserves that space
+- **Matches legacy behavior**: Legacy app has no safe-area-bottom on its nav; icons sit flush at the bottom edge
+
 ## v0.54.20 — 2026-02-22
 
 ### PWA Layout Debug Overlay

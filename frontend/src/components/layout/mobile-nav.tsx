@@ -36,7 +36,7 @@ export function MobileNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-md bg-background/80 md:hidden safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-md bg-background/80 md:hidden">
       <div className="flex h-14 items-center justify-around">
         {leftNav.map(renderLink)}
         <button
