@@ -555,3 +555,21 @@ class RecurrenceService:
                 count += 1
 
         return count
+
+    async def unskip_instance(self, instance_id: int) -> TaskInstance | None:
+        """Unskip a specific instance (revert skip, mark as pending)."""
+        result = await self.db.execute(
+            select(TaskInstance)
+            .join(Task)
+            .where(
+                TaskInstance.id == instance_id,
+                Task.user_id == self.user_id,
+            )
+        )
+        instance = result.scalar_one_or_none()
+
+        if instance:
+            instance.status = "pending"
+            await self.db.flush()
+
+        return instance

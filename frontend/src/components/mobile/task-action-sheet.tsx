@@ -8,6 +8,8 @@ import {
   useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
   useListInstancesApiV1InstancesGet,
   useSkipInstanceApiV1InstancesInstanceIdSkipPost,
+  useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost,
+  useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
 import {
   getListTasksApiV1TasksGetQueryKey,
@@ -44,9 +46,11 @@ export function TaskActionSheet({
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
+  const uncompleteInstance = useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
+  const unskipInstance = useUnskipInstanceApiV1InstancesInstanceIdUnskipPost();
   const { trigger: haptic } = useHaptics();
 
   // Fall back to today-only query when no pendingInstance prop is provided
@@ -104,8 +108,20 @@ export function TaskActionSheet({
         {
           onSuccess: () => {
             invalidateAll();
-            toast.success(`Completed instance of "${task.title}"`, {
+            toast.success(`Completed "${task.title}"`, {
               id: `complete-inst-${pendingInstance.id}`,
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  uncompleteInstance.mutate(
+                    { instanceId: pendingInstance.id },
+                    {
+                      onSuccess: () => invalidateAll(),
+                      onError: () => toast.error("Undo failed"),
+                    },
+                  );
+                },
+              },
             });
           },
           onError: () => {
@@ -261,8 +277,20 @@ export function TaskActionSheet({
                 {
                   onSuccess: () => {
                     invalidateAll();
-                    toast.success(`Skipped instance of "${task.title}"`, {
+                    toast.success(`Skipped "${task.title}"`, {
                       id: `skip-inst-${pendingInstance.id}`,
+                      action: {
+                        label: "Undo",
+                        onClick: () => {
+                          unskipInstance.mutate(
+                            { instanceId: pendingInstance.id },
+                            {
+                              onSuccess: () => invalidateAll(),
+                              onError: () => toast.error("Undo failed"),
+                            },
+                          );
+                        },
+                      },
                     });
                   },
                   onError: () =>
