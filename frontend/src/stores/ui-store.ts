@@ -6,6 +6,8 @@ type EnergyLevel = 1 | 2 | 3;
 type SortField = "impact" | "duration" | "clarity";
 type SortDirection = "asc" | "desc";
 type MobileTab = "tasks" | "calendar";
+export type CardStyle = "default" | "colored" | "all-colored" | "bordered";
+const CARD_STYLES: CardStyle[] = ["default", "colored", "all-colored", "bordered"];
 
 interface UIState {
   theme: Theme;
@@ -23,6 +25,7 @@ interface UIState {
   calendarHourHeight: number;
   calendarCenterDate: string;
   justUpdatedId: number | null;
+  cardStyle: CardStyle;
 }
 
 interface UIActions {
@@ -41,6 +44,7 @@ interface UIActions {
   setCalendarHourHeight: (height: number) => void;
   setCalendarCenterDate: (date: string) => void;
   flashUpdatedTask: (taskId: number) => void;
+  cycleCardStyle: () => void;
 }
 
 let flashScrollTimer: ReturnType<typeof setTimeout>;
@@ -63,6 +67,7 @@ export const useUIStore = create<UIState & UIActions>()(
       quickAddOpen: false,
       calendarHourHeight: 60,
       justUpdatedId: null,
+      cardStyle: "default" as CardStyle,
       calendarCenterDate: (() => {
         const now = new Date();
         if (now.getHours() >= 20) {
@@ -139,6 +144,11 @@ export const useUIStore = create<UIState & UIActions>()(
         }, 100);
         flashClearTimer = setTimeout(() => set({ justUpdatedId: null }), 1500);
       },
+      cycleCardStyle: () =>
+        set((s) => {
+          const idx = CARD_STYLES.indexOf(s.cardStyle);
+          return { cardStyle: CARD_STYLES[(idx + 1) % CARD_STYLES.length] };
+        }),
     }),
     {
       name: "whendoist-ui",
@@ -153,6 +163,7 @@ export const useUIStore = create<UIState & UIActions>()(
         collapsedDomains: [...state.collapsedDomains],
         expandedSubtasks: [...state.expandedSubtasks],
         mobileTab: state.mobileTab,
+        cardStyle: state.cardStyle,
       }),
       storage: {
         getItem: (name) => {
