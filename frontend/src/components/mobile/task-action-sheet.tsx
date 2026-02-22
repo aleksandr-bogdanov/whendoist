@@ -108,7 +108,10 @@ export function TaskActionSheet({
         {
           onSuccess: () => {
             invalidateAll();
-            toast.success(`Completed "${task.title}"`, {
+            const dateHint = new Date(
+              `${pendingInstance.instance_date}T00:00:00`,
+            ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            toast.success(`Completed "${task.title}" · ${dateHint}`, {
               id: `complete-inst-${pendingInstance.id}`,
               action: {
                 label: "Undo",
@@ -277,7 +280,10 @@ export function TaskActionSheet({
                 {
                   onSuccess: () => {
                     invalidateAll();
-                    toast.success(`Skipped "${task.title}"`, {
+                    const dateHint = new Date(
+                      `${pendingInstance.instance_date}T00:00:00`,
+                    ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    toast.success(`Skipped "${task.title}" · ${dateHint}`, {
                       id: `skip-inst-${pendingInstance.id}`,
                       action: {
                         label: "Undo",
