@@ -67,7 +67,7 @@ export function Header({ userName: _userName, userEmail: _userEmail }: HeaderPro
       <div className="pt-safe" />
 
       {/* Content row */}
-      <div className="relative flex h-14 items-center px-4 md:px-6 md:h-20">
+      <div className="relative flex h-14 items-center px-5 md:px-6 md:h-20">
         {/* Gradient bar at bottom of content row */}
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
 

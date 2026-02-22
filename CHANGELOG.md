@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.19 — 2026-02-22
+
+### iOS PWA — Header side padding & settings blank space
+- **Header breathing room**: increased mobile side padding from `px-4` to `px-5` so logo and action buttons have space from the screen edges
+- **Settings bottom blank space**: removed redundant `pb-24` from settings page content — nav clearance is already handled by `pb-nav-safe` on `main`, so `pb-24` was adding 96px of empty scroll area below the last settings item
+
 ## v0.54.18 — 2026-02-21
 
 ### iOS PWA — Header notch fix & mobile header redesign
