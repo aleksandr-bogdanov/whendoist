@@ -54,38 +54,6 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
       clarity: "normal",
     };
 
-    // Optimistic: add placeholder task to cache immediately
-    const optimisticId = -Date.now();
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) =>
-        old
-          ? [
-              ...old,
-              {
-                id: optimisticId,
-                title: trimmed,
-                description: null,
-                domain_id: domain?.id ?? null,
-                domain_name: domain?.name ?? null,
-                parent_id: null,
-                duration_minutes: null,
-                impact: 4,
-                clarity: "normal",
-                scheduled_date: null,
-                scheduled_time: null,
-                is_recurring: false,
-                recurrence_rule: null as unknown as AppRoutersTasksTaskResponse["recurrence_rule"],
-                status: "pending",
-                position: 0,
-                created_at: new Date().toISOString(),
-                completed_at: null,
-                subtasks: [],
-              },
-            ]
-          : old,
-    );
-
     // Clear input immediately for fast UX
     setNewTaskTitle("");
     addInputRef.current?.focus();
@@ -94,12 +62,11 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
       { data },
       {
         onSuccess: (created) => {
-          // Swap optimistic placeholder with real task before refetch to avoid flicker
+          // Append real task to cache — stable key, no flicker
           queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
             getListTasksApiV1TasksGetQueryKey(),
-            (old) => old?.map((t) => (t.id === optimisticId ? created : t)),
+            (old) => (old ? [...old, created] : [created]),
           );
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           toast.success(`Created "${trimmed}"`, {
             id: `create-${created.id}`,
             action: {
@@ -120,14 +87,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
             duration: 5000,
           });
         },
-        onError: () => {
-          // Roll back optimistic task
-          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-            getListTasksApiV1TasksGetQueryKey(),
-            (old) => old?.filter((t) => t.id !== optimisticId),
-          );
-          toast.error("Failed to create task");
-        },
+        onError: () => toast.error("Failed to create task"),
       },
     );
   }, [newTaskTitle, domain, createTask, deleteTask, queryClient, encryptTaskFields]);
