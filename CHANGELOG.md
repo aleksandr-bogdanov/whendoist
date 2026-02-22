@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.27 — 2026-02-22
+
+### Calendar — Anytime section wraps tasks vertically
+- Removed fixed `h-[34px]` height and horizontal scroll from the ANYTIME section
+- Tasks now wrap to new lines instead of scrolling horizontally when there are many
+- Calendar body adapts via `flex-1 min-h-0` — no layout shift, no scroll jump
+
+---
+
 ## v0.54.26 — 2026-02-22
 
 ### Calendar — Fix Google Calendar event click (400 error)
