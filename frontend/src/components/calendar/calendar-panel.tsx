@@ -398,7 +398,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         >
           <div className="flex" style={{ height: `${totalHeight}px` }}>
             {/* Time ruler */}
-            <div className="flex-shrink-0 w-12 z-10 bg-background">
+            <div className="flex-shrink-0 w-12 bg-background">
               <div className="relative" style={{ height: `${totalHeight}px` }}>
                 {hourLabels.map((hl) => (
                   <div

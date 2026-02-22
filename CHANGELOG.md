@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.50 — 2026-02-22
+
+### Fix 1px white line clipping card left borders
+- Remove `z-10` from time ruler — it was painting its white `bg-background` on top of the first pixel of calendar cards at the ruler/carousel boundary
+- Revert GCal outline to uniform `2px` border (non-uniform 3px/1.5px looked off)
+
+---
+
 ## v0.54.49 — 2026-02-22
 
 ### Reparent visual: ghost placeholder instead of misleading indent

@@ -42,9 +42,7 @@ export function CalendarEventCard({
           height: `${Math.max(item.height, 18)}px`,
           width,
           left,
-          border: `1.5px solid ${calColor}50`,
-          borderLeftWidth: 3,
-          borderLeftColor: `${calColor}90`,
+          border: `2px solid ${calColor}60`,
         }}
         title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
       >
