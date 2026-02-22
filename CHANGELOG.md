@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.48 — 2026-02-22
+
+### Consistent 3px left borders + GCal event text contrast
+- InstanceCard: `border-l-2` (2px) → inline `3px solid` to match ScheduledTaskCard
+- GCal outline: 3px left accent + 1.5px border on other sides (was uniform 2px)
+- GCal event title: `text-foreground` instead of `text-muted-foreground` across all styles
+
+---
+
 ## v0.54.47 — 2026-02-22
 
 ### Fix calendar card left border clipping + refine outline GCal style

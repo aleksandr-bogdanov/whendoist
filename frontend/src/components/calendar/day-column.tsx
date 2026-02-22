@@ -581,7 +581,7 @@ function InstanceCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left border-l-2 cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow ${
+          className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-primary/50 transition-shadow ${
             isSkipped || isCompleted ? "opacity-50" : ""
           } ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
           style={{
@@ -590,7 +590,7 @@ function InstanceCard({
             width,
             left,
             backgroundColor: `${impactColor}2A`,
-            borderLeftColor: impactColor,
+            borderLeft: `3px solid ${impactColor}`,
           }}
           title={`${instance.task_title} (recurring)`}
           onClick={() => onEditSeries?.()}

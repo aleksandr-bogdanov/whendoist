@@ -30,7 +30,7 @@ export function CalendarEventCard({
     }
   };
 
-  // ── Style A: Outline — card bg, colored border all sides ──
+  // ── Style A: Outline — card bg, colored border all sides, thicker left accent ──
   if (cardStyle === "outline") {
     return (
       <button
@@ -42,17 +42,19 @@ export function CalendarEventCard({
           height: `${Math.max(item.height, 18)}px`,
           width,
           left,
-          border: `2px solid ${calColor}60`,
+          border: `1.5px solid ${calColor}50`,
+          borderLeftWidth: 3,
+          borderLeftColor: `${calColor}90`,
         }}
         title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
       >
         <div className="flex items-center gap-1 truncate">
           <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-          <span className="truncate font-medium text-muted-foreground">{summary}</span>
+          <span className="truncate font-medium text-foreground">{summary}</span>
           <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
         </div>
         {item.height > 32 && (
-          <div className="truncate text-muted-foreground/70 text-[10px]">{timeLabel}</div>
+          <div className="truncate text-muted-foreground text-[10px]">{timeLabel}</div>
         )}
       </button>
     );
@@ -77,11 +79,11 @@ export function CalendarEventCard({
       >
         <div className="flex items-center gap-1 truncate">
           <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-          <span className="truncate font-medium text-muted-foreground">{summary}</span>
+          <span className="truncate font-medium text-foreground">{summary}</span>
           <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
         </div>
         {item.height > 32 && (
-          <div className="truncate text-muted-foreground/70 text-[10px]">{timeLabel}</div>
+          <div className="truncate text-muted-foreground text-[10px]">{timeLabel}</div>
         )}
       </button>
     );
@@ -106,11 +108,11 @@ export function CalendarEventCard({
       >
         <div className="flex items-center gap-1 truncate">
           <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-          <span className="truncate font-medium text-muted-foreground">{summary}</span>
+          <span className="truncate font-medium text-foreground">{summary}</span>
           <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
         </div>
         {item.height > 32 && (
-          <div className="truncate text-muted-foreground/70 text-[10px]">{timeLabel}</div>
+          <div className="truncate text-muted-foreground text-[10px]">{timeLabel}</div>
         )}
       </button>
     );
@@ -134,11 +136,11 @@ export function CalendarEventCard({
     >
       <div className="flex items-center gap-1 truncate">
         <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-        <span className="truncate font-medium text-muted-foreground">{summary}</span>
+        <span className="truncate font-medium text-foreground">{summary}</span>
         <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/40" />
       </div>
       {item.height > 32 && (
-        <div className="truncate text-muted-foreground/70 text-[10px]">{timeLabel}</div>
+        <div className="truncate text-muted-foreground text-[10px]">{timeLabel}</div>
       )}
     </button>
   );
