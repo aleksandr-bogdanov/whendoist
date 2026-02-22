@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.29 — 2026-02-22
+
+### Calendar — Fix anytime pills wrapping under label
+- Switch from CSS grid to flexbox with `min-w-0` on the pills container
+- The `min-w-0` override (instead of default `min-width: auto`) allows the flex item to shrink below its content width, enabling proper `flex-wrap` behavior within the constrained space
+
+---
+
 ## v0.54.28 — 2026-02-22
 
 ### Calendar — Anytime pills stay right of label on wrap
