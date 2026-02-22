@@ -57,30 +57,75 @@ const CLARITY_ORDER: Record<string, number> = {
 };
 
 /**
+ * Numeric sort value for a task or subtask by the given field.
+ */
+function getSortValue(
+  item: { impact: number; duration_minutes?: number | null; clarity?: string | null },
+  field: SortField,
+): number {
+  switch (field) {
+    case "impact":
+      return item.impact;
+    case "duration":
+      return item.duration_minutes ?? 0;
+    case "clarity":
+      return CLARITY_ORDER[item.clarity ?? "normal"] ?? 2;
+  }
+}
+
+/**
  * Sort tasks by the given field and direction.
+ *
+ * Subtasks are also sorted within each parent: pending subtasks first
+ * (ordered by the active sort field), completed subtasks last. The parent's
+ * effective sort value is derived from its best pending subtask, so parents
+ * with high-priority / short / autopilot subtasks bubble up accordingly.
  */
 export function sortTasks(
   tasks: AppRoutersTasksTaskResponse[],
   field: SortField,
   direction: SortDirection,
 ): AppRoutersTasksTaskResponse[] {
-  const sorted = [...tasks].sort((a, b) => {
-    let cmp = 0;
-    switch (field) {
-      case "impact":
-        cmp = a.impact - b.impact;
-        break;
-      case "duration":
-        cmp = (a.duration_minutes ?? 0) - (b.duration_minutes ?? 0);
-        break;
-      case "clarity":
-        cmp =
-          (CLARITY_ORDER[a.clarity ?? "normal"] ?? 2) - (CLARITY_ORDER[b.clarity ?? "normal"] ?? 2);
-        break;
+  const dirMul = direction === "asc" ? 1 : -1;
+
+  // For each task, sort subtasks and compute the effective sort value
+  const prepared = tasks.map((task) => {
+    const subtasks = task.subtasks;
+    if (!subtasks?.length) {
+      return { task, effectiveValue: getSortValue(task, field) };
     }
-    return direction === "asc" ? cmp : -cmp;
+
+    const pending = subtasks.filter((s) => s.status !== "completed");
+    const completed = subtasks.filter((s) => s.status === "completed");
+
+    // Sort pending subtasks by field+direction, tiebreak by position
+    const sortedPending = [...pending].sort((a, b) => {
+      const cmp = getSortValue(a, field) - getSortValue(b, field);
+      if (cmp !== 0) return dirMul * cmp;
+      return a.position - b.position;
+    });
+
+    // Completed subtasks keep their original position order
+    const sortedCompleted = [...completed].sort((a, b) => a.position - b.position);
+
+    // Effective value: best pending subtask, or parent's own value
+    const effectiveValue =
+      sortedPending.length > 0 ? getSortValue(sortedPending[0], field) : getSortValue(task, field);
+
+    return {
+      task: { ...task, subtasks: [...sortedPending, ...sortedCompleted] },
+      effectiveValue,
+    };
   });
-  return sorted;
+
+  // Sort top-level tasks by effective value, tiebreak by task's own value
+  prepared.sort((a, b) => {
+    const cmp = a.effectiveValue - b.effectiveValue;
+    if (cmp !== 0) return dirMul * cmp;
+    return dirMul * (getSortValue(a.task, field) - getSortValue(b.task, field));
+  });
+
+  return prepared.map((p) => p.task);
 }
 
 /**
