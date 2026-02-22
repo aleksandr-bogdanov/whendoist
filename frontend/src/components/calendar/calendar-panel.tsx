@@ -507,14 +507,14 @@ function AnytimeSection({
   return (
     <div
       ref={setNodeRef}
-      className={`border-b px-3 py-1.5 flex items-start gap-2 flex-shrink-0 transition-colors ${
+      className={`border-b px-3 py-1.5 grid grid-cols-[auto_1fr] gap-x-2 items-start flex-shrink-0 transition-colors ${
         isOver ? "bg-primary/10 border-b-primary/40" : ""
       }`}
     >
-      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] flex-shrink-0 leading-[22px]">
+      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] leading-[22px]">
         ANYTIME
       </span>
-      <div className="flex flex-wrap gap-1 flex-1 min-w-0 min-h-[22px] items-center">
+      <div className="flex flex-wrap gap-1 min-h-[22px] items-center">
         {anytimeTasks.length > 0 ? (
           anytimeTasks.map((t) => (
             <AnytimeTaskPill key={t.id} task={t} onClick={() => onTaskClick?.(t)} />
