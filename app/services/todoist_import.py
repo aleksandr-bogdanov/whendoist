@@ -14,6 +14,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Domain, Task, TaskInstance
+from app.services.data_version import bump_data_version
 from app.services.todoist import TodoistClient, TodoistProject, TodoistTask
 
 logger = logging.getLogger(__name__)
@@ -90,6 +91,7 @@ class TodoistImportService:
         domain_result = await self.db.execute(delete(Domain).where(Domain.user_id == self.user_id))
         domains_deleted: int = domain_result.rowcount  # type: ignore[assignment]
 
+        await bump_data_version(self.db, self.user_id)
         await self.db.commit()
 
         return {
@@ -142,6 +144,7 @@ class TodoistImportService:
                         completed, tasks, completed_child_to_parent, domain_map, result, skip_existing
                     )
 
+            await bump_data_version(self.db, self.user_id)
             await self.db.commit()
 
         except Exception:

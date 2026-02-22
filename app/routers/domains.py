@@ -16,6 +16,7 @@ from app.constants import DOMAIN_NAME_MAX_LENGTH
 from app.database import get_db
 from app.models import Domain, User
 from app.routers.auth import require_user
+from app.services.data_version import bump_data_version
 from app.services.task_service import TaskService
 
 # Regex to match control characters except \n (newline) and \t (tab)
@@ -228,6 +229,10 @@ async def batch_update_domains(
             await db.rollback()
             errors.append({"id": domain_id, "error": "Update failed"})
             logger.warning(f"Failed to update domain {domain_id}: {e}")
+
+    if updated_count > 0:
+        await bump_data_version(db, user.id)
+        await db.commit()
 
     result: dict[str, int | list[dict[str, str]]] = {
         "updated_count": updated_count,

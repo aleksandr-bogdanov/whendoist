@@ -24,6 +24,7 @@ from app.database import async_session_factory, get_db
 from app.middleware.rate_limit import TASK_CREATE_LIMIT, limiter
 from app.models import Task, User
 from app.routers.auth import require_user
+from app.services.data_version import bump_data_version
 from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
 from app.services.task_service import TaskService
@@ -866,6 +867,8 @@ async def batch_update_tasks(
             logger.warning(f"Failed to update task {task_id}: {e}")
 
     # Final commit for remaining items
+    if updated_count > 0:
+        await bump_data_version(db, user.id)
     await db.commit()
 
     failed_ids = [e.id for e in errors] if errors else None

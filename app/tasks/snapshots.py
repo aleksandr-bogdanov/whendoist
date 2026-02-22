@@ -2,15 +2,15 @@
 Background task for automated export snapshots.
 
 Periodically checks users with snapshots enabled and creates
-daily snapshots. Uses content-hash deduplication so inactive
-users generate zero additional storage.
+daily snapshots. Uses data_version fast-path to skip unchanged users
+entirely, plus content-hash deduplication as a safety net.
 """
 
 import asyncio
 import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
 
 from app.constants import (
     SNAPSHOT_CHECK_INTERVAL_SECONDS,
@@ -19,7 +19,7 @@ from app.constants import (
     SNAPSHOT_RETAIN_COUNT,
 )
 from app.database import async_session_factory
-from app.models import UserPreferences
+from app.models import ExportSnapshot, User, UserPreferences
 from app.services.snapshot_service import SnapshotService
 
 logger = logging.getLogger("whendoist.tasks.snapshots")
@@ -29,38 +29,89 @@ async def process_due_snapshots() -> dict[str, int]:
     """
     Check all users with snapshots enabled and create snapshots when due.
 
-    Returns dict with stats: {users_checked, snapshots_created, snapshots_skipped}
+    Uses a single batch query to find candidates, then a data_version
+    fast-path to skip users whose data hasn't changed since the last snapshot.
+
+    Returns dict with stats: {users_checked, snapshots_created, snapshots_skipped, users_skipped_fast}
     """
-    stats = {"users_checked": 0, "snapshots_created": 0, "snapshots_skipped": 0}
-
-    # Get users with snapshots enabled
-    async with async_session_factory() as db:
-        result = await db.execute(
-            select(UserPreferences.user_id).where(UserPreferences.snapshots_enabled == True)  # noqa: E712
-        )
-        user_ids = [row[0] for row in result.all()]
-
-    if not user_ids:
-        logger.debug("No users with snapshots enabled")
-        return stats
+    stats = {"users_checked": 0, "snapshots_created": 0, "snapshots_skipped": 0, "users_skipped_fast": 0}
 
     now = datetime.now(UTC)
+    cutoff = now - SNAPSHOT_FREQUENCY_INTERVAL
 
-    for user_id in user_ids:
+    # Single batch query: find users who are due for a snapshot check
+    async with async_session_factory() as db:
+        # Subquery: latest snapshot per user (MAX created_at)
+        latest_time_sub = (
+            select(
+                ExportSnapshot.user_id,
+                func.max(ExportSnapshot.created_at).label("max_created"),
+            )
+            .group_by(ExportSnapshot.user_id)
+            .subquery()
+        )
+
+        # Subquery: join back to get snapshot_data_version for the latest snapshot
+        latest_snapshot = (
+            select(
+                ExportSnapshot.user_id,
+                ExportSnapshot.snapshot_data_version,
+                ExportSnapshot.created_at,
+            )
+            .join(
+                latest_time_sub,
+                and_(
+                    ExportSnapshot.user_id == latest_time_sub.c.user_id,
+                    ExportSnapshot.created_at == latest_time_sub.c.max_created,
+                ),
+            )
+            .subquery()
+        )
+
+        # Main query: users with snapshots_enabled who are due
+        result = await db.execute(
+            select(
+                UserPreferences.user_id,
+                User.data_version,
+                latest_snapshot.c.snapshot_data_version,
+            )
+            .join(User, User.id == UserPreferences.user_id)
+            .outerjoin(latest_snapshot, latest_snapshot.c.user_id == UserPreferences.user_id)
+            .where(
+                UserPreferences.snapshots_enabled == True,  # noqa: E712
+                or_(
+                    latest_snapshot.c.created_at.is_(None),  # Never had a snapshot
+                    latest_snapshot.c.created_at < cutoff,  # Due for new one
+                ),
+            )
+        )
+        candidates = result.all()
+
+    if not candidates:
+        logger.debug("No users due for snapshots")
+        return stats
+
+    for row in candidates:
+        user_id = row.user_id
+        current_version = row.data_version
+        snapshot_version = row.snapshot_data_version
+
+        stats["users_checked"] += 1
+
+        # Fast path: data_version unchanged since last snapshot — skip entirely
+        if snapshot_version is not None and snapshot_version == current_version:
+            stats["users_skipped_fast"] += 1
+            continue
+
+        # Slow path: data_version changed (or NULL for legacy snapshots)
+        # Do full export + content-hash dedup
         try:
             async with async_session_factory() as db:
                 service = SnapshotService(db, user_id)
-
-                # Check if snapshot is due (daily)
-                latest_time = await service.get_latest_snapshot_time()
-                if latest_time:
-                    latest_aware = latest_time.replace(tzinfo=UTC) if latest_time.tzinfo is None else latest_time
-                    if (now - latest_aware) < SNAPSHOT_FREQUENCY_INTERVAL:
-                        stats["users_checked"] += 1
-                        continue
-
-                # Due: create snapshot
-                snapshot = await service.create_snapshot(is_manual=False)
+                snapshot = await service.create_snapshot(
+                    is_manual=False,
+                    data_version=current_version,
+                )
                 if snapshot:
                     stats["snapshots_created"] += 1
                     deleted = await service.enforce_retention(SNAPSHOT_RETAIN_COUNT)
@@ -70,16 +121,17 @@ async def process_due_snapshots() -> dict[str, int]:
                     stats["snapshots_skipped"] += 1
 
                 await db.commit()
-                stats["users_checked"] += 1
 
         except Exception as e:
             logger.exception(f"Snapshot failed for user {user_id}: {type(e).__name__}: {e}")
             continue
 
-    if stats["snapshots_created"] > 0:
+    if stats["snapshots_created"] > 0 or stats["users_skipped_fast"] > 0:
         logger.info(
-            f"Snapshots: {stats['users_checked']} users checked, "
-            f"{stats['snapshots_created']} created, {stats['snapshots_skipped']} skipped (no changes)"
+            f"Snapshots: {stats['users_checked']} checked, "
+            f"{stats['users_skipped_fast']} skipped (version match), "
+            f"{stats['snapshots_created']} created, "
+            f"{stats['snapshots_skipped']} skipped (hash match)"
         )
     else:
         logger.debug(f"Snapshots: {stats['users_checked']} users checked, nothing to do")

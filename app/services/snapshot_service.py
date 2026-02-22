@@ -29,7 +29,7 @@ class SnapshotService:
         self.db = db
         self.user_id = user_id
 
-    async def create_snapshot(self, is_manual: bool = False) -> ExportSnapshot | None:
+    async def create_snapshot(self, is_manual: bool = False, data_version: int | None = None) -> ExportSnapshot | None:
         """
         Create a new snapshot from current user data.
 
@@ -64,6 +64,7 @@ class SnapshotService:
             content_hash=content_hash,
             size_bytes=len(compressed),
             is_manual=is_manual,
+            snapshot_data_version=data_version,
         )
         self.db.add(snapshot)
         await self.db.flush()

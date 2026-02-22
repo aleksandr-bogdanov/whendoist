@@ -20,6 +20,7 @@ from app.constants import (
     TASK_TITLE_MAX_LENGTH,
 )
 from app.models import Domain, Task, TaskInstance, UserPreferences
+from app.services.data_version import bump_data_version
 
 # Regex to match control characters except \n (newline) and \t (tab)
 CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -369,6 +370,7 @@ class BackupService:
                         current = parent_result.scalar_one_or_none()
 
             await self.db.flush()
+            await bump_data_version(self.db, self.user_id)
 
             # Import preferences
             if validated.preferences:

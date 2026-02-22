@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Domain, Task
+from app.services.data_version import bump_data_version
 
 
 class TaskService:
@@ -62,6 +63,7 @@ class TaskService:
             if color and existing.color != color:
                 existing.color = color
             await self.db.flush()
+            await bump_data_version(self.db, self.user_id)
             return existing
 
         # Get max position for ordering
@@ -79,6 +81,7 @@ class TaskService:
         )
         self.db.add(domain)
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return domain
 
     async def update_domain(
@@ -104,6 +107,7 @@ class TaskService:
             domain.position = position
 
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return domain
 
     async def archive_domain(self, domain_id: int) -> Domain | None:
@@ -114,6 +118,7 @@ class TaskService:
 
         domain.is_archived = True
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return domain
 
     # =========================================================================
@@ -297,6 +302,7 @@ class TaskService:
         )
         self.db.add(task)
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return task
 
     async def _next_position(self, domain_id: int | None, parent_id: int | None) -> int:
@@ -402,6 +408,7 @@ class TaskService:
                 setattr(task, field, value)
 
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return task
 
     async def complete_task(self, task_id: int) -> Task | None:
@@ -434,6 +441,7 @@ class TaskService:
             subtask.completed_at = now
 
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return task
 
     async def uncomplete_task(self, task_id: int) -> Task | None:
@@ -445,6 +453,7 @@ class TaskService:
         task.status = "pending"
         task.completed_at = None
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return task
 
     async def toggle_task_completion(self, task_id: int) -> Task | None:
@@ -469,6 +478,7 @@ class TaskService:
 
         task.status = "archived"
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return task
 
     async def _archive_subtasks(self, parent_id: int, _visited: set[int] | None = None) -> None:
@@ -505,6 +515,7 @@ class TaskService:
         task.status = "pending"
         task.completed_at = None
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return task
 
     async def _restore_subtasks(self, parent_id: int, _visited: set[int] | None = None) -> None:
@@ -542,6 +553,7 @@ class TaskService:
 
         await self.db.delete(task)
         await self.db.flush()
+        await bump_data_version(self.db, self.user_id)
         return True
 
     # =========================================================================

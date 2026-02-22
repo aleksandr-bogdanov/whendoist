@@ -324,3 +324,28 @@ async def test_delete_enforces_user_id(db_session, user_with_data, other_user):
     # Owner can delete
     deleted = await service1.delete_snapshot(snapshot.id)
     assert deleted is True
+
+
+# =============================================================================
+# data_version Tests
+# =============================================================================
+
+
+async def test_snapshot_stores_data_version(db_session, user_with_data):
+    """Snapshot stores the data_version passed at creation time."""
+    service = SnapshotService(db_session, user_with_data.id)
+    snapshot = await service.create_snapshot(is_manual=True, data_version=5)
+    await db_session.commit()
+
+    assert snapshot is not None
+    assert snapshot.snapshot_data_version == 5
+
+
+async def test_snapshot_data_version_defaults_to_none(db_session, user_with_data):
+    """Snapshot without explicit data_version stores None (backward compat)."""
+    service = SnapshotService(db_session, user_with_data.id)
+    snapshot = await service.create_snapshot(is_manual=True)
+    await db_session.commit()
+
+    assert snapshot is not None
+    assert snapshot.snapshot_data_version is None
