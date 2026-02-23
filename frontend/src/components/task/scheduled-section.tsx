@@ -150,8 +150,12 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
                 <span className="text-destructive/60 font-normal tabular-nums">{overdueCount}</span>
               </div>
               {filteredOverdueGroups.map((group) => (
-                <div key={group.date}>
-                  <DateGroupHeader date={group.date} label={group.label} variant="overdue" />
+                <DateGroupDropZone
+                  key={group.date}
+                  date={group.date}
+                  label={group.label}
+                  variant="overdue"
+                >
                   <AnimatePresence initial={false}>
                     {group.tasks.map((task) => (
                       <motion.div
@@ -171,7 +175,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
                       </motion.div>
                     ))}
                   </AnimatePresence>
-                </div>
+                </DateGroupDropZone>
               ))}
             </div>
           )}
@@ -180,12 +184,12 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
           {upcomingGroups.map((group) => {
             const isToday = group.date === today;
             return (
-              <div key={group.date}>
-                <DateGroupHeader
-                  date={group.date}
-                  label={group.label}
-                  variant={isToday ? "today" : "default"}
-                />
+              <DateGroupDropZone
+                key={group.date}
+                date={group.date}
+                label={group.label}
+                variant={isToday ? "today" : "default"}
+              >
                 <AnimatePresence initial={false}>
                   {group.tasks.map((task) => (
                     <motion.div
@@ -205,7 +209,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
                     </motion.div>
                   ))}
                 </AnimatePresence>
-              </div>
+              </DateGroupDropZone>
             );
           })}
         </div>
@@ -214,16 +218,21 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
   );
 }
 
-// ─── Droppable Date Group Header ──────────────────────────────────────────────
+// ─── Droppable Date Group Wrapper ─────────────────────────────────────────────
+// Wraps the entire date group (header + tasks) so dropping anywhere in the group
+// reschedules the task to that date — collision detection gives date-group-*
+// priority over task-drop-* (reparent), preventing accidental subtask creation.
 
-function DateGroupHeader({
+function DateGroupDropZone({
   date,
   label,
   variant,
+  children,
 }: {
   date: string;
   label: string;
   variant: "overdue" | "today" | "default";
+  children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `date-group-${date}`,
@@ -234,14 +243,21 @@ function DateGroupHeader({
     <div
       ref={setNodeRef}
       className={cn(
-        "px-3 py-1 text-xs font-medium transition-colors rounded-sm",
-        variant === "overdue" && "text-destructive/70 text-[11px] py-0.5",
-        variant === "today" && "text-primary",
-        variant === "default" && "text-muted-foreground",
+        "rounded-sm transition-colors",
         isOver && "bg-primary/10 ring-1 ring-primary/30",
       )}
     >
-      {label}
+      <div
+        className={cn(
+          "px-3 py-1 text-xs font-medium",
+          variant === "overdue" && "text-destructive/70 text-[11px] py-0.5",
+          variant === "today" && "text-primary",
+          variant === "default" && "text-muted-foreground",
+        )}
+      >
+        {label}
+      </div>
+      {children}
     </div>
   );
 }
