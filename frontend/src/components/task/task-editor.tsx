@@ -12,6 +12,7 @@ import {
   getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
+  useListTasksApiV1TasksGet,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
@@ -122,6 +123,15 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     }
     setDirty(false);
   }, [task]);
+
+  // Close editor if the task being edited is deleted/archived
+  const { data: allTasks } = useListTasksApiV1TasksGet();
+  useEffect(() => {
+    if (open && task && allTasks) {
+      const stillExists = allTasks.some((t) => t.id === task.id);
+      if (!stillExists) onOpenChange(false);
+    }
+  }, [open, task, allTasks, onOpenChange]);
 
   // Focus title on open
   useEffect(() => {

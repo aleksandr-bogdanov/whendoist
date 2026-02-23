@@ -116,6 +116,9 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
           });
         },
         onError: () => toast.error("Failed to create task"),
+        onSettled: () => {
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+        },
       },
     );
   }, [newTaskTitle, domain, createTask, deleteTask, queryClient, encryptTaskFields]);

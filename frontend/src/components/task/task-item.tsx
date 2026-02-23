@@ -169,8 +169,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
     onEdit?.(task);
   };
 
+  const isCompletePending =
+    toggleComplete.isPending || completeInstance.isPending || uncompleteInstance.isPending;
+
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isCompletePending) return;
 
     // For recurring tasks with a pending instance, complete/uncomplete the instance (not the parent)
     if (task.is_recurring && pendingInstance) {
@@ -285,6 +289,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
   }, [task, onEdit]);
 
   const handleMenuComplete = useCallback(() => {
+    if (isCompletePending) return;
     // For recurring tasks with a pending instance, complete the instance (not the parent)
     if (task.is_recurring && pendingInstance) {
       const previousInstances = queryClient.getQueryData(
@@ -370,6 +375,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
   }, [
     task,
     isCompleted,
+    isCompletePending,
     pendingInstance,
     queryClient,
     toggleComplete,
@@ -640,6 +646,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   className="flex-shrink-0 cursor-pointer relative z-10 [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
                   onClick={handleToggleComplete}
                   onPointerDown={(e) => e.stopPropagation()}
+                  disabled={isCompletePending}
                   title={isCompleted ? "Mark as pending" : "Mark as complete"}
                 >
                   <svg
@@ -1042,6 +1049,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (toggleComplete.isPending) return;
     doToggleComplete();
   };
 

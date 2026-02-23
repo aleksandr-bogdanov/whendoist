@@ -88,7 +88,7 @@ function showRateLimitCountdown(seconds: number) {
 
 axios.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     // Network errors (no response received)
     if (!error.response) {
       const networkError = new NetworkError(error.message || "Network request failed");
@@ -103,20 +103,25 @@ axios.interceptors.response.use(
       return Promise.reject(new AuthError("Session expired"));
     }
 
-    if (status === 403) {
-      // Clear CSRF cache so next request re-fetches
+    if (status === 403 && !error.config?._csrfRetried) {
+      // Clear CSRF cache, fetch a new token, and retry once
       csrfToken = null;
+      csrfFetchPromise = null;
+      error.config._csrfRetried = true;
+      const newToken = await getCsrfToken();
+      error.config.headers.set("X-CSRF-Token", newToken);
+      return axios(error.config);
+    }
+    if (status === 403) {
       return Promise.reject(new CSRFError("CSRF token rejected"));
     }
 
     if (status === 400) {
       const msg = error.response.data?.detail || "Invalid request. Check your input.";
-      toast.error(msg, { id: "validation-error" });
       return Promise.reject(new ValidationError(msg));
     }
 
     if (status === 404) {
-      toast.error("Resource not found.", { id: "not-found" });
       return Promise.reject(new NotFoundError("Resource not found"));
     }
 

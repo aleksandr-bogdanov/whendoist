@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.80 — 2026-02-24
+
+### Fix: UX hardening — double-tap guard, CSRF retry, toast dedup
+- **M-1** Double-tap guard on completion toggle — `isPending` check prevents concurrent complete/uncomplete mutations on rapid taps
+- **M-2** AnytimeInstancePill optimistic update — complete/skip actions now update cache immediately, matching day-column InstanceCard pattern
+- **M-5** CSRF retry — on 403, automatically fetches a new CSRF token and retries the failed request once
+- **M-7** Disabled `refetchOnWindowFocus` and increased `staleTime` to 2 minutes to prevent overwrites of in-flight optimistic updates
+- **M-8** Domain-group inline add invalidation — `onSettled` callback ensures server sort order is applied after optimistic append
+- **L-6** Double toast on errors — removed duplicate toasts from global interceptor for 400/404 (mutation `onError` handlers show their own)
+- **L-7** Editor stays open for deleted tasks — editor auto-closes when the task is removed from the cache
+
 ## v0.54.79 — 2026-02-24
 
 ### Fix: Decrypt ciphertext in all UI surfaces

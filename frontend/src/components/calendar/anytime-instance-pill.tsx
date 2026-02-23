@@ -43,6 +43,15 @@ export function AnytimeInstancePill({
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
 
   const handleComplete = () => {
+    if (completeInstance.isPending || uncompleteInstance.isPending) return;
+    const previousInstances = queryClient.getQueryData(getListInstancesApiV1InstancesGetQueryKey());
+    const newStatus = isCompleted ? ("pending" as const) : ("completed" as const);
+    queryClient.setQueryData(
+      getListInstancesApiV1InstancesGetQueryKey(),
+      (old: InstanceResponse[] | undefined) =>
+        old?.map((i) => (i.id === instance.id ? { ...i, status: newStatus } : i)),
+    );
+
     if (isCompleted) {
       uncompleteInstance.mutate(
         { instanceId: instance.id },
@@ -54,7 +63,13 @@ export function AnytimeInstancePill({
               id: `inst-uncomplete-${instance.id}`,
             });
           },
-          onError: () => toast.error("Failed to reopen instance"),
+          onError: () => {
+            queryClient.setQueryData(
+              getListInstancesApiV1InstancesGetQueryKey(),
+              previousInstances,
+            );
+            toast.error("Failed to reopen instance");
+          },
         },
       );
     } else {
@@ -68,13 +83,28 @@ export function AnytimeInstancePill({
               id: `inst-complete-${instance.id}`,
             });
           },
-          onError: () => toast.error("Failed to complete instance"),
+          onError: () => {
+            queryClient.setQueryData(
+              getListInstancesApiV1InstancesGetQueryKey(),
+              previousInstances,
+            );
+            toast.error("Failed to complete instance");
+          },
         },
       );
     }
   };
 
   const handleSkip = () => {
+    if (skipInstance.isPending || unskipInstance.isPending) return;
+    const previousInstances = queryClient.getQueryData(getListInstancesApiV1InstancesGetQueryKey());
+    const newStatus = isSkipped ? ("pending" as const) : ("skipped" as const);
+    queryClient.setQueryData(
+      getListInstancesApiV1InstancesGetQueryKey(),
+      (old: InstanceResponse[] | undefined) =>
+        old?.map((i) => (i.id === instance.id ? { ...i, status: newStatus } : i)),
+    );
+
     if (isSkipped) {
       unskipInstance.mutate(
         { instanceId: instance.id },
@@ -86,7 +116,13 @@ export function AnytimeInstancePill({
               id: `inst-unskip-${instance.id}`,
             });
           },
-          onError: () => toast.error("Failed to unskip instance"),
+          onError: () => {
+            queryClient.setQueryData(
+              getListInstancesApiV1InstancesGetQueryKey(),
+              previousInstances,
+            );
+            toast.error("Failed to unskip instance");
+          },
         },
       );
     } else {
@@ -98,7 +134,13 @@ export function AnytimeInstancePill({
             announce("Instance skipped");
             toast.success(`Skipped "${instance.task_title}"`, { id: `inst-skip-${instance.id}` });
           },
-          onError: () => toast.error("Failed to skip instance"),
+          onError: () => {
+            queryClient.setQueryData(
+              getListInstancesApiV1InstancesGetQueryKey(),
+              previousInstances,
+            );
+            toast.error("Failed to skip instance");
+          },
         },
       );
     }
