@@ -110,46 +110,48 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   );
   const safeAllStatusTasks = allStatusTasks ?? tasks;
 
-  // Extract scheduled subtasks as synthetic task-like objects for calendar display
-  const subtasksAsTasks = useMemo(() => {
+  // Extract ALL subtasks as synthetic task-like objects (for phantom card duration lookup + display)
+  const allSubtasksAsTasks = useMemo(() => {
     const result: AppRoutersTasksTaskResponse[] = [];
     for (const task of safeAllStatusTasks) {
       if (!task.subtasks) continue;
       for (const st of task.subtasks) {
-        if (st.scheduled_date) {
-          result.push({
-            ...st,
-            parent_id: task.id,
-            domain_id: task.domain_id,
-            domain_name: task.domain_name,
-            scheduled_time: st.scheduled_time ?? null,
-            is_recurring: false,
-            recurrence_rule: null,
-            completed_at: st.status === "completed" ? "" : null,
-            subtasks: [],
-          } as unknown as AppRoutersTasksTaskResponse);
-        }
+        result.push({
+          ...st,
+          parent_id: task.id,
+          domain_id: task.domain_id,
+          domain_name: task.domain_name,
+          scheduled_time: st.scheduled_time ?? null,
+          is_recurring: false,
+          recurrence_rule: null,
+          completed_at: st.status === "completed" ? "" : null,
+          subtasks: [],
+        } as unknown as AppRoutersTasksTaskResponse);
       }
     }
     return result;
   }, [safeAllStatusTasks]);
 
+  // Combined lookup: top-level tasks + all subtasks (used for phantom card duration)
+  const allTasksWithSubtasks = useMemo(
+    () => [...safeAllStatusTasks, ...allSubtasksAsTasks],
+    [safeAllStatusTasks, allSubtasksAsTasks],
+  );
+
   // Scheduled tasks with a specific time (exclude recurring parents — their instances render instead)
   const scheduledTasks = useMemo(
     () =>
-      [...safeAllStatusTasks, ...subtasksAsTasks].filter(
-        (t) => t.scheduled_date && t.scheduled_time && !t.is_recurring,
-      ),
-    [safeAllStatusTasks, subtasksAsTasks],
+      allTasksWithSubtasks.filter((t) => t.scheduled_date && t.scheduled_time && !t.is_recurring),
+    [allTasksWithSubtasks],
   );
 
   // Anytime tasks for the displayed date (exclude recurring parents)
   const anytimeTasks = useMemo(
     () =>
-      [...safeAllStatusTasks, ...subtasksAsTasks].filter(
+      allTasksWithSubtasks.filter(
         (t) => t.scheduled_date === displayDate && !t.scheduled_time && !t.is_recurring,
       ),
-    [safeAllStatusTasks, subtasksAsTasks, displayDate],
+    [allTasksWithSubtasks, displayDate],
   );
 
   // Anytime instances for the displayed date (no scheduled_datetime, not skipped)
@@ -473,7 +475,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         displayDate={displayDate}
         anytimeTasks={anytimeTasks}
         anytimeInstances={anytimeInstances}
-        allTasks={safeAllStatusTasks}
+        allTasks={allTasksWithSubtasks}
         onTaskClick={onTaskClick}
       />
 
@@ -535,7 +537,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                       centerDate={date}
                       events={safeEvents}
                       tasks={scheduledTasks}
-                      allTasks={safeAllStatusTasks}
+                      allTasks={allTasksWithSubtasks}
                       instances={safeInstances}
                       hourHeight={calendarHourHeight}
                       calendarColors={calendarColors}

@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.74 — 2026-02-23
+
+### Fix: Phantom card shows wrong duration for subtask drag-to-calendar
+- Calendar now passes all subtasks (not just scheduled ones) to DayColumn lookup, so phantom card uses the real duration instead of defaulting to 30 minutes
+
+
 ## v0.54.73 — 2026-02-23
 
 ### Fix: Subtask drag-to-calendar scheduling not working
