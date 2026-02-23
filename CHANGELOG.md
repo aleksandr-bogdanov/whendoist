@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.66 — 2026-02-23
+
+### Fix: Drag-drop in scheduled section reschedules instead of reparenting
+- Dragging a task from Overdue to Today (or between any date groups) now correctly reschedules the task instead of creating a subtask
+- Extended the date-group droppable zone to cover the entire group (header + tasks), not just the header
+- Collision detection already prioritizes date-group over task-drop, so this ensures rescheduling wins
+
+
 ## v0.54.65 — 2026-02-23
 
 ### Fix: Centered FAB + content scrolls behind glass nav
