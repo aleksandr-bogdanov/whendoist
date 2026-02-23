@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.81 — 2026-02-24
+
+### Fix: Backend hardening — nonce CSP, input validation, GCal cleanup
+- **M-3** Nonce-based CSP — replaced `'unsafe-inline'` in `script-src` with per-request nonces; inline scripts in `index.html` receive nonce attributes at serve time
+- **M-4** `recurrence_rule` validation — added `RecurrenceRuleSchema` Pydantic model with `extra="forbid"` to reject unknown keys and validate field shapes
+- **L-3** `import_data.py` switched from `get_current_user` (returns Optional) to `require_user` (raises 401) for consistency with all other routers
+- **L-4** Domain color validation — added `@field_validator("color")` enforcing `^#[0-9a-fA-F]{6}$` hex format on `DomainCreate`/`DomainUpdate`
+- **L-5** `expandedSubtasks` set capped at 100 entries to prevent unbounded growth in persisted localStorage
+- **NF-4** Backup import now cleans GCal events — `_clear_user_data()` deletes the GCal calendar and sync records before wiping tasks (matching the wipe endpoint)
+
 ## v0.54.80 — 2026-02-24
 
 ### Fix: UX hardening — double-tap guard, CSRF retry, toast dedup

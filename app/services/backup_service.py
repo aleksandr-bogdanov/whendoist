@@ -19,7 +19,7 @@ from app.constants import (
     TASK_DESCRIPTION_MAX_LENGTH,
     TASK_TITLE_MAX_LENGTH,
 )
-from app.models import Domain, Task, TaskInstance, UserPreferences
+from app.models import Domain, GoogleCalendarEventSync, GoogleToken, Task, TaskInstance, UserPreferences
 from app.services.data_version import bump_data_version
 
 # Regex to match control characters except \n (newline) and \t (tab)
@@ -407,6 +407,32 @@ class BackupService:
 
     async def _clear_user_data(self) -> None:
         """Delete all user data before import."""
+        import logging
+
+        from app.services.gcal import GoogleCalendarClient
+
+        logger = logging.getLogger("whendoist.backup")
+
+        # Clean up GCal sync if enabled — delete calendar and sync records
+        # before wiping tasks (matches the wipe endpoint behavior)
+        prefs_result = await self.db.execute(select(UserPreferences).where(UserPreferences.user_id == self.user_id))
+        prefs = prefs_result.scalar_one_or_none()
+        if prefs and prefs.gcal_sync_enabled and prefs.gcal_sync_calendar_id:
+            calendar_id = prefs.gcal_sync_calendar_id
+            try:
+                token_result = await self.db.execute(select(GoogleToken).where(GoogleToken.user_id == self.user_id))
+                google_token = token_result.scalar_one_or_none()
+                if google_token:
+                    async with GoogleCalendarClient(self.db, google_token) as client:
+                        await client.delete_calendar(calendar_id)
+            except Exception:
+                logger.warning(f"Failed to delete GCal calendar during backup import for user {self.user_id}")
+
+            # Clean up sync state regardless of API success
+            await self.db.execute(
+                delete(GoogleCalendarEventSync).where(GoogleCalendarEventSync.user_id == self.user_id)
+            )
+
         # Delete instances for user's tasks first (foreign key constraint)
         await self.db.execute(
             delete(TaskInstance).where(TaskInstance.task_id.in_(select(Task.id).where(Task.user_id == self.user_id)))

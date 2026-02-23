@@ -21,6 +21,7 @@ from app.services.task_service import TaskService
 
 # Regex to match control characters except \n (newline) and \t (tab)
 CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+HEX_COLOR_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 logger = logging.getLogger("whendoist.domains")
 
@@ -54,6 +55,13 @@ class DomainCreate(BaseModel):
             raise ValueError(f"Name cannot exceed {DOMAIN_NAME_MAX_LENGTH} characters")
         return v
 
+    @field_validator("color")
+    @classmethod
+    def validate_color(cls, v: str | None) -> str | None:
+        if v is not None and not HEX_COLOR_PATTERN.match(v):
+            raise ValueError("Color must be a hex color (e.g. #FF5733)")
+        return v
+
 
 class DomainUpdate(BaseModel):
     """Request body for updating a domain."""
@@ -73,6 +81,13 @@ class DomainUpdate(BaseModel):
             raise ValueError("Name cannot be empty")
         if len(v) > DOMAIN_NAME_MAX_LENGTH:
             raise ValueError(f"Name cannot exceed {DOMAIN_NAME_MAX_LENGTH} characters")
+        return v
+
+    @field_validator("color")
+    @classmethod
+    def validate_color(cls, v: str | None) -> str | None:
+        if v is not None and not HEX_COLOR_PATTERN.match(v):
+            raise ValueError("Color must be a hex color (e.g. #FF5733)")
         return v
 
 

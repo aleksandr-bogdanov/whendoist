@@ -108,6 +108,11 @@ export const useUIStore = create<UIState & UIActions>()(
           if (next.has(taskId)) {
             next.delete(taskId);
           } else {
+            // Cap at 100 entries to prevent unbounded growth in persisted storage
+            if (next.size >= 100) {
+              const oldest = next.values().next().value;
+              if (oldest !== undefined) next.delete(oldest);
+            }
             next.add(taskId);
           }
           return { expandedSubtasks: next };

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -343,9 +343,14 @@ else:
 
         # SPA fallback: all non-API, non-auth, non-static routes serve index.html
         # This MUST be registered AFTER all other routes
+        _index_html_template = (_spa_dist / "index.html").read_text()
+
         @app.get("/{path:path}", include_in_schema=False)
-        async def spa_fallback(path: str):
+        async def spa_fallback(request: Request, path: str):
             # Don't catch API, auth, static, health, or metrics routes
             if path.startswith(("api/", "auth/", "static/", "health", "ready", "metrics")):
                 raise HTTPException(status_code=404)
-            return FileResponse(str(_spa_dist / "index.html"))
+            # Inject CSP nonce into inline script tags
+            nonce = getattr(request.state, "csp_nonce", "")
+            html = _index_html_template.replace("<script>", f'<script nonce="{nonce}">')
+            return HTMLResponse(html)
