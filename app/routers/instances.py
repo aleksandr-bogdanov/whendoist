@@ -119,7 +119,7 @@ async def list_instances(
     instances = await service.get_instances_for_range(
         start_date=start_date,
         end_date=end_date,
-        status=status,
+        status=None if status == "all" else status,
     )
     return [_instance_to_response(i) for i in instances]
 

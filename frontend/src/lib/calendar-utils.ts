@@ -293,28 +293,19 @@ export function calculateOverlaps(
     items.push({ id: String(task.id), type: "task", range, original: task });
   }
 
-  // Add recurring task instances for this date
+  // Add recurring task instances for this date (only those with a scheduled time)
   if (instances) {
     for (const inst of instances) {
       if (inst.instance_date !== dateStr) continue;
-      let range: TimeRange;
-      if (inst.scheduled_datetime) {
-        const dt = new Date(inst.scheduled_datetime);
-        const h = dt.getHours();
-        const m = dt.getMinutes();
-        const duration = inst.duration_minutes ?? 30;
-        range = {
-          startMinutes: toMinutesSinceMidnight(h, m),
-          endMinutes: toMinutesSinceMidnight(h, m) + duration,
-        };
-      } else {
-        // No specific time — place at 9am as default
-        const duration = inst.duration_minutes ?? 30;
-        range = {
-          startMinutes: toMinutesSinceMidnight(9, 0),
-          endMinutes: toMinutesSinceMidnight(9, 0) + duration,
-        };
-      }
+      if (!inst.scheduled_datetime) continue; // Time-less → anytime section
+      const dt = new Date(inst.scheduled_datetime);
+      const h = dt.getHours();
+      const m = dt.getMinutes();
+      const duration = inst.duration_minutes ?? 30;
+      const range: TimeRange = {
+        startMinutes: toMinutesSinceMidnight(h, m),
+        endMinutes: toMinutesSinceMidnight(h, m) + duration,
+      };
       items.push({ id: `inst-${inst.id}`, type: "instance", range, original: inst });
     }
   }
@@ -449,26 +440,18 @@ export function calculateExtendedOverlaps(
       });
     }
 
-    // Instances
+    // Instances (only those with a scheduled time — time-less go to anytime section)
     for (const inst of instances) {
       if (inst.instance_date !== dateStr) continue;
-      let range: TimeRange;
-      if (inst.scheduled_datetime) {
-        const dt = new Date(inst.scheduled_datetime);
-        const h = dt.getHours();
-        const m = dt.getMinutes();
-        const duration = inst.duration_minutes ?? 30;
-        range = {
-          startMinutes: toMinutesSinceMidnight(h, m),
-          endMinutes: toMinutesSinceMidnight(h, m) + duration,
-        };
-      } else {
-        const duration = inst.duration_minutes ?? 30;
-        range = {
-          startMinutes: toMinutesSinceMidnight(9, 0),
-          endMinutes: toMinutesSinceMidnight(9, 0) + duration,
-        };
-      }
+      if (!inst.scheduled_datetime) continue;
+      const dt = new Date(inst.scheduled_datetime);
+      const h = dt.getHours();
+      const m = dt.getMinutes();
+      const duration = inst.duration_minutes ?? 30;
+      const range: TimeRange = {
+        startMinutes: toMinutesSinceMidnight(h, m),
+        endMinutes: toMinutesSinceMidnight(h, m) + duration,
+      };
       const startHour = Math.floor(range.startMinutes / 60);
       if (startHour < minHour || startHour >= maxHour) continue;
       rangeItems.push({

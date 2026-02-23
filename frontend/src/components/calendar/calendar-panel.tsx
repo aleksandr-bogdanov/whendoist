@@ -2,7 +2,7 @@ import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { keepPreviousData } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
 import {
   useGetCalendarsApiV1CalendarsGet,
   useGetEventsApiV1EventsGet,
@@ -25,6 +25,7 @@ import {
   ZOOM_STEPS,
 } from "@/lib/calendar-utils";
 import { useUIStore } from "@/stores/ui-store";
+import { AnytimeInstancePill } from "./anytime-instance-pill";
 import { AnytimeTaskPill } from "./anytime-task-pill";
 import { DayColumn } from "./day-column";
 import { PlanMode } from "./plan-mode";
@@ -93,9 +94,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     return map;
   }, [calendars]);
 
-  // Fetch recurring task instances — keepPreviousData prevents flash
+  // Fetch recurring task instances (all statuses so completed stay visible) — keepPreviousData prevents flash
   const { data: instances } = useListInstancesApiV1InstancesGet(
-    { start_date: startDate, end_date: endDate },
+    { start_date: startDate, end_date: endDate, status: "all" },
     { query: { staleTime: 60_000, placeholderData: keepPreviousData } },
   );
 
@@ -122,6 +123,18 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         (t) => t.scheduled_date === displayDate && !t.scheduled_time && !t.is_recurring,
       ),
     [safeAllStatusTasks, displayDate],
+  );
+
+  // Anytime instances for the displayed date (no scheduled_datetime, not skipped)
+  const anytimeInstances = useMemo(
+    () =>
+      safeInstances.filter(
+        (inst) =>
+          inst.instance_date === displayDate &&
+          !inst.scheduled_datetime &&
+          inst.status !== "skipped",
+      ),
+    [safeInstances, displayDate],
   );
 
   const isNotToday = displayDate !== todayString();
@@ -432,6 +445,8 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       <AnytimeSection
         displayDate={displayDate}
         anytimeTasks={anytimeTasks}
+        anytimeInstances={anytimeInstances}
+        allTasks={safeAllStatusTasks}
         onTaskClick={onTaskClick}
       />
 
@@ -548,16 +563,29 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
 function AnytimeSection({
   displayDate,
   anytimeTasks,
+  anytimeInstances,
+  allTasks,
   onTaskClick,
 }: {
   displayDate: string;
   anytimeTasks: AppRoutersTasksTaskResponse[];
+  anytimeInstances: InstanceResponse[];
+  allTasks: AppRoutersTasksTaskResponse[];
   onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `anytime-drop-${displayDate}`,
     data: { type: "anytime", dateStr: displayDate },
   });
+
+  // Build a lookup map for parent tasks (for instance pills)
+  const taskMap = useMemo(() => {
+    const map = new Map<number, AppRoutersTasksTaskResponse>();
+    for (const t of allTasks) map.set(t.id, t);
+    return map;
+  }, [allTasks]);
+
+  const hasItems = anytimeTasks.length > 0 || anytimeInstances.length > 0;
 
   return (
     <div
@@ -570,10 +598,20 @@ function AnytimeSection({
         ANYTIME
       </span>
       <div className="flex flex-wrap gap-1 min-h-[22px] items-center flex-1 min-w-0">
-        {anytimeTasks.length > 0 ? (
-          anytimeTasks.map((t) => (
-            <AnytimeTaskPill key={t.id} task={t} onClick={() => onTaskClick?.(t)} />
-          ))
+        {hasItems ? (
+          <>
+            {anytimeTasks.map((t) => (
+              <AnytimeTaskPill key={t.id} task={t} onClick={() => onTaskClick?.(t)} />
+            ))}
+            {anytimeInstances.map((inst) => (
+              <AnytimeInstancePill
+                key={`inst-${inst.id}`}
+                instance={inst}
+                parentTask={taskMap.get(inst.task_id)}
+                onTaskClick={onTaskClick}
+              />
+            ))}
+          </>
         ) : (
           <span className="text-[10px] text-muted-foreground/50">
             {isOver ? "Drop here for anytime" : "No tasks"}
