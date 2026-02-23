@@ -12,6 +12,7 @@ Development history of Whendoist. Per-patch details in git history.
 - Applies to single task sync, instance sync, and bulk sync operations
 
 
+
 ## v0.54.77 — 2026-02-23
 
 ### Fix: Encryption toggle completeness and backup metadata
