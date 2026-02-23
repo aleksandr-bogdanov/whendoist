@@ -56,20 +56,27 @@ export function TaskPanel({
 
   const [decryptedTasks, setDecryptedTasks] = useState<TaskResponse[]>([]);
   const [decryptedDomains, setDecryptedDomains] = useState<DomainResponse[]>([]);
+  const [decryptionComplete, setDecryptionComplete] = useState(false);
 
   // Decrypt tasks when data or crypto state changes
   useEffect(() => {
     if (!tasks) {
       setDecryptedTasks([]);
+      setDecryptionComplete(false);
       return;
     }
     if (!canDecrypt || !derivedKey) {
       setDecryptedTasks(tasks);
+      setDecryptionComplete(true);
       return;
     }
+    setDecryptionComplete(false);
     let cancelled = false;
     Promise.all(tasks.map((t) => decryptTask(t, derivedKey))).then((result) => {
-      if (!cancelled) setDecryptedTasks(result.map(([t]) => t));
+      if (!cancelled) {
+        setDecryptedTasks(result.map(([t]) => t));
+        setDecryptionComplete(true);
+      }
     });
     return () => {
       cancelled = true;
@@ -123,7 +130,7 @@ export function TaskPanel({
   }, [decryptedTasks, decryptedDomains, sortField, sortDirection, energyLevel]);
 
   // Prevent ciphertext flash: show loading while decryption is pending
-  const decryptionPending = canDecrypt && (tasks?.length ?? 0) > 0 && decryptedTasks.length === 0;
+  const decryptionPending = canDecrypt && (tasks?.length ?? 0) > 0 && !decryptionComplete;
 
   if (isLoading || decryptionPending) {
     return (

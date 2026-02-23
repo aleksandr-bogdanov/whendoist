@@ -14,7 +14,7 @@ export function useNetworkStatus() {
       toast.error("No internet connection", {
         id: "network-status",
         duration: Number.POSITIVE_INFINITY,
-        description: "Changes will sync when you're back online.",
+        description: "No internet connection. Please reconnect to make changes.",
       });
     };
 
