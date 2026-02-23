@@ -110,6 +110,19 @@ export function useCarousel({
     const onScroll = () => {
       if (isProgrammatic.current || disabledRef.current) return;
 
+      // Reject scrolls not initiated by a user gesture (e.g. screenshot tools
+      // that programmatically scroll inner containers for full-page capture).
+      // Snap back immediately so the carousel stays on the current panel.
+      if (!hasRecentGesture.current) {
+        isProgrammatic.current = true;
+        const pw = el.offsetWidth;
+        if (pw > 0) el.scrollLeft = currentPanel.current * pw;
+        requestAnimationFrame(() => {
+          isProgrammatic.current = false;
+        });
+        return;
+      }
+
       // Report visible panel immediately (no debounce) for live header updates
       const panelWidth = el.offsetWidth;
       if (panelWidth > 0) {
