@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.56 — 2026-02-23
+
+### Interactive attribute mini-pills
+- Task metadata (impact, clarity, duration) now renders as interactive pills on desktop
+- Hover reveals clickable affordance; click opens compact segmented-control popover for inline editing
+- Optimistic mutations update immediately, with rollback on error
+- Completed tasks render static pills (no popover) to prevent accidental edits
+- Works on both parent leaf tasks and subtasks
+- Extracted shared constants (`IMPACT_OPTIONS`, `CLARITY_OPTIONS`, `DURATION_PRESETS`) to `task-utils.ts`
+
 ## v0.54.55 — 2026-02-23
 
 ### Savepoints for IntegrityError handlers + snapshot review comments
