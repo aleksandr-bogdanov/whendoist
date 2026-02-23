@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.72 — 2026-02-23
+
+### Fix: Invalidate instances cache on task edit and delete
+- Task editor now invalidates instance query cache after save — fixes stale instance IDs causing "failed to complete/skip" errors when recurrence or time changes
+- Task delete now invalidates instance query cache — fixes ghost instances lingering on calendar after parent task is deleted
+
+
 ## v0.54.71 — 2026-02-23
 
 ### Fix: Subtask delete not working
