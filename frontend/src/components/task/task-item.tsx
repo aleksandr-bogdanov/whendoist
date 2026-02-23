@@ -507,7 +507,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
       { taskId: task.id },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          invalidateAll();
           announce("Task deleted");
           toast.success(`Deleted "${task.title}"`, {
             id: `delete-${task.id}`,
@@ -517,14 +517,9 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 restoreTask.mutate(
                   { taskId: task.id },
                   {
-                    onSuccess: () =>
-                      queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
-                      }),
+                    onSuccess: () => invalidateAll(),
                     onError: () => {
-                      queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
-                      });
+                      invalidateAll();
                       toast.error("Undo failed");
                     },
                   },
@@ -537,7 +532,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
       },
     );
     setMenuOpen(false);
-  }, [task, deleteTask, restoreTask, queryClient]);
+  }, [task, deleteTask, restoreTask, invalidateAll]);
 
   const scheduledDate = task.scheduled_date;
   // For recurring tasks with a pending instance, use instance date for overdue display

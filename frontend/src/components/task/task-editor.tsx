@@ -9,6 +9,7 @@ import type {
   TaskUpdate,
 } from "@/api/model";
 import {
+  getListInstancesApiV1InstancesGetQueryKey,
   useBatchCompleteInstancesApiV1InstancesBatchCompletePost,
   usePendingPastCountApiV1InstancesPendingPastCountGet,
 } from "@/api/queries/instances/instances";
@@ -161,6 +162,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
 
   const invalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
   };
 
   const handleSave = async () => {
