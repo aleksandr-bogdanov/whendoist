@@ -4,7 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.54.81 — 2026-02-24
+## v0.54.82 — 2026-02-24
+
+### Feat: Error boundary, code splitting, PWA reload prompt
+- **Error boundary** — Root-level `RootErrorBoundary` in `__root.tsx` catches rendering errors in any route and shows a friendly "Something went wrong" page with reload button (previously: white screen crash)
+- **L-8 Code splitting** — Route-based code splitting via TanStack Router `.lazy.tsx` files for settings, thoughts, analytics, and login pages. Vendor libraries split into separate chunks (react-dom, radix, motion, recharts, dnd, axios, etc). Initial bundle reduced from 1,546 KB (single chunk) to 350 KB main chunk
+- **L-9 PWA reload prompt** — Changed `registerType` from `autoUpdate` to `prompt`. New `PwaReloadPrompt` component shows a persistent toast when a new version is available, letting users choose when to reload instead of silently updating
+
+
 
 ### Fix: Backend hardening — nonce CSP, input validation, GCal cleanup
 - **M-3** Nonce-based CSP — replaced `'unsafe-inline'` in `script-src` with per-request nonces; inline scripts in `index.html` receive nonce attributes at serve time
