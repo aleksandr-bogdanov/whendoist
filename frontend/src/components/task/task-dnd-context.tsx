@@ -220,6 +220,13 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
       grabRatioRef.current = null; // Reset so next modifier call captures fresh ratio
+      // Seed lastPointerRef so the first modifier frame has accurate position
+      const ev = event.activatorEvent;
+      if (ev instanceof TouchEvent && ev.touches[0]) {
+        lastPointerRef.current = { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+      } else if (ev instanceof PointerEvent) {
+        lastPointerRef.current = { x: ev.clientX, y: ev.clientY };
+      }
       const activeIdStr = String(event.active.id);
       const isInstance = activeIdStr.startsWith("instance-");
       const task = isInstance ? null : findTask(event.active.id);
@@ -1074,40 +1081,49 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     });
   }, []);
 
-  // Modifier: preserve proportional grab offset, immune to scroll drift.
-  // dnd-kit measures activeNodeRect from the draggable DOM node, but the DragOverlay
-  // renders a compact card (TaskDragOverlay) inside a wrapper sized to the original
-  // card. We measure the actual content width via overlayContentRef and use it for
-  // proportional positioning. The activeNodeRect values cancel out algebraically
-  // so scroll drift doesn't affect the visual position.
+  // Modifier: proportional grab offset mapped to the compact overlay pill.
+  // The overlay pill (TaskDragOverlay) is much smaller than the original card.
+  // We capture WHERE on the original card the user grabbed (as a 0–1 ratio),
+  // then apply that ratio to the pill's actual rendered dimensions so the cursor
+  // stays at the same proportional position (grab middle → cursor at pill middle).
   const grabRatioRef = useRef<{ x: number; y: number } | null>(null);
   const overlayContentRef = useRef<HTMLDivElement>(null);
   const overlayModifiers = useMemo<Modifier[]>(
     () => [
       ({ transform, activatorEvent, activeNodeRect }) => {
         if (!activeNodeRect || !activatorEvent) return transform;
-        const ev = activatorEvent as PointerEvent;
-        // Capture grab position as ratio of original card (no scroll drift yet)
+        // Capture grab position as 0–1 ratio of original card (once per drag)
         if (!grabRatioRef.current) {
+          let clientX: number;
+          let clientY: number;
+          if (activatorEvent instanceof TouchEvent) {
+            clientX = activatorEvent.touches[0]?.clientX ?? 0;
+            clientY = activatorEvent.touches[0]?.clientY ?? 0;
+          } else {
+            clientX = (activatorEvent as PointerEvent).clientX;
+            clientY = (activatorEvent as PointerEvent).clientY;
+          }
           grabRatioRef.current = {
-            x: (ev.clientX - activeNodeRect.left) / (activeNodeRect.width || 1),
-            y: (ev.clientY - activeNodeRect.top) / (activeNodeRect.height || 1),
+            x: (clientX - activeNodeRect.left) / (activeNodeRect.width || 1),
+            y: (clientY - activeNodeRect.top) / (activeNodeRect.height || 1),
           };
         }
-        // Use actual content dimensions if available, otherwise fall back to original card
-        const contentEl = overlayContentRef.current;
-        const contentW = contentEl?.offsetWidth ?? activeNodeRect.width;
-        const contentH = contentEl?.offsetHeight ?? activeNodeRect.height;
-        const offsetX = grabRatioRef.current.x * contentW;
-        const offsetY = grabRatioRef.current.y * contentH;
-        const currentX = ev.clientX + transform.x;
-        const currentY = ev.clientY + transform.y;
-        // visual = activeNodeRect.left + result.x = currentX - offsetX
-        // (activeNodeRect.left cancels out, so scroll drift doesn't matter)
+        // Measure the actual compact pill via firstElementChild (the TaskDragOverlay root).
+        // The overlayContentRef div itself fills the dnd-kit wrapper width, so we need
+        // the inner element to get the real pill dimensions.
+        const wrapper = overlayContentRef.current;
+        const pill = wrapper?.firstElementChild as HTMLElement | null;
+        const pillW = pill?.offsetWidth ?? activeNodeRect.width;
+        const pillH = pill?.offsetHeight ?? activeNodeRect.height;
+        const offsetX = grabRatioRef.current.x * pillW;
+        const offsetY = grabRatioRef.current.y * pillH;
+        // Use live pointer position — immune to dnd-kit scroll drift
+        const pointerX = lastPointerRef.current.x;
+        const pointerY = lastPointerRef.current.y;
         return {
           ...transform,
-          x: currentX - activeNodeRect.left - offsetX,
-          y: currentY - activeNodeRect.top - offsetY,
+          x: pointerX - activeNodeRect.left - offsetX,
+          y: pointerY - activeNodeRect.top - offsetY,
         };
       },
     ],

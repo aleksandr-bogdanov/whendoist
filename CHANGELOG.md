@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.58 — 2026-02-23
+
+### Fix: Calendar DnD overlay grab offset
+- Drag overlay pill now preserves proportional grab position (grab middle → cursor at pill middle)
+- Measures the actual compact pill element via `firstElementChild` instead of the dnd-kit wrapper
+- Uses live pointer position for scroll-drift immunity
+- Handles both PointerEvent and TouchEvent activator events
+
 ## v0.54.57 — 2026-02-23
 
 ### Attribute pills: legacy pill shape + toast with undo
