@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.60 — 2026-02-23
+
+### Feat: Apple Glass floating pill bottom navigation
+- MobileNav converted from full-width fixed bar to floating pill with rounded corners
+- Frosted glass effect: `backdrop-blur-xl` + semi-transparent background + shadow
+- Pill floats above iOS safe area / home indicator — no more touch conflicts
+- `pb-nav-safe` now accounts for safe area inset + pill offset
+- Demo pill and gesture discovery hints repositioned above the floating nav
+
 ## v0.54.59 — 2026-02-23
 
 ### Fix: Calendar DnD — drag across days + overlay stability

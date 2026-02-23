@@ -75,6 +75,12 @@
   --col-gap: 8px;
   --rail-w: 4px;
 
+  /* Floating pill nav dimensions */
+  --nav-pill-height: 3.5rem;
+  --nav-pill-mx: 0.75rem;
+  --nav-pill-mb: 0.5rem;
+  --nav-pill-radius: 1.5rem;
+
   /* Brand shadow system */
   --shadow-card: 0 2px 8px rgba(15, 23, 42, 0.04), 0 4px 24px rgba(15, 23, 42, 0.06);
   --shadow-raised: 0 4px 16px rgba(15, 23, 42, 0.06), 0 8px 40px rgba(15, 23, 42, 0.08);
@@ -181,9 +187,14 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* pb-nav-safe = h-14 (3.5rem) nav height + 1px border-t */
+/* pb-nav-safe = safe-area + pill bottom margin + pill height + gap above pill */
 @utility pb-nav-safe {
-  padding-bottom: calc(3.5rem + 1px);
+  padding-bottom: calc(
+    env(safe-area-inset-bottom, 0px) +
+    var(--nav-pill-mb) +
+    var(--nav-pill-height) +
+    0.25rem
+  );
 }
 
 /* Prevent macOS two-finger swipe back/forward navigation */
