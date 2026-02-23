@@ -177,7 +177,7 @@ export function TaskPanel({
           data-task-scroll-area
         >
           <StickyDomainHeader />
-          <div className="p-2 sm:p-4 space-y-2">
+          <div className="p-2 sm:p-4 pb-nav-safe md:pb-4 space-y-2">
             <PendingPastBanner />
             <TaskList groups={pendingGroups} onEditTask={onEditTask} />
             <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />
@@ -185,7 +185,7 @@ export function TaskPanel({
             <DeletedSection />
           </div>
         </div>
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background/50 to-transparent md:h-16 md:from-background" />
       </div>
     </div>
   );

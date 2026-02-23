@@ -49,7 +49,7 @@ function AnalyticsPage() {
 
   return (
     <ScrollArea className="flex-1">
-      <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 pb-nav-safe md:pb-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Analytics</h1>

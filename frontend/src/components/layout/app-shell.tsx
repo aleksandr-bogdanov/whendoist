@@ -29,7 +29,7 @@ export function AppShell({ userName, userEmail }: AppShellProps) {
   return (
     <div className="flex h-[var(--app-height,100vh)] flex-col mx-auto w-full max-w-[1200px]">
       <Header userName={userName} userEmail={userEmail} onDebugToggle={toggleDebug} />
-      <main className="flex flex-col flex-1 overflow-hidden pb-nav-safe md:pb-0 min-h-0">
+      <main className="flex flex-col flex-1 overflow-hidden md:pb-0 min-h-0">
         <Outlet />
       </main>
       <MobileNav />
