@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.79 — 2026-02-24
+
+### Fix: Decrypt ciphertext in all UI surfaces
+- Dashboard keyboard shortcuts (c/e/Enter/x) now show decrypted task titles in toasts and confirm dialogs instead of raw ciphertext
+- CalendarPanel receives decrypted tasks from dashboard
+- Settings domain list displays decrypted names and pre-fills edit form with plaintext
+- Thoughts page domain pills show decrypted domain names
+
 ## v0.54.78 — 2026-02-23
 
 ### Fix: Mask encrypted task content in GCal sync
