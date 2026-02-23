@@ -245,6 +245,7 @@ class SubtaskResponse(BaseModel):
     impact: int
     clarity: str | None
     scheduled_date: date | None
+    scheduled_time: time | None
     status: str
     position: int
 
@@ -323,6 +324,7 @@ def _task_to_response(task: Task, user_today: date | None = None) -> TaskRespons
                 impact=s.impact,
                 clarity=s.clarity,
                 scheduled_date=s.scheduled_date,
+                scheduled_time=s.scheduled_time,
                 status=s.status,
                 position=s.position,
             )
