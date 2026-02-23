@@ -21,7 +21,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { CalendarResponse, DomainResponse, PasskeyInfo, SnapshotInfo } from "@/api/model";
 import {
@@ -871,7 +871,7 @@ function DomainsSection() {
   const updateDomain = useUpdateDomainApiV1DomainsDomainIdPut();
   const deleteDomain = useDeleteDomainApiV1DomainsDomainIdDelete();
   const queryClient = useQueryClient();
-  const { encryptDomainName } = useCrypto();
+  const { encryptDomainName, decryptDomains } = useCrypto();
 
   const [newName, setNewName] = useState("");
   const [newIcon, setNewIcon] = useState("");
@@ -884,6 +884,27 @@ function DomainsSection() {
   const domains = (domainsQuery.data ?? [])
     .filter((d) => !d.is_archived)
     .sort((a, b) => a.position - b.position);
+
+  // Decrypt domain names for display and editing
+  const [decryptedNameMap, setDecryptedNameMap] = useState<Map<number, string>>(new Map());
+  const domainsFingerprint = useMemo(
+    () => domains.map((d) => `${d.id}:${d.name?.slice(0, 8)}`).join(","),
+    [domains],
+  );
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint tracks changes
+  useEffect(() => {
+    let cancelled = false;
+    decryptDomains(domains).then((result) => {
+      if (!cancelled) {
+        const map = new Map<number, string>();
+        for (const d of result) map.set(d.id, d.name);
+        setDecryptedNameMap(map);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [domainsFingerprint, decryptDomains]);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -950,7 +971,7 @@ function DomainsSection() {
 
   const startEditing = (d: DomainResponse) => {
     setEditingId(d.id);
-    setEditName(d.name);
+    setEditName(decryptedNameMap.get(d.id) ?? d.name);
     setEditIcon(d.icon ?? "");
     setEditColor(d.color ?? "#6D5EF6");
   };
@@ -1013,7 +1034,7 @@ function DomainsSection() {
                   className="h-3 w-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: d.color ?? "#6D5EF6" }}
                 />
-                <span className="flex-1 text-sm">{d.name}</span>
+                <span className="flex-1 text-sm">{decryptedNameMap.get(d.id) ?? d.name}</span>
                 <Button size="sm" variant="ghost" onClick={() => startEditing(d)}>
                   Edit
                 </Button>

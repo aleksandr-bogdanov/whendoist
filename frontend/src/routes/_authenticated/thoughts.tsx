@@ -64,7 +64,7 @@ function ThoughtsPage() {
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const domainsQuery = useListDomainsApiV1DomainsGet();
   const queryClient = useQueryClient();
-  const { decryptTasks, encryptTaskFields } = useCrypto();
+  const { decryptTasks, encryptTaskFields, decryptDomains } = useCrypto();
 
   const [input, setInput] = useState("");
   const [decryptedTasks, setDecryptedTasks] = useState<TaskResponse[]>([]);
@@ -72,7 +72,24 @@ function ThoughtsPage() {
   const [editText, setEditText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const domains = (domainsQuery.data ?? []).filter((d: DomainResponse) => !d.is_archived);
+  const rawDomains = (domainsQuery.data ?? []).filter((d: DomainResponse) => !d.is_archived);
+  const [domains, setDomains] = useState<DomainResponse[]>([]);
+
+  // Decrypt domain names for promote-to-task pills
+  const domainsFingerprint = useMemo(
+    () => rawDomains.map((d) => `${d.id}:${d.name?.slice(0, 8)}`).join(","),
+    [rawDomains],
+  );
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint tracks changes
+  useEffect(() => {
+    let cancelled = false;
+    decryptDomains(rawDomains).then((result) => {
+      if (!cancelled) setDomains(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [domainsFingerprint, decryptDomains]);
 
   // Filter for thoughts (tasks without a domain)
   const allTasks = tasksQuery.data ?? [];
