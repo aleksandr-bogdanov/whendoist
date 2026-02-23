@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.63 — 2026-02-23
+
+### Fix: Enhanced Apple Glass effect on header and nav pill
+- Apply Apple's native `saturate(180%) blur(40px)` formula to both header and floating nav pill
+- Lower background opacity with white/dark surface tint for more translucent glass
+- Replace border with subtle inset ring highlight (hairline edge like native iOS)
+- Consistent glass treatment across header and bottom navigation
+
 ## v0.54.62 — 2026-02-23
 
 ### Fix: Parent picker smart ordering + subtask count badges

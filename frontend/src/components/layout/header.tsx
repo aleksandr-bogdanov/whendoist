@@ -79,7 +79,7 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
   }
 
   return (
-    <header className="relative flex flex-col backdrop-blur-md bg-background/85">
+    <header className="relative flex flex-col backdrop-blur-2xl backdrop-saturate-[1.8] bg-white/60 dark:bg-[rgba(30,41,59,0.55)]">
       {/* iOS PWA: notch spacer — background fills notch area, content below it */}
       <div className="pt-safe" />
 
