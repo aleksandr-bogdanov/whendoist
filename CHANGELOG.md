@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.70 — 2026-02-23
+
+### Fix: SubtaskItem context menu, kebab menu, and delete action
+- Subtasks now have full right-click context menu (Edit, Complete/Reopen, Delete) — was completely missing
+- Added kebab (⋮) dropdown menu on hover for desktop, matching parent task pattern
+- Delete action with undo toast for subtasks
+
+
 ## v0.54.69 — 2026-02-23
 
 ### Fix: Ghost row persistence + style consolidation

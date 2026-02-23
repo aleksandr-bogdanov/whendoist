@@ -999,9 +999,12 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
   const { selectedTaskId, selectTask } = useUIStore();
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
+  const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
+  const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
   const isSelected = selectedTaskId === subtask.id;
   const isCompleted = subtask.status === "completed";
   const impactColor = IMPACT_COLORS[subtask.impact] ?? IMPACT_COLORS[4];
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: String(subtask.id),
@@ -1019,9 +1022,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
     }
   };
 
-  const handleToggleComplete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
+  const doToggleComplete = useCallback(() => {
     const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
@@ -1051,119 +1052,228 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
         },
       },
     );
+  }, [subtask.id, isCompleted, queryClient, toggleComplete]);
+
+  const handleToggleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    doToggleComplete();
   };
 
+  const handleMenuEdit = useCallback(() => {
+    setMenuOpen(false);
+    selectTask(subtask.id);
+    onSelect?.(subtask.id);
+    getTaskApiV1TasksTaskIdGet(subtask.id)
+      .then((fullTask) => onEdit?.(fullTask as AppRoutersTasksTaskResponse))
+      .catch(() => onEdit?.(subtask as unknown as AppRoutersTasksTaskResponse));
+  }, [subtask, onSelect, onEdit, selectTask]);
+
+  const handleMenuComplete = useCallback(() => {
+    setMenuOpen(false);
+    doToggleComplete();
+  }, [doToggleComplete]);
+
+  const handleMenuDelete = useCallback(() => {
+    setMenuOpen(false);
+    deleteTask.mutate(
+      { taskId: subtask.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          announce("Subtask deleted");
+          toast.success(`Deleted "${subtask.title}"`, {
+            id: `delete-${subtask.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                restoreTask.mutate(
+                  { taskId: subtask.id },
+                  {
+                    onSuccess: () =>
+                      queryClient.invalidateQueries({
+                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                      }),
+                    onError: () => toast.error("Undo failed"),
+                  },
+                );
+              },
+            },
+          });
+        },
+        onError: () => toast.error("Failed to delete subtask", { id: `delete-err-${subtask.id}` }),
+      },
+    );
+  }, [subtask, deleteTask, restoreTask, queryClient]);
+
+  const contextMenuItems = (
+    <>
+      <ContextMenuItem onClick={handleMenuEdit}>
+        <Pencil className="h-3.5 w-3.5 mr-2" />
+        Edit
+      </ContextMenuItem>
+      <ContextMenuItem onClick={handleMenuComplete}>
+        <Check className="h-3.5 w-3.5 mr-2" />
+        {isCompleted ? "Reopen" : "Complete"}
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem
+        onClick={handleMenuDelete}
+        className="text-destructive focus:text-destructive"
+      >
+        <Trash2 className="h-3.5 w-3.5 mr-2" />
+        Delete
+      </ContextMenuItem>
+    </>
+  );
+
   return (
-    <div
-      ref={setNodeRef}
-      className={cn(
-        "group flex items-center gap-[var(--col-gap)] py-1 transition-colors border-b border-border/20 cursor-grab active:cursor-grabbing",
-        "hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
-        isSelected && "bg-[rgba(109,94,246,0.08)]",
-        isCompleted && "opacity-60",
-        isDragging && "opacity-50",
-      )}
-      style={{
-        marginLeft: `${depth * 24}px`,
-        paddingLeft: 8,
-        borderLeftWidth: 3,
-        borderLeftColor: impactColor,
-        borderLeftStyle: "solid",
-        borderRadius: "4px 0 0 4px",
-        backgroundColor: IMPACT_WASHES[subtask.impact] ?? IMPACT_WASHES[4],
-      }}
-      {...listeners}
-      {...attributes}
-    >
-      <button
-        type="button"
-        className="flex-shrink-0 cursor-pointer group/cb"
-        onClick={handleToggleComplete}
-        onPointerDown={(e) => e.stopPropagation()}
-        title={isCompleted ? "Mark as pending" : "Mark as complete"}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          role="img"
-          aria-label={isCompleted ? "Completed" : "Not completed"}
-          className="h-[15px] w-[15px] transition-colors"
-        >
-          {isCompleted ? (
-            <>
-              <circle cx="12" cy="12" r="10" fill="#6D5EF6" />
-              <polyline
-                points="8 12 10.5 14.5 16 9"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </>
-          ) : (
-            <>
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="text-muted-foreground/20 group-hover/cb:text-[#6D5EF6]/60"
-              />
-              <polyline
-                points="8 12 10.5 14.5 16 9"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-muted-foreground/0 group-hover/cb:text-[#6D5EF6]/30"
-              />
-            </>
-          )}
-        </svg>
-      </button>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+            <div
+              ref={setNodeRef}
+              className={cn(
+                "group flex items-center gap-[var(--col-gap)] py-1 transition-colors border-b border-border/20 cursor-grab active:cursor-grabbing",
+                "hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
+                isSelected && "bg-[rgba(109,94,246,0.08)]",
+                isCompleted && "opacity-60",
+                isDragging && "opacity-50",
+              )}
+              style={{
+                marginLeft: `${depth * 24}px`,
+                paddingLeft: 8,
+                borderLeftWidth: 3,
+                borderLeftColor: impactColor,
+                borderLeftStyle: "solid",
+                borderRadius: "4px 0 0 4px",
+                backgroundColor: IMPACT_WASHES[subtask.impact] ?? IMPACT_WASHES[4],
+              }}
+              {...listeners}
+              {...attributes}
+            >
+              <button
+                type="button"
+                className="flex-shrink-0 cursor-pointer group/cb"
+                onClick={handleToggleComplete}
+                onPointerDown={(e) => e.stopPropagation()}
+                title={isCompleted ? "Mark as pending" : "Mark as complete"}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  role="img"
+                  aria-label={isCompleted ? "Completed" : "Not completed"}
+                  className="h-[15px] w-[15px] transition-colors"
+                >
+                  {isCompleted ? (
+                    <>
+                      <circle cx="12" cy="12" r="10" fill="#6D5EF6" />
+                      <polyline
+                        points="8 12 10.5 14.5 16 9"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        className="text-muted-foreground/20 group-hover/cb:text-[#6D5EF6]/60"
+                      />
+                      <polyline
+                        points="8 12 10.5 14.5 16 9"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-muted-foreground/0 group-hover/cb:text-[#6D5EF6]/30"
+                      />
+                    </>
+                  )}
+                </svg>
+              </button>
 
-      <button
-        type="button"
-        className="flex-1 min-w-0 text-left cursor-pointer"
-        onClick={handleClick}
-      >
-        <span
-          className={cn(
-            "text-sm line-clamp-2",
-            isCompleted && "line-through text-muted-foreground",
-          )}
-        >
-          {subtask.title}
-        </span>
-      </button>
+              <button
+                type="button"
+                className="flex-1 min-w-0 text-left cursor-pointer"
+                onClick={handleClick}
+              >
+                <span
+                  className={cn(
+                    "text-sm line-clamp-2",
+                    isCompleted && "line-through text-muted-foreground",
+                  )}
+                >
+                  {subtask.title}
+                </span>
+              </button>
 
-      {/* Metadata columns — grid-aligned with parent task */}
-      <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
-        {/* Clarity */}
-        <span className="w-[var(--col-clarity)] text-center">
-          <ClarityPill taskId={subtask.id} value={subtask.clarity} disabled={isCompleted} />
-        </span>
+              {/* Metadata columns — grid-aligned with parent task */}
+              <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
+                {/* Clarity */}
+                <span className="w-[var(--col-clarity)] text-center">
+                  <ClarityPill taskId={subtask.id} value={subtask.clarity} disabled={isCompleted} />
+                </span>
 
-        {/* Duration */}
-        <span className="w-[var(--col-duration)] text-center">
-          <DurationPill
-            taskId={subtask.id}
-            value={subtask.duration_minutes}
-            disabled={isCompleted}
-          />
-        </span>
+                {/* Duration */}
+                <span className="w-[var(--col-duration)] text-center">
+                  <DurationPill
+                    taskId={subtask.id}
+                    value={subtask.duration_minutes}
+                    disabled={isCompleted}
+                  />
+                </span>
 
-        {/* Impact */}
-        <span className="w-[var(--col-impact)] text-center">
-          <ImpactPill taskId={subtask.id} value={subtask.impact} disabled={isCompleted} />
-        </span>
-      </span>
+                {/* Impact */}
+                <span className="w-[var(--col-impact)] text-center">
+                  <ImpactPill taskId={subtask.id} value={subtask.impact} disabled={isCompleted} />
+                </span>
+              </span>
 
-      {/* Actions spacer to match parent row */}
-      <span className="hidden sm:block w-[var(--col-actions)] flex-shrink-0" />
-    </div>
+              {/* Kebab menu button */}
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="hidden sm:flex flex-shrink-0 p-0.5 rounded hover:bg-[rgba(109,94,246,0.06)] relative z-10 opacity-0 group-hover:opacity-100 transition-opacity w-[var(--col-actions)] justify-center"
+                  title="Subtask actions"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <EllipsisVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+            </div>
+            <DropdownMenuContent align="start" className="min-w-[140px]">
+              <DropdownMenuItem onClick={handleMenuEdit}>
+                <Pencil className="h-3.5 w-3.5 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleMenuComplete}>
+                <Check className="h-3.5 w-3.5 mr-2" />
+                {isCompleted ? "Reopen" : "Complete"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleMenuDelete}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="min-w-[140px]">{contextMenuItems}</ContextMenuContent>
+    </ContextMenu>
   );
 }
