@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CalendarOff, Check, Pencil, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, EventResponse, InstanceResponse } from "@/api/model";
+import type { EventResponse, InstanceResponse, TaskResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey,
@@ -41,13 +41,13 @@ import { ScheduledTaskCard } from "./scheduled-task-card";
 interface DayColumnProps {
   centerDate: string;
   events: EventResponse[];
-  tasks: AppRoutersTasksTaskResponse[];
+  tasks: TaskResponse[];
   /** All tasks (including anytime) — used for phantom card duration lookup during drag */
-  allTasks?: AppRoutersTasksTaskResponse[];
+  allTasks?: TaskResponse[];
   instances: InstanceResponse[];
   hourHeight: number;
   calendarColors: Map<string, string>;
-  onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
+  onTaskClick?: (task: TaskResponse) => void;
   /** Whether this panel is the currently visible/active one (receives drop events) */
   isActivePanel?: boolean;
 }
@@ -102,7 +102,7 @@ export function DayColumn({
 
   // Find task by ID for click handling
   const taskMap = useMemo(() => {
-    const m = new Map<string, AppRoutersTasksTaskResponse>();
+    const m = new Map<string, TaskResponse>();
     for (const t of tasks) {
       m.set(String(t.id), t);
     }

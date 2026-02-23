@@ -1,15 +1,15 @@
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { TaskResponse } from "@/api/model";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskItem } from "./task-item";
 
 interface CompletedSectionProps {
-  tasks: AppRoutersTasksTaskResponse[];
+  tasks: TaskResponse[];
   onSelectTask?: (taskId: number) => void;
-  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
+  onEditTask?: (task: TaskResponse) => void;
 }
 
 export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedSectionProps) {

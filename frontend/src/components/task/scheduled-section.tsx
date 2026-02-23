@@ -2,7 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { AlertTriangle, CalendarClock, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
-import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
+import type { InstanceResponse, TaskResponse } from "@/api/model";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { todayString } from "@/lib/calendar-utils";
@@ -12,9 +12,9 @@ import { useUIStore } from "@/stores/ui-store";
 import { TaskItem } from "./task-item";
 
 interface ScheduledSectionProps {
-  tasks: AppRoutersTasksTaskResponse[];
+  tasks: TaskResponse[];
   onSelectTask?: (taskId: number) => void;
-  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
+  onEditTask?: (task: TaskResponse) => void;
 }
 
 export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledSectionProps) {

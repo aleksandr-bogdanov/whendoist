@@ -19,7 +19,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, InstanceResponse, SubtaskResponse } from "@/api/model";
+import type { InstanceResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey,
@@ -66,10 +66,10 @@ import { SubtaskGhostRow } from "./subtask-ghost-row";
 import { useDndState } from "./task-dnd-context";
 
 interface TaskItemProps {
-  task: AppRoutersTasksTaskResponse;
+  task: TaskResponse;
   depth?: number;
   onSelect?: (taskId: number) => void;
-  onEdit?: (task: AppRoutersTasksTaskResponse) => void;
+  onEdit?: (task: TaskResponse) => void;
   /** Overdue pending instance for recurring tasks — enables "Skip this one" menu item */
   pendingInstance?: InstanceResponse;
 }
@@ -224,30 +224,27 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
     }
 
     // Non-recurring task: toggle complete on the parent
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
 
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) => {
-        if (!old) return old;
-        return old.map((t) => {
-          if (t.id === task.id) {
-            return {
-              ...t,
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+      if (!old) return old;
+      return old.map((t) => {
+        if (t.id === task.id) {
+          return {
+            ...t,
+            status: isCompleted ? "pending" : "completed",
+            completed_at: isCompleted ? null : new Date().toISOString(),
+            subtasks: t.subtasks?.map((st) => ({
+              ...st,
               status: isCompleted ? "pending" : "completed",
-              completed_at: isCompleted ? null : new Date().toISOString(),
-              subtasks: t.subtasks?.map((st) => ({
-                ...st,
-                status: isCompleted ? "pending" : "completed",
-              })),
-            };
-          }
-          return t;
-        });
-      },
-    );
+            })),
+          };
+        }
+        return t;
+      });
+    });
 
     toggleComplete.mutate(
       { taskId: task.id, data: null },
@@ -339,25 +336,23 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
       return;
     }
 
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) =>
-        old?.map((t) =>
-          t.id === task.id
-            ? {
-                ...t,
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+      old?.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              status: isCompleted ? "pending" : "completed",
+              completed_at: isCompleted ? null : new Date().toISOString(),
+              subtasks: t.subtasks?.map((st) => ({
+                ...st,
                 status: isCompleted ? "pending" : "completed",
-                completed_at: isCompleted ? null : new Date().toISOString(),
-                subtasks: t.subtasks?.map((st) => ({
-                  ...st,
-                  status: isCompleted ? "pending" : "completed",
-                })),
-              }
-            : t,
-        ),
+              })),
+            }
+          : t,
+      ),
     );
     toggleComplete.mutate(
       { taskId: task.id, data: null },
@@ -393,15 +388,13 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
     const prevDate = task.scheduled_date;
     const prevTime = task.scheduled_time ?? null;
 
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) =>
-        old?.map((t) =>
-          t.id === task.id ? { ...t, scheduled_date: null, scheduled_time: null } : t,
-        ),
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+      old?.map((t) =>
+        t.id === task.id ? { ...t, scheduled_date: null, scheduled_time: null } : t,
+      ),
     );
     updateTask.mutate(
       { taskId: task.id, data: { scheduled_date: null, scheduled_time: null } },
@@ -414,7 +407,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
             action: {
               label: "Undo",
               onClick: () => {
-                queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                queryClient.setQueryData<TaskResponse[]>(
                   getListTasksApiV1TasksGetQueryKey(),
                   (old) =>
                     old?.map((t) =>
@@ -955,10 +948,10 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
 
 interface SubtaskTreeProps {
   subtasks: SubtaskResponse[];
-  parentTask: AppRoutersTasksTaskResponse;
+  parentTask: TaskResponse;
   depth: number;
   onSelect?: (taskId: number) => void;
-  onEdit?: (task: AppRoutersTasksTaskResponse) => void;
+  onEdit?: (task: TaskResponse) => void;
 }
 
 function SubtaskTree({ subtasks, parentTask, depth, onSelect, onEdit }: SubtaskTreeProps) {
@@ -987,7 +980,7 @@ interface SubtaskItemProps {
   parentId: number;
   depth: number;
   onSelect?: (taskId: number) => void;
-  onEdit?: (task: AppRoutersTasksTaskResponse) => void;
+  onEdit?: (task: TaskResponse) => void;
 }
 
 function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItemProps) {
@@ -1011,28 +1004,26 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
     onSelect?.(subtask.id);
     try {
       const fullTask = await getTaskApiV1TasksTaskIdGet(subtask.id);
-      onEdit?.(fullTask as AppRoutersTasksTaskResponse);
+      onEdit?.(fullTask as TaskResponse);
     } catch {
-      onEdit?.(subtask as unknown as AppRoutersTasksTaskResponse);
+      onEdit?.(subtask as unknown as TaskResponse);
     }
   };
 
   const doToggleComplete = useCallback(() => {
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
 
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) =>
-        old?.map((t) => ({
-          ...t,
-          subtasks: t.subtasks?.map((st) =>
-            st.id === subtask.id
-              ? { ...st, status: isCompleted ? ("pending" as const) : ("completed" as const) }
-              : st,
-          ),
-        })),
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+      old?.map((t) => ({
+        ...t,
+        subtasks: t.subtasks?.map((st) =>
+          st.id === subtask.id
+            ? { ...st, status: isCompleted ? ("pending" as const) : ("completed" as const) }
+            : st,
+        ),
+      })),
     );
 
     toggleComplete.mutate(
@@ -1059,8 +1050,8 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
     selectTask(subtask.id);
     onSelect?.(subtask.id);
     getTaskApiV1TasksTaskIdGet(subtask.id)
-      .then((fullTask) => onEdit?.(fullTask as AppRoutersTasksTaskResponse))
-      .catch(() => onEdit?.(subtask as unknown as AppRoutersTasksTaskResponse));
+      .then((fullTask) => onEdit?.(fullTask as TaskResponse))
+      .catch(() => onEdit?.(subtask as unknown as TaskResponse));
   }, [subtask, onSelect, onEdit, selectTask]);
 
   const handleMenuComplete = useCallback(() => {
@@ -1072,17 +1063,15 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
     setMenuOpen(false);
 
     // Optimistically remove the subtask from parent's subtasks array
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) =>
-        old?.map((t) =>
-          t.id === parentId
-            ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== subtask.id) }
-            : t,
-        ),
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+      old?.map((t) =>
+        t.id === parentId
+          ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== subtask.id) }
+          : t,
+      ),
     );
 
     deleteTask.mutate(

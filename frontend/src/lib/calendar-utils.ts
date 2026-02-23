@@ -3,7 +3,7 @@
  * date navigation, and plan mode auto-scheduling.
  */
 
-import type { AppRoutersTasksTaskResponse, EventResponse, InstanceResponse } from "@/api/model";
+import type { EventResponse, InstanceResponse, TaskResponse } from "@/api/model";
 
 // ─── Date Helpers ────────────────────────────────────────────────────────────
 
@@ -234,7 +234,7 @@ function eventToTimeRange(event: EventResponse): TimeRange {
   };
 }
 
-function taskToTimeRange(task: AppRoutersTasksTaskResponse): TimeRange | null {
+function taskToTimeRange(task: TaskResponse): TimeRange | null {
   if (!task.scheduled_time) return null;
   const [hStr, mStr] = task.scheduled_time.split(":");
   const h = Number.parseInt(hStr, 10);
@@ -265,7 +265,7 @@ const MAX_OVERLAP_COLUMNS = 3;
 /** Detect overlaps and assign column positions for side-by-side display (single day) */
 export function calculateOverlaps(
   events: EventResponse[],
-  tasks: AppRoutersTasksTaskResponse[],
+  tasks: TaskResponse[],
   dateStr: string,
   hourHeight: number,
   instances?: InstanceResponse[],
@@ -392,7 +392,7 @@ function toAbsoluteMinutes(minutesSinceMidnight: number, section: DaySection): n
 /** Calculate positioned items across the entire 44-hour extended timeline */
 export function calculateExtendedOverlaps(
   events: EventResponse[],
-  tasks: AppRoutersTasksTaskResponse[],
+  tasks: TaskResponse[],
   instances: InstanceResponse[],
   centerDate: string,
   hourHeight: number,
@@ -576,7 +576,7 @@ export interface PlannedTask {
 
 /** First-fit bin packing of tasks into free slots */
 export function planTasks(
-  tasks: AppRoutersTasksTaskResponse[],
+  tasks: TaskResponse[],
   events: EventResponse[],
   dateStr: string,
 ): PlannedTask[] {

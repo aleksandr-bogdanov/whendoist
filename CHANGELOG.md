@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.75 — 2026-02-23
+
+### Fix: TypeScript CI to actually type-check source files
+- Changed `npx tsc --noEmit` to `npx tsc -p tsconfig.app.json --noEmit` — the bare command checked zero files due to `"files": []` in tsconfig.json
+- Replaced phantom `AppRoutersTasksTaskResponse` type with orval-generated `TaskResponse` across 25 files
+- Fixed `SubtaskResponse` literal missing `scheduled_time` in parent-task-picker
+- Fixed `Record<string, unknown>` cast needing double-cast via `unknown` in attribute-pills
+- Added `position` to backend `DomainContentData` so domain reorder actually works
+- Fixed unused import in context-menu.tsx
+- Fixed `decryptTask`/`decryptDomain` tuple destructuring in task-panel
+
+
 ## v0.54.74 — 2026-02-23
 
 ### Fix: Phantom card shows wrong duration for subtask drag-to-calendar

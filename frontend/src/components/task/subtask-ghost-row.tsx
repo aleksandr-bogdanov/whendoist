@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, TaskCreate } from "@/api/model";
+import type { TaskCreate, TaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
@@ -13,7 +13,7 @@ import { useCrypto } from "@/hooks/use-crypto";
 import { useUIStore } from "@/stores/ui-store";
 
 interface SubtaskGhostRowProps {
-  parentTask: AppRoutersTasksTaskResponse;
+  parentTask: TaskResponse;
   depth: number;
 }
 

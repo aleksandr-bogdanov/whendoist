@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Pencil, Send, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
+import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import {
   getListTasksApiV1TasksGetQueryKey,
@@ -39,9 +39,9 @@ function formatDateLabel(dateStr: string): string {
 }
 
 function groupByDate(
-  tasks: AppRoutersTasksTaskResponse[],
-): Array<{ date: string; label: string; thoughts: AppRoutersTasksTaskResponse[] }> {
-  const groups = new Map<string, AppRoutersTasksTaskResponse[]>();
+  tasks: TaskResponse[],
+): Array<{ date: string; label: string; thoughts: TaskResponse[] }> {
+  const groups = new Map<string, TaskResponse[]>();
   for (const t of tasks) {
     const dateKey = t.created_at ? t.created_at.split("T")[0] : "unknown";
     const group = groups.get(dateKey);
@@ -67,7 +67,7 @@ function ThoughtsPage() {
   const { decryptTasks, encryptTaskFields } = useCrypto();
 
   const [input, setInput] = useState("");
-  const [decryptedTasks, setDecryptedTasks] = useState<AppRoutersTasksTaskResponse[]>([]);
+  const [decryptedTasks, setDecryptedTasks] = useState<TaskResponse[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -127,7 +127,7 @@ function ThoughtsPage() {
   };
 
   const handleDelete = useCallback(
-    (thought: AppRoutersTasksTaskResponse) => {
+    (thought: TaskResponse) => {
       deleteTask.mutate(
         { taskId: thought.id },
         {
@@ -158,7 +158,7 @@ function ThoughtsPage() {
     [deleteTask, restoreTask, queryClient],
   );
 
-  const handleStartEdit = useCallback((thought: AppRoutersTasksTaskResponse) => {
+  const handleStartEdit = useCallback((thought: TaskResponse) => {
     setEditingId(thought.id);
     setEditText(thought.title);
   }, []);
@@ -180,7 +180,7 @@ function ThoughtsPage() {
   }, [editingId, editText, encryptTaskFields, updateTask, queryClient]);
 
   const handlePromote = useCallback(
-    async (thought: AppRoutersTasksTaskResponse, domainId: number) => {
+    async (thought: TaskResponse, domainId: number) => {
       updateTask.mutate(
         { taskId: thought.id, data: { domain_id: domainId } },
         {
@@ -291,15 +291,15 @@ function ThoughtBubble({
   onPromote,
   domains,
 }: {
-  thought: AppRoutersTasksTaskResponse;
+  thought: TaskResponse;
   isEditing: boolean;
   editText: string;
   onEditTextChange: (text: string) => void;
-  onStartEdit: (thought: AppRoutersTasksTaskResponse) => void;
+  onStartEdit: (thought: TaskResponse) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
-  onDelete: (thought: AppRoutersTasksTaskResponse) => void;
-  onPromote: (thought: AppRoutersTasksTaskResponse, domainId: number) => void;
+  onDelete: (thought: TaskResponse) => void;
+  onPromote: (thought: TaskResponse, domainId: number) => void;
   domains: DomainResponse[];
 }) {
   const [showActions, setShowActions] = useState(false);

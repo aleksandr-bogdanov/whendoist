@@ -183,6 +183,7 @@ class DomainContentData(BaseModel):
 
     id: int
     name: str
+    position: int | None = None
 
 
 class BatchUpdateDomainsRequest(BaseModel):
@@ -222,7 +223,10 @@ async def batch_update_domains(
             if not domain:
                 continue
 
-            domain.name = updates_by_id[domain_id].name
+            update = updates_by_id[domain_id]
+            domain.name = update.name
+            if update.position is not None:
+                domain.position = update.position
             updated_count += 1
             await db.commit()
         except Exception as e:

@@ -2,7 +2,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarOff, Check, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { TaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
@@ -21,7 +21,7 @@ import {
 import { IMPACT_COLORS } from "@/lib/task-utils";
 
 interface AnytimeTaskPillProps {
-  task: AppRoutersTasksTaskResponse;
+  task: TaskResponse;
   onClick?: () => void;
 }
 
@@ -40,12 +40,10 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
 
   const handleUnschedule = () => {
     const prevDate = task.scheduled_date;
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) =>
-        old?.map((t) =>
-          t.id === task.id ? { ...t, scheduled_date: null, scheduled_time: null } : t,
-        ),
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+      old?.map((t) =>
+        t.id === task.id ? { ...t, scheduled_date: null, scheduled_time: null } : t,
+      ),
     );
     updateTask.mutate(
       { taskId: task.id, data: { scheduled_date: null, scheduled_time: null } },
@@ -81,18 +79,16 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
 
   const handleComplete = () => {
     const isCompleted = task.status === "completed";
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) =>
-        old?.map((t) =>
-          t.id === task.id
-            ? {
-                ...t,
-                status: isCompleted ? ("pending" as const) : ("completed" as const),
-                completed_at: isCompleted ? null : new Date().toISOString(),
-              }
-            : t,
-        ),
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+      old?.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              status: isCompleted ? ("pending" as const) : ("completed" as const),
+              completed_at: isCompleted ? null : new Date().toISOString(),
+            }
+          : t,
+      ),
     );
     toggleComplete.mutate(
       { taskId: task.id, data: null },
@@ -105,7 +101,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
             action: {
               label: "Undo",
               onClick: () => {
-                queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                queryClient.setQueryData<TaskResponse[]>(
                   getListTasksApiV1TasksGetQueryKey(),
                   (old) =>
                     old?.map((t) =>

@@ -2,7 +2,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarOff, Check, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { TaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
@@ -60,23 +60,17 @@ export function ScheduledTaskCard({
   const impactColor = IMPACT_COLORS[impact] ?? IMPACT_COLORS[4];
 
   const handleUnschedule = () => {
-    const tasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
+    const tasks = queryClient.getQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey());
     const prev = tasks?.find((t) => t.id === taskId);
     const prevDate = prev?.scheduled_date ?? null;
     const prevTime = prev?.scheduled_time ?? null;
 
     // Optimistic update — immediately remove from calendar
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) =>
-        old?.map((t) =>
-          t.id === taskId ? { ...t, scheduled_date: null, scheduled_time: null } : t,
-        ),
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+      old?.map((t) => (t.id === taskId ? { ...t, scheduled_date: null, scheduled_time: null } : t)),
     );
 
     updateTask.mutate(
@@ -91,7 +85,7 @@ export function ScheduledTaskCard({
               label: "Undo",
               onClick: () => {
                 // Optimistic undo — immediately restore on calendar
-                queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                queryClient.setQueryData<TaskResponse[]>(
                   getListTasksApiV1TasksGetQueryKey(),
                   (old) =>
                     old?.map((t) =>
@@ -122,25 +116,22 @@ export function ScheduledTaskCard({
   };
 
   const handleComplete = () => {
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
 
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) => {
-        if (!old) return old;
-        return old.map((t) =>
-          t.id === taskId
-            ? {
-                ...t,
-                status: isCompleted ? ("pending" as const) : ("completed" as const),
-                completed_at: isCompleted ? null : new Date().toISOString(),
-              }
-            : t,
-        );
-      },
-    );
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+      if (!old) return old;
+      return old.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              status: isCompleted ? ("pending" as const) : ("completed" as const),
+              completed_at: isCompleted ? null : new Date().toISOString(),
+            }
+          : t,
+      );
+    });
 
     toggleComplete.mutate(
       { taskId, data: null },
@@ -153,7 +144,7 @@ export function ScheduledTaskCard({
             action: {
               label: "Undo",
               onClick: () => {
-                queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                queryClient.setQueryData<TaskResponse[]>(
                   getListTasksApiV1TasksGetQueryKey(),
                   (old) =>
                     old?.map((t) =>

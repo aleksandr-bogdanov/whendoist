@@ -27,7 +27,7 @@ If a test can't run automatically in GitHub Actions, don't write it.
 uv run ruff format . && uv run ruff check . && uv run pyright app/ && just test
 
 # Frontend checks (also enforced by CI)
-cd frontend && npx tsc --noEmit && npx biome check . && npm run build
+cd frontend && npx tsc -p tsconfig.app.json --noEmit && npx biome check . && npm run build
 
 # Database migrations (required for ALL schema changes)
 just migrate-new "description"   # Create migration after changing models.py
@@ -42,7 +42,7 @@ cd frontend && npm run dev          # Dev server (port 5173, proxies API to 8000
 cd frontend && npm run build        # Production build → frontend/dist/
 cd frontend && npx orval            # Regenerate API types from OpenAPI spec
 cd frontend && npx biome check .    # Lint + format check
-cd frontend && npx tsc --noEmit     # TypeScript type check
+cd frontend && npx tsc -p tsconfig.app.json --noEmit     # TypeScript type check
 ```
 
 ---

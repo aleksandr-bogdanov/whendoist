@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CalendarDays, CalendarPlus, ListTodo, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import {
@@ -36,7 +36,7 @@ function DashboardPage() {
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
 
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<AppRoutersTasksTaskResponse | null>(null);
+  const [editingTask, setEditingTask] = useState<TaskResponse | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const [gcalBannerDismissed, setGcalBannerDismissed] = useState(
@@ -100,7 +100,7 @@ function DashboardPage() {
     setQuickAddOpen(true);
   }, []);
 
-  const handleEditTask = useCallback((task: AppRoutersTasksTaskResponse) => {
+  const handleEditTask = useCallback((task: TaskResponse) => {
     setEditingTask(task);
     setEditorOpen(true);
   }, []);

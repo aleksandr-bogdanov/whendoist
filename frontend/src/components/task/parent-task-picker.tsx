@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, DomainResponse, SubtaskResponse } from "@/api/model";
+import type { DomainResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useUpdateTaskApiV1TasksTaskIdPut,
@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
 interface ParentTaskPickerProps {
-  task: AppRoutersTasksTaskResponse;
-  parentTasks: AppRoutersTasksTaskResponse[];
+  task: TaskResponse;
+  parentTasks: TaskResponse[];
   domains: DomainResponse[];
 }
 
@@ -50,12 +50,12 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
       .filter((t) => t.domain_id != null) // exclude Thoughts — not real tasks
       .filter((t) => !q || t.title.toLowerCase().includes(q));
 
-    const parentsSameDomain: AppRoutersTasksTaskResponse[] = [];
-    const parentsOther: AppRoutersTasksTaskResponse[] = [];
-    const sameDomain: AppRoutersTasksTaskResponse[] = [];
-    const rest: AppRoutersTasksTaskResponse[] = [];
+    const parentsSameDomain: TaskResponse[] = [];
+    const parentsOther: TaskResponse[] = [];
+    const sameDomain: TaskResponse[] = [];
+    const rest: TaskResponse[] = [];
 
-    const isSameDomain = (t: AppRoutersTasksTaskResponse) =>
+    const isSameDomain = (t: TaskResponse) =>
       task.domain_id != null && t.domain_id === task.domain_id;
 
     for (const t of eligible) {
@@ -71,7 +71,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
       }
     }
 
-    const groups: { label: string; tasks: AppRoutersTasksTaskResponse[] }[] = [];
+    const groups: { label: string; tasks: TaskResponse[] }[] = [];
     if (parentsSameDomain.length > 0)
       groups.push({ label: "Parents · same domain", tasks: parentsSameDomain });
     if (parentsOther.length > 0) groups.push({ label: "Parents", tasks: parentsOther });
@@ -91,7 +91,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
     }
 
     const prevParentId = currentParentId;
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
 
@@ -111,62 +111,57 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
         impact: task.impact,
         clarity: task.clarity ?? null,
         scheduled_date: task.scheduled_date ?? null,
+        scheduled_time: task.scheduled_time ?? null,
         status: task.status ?? "pending",
         position: 9999,
       };
 
-      queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-        getListTasksApiV1TasksGetQueryKey(),
-        (old) => {
-          if (!old) return old;
-          return old
-            .filter((t) => t.id !== task.id) // Remove from top-level
-            .map((t) => {
-              // Remove from old parent's subtasks (if reparenting)
-              if (prevParentId && t.id === prevParentId) {
-                return {
-                  ...t,
-                  subtasks: t.subtasks?.filter((st) => st.id !== task.id),
-                };
-              }
-              // Add to new parent's subtasks
-              if (t.id === newParentId) {
-                return {
-                  ...t,
-                  subtasks: [...(t.subtasks ?? []), newSubtask],
-                };
-              }
-              return t;
-            });
-        },
-      );
+      queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+        if (!old) return old;
+        return old
+          .filter((t) => t.id !== task.id) // Remove from top-level
+          .map((t) => {
+            // Remove from old parent's subtasks (if reparenting)
+            if (prevParentId && t.id === prevParentId) {
+              return {
+                ...t,
+                subtasks: t.subtasks?.filter((st) => st.id !== task.id),
+              };
+            }
+            // Add to new parent's subtasks
+            if (t.id === newParentId) {
+              return {
+                ...t,
+                subtasks: [...(t.subtasks ?? []), newSubtask],
+              };
+            }
+            return t;
+          });
+      });
 
       useUIStore.getState().expandSubtask(newParentId);
     } else {
       // Promoting to top-level
-      const promoted: AppRoutersTasksTaskResponse = {
+      const promoted: TaskResponse = {
         ...task,
         parent_id: null,
         subtasks: [],
       };
 
-      queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-        getListTasksApiV1TasksGetQueryKey(),
-        (old) => {
-          if (!old) return old;
-          return [
-            ...old.map((t) =>
-              t.id === prevParentId
-                ? {
-                    ...t,
-                    subtasks: t.subtasks?.filter((st) => st.id !== task.id),
-                  }
-                : t,
-            ),
-            promoted,
-          ];
-        },
-      );
+      queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+        if (!old) return old;
+        return [
+          ...old.map((t) =>
+            t.id === prevParentId
+              ? {
+                  ...t,
+                  subtasks: t.subtasks?.filter((st) => st.id !== task.id),
+                }
+              : t,
+          ),
+          promoted,
+        ];
+      });
     }
 
     const parentTitle =

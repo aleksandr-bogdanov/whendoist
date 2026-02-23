@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Pencil, SkipForward, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
+import type { InstanceResponse, TaskResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   useCompleteInstanceApiV1InstancesInstanceIdCompletePost,
@@ -21,8 +21,8 @@ import { IMPACT_COLORS } from "@/lib/task-utils";
 
 interface AnytimeInstancePillProps {
   instance: InstanceResponse;
-  parentTask?: AppRoutersTasksTaskResponse;
-  onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
+  parentTask?: TaskResponse;
+  onTaskClick?: (task: TaskResponse) => void;
 }
 
 export function AnytimeInstancePill({

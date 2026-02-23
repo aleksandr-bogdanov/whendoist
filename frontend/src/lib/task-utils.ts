@@ -4,7 +4,7 @@
  * Handles grouping, sorting, filtering, and date formatting for tasks.
  */
 
-import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
+import type { DomainResponse, TaskResponse } from "@/api/model";
 
 // Impact metadata matching app/constants.py
 export const IMPACT_LABELS: Record<number, string> = {
@@ -103,10 +103,10 @@ function getSortValue(
  * with high-priority / short / autopilot subtasks bubble up accordingly.
  */
 export function sortTasks(
-  tasks: AppRoutersTasksTaskResponse[],
+  tasks: TaskResponse[],
   field: SortField,
   direction: SortDirection,
-): AppRoutersTasksTaskResponse[] {
+): TaskResponse[] {
   const dirMul = direction === "asc" ? 1 : -1;
 
   // For each task, sort subtasks and compute the effective sort value
@@ -158,10 +158,7 @@ export function sortTasks(
  * Parent tasks (with subtasks) are exempt — they show if any subtask
  * matches the energy level, so containers aren't accidentally hidden.
  */
-export function filterByEnergy(
-  tasks: AppRoutersTasksTaskResponse[],
-  energyLevel: 1 | 2 | 3,
-): AppRoutersTasksTaskResponse[] {
+export function filterByEnergy(tasks: TaskResponse[], energyLevel: 1 | 2 | 3): TaskResponse[] {
   if (energyLevel === 3) return tasks;
 
   const matchesEnergy = (clarity: string | null | undefined): boolean => {
@@ -170,7 +167,7 @@ export function filterByEnergy(
     return c === "autopilot";
   };
 
-  const result: AppRoutersTasksTaskResponse[] = [];
+  const result: TaskResponse[] = [];
   for (const t of tasks) {
     if (t.subtasks && t.subtasks.length > 0) {
       const filtered = t.subtasks.filter((st) => matchesEnergy(st.clarity));
@@ -186,18 +183,15 @@ export function filterByEnergy(
 
 export interface DomainGroup {
   domain: DomainResponse | null;
-  tasks: AppRoutersTasksTaskResponse[];
+  tasks: TaskResponse[];
 }
 
 /**
  * Group tasks by domain, preserving domain sort order.
  * Thoughts (domain_id=null) are excluded — they belong on the Thoughts page.
  */
-export function groupByDomain(
-  tasks: AppRoutersTasksTaskResponse[],
-  domains: DomainResponse[],
-): DomainGroup[] {
-  const groups = new Map<number | null, AppRoutersTasksTaskResponse[]>();
+export function groupByDomain(tasks: TaskResponse[], domains: DomainResponse[]): DomainGroup[] {
+  const groups = new Map<number | null, TaskResponse[]>();
 
   for (const task of tasks) {
     const key = task.domain_id;
@@ -230,10 +224,10 @@ export function groupByDomain(
 /**
  * Separate tasks into pending, scheduled, and completed buckets.
  */
-export function categorizeTasks(tasks: AppRoutersTasksTaskResponse[]) {
-  const pending: AppRoutersTasksTaskResponse[] = [];
-  const scheduled: AppRoutersTasksTaskResponse[] = [];
-  const completed: AppRoutersTasksTaskResponse[] = [];
+export function categorizeTasks(tasks: TaskResponse[]) {
+  const pending: TaskResponse[] = [];
+  const scheduled: TaskResponse[] = [];
+  const completed: TaskResponse[] = [];
 
   for (const task of tasks) {
     // Only top-level tasks (not subtasks)
@@ -323,9 +317,9 @@ export function isOverdue(dateStr: string | null): boolean {
  * Group scheduled tasks by date for the scheduled section.
  */
 export function groupScheduledByDate(
-  tasks: AppRoutersTasksTaskResponse[],
-): { label: string; date: string; tasks: AppRoutersTasksTaskResponse[] }[] {
-  const byDate = new Map<string, AppRoutersTasksTaskResponse[]>();
+  tasks: TaskResponse[],
+): { label: string; date: string; tasks: TaskResponse[] }[] {
+  const byDate = new Map<string, TaskResponse[]>();
 
   for (const task of tasks) {
     const date = task.scheduled_date ?? "";

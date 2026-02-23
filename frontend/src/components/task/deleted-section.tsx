@@ -3,7 +3,7 @@ import { ChevronDown, RotateCcw, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { TaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useListTasksApiV1TasksGet,
@@ -22,7 +22,7 @@ export function DeletedSection() {
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
   const queryClient = useQueryClient();
 
-  const tasks = (archivedTasks ?? []) as AppRoutersTasksTaskResponse[];
+  const tasks = (archivedTasks ?? []) as TaskResponse[];
 
   const handleRestore = (taskId: number, title: string) => {
     restoreTask.mutate(
