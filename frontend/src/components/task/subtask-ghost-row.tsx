@@ -10,7 +10,6 @@ import {
   useDeleteTaskApiV1TasksTaskIdDelete,
 } from "@/api/queries/tasks/tasks";
 import { useCrypto } from "@/hooks/use-crypto";
-import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
 interface SubtaskGhostRowProps {
@@ -26,9 +25,10 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
   const createTask = useCreateTaskApiV1TasksPost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const { encryptTaskFields } = useCrypto();
-  const { subtaskAddFocusId, clearSubtaskAddFocus } = useUIStore();
+  const { subtaskAddFocusId, clearSubtaskAddFocus, toggleExpandedSubtask } = useUIStore();
 
   const shouldAutoFocus = subtaskAddFocusId === parentTask.id;
+  const hasRealSubtasks = (parentTask.subtasks?.length ?? 0) > 0;
 
   useEffect(() => {
     if (shouldAutoFocus) {
@@ -97,10 +97,14 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
     encryptTaskFields,
   ]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setIsEditing(false);
     setTitle("");
-  };
+    // Collapse the expansion if parent has no real subtasks (was a temporary expand)
+    if (!hasRealSubtasks) {
+      toggleExpandedSubtask(parentTask.id);
+    }
+  }, [hasRealSubtasks, parentTask.id, toggleExpandedSubtask]);
 
   return (
     <motion.div
@@ -110,16 +114,9 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
     >
       {isEditing ? (
         <div
-          className="flex items-center gap-2 py-1"
-          style={{
-            marginLeft: `${depth * 24}px`,
-            paddingLeft: 8,
-            borderLeftWidth: 3,
-            borderLeftStyle: "dashed",
-            borderLeftColor: "var(--border)",
-          }}
+          className="flex items-center gap-1.5 py-1.5"
+          style={{ marginLeft: `${depth * 24}px`, paddingLeft: 12 }}
         >
-          <Plus className="h-[15px] w-[15px] flex-shrink-0 text-muted-foreground/40" />
           <input
             ref={inputRef}
             type="text"
@@ -140,7 +137,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
               }
             }}
             placeholder="Subtask title..."
-            className="flex-1 h-7 text-sm bg-transparent border-none outline-none px-1"
+            className="flex-1 h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
             disabled={createTask.isPending}
           />
         </div>
@@ -151,20 +148,11 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
             setIsEditing(true);
             requestAnimationFrame(() => inputRef.current?.focus());
           }}
-          className={cn(
-            "flex items-center gap-2 py-1 w-full transition-colors",
-            "text-muted-foreground/40 hover:text-muted-foreground/60",
-          )}
-          style={{
-            marginLeft: `${depth * 24}px`,
-            paddingLeft: 8,
-            borderLeftWidth: 3,
-            borderLeftStyle: "dashed",
-            borderLeftColor: "color-mix(in srgb, var(--border) 30%, transparent)",
-          }}
+          className="flex items-center gap-1.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+          style={{ marginLeft: `${depth * 24}px`, paddingLeft: 12 }}
         >
-          <Plus className="h-[15px] w-[15px] flex-shrink-0" />
-          <span className="text-sm">Add subtask...</span>
+          <Plus className="h-3 w-3" />
+          Add subtask
         </button>
       )}
     </motion.div>
