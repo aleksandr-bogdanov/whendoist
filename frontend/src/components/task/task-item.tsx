@@ -1075,6 +1075,21 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
 
   const handleMenuDelete = useCallback(() => {
     setMenuOpen(false);
+
+    // Optimistically remove the subtask from parent's subtasks array
+    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+    );
+    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+      getListTasksApiV1TasksGetQueryKey(),
+      (old) =>
+        old?.map((t) =>
+          t.id === parentId
+            ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== subtask.id) }
+            : t,
+        ),
+    );
+
     deleteTask.mutate(
       { taskId: subtask.id },
       {
@@ -1100,10 +1115,13 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
             },
           });
         },
-        onError: () => toast.error("Failed to delete subtask", { id: `delete-err-${subtask.id}` }),
+        onError: () => {
+          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          toast.error("Failed to delete subtask", { id: `delete-err-${subtask.id}` });
+        },
       },
     );
-  }, [subtask, deleteTask, restoreTask, queryClient]);
+  }, [subtask, parentId, deleteTask, restoreTask, queryClient]);
 
   const contextMenuItems = (
     <>

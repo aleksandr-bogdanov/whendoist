@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.71 — 2026-02-23
+
+### Fix: Subtask delete not working
+- Backend: `_task_to_response` now filters out archived subtasks (`status != "archived"`) — previously archived subtasks were still returned in the parent's subtask array
+- Frontend: Optimistic cache update removes the subtask from the parent's array immediately, with rollback on error
+
+
 ## v0.54.70 — 2026-02-23
 
 ### Fix: SubtaskItem context menu, kebab menu, and delete action
