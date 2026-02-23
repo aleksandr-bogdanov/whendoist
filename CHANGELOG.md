@@ -11,6 +11,7 @@ Development history of Whendoist. Per-patch details in git history.
 - Backup export/import now includes encryption metadata (`encryption_enabled`, `encryption_salt`, `encryption_test_value`) so encrypted backups can be restored
 - Improved error messages during encryption toggle to help users recover from partial failures
 
+
 ## v0.54.76 — 2026-02-23
 
 ### Fix: Encryption decryption pending guard and offline toast
