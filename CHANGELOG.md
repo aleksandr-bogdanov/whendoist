@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.64 — 2026-02-23
+
+### Fix: Parent picker scroll, ordering, and Thoughts filter
+- Fixed scroll not working inside picker (Sheet's scroll lock blocked portaled Popover — replaced with inline dropdown)
+- Reordered: parents same-domain → parents other → same-domain → other
+- Excluded Thoughts (no-domain tasks) from parent candidates
+
 ## v0.54.63 — 2026-02-23
 
 ### Fix: Enhanced Apple Glass effect on header and nav pill

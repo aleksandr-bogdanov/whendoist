@@ -8,7 +8,6 @@ import {
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -48,16 +47,24 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
     const q = search.toLowerCase().trim();
     const eligible = parentTasks
       .filter((t) => t.id !== task.id)
+      .filter((t) => t.domain_id != null) // exclude Thoughts — not real tasks
       .filter((t) => !q || t.title.toLowerCase().includes(q));
 
-    const parents: AppRoutersTasksTaskResponse[] = [];
+    const parentsSameDomain: AppRoutersTasksTaskResponse[] = [];
+    const parentsOther: AppRoutersTasksTaskResponse[] = [];
     const sameDomain: AppRoutersTasksTaskResponse[] = [];
     const rest: AppRoutersTasksTaskResponse[] = [];
 
+    const isSameDomain = (t: AppRoutersTasksTaskResponse) =>
+      task.domain_id != null && t.domain_id === task.domain_id;
+
     for (const t of eligible) {
-      if ((t.subtasks?.length ?? 0) > 0) {
-        parents.push(t);
-      } else if (task.domain_id && t.domain_id === task.domain_id) {
+      const isParent = (t.subtasks?.length ?? 0) > 0;
+      if (isParent && isSameDomain(t)) {
+        parentsSameDomain.push(t);
+      } else if (isParent) {
+        parentsOther.push(t);
+      } else if (isSameDomain(t)) {
         sameDomain.push(t);
       } else {
         rest.push(t);
@@ -65,7 +72,9 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
     }
 
     const groups: { label: string; tasks: AppRoutersTasksTaskResponse[] }[] = [];
-    if (parents.length > 0) groups.push({ label: "Parents", tasks: parents });
+    if (parentsSameDomain.length > 0)
+      groups.push({ label: "Parents · same domain", tasks: parentsSameDomain });
+    if (parentsOther.length > 0) groups.push({ label: "Parents", tasks: parentsOther });
     if (sameDomain.length > 0) groups.push({ label: "Same domain", tasks: sameDomain });
     if (rest.length > 0) groups.push({ label: "Other", tasks: rest });
     return groups;
@@ -244,124 +253,131 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
     );
   };
 
-  return (
-    <Popover
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) setSearch("");
-      }}
-    >
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "flex items-center justify-between w-full h-9 px-3 rounded-md border border-input bg-transparent text-sm",
-            "hover:bg-accent/50 transition-colors cursor-pointer",
-          )}
-        >
-          <span className="flex items-center gap-1.5 truncate min-w-0">
-            {currentParent ? (
-              <>
-                {currentParentDomain?.icon && (
-                  <span className="shrink-0">{currentParentDomain.icon}</span>
-                )}
-                <span className="truncate">{currentParent.title}</span>
-              </>
-            ) : (
-              <span className="text-muted-foreground">None (top-level)</span>
-            )}
-          </span>
-          <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
-        </button>
-      </PopoverTrigger>
+  // Close on click outside
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
+  }, [open]);
 
-      <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] p-0"
-        align="start"
-        sideOffset={4}
-        onOpenAutoFocus={(e) => {
-          e.preventDefault();
-          searchRef.current?.focus();
-        }}
-        onPointerDown={(e) => e.stopPropagation()}
+  // Auto-focus search when opening
+  useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 0);
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      {/* Trigger */}
+      <button
+        type="button"
+        className={cn(
+          "flex items-center justify-between w-full h-9 px-3 rounded-md border border-input bg-transparent text-sm",
+          "hover:bg-accent/50 transition-colors cursor-pointer",
+        )}
+        onClick={() => setOpen(!open)}
       >
-        {/* Search input */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b">
-          <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <input
-            ref={searchRef}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tasks..."
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          {search && (
+        <span className="flex items-center gap-1.5 truncate min-w-0">
+          {currentParent ? (
+            <>
+              {currentParentDomain?.icon && (
+                <span className="shrink-0">{currentParentDomain.icon}</span>
+              )}
+              <span className="truncate">{currentParent.title}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">None (top-level)</span>
+          )}
+        </span>
+        <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
+      </button>
+
+      {/* Dropdown — inline, no portal */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
+          {/* Search input */}
+          <div className="flex items-center gap-2 px-3 py-2 border-b">
+            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tasks..."
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Options list */}
+          <div className="max-h-60 overflow-y-auto py-1">
+            {/* None (top-level) — always first */}
             <button
               type="button"
-              onClick={() => setSearch("")}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-
-        {/* Options list */}
-        <div className="max-h-60 overflow-y-auto py-1">
-          {/* None (top-level) — always first */}
-          <button
-            type="button"
-            className={cn(
-              "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer",
-              currentParentId === null && "bg-accent font-medium",
-            )}
-            onClick={() => handleSelect(null)}
-          >
-            None (top-level)
-          </button>
-
-          {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
-
-          {taskGroups.map((group, gi) => (
-            <div key={group.label}>
-              {gi > 0 && <div className="h-px bg-border mx-2 my-1" />}
-              {showLabels && (
-                <div className="px-3 pt-1.5 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                  {group.label}
-                </div>
+              className={cn(
+                "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer",
+                currentParentId === null && "bg-accent font-medium",
               )}
-              {group.tasks.map((t) => {
-                const domain = t.domain_id ? domains.find((d) => d.id === t.domain_id) : null;
-                const subtaskCount = t.subtasks?.length ?? 0;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={cn(
-                      "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer flex items-center gap-1.5",
-                      currentParentId === t.id && "bg-accent font-medium",
-                    )}
-                    onClick={() => handleSelect(t.id)}
-                  >
-                    {domain?.icon && <span className="shrink-0">{domain.icon}</span>}
-                    <span className="truncate">{t.title}</span>
-                    {subtaskCount > 0 && (
-                      <span className="shrink-0 text-[10px] text-muted-foreground ml-auto">
-                        ·{subtaskCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+              onClick={() => handleSelect(null)}
+            >
+              None (top-level)
+            </button>
 
-          {totalFiltered === 0 && search && (
-            <div className="px-3 py-2 text-sm text-muted-foreground">No matching tasks</div>
-          )}
+            {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
+
+            {taskGroups.map((group, gi) => (
+              <div key={group.label}>
+                {gi > 0 && <div className="h-px bg-border mx-2 my-1" />}
+                {showLabels && (
+                  <div className="px-3 pt-1.5 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {group.label}
+                  </div>
+                )}
+                {group.tasks.map((t) => {
+                  const domain = t.domain_id ? domains.find((d) => d.id === t.domain_id) : null;
+                  const subtaskCount = t.subtasks?.length ?? 0;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={cn(
+                        "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer flex items-center gap-1.5",
+                        currentParentId === t.id && "bg-accent font-medium",
+                      )}
+                      onClick={() => handleSelect(t.id)}
+                    >
+                      {domain?.icon && <span className="shrink-0">{domain.icon}</span>}
+                      <span className="truncate">{t.title}</span>
+                      {subtaskCount > 0 && (
+                        <span className="shrink-0 text-[10px] text-muted-foreground ml-auto">
+                          ·{subtaskCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+
+            {totalFiltered === 0 && search && (
+              <div className="px-3 py-2 text-sm text-muted-foreground">No matching tasks</div>
+            )}
+          </div>
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 }
