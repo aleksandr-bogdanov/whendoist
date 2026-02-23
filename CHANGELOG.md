@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.69 — 2026-02-23
+
+### Fix: Ghost row persistence + style consolidation
+- Non-parent tasks no longer stay permanently expanded after dismissing the add-subtask input — collapse on cancel when no real subtasks exist
+- Ghost row "Add subtask" now matches domain-level "Add task" style (text-xs, same icon size, same colors, underline input)
+
+
 ## v0.54.68 — 2026-02-23
 
 ### Feat: Quick add subtask
