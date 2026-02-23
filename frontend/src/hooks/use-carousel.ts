@@ -42,6 +42,35 @@ export function useCarousel({
   // Track which panel index is "current" to detect changes
   const currentPanel = useRef(CENTER_INDEX);
 
+  // Guard against external programmatic scrolls (e.g. full-page screenshot tools).
+  // Only respond to scroll events preceded by a real user gesture.
+  const hasRecentGesture = useRef(false);
+  const gestureTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const markGesture = () => {
+      hasRecentGesture.current = true;
+      if (gestureTimer.current) clearTimeout(gestureTimer.current);
+      gestureTimer.current = setTimeout(() => {
+        hasRecentGesture.current = false;
+      }, 1000);
+    };
+
+    el.addEventListener("pointerdown", markGesture, { passive: true });
+    el.addEventListener("touchstart", markGesture, { passive: true });
+    el.addEventListener("wheel", markGesture, { passive: true });
+
+    return () => {
+      el.removeEventListener("pointerdown", markGesture);
+      el.removeEventListener("touchstart", markGesture);
+      el.removeEventListener("wheel", markGesture);
+      if (gestureTimer.current) clearTimeout(gestureTimer.current);
+    };
+  }, [containerRef]);
+
   // ── Scroll to center panel (no animation). Call after date update. ────────
   const scrollToCenter = useCallback(() => {
     const el = containerRef.current;
@@ -67,7 +96,7 @@ export function useCarousel({
     let lastReportedPanel = currentPanel.current;
 
     const commitIfNeeded = () => {
-      if (isProgrammatic.current || disabledRef.current) return;
+      if (isProgrammatic.current || disabledRef.current || !hasRecentGesture.current) return;
       const panelWidth = el.offsetWidth;
       if (panelWidth === 0) return;
       const panelIndex = Math.round(el.scrollLeft / panelWidth);

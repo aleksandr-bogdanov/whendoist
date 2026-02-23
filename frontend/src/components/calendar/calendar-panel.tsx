@@ -233,19 +233,31 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     }
   }, [calendarCenterDate]);
 
-  // Auto-scroll during dnd-kit drag near top/bottom edges.
+  // Auto-scroll during dnd-kit drag near top/bottom edges (vertical) and
+  // auto-navigate to previous/next day near left/right edges (horizontal).
   // Uses real pointer position (not dnd-kit delta which drifts) and runs in a
   // RAF loop so scrolling continues even when the pointer is held still.
   const autoScrollRaf = useRef<number>(0);
   const dndPointerY = useRef<number>(0);
+  const dndPointerX = useRef<number>(0);
   const isDndActive = useRef(false);
+  const navCooldownRef = useRef<number>(0);
+  const isNavAnimating = useRef(false);
+  const calendarCenterDateRef = useRef(calendarCenterDate);
+  calendarCenterDateRef.current = calendarCenterDate;
 
   useEffect(() => {
     const handler = (e: PointerEvent) => {
-      if (isDndActive.current) dndPointerY.current = e.clientY;
+      if (isDndActive.current) {
+        dndPointerY.current = e.clientY;
+        dndPointerX.current = e.clientX;
+      }
     };
     const touchHandler = (e: TouchEvent) => {
-      if (isDndActive.current && e.touches[0]) dndPointerY.current = e.touches[0].clientY;
+      if (isDndActive.current && e.touches[0]) {
+        dndPointerY.current = e.touches[0].clientY;
+        dndPointerX.current = e.touches[0].clientX;
+      }
     };
     document.addEventListener("pointermove", handler);
     document.addEventListener("touchmove", touchHandler);
@@ -259,20 +271,29 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     onDragStart(event) {
       setIsDndDragging(true);
       isDndActive.current = true;
-      // Seed initial pointer Y from the activator event
+      navCooldownRef.current = Date.now(); // Prevent immediate navigation on drag start
+      isNavAnimating.current = false;
+      // Seed initial pointer position from the activator event
       const ev = event.activatorEvent;
       if (ev instanceof TouchEvent) {
         dndPointerY.current = ev.touches[0]?.clientY ?? 0;
+        dndPointerX.current = ev.touches[0]?.clientX ?? 0;
       } else {
         dndPointerY.current = (ev as PointerEvent).clientY;
+        dndPointerX.current = (ev as PointerEvent).clientX;
       }
       const EDGE_ZONE = 60;
       const SCROLL_SPEED = 8;
+      const HORIZONTAL_EDGE_ZONE = 40;
+      const NAV_COOLDOWN_MS = 700;
       const loop = () => {
         if (!scrollRef.current || !isDndActive.current) return;
         const container = scrollRef.current;
         const rect = container.getBoundingClientRect();
         const pointerY = dndPointerY.current;
+        const pointerX = dndPointerX.current;
+
+        // Vertical auto-scroll near top/bottom edges
         const distFromTop = pointerY - rect.top;
         const distFromBottom = rect.bottom - pointerY;
         if (distFromTop < EDGE_ZONE && distFromTop > 0) {
@@ -280,6 +301,35 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         } else if (distFromBottom < EDGE_ZONE && distFromBottom > 0) {
           container.scrollTop += SCROLL_SPEED * (1 - distFromBottom / EDGE_ZONE);
         }
+
+        // Horizontal auto-navigate: smoothly slide carousel, then commit
+        const el = carouselRef.current;
+        const now = Date.now();
+        if (el && !isNavAnimating.current && now - navCooldownRef.current > NAV_COOLDOWN_MS) {
+          const distFromLeft = pointerX - rect.left;
+          const distFromRight = rect.right - pointerX;
+          let direction = 0;
+          if (distFromLeft < HORIZONTAL_EDGE_ZONE && distFromLeft > 0) direction = -1;
+          else if (distFromRight < HORIZONTAL_EDGE_ZONE && distFromRight > 0) direction = 1;
+
+          if (direction !== 0) {
+            isNavAnimating.current = true;
+            navCooldownRef.current = now;
+            const panelWidth = el.offsetWidth;
+            const targetPanel = Math.max(0, Math.min(4, CENTER_INDEX + direction));
+            // Smooth scroll to adjacent panel
+            el.scrollTo({ left: targetPanel * panelWidth, behavior: "smooth" });
+            // After animation settles, commit navigation and recenter
+            setTimeout(() => {
+              if (!isDndActive.current) return;
+              savedScrollTop.current = container.scrollTop;
+              setVisiblePanel(CENTER_INDEX);
+              setCalendarCenterDate(addDays(calendarCenterDateRef.current, direction));
+              isNavAnimating.current = false;
+            }, 350);
+          }
+        }
+
         autoScrollRaf.current = requestAnimationFrame(loop);
       };
       autoScrollRaf.current = requestAnimationFrame(loop);
@@ -287,6 +337,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     onDragEnd() {
       setIsDndDragging(false);
       isDndActive.current = false;
+      isNavAnimating.current = false;
       cancelAnimationFrame(autoScrollRaf.current);
       // Re-center carousel after drag — it may have drifted off-center
       requestAnimationFrame(() => carousel.scrollToCenter());
@@ -294,6 +345,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     onDragCancel() {
       setIsDndDragging(false);
       isDndActive.current = false;
+      isNavAnimating.current = false;
       cancelAnimationFrame(autoScrollRaf.current);
       requestAnimationFrame(() => carousel.scrollToCenter());
     },

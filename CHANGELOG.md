@@ -4,12 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.54.58 — 2026-02-23
+## v0.54.59 — 2026-02-23
 
-### Fix: Calendar DnD overlay grab offset
-- Drag overlay pill now preserves proportional grab position (grab middle → cursor at pill middle)
-- Measures the actual compact pill element via `firstElementChild` instead of the dnd-kit wrapper
-- Uses live pointer position for scroll-drift immunity
+### Fix: Calendar DnD — drag across days + overlay stability
+- Drag-to-adjacent-day: dragging a task to the left/right edge smoothly slides the carousel to the previous/next day
+- Overlay no longer jumps during day navigation — `activeNodeRect.left/top` frozen at drag start
+- Carousel ignores programmatic scroll events (Arc full-page screenshot compatibility)
+- Drag overlay pill preserves proportional grab position with live pointer tracking
 - Handles both PointerEvent and TouchEvent activator events
 
 ## v0.54.57 — 2026-02-23
