@@ -24,7 +24,7 @@ from app.models import (
     User,
     UserPreferences,
 )
-from app.routers.auth import get_current_user
+from app.routers.auth import require_user
 from app.services.data_version import bump_data_version
 from app.services.gcal import GoogleCalendarClient
 from app.services.todoist import TodoistClient
@@ -81,7 +81,7 @@ class ImportResponse(BaseModel):
 async def wipe_user_data(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User | None = Depends(get_current_user),
+    user: User = Depends(require_user),
 ):
     """
     Delete all tasks and domains for the current user.
@@ -89,8 +89,6 @@ async def wipe_user_data(
     This is a destructive operation for testing purposes.
     No external service connection required.
     """
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
 
     # Clean up GCal sync if enabled — delete calendar and sync records
     # before wiping tasks (otherwise sync records cascade-delete but
@@ -154,15 +152,13 @@ async def wipe_user_data(
 async def preview_todoist_import(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User | None = Depends(get_current_user),
+    user: User = Depends(require_user),
 ):
     """
     Preview what will be imported from Todoist.
 
     Returns counts and project list without actually importing anything.
     """
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
 
     # Get Todoist token
     todoist_token = (await db.execute(select(TodoistToken).where(TodoistToken.user_id == user.id))).scalar_one_or_none()
@@ -219,7 +215,7 @@ async def import_from_todoist(
     request: Request,
     options: ImportOptions | None = None,
     db: AsyncSession = Depends(get_db),
-    user: User | None = Depends(get_current_user),
+    user: User = Depends(require_user),
 ):
     """
     Import all projects and tasks from connected Todoist account.
@@ -227,8 +223,6 @@ async def import_from_todoist(
     Creates domains from Todoist projects and tasks with their attributes.
     Skips items that have already been imported (tracked by external_id).
     """
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
 
     # Use defaults if no options provided
     if options is None:

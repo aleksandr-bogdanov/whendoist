@@ -2,11 +2,13 @@
 Security headers middleware.
 
 Adds essential security headers to all responses:
-- Content-Security-Policy: Prevents XSS by controlling resource loading
+- Content-Security-Policy: Prevents XSS by controlling resource loading (nonce-based)
 - X-Frame-Options: Prevents clickjacking
 - X-Content-Type-Options: Prevents MIME sniffing
 - Referrer-Policy: Controls referrer information leakage
 """
+
+import secrets
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -17,14 +19,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Middleware that adds security headers to all responses."""
 
     async def dispatch(self, request: Request, call_next) -> Response:
+        # Generate a per-request nonce for inline scripts
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+
         response = await call_next(request)
 
-        # Content Security Policy
-        # Note: 'unsafe-inline' kept for compatibility with inline PWA viewport script.
-        # Tracked for nonce-based CSP refactor in Post-v1.0 Backlog.
+        # Content Security Policy (nonce-based for script-src)
         csp = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
+            f"script-src 'self' 'nonce-{nonce}'; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "img-src 'self' data: https:; "
             "font-src 'self' https://fonts.gstatic.com; "

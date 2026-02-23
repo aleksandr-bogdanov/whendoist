@@ -8,6 +8,7 @@ import asyncio
 import logging
 import re
 from datetime import date, datetime, time
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -129,6 +130,31 @@ def _strip_control_chars(value: str) -> str:
     return CONTROL_CHAR_PATTERN.sub("", value)
 
 
+VALID_DAYS_OF_WEEK = {"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
+
+
+class RecurrenceRuleSchema(BaseModel):
+    """Validated shape for recurrence_rule JSON."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    freq: Literal["daily", "weekly", "monthly", "yearly"]
+    interval: int = Field(default=1, ge=1, le=99)
+    days_of_week: list[str] | None = None
+    day_of_month: int | None = Field(None, ge=1, le=31)
+    week_of_month: int | None = Field(None, ge=1, le=5)
+    month_of_year: int | None = Field(None, ge=1, le=12)
+
+    @field_validator("days_of_week")
+    @classmethod
+    def validate_days_of_week(cls, v: list[str] | None) -> list[str] | None:
+        if v is not None:
+            for d in v:
+                if d not in VALID_DAYS_OF_WEEK:
+                    raise ValueError(f"Invalid day: {d}. Must be one of {sorted(VALID_DAYS_OF_WEEK)}")
+        return v
+
+
 class TaskCreate(BaseModel):
     """Request body for creating a task."""
 
@@ -142,7 +168,7 @@ class TaskCreate(BaseModel):
     scheduled_date: date | None = None
     scheduled_time: time | None = None
     is_recurring: bool = False
-    recurrence_rule: dict | None = None
+    recurrence_rule: RecurrenceRuleSchema | None = None
     recurrence_start: date | None = None
     recurrence_end: date | None = None
 
@@ -194,7 +220,7 @@ class TaskUpdate(BaseModel):
     scheduled_date: date | None = None
     scheduled_time: time | None = None
     is_recurring: bool | None = None
-    recurrence_rule: dict | None = None
+    recurrence_rule: RecurrenceRuleSchema | None = None
     recurrence_start: date | None = None
     recurrence_end: date | None = None
     position: int | None = None
@@ -477,7 +503,7 @@ async def create_task(
             scheduled_date=scheduled_date,
             scheduled_time=data.scheduled_time,
             is_recurring=data.is_recurring,
-            recurrence_rule=data.recurrence_rule,
+            recurrence_rule=data.recurrence_rule.model_dump() if data.recurrence_rule else None,
             recurrence_start=data.recurrence_start,
             recurrence_end=data.recurrence_end,
         )
