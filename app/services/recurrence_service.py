@@ -178,11 +178,13 @@ class RecurrenceService:
                 self.db.add(instance)
 
                 try:
-                    await self.db.flush()
+                    async with self.db.begin_nested():
+                        await self.db.flush()
                     instances.append(instance)
                 except IntegrityError:
-                    # Instance was created by a concurrent process, skip
-                    await self.db.rollback()
+                    # Instance was created by a concurrent process, skip.
+                    # begin_nested() ensures only this INSERT is rolled back,
+                    # not the entire transaction (which would lose prior instances).
                     logger.debug(f"Instance already exists for task {task.id} on {occ_date}, skipping")
                     continue
 
@@ -499,10 +501,12 @@ class RecurrenceService:
         self.db.add(instance)
 
         try:
-            await self.db.flush()
+            async with self.db.begin_nested():
+                await self.db.flush()
         except IntegrityError:
-            # Race condition: instance was created by concurrent request
-            await self.db.rollback()
+            # Race condition: instance was created by concurrent request.
+            # begin_nested() ensures only this INSERT is rolled back,
+            # not any prior work in the caller's transaction.
             # Re-query the instance that was created by the concurrent request
             result = await self.db.execute(
                 select(TaskInstance).where(

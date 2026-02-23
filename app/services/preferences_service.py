@@ -107,6 +107,11 @@ class PreferencesService:
         """
         Enable E2E encryption with the provided salt and test value.
 
+        Note: No bump_data_version here — encryption metadata (salt, test_value,
+        encryption_enabled) is not included in snapshot exports. The actual data
+        change (re-encrypting task titles/domain names) happens via batch-update
+        endpoints which do bump.
+
         Args:
             salt: Base64-encoded 32-byte salt for key derivation
             test_value: Encrypted known value for passphrase verification
@@ -125,6 +130,10 @@ class PreferencesService:
         Disable E2E encryption.
 
         Note: This does NOT decrypt existing data.
+
+        Note: No bump_data_version here — encryption metadata and passkeys are
+        not included in snapshot exports. The actual data change (decrypting
+        task titles/domain names) happens via batch-update endpoints which do bump.
 
         IMPORTANT: Also deletes all passkeys for this user because:
         - Passkeys store wrapped_key values that wrap the current master key
