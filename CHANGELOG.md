@@ -13,6 +13,7 @@ Development history of Whendoist. Per-patch details in git history.
 - `pb-nav-safe` now accounts for safe area inset + pill offset
 - Demo pill and gesture discovery hints repositioned above the floating nav
 
+
 ## v0.54.59 — 2026-02-23
 
 ### Fix: Calendar DnD — drag across days + overlay stability
