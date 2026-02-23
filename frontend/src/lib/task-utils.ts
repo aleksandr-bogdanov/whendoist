@@ -47,6 +47,27 @@ export const CLARITY_LABELS: Record<string, string> = {
   brainstorm: "Brainstorm",
 };
 
+// Shared option arrays used by task-editor and attribute-pills
+export const IMPACT_OPTIONS = [
+  { value: 1, label: "P1 High" },
+  { value: 2, label: "P2 Mid" },
+  { value: 3, label: "P3 Low" },
+  { value: 4, label: "P4 Min" },
+] as const;
+
+export const CLARITY_OPTIONS = [
+  { value: "autopilot", label: "Autopilot" },
+  { value: "normal", label: "Normal" },
+  { value: "brainstorm", label: "Brainstorm" },
+] as const;
+
+export const DURATION_PRESETS = [15, 30, 60, 120, 240] as const;
+
+export function formatDurationLabel(m: number) {
+  if (m < 60) return `${m}m`;
+  return `${m / 60}h`;
+}
+
 type SortField = "impact" | "duration" | "clarity";
 type SortDirection = "asc" | "desc";
 

@@ -36,6 +36,7 @@ import {
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
+import { ClarityPill, DurationPill, ImpactPill } from "@/components/task/attribute-pills";
 import { Badge } from "@/components/ui/badge";
 import {
   ContextMenu,
@@ -52,12 +53,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  CLARITY_COLORS,
-  CLARITY_LABELS,
   formatDate,
   formatDuration,
   IMPACT_COLORS,
-  IMPACT_LABELS,
   IMPACT_WASHES,
   isOverdue,
 } from "@/lib/task-utils";
@@ -785,34 +783,21 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                     <>
                       {/* Clarity */}
                       <span className="w-[var(--col-clarity)] text-center">
-                        {task.clarity && task.clarity !== "normal" ? (
-                          <span
-                            className="inline-block text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full"
-                            style={{
-                              color: CLARITY_COLORS[task.clarity] ?? CLARITY_COLORS.normal,
-                              backgroundColor: `var(--${task.clarity ?? "normal"}-tint)`,
-                            }}
-                          >
-                            {CLARITY_LABELS[task.clarity] ?? task.clarity}
-                          </span>
-                        ) : null}
+                        <ClarityPill taskId={task.id} value={task.clarity} disabled={isCompleted} />
                       </span>
 
                       {/* Duration */}
-                      <span className="w-[var(--col-duration)] text-center text-[0.65rem] font-medium tabular-nums text-muted-foreground">
-                        {task.duration_minutes ? (
-                          formatDuration(task.duration_minutes)
-                        ) : (
-                          <span className="opacity-30">&mdash;</span>
-                        )}
+                      <span className="w-[var(--col-duration)] text-center">
+                        <DurationPill
+                          taskId={task.id}
+                          value={task.duration_minutes}
+                          disabled={isCompleted}
+                        />
                       </span>
 
-                      {/* Impact — text label */}
-                      <span
-                        className="w-[var(--col-impact)] text-center text-[0.65rem] font-semibold"
-                        style={{ color: impactColor }}
-                      >
-                        {IMPACT_LABELS[task.impact] ?? "Min"}
+                      {/* Impact */}
+                      <span className="w-[var(--col-impact)] text-center">
+                        <ImpactPill taskId={task.id} value={task.impact} disabled={isCompleted} />
                       </span>
                     </>
                   )}
@@ -1111,34 +1096,21 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
       <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
         {/* Clarity */}
         <span className="w-[var(--col-clarity)] text-center">
-          {subtask.clarity && subtask.clarity !== "normal" ? (
-            <span
-              className="inline-block text-[0.65rem] font-semibold px-1.5 py-0.5 rounded-full"
-              style={{
-                color: CLARITY_COLORS[subtask.clarity] ?? CLARITY_COLORS.normal,
-                backgroundColor: `var(--${subtask.clarity ?? "normal"}-tint)`,
-              }}
-            >
-              {CLARITY_LABELS[subtask.clarity] ?? subtask.clarity}
-            </span>
-          ) : null}
+          <ClarityPill taskId={subtask.id} value={subtask.clarity} disabled={isCompleted} />
         </span>
 
         {/* Duration */}
-        <span className="w-[var(--col-duration)] text-center text-[0.65rem] font-medium tabular-nums text-muted-foreground">
-          {subtask.duration_minutes ? (
-            formatDuration(subtask.duration_minutes)
-          ) : (
-            <span className="opacity-30">&mdash;</span>
-          )}
+        <span className="w-[var(--col-duration)] text-center">
+          <DurationPill
+            taskId={subtask.id}
+            value={subtask.duration_minutes}
+            disabled={isCompleted}
+          />
         </span>
 
         {/* Impact */}
-        <span
-          className="w-[var(--col-impact)] text-center text-[0.65rem] font-semibold"
-          style={{ color: impactColor }}
-        >
-          {IMPACT_LABELS[subtask.impact] ?? "Min"}
+        <span className="w-[var(--col-impact)] text-center">
+          <ImpactPill taskId={subtask.id} value={subtask.impact} disabled={isCompleted} />
         </span>
       </span>
 

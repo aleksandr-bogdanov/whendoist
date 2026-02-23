@@ -48,27 +48,15 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useCrypto } from "@/hooks/use-crypto";
-import { IMPACT_COLORS } from "@/lib/task-utils";
+import {
+  CLARITY_OPTIONS,
+  DURATION_PRESETS,
+  formatDurationLabel,
+  IMPACT_COLORS,
+  IMPACT_OPTIONS,
+} from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
-
-const DURATION_PRESETS = [15, 30, 60, 120, 240] as const;
-const IMPACT_OPTIONS = [
-  { value: 1, label: "P1 High" },
-  { value: 2, label: "P2 Mid" },
-  { value: 3, label: "P3 Low" },
-  { value: 4, label: "P4 Min" },
-];
-const CLARITY_OPTIONS = [
-  { value: "autopilot", label: "Autopilot" },
-  { value: "normal", label: "Normal" },
-  { value: "brainstorm", label: "Brainstorm" },
-];
-
-function formatDurationLabel(m: number) {
-  if (m < 60) return `${m}m`;
-  return `${m / 60}h`;
-}
 
 interface TaskEditorProps {
   open: boolean;
