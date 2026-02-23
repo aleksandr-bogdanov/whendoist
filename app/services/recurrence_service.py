@@ -7,6 +7,7 @@ Instances are materialized for a rolling window (default 60 days ahead).
 
 import logging
 from datetime import UTC, date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from dateutil.rrule import DAILY, FR, MO, MONTHLY, SA, SU, TH, TU, WE, WEEKLY, YEARLY, rrule
 from sqlalchemy import and_, delete, func, select
@@ -46,6 +47,17 @@ class RecurrenceService:
         self.db = db
         self.user_id = user_id
         self.timezone = timezone
+
+    def _to_utc_datetime(self, occ_date: date, local_time: time) -> datetime:
+        """Convert a user-local date+time to a UTC datetime.
+
+        If no timezone is configured, falls back to treating the time as UTC.
+        """
+        if self.timezone:
+            tz = ZoneInfo(self.timezone)
+            local_dt = datetime.combine(occ_date, local_time, tzinfo=tz)
+            return local_dt.astimezone(UTC).replace(tzinfo=UTC)
+        return datetime.combine(occ_date, local_time, tzinfo=UTC)
 
     def generate_occurrences(
         self,
@@ -121,6 +133,7 @@ class RecurrenceService:
         self,
         task: Task,
         horizon_days: int = 60,
+        from_date: date | None = None,
     ) -> list[TaskInstance]:
         """
         Generate and save instances for a recurring task.
@@ -128,6 +141,8 @@ class RecurrenceService:
         Args:
             task: The recurring task
             horizon_days: How many days ahead to generate
+            from_date: If set, only create instances from this date onward
+                (used by regenerate_instances to avoid recreating past instances)
 
         Returns:
             List of created instances
@@ -168,45 +183,49 @@ class RecurrenceService:
         # Create new instances
         instances = []
         for occ_date in occurrences:
-            if occ_date not in existing_dates:
-                instance = TaskInstance(
-                    task_id=task.id,
-                    user_id=self.user_id,
-                    instance_date=occ_date,
-                    scheduled_datetime=(datetime.combine(occ_date, default_time, tzinfo=UTC) if default_time else None),
-                )
-                self.db.add(instance)
+            if occ_date in existing_dates:
+                continue
+            if from_date and occ_date < from_date:
+                continue
+            instance = TaskInstance(
+                task_id=task.id,
+                user_id=self.user_id,
+                instance_date=occ_date,
+                scheduled_datetime=(self._to_utc_datetime(occ_date, default_time) if default_time else None),
+            )
+            self.db.add(instance)
 
-                try:
-                    async with self.db.begin_nested():
-                        await self.db.flush()
-                    instances.append(instance)
-                except IntegrityError:
-                    # Instance was created by a concurrent process, skip.
-                    # begin_nested() ensures only this INSERT is rolled back,
-                    # not the entire transaction (which would lose prior instances).
-                    logger.debug(f"Instance already exists for task {task.id} on {occ_date}, skipping")
-                    continue
+            try:
+                async with self.db.begin_nested():
+                    await self.db.flush()
+                instances.append(instance)
+            except IntegrityError:
+                # Instance was created by a concurrent process, skip.
+                # begin_nested() ensures only this INSERT is rolled back,
+                # not the entire transaction (which would lose prior instances).
+                logger.debug(f"Instance already exists for task {task.id} on {occ_date}, skipping")
+                continue
 
         return instances
 
     async def regenerate_instances(self, task: Task) -> list[TaskInstance]:
         """
-        Delete future pending instances and regenerate.
+        Delete all pending instances and regenerate from today onward.
 
-        Call this when recurrence rule changes.
+        Call this when recurrence rule changes. Completed/skipped instances
+        are preserved. Past pending instances (stale) are cleaned up.
         """
-        # Delete future pending instances (use user's timezone for "today")
+        # Delete ALL pending instances (past and future) to clean up stale ones
         await self.db.execute(
             delete(TaskInstance).where(
                 TaskInstance.task_id == task.id,
-                TaskInstance.instance_date >= get_user_today(self.timezone),
                 TaskInstance.status == "pending",
             )
         )
+        await self.db.flush()
 
-        # Regenerate
-        return await self.materialize_instances(task)
+        # Regenerate from today onward (don't recreate past pending instances)
+        return await self.materialize_instances(task, from_date=get_user_today(self.timezone))
 
     async def get_instances_for_range(
         self,
@@ -496,7 +515,7 @@ class RecurrenceService:
             task_id=task.id,
             user_id=self.user_id,
             instance_date=target_date,
-            scheduled_datetime=(datetime.combine(target_date, default_time, tzinfo=UTC) if default_time else None),
+            scheduled_datetime=(self._to_utc_datetime(target_date, default_time) if default_time else None),
         )
         self.db.add(instance)
 

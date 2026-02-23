@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.67 — 2026-02-23
+
+### Fix: Recurring tasks overhaul — 6 bug fixes
+- **Timezone bug**: Instance scheduled_datetime now correctly converts user-local time to UTC (e.g., 9 AM ET → 2 PM UTC) instead of treating local time as UTC
+- **Invisible in task panel**: Recurring tasks now appear in the Scheduled section instead of being filtered out entirely
+- **Completed instances vanish**: Calendar fetches all instance statuses so completed instances stay visible with opacity styling
+- **Time-less at 9 AM**: Instances without a scheduled time no longer appear at 9 AM on the calendar; they show in the Anytime section instead
+- **Stale instances survive**: Regeneration now deletes ALL pending instances (including past) and recreates from today onward
+- **All status endpoint**: Instances API now accepts `status=all` to return all statuses (matches tasks endpoint pattern)
+- New `AnytimeInstancePill` component for time-less recurring instances in the calendar's Anytime section
+
+
 ## v0.54.66 — 2026-02-23
 
 ### Fix: Drag-drop in scheduled section reschedules instead of reparenting
