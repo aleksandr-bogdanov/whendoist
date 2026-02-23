@@ -15,7 +15,7 @@ export default defineConfig({
     }),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       manifest: {
         name: "Whendoist",
         short_name: "Whendoist",
@@ -75,6 +75,31 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("recharts") || id.includes("d3-") || id.includes("victory-vendor"))
+            return "recharts";
+          if (id.includes("@dnd-kit")) return "dnd";
+          if (id.includes("@tanstack/react-router") || id.includes("@tanstack/router"))
+            return "router";
+          if (id.includes("@tanstack/react-query") || id.includes("@tanstack/query"))
+            return "query";
+          if (id.includes("lucide-react")) return "icons";
+          if (id.includes("radix-ui") || id.includes("@radix-ui")) return "radix";
+          if (id.includes("motion")) return "motion";
+          if (id.includes("vaul")) return "vaul";
+          if (id.includes("axios")) return "axios";
+          if (id.includes("react-dom")) return "react-dom";
+          if (id.includes("/react/")) return "react";
+          if (id.includes("sonner") || id.includes("zustand") || id.includes("zod"))
+            return "vendor";
+        },
+      },
     },
   },
   server: {
