@@ -327,6 +327,7 @@ def _task_to_response(task: Task, user_today: date | None = None) -> TaskRespons
                 position=s.position,
             )
             for s in (task.subtasks or [])
+            if s.status != "archived"
         ],
         today_instance_completed=today_instance_completed,
     )
