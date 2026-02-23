@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CalendarDays, CalendarPlus, ListTodo, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { TaskResponse } from "@/api/model";
+import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import {
@@ -20,6 +20,7 @@ import { TaskDndContext } from "@/components/task/task-dnd-context";
 import { TaskEditor } from "@/components/task/task-editor";
 import { TaskQuickAdd } from "@/components/task/task-quick-add";
 import { Button } from "@/components/ui/button";
+import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -34,6 +35,9 @@ function DashboardPage() {
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
+  const { decryptTasks, decryptDomains } = useCrypto();
+  const [decryptedTasks, setDecryptedTasks] = useState<TaskResponse[]>([]);
+  const [decryptedDomains, setDecryptedDomains] = useState<DomainResponse[]>([]);
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskResponse | null>(null);
@@ -49,6 +53,38 @@ function DashboardPage() {
     setGcalBannerDismissed(true);
     localStorage.setItem("gcal-banner-dismissed", "1");
   }, []);
+
+  // Decrypt tasks for keyboard shortcuts, CalendarPanel, and DnD context
+  const tasksFingerprint = useMemo(
+    () => (tasks ?? []).map((t) => `${t.id}:${t.title?.slice(0, 8)}`).join(","),
+    [tasks],
+  );
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint tracks changes
+  useEffect(() => {
+    let cancelled = false;
+    decryptTasks(tasks ?? []).then((result) => {
+      if (!cancelled) setDecryptedTasks(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tasksFingerprint, decryptTasks]);
+
+  // Decrypt domains for editor and quick-add
+  const domainsFingerprint = useMemo(
+    () => (domains ?? []).map((d) => `${d.id}:${d.name?.slice(0, 8)}`).join(","),
+    [domains],
+  );
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint tracks changes
+  useEffect(() => {
+    let cancelled = false;
+    decryptDomains(domains ?? []).then((result) => {
+      if (!cancelled) setDecryptedDomains(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [domainsFingerprint, decryptDomains]);
 
   const {
     mobileTab,
@@ -72,8 +108,8 @@ function DashboardPage() {
 
   // Top-level tasks for parent picker (exclude subtasks and recurring)
   const parentTasks = useMemo(
-    () => tasks?.filter((t) => t.parent_id === null && !t.is_recurring) ?? [],
-    [tasks],
+    () => decryptedTasks.filter((t) => t.parent_id === null && !t.is_recurring),
+    [decryptedTasks],
   );
 
   // Flat list of visible task IDs for j/k navigation
@@ -86,9 +122,9 @@ function DashboardPage() {
   }, [tasks]);
 
   // Keep a ref to avoid stale closures in shortcut handlers
-  const stateRef = useRef({ selectedTaskId, visibleTaskIds, tasks, isModalOpen });
+  const stateRef = useRef({ selectedTaskId, visibleTaskIds, tasks: decryptedTasks, isModalOpen });
   useEffect(() => {
-    stateRef.current = { selectedTaskId, visibleTaskIds, tasks, isModalOpen };
+    stateRef.current = { selectedTaskId, visibleTaskIds, tasks: decryptedTasks, isModalOpen };
   });
 
   const handleNewTask = useCallback(() => {
@@ -311,8 +347,8 @@ function DashboardPage() {
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [selectedTaskId]);
 
-  const safedomains = domains ?? [];
-  const safeTasks = tasks ?? [];
+  const safedomains = decryptedDomains;
+  const safeTasks = decryptedTasks;
 
   return (
     <TaskDndContext tasks={safeTasks}>
