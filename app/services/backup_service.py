@@ -159,6 +159,10 @@ class BackupPreferencesSchema(BaseModel):
     scheduled_move_to_bottom: bool = True
     scheduled_sort_by_date: bool = True
     timezone: str | None = None
+    # Encryption metadata — needed so encrypted backups can be restored
+    encryption_enabled: bool = False
+    encryption_salt: str | None = None
+    encryption_test_value: str | None = None
 
 
 class BackupSchema(BaseModel):
@@ -387,6 +391,9 @@ class BackupService:
                     scheduled_move_to_bottom=prefs_data.scheduled_move_to_bottom,
                     scheduled_sort_by_date=prefs_data.scheduled_sort_by_date,
                     timezone=prefs_data.timezone,
+                    encryption_enabled=prefs_data.encryption_enabled,
+                    encryption_salt=prefs_data.encryption_salt,
+                    encryption_test_value=prefs_data.encryption_test_value,
                 )
                 self.db.add(preferences)
 
@@ -465,6 +472,9 @@ class BackupService:
             "scheduled_move_to_bottom": prefs.scheduled_move_to_bottom,
             "scheduled_sort_by_date": prefs.scheduled_sort_by_date,
             "timezone": prefs.timezone,
+            "encryption_enabled": prefs.encryption_enabled,
+            "encryption_salt": prefs.encryption_salt,
+            "encryption_test_value": prefs.encryption_test_value,
         }
 
     def _parse_date(self, value: str | None) -> date | None:

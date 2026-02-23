@@ -414,14 +414,13 @@ async def get_all_content(
     """
     service = TaskService(db, user.id)
 
-    # Get all non-archived tasks (including subtasks)
+    # Get ALL tasks regardless of status (including subtasks and archived)
+    # so encryption toggle covers every task in the database
     tasks = await service.get_tasks(status=None, top_level_only=False)
-    task_data = [
-        TaskContentData(id=t.id, title=t.title, description=t.description) for t in tasks if t.status != "archived"
-    ]
+    task_data = [TaskContentData(id=t.id, title=t.title, description=t.description) for t in tasks]
 
-    # Get all domains
-    domains = await service.get_domains(include_archived=False)
+    # Get all domains (including archived)
+    domains = await service.get_domains(include_archived=True)
     domain_data = [DomainContentData(id=d.id, name=d.name) for d in domains]
 
     return AllDataResponse(tasks=task_data, domains=domain_data)
