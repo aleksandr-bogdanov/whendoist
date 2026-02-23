@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.76 — 2026-02-23
+
+### Fix: Encryption decryption pending guard and offline toast
+- Fixed decryption pending guard using `decryptionComplete` boolean instead of checking array length — prevents ciphertext flash when decryption fails (wrong key)
+- Changed misleading offline toast from "Changes will sync when you're back online" to honest message since no sync mechanism exists
+
 ## v0.54.75 — 2026-02-23
 
 ### Fix: TypeScript CI to actually type-check source files
