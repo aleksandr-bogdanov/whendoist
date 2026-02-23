@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.73 — 2026-02-23
+
+### Fix: Subtask drag-to-calendar scheduling not working
+- Added `scheduled_time` to `SubtaskResponse` — field was missing, causing scheduled time to be lost on data refetch
+- Fixed optimistic cache updates in DnD handler to update subtasks within parent's subtasks array (not just top-level tasks)
+- Calendar and anytime sections now extract and display scheduled subtasks from parent tasks
+
+
 ## v0.54.72 — 2026-02-23
 
 ### Fix: Invalidate instances cache on task edit and delete

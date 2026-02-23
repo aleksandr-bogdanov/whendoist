@@ -78,6 +78,30 @@ interface TaskDndContextProps {
   children: React.ReactNode;
 }
 
+/**
+ * Update a task or subtask in the cache array.
+ * For top-level tasks, updates directly. For subtasks, updates within the parent's subtasks array.
+ */
+function updateTaskOrSubtaskInCache(
+  tasks: AppRoutersTasksTaskResponse[],
+  taskId: number,
+  updates: Record<string, unknown>,
+): AppRoutersTasksTaskResponse[] {
+  // Try top-level first
+  const isTopLevel = tasks.some((t) => t.id === taskId);
+  if (isTopLevel) {
+    return tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t));
+  }
+  // Otherwise update inside parent's subtasks
+  return tasks.map((t) => {
+    if (!t.subtasks?.some((st) => st.id === taskId)) return t;
+    return {
+      ...t,
+      subtasks: t.subtasks.map((st) => (st.id === taskId ? { ...st, ...updates } : st)),
+    };
+  });
+}
+
 /** Parse a draggable/droppable ID to extract the numeric task ID. Handles prefixed IDs. */
 function parseTaskId(id: UniqueIdentifier): number {
   const s = String(id);
@@ -471,9 +495,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           getListTasksApiV1TasksGetQueryKey(),
           (old) => {
             if (!old) return old;
-            return old.map((t) =>
-              t.id === activeId ? { ...t, scheduled_date: dateStr, scheduled_time: null } : t,
-            );
+            return updateTaskOrSubtaskInCache(old, activeId, {
+              scheduled_date: dateStr,
+              scheduled_time: null,
+            });
           },
         );
 
@@ -537,10 +562,13 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         );
         queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
           getListTasksApiV1TasksGetQueryKey(),
-          (old) =>
-            old?.map((t) =>
-              t.id === activeId ? { ...t, scheduled_date: dateStr, scheduled_time: null } : t,
-            ),
+          (old) => {
+            if (!old) return old;
+            return updateTaskOrSubtaskInCache(old, activeId, {
+              scheduled_date: dateStr,
+              scheduled_time: null,
+            });
+          },
         );
 
         const taskTitle = task?.title ?? "Task";
@@ -657,11 +685,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           getListTasksApiV1TasksGetQueryKey(),
           (old) => {
             if (!old) return old;
-            return old.map((t) =>
-              t.id === activeId
-                ? { ...t, scheduled_date: dateStr, scheduled_time: scheduledTime }
-                : t,
-            );
+            return updateTaskOrSubtaskInCache(old, activeId, {
+              scheduled_date: dateStr,
+              scheduled_time: scheduledTime,
+            });
           },
         );
 
@@ -831,9 +858,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             getListTasksApiV1TasksGetQueryKey(),
             (old) => {
               if (!old) return old;
-              return old.map((t) =>
-                t.id === activeId ? { ...t, scheduled_date: null, scheduled_time: null } : t,
-              );
+              return updateTaskOrSubtaskInCache(old, activeId, {
+                scheduled_date: null,
+                scheduled_time: null,
+              });
             },
           );
 
@@ -996,6 +1024,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           impact: activeTask.impact,
           clarity: activeTask.clarity ?? null,
           scheduled_date: activeTask.scheduled_date ?? null,
+          scheduled_time: activeTask.scheduled_time ?? null,
           status: activeTask.status ?? "pending",
           position: 9999,
         };

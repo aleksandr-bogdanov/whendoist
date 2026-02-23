@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Whendoist",
-    "version": "0.54.5"
+    "version": "0.54.72"
   },
   "paths": {
     "/auth/todoist": {
@@ -2059,49 +2059,6 @@
         }
       }
     },
-    "/api/v1/instances/{instance_id}/unskip": {
-      "post": {
-        "tags": [
-          "instances"
-        ],
-        "summary": "Unskip Instance",
-        "description": "Unskip a specific instance (revert skip, mark as pending).",
-        "operationId": "unskip_instance_api_v1_instances__instance_id__unskip_post",
-        "parameters": [
-          {
-            "name": "instance_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Instance Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InstanceStatusResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/instances/{instance_id}/schedule": {
       "put": {
         "tags": [
@@ -2244,6 +2201,49 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BatchPastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instances/{instance_id}/unskip": {
+      "post": {
+        "tags": [
+          "instances"
+        ],
+        "summary": "Unskip Instance",
+        "description": "Unskip a specific instance (revert skip, mark as pending).",
+        "operationId": "unskip_instance_api_v1_instances__instance_id__unskip_post",
+        "parameters": [
+          {
+            "name": "instance_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Instance Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceStatusResponse"
                 }
               }
             }
@@ -3009,7 +3009,7 @@
           },
           "domains": {
             "items": {
-              "$ref": "#/components/schemas/app__routers__domains__DomainContentData"
+              "$ref": "#/components/schemas/app__routers__tasks__DomainContentData"
             },
             "type": "array",
             "title": "Domains"
@@ -3273,7 +3273,7 @@
         "properties": {
           "domains": {
             "items": {
-              "$ref": "#/components/schemas/app__routers__domains__DomainContentData"
+              "$ref": "#/components/schemas/app__routers__tasks__DomainContentData"
             },
             "type": "array",
             "maxItems": 500,
@@ -3831,6 +3831,17 @@
           "calendar_id": {
             "type": "string",
             "title": "Calendar Id"
+          },
+          "html_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html Link"
           }
         },
         "type": "object",
@@ -3841,7 +3852,8 @@
           "start",
           "end",
           "all_day",
-          "calendar_id"
+          "calendar_id",
+          "html_link"
         ],
         "title": "EventResponse",
         "description": "Google Calendar event."
@@ -4724,6 +4736,18 @@
             ],
             "title": "Scheduled Date"
           },
+          "scheduled_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Time"
+          },
           "status": {
             "type": "string",
             "title": "Status"
@@ -4742,6 +4766,7 @@
           "impact",
           "clarity",
           "scheduled_date",
+          "scheduled_time",
           "status",
           "position"
         ],
@@ -5704,25 +5729,6 @@
         "title": "ImportResponse",
         "description": "Response from import operation."
       },
-      "app__routers__domains__DomainContentData": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "DomainContentData",
-        "description": "Single domain's content for batch update."
-      },
       "app__routers__import_data__ImportResponse": {
         "properties": {
           "success": {
@@ -5779,6 +5785,25 @@
         ],
         "title": "ImportResponse",
         "description": "Response from import operation."
+      },
+      "app__routers__tasks__DomainContentData": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "DomainContentData",
+        "description": "Single domain's content for batch update."
       }
     }
   }

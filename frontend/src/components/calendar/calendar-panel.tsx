@@ -110,19 +110,46 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   );
   const safeAllStatusTasks = allStatusTasks ?? tasks;
 
+  // Extract scheduled subtasks as synthetic task-like objects for calendar display
+  const subtasksAsTasks = useMemo(() => {
+    const result: AppRoutersTasksTaskResponse[] = [];
+    for (const task of safeAllStatusTasks) {
+      if (!task.subtasks) continue;
+      for (const st of task.subtasks) {
+        if (st.scheduled_date) {
+          result.push({
+            ...st,
+            parent_id: task.id,
+            domain_id: task.domain_id,
+            domain_name: task.domain_name,
+            scheduled_time: st.scheduled_time ?? null,
+            is_recurring: false,
+            recurrence_rule: null,
+            completed_at: st.status === "completed" ? "" : null,
+            subtasks: [],
+          } as unknown as AppRoutersTasksTaskResponse);
+        }
+      }
+    }
+    return result;
+  }, [safeAllStatusTasks]);
+
   // Scheduled tasks with a specific time (exclude recurring parents — their instances render instead)
   const scheduledTasks = useMemo(
-    () => safeAllStatusTasks.filter((t) => t.scheduled_date && t.scheduled_time && !t.is_recurring),
-    [safeAllStatusTasks],
+    () =>
+      [...safeAllStatusTasks, ...subtasksAsTasks].filter(
+        (t) => t.scheduled_date && t.scheduled_time && !t.is_recurring,
+      ),
+    [safeAllStatusTasks, subtasksAsTasks],
   );
 
   // Anytime tasks for the displayed date (exclude recurring parents)
   const anytimeTasks = useMemo(
     () =>
-      safeAllStatusTasks.filter(
+      [...safeAllStatusTasks, ...subtasksAsTasks].filter(
         (t) => t.scheduled_date === displayDate && !t.scheduled_time && !t.is_recurring,
       ),
-    [safeAllStatusTasks, displayDate],
+    [safeAllStatusTasks, subtasksAsTasks, displayDate],
   );
 
   // Anytime instances for the displayed date (no scheduled_datetime, not skipped)
