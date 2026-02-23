@@ -923,8 +923,8 @@ function DomainsSection() {
       {
         data: {
           domains: [
-            { id: current.id, position: other.position },
-            { id: other.id, position: current.position },
+            { id: current.id, name: current.name, position: other.position },
+            { id: other.id, name: other.name, position: current.position },
           ],
         },
       },

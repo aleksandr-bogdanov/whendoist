@@ -11,4 +11,5 @@
 export interface AppRoutersTasksDomainContentData {
   id: number;
   name: string;
+  position?: number | null;
 }

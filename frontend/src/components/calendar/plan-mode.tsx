@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, EventResponse } from "@/api/model";
+import type { EventResponse, TaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useUpdateTaskApiV1TasksTaskIdPut,
@@ -23,7 +23,7 @@ import { useUIStore } from "@/stores/ui-store";
 interface PlanModeProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tasks: AppRoutersTasksTaskResponse[];
+  tasks: TaskResponse[];
   events: EventResponse[];
   centerDate: string;
 }

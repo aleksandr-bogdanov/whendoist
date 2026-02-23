@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { TaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useUpdateTaskApiV1TasksTaskIdPut,
@@ -44,18 +44,14 @@ function useAttributeUpdate() {
 
   const applyOptimistic = useCallback(
     (taskId: number, field: string, value: number | string | null) => {
-      queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-        getListTasksApiV1TasksGetQueryKey(),
-        (old) =>
-          old?.map((t) => {
-            if (t.id === taskId) return { ...t, [field]: value };
-            return {
-              ...t,
-              subtasks: t.subtasks?.map((st) =>
-                st.id === taskId ? { ...st, [field]: value } : st,
-              ),
-            };
-          }),
+      queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+        old?.map((t) => {
+          if (t.id === taskId) return { ...t, [field]: value };
+          return {
+            ...t,
+            subtasks: t.subtasks?.map((st) => (st.id === taskId ? { ...st, [field]: value } : st)),
+          };
+        }),
       );
     },
     [queryClient],
@@ -64,15 +60,14 @@ function useAttributeUpdate() {
   // Find the current value of a field for a task (top-level or subtask)
   const findCurrentValue = useCallback(
     (taskId: number, field: string): number | string | null => {
-      const tasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
-        getListTasksApiV1TasksGetQueryKey(),
-      );
+      const tasks = queryClient.getQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey());
       if (!tasks) return null;
       for (const t of tasks) {
-        if (t.id === taskId) return (t as Record<string, unknown>)[field] as number | string | null;
+        if (t.id === taskId)
+          return (t as unknown as Record<string, unknown>)[field] as number | string | null;
         for (const st of t.subtasks ?? []) {
           if (st.id === taskId)
-            return (st as Record<string, unknown>)[field] as number | string | null;
+            return (st as unknown as Record<string, unknown>)[field] as number | string | null;
         }
       }
       return null;
@@ -87,7 +82,7 @@ function useAttributeUpdate() {
       value: number | string | null,
     ) => {
       const previousValue = findCurrentValue(taskId, field);
-      const previous = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      const previous = queryClient.getQueryData<TaskResponse[]>(
         getListTasksApiV1TasksGetQueryKey(),
       );
 

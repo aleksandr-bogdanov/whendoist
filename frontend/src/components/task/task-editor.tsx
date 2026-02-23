@@ -2,12 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type {
-  AppRoutersTasksTaskResponse,
-  DomainResponse,
-  TaskCreate,
-  TaskUpdate,
-} from "@/api/model";
+import type { DomainResponse, TaskCreate, TaskResponse, TaskUpdate } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   useBatchCompleteInstancesApiV1InstancesBatchCompletePost,
@@ -63,9 +58,9 @@ import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
 interface TaskEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  task?: AppRoutersTasksTaskResponse | null;
+  task?: TaskResponse | null;
   domains: DomainResponse[];
-  parentTasks?: AppRoutersTasksTaskResponse[];
+  parentTasks?: TaskResponse[];
 }
 
 export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: TaskEditorProps) {

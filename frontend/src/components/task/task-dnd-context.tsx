@@ -27,7 +27,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, InstanceResponse, SubtaskResponse } from "@/api/model";
+import type { InstanceResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   useScheduleInstanceApiV1InstancesInstanceIdSchedulePut,
@@ -45,7 +45,7 @@ import { TaskDragOverlay } from "./task-drag-overlay";
 // --- DnD state context (shared with TaskItem for drop-target validation) ---
 interface DndStateContextValue {
   activeId: UniqueIdentifier | null;
-  activeTask: AppRoutersTasksTaskResponse | null;
+  activeTask: TaskResponse | null;
 }
 
 const DndStateCtx = createContext<DndStateContextValue>({
@@ -59,7 +59,7 @@ export function useDndState() {
 
 export interface DragState {
   activeId: UniqueIdentifier | null;
-  activeTask: AppRoutersTasksTaskResponse | null;
+  activeTask: TaskResponse | null;
   activeInstance: InstanceResponse | null;
   overId: UniqueIdentifier | null;
   overType:
@@ -74,7 +74,7 @@ export interface DragState {
 }
 
 interface TaskDndContextProps {
-  tasks: AppRoutersTasksTaskResponse[];
+  tasks: TaskResponse[];
   children: React.ReactNode;
 }
 
@@ -83,10 +83,10 @@ interface TaskDndContextProps {
  * For top-level tasks, updates directly. For subtasks, updates within the parent's subtasks array.
  */
 function updateTaskOrSubtaskInCache(
-  tasks: AppRoutersTasksTaskResponse[],
+  tasks: TaskResponse[],
   taskId: number,
   updates: Record<string, unknown>,
-): AppRoutersTasksTaskResponse[] {
+): TaskResponse[] {
   // Try top-level first
   const isTopLevel = tasks.some((t) => t.id === taskId);
   if (isTopLevel) {
@@ -191,7 +191,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   );
 
   const findTask = useCallback(
-    (id: UniqueIdentifier): AppRoutersTasksTaskResponse | null => {
+    (id: UniqueIdentifier): TaskResponse | null => {
       const numId = parseTaskId(id);
       // Search top-level tasks and their subtasks
       for (const task of tasks) {
@@ -204,7 +204,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 ...st,
                 parent_id: task.id,
                 subtasks: [],
-              } as unknown as AppRoutersTasksTaskResponse;
+              } as unknown as TaskResponse;
             }
           }
         }
@@ -488,19 +488,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         // No-op if already anytime on same date
         if (prevDate === dateStr && !prevTime) return;
 
-        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
           getListTasksApiV1TasksGetQueryKey(),
         );
-        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-          (old) => {
-            if (!old) return old;
-            return updateTaskOrSubtaskInCache(old, activeId, {
-              scheduled_date: dateStr,
-              scheduled_time: null,
-            });
-          },
-        );
+        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+          if (!old) return old;
+          return updateTaskOrSubtaskInCache(old, activeId, {
+            scheduled_date: dateStr,
+            scheduled_time: null,
+          });
+        });
 
         updateTask.mutate(
           {
@@ -557,19 +554,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
         if (prevDate === dateStr && !prevTime) return;
 
-        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
           getListTasksApiV1TasksGetQueryKey(),
         );
-        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-          (old) => {
-            if (!old) return old;
-            return updateTaskOrSubtaskInCache(old, activeId, {
-              scheduled_date: dateStr,
-              scheduled_time: null,
-            });
-          },
-        );
+        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+          if (!old) return old;
+          return updateTaskOrSubtaskInCache(old, activeId, {
+            scheduled_date: dateStr,
+            scheduled_time: null,
+          });
+        });
 
         const taskTitle = task?.title ?? "Task";
         updateTask.mutate(
@@ -583,7 +577,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 action: {
                   label: "Undo",
                   onClick: () => {
-                    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
+                    queryClient.setQueryData<TaskResponse[]>(
                       getListTasksApiV1TasksGetQueryKey(),
                       (old) =>
                         old?.map((t) =>
@@ -678,19 +672,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         if (isReschedule && prevDate === dateStr && prevTime === scheduledTime) return;
 
         // Optimistic update
-        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
           getListTasksApiV1TasksGetQueryKey(),
         );
-        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-          (old) => {
-            if (!old) return old;
-            return updateTaskOrSubtaskInCache(old, activeId, {
-              scheduled_date: dateStr,
-              scheduled_time: scheduledTime,
-            });
-          },
-        );
+        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+          if (!old) return old;
+          return updateTaskOrSubtaskInCache(old, activeId, {
+            scheduled_date: dateStr,
+            scheduled_time: scheduledTime,
+          });
+        });
 
         updateTask.mutate(
           {
@@ -781,30 +772,27 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         // Promote subtask — only on explicit promote zones (bar/gaps), not the general container
         if (task?.parent_id != null && overId !== "task-list-drop") {
           const prevParentId = task.parent_id;
-          const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+          const previousTasks = queryClient.getQueryData<TaskResponse[]>(
             getListTasksApiV1TasksGetQueryKey(),
           );
 
           // Optimistic: remove from parent's subtasks, add as top-level task
-          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-            getListTasksApiV1TasksGetQueryKey(),
-            (old) => {
-              if (!old) return old;
-              const promoted: AppRoutersTasksTaskResponse = {
-                ...task,
-                parent_id: null,
-                subtasks: [],
-              };
-              return [
-                ...old.map((t) =>
-                  t.id === prevParentId
-                    ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== activeId) }
-                    : t,
-                ),
-                promoted,
-              ];
-            },
-          );
+          queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+            if (!old) return old;
+            const promoted: TaskResponse = {
+              ...task,
+              parent_id: null,
+              subtasks: [],
+            };
+            return [
+              ...old.map((t) =>
+                t.id === prevParentId
+                  ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== activeId) }
+                  : t,
+              ),
+              promoted,
+            ];
+          });
 
           updateTask.mutate(
             { taskId: activeId, data: { parent_id: null } },
@@ -851,19 +839,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           const prevDate = task.scheduled_date;
           const prevTime = task.scheduled_time ?? null;
 
-          const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+          const previousTasks = queryClient.getQueryData<TaskResponse[]>(
             getListTasksApiV1TasksGetQueryKey(),
           );
-          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-            getListTasksApiV1TasksGetQueryKey(),
-            (old) => {
-              if (!old) return old;
-              return updateTaskOrSubtaskInCache(old, activeId, {
-                scheduled_date: null,
-                scheduled_time: null,
-              });
-            },
-          );
+          queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+            if (!old) return old;
+            return updateTaskOrSubtaskInCache(old, activeId, {
+              scheduled_date: null,
+              scheduled_time: null,
+            });
+          });
 
           updateTask.mutate(
             {
@@ -918,30 +903,27 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         if (!task || task.parent_id == null) return; // Only subtasks can be promoted
 
         const prevParentId = task.parent_id;
-        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
           getListTasksApiV1TasksGetQueryKey(),
         );
 
         // Optimistic: remove from parent's subtasks, add as top-level task
-        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-          (old) => {
-            if (!old) return old;
-            const promoted: AppRoutersTasksTaskResponse = {
-              ...task,
-              parent_id: null,
-              subtasks: [],
-            };
-            return [
-              ...old.map((t) =>
-                t.id === prevParentId
-                  ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== activeId) }
-                  : t,
-              ),
-              promoted,
-            ];
-          },
-        );
+        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+          if (!old) return old;
+          const promoted: TaskResponse = {
+            ...task,
+            parent_id: null,
+            subtasks: [],
+          };
+          return [
+            ...old.map((t) =>
+              t.id === prevParentId
+                ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== activeId) }
+                : t,
+            ),
+            promoted,
+          ];
+        });
 
         updateTask.mutate(
           { taskId: activeId, data: { parent_id: null } },
@@ -1011,7 +993,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         }
 
         const prevParentId = activeTask.parent_id;
-        const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
           getListTasksApiV1TasksGetQueryKey(),
         );
 
@@ -1029,31 +1011,28 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           position: 9999,
         };
 
-        queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-          (old) => {
-            if (!old) return old;
-            return old
-              .filter((t) => t.id !== activeTask.id) // Remove from top-level
-              .map((t) => {
-                // Remove from old parent's subtasks (if reparenting between parents)
-                if (prevParentId && t.id === prevParentId) {
-                  return {
-                    ...t,
-                    subtasks: t.subtasks?.filter((st) => st.id !== activeTask.id),
-                  };
-                }
-                // Add to new parent's subtasks
-                if (t.id === overTaskId) {
-                  return {
-                    ...t,
-                    subtasks: [...(t.subtasks ?? []), newSubtask],
-                  };
-                }
-                return t;
-              });
-          },
-        );
+        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+          if (!old) return old;
+          return old
+            .filter((t) => t.id !== activeTask.id) // Remove from top-level
+            .map((t) => {
+              // Remove from old parent's subtasks (if reparenting between parents)
+              if (prevParentId && t.id === prevParentId) {
+                return {
+                  ...t,
+                  subtasks: t.subtasks?.filter((st) => st.id !== activeTask.id),
+                };
+              }
+              // Add to new parent's subtasks
+              if (t.id === overTaskId) {
+                return {
+                  ...t,
+                  subtasks: [...(t.subtasks ?? []), newSubtask],
+                };
+              }
+              return t;
+            });
+        });
 
         // Auto-expand the target parent
         useUIStore.getState().expandSubtask(overTaskId);
@@ -1211,7 +1190,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 {
                   ...dragState.activeInstance,
                   title: dragState.activeInstance.task_title,
-                } as unknown as AppRoutersTasksTaskResponse
+                } as unknown as TaskResponse
               }
             />
           </div>

@@ -10,7 +10,7 @@
  */
 
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
+import type { DomainResponse, TaskResponse } from "@/api/model";
 import { decrypt, encrypt, looksEncrypted } from "@/lib/crypto";
 import { useCryptoStore } from "@/stores/crypto-store";
 
@@ -35,9 +35,9 @@ async function decryptFieldIfNeeded(
  * Returns [decryptedTask, failureCount].
  */
 export async function decryptTask(
-  task: AppRoutersTasksTaskResponse,
+  task: TaskResponse,
   key: CryptoKey,
-): Promise<[AppRoutersTasksTaskResponse, number]> {
+): Promise<[TaskResponse, number]> {
   let failures = 0;
   const [[title, titleFailed], [description, descFailed]] = await Promise.all([
     decryptFieldIfNeeded(task.title, key),
@@ -110,9 +110,7 @@ export function useCrypto() {
     /**
      * Decrypt an array of tasks. Returns as-is if encryption not active.
      */
-    decryptTasks: async (
-      tasks: AppRoutersTasksTaskResponse[],
-    ): Promise<AppRoutersTasksTaskResponse[]> => {
+    decryptTasks: async (tasks: TaskResponse[]): Promise<TaskResponse[]> => {
       if (!canDecrypt || !derivedKey) return tasks;
       const results = await Promise.all(tasks.map((t) => decryptTask(t, derivedKey)));
       const totalFailures = results.reduce((sum, [, f]) => sum + f, 0);
@@ -123,9 +121,7 @@ export function useCrypto() {
     /**
      * Decrypt a single task. Returns as-is if encryption not active.
      */
-    decryptTask: async (
-      task: AppRoutersTasksTaskResponse,
-    ): Promise<AppRoutersTasksTaskResponse> => {
+    decryptTask: async (task: TaskResponse): Promise<TaskResponse> => {
       if (!canDecrypt || !derivedKey) return task;
       const [decrypted, failures] = await decryptTask(task, derivedKey);
       reportFailures(failures);

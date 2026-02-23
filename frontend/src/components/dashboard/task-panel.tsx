@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AppRoutersTasksTaskResponse, DomainResponse } from "@/api/model";
+import type { DomainResponse, TaskResponse } from "@/api/model";
 import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import { StickyDomainHeader } from "@/components/mobile/sticky-domain";
 import { CompletedSection } from "@/components/task/completed-section";
@@ -22,12 +22,12 @@ import { SettingsPanel } from "./settings-panel";
 import { SortControls } from "./sort-controls";
 
 interface TaskPanelProps {
-  tasks: AppRoutersTasksTaskResponse[] | undefined;
+  tasks: TaskResponse[] | undefined;
   domains: DomainResponse[] | undefined;
   isLoading: boolean;
   onNewTask?: () => void;
   onQuickAdd?: () => void;
-  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
+  onEditTask?: (task: TaskResponse) => void;
 }
 
 export function TaskPanel({
@@ -54,7 +54,7 @@ export function TaskPanel({
   });
   const canDecrypt = encryptionEnabled && isUnlocked && derivedKey !== null;
 
-  const [decryptedTasks, setDecryptedTasks] = useState<AppRoutersTasksTaskResponse[]>([]);
+  const [decryptedTasks, setDecryptedTasks] = useState<TaskResponse[]>([]);
   const [decryptedDomains, setDecryptedDomains] = useState<DomainResponse[]>([]);
 
   // Decrypt tasks when data or crypto state changes
@@ -69,7 +69,7 @@ export function TaskPanel({
     }
     let cancelled = false;
     Promise.all(tasks.map((t) => decryptTask(t, derivedKey))).then((result) => {
-      if (!cancelled) setDecryptedTasks(result);
+      if (!cancelled) setDecryptedTasks(result.map(([t]) => t));
     });
     return () => {
       cancelled = true;
@@ -87,7 +87,7 @@ export function TaskPanel({
     }
     let cancelled = false;
     Promise.all(domains.map((d) => decryptDomain(d, derivedKey))).then((result) => {
-      if (!cancelled) setDecryptedDomains(result);
+      if (!cancelled) setDecryptedDomains(result.map(([d]) => d));
     });
     return () => {
       cancelled = true;

@@ -2,7 +2,7 @@ import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { keepPreviousData } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
+import type { InstanceResponse, TaskResponse } from "@/api/model";
 import {
   useGetCalendarsApiV1CalendarsGet,
   useGetEventsApiV1EventsGet,
@@ -34,8 +34,8 @@ const CENTER_INDEX = 2; // 5 panels: 0, 1, [2], 3, 4
 const PANEL_OFFSETS = [-2, -1, 0, 1, 2];
 
 interface CalendarPanelProps {
-  tasks: AppRoutersTasksTaskResponse[];
-  onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
+  tasks: TaskResponse[];
+  onTaskClick?: (task: TaskResponse) => void;
 }
 
 export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
@@ -112,7 +112,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
 
   // Extract ALL subtasks as synthetic task-like objects (for phantom card duration lookup + display)
   const allSubtasksAsTasks = useMemo(() => {
-    const result: AppRoutersTasksTaskResponse[] = [];
+    const result: TaskResponse[] = [];
     for (const task of safeAllStatusTasks) {
       if (!task.subtasks) continue;
       for (const st of task.subtasks) {
@@ -126,7 +126,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           recurrence_rule: null,
           completed_at: st.status === "completed" ? "" : null,
           subtasks: [],
-        } as unknown as AppRoutersTasksTaskResponse);
+        } as unknown as TaskResponse);
       }
     }
     return result;
@@ -597,10 +597,10 @@ function AnytimeSection({
   onTaskClick,
 }: {
   displayDate: string;
-  anytimeTasks: AppRoutersTasksTaskResponse[];
+  anytimeTasks: TaskResponse[];
   anytimeInstances: InstanceResponse[];
-  allTasks: AppRoutersTasksTaskResponse[];
-  onTaskClick?: (task: AppRoutersTasksTaskResponse) => void;
+  allTasks: TaskResponse[];
+  onTaskClick?: (task: TaskResponse) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `anytime-drop-${displayDate}`,
@@ -609,7 +609,7 @@ function AnytimeSection({
 
   // Build a lookup map for parent tasks (for instance pills)
   const taskMap = useMemo(() => {
-    const map = new Map<number, AppRoutersTasksTaskResponse>();
+    const map = new Map<number, TaskResponse>();
     for (const t of allTasks) map.set(t.id, t);
     return map;
   }, [allTasks]);

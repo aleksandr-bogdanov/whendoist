@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Check, Pencil, Plus, SkipForward, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
+import type { InstanceResponse, TaskResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey,
@@ -24,10 +24,10 @@ import { BottomSheet } from "./bottom-sheet";
 interface TaskActionSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  task: AppRoutersTasksTaskResponse | null;
-  onEdit?: (task: AppRoutersTasksTaskResponse) => void;
-  onSchedule?: (task: AppRoutersTasksTaskResponse) => void;
-  onAddSubtask?: (task: AppRoutersTasksTaskResponse) => void;
+  task: TaskResponse | null;
+  onEdit?: (task: TaskResponse) => void;
+  onSchedule?: (task: TaskResponse) => void;
+  onAddSubtask?: (task: TaskResponse) => void;
   /** Pending instance for recurring tasks — enables skip/complete actions on the correct instance */
   pendingInstance?: InstanceResponse;
 }
@@ -143,29 +143,26 @@ export function TaskActionSheet({
       return;
     }
 
-    const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
       getListTasksApiV1TasksGetQueryKey(),
     );
 
-    queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-      (old) => {
-        if (!old) return old;
-        return old.map((t) =>
-          t.id === task.id
-            ? {
-                ...t,
-                status: isCompleted ? ("pending" as const) : ("completed" as const),
-                completed_at: isCompleted ? null : new Date().toISOString(),
-                subtasks: t.subtasks?.map((st) => ({
-                  ...st,
-                  status: isCompleted ? "pending" : "completed",
-                })),
-              }
-            : t,
-        );
-      },
-    );
+    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+      if (!old) return old;
+      return old.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              status: isCompleted ? ("pending" as const) : ("completed" as const),
+              completed_at: isCompleted ? null : new Date().toISOString(),
+              subtasks: t.subtasks?.map((st) => ({
+                ...st,
+                status: isCompleted ? "pending" : "completed",
+              })),
+            }
+          : t,
+      );
+    });
 
     haptic(isCompleted ? "light" : "success");
 

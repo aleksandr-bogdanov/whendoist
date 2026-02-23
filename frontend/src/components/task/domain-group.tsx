@@ -4,7 +4,7 @@ import { ChevronDown, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRoutersTasksTaskResponse, DomainResponse, TaskCreate } from "@/api/model";
+import type { DomainResponse, TaskCreate, TaskResponse } from "@/api/model";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
@@ -49,9 +49,9 @@ function TaskInsertionZone({ id, isActive }: { id: string; isActive: boolean }) 
 
 interface DomainGroupProps {
   domain: DomainResponse | null;
-  tasks: AppRoutersTasksTaskResponse[];
+  tasks: TaskResponse[];
   onSelectTask?: (taskId: number) => void;
-  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
+  onEditTask?: (task: TaskResponse) => void;
 }
 
 export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainGroupProps) {
@@ -93,9 +93,8 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
       {
         onSuccess: (created) => {
           // Append real task to cache — stable key, no flicker
-          queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-            getListTasksApiV1TasksGetQueryKey(),
-            (old) => (old ? [...old, created] : [created]),
+          queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+            old ? [...old, created] : [created],
           );
           toast.success(`Created "${trimmed}"`, {
             id: `create-${created.id}`,
@@ -123,7 +122,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
 
   // Action sheet state
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
-  const [actionSheetTask, setActionSheetTask] = useState<AppRoutersTasksTaskResponse | null>(null);
+  const [actionSheetTask, setActionSheetTask] = useState<TaskResponse | null>(null);
 
   const domainKey = domain?.id ?? 0;
   const isExpanded = !collapsedDomains.has(domainKey);
@@ -133,31 +132,28 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
   };
 
   const handleSwipeComplete = useCallback(
-    (task: AppRoutersTasksTaskResponse) => {
+    (task: TaskResponse) => {
       const isCompleted = task.status === "completed" || !!task.completed_at;
-      const previousTasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+      const previousTasks = queryClient.getQueryData<TaskResponse[]>(
         getListTasksApiV1TasksGetQueryKey(),
       );
 
-      queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
-        getListTasksApiV1TasksGetQueryKey(),
-        (old) => {
-          if (!old) return old;
-          return old.map((t) =>
-            t.id === task.id
-              ? {
-                  ...t,
-                  status: isCompleted ? ("pending" as const) : ("completed" as const),
-                  completed_at: isCompleted ? null : new Date().toISOString(),
-                  subtasks: t.subtasks?.map((st) => ({
-                    ...st,
-                    status: isCompleted ? "pending" : "completed",
-                  })),
-                }
-              : t,
-          );
-        },
-      );
+      queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+        if (!old) return old;
+        return old.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: isCompleted ? ("pending" as const) : ("completed" as const),
+                completed_at: isCompleted ? null : new Date().toISOString(),
+                subtasks: t.subtasks?.map((st) => ({
+                  ...st,
+                  status: isCompleted ? "pending" : "completed",
+                })),
+              }
+            : t,
+        );
+      });
 
       toggleComplete.mutate(
         { taskId: task.id, data: null },
@@ -193,7 +189,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
   );
 
   const handleSwipeSchedule = useCallback(
-    (task: AppRoutersTasksTaskResponse) => {
+    (task: TaskResponse) => {
       haptic("light");
       selectTask(task.id);
       setMobileTab("calendar");
@@ -201,13 +197,13 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
     [haptic, selectTask, setMobileTab],
   );
 
-  const handleLongPress = useCallback((task: AppRoutersTasksTaskResponse) => {
+  const handleLongPress = useCallback((task: TaskResponse) => {
     setActionSheetTask(task);
     setActionSheetOpen(true);
   }, []);
 
   const handleScheduleFromSheet = useCallback(
-    (task: AppRoutersTasksTaskResponse) => {
+    (task: TaskResponse) => {
       selectTask(task.id);
       setMobileTab("calendar");
     },

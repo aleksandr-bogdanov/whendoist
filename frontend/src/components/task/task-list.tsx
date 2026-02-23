@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { ArrowUpFromDot } from "lucide-react";
 import { motion } from "motion/react";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { TaskResponse } from "@/api/model";
 import type { DomainGroup as DomainGroupType } from "@/lib/task-utils";
 import { DomainGroup } from "./domain-group";
 import { useDndState } from "./task-dnd-context";
@@ -9,7 +9,7 @@ import { useDndState } from "./task-dnd-context";
 interface TaskListProps {
   groups: DomainGroupType[];
   onSelectTask?: (taskId: number) => void;
-  onEditTask?: (task: AppRoutersTasksTaskResponse) => void;
+  onEditTask?: (task: TaskResponse) => void;
 }
 
 export function TaskList({ groups, onSelectTask, onEditTask }: TaskListProps) {

@@ -1,11 +1,11 @@
 import { Clock, CornerDownRight } from "lucide-react";
-import type { AppRoutersTasksTaskResponse } from "@/api/model";
+import type { TaskResponse } from "@/api/model";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration, IMPACT_COLORS } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 
 interface TaskDragOverlayProps {
-  task: AppRoutersTasksTaskResponse;
+  task: TaskResponse;
   isReparenting?: boolean;
 }
 
