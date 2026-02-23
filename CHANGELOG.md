@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.78 — 2026-02-23
+
+### Fix: Mask encrypted task content in GCal sync
+- When E2E encryption is enabled, GCal sync now uses "Encrypted task" as the event title and clears the description instead of pushing ciphertext to Google Calendar
+- Event timing (create/update/delete, scheduled dates and times) continues to sync normally
+- Applies to single task sync, instance sync, and bulk sync operations
+
+
+
 ## v0.54.77 — 2026-02-23
 
 ### Fix: Encryption toggle completeness and backup metadata
