@@ -128,7 +128,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 function SettingsPage() {
   return (
     <ScrollArea className="h-full">
-      <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
+      <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8 pb-nav-safe md:pb-8">
         <h1 className="text-2xl font-semibold">Settings</h1>
         <ThemeSection />
         <Separator />

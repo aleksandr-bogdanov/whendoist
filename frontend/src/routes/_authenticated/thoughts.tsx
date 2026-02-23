@@ -252,7 +252,7 @@ function ThoughtsPage() {
       </ScrollArea>
 
       {/* Input area */}
-      <div className="border-t px-4 py-3">
+      <div className="border-t px-4 py-3 pb-nav-safe md:pb-3">
         <div className="mx-auto flex max-w-xl gap-2">
           <Input
             value={input}

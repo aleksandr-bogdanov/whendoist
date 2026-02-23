@@ -55,7 +55,7 @@ export function MobileNav() {
         <button
           type="button"
           onClick={() => setQuickAddOpen(true)}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md -mt-5 transition-transform active:scale-95"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[var(--shadow-cta)] transition-transform active:scale-95"
         >
           <Plus className="h-5 w-5" />
         </button>
