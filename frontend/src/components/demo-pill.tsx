@@ -33,7 +33,7 @@ export function DemoPill() {
   };
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 md:bottom-4">
+    <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.75rem)] right-4 z-50 md:bottom-4">
       {expanded ? (
         <div className="flex items-center gap-2 rounded-full bg-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
           <button

@@ -1,6 +1,6 @@
 [project]
 name = "whendoist"
-version = "0.54.59"
+version = "0.54.60"
 description = "Task scheduling app - WHEN do I do my tasks?"
 readme = "README.md"
 requires-python = ">=3.13"

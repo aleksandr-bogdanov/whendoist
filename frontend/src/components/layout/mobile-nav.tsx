@@ -36,8 +36,18 @@ export function MobileNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-md bg-background/80 md:hidden">
-      <div className="flex h-14 items-center justify-around">
+    <nav
+      className={cn(
+        "fixed z-50 md:hidden",
+        "left-[var(--nav-pill-mx)] right-[var(--nav-pill-mx)]",
+        "bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb))]",
+        "rounded-[var(--nav-pill-radius)]",
+        "backdrop-blur-xl bg-background/70",
+        "border border-border/50",
+        "shadow-lg shadow-black/[0.08] dark:shadow-black/25",
+      )}
+    >
+      <div className="flex h-[var(--nav-pill-height)] items-center justify-around">
         {leftNav.map(renderLink)}
         <button
           type="button"

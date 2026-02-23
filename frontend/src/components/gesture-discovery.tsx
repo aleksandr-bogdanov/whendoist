@@ -77,7 +77,7 @@ export function GestureDiscovery() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-20 left-4 right-4 z-50 rounded-xl bg-foreground/90 px-4 py-3 text-center text-sm text-background shadow-lg backdrop-blur-sm"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.75rem)] left-4 right-4 z-50 rounded-xl bg-foreground/90 px-4 py-3 text-center text-sm text-background shadow-lg backdrop-blur-sm"
           onClick={() => setShowHint(false)}
         >
           Swipe right to complete, left to schedule. Long-press for more.
