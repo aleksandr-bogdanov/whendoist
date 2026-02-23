@@ -22,21 +22,28 @@ import { cn } from "@/lib/utils";
 
 // ── Shared optimistic mutation hook ──────────────────────────────
 
+const FIELD_LABELS: Record<string, string> = {
+  impact: "Impact",
+  clarity: "Clarity",
+  duration_minutes: "Duration",
+};
+
+function formatFieldValue(
+  field: "impact" | "clarity" | "duration_minutes",
+  value: number | string | null,
+): string {
+  if (field === "impact") return IMPACT_LABELS[value as number] ?? "Min";
+  if (field === "clarity") return CLARITY_LABELS[value as string] ?? "Normal";
+  if (field === "duration_minutes") return value ? formatDuration(value as number) : "none";
+  return String(value);
+}
+
 function useAttributeUpdate() {
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
 
-  return useCallback(
-    (
-      taskId: number,
-      field: "impact" | "clarity" | "duration_minutes",
-      value: number | string | null,
-    ) => {
-      const previous = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
-        getListTasksApiV1TasksGetQueryKey(),
-      );
-
-      // Optimistic update — handles both top-level tasks and subtasks
+  const applyOptimistic = useCallback(
+    (taskId: number, field: string, value: number | string | null) => {
       queryClient.setQueryData<AppRoutersTasksTaskResponse[]>(
         getListTasksApiV1TasksGetQueryKey(),
         (old) =>
@@ -50,6 +57,41 @@ function useAttributeUpdate() {
             };
           }),
       );
+    },
+    [queryClient],
+  );
+
+  // Find the current value of a field for a task (top-level or subtask)
+  const findCurrentValue = useCallback(
+    (taskId: number, field: string): number | string | null => {
+      const tasks = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+        getListTasksApiV1TasksGetQueryKey(),
+      );
+      if (!tasks) return null;
+      for (const t of tasks) {
+        if (t.id === taskId) return (t as Record<string, unknown>)[field] as number | string | null;
+        for (const st of t.subtasks ?? []) {
+          if (st.id === taskId)
+            return (st as Record<string, unknown>)[field] as number | string | null;
+        }
+      }
+      return null;
+    },
+    [queryClient],
+  );
+
+  return useCallback(
+    (
+      taskId: number,
+      field: "impact" | "clarity" | "duration_minutes",
+      value: number | string | null,
+    ) => {
+      const previousValue = findCurrentValue(taskId, field);
+      const previous = queryClient.getQueryData<AppRoutersTasksTaskResponse[]>(
+        getListTasksApiV1TasksGetQueryKey(),
+      );
+
+      applyOptimistic(taskId, field, value);
 
       updateTask.mutate(
         { taskId, data: { [field]: value } },
@@ -57,6 +99,25 @@ function useAttributeUpdate() {
           onSuccess: () => {
             queryClient.invalidateQueries({
               queryKey: getListTasksApiV1TasksGetQueryKey(),
+            });
+            toast.success(`${FIELD_LABELS[field]} → ${formatFieldValue(field, value)}`, {
+              id: `attr-${field}-${taskId}`,
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  applyOptimistic(taskId, field, previousValue);
+                  updateTask.mutate(
+                    { taskId, data: { [field]: previousValue } },
+                    {
+                      onSuccess: () =>
+                        queryClient.invalidateQueries({
+                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        }),
+                      onError: () => toast.error("Undo failed"),
+                    },
+                  );
+                },
+              },
             });
           },
           onError: () => {
@@ -66,19 +127,18 @@ function useAttributeUpdate() {
         },
       );
     },
-    [queryClient, updateTask],
+    [queryClient, updateTask, applyOptimistic, findCurrentValue],
   );
 }
 
-// ── Pill trigger wrapper (hover reveal + open state) ─────────────
+// ── Pill trigger wrapper (legacy pill shape + hover) ─────────────
 
 const pillTriggerClass =
-  "inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[0.65rem] font-semibold transition-all duration-150 cursor-pointer select-none";
+  "inline-flex items-center justify-center h-5 rounded-full px-2 text-[0.65rem] font-semibold transition-all duration-150 cursor-pointer select-none border border-transparent";
 
-const pillHoverClass =
-  "group-hover:bg-[rgba(109,94,246,0.06)] group-hover:ring-1 group-hover:ring-border";
+const pillHoverClass = "hover:bg-background hover:border-border";
 
-const pillOpenClass = "bg-[rgba(109,94,246,0.10)] ring-1 ring-ring";
+const pillOpenClass = "bg-[rgba(109,94,246,0.10)] border-ring";
 
 // ── Segmented control container ──────────────────────────────────
 
@@ -202,11 +262,7 @@ export function ClarityPill({ taskId, value, disabled }: PillProps) {
             open && pillOpenClass,
             isNormal && "text-muted-foreground/40",
           )}
-          style={
-            isNormal
-              ? undefined
-              : { color, backgroundColor: `var(--${clarity}-tint)`, borderRadius: "9999px" }
-          }
+          style={isNormal ? undefined : { color, backgroundColor: `var(--${clarity}-tint)` }}
           onPointerDown={(e) => e.stopPropagation()}
           aria-label={`Clarity: ${CLARITY_LABELS[clarity] ?? clarity}`}
         >

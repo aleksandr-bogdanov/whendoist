@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.57 — 2026-02-23
+
+### Attribute pills: legacy pill shape + toast with undo
+- Pill triggers use legacy shape (`rounded-full`, `h-5`, `px-2`, transparent border → visible on hover)
+- Each attribute change shows a success toast with Undo action that reverts optimistically
+
 ## v0.54.56 — 2026-02-23
 
 ### Interactive attribute mini-pills
