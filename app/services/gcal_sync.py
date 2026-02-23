@@ -19,6 +19,7 @@ from app.auth.google import TokenRefreshError
 from app.constants import (
     DEFAULT_TIMEZONE,
     GCAL_SYNC_BATCH_DELAY_SECONDS,
+    GCAL_SYNC_ENCRYPTED_PLACEHOLDER,
     GCAL_SYNC_RATE_LIMIT_BACKOFF_BASE,
     GCAL_SYNC_RATE_LIMIT_MAX_RETRIES,
     GCAL_SYNC_RATE_LIMIT_PENALTY_SECONDS,
@@ -184,6 +185,10 @@ class GCalSyncService:
         if not prefs or not prefs.gcal_sync_enabled or not prefs.gcal_sync_calendar_id:
             return
 
+        # Mask encrypted content — keys are client-side only, server sees ciphertext
+        title = GCAL_SYNC_ENCRYPTED_PLACEHOLDER if prefs.encryption_enabled else task.title
+        description = None if prefs.encryption_enabled else task.description
+
         # Resolve effective date (scheduled_date or completed_at for Todoist imports)
         eff_date = _effective_date(task)
         if not eff_date:
@@ -194,8 +199,8 @@ class GCalSyncService:
         is_completed = task.status == "completed"
 
         current_hash = compute_sync_hash(
-            title=task.title,
-            description=task.description,
+            title=title,
+            description=description,
             scheduled_date=eff_date,
             scheduled_time=task.scheduled_time,
             duration_minutes=task.duration_minutes,
@@ -216,8 +221,8 @@ class GCalSyncService:
             return  # Already in sync
 
         event_data = build_event_data(
-            title=task.title,
-            description=task.description,
+            title=title,
+            description=description,
             scheduled_date=eff_date,
             scheduled_time=task.scheduled_time,
             duration_minutes=task.duration_minutes,
@@ -290,6 +295,10 @@ class GCalSyncService:
         if not prefs or not prefs.gcal_sync_enabled or not prefs.gcal_sync_calendar_id:
             return
 
+        # Mask encrypted content
+        title = GCAL_SYNC_ENCRYPTED_PLACEHOLDER if prefs.encryption_enabled else task.title
+        description = None if prefs.encryption_enabled else task.description
+
         # Recurring tasks only sync when they have a specific time
         scheduled_time = task.scheduled_time
         if not scheduled_time:
@@ -300,8 +309,8 @@ class GCalSyncService:
         is_completed = instance.status == "completed"
 
         current_hash = compute_sync_hash(
-            title=task.title,
-            description=task.description,
+            title=title,
+            description=description,
             scheduled_date=instance.instance_date,
             scheduled_time=scheduled_time,
             duration_minutes=task.duration_minutes,
@@ -322,8 +331,8 @@ class GCalSyncService:
             return  # Already in sync
 
         event_data = build_event_data(
-            title=task.title,
-            description=task.description,
+            title=title,
+            description=description,
             scheduled_date=instance.instance_date,
             scheduled_time=scheduled_time,
             duration_minutes=task.duration_minutes,
@@ -467,6 +476,7 @@ class GCalSyncService:
             return {"created": 0, "updated": 0, "deleted": 0, "skipped": 0}
 
         timezone = await self._get_timezone(prefs)
+        encrypted = prefs.encryption_enabled
         stats: dict = {"created": 0, "updated": 0, "deleted": 0, "skipped": 0}
 
         def _check_cancelled() -> bool:
@@ -535,9 +545,11 @@ class GCalSyncService:
                     if not eff_date:
                         continue
                     is_completed = task.status == "completed"
+                    t_title = GCAL_SYNC_ENCRYPTED_PLACEHOLDER if encrypted else task.title
+                    t_desc = None if encrypted else task.description
                     current_hash = compute_sync_hash(
-                        title=task.title,
-                        description=task.description,
+                        title=t_title,
+                        description=t_desc,
                         scheduled_date=eff_date,
                         scheduled_time=task.scheduled_time,
                         duration_minutes=task.duration_minutes,
@@ -555,8 +567,8 @@ class GCalSyncService:
                             continue
                         # Update
                         event_data = build_event_data(
-                            title=task.title,
-                            description=task.description,
+                            title=t_title,
+                            description=t_desc,
                             scheduled_date=eff_date,
                             scheduled_time=task.scheduled_time,
                             duration_minutes=task.duration_minutes,
@@ -597,8 +609,8 @@ class GCalSyncService:
                     else:
                         # Create
                         event_data = build_event_data(
-                            title=task.title,
-                            description=task.description,
+                            title=t_title,
+                            description=t_desc,
                             scheduled_date=eff_date,
                             scheduled_time=task.scheduled_time,
                             duration_minutes=task.duration_minutes,
@@ -653,9 +665,11 @@ class GCalSyncService:
                         continue
 
                     is_completed = instance.status == "completed"
+                    p_title = GCAL_SYNC_ENCRYPTED_PLACEHOLDER if encrypted else parent_task.title
+                    p_desc = None if encrypted else parent_task.description
                     current_hash = compute_sync_hash(
-                        title=parent_task.title,
-                        description=parent_task.description,
+                        title=p_title,
+                        description=p_desc,
                         scheduled_date=instance.instance_date,
                         scheduled_time=scheduled_time,
                         duration_minutes=parent_task.duration_minutes,
@@ -672,8 +686,8 @@ class GCalSyncService:
                             _report()
                             continue
                         event_data = build_event_data(
-                            title=parent_task.title,
-                            description=parent_task.description,
+                            title=p_title,
+                            description=p_desc,
                             scheduled_date=instance.instance_date,
                             scheduled_time=scheduled_time,
                             duration_minutes=parent_task.duration_minutes,
@@ -713,8 +727,8 @@ class GCalSyncService:
                                 logger.warning(f"Failed to update event for instance {instance.id}: {e}")
                     else:
                         event_data = build_event_data(
-                            title=parent_task.title,
-                            description=parent_task.description,
+                            title=p_title,
+                            description=p_desc,
                             scheduled_date=instance.instance_date,
                             scheduled_time=scheduled_time,
                             duration_minutes=parent_task.duration_minutes,
