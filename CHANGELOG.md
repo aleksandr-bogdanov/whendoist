@@ -11,6 +11,7 @@ Development history of Whendoist. Per-patch details in git history.
 - Extended the date-group droppable zone to cover the entire group (header + tasks), not just the header
 - Collision detection already prioritizes date-group over task-drop, so this ensures rescheduling wins
 
+
 ## v0.54.65 — 2026-02-23
 
 ### Fix: Centered FAB + content scrolls behind glass nav
