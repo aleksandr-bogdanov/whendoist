@@ -1086,13 +1086,21 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   // We capture WHERE on the original card the user grabbed (as a 0–1 ratio),
   // then apply that ratio to the pill's actual rendered dimensions so the cursor
   // stays at the same proportional position (grab middle → cursor at pill middle).
-  const grabRatioRef = useRef<{ x: number; y: number } | null>(null);
+  const grabRatioRef = useRef<{
+    x: number;
+    y: number;
+    initialLeft: number;
+    initialTop: number;
+  } | null>(null);
   const overlayContentRef = useRef<HTMLDivElement>(null);
   const overlayModifiers = useMemo<Modifier[]>(
     () => [
       ({ transform, activatorEvent, activeNodeRect }) => {
         if (!activeNodeRect || !activatorEvent) return transform;
-        // Capture grab position as 0–1 ratio of original card (once per drag)
+        // Capture grab position as 0–1 ratio AND freeze activeNodeRect position (once per drag).
+        // activeNodeRect.left/top is LIVE — it shifts when the carousel scrolls during drag,
+        // causing the overlay to jump by exactly one panel width per navigation.
+        // Freezing it at drag start eliminates the jump.
         if (!grabRatioRef.current) {
           let clientX: number;
           let clientY: number;
@@ -1106,6 +1114,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           grabRatioRef.current = {
             x: (clientX - activeNodeRect.left) / (activeNodeRect.width || 1),
             y: (clientY - activeNodeRect.top) / (activeNodeRect.height || 1),
+            initialLeft: activeNodeRect.left,
+            initialTop: activeNodeRect.top,
           };
         }
         // Measure the actual compact pill via firstElementChild (the TaskDragOverlay root).
@@ -1117,13 +1127,14 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         const pillH = pill?.offsetHeight ?? activeNodeRect.height;
         const offsetX = grabRatioRef.current.x * pillW;
         const offsetY = grabRatioRef.current.y * pillH;
-        // Use live pointer position — immune to dnd-kit scroll drift
+        // Use live pointer + frozen initial rect — immune to both scroll drift
+        // and carousel navigation shifting the card's DOM position
         const pointerX = lastPointerRef.current.x;
         const pointerY = lastPointerRef.current.y;
         return {
           ...transform,
-          x: pointerX - activeNodeRect.left - offsetX,
-          y: pointerY - activeNodeRect.top - offsetY,
+          x: pointerX - grabRatioRef.current.initialLeft - offsetX,
+          y: pointerY - grabRatioRef.current.initialTop - offsetY,
         };
       },
     ],

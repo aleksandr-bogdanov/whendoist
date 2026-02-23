@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.59 — 2026-02-23
+
+### Fix: Calendar DnD — drag across days + overlay stability
+- Drag-to-adjacent-day: dragging a task to the left/right edge smoothly slides the carousel to the previous/next day
+- Overlay no longer jumps during day navigation — `activeNodeRect.left/top` frozen at drag start
+- Carousel ignores programmatic scroll events (Arc full-page screenshot compatibility)
+- Drag overlay pill preserves proportional grab position with live pointer tracking
+- Handles both PointerEvent and TouchEvent activator events
+
 ## v0.54.58 — 2026-02-23
 
 ### Fix: Calendar DnD overlay grab offset
