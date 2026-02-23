@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowUpFromLine, CheckCircle, Loader2, RotateCcw, Trash2 } from "lucide-react";
+import { CheckCircle, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type {
@@ -56,6 +56,7 @@ import {
   IMPACT_OPTIONS,
 } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
+import { ParentTaskPicker } from "./parent-task-picker";
 import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
 
 interface TaskEditorProps {
@@ -77,7 +78,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [domainId, setDomainId] = useState<string>("none");
-  const [parentId, setParentId] = useState<string>("none");
   const [impact, setImpact] = useState(4);
   const [clarity, setClarity] = useState("normal");
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
@@ -97,7 +97,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       setTitle(task.title);
       setDescription(task.description ?? "");
       setDomainId(task.domain_id != null ? String(task.domain_id) : "none");
-      setParentId(task.parent_id != null ? String(task.parent_id) : "none");
       setImpact(task.impact);
       setClarity(task.clarity ?? "normal");
       setDurationMinutes(task.duration_minutes);
@@ -114,7 +113,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       setTitle("");
       setDescription("");
       setDomainId("none");
-      setParentId("none");
       setImpact(4);
       setClarity("normal");
       setDurationMinutes(null);
@@ -177,14 +175,12 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     });
 
     const parsedDomainId = domainId !== "none" ? Number(domainId) : null;
-    const parsedParentId = parentId !== "none" ? Number(parentId) : null;
 
     if (isEdit && task) {
       const data: TaskUpdate = {
         title: encrypted.title,
         description: encrypted.description,
         domain_id: parsedDomainId,
-        parent_id: parsedParentId,
         impact,
         clarity,
         duration_minutes: durationMinutes,
@@ -215,7 +211,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         title: encrypted.title!,
         description: encrypted.description,
         domain_id: parsedDomainId,
-        parent_id: parsedParentId,
         impact,
         clarity,
         duration_minutes: durationMinutes,
@@ -315,21 +310,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     );
   };
 
-  const handlePromote = () => {
-    if (!task) return;
-    updateMutation.mutate(
-      { taskId: task.id, data: { parent_id: null } },
-      {
-        onSuccess: () => {
-          invalidateQueries();
-          toast.success("Promoted to top-level task");
-          onOpenChange(false);
-        },
-        onError: () => toast.error("Failed to promote task"),
-      },
-    );
-  };
-
   return (
     <>
       <Sheet open={open} onOpenChange={handleClose}>
@@ -407,31 +387,11 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
               </Select>
             </div>
 
-            {/* Parent task */}
-            {parentTasks && parentTasks.length > 0 && (
+            {/* Parent task (edit mode only — immediate apply with undo) */}
+            {isEdit && task && parentTasks && parentTasks.length > 0 && (
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">Parent Task</Label>
-                <Select
-                  value={parentId}
-                  onValueChange={(v) => {
-                    setParentId(v);
-                    markDirty();
-                  }}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="None (top-level)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None (top-level)</SelectItem>
-                    {parentTasks
-                      .filter((t) => t.id !== task?.id)
-                      .map((t) => (
-                        <SelectItem key={t.id} value={String(t.id)}>
-                          {t.title}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <ParentTaskPicker task={task} parentTasks={parentTasks} domains={domains} />
               </div>
             )}
 
@@ -643,18 +603,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Editor actions: promote / complete */}
             {isEdit && task && (
               <div className="flex gap-2 pt-2 border-t">
-                {task.parent_id != null && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs gap-1"
-                    onClick={handlePromote}
-                    disabled={updateMutation.isPending}
-                  >
-                    <ArrowUpFromLine className="h-3.5 w-3.5" />
-                    Promote to top-level
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   size="sm"

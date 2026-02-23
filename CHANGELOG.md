@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.61 — 2026-02-23
+
+### Feat: Searchable parent task picker with instant apply + undo
+- Replaced dumb `<Select>` dropdown with searchable Popover-based picker (type to filter)
+- Shows domain icons alongside task names for context
+- Changes apply immediately via API (no form save required), matching DnD reparenting behavior
+- Toast shows detailed message ("Made X a subtask of Y") with Undo button
+- Selecting "None (top-level)" promotes subtask with undo — replaces standalone Promote button
+- Edit-mode only; subtask creation on new tasks is via DnD
+
 ## v0.54.60 — 2026-02-23
 
 ### Feat: Apple Glass floating pill bottom navigation
@@ -12,7 +22,6 @@ Development history of Whendoist. Per-patch details in git history.
 - Pill floats above iOS safe area / home indicator — no more touch conflicts
 - `pb-nav-safe` now accounts for safe area inset + pill offset
 - Demo pill and gesture discovery hints repositioned above the floating nav
-
 
 ## v0.54.59 — 2026-02-23
 
