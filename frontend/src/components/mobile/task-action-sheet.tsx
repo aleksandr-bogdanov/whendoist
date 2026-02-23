@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Check, Pencil, SkipForward, Trash2, Undo2 } from "lucide-react";
+import { Calendar, Check, Pencil, Plus, SkipForward, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import type { AppRoutersTasksTaskResponse, InstanceResponse } from "@/api/model";
 import {
@@ -27,6 +27,7 @@ interface TaskActionSheetProps {
   task: AppRoutersTasksTaskResponse | null;
   onEdit?: (task: AppRoutersTasksTaskResponse) => void;
   onSchedule?: (task: AppRoutersTasksTaskResponse) => void;
+  onAddSubtask?: (task: AppRoutersTasksTaskResponse) => void;
   /** Pending instance for recurring tasks — enables skip/complete actions on the correct instance */
   pendingInstance?: InstanceResponse;
 }
@@ -41,6 +42,7 @@ export function TaskActionSheet({
   task,
   onEdit,
   onSchedule,
+  onAddSubtask,
   pendingInstance: pendingInstanceProp,
 }: TaskActionSheetProps) {
   const queryClient = useQueryClient();
@@ -266,6 +268,16 @@ export function TaskActionSheet({
           label="Schedule"
           onClick={handleSchedule}
         />
+        {!task.is_recurring && !isCompleted && task.parent_id == null && (
+          <ActionButton
+            icon={<Plus className="h-5 w-5" />}
+            label="Add subtask"
+            onClick={() => {
+              close();
+              onAddSubtask?.(task);
+            }}
+          />
+        )}
         {task.is_recurring && pendingInstance && (
           <ActionButton
             icon={<SkipForward className="h-5 w-5" />}

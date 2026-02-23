@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.68 — 2026-02-23
+
+### Feat: Quick add subtask
+- Ghost row at the bottom of expanded subtask trees — click to add a subtask inline with rapid sequential adds
+- Hover '+' icon on task rows (desktop) — more subtle for non-parent tasks, auto-expands and focuses the input
+- "Add subtask" in right-click context menu, kebab dropdown menu, and mobile long-press action sheet
+- Works for any non-recurring, non-completed, top-level task
+
+
 ## v0.54.67 — 2026-02-23
 
 ### Fix: Recurring tasks overhaul — 6 bug fixes
