@@ -4,13 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.54.64 — 2026-02-23
+## v0.54.65 — 2026-02-23
 
 ### Fix: Centered FAB + content scrolls behind glass nav
 - FAB (+) button now sits centered inside the pill (YouTube-style, no protrusion)
 - Content scrolls behind the glass nav pill — visible through the frosted blur
 - Bottom padding moved from `<main>` to individual scroll containers
 - Reduced gradient fade on mobile to let glass effect dominate
+
+## v0.54.64 — 2026-02-23
+
+### Fix: Parent picker scroll, ordering, and Thoughts filter
+- Fixed scroll not working inside picker (Sheet's scroll lock blocked portaled Popover — replaced with inline dropdown)
+- Reordered: parents same-domain → parents other → same-domain → other
+- Excluded Thoughts (no-domain tasks) from parent candidates
 
 ## v0.54.63 — 2026-02-23
 
