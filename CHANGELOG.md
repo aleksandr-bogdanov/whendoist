@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.62 — 2026-02-23
+
+### Fix: Parent picker smart ordering + subtask count badges
+- Tasks with existing subtasks ranked first ("Parents" group)
+- Same-domain tasks ranked second for contextual relevance
+- Subtask count badge (·N) shown next to parent tasks
+- Section labels shown when multiple groups exist (hidden during search)
+
 ## v0.54.61 — 2026-02-23
 
 ### Feat: Searchable parent task picker with instant apply + undo
