@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.55 — 2026-02-23
+
+### Savepoints for IntegrityError handlers + snapshot review comments
+- Replace full `db.rollback()` with `begin_nested()` savepoints in `RecurrenceService.materialize_instances()` and `get_or_create_instance_for_date()` — prevents silent loss of prior work in the caller's transaction on concurrent instance creation
+- Add docstring notes on `PreferencesService.setup_encryption()` and `disable_encryption()` explaining why no `bump_data_version` is needed (encryption metadata and passkeys aren't in snapshot exports)
+
 ## v0.54.54 — 2026-02-23
 
 ### Snapshot scalability — `data_version` change tracking
