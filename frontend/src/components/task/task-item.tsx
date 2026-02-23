@@ -11,6 +11,7 @@ import {
   CornerDownRight,
   EllipsisVertical,
   Pencil,
+  Plus,
   Repeat,
   SkipForward,
   Trash2,
@@ -61,6 +62,7 @@ import {
 } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
+import { SubtaskGhostRow } from "./subtask-ghost-row";
 import { useDndState } from "./task-dnd-context";
 
 interface TaskItemProps {
@@ -78,6 +80,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
     selectTask,
     expandedSubtasks,
     toggleExpandedSubtask,
+    requestSubtaskAdd,
     setMobileTab,
     justUpdatedId,
   } = useUIStore();
@@ -95,6 +98,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
   const isExpanded = expandedSubtasks.has(task.id);
+  const canHaveSubtasks = !task.is_recurring && !isCompleted && task.parent_id == null;
 
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
@@ -588,6 +592,12 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
           Unschedule
         </ContextMenuItem>
       )}
+      {canHaveSubtasks && (
+        <ContextMenuItem onClick={() => requestSubtaskAdd(task.id)}>
+          <Plus className="h-3.5 w-3.5 mr-2" />
+          Add subtask
+        </ContextMenuItem>
+      )}
       <ContextMenuSeparator />
       <ContextMenuItem
         onClick={handleMenuDelete}
@@ -731,6 +741,27 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   </Badge>
                 )}
 
+                {/* Quick add subtask — hover only, desktop */}
+                {canHaveSubtasks && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      requestSubtaskAdd(task.id);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className={cn(
+                      "flex-shrink-0 p-0.5 rounded hover:bg-[rgba(109,94,246,0.06)] relative z-10 transition-opacity",
+                      "opacity-0 group-hover:opacity-100",
+                      "hidden sm:flex",
+                      !hasSubtasks && "group-hover:opacity-50 hover:!opacity-100",
+                    )}
+                    title="Add subtask"
+                  >
+                    <Plus className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                )}
+
                 {/* Recurring indicator */}
                 {task.is_recurring && (
                   <Repeat className="hidden sm:block h-3 w-3 text-muted-foreground flex-shrink-0" />
@@ -843,6 +874,17 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                     Unschedule
                   </DropdownMenuItem>
                 )}
+                {canHaveSubtasks && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      requestSubtaskAdd(task.id);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-2" />
+                    Add subtask
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleMenuDelete}
@@ -886,7 +928,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
 
       {/* Expanded subtasks */}
       <AnimatePresence initial={false}>
-        {hasSubtasks && isExpanded && (
+        {isExpanded && (hasSubtasks || canHaveSubtasks) && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -896,13 +938,15 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
             className="relative"
           >
             {/* Subtask connector line — centered under parent checkbox */}
-            <div
-              className="absolute top-0 bottom-4 border-l-2 border-border/40"
-              style={{ left: `${depth * 24 + 19}px` }}
-            />
+            {hasSubtasks && (
+              <div
+                className="absolute top-0 bottom-4 border-l-2 border-border/40"
+                style={{ left: `${depth * 24 + 19}px` }}
+              />
+            )}
             <SubtaskTree
-              subtasks={task.subtasks!}
-              parentId={task.id}
+              subtasks={task.subtasks ?? []}
+              parentTask={task}
               depth={depth + 1}
               onSelect={onSelect}
               onEdit={onEdit}
@@ -916,25 +960,29 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
 
 interface SubtaskTreeProps {
   subtasks: SubtaskResponse[];
-  parentId: number;
+  parentTask: AppRoutersTasksTaskResponse;
   depth: number;
   onSelect?: (taskId: number) => void;
   onEdit?: (task: AppRoutersTasksTaskResponse) => void;
 }
 
-function SubtaskTree({ subtasks, parentId, depth, onSelect, onEdit }: SubtaskTreeProps) {
+function SubtaskTree({ subtasks, parentTask, depth, onSelect, onEdit }: SubtaskTreeProps) {
+  const canAdd =
+    !parentTask.is_recurring && parentTask.status !== "completed" && !parentTask.completed_at;
+
   return (
     <div>
       {subtasks.map((st) => (
         <SubtaskItem
           key={st.id}
           subtask={st}
-          parentId={parentId}
+          parentId={parentTask.id}
           depth={depth}
           onSelect={onSelect}
           onEdit={onEdit}
         />
       ))}
+      {canAdd && <SubtaskGhostRow parentTask={parentTask} depth={depth} />}
     </div>
   );
 }

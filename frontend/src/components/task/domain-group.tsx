@@ -55,7 +55,8 @@ interface DomainGroupProps {
 }
 
 export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainGroupProps) {
-  const { collapsedDomains, toggleCollapsedDomain, setMobileTab, selectTask } = useUIStore();
+  const { collapsedDomains, toggleCollapsedDomain, setMobileTab, selectTask, requestSubtaskAdd } =
+    useUIStore();
   const { prefersTouch, hasTouch } = useDevice();
   const dndState = useDndState();
   const isSubtaskDrag = dndState.activeId != null && dndState.activeTask?.parent_id != null;
@@ -359,6 +360,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
         task={actionSheetTask}
         onEdit={onEditTask}
         onSchedule={handleScheduleFromSheet}
+        onAddSubtask={(t) => requestSubtaskAdd(t.id)}
       />
     </>
   );
