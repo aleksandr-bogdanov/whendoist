@@ -43,12 +43,36 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
     [currentParent, domains],
   );
 
-  const filteredTasks = useMemo(() => {
+  // Smart ordering: parents first, then same-domain, then rest
+  const taskGroups = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return parentTasks
+    const eligible = parentTasks
       .filter((t) => t.id !== task.id)
       .filter((t) => !q || t.title.toLowerCase().includes(q));
-  }, [parentTasks, task.id, search]);
+
+    const parents: AppRoutersTasksTaskResponse[] = [];
+    const sameDomain: AppRoutersTasksTaskResponse[] = [];
+    const rest: AppRoutersTasksTaskResponse[] = [];
+
+    for (const t of eligible) {
+      if ((t.subtasks?.length ?? 0) > 0) {
+        parents.push(t);
+      } else if (task.domain_id && t.domain_id === task.domain_id) {
+        sameDomain.push(t);
+      } else {
+        rest.push(t);
+      }
+    }
+
+    const groups: { label: string; tasks: AppRoutersTasksTaskResponse[] }[] = [];
+    if (parents.length > 0) groups.push({ label: "Parents", tasks: parents });
+    if (sameDomain.length > 0) groups.push({ label: "Same domain", tasks: sameDomain });
+    if (rest.length > 0) groups.push({ label: "Other", tasks: rest });
+    return groups;
+  }, [parentTasks, task.id, task.domain_id, search]);
+
+  const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
+  const showLabels = !search && taskGroups.length > 1;
 
   const handleSelect = (newParentId: number | null) => {
     if (newParentId === currentParentId) {
@@ -297,27 +321,43 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
             None (top-level)
           </button>
 
-          {filteredTasks.length > 0 && <div className="h-px bg-border mx-2 my-1" />}
+          {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
 
-          {filteredTasks.map((t) => {
-            const domain = t.domain_id ? domains.find((d) => d.id === t.domain_id) : null;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                className={cn(
-                  "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer flex items-center gap-1.5",
-                  currentParentId === t.id && "bg-accent font-medium",
-                )}
-                onClick={() => handleSelect(t.id)}
-              >
-                {domain?.icon && <span className="shrink-0">{domain.icon}</span>}
-                <span className="truncate">{t.title}</span>
-              </button>
-            );
-          })}
+          {taskGroups.map((group, gi) => (
+            <div key={group.label}>
+              {gi > 0 && <div className="h-px bg-border mx-2 my-1" />}
+              {showLabels && (
+                <div className="px-3 pt-1.5 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  {group.label}
+                </div>
+              )}
+              {group.tasks.map((t) => {
+                const domain = t.domain_id ? domains.find((d) => d.id === t.domain_id) : null;
+                const subtaskCount = t.subtasks?.length ?? 0;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={cn(
+                      "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer flex items-center gap-1.5",
+                      currentParentId === t.id && "bg-accent font-medium",
+                    )}
+                    onClick={() => handleSelect(t.id)}
+                  >
+                    {domain?.icon && <span className="shrink-0">{domain.icon}</span>}
+                    <span className="truncate">{t.title}</span>
+                    {subtaskCount > 0 && (
+                      <span className="shrink-0 text-[10px] text-muted-foreground ml-auto">
+                        ·{subtaskCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
 
-          {filteredTasks.length === 0 && search && (
+          {totalFiltered === 0 && search && (
             <div className="px-3 py-2 text-sm text-muted-foreground">No matching tasks</div>
           )}
         </div>
