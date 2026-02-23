@@ -74,9 +74,10 @@ import {
   useUpdatePreferencesApiV1PreferencesPut,
 } from "@/api/queries/preferences/preferences";
 import {
+  getGetAllContentApiV1TasksAllContentGetQueryKey,
   getListTasksApiV1TasksGetQueryKey,
   useBatchUpdateTasksApiV1TasksBatchUpdatePost,
-  useListTasksApiV1TasksGet,
+  useGetAllContentApiV1TasksAllContentGet,
 } from "@/api/queries/tasks/tasks";
 import {
   getGetWizardStatusApiV1WizardStatusGetQueryKey,
@@ -542,8 +543,8 @@ function EncryptionSection() {
   const passkeysQuery = useListPasskeysApiV1PasskeysGet();
   const deletePasskeyMutation = useDeletePasskeyApiV1PasskeysPasskeyIdDelete();
 
-  const tasksQuery = useListTasksApiV1TasksGet();
-  const domainsQuery = useListDomainsApiV1DomainsGet();
+  // Use /all-content endpoint to get ALL tasks (including subtasks, completed, archived)
+  const allContentQuery = useGetAllContentApiV1TasksAllContentGet();
   const batchTasks = useBatchUpdateTasksApiV1TasksBatchUpdatePost();
   const batchDomains = useBatchUpdateDomainsApiV1DomainsBatchUpdatePost();
 
@@ -582,24 +583,22 @@ function EncryptionSection() {
       await setupMutation.mutateAsync({ data: { salt, test_value: testValue } });
 
       // Encrypt all existing task titles/descriptions and domain names
-      const tasks = (tasksQuery.data ?? []) as Array<{
-        id: number;
-        title: string;
-        description: string | null;
-      }>;
-      const domains = (domainsQuery.data ?? []) as Array<{ id: number; name: string }>;
+      // Uses /all-content which returns ALL tasks (subtasks, completed, archived)
+      const allContent = allContentQuery.data;
+      const tasks: TaskContentData[] = (allContent?.tasks ?? []).map((t) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description ?? null,
+      }));
+      const domains: DomainContentData[] = (allContent?.domains ?? []).map((d) => ({
+        id: d.id,
+        name: d.name,
+      }));
 
       const key = (await import("@/lib/crypto")).getStoredKey;
       const storedKey = await key();
       if (storedKey) {
-        const taskData: TaskContentData[] = tasks.map((t) => ({
-          id: t.id,
-          title: t.title,
-          description: t.description,
-        }));
-        const domainData: DomainContentData[] = domains.map((d) => ({ id: d.id, name: d.name }));
-
-        const encrypted = await encryptAllData(storedKey, taskData, domainData);
+        const encrypted = await encryptAllData(storedKey, tasks, domains);
 
         if (encrypted.tasks.length > 0) {
           await batchTasks.mutateAsync({ data: { tasks: encrypted.tasks } });
@@ -616,12 +615,18 @@ function EncryptionSection() {
       });
       queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
       queryClient.invalidateQueries({ queryKey: getListDomainsApiV1DomainsGetQueryKey() });
-      toast.success("Encryption enabled");
+      queryClient.invalidateQueries({
+        queryKey: getGetAllContentApiV1TasksAllContentGetQueryKey(),
+      });
+      toast.success("Encryption enabled — all tasks and domains encrypted");
       setShowEnableDialog(false);
       setPassphrase("");
       setConfirmPassphrase("");
     } catch (err) {
-      toast.error("Failed to enable encryption");
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error(
+        `Failed to enable encryption: ${msg}. Encryption is marked as enabled — you can retry by toggling off and on.`,
+      );
       console.error(err);
     } finally {
       setEnabling(false);
@@ -635,21 +640,19 @@ function EncryptionSection() {
       const storedKey = await storedKeyFn();
 
       if (storedKey) {
-        const tasks = (tasksQuery.data ?? []) as Array<{
-          id: number;
-          title: string;
-          description: string | null;
-        }>;
-        const domains = (domainsQuery.data ?? []) as Array<{ id: number; name: string }>;
-
-        const taskData: TaskContentData[] = tasks.map((t) => ({
+        // Uses /all-content which returns ALL tasks (subtasks, completed, archived)
+        const allContent = allContentQuery.data;
+        const tasks: TaskContentData[] = (allContent?.tasks ?? []).map((t) => ({
           id: t.id,
           title: t.title,
-          description: t.description,
+          description: t.description ?? null,
         }));
-        const domainData: DomainContentData[] = domains.map((d) => ({ id: d.id, name: d.name }));
+        const domains: DomainContentData[] = (allContent?.domains ?? []).map((d) => ({
+          id: d.id,
+          name: d.name,
+        }));
 
-        const decrypted = await decryptAllData(storedKey, taskData, domainData);
+        const decrypted = await decryptAllData(storedKey, tasks, domains);
 
         if (decrypted.tasks.length > 0) {
           await batchTasks.mutateAsync({ data: { tasks: decrypted.tasks } });
@@ -667,10 +670,16 @@ function EncryptionSection() {
       });
       queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
       queryClient.invalidateQueries({ queryKey: getListDomainsApiV1DomainsGetQueryKey() });
-      toast.success("Encryption disabled");
+      queryClient.invalidateQueries({
+        queryKey: getGetAllContentApiV1TasksAllContentGetQueryKey(),
+      });
+      toast.success("Encryption disabled — all tasks and domains decrypted");
       setShowDisableDialog(false);
     } catch (err) {
-      toast.error("Failed to disable encryption");
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error(
+        `Failed to disable encryption: ${msg}. You can retry — already-decrypted data won't be affected.`,
+      );
       console.error(err);
     } finally {
       setDisabling(false);
