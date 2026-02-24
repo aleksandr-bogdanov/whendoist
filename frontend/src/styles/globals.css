@@ -232,6 +232,45 @@ body.reduced-motion * {
   }
 }
 
+/* Empty state entrance — fade in + slight scale-up */
+@keyframes emptyStateEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Thoughts lightbulb glow — glacial brightness pulse */
+@keyframes thoughtsGlow {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.12);
+  }
+}
+
+/* Rocket entrance — slide up with ease-out overshoot */
+@keyframes rocketEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Wizard animations */
 @keyframes logoFloat {
   0%,
@@ -258,6 +297,26 @@ body.reduced-motion * {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  @keyframes emptyStateEntrance {
+    from,
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes thoughtsGlow {
+    0%,
+    100% {
+      filter: none;
+    }
+  }
+  @keyframes rocketEntrance {
+    from,
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
   @keyframes logoFloat {
     0%,
     100% {
