@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.constants import DEMO_EMAIL_SUFFIX, DEMO_VALID_PROFILES, get_user_today
 from app.models import (
     Domain,
+    ExportSnapshot,
     GoogleCalendarEventSync,
     GoogleCalendarSelection,
     GoogleToken,
@@ -135,14 +136,14 @@ class DemoService:
 
         result = await self.db.execute(
             select(User).where(
-                User.email.endswith(DEMO_EMAIL_SUFFIX),
+                User.email.startswith("demo-"),
                 User.created_at < cutoff,
             )
         )
         stale_users = list(result.scalars().all())
 
+        # Just delete User rows — all child tables have ondelete=CASCADE
         for user in stale_users:
-            await self._clear_user_data(user.id)
             await self.db.delete(user)
 
         if stale_users:
@@ -152,8 +153,13 @@ class DemoService:
         return len(stale_users)
 
     async def _clear_user_data(self, user_id: int) -> None:
-        """Delete all user-generated data, keeping the User row."""
+        """Delete all user-generated data, keeping the User row.
+
+        Only used by reset_demo_user (cleanup_stale_users relies on CASCADE instead).
+        If you add a new table with user_id FK, add a DELETE here too.
+        """
         # Order matters: delete children before parents
+        await self.db.execute(delete(ExportSnapshot).where(ExportSnapshot.user_id == user_id))
         await self.db.execute(delete(GoogleCalendarEventSync).where(GoogleCalendarEventSync.user_id == user_id))
         await self.db.execute(delete(TaskInstance).where(TaskInstance.user_id == user_id))
         await self.db.execute(delete(Task).where(Task.user_id == user_id))

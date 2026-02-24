@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.93 — 2026-02-24
+
+### Fix: Demo cleanup uses index-friendly query and CASCADE deletes
+- Cleanup query uses `startswith("demo-")` instead of `endswith("@whendoist.local")` — B-tree index compatible
+- Cleanup relies on `ondelete=CASCADE` instead of manual 10-table deletes — future-proof when new tables are added
+- Added missing `ExportSnapshot` delete to `_clear_user_data` (used by demo reset)
+
+---
+
 ## v0.54.92 — 2026-02-24
 
 ### Feat: Multi-tenant demo users (unique per session)
