@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.96 — 2026-02-24
+
+### Fix: PWA update toast keeps reappearing after reload
+- Switched service worker from `registerType: "prompt"` to `autoUpdate` — updates apply silently in background
+- Removed `PwaReloadPrompt` component and persistent "New version available" toast
+
 ## v0.54.95 — 2026-02-24
 
 ### Feat: Task panel header cleanup and UX improvements

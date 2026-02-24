@@ -15,7 +15,7 @@ export default defineConfig({
     }),
     tailwindcss(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       manifest: {
         name: "Whendoist",
         short_name: "Whendoist",
