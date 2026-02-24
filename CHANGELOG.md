@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.89 — 2026-02-24
+
+### Fix: Child task editor opens on click
+- Task editor's "close if deleted" guard only checked top-level tasks, causing it to immediately close when opening a child task
+- Now also checks `subtasks` arrays so child tasks are recognized as existing
+
+---
+
 ## v0.54.88 — 2026-02-24
 
 ### Feat: Allow editing completed tasks via metadata pills
