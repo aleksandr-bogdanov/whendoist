@@ -25,10 +25,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        # Content Security Policy (nonce-based for script-src)
+        # Legacy Jinja2 templates use inline event handlers (onclick etc.)
+        # which can't use nonces — fall back to 'unsafe-inline' for those pages
+        is_legacy = getattr(request.state, "legacy_template", False)
+        script_src = "'self' 'unsafe-inline'" if is_legacy else f"'self' 'nonce-{nonce}'"
+
+        # Content Security Policy
         csp = (
             "default-src 'self'; "
-            f"script-src 'self' 'nonce-{nonce}'; "
+            f"script-src {script_src}; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "img-src 'self' data: https:; "
             "font-src 'self' https://fonts.gstatic.com; "
