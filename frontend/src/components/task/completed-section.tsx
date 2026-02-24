@@ -47,7 +47,9 @@ export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedS
     return sorted.filter((t) => t.completed_at && new Date(t.completed_at) >= cutoff);
   }, [tasks, retentionDays]);
 
-  if (filtered.length === 0) return null;
+  // Hide only when there are no completed tasks at all — never hide just because
+  // the retention filter is narrow, otherwise the user can't change the filter back
+  if (tasks.length === 0) return null;
 
   return (
     <Collapsible open={showCompleted} onOpenChange={toggleShowCompleted}>
