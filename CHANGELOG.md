@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.2 — 2026-02-24
+
+### Docs: Task dashboard UX review pass 2
+- Added second-pass visual/UX audit of task dashboard after initial cleanup
+- Documents column header alignment issues, toolbar balance, section breaks, color channel analysis, and mobile bottom-nav overlap bug
+
 ## v0.55.1 — 2026-02-24
 
 ### Chore: Task panel UX cleanup
