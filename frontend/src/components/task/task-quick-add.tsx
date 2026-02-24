@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { DomainResponse, TaskCreate } from "@/api/model";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
 } from "@/api/queries/tasks/tasks";
@@ -27,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCrypto } from "@/hooks/use-crypto";
+import { dashboardTasksKey } from "@/lib/query-keys";
 
 interface TaskQuickAddProps {
   open: boolean;
@@ -62,7 +62,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
       { data },
       {
         onSuccess: (created) => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           toast.success(`Created "${trimmed}"`, {
             id: `create-${created.id}`,
             action: {
@@ -73,7 +73,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                     onError: () => toast.error("Undo failed"),
                   },

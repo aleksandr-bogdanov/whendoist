@@ -2,11 +2,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
-import {
-  getListTasksApiV1TasksGetQueryKey,
-  useUpdateTaskApiV1TasksTaskIdPut,
-} from "@/api/queries/tasks/tasks";
+import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import {
   CLARITY_COLORS,
   CLARITY_LABELS,
@@ -44,7 +42,7 @@ function useAttributeUpdate() {
 
   const applyOptimistic = useCallback(
     (taskId: number, field: string, value: number | string | null) => {
-      queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+      queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
         old?.map((t) => {
           if (t.id === taskId) return { ...t, [field]: value };
           return {
@@ -60,7 +58,7 @@ function useAttributeUpdate() {
   // Find the current value of a field for a task (top-level or subtask)
   const findCurrentValue = useCallback(
     (taskId: number, field: string): number | string | null => {
-      const tasks = queryClient.getQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey());
+      const tasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
       if (!tasks) return null;
       for (const t of tasks) {
         if (t.id === taskId)
@@ -82,9 +80,7 @@ function useAttributeUpdate() {
       value: number | string | null,
     ) => {
       const previousValue = findCurrentValue(taskId, field);
-      const previous = queryClient.getQueryData<TaskResponse[]>(
-        getListTasksApiV1TasksGetQueryKey(),
-      );
+      const previous = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
       applyOptimistic(taskId, field, value);
 
@@ -93,7 +89,7 @@ function useAttributeUpdate() {
         {
           onSuccess: () => {
             queryClient.invalidateQueries({
-              queryKey: getListTasksApiV1TasksGetQueryKey(),
+              queryKey: dashboardTasksKey(),
             });
             toast.success(`${FIELD_LABELS[field]} → ${formatFieldValue(field, value)}`, {
               id: `attr-${field}-${taskId}`,
@@ -106,7 +102,7 @@ function useAttributeUpdate() {
                     {
                       onSuccess: () =>
                         queryClient.invalidateQueries({
-                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          queryKey: dashboardTasksKey(),
                         }),
                       onError: () => toast.error("Undo failed"),
                     },
@@ -116,7 +112,7 @@ function useAttributeUpdate() {
             });
           },
           onError: () => {
-            queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previous);
+            queryClient.setQueryData(dashboardTasksKey(), previous);
             toast.error("Failed to update task", { id: `attr-err-${taskId}` });
           },
         },

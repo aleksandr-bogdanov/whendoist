@@ -10,7 +10,7 @@ import re
 from datetime import date, datetime, time
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -369,12 +369,15 @@ def _task_to_response(task: Task, user_today: date | None = None) -> TaskRespons
 
 @router.get("", response_model=list[TaskResponse])
 async def list_tasks(
+    response: Response,
     domain_id: int | None = Query(None, description="Filter by domain ID"),
     status: str = Query("pending", description="Filter by status"),
     scheduled_date: date | None = Query(None, description="Filter by scheduled date"),
     is_recurring: bool | None = Query(None, description="Filter recurring/non-recurring"),
     clarity: str | None = Query(None, description="Filter by clarity (executable/defined/exploratory/none)"),
     parent_id: int | None = Query(None, description="Get subtasks of a task"),
+    limit: int | None = Query(None, ge=1, le=200, description="Max tasks to return"),
+    offset: int | None = Query(None, ge=0, description="Number of tasks to skip"),
     user: User = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -388,6 +391,22 @@ async def list_tasks(
     # "all" returns pending + completed (excludes archived)
     effective_status = None if status == "all" else status
     exclude_statuses = ["archived"] if status == "all" else None
+
+    top_level_only = parent_id is None
+
+    # When limit is set, also return total count via header
+    if limit is not None:
+        total = await service.count_tasks(
+            domain_id=domain_id,
+            status=effective_status,
+            exclude_statuses=exclude_statuses,
+            scheduled_date=scheduled_date,
+            is_recurring=is_recurring,
+            clarity=clarity,
+            top_level_only=top_level_only,
+        )
+        response.headers["X-Total-Count"] = str(total)
+
     tasks = await service.get_tasks(
         domain_id=domain_id,
         status=effective_status,
@@ -396,7 +415,9 @@ async def list_tasks(
         is_recurring=is_recurring,
         clarity=clarity,
         parent_id=parent_id,
-        top_level_only=(parent_id is None),
+        top_level_only=top_level_only,
+        limit=limit,
+        offset=offset,
     )
     return [_task_to_response(t, user_today) for t in tasks]
 

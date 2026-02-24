@@ -6,7 +6,6 @@ import { Fragment, useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { DomainResponse, TaskCreate, TaskResponse } from "@/api/model";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
@@ -17,6 +16,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useCrypto } from "@/hooks/use-crypto";
 import { useDevice } from "@/hooks/use-device";
 import { useHaptics } from "@/hooks/use-haptics";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { useDndState } from "./task-dnd-context";
@@ -93,7 +93,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
       {
         onSuccess: (created) => {
           // Append real task to cache — stable key, no flicker
-          queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+          queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
             old ? [...old, created] : [created],
           );
           toast.success(`Created "${trimmed}"`, {
@@ -106,7 +106,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                     onError: () => toast.error("Undo failed"),
                   },
@@ -117,7 +117,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
         },
         onError: () => toast.error("Failed to create task"),
         onSettled: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
         },
       },
     );
@@ -137,11 +137,9 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
   const handleSwipeComplete = useCallback(
     (task: TaskResponse) => {
       const isCompleted = task.status === "completed" || !!task.completed_at;
-      const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-        getListTasksApiV1TasksGetQueryKey(),
-      );
+      const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
-      queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+      queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
         if (!old) return old;
         return old.map((t) =>
           t.id === task.id
@@ -162,7 +160,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
         { taskId: task.id, data: null },
         {
           onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+            queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
             toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
               id: `complete-${task.id}`,
               action: {
@@ -173,7 +171,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
                     {
                       onSuccess: () =>
                         queryClient.invalidateQueries({
-                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          queryKey: dashboardTasksKey(),
                         }),
                     },
                   );
@@ -182,7 +180,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
             });
           },
           onError: () => {
-            queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+            queryClient.setQueryData(dashboardTasksKey(), previousTasks);
             toast.error("Failed to update task", { id: `complete-err-${task.id}` });
           },
         },

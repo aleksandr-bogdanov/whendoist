@@ -32,12 +32,10 @@ import {
   getListInstancesApiV1InstancesGetQueryKey,
   useScheduleInstanceApiV1InstancesInstanceIdSchedulePut,
 } from "@/api/queries/instances/instances";
-import {
-  getListTasksApiV1TasksGetQueryKey,
-  useUpdateTaskApiV1TasksTaskIdPut,
-} from "@/api/queries/tasks/tasks";
+import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
 import { offsetToTime, PREV_DAY_START_HOUR } from "@/lib/calendar-utils";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { formatScheduleTarget } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskDragOverlay } from "./task-drag-overlay";
@@ -294,7 +292,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
       const invalidateInstances = () => {
         queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+        queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
       };
 
       // --- Instance drop onto anytime: unschedule (clear time) ---
@@ -494,10 +492,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         // No-op if already anytime on same date
         if (prevDate === dateStr && !prevTime) return;
 
-        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-        );
-        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+        queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
           if (!old) return old;
           return updateTaskOrSubtaskInCache(old, activeId, {
             scheduled_date: dateStr,
@@ -512,7 +508,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           },
           {
             onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
               const taskTitle = task?.title ?? "Task";
               announce("Task scheduled");
               toast.success(`Scheduled "${taskTitle}" for ${formatScheduleTarget(dateStr)}`, {
@@ -528,11 +524,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                       {
                         onSuccess: () =>
                           queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            queryKey: dashboardTasksKey(),
                           }),
                         onError: () => {
                           queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            queryKey: dashboardTasksKey(),
                           });
                           toast.error("Undo failed");
                         },
@@ -543,7 +539,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               });
             },
             onError: () => {
-              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+              queryClient.setQueryData(dashboardTasksKey(), previousTasks);
               toast.error("Failed to schedule task", { id: `anytime-err-${activeId}` });
             },
           },
@@ -560,10 +556,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
         if (prevDate === dateStr && !prevTime) return;
 
-        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-        );
-        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+        queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
           if (!old) return old;
           return updateTaskOrSubtaskInCache(old, activeId, {
             scheduled_date: dateStr,
@@ -576,21 +570,19 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           { taskId: activeId, data: { scheduled_date: dateStr, scheduled_time: null } },
           {
             onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
               announce("Task rescheduled");
               toast.success(`Rescheduled "${taskTitle}" to ${formatScheduleTarget(dateStr)}`, {
                 id: `reschedule-${activeId}`,
                 action: {
                   label: "Undo",
                   onClick: () => {
-                    queryClient.setQueryData<TaskResponse[]>(
-                      getListTasksApiV1TasksGetQueryKey(),
-                      (old) =>
-                        old?.map((t) =>
-                          t.id === activeId
-                            ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
-                            : t,
-                        ),
+                    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
+                      old?.map((t) =>
+                        t.id === activeId
+                          ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
+                          : t,
+                      ),
                     );
                     updateTask.mutate(
                       {
@@ -600,11 +592,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                       {
                         onSuccess: () =>
                           queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            queryKey: dashboardTasksKey(),
                           }),
                         onError: () => {
                           queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            queryKey: dashboardTasksKey(),
                           });
                           toast.error("Undo failed");
                         },
@@ -615,7 +607,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               });
             },
             onError: () => {
-              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+              queryClient.setQueryData(dashboardTasksKey(), previousTasks);
               toast.error("Failed to reschedule task", { id: `reschedule-err-${activeId}` });
             },
           },
@@ -678,10 +670,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         if (isReschedule && prevDate === dateStr && prevTime === scheduledTime) return;
 
         // Optimistic update
-        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-        );
-        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+        queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
           if (!old) return old;
           return updateTaskOrSubtaskInCache(old, activeId, {
             scheduled_date: dateStr,
@@ -696,7 +686,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           },
           {
             onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
               const taskTitle = task?.title ?? "Task";
               if (isReschedule) {
                 announce("Task rescheduled");
@@ -715,11 +705,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                           {
                             onSuccess: () =>
                               queryClient.invalidateQueries({
-                                queryKey: getListTasksApiV1TasksGetQueryKey(),
+                                queryKey: dashboardTasksKey(),
                               }),
                             onError: () => {
                               queryClient.invalidateQueries({
-                                queryKey: getListTasksApiV1TasksGetQueryKey(),
+                                queryKey: dashboardTasksKey(),
                               });
                               toast.error("Undo failed");
                             },
@@ -746,11 +736,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                           {
                             onSuccess: () =>
                               queryClient.invalidateQueries({
-                                queryKey: getListTasksApiV1TasksGetQueryKey(),
+                                queryKey: dashboardTasksKey(),
                               }),
                             onError: () => {
                               queryClient.invalidateQueries({
-                                queryKey: getListTasksApiV1TasksGetQueryKey(),
+                                queryKey: dashboardTasksKey(),
                               });
                               toast.error("Undo failed");
                             },
@@ -763,7 +753,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               }
             },
             onError: () => {
-              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+              queryClient.setQueryData(dashboardTasksKey(), previousTasks);
               toast.error("Failed to schedule task", { id: `schedule-err-${activeId}` });
             },
           },
@@ -778,12 +768,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         // Promote subtask — only on explicit promote zones (bar/gaps), not the general container
         if (task?.parent_id != null && overId !== "task-list-drop") {
           const prevParentId = task.parent_id;
-          const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-            getListTasksApiV1TasksGetQueryKey(),
-          );
+          const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
           // Optimistic: remove from parent's subtasks, add as top-level task
-          queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+          queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
             if (!old) return old;
             const promoted: TaskResponse = {
               ...task,
@@ -804,24 +792,24 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             { taskId: activeId, data: { parent_id: null } },
             {
               onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+                queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
                 announce("Subtask promoted to task");
                 toast.success(`Promoted "${task.title}" to standalone task`, {
                   id: `promote-${activeId}`,
                   action: {
                     label: "Undo",
                     onClick: () => {
-                      queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                      queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                       updateTask.mutate(
                         { taskId: activeId, data: { parent_id: prevParentId } },
                         {
                           onSuccess: () =>
                             queryClient.invalidateQueries({
-                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                              queryKey: dashboardTasksKey(),
                             }),
                           onError: () => {
                             queryClient.invalidateQueries({
-                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                              queryKey: dashboardTasksKey(),
                             });
                             toast.error("Undo failed");
                           },
@@ -832,7 +820,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 });
               },
               onError: () => {
-                queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                 toast.error("Failed to promote task", { id: `promote-err-${activeId}` });
               },
             },
@@ -845,10 +833,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           const prevDate = task.scheduled_date;
           const prevTime = task.scheduled_time ?? null;
 
-          const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-            getListTasksApiV1TasksGetQueryKey(),
-          );
-          queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+          const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+          queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
             if (!old) return old;
             return updateTaskOrSubtaskInCache(old, activeId, {
               scheduled_date: null,
@@ -863,7 +849,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             },
             {
               onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+                queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
                 const taskTitle = task?.title ?? "Task";
                 announce("Task unscheduled");
                 toast.success(`Unscheduled "${taskTitle}"`, {
@@ -879,11 +865,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                         {
                           onSuccess: () =>
                             queryClient.invalidateQueries({
-                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                              queryKey: dashboardTasksKey(),
                             }),
                           onError: () => {
                             queryClient.invalidateQueries({
-                              queryKey: getListTasksApiV1TasksGetQueryKey(),
+                              queryKey: dashboardTasksKey(),
                             });
                             toast.error("Undo failed");
                           },
@@ -894,7 +880,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 });
               },
               onError: () => {
-                queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                 toast.error("Failed to unschedule task", { id: `unschedule-err-${activeId}` });
               },
             },
@@ -909,12 +895,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         if (!task || task.parent_id == null) return; // Only subtasks can be promoted
 
         const prevParentId = task.parent_id;
-        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-        );
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
         // Optimistic: remove from parent's subtasks, add as top-level task
-        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+        queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
           if (!old) return old;
           const promoted: TaskResponse = {
             ...task,
@@ -935,24 +919,24 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           { taskId: activeId, data: { parent_id: null } },
           {
             onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
               announce("Subtask promoted to task");
               toast.success(`Promoted "${task.title}" to standalone task`, {
                 id: `promote-${activeId}`,
                 action: {
                   label: "Undo",
                   onClick: () => {
-                    queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                    queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                     updateTask.mutate(
                       { taskId: activeId, data: { parent_id: prevParentId } },
                       {
                         onSuccess: () =>
                           queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            queryKey: dashboardTasksKey(),
                           }),
                         onError: () => {
                           queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            queryKey: dashboardTasksKey(),
                           });
                           toast.error("Undo failed");
                         },
@@ -963,7 +947,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               });
             },
             onError: () => {
-              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+              queryClient.setQueryData(dashboardTasksKey(), previousTasks);
               toast.error("Failed to promote task", { id: `promote-err-${activeId}` });
             },
           },
@@ -999,9 +983,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         }
 
         const prevParentId = activeTask.parent_id;
-        const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-          getListTasksApiV1TasksGetQueryKey(),
-        );
+        const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
         // Optimistic: move task into target's subtasks array
         const newSubtask: SubtaskResponse = {
@@ -1017,7 +999,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           position: 9999,
         };
 
-        queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+        queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
           if (!old) return old;
           return old
             .filter((t) => t.id !== activeTask.id) // Remove from top-level
@@ -1047,24 +1029,24 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           { taskId: activeId, data: { parent_id: overTaskId } },
           {
             onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+              queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
               announce("Task nested as subtask");
               toast.success(`Made "${activeTask.title}" a subtask of "${overTask.title}"`, {
                 id: `reparent-${activeId}`,
                 action: {
                   label: "Undo",
                   onClick: () => {
-                    queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                    queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                     updateTask.mutate(
                       { taskId: activeId, data: { parent_id: prevParentId } },
                       {
                         onSuccess: () =>
                           queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            queryKey: dashboardTasksKey(),
                           }),
                         onError: () => {
                           queryClient.invalidateQueries({
-                            queryKey: getListTasksApiV1TasksGetQueryKey(),
+                            queryKey: dashboardTasksKey(),
                           });
                           toast.error("Undo failed");
                         },
@@ -1075,7 +1057,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               });
             },
             onError: () => {
-              queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+              queryClient.setQueryData(dashboardTasksKey(), previousTasks);
               toast.error("Failed to reparent task", { id: `reparent-err-${activeId}` });
             },
           },

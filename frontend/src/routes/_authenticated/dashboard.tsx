@@ -7,7 +7,6 @@ import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useListTasksApiV1TasksGet,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
@@ -22,6 +21,7 @@ import { TaskQuickAdd } from "@/components/task/task-quick-add";
 import { Button } from "@/components/ui/button";
 import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
+import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
 import { useUIStore } from "@/stores/ui-store";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -29,7 +29,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function DashboardPage() {
-  const { data: tasks, isLoading: tasksLoading } = useListTasksApiV1TasksGet();
+  const { data: tasks, isLoading: tasksLoading } =
+    useListTasksApiV1TasksGet(DASHBOARD_TASKS_PARAMS);
   const { data: domains, isLoading: domainsLoading } = useListDomainsApiV1DomainsGet();
   const { data: me } = useGetMeApiV1MeGet();
   const queryClient = useQueryClient();
@@ -220,7 +221,7 @@ function DashboardPage() {
               { taskId: sel, data: null },
               {
                 onSuccess: () => {
-                  queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+                  queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
                   const label =
                     t?.status === "completed"
                       ? `Reopened "${t.title}"`
@@ -293,7 +294,7 @@ function DashboardPage() {
               { taskId: sel },
               {
                 onSuccess: () => {
-                  queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+                  queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
                   toast.success(`Deleted "${task.title}"`, { id: `delete-${sel}` });
                 },
                 onError: () => {

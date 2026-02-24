@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
-import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import { StickyDomainHeader } from "@/components/mobile/sticky-domain";
 import { CompletedSection } from "@/components/task/completed-section";
 import { DeletedSection } from "@/components/task/deleted-section";
@@ -12,13 +11,12 @@ import { Button } from "@/components/ui/button";
 import { decryptDomain, decryptTask } from "@/hooks/use-crypto";
 import { useDevice } from "@/hooks/use-device";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { categorizeTasks, filterByEnergy, groupByDomain, sortTasks } from "@/lib/task-utils";
 import { useCryptoStore } from "@/stores/crypto-store";
 import { useUIStore } from "@/stores/ui-store";
 import { EnergySelector } from "./energy-selector";
-import { FilterBar } from "./filter-bar";
 import { PendingPastBanner } from "./pending-past-banner";
-import { SettingsPanel } from "./settings-panel";
 import { SortControls } from "./sort-controls";
 
 interface TaskPanelProps {
@@ -45,7 +43,7 @@ export function TaskPanel({
   const isTouchDevice = prefersTouch || hasTouch;
 
   const handlePullRefresh = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    await queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
   }, [queryClient]);
 
   const pullRefreshRef = usePullToRefresh({
@@ -145,35 +143,27 @@ export function TaskPanel({
       {/* Panel header with controls */}
       <div
         data-task-panel-header
-        className="relative flex flex-col gap-2 px-2 sm:px-4 py-2 border-b backdrop-blur-md bg-muted/30"
+        className="relative flex items-center gap-2 px-2 sm:px-4 py-2 border-b backdrop-blur-md bg-muted/30"
       >
         {/* Spectrum bar */}
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
 
-        {/* Row 1: energy + actions */}
-        <div className="flex items-center justify-between gap-2">
-          <EnergySelector />
-          <div className="flex items-center gap-1">
-            {onQuickAdd && (
-              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onQuickAdd}>
-                <Plus className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Quick</span>
-              </Button>
-            )}
-            {onNewTask && (
-              <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNewTask}>
-                <Plus className="h-3.5 w-3.5" />
-                New Task
-              </Button>
-            )}
-            <SettingsPanel />
-          </div>
-        </div>
-
-        {/* Row 2: filter toggles + sort controls (right-aligned to match task columns) */}
-        <div className="flex items-center justify-between gap-2">
-          <FilterBar />
-          <SortControls />
+        <EnergySelector />
+        <div className="flex-1" />
+        <SortControls />
+        <div className="flex items-center gap-1">
+          {onQuickAdd && (
+            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onQuickAdd}>
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Quick</span>
+            </Button>
+          )}
+          {onNewTask && (
+            <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNewTask}>
+              <Plus className="h-3.5 w-3.5" />
+              New Task
+            </Button>
+          )}
         </div>
       </div>
 

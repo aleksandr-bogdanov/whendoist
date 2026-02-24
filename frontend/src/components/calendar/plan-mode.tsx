@@ -3,10 +3,7 @@ import { CalendarCheck, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { EventResponse, TaskResponse } from "@/api/model";
-import {
-  getListTasksApiV1TasksGetQueryKey,
-  useUpdateTaskApiV1TasksTaskIdPut,
-} from "@/api/queries/tasks/tasks";
+import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatTime, type PlannedTask, planTasks } from "@/lib/calendar-utils";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { filterByEnergy } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -77,7 +75,7 @@ export function PlanMode({ open, onOpenChange, tasks, events, centerDate }: Plan
     const successCount = results.filter((r) => r.status === "fulfilled").length;
     const failCount = results.filter((r) => r.status === "rejected").length;
 
-    await queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    await queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
     setIsCommitting(false);
     onOpenChange(false);
 

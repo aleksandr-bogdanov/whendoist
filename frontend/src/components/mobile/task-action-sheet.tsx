@@ -12,12 +12,12 @@ import {
   useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
 } from "@/api/queries/tasks/tasks";
 import { useHaptics } from "@/hooks/use-haptics";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { BottomSheet } from "./bottom-sheet";
 
@@ -78,7 +78,7 @@ export function TaskActionSheet({
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
     queryClient.invalidateQueries({
       queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
     });
@@ -143,11 +143,9 @@ export function TaskActionSheet({
       return;
     }
 
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
       if (!old) return old;
       return old.map((t) =>
         t.id === task.id
@@ -170,7 +168,7 @@ export function TaskActionSheet({
       { taskId: task.id, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
             id: `complete-${task.id}`,
             action: {
@@ -181,7 +179,7 @@ export function TaskActionSheet({
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                   },
                 );
@@ -190,7 +188,7 @@ export function TaskActionSheet({
           });
         },
         onError: () => {
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to update task", { id: `complete-err-${task.id}` });
         },
       },
@@ -221,7 +219,7 @@ export function TaskActionSheet({
       { taskId: task.id },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           toast.success(`Deleted "${task.title}"`, {
             id: `delete-${task.id}`,
             action: {
@@ -232,7 +230,7 @@ export function TaskActionSheet({
                   {
                     onSuccess: () => {
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       });
                       toast.success("Task restored", { id: `restore-${task.id}` });
                     },

@@ -13,7 +13,6 @@ import {
   useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost,
   useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
-import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -34,6 +33,7 @@ import {
   PREV_DAY_START_HOUR,
   todayString,
 } from "@/lib/calendar-utils";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 import { CalendarEventCard } from "./calendar-event";
 import { ScheduledTaskCard } from "./scheduled-task-card";
@@ -440,7 +440,7 @@ function InstanceCard({
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
     queryClient.invalidateQueries({
       queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
     });
