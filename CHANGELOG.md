@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.94 — 2026-02-24
+
+### Feat: Add illustrations to empty states and error boundaries
+- Created reusable `EmptyState` component (`frontend/src/components/ui/empty-state.tsx`)
+- Added illustrations to: empty task list, empty thoughts, analytics load failure, root and app error boundaries
+- Copied 4 brand SVGs from legacy `static/img/illustrations/` to `frontend/public/illustrations/`
+
+---
+
 ## v0.54.93 — 2026-02-24
 
 ### Fix: Demo cleanup uses index-friendly query and CASCADE deletes

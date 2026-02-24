@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { ArrowUpFromDot } from "lucide-react";
 import { motion } from "motion/react";
 import type { TaskResponse } from "@/api/model";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { DomainGroup as DomainGroupType } from "@/lib/task-utils";
 import { DomainGroup } from "./domain-group";
 import { useDndState } from "./task-dnd-context";
@@ -30,12 +31,12 @@ export function TaskList({ groups, onSelectTask, onEditTask }: TaskListProps) {
 
   if (groups.length === 0) {
     return (
-      <div ref={setNodeRef} className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-muted-foreground text-sm">No tasks to show</p>
-        <p className="text-muted-foreground/60 text-xs mt-1">
-          Tasks matching your filters will appear here
-        </p>
-      </div>
+      <EmptyState
+        ref={setNodeRef}
+        illustration="/illustrations/empty-tasks.svg"
+        title="No tasks to show"
+        description="Tasks matching your filters will appear here"
+      />
     );
   }
 

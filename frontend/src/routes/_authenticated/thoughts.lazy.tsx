@@ -14,6 +14,7 @@ import {
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCrypto } from "@/hooks/use-crypto";
@@ -228,10 +229,11 @@ function ThoughtsPage() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : decryptedTasks.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">
-              <p className="text-lg mb-1">No thoughts yet</p>
-              <p className="text-sm">Type below to capture your first thought</p>
-            </div>
+            <EmptyState
+              illustration="/illustrations/empty-thoughts.svg"
+              title="No thoughts yet"
+              description="Type below to capture your first thought"
+            />
           ) : (
             dateGroups.map((group) => (
               <div key={group.date}>
