@@ -326,6 +326,11 @@ else:
         if _spa_icons.exists():
             app.mount("/icons", StaticFiles(directory=str(_spa_icons)), name="spa-icons")
 
+        # Serve illustrations from frontend/dist/illustrations/
+        _spa_illustrations = _spa_dist / "illustrations"
+        if _spa_illustrations.exists():
+            app.mount("/illustrations", StaticFiles(directory=str(_spa_illustrations)), name="spa-illustrations")
+
         # Serve additional root-level SPA files (manifest, registerSW.js, workbox, etc.)
         @app.get("/manifest.webmanifest", include_in_schema=False)
         async def spa_manifest():
@@ -348,7 +353,9 @@ else:
         @app.get("/{path:path}", include_in_schema=False)
         async def spa_fallback(request: Request, path: str):
             # Don't catch API, auth, static, health, or metrics routes
-            if path.startswith(("api/", "auth/", "static/", "health", "ready", "metrics")):
+            if path.startswith(
+                ("api/", "auth/", "static/", "assets/", "icons/", "illustrations/", "health", "ready", "metrics")
+            ):
                 raise HTTPException(status_code=404)
             # Inject CSP nonce into inline script tags
             nonce = getattr(request.state, "csp_nonce", "")
