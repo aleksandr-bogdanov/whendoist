@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.98 — 2026-02-24
+
+### Fix: Demo login 500 error + landing page readability + animation tweaks
+- **Demo login crash**: Added `passive_deletes=True` to all User relationships — SQLAlchemy was trying to null-out FKs before DB CASCADE could fire during demo user cleanup
+- **Landing task cards**: Changed from white to muted background with subtle shadow for contrast against hero illustration
+- **Rocket animation**: Slowed from 0.6s to 1.2s with gentler float-up-and-settle curve
+- **Thoughts glow**: Sped up from 5s to 3s cycle
+- **Empty tasks entrance**: More noticeable — added translateY + larger scale change, 0.6s duration
+
 ## v0.54.97 — 2026-02-24
 
 ### Feat: Subtle animations for empty states and illustrations

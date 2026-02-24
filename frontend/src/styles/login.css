@@ -225,13 +225,14 @@
 
 .login-hero-task {
   height: 22px;
-  background: var(--background);
+  background: hsl(var(--muted));
   border: 1px solid hsl(var(--border));
   border-radius: 5px;
   display: flex;
   align-items: center;
   overflow: hidden;
   position: relative;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .login-hero-task-1 {

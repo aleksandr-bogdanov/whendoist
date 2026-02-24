@@ -7,6 +7,7 @@ Test Categories:
 """
 
 import pytest
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.database import Base
@@ -16,6 +17,13 @@ from app.database import Base
 async def db_session():
     """Create an in-memory SQLite database for fast unit testing."""
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+
+    # Enable FK enforcement so ON DELETE CASCADE works in SQLite
+    @event.listens_for(engine.sync_engine, "connect")
+    def _set_sqlite_pragma(dbapi_conn, _connection_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

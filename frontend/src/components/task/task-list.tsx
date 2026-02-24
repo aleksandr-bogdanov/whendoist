@@ -34,7 +34,7 @@ export function TaskList({ groups, onSelectTask, onEditTask }: TaskListProps) {
       <EmptyState
         ref={setNodeRef}
         illustration="/illustrations/empty-tasks.svg"
-        illustrationClassName="animate-[emptyStateEntrance_0.4s_ease-out]"
+        illustrationClassName="animate-[emptyStateEntrance_0.6s_ease-out]"
         title="No tasks to show"
         description="Tasks matching your filters will appear here"
       />
