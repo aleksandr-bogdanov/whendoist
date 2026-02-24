@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.92 — 2026-02-24
+
+### Feat: Multi-tenant demo users (unique per session)
+- Each demo login creates a fresh user with unique email `demo-{profile}-{uuid}@whendoist.local` — no more shared state between concurrent sessions
+- Added `cleanup_stale_users()` that lazily deletes demo users older than 24h (configurable via `DEMO_CLEANUP_MAX_AGE_HOURS`)
+- Added `extract_profile()` to parse profile from both new and legacy email formats
+- 21 tests covering creation, reset, cleanup, and isolation
+
+---
+
 ## v0.54.91 — 2026-02-24
 
 ### Feat: Demo users always start with onboarding wizard

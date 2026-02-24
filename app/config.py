@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     # Demo login (bypasses Google OAuth for testing/previews)
     demo_login_enabled: bool = False
+    demo_cleanup_max_age_hours: int = 24
 
     # Legacy frontend toggle (serve Jinja2 templates instead of React SPA)
     serve_legacy_frontend: bool = False

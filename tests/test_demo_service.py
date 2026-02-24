@@ -1,9 +1,11 @@
 """
 Demo service unit tests.
 
-Tests demo user creation, seeding, reset, and email detection.
+Tests demo user creation, seeding, reset, cleanup, and email detection.
 Uses SQLite in-memory database for fast unit testing.
 """
+
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import func, select
@@ -21,21 +23,30 @@ async def demo_service(db_session: AsyncSession) -> DemoService:
 
 
 class TestDemoEmail:
-    """Tests for demo email generation and detection."""
-
-    def test_demo_email_generation(self):
-        assert DemoService.demo_email("demo") == f"demo-demo{DEMO_EMAIL_SUFFIX}"
-        assert DemoService.demo_email("blank") == f"demo-blank{DEMO_EMAIL_SUFFIX}"
-        assert DemoService.demo_email("encrypted") == f"demo-encrypted{DEMO_EMAIL_SUFFIX}"
+    """Tests for demo email detection and profile extraction."""
 
     def test_is_demo_user_positive(self):
+        assert DemoService.is_demo_user(f"demo-demo-abc12345{DEMO_EMAIL_SUFFIX}") is True
+        assert DemoService.is_demo_user(f"demo-blank-xyz99999{DEMO_EMAIL_SUFFIX}") is True
+        # Legacy format
         assert DemoService.is_demo_user(f"demo-demo{DEMO_EMAIL_SUFFIX}") is True
-        assert DemoService.is_demo_user(f"demo-blank{DEMO_EMAIL_SUFFIX}") is True
 
     def test_is_demo_user_negative(self):
         assert DemoService.is_demo_user("user@gmail.com") is False
         assert DemoService.is_demo_user("admin@whendoist.com") is False
         assert DemoService.is_demo_user("") is False
+
+    def test_extract_profile(self):
+        assert DemoService.extract_profile(f"demo-demo-abc12345{DEMO_EMAIL_SUFFIX}") == "demo"
+        assert DemoService.extract_profile(f"demo-blank-xyz{DEMO_EMAIL_SUFFIX}") == "blank"
+        assert DemoService.extract_profile(f"demo-encrypted-123{DEMO_EMAIL_SUFFIX}") == "encrypted"
+        # Legacy format
+        assert DemoService.extract_profile(f"demo-demo{DEMO_EMAIL_SUFFIX}") == "demo"
+
+    def test_extract_profile_invalid(self):
+        assert DemoService.extract_profile("user@gmail.com") is None
+        assert DemoService.extract_profile(f"notdemo-demo{DEMO_EMAIL_SUFFIX}") is None
+        assert DemoService.extract_profile("") is None
 
 
 class TestGetOrCreateDemoUser:
@@ -46,7 +57,8 @@ class TestGetOrCreateDemoUser:
         user = await demo_service.get_or_create_demo_user("demo")
 
         assert user.id is not None
-        assert user.email == f"demo-demo{DEMO_EMAIL_SUFFIX}"
+        assert user.email.startswith("demo-demo-")
+        assert user.email.endswith(DEMO_EMAIL_SUFFIX)
         assert user.name == "Demo User"
         assert user.wizard_completed is False
 
@@ -65,7 +77,8 @@ class TestGetOrCreateDemoUser:
         """Blank profile creates user with no data."""
         user = await demo_service.get_or_create_demo_user("blank")
 
-        assert user.email == f"demo-blank{DEMO_EMAIL_SUFFIX}"
+        assert user.email.startswith("demo-blank-")
+        assert user.email.endswith(DEMO_EMAIL_SUFFIX)
         assert user.name == "Blank Slate"
         assert user.wizard_completed is False
 
@@ -80,19 +93,22 @@ class TestGetOrCreateDemoUser:
         """Encrypted profile creates user with no data."""
         user = await demo_service.get_or_create_demo_user("encrypted")
 
-        assert user.email == f"demo-encrypted{DEMO_EMAIL_SUFFIX}"
+        assert user.email.startswith("demo-encrypted-")
+        assert user.email.endswith(DEMO_EMAIL_SUFFIX)
         assert user.name == "Encryption Test"
 
-    async def test_idempotent_creation(self, db_session: AsyncSession, demo_service: DemoService):
-        """Second call returns the same user, doesn't duplicate."""
+    async def test_each_call_creates_unique_user(self, db_session: AsyncSession, demo_service: DemoService):
+        """Two calls create two different users with isolated data."""
         user1 = await demo_service.get_or_create_demo_user("demo")
         user2 = await demo_service.get_or_create_demo_user("demo")
 
-        assert user1.id == user2.id
+        assert user1.id != user2.id
+        assert user1.email != user2.email
 
-        # Should still have only 4 domains (not 8)
-        domains_result = await db_session.execute(select(func.count(Domain.id)).where(Domain.user_id == user1.id))
-        assert domains_result.scalar() == 4
+        # Each should have their own 4 domains
+        for user in (user1, user2):
+            domains_result = await db_session.execute(select(func.count(Domain.id)).where(Domain.user_id == user.id))
+            assert domains_result.scalar() == 4
 
     async def test_invalid_profile_raises(self, demo_service: DemoService):
         """Invalid profile name raises ValueError."""
@@ -220,3 +236,108 @@ class TestResetDemoUser:
     async def test_reset_noop_for_missing_user(self, db_session: AsyncSession, demo_service: DemoService):
         """Reset is a no-op for non-existent user IDs."""
         await demo_service.reset_demo_user(99999)  # Should not raise
+
+
+class TestCleanupStaleUsers:
+    """Tests for stale demo user cleanup."""
+
+    async def test_cleanup_deletes_old_users(self, db_session: AsyncSession, demo_service: DemoService):
+        """Cleanup deletes demo users older than max_age_hours."""
+        # Create a demo user and backdate its created_at
+        user = User(
+            email=f"demo-demo-old12345{DEMO_EMAIL_SUFFIX}",
+            name="Old Demo",
+            created_at=datetime.now(UTC) - timedelta(hours=48),
+        )
+        db_session.add(user)
+        await db_session.commit()
+
+        deleted = await demo_service.cleanup_stale_users(max_age_hours=24)
+        await db_session.commit()
+
+        assert deleted == 1
+
+        # Verify user is gone
+        result = await db_session.execute(select(User).where(User.id == user.id))
+        assert result.scalar_one_or_none() is None
+
+    async def test_cleanup_keeps_recent_users(self, db_session: AsyncSession, demo_service: DemoService):
+        """Cleanup keeps demo users newer than max_age_hours."""
+        user = await demo_service.get_or_create_demo_user("blank")
+
+        deleted = await demo_service.cleanup_stale_users(max_age_hours=24)
+        await db_session.commit()
+
+        assert deleted == 0
+
+        # Verify user still exists
+        result = await db_session.execute(select(User).where(User.id == user.id))
+        assert result.scalar_one_or_none() is not None
+
+    async def test_cleanup_ignores_real_users(self, db_session: AsyncSession, demo_service: DemoService):
+        """Cleanup never touches non-demo users regardless of age."""
+        real_user = User(
+            email="old@gmail.com",
+            name="Old Real User",
+            created_at=datetime.now(UTC) - timedelta(hours=48),
+        )
+        db_session.add(real_user)
+        await db_session.commit()
+
+        deleted = await demo_service.cleanup_stale_users(max_age_hours=24)
+        await db_session.commit()
+
+        assert deleted == 0
+
+        # Real user still exists
+        result = await db_session.execute(select(User).where(User.id == real_user.id))
+        assert result.scalar_one_or_none() is not None
+
+    async def test_cleanup_deletes_user_data(self, db_session: AsyncSession, demo_service: DemoService):
+        """Cleanup deletes all associated data (tasks, domains, etc.)."""
+        # Create a demo user with seed data
+        user = await demo_service.get_or_create_demo_user("demo")
+        user_id = user.id
+
+        # Verify data exists
+        tasks_before = await db_session.execute(select(func.count(Task.id)).where(Task.user_id == user_id))
+        assert tasks_before.scalar() > 0
+
+        # Backdate user to be stale
+        user.created_at = datetime.now(UTC) - timedelta(hours=48)
+        await db_session.commit()
+
+        deleted = await demo_service.cleanup_stale_users(max_age_hours=24)
+        await db_session.commit()
+
+        assert deleted == 1
+
+        # All data should be gone
+        tasks_after = await db_session.execute(select(func.count(Task.id)).where(Task.user_id == user_id))
+        assert tasks_after.scalar() == 0
+
+        domains_after = await db_session.execute(select(func.count(Domain.id)).where(Domain.user_id == user_id))
+        assert domains_after.scalar() == 0
+
+    async def test_cleanup_runs_on_demo_login(self, db_session: AsyncSession, demo_service: DemoService):
+        """Creating a demo user triggers cleanup of stale users."""
+        # Create a stale user directly
+        stale_user = User(
+            email=f"demo-demo-stale123{DEMO_EMAIL_SUFFIX}",
+            name="Stale Demo",
+            created_at=datetime.now(UTC) - timedelta(hours=48),
+        )
+        db_session.add(stale_user)
+        await db_session.commit()
+        stale_email = stale_user.email
+
+        # Creating a new demo user should trigger cleanup (default max_age=24h)
+        new_user = await demo_service.get_or_create_demo_user("blank")
+
+        # Stale user should be gone (use email match to avoid identity map caching)
+        result = await db_session.execute(select(func.count(User.id)).where(User.email == stale_email))
+        assert result.scalar() == 0
+
+        # New user should exist
+        result = await db_session.execute(select(func.count(User.id)).where(User.id == new_user.id))
+        assert result.scalar() == 1
