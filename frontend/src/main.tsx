@@ -3,7 +3,6 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
-import { PwaReloadPrompt } from "@/components/pwa-reload-prompt";
 import { queryClient } from "@/lib/query-client";
 import { TOAST_DURATION } from "@/lib/toast";
 import { routeTree } from "./routeTree.gen";
@@ -22,7 +21,6 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
       <Toaster richColors position="bottom-right" toastOptions={{ duration: TOAST_DURATION }} />
-      <PwaReloadPrompt />
     </QueryClientProvider>
   </StrictMode>,
 );
