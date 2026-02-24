@@ -1226,4 +1226,4 @@ Fixed bottom navigation with embedded FAB:
 
 ---
 
-*For historical brand audit documentation, see [docs/archive/2026-01-22-brand-cohesiveness-audit.md](docs/archive/2026-01-22-brand-cohesiveness-audit.md).*
+*For historical brand audit documentation, see [docs/plans/2026-01-22-brand-cohesiveness-audit.md](docs/plans/2026-01-22-brand-cohesiveness-audit.md).*

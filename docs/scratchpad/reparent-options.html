@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reparent Visual Options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0b; color: #e4e4e7; padding: 24px; }
+  h1 { font-size: 1.1rem; color: #a1a1aa; margin-bottom: 24px; text-align: center; letter-spacing: 0.05em; text-transform: uppercase; }
+  .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 32px; max-width: 1600px; margin: 0 auto; }
+  .option { background: #18181b; border-radius: 16px; padding: 20px; border: 1px solid #27272a; }
+  .option-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .option-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6D5EF6; background: rgba(109,94,246,0.12); padding: 4px 10px; border-radius: 99px; }
+  .option-desc { font-size: 0.8rem; color: #71717a; margin-bottom: 16px; line-height: 1.5; }
+  .option-bad { border-color: #991b1b; }
+  .option-bad .option-label { color: #ef4444; background: rgba(239,68,68,0.12); }
+
+  /* Task list simulation */
+  .task-list { background: #09090b; border-radius: 12px; border: 1px solid #27272a; overflow: hidden; }
+  .domain-header { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(255,255,255,0.03); border-bottom: 1px solid #27272a; font-size: 0.85rem; font-weight: 700; }
+  .domain-dot { width: 10px; height: 10px; border-radius: 50%; background: #6D5EF6; }
+  .domain-count { font-size: 0.65rem; color: #71717a; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 99px; margin-left: 4px; }
+
+  /* Task row */
+  .task-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); transition: all 0.2s; position: relative; }
+  .task-checkbox { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.15); flex-shrink: 0; }
+  .task-title { flex: 1; font-size: 0.85rem; min-width: 0; }
+  .task-meta { display: flex; gap: 16px; font-size: 0.65rem; font-weight: 600; color: #71717a; flex-shrink: 0; }
+  .meta-impact { color: #B8860B; }
+  .meta-duration { color: #71717a; }
+  .meta-clarity { color: #167BFF; background: rgba(22,123,255,0.1); padding: 2px 6px; border-radius: 99px; }
+  .impact-border { border-left: 3px solid; border-radius: 4px 0 0 4px; }
+  .impact-p1 { border-left-color: #C9505A; }
+  .impact-p2 { border-left-color: #B8860B; }
+  .impact-p3 { border-left-color: #1A9160; }
+  .impact-p4 { border-left-color: #6B7385; }
+
+  /* Drag overlay card */
+  .drag-overlay { position: relative; z-index: 10; width: fit-content; max-width: 240px; padding: 8px 14px; background: #1c1c20; border: 1.5px solid #6D5EF6; border-radius: 10px; box-shadow: 0 8px 32px rgba(109,94,246,0.25), 0 2px 8px rgba(0,0,0,0.5); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; opacity: 0.95; }
+  .drag-overlay .arrow-icon { color: #6D5EF6; font-size: 0.9rem; }
+
+  /* Badge */
+  .reparent-badge { position: absolute; left: 50%; transform: translateX(-50%); top: -8px; background: #6D5EF6; color: white; font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 99px; white-space: nowrap; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(109,94,246,0.4); z-index: 5; }
+  .badge-icon { font-size: 0.7rem; }
+
+  /* Current (broken) - indent on target */
+  .target-indented { margin-left: 24px; background: rgba(109,94,246,0.06); border-left: 3px solid #6D5EF6; box-shadow: inset 0 0 0 1px rgba(109,94,246,0.15); border-radius: 4px; }
+
+  /* Option A - glow only */
+  .target-glow { background: rgba(109,94,246,0.04); border-left: 3px solid #6D5EF6 !important; box-shadow: -4px 0 12px rgba(109,94,246,0.15); }
+
+  /* Option B - indented overlay */
+  .overlay-indented { margin-left: 32px; transform: scale(0.92); }
+
+  /* Option C - ghost placeholder */
+  .ghost-placeholder { margin-left: 24px; padding: 8px 12px; border: 2px dashed rgba(109,94,246,0.3); border-radius: 8px; background: rgba(109,94,246,0.04); color: rgba(109,94,246,0.5); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; }
+  .ghost-checkbox { width: 15px; height: 15px; border-radius: 50%; border: 1.5px dashed rgba(109,94,246,0.3); flex-shrink: 0; }
+
+  /* Dimmed row (dragged away) */
+  .task-dimmed { opacity: 0.25; }
+
+  .spacer { height: 20px; }
+  .annotation { font-size: 0.65rem; color: #52525b; padding: 8px 12px; text-align: center; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>Drag "Buy groceries" onto "Write report" — which visual?</h1>
+
+<div class="options">
+
+  <!-- CURRENT (broken) -->
+  <div class="option option-bad">
+    <div class="option-header">
+      <span class="option-label">Current (misleading)</span>
+    </div>
+    <p class="option-desc">Target indents right, making it look like "Write report" is becoming the child. Confusing — the dragged task is the one becoming a subtask, not the target.</p>
+    <div class="task-list">
+      <div class="domain-header"><div class="domain-dot"></div> Work <span class="domain-count">3</span></div>
+
+      <!-- Dragged task (dimmed in place) -->
+      <div class="task-row impact-border impact-p4 task-dimmed">
+        <div class="task-checkbox"></div>
+        <span class="task-title">Buy groceries</span>
+        <div class="task-meta"><span class="meta-duration">15m</span><span style="color:#6B7385">Min</span></div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <!-- Drag overlay floating -->
+      <div style="padding: 0 12px;">
+        <div class="drag-overlay" style="border-color: #6D5EF6; background: rgba(109,94,246,0.08);">
+          <span class="arrow-icon">↳</span> Buy groceries
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <!-- Target (indented = misleading) -->
+      <div class="task-row impact-border impact-p2 target-indented" style="position:relative;">
+        <div class="reparent-badge"><span class="badge-icon">↳</span> Make subtask</div>
+        <div class="task-checkbox"></div>
+        <span class="task-title">Write report</span>
+        <div class="task-meta"><span class="meta-duration">30m</span><span class="meta-impact">Mid</span></div>
+      </div>
+
+      <div class="task-row impact-border impact-p3">
+        <div class="task-checkbox"></div>
+        <span class="task-title">Review PR</span>
+        <div class="task-meta"><span class="meta-duration">10m</span><span style="color:#1A9160">Low</span></div>
+      </div>
+    </div>
+    <div class="annotation">↑ "Write report" shifts right — looks like IT is the subtask</div>
+  </div>
+
+  <!-- OPTION A: Glow only -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-label">Option A — Glow only</span>
+    </div>
+    <p class="option-desc">Target stays in place. Purple left-border glow + badge. No spatial shift — the badge alone communicates the action. Clean and minimal.</p>
+    <div class="task-list">
+      <div class="domain-header"><div class="domain-dot"></div> Work <span class="domain-count">3</span></div>
+
+      <div class="task-row impact-border impact-p4 task-dimmed">
+        <div class="task-checkbox"></div>
+        <span class="task-title">Buy groceries</span>
+        <div class="task-meta"><span class="meta-duration">15m</span><span style="color:#6B7385">Min</span></div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div style="padding: 0 12px;">
+        <div class="drag-overlay" style="border-color: #6D5EF6; background: rgba(109,94,246,0.08);">
+          <span class="arrow-icon">↳</span> Buy groceries
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <!-- Target (NO indent, just glow) -->
+      <div class="task-row target-glow" style="position:relative; border-left: 3px solid #6D5EF6;">
+        <div class="reparent-badge"><span class="badge-icon">↳</span> Make a subtask</div>
+        <div class="task-checkbox"></div>
+        <span class="task-title">Write report</span>
+        <div class="task-meta"><span class="meta-duration">30m</span><span class="meta-impact">Mid</span></div>
+      </div>
+
+      <div class="task-row impact-border impact-p3">
+        <div class="task-checkbox"></div>
+        <span class="task-title">Review PR</span>
+        <div class="task-meta"><span class="meta-duration">10m</span><span style="color:#1A9160">Low</span></div>
+      </div>
+    </div>
+    <div class="annotation">Target stays put — glow + badge is enough</div>
+  </div>
+
+  <!-- OPTION B: Indent the overlay -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-label">Option B — Indent the overlay</span>
+    </div>
+    <p class="option-desc">The floating drag card shifts right and shrinks when over a valid parent, visually showing "I am nesting under this task." Target gets a subtle highlight only.</p>
+    <div class="task-list">
+      <div class="domain-header"><div class="domain-dot"></div> Work <span class="domain-count">3</span></div>
+
+      <div class="task-row impact-border impact-p4 task-dimmed">
+        <div class="task-checkbox"></div>
+        <span class="task-title">Buy groceries</span>
+        <div class="task-meta"><span class="meta-duration">15m</span><span style="color:#6B7385">Min</span></div>
+      </div>
+
+      <!-- Target (subtle highlight, no indent) -->
+      <div class="task-row target-glow" style="position:relative; border-left: 3px solid #6D5EF6;">
+        <div class="reparent-badge"><span class="badge-icon">↳</span> Make a subtask</div>
+        <div class="task-checkbox"></div>
+        <span class="task-title">Write report</span>
+        <div class="task-meta"><span class="meta-duration">30m</span><span class="meta-impact">Mid</span></div>
+      </div>
+
+      <!-- Drag overlay indented + smaller -->
+      <div style="padding: 4px 12px;">
+        <div class="drag-overlay overlay-indented" style="border-color: #6D5EF6; background: rgba(109,94,246,0.08);">
+          <span class="arrow-icon">↳</span> Buy groceries
+        </div>
+      </div>
+
+      <div class="task-row impact-border impact-p3">
+        <div class="task-checkbox"></div>
+        <span class="task-title">Review PR</span>
+        <div class="task-meta"><span class="meta-duration">10m</span><span style="color:#1A9160">Low</span></div>
+      </div>
+    </div>
+    <div class="annotation">The card you're dragging shows it's becoming a child</div>
+  </div>
+
+  <!-- OPTION C: Gap + ghost placeholder -->
+  <div class="option">
+    <div class="option-header">
+      <span class="option-label">Option C — Ghost placeholder</span>
+    </div>
+    <p class="option-desc">Target stays in place. A gap opens below it with an indented dashed placeholder showing the task title — previewing exactly where the subtask will land.</p>
+    <div class="task-list">
+      <div class="domain-header"><div class="domain-dot"></div> Work <span class="domain-count">3</span></div>
+
+      <div class="task-row impact-border impact-p4 task-dimmed">
+        <div class="task-checkbox"></div>
+        <span class="task-title">Buy groceries</span>
+        <div class="task-meta"><span class="meta-duration">15m</span><span style="color:#6B7385">Min</span></div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div style="padding: 0 12px;">
+        <div class="drag-overlay" style="border-color: #6D5EF6; background: rgba(109,94,246,0.08);">
+          <span class="arrow-icon">↳</span> Buy groceries
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <!-- Target (no indent, subtle highlight) -->
+      <div class="task-row target-glow" style="position:relative; border-left: 3px solid #6D5EF6;">
+        <div class="reparent-badge"><span class="badge-icon">↳</span> Make a subtask</div>
+        <div class="task-checkbox"></div>
+        <span class="task-title">Write report</span>
+        <div class="task-meta"><span class="meta-duration">30m</span><span class="meta-impact">Mid</span></div>
+      </div>
+
+      <!-- Ghost placeholder -->
+      <div style="padding: 4px 12px 4px 12px;">
+        <div class="ghost-placeholder">
+          <div class="ghost-checkbox"></div>
+          <span style="opacity: 0.6;">Buy groceries</span>
+        </div>
+      </div>
+
+      <div class="task-row impact-border impact-p3">
+        <div class="task-checkbox"></div>
+        <span class="task-title">Review PR</span>
+        <div class="task-meta"><span class="meta-duration">10m</span><span style="color:#1A9160">Low</span></div>
+      </div>
+    </div>
+    <div class="annotation">Ghost preview shows exactly where it will land</div>
+  </div>
+
+</div>
+
+</body>
+</html>
