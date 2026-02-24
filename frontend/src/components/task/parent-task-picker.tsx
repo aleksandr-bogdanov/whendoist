@@ -3,11 +3,9 @@ import { ChevronDown, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { DomainResponse, SubtaskResponse, TaskResponse } from "@/api/model";
-import {
-  getListTasksApiV1TasksGetQueryKey,
-  useUpdateTaskApiV1TasksTaskIdPut,
-} from "@/api/queries/tasks/tasks";
+import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -91,9 +89,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
     }
 
     const prevParentId = currentParentId;
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
     // Update local state immediately
     setCurrentParentId(newParentId);
@@ -116,7 +112,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
         position: 9999,
       };
 
-      queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+      queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
         if (!old) return old;
         return old
           .filter((t) => t.id !== task.id) // Remove from top-level
@@ -148,7 +144,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
         subtasks: [],
       };
 
-      queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+      queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
         if (!old) return old;
         return [
           ...old.map((t) =>
@@ -172,7 +168,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
       {
         onSuccess: () => {
           queryClient.invalidateQueries({
-            queryKey: getListTasksApiV1TasksGetQueryKey(),
+            queryKey: dashboardTasksKey(),
           });
 
           if (newParentId !== null) {
@@ -183,7 +179,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
                 label: "Undo",
                 onClick: () => {
                   setCurrentParentId(prevParentId);
-                  queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                  queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                   updateTask.mutate(
                     {
                       taskId: task.id,
@@ -192,11 +188,11 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
                     {
                       onSuccess: () =>
                         queryClient.invalidateQueries({
-                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          queryKey: dashboardTasksKey(),
                         }),
                       onError: () => {
                         queryClient.invalidateQueries({
-                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          queryKey: dashboardTasksKey(),
                         });
                         toast.error("Undo failed");
                       },
@@ -213,7 +209,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
                 label: "Undo",
                 onClick: () => {
                   setCurrentParentId(prevParentId);
-                  queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+                  queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                   updateTask.mutate(
                     {
                       taskId: task.id,
@@ -222,11 +218,11 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
                     {
                       onSuccess: () =>
                         queryClient.invalidateQueries({
-                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          queryKey: dashboardTasksKey(),
                         }),
                       onError: () => {
                         queryClient.invalidateQueries({
-                          queryKey: getListTasksApiV1TasksGetQueryKey(),
+                          queryKey: dashboardTasksKey(),
                         });
                         toast.error("Undo failed");
                       },
@@ -239,7 +235,7 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
         },
         onError: () => {
           setCurrentParentId(prevParentId);
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to change parent task", {
             id: `reparent-err-${task.id}`,
           });

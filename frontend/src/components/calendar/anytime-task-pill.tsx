@@ -4,7 +4,6 @@ import { CalendarOff, Check, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
@@ -18,6 +17,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 
 interface AnytimeTaskPillProps {
@@ -40,7 +40,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
 
   const handleUnschedule = () => {
     const prevDate = task.scheduled_date;
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) =>
         t.id === task.id ? { ...t, scheduled_date: null, scheduled_time: null } : t,
       ),
@@ -49,7 +49,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
       { taskId: task.id, data: { scheduled_date: null, scheduled_time: null } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task unscheduled");
           toast.success(`Unscheduled "${task.title}"`, {
             id: `unschedule-${task.id}`,
@@ -61,7 +61,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                   },
                 );
@@ -70,7 +70,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
           });
         },
         onError: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           toast.error("Failed to unschedule task", { id: `unschedule-err-${task.id}` });
         },
       },
@@ -79,7 +79,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
 
   const handleComplete = () => {
     const isCompleted = task.status === "completed";
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) =>
         t.id === task.id
           ? {
@@ -94,32 +94,30 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
       { taskId: task.id, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce(isCompleted ? "Task reopened" : "Task completed");
           toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
             id: `complete-${task.id}`,
             action: {
               label: "Undo",
               onClick: () => {
-                queryClient.setQueryData<TaskResponse[]>(
-                  getListTasksApiV1TasksGetQueryKey(),
-                  (old) =>
-                    old?.map((t) =>
-                      t.id === task.id
-                        ? {
-                            ...t,
-                            status: isCompleted ? ("completed" as const) : ("pending" as const),
-                            completed_at: isCompleted ? new Date().toISOString() : null,
-                          }
-                        : t,
-                    ),
+                queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
+                  old?.map((t) =>
+                    t.id === task.id
+                      ? {
+                          ...t,
+                          status: isCompleted ? ("completed" as const) : ("pending" as const),
+                          completed_at: isCompleted ? new Date().toISOString() : null,
+                        }
+                      : t,
+                  ),
                 );
                 toggleComplete.mutate(
                   { taskId: task.id, data: null },
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                   },
                 );
@@ -128,7 +126,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
           });
         },
         onError: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           toast.error("Failed to complete task", { id: `complete-err-${task.id}` });
         },
       },
@@ -140,7 +138,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
       { taskId: task.id },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task deleted");
           toast.success(`Deleted "${task.title}"`, {
             id: `delete-${task.id}`,
@@ -152,7 +150,7 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                     onError: () => toast.error("Undo failed"),
                   },

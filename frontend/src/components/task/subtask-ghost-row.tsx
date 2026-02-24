@@ -5,11 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { TaskCreate, TaskResponse } from "@/api/model";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
 } from "@/api/queries/tasks/tasks";
 import { useCrypto } from "@/hooks/use-crypto";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { useUIStore } from "@/stores/ui-store";
 
 interface SubtaskGhostRowProps {
@@ -63,7 +63,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
       {
         onSuccess: (created) => {
           queryClient.invalidateQueries({
-            queryKey: getListTasksApiV1TasksGetQueryKey(),
+            queryKey: dashboardTasksKey(),
           });
           toast.success(`Created subtask "${trimmed}"`, {
             id: `create-subtask-${created.id}`,
@@ -75,7 +75,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                     onError: () => toast.error("Undo failed"),
                   },

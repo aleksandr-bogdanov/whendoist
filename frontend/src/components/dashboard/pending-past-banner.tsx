@@ -9,8 +9,8 @@ import {
   useBatchPastInstancesApiV1InstancesBatchPastPost,
   usePendingPastCountApiV1InstancesPendingPastCountGet,
 } from "@/api/queries/instances/instances";
-import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
+import { dashboardTasksKey } from "@/lib/query-keys";
 
 export function PendingPastBanner() {
   const queryClient = useQueryClient();
@@ -38,7 +38,7 @@ export function PendingPastBanner() {
             queryKey: getListInstancesApiV1InstancesGetQueryKey(),
           });
           queryClient.invalidateQueries({
-            queryKey: getListTasksApiV1TasksGetQueryKey(),
+            queryKey: dashboardTasksKey(),
           });
           toast.success(
             action === "complete"

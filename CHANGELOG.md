@@ -4,6 +4,22 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.95 — 2026-02-24
+
+### Feat: Task panel header cleanup and UX improvements
+- Removed FilterBar (SCHEDULED/COMPLETED toggle buttons) and SettingsPanel (gear menu) — redundant with section-level controls
+- Restructured task panel header to single row: Energy selector + Sort controls + action buttons
+- Moved completed retention days (1d/3d/7d) to CompletedSection header — contextually discoverable
+- Dashboard now fetches `status=all` so completed tasks persist across page refresh
+- Created shared `dashboardTasksKey()` for consistent query invalidation across all task components
+- DeletedSection: limited to 15 items by default with "Show all" link; reads `X-Total-Count` header
+- Backend: added `limit`/`offset` query params and `X-Total-Count` header to `GET /api/v1/tasks`
+- Extracted `_build_task_filters()` and added `count_tasks()` to TaskService
+- Added per-parent "hide completed subtasks" toggle on the subtask count badge
+- Removed "Hide recurring after done" setting (meaningless in current architecture)
+
+---
+
 ## v0.54.94 — 2026-02-24
 
 ### Feat: Add illustrations to empty states and error boundaries

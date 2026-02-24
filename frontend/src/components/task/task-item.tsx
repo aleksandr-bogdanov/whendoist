@@ -29,7 +29,6 @@ import {
   useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   getTaskApiV1TasksTaskIdGet,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
@@ -53,6 +52,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import {
   formatDate,
   formatDuration,
@@ -80,6 +80,8 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
     selectTask,
     expandedSubtasks,
     toggleExpandedSubtask,
+    hideCompletedSubtasks,
+    toggleHideCompletedSubtasks,
     requestSubtaskAdd,
     setMobileTab,
     justUpdatedId,
@@ -102,7 +104,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
 
   const invalidateAll = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
     queryClient.invalidateQueries({
       queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
     });
@@ -228,11 +230,9 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
     }
 
     // Non-recurring task: toggle complete on the parent
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
       if (!old) return old;
       return old.map((t) => {
         if (t.id === task.id) {
@@ -254,7 +254,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
       { taskId: task.id, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce(isCompleted ? "Task reopened" : "Task completed");
           toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
             id: `complete-${task.id}`,
@@ -266,7 +266,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   {
                     onSuccess: () => {
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       });
                     },
                     onError: () => toast.error("Undo failed"),
@@ -277,7 +277,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
           });
         },
         onError: () => {
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to update task", { id: `complete-err-${task.id}` });
         },
       },
@@ -342,10 +342,8 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
       return;
     }
 
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) =>
         t.id === task.id
           ? {
@@ -364,10 +362,10 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
       { taskId: task.id, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
         },
         onError: () => {
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to update task", { id: `complete-err-${task.id}` });
         },
       },
@@ -395,10 +393,8 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
     const prevDate = task.scheduled_date;
     const prevTime = task.scheduled_time ?? null;
 
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) =>
         t.id === task.id ? { ...t, scheduled_date: null, scheduled_time: null } : t,
       ),
@@ -407,28 +403,26 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
       { taskId: task.id, data: { scheduled_date: null, scheduled_time: null } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task unscheduled");
           toast.success(`Unscheduled "${task.title}"`, {
             id: `unschedule-${task.id}`,
             action: {
               label: "Undo",
               onClick: () => {
-                queryClient.setQueryData<TaskResponse[]>(
-                  getListTasksApiV1TasksGetQueryKey(),
-                  (old) =>
-                    old?.map((t) =>
-                      t.id === task.id
-                        ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
-                        : t,
-                    ),
+                queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
+                  old?.map((t) =>
+                    t.id === task.id
+                      ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
+                      : t,
+                  ),
                 );
                 updateTask.mutate(
                   { taskId: task.id, data: { scheduled_date: prevDate, scheduled_time: prevTime } },
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                   },
                 );
@@ -437,7 +431,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
           });
         },
         onError: () => {
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to unschedule task", { id: `unschedule-err-${task.id}` });
         },
       },
@@ -458,7 +452,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           queryClient.invalidateQueries({
             queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
           });
@@ -480,7 +474,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                         queryKey: getListInstancesApiV1InstancesGetQueryKey(),
                       });
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       });
                       queryClient.invalidateQueries({
                         queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
@@ -730,11 +724,31 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   </button>
                 )}
 
-                {/* Subtask count */}
-                {hasSubtasks && !isExpanded && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                    {task.subtasks!.length}
-                  </Badge>
+                {/* Subtask count — clickable to toggle hiding completed subtasks */}
+                {hasSubtasks && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleHideCompletedSubtasks(task.id);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="relative z-10"
+                    title={
+                      hideCompletedSubtasks.has(task.id)
+                        ? "Show completed subtasks"
+                        : "Hide completed subtasks"
+                    }
+                  >
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-accent"
+                    >
+                      {hideCompletedSubtasks.has(task.id)
+                        ? `${subtaskStats?.activeCount}/${subtaskStats?.totalCount}`
+                        : subtaskStats?.totalCount}
+                    </Badge>
+                  </button>
                 )}
 
                 {/* Quick add subtask — hover only, desktop */}
@@ -959,12 +973,19 @@ interface SubtaskTreeProps {
 }
 
 function SubtaskTree({ subtasks, parentTask, depth, onSelect, onEdit }: SubtaskTreeProps) {
+  const { hideCompletedSubtasks } = useUIStore();
+  const isHidingCompleted = hideCompletedSubtasks.has(parentTask.id);
+
+  const visibleSubtasks = isHidingCompleted
+    ? subtasks.filter((st) => st.status !== "completed")
+    : subtasks;
+
   const canAdd =
     !parentTask.is_recurring && parentTask.status !== "completed" && !parentTask.completed_at;
 
   return (
     <div>
-      {subtasks.map((st) => (
+      {visibleSubtasks.map((st) => (
         <SubtaskItem
           key={st.id}
           subtask={st}
@@ -1015,11 +1036,9 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
   };
 
   const doToggleComplete = useCallback(() => {
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) => ({
         ...t,
         subtasks: t.subtasks?.map((st) =>
@@ -1034,10 +1053,10 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
       { taskId: subtask.id, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
         },
         onError: () => {
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to update task", { id: `complete-err-${subtask.id}` });
         },
       },
@@ -1068,10 +1087,8 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
     setMenuOpen(false);
 
     // Optimistically remove the subtask from parent's subtasks array
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) =>
         t.id === parentId
           ? { ...t, subtasks: t.subtasks?.filter((st) => st.id !== subtask.id) }
@@ -1083,7 +1100,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
       { taskId: subtask.id },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Subtask deleted");
           toast.success(`Deleted "${subtask.title}"`, {
             id: `delete-${subtask.id}`,
@@ -1095,7 +1112,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                     onError: () => toast.error("Undo failed"),
                   },
@@ -1105,7 +1122,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
           });
         },
         onError: () => {
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to delete subtask", { id: `delete-err-${subtask.id}` });
         },
       },

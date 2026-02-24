@@ -9,7 +9,6 @@ import {
   usePendingPastCountApiV1InstancesPendingPastCountGet,
 } from "@/api/queries/instances/instances";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useListTasksApiV1TasksGet,
@@ -45,6 +44,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useCrypto } from "@/hooks/use-crypto";
+import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
 import {
   CLARITY_OPTIONS,
   DURATION_PRESETS,
@@ -125,7 +125,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   }, [task]);
 
   // Close editor if the task being edited is deleted/archived
-  const { data: allTasks } = useListTasksApiV1TasksGet();
+  const { data: allTasks } = useListTasksApiV1TasksGet(DASHBOARD_TASKS_PARAMS);
   useEffect(() => {
     if (open && task && allTasks) {
       const stillExists = allTasks.some(
@@ -168,7 +168,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   };
 
   const invalidateQueries = () => {
-    queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+    queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
   };
 

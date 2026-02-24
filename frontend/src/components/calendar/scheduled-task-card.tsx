@@ -4,7 +4,6 @@ import { CalendarOff, Check, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
 import {
-  getListTasksApiV1TasksGetQueryKey,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
@@ -19,6 +18,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { PositionedItem } from "@/lib/calendar-utils";
+import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 
 interface ScheduledTaskCardProps {
@@ -60,16 +60,14 @@ export function ScheduledTaskCard({
   const impactColor = IMPACT_COLORS[impact] ?? IMPACT_COLORS[4];
 
   const handleUnschedule = () => {
-    const tasks = queryClient.getQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey());
+    const tasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
     const prev = tasks?.find((t) => t.id === taskId);
     const prevDate = prev?.scheduled_date ?? null;
     const prevTime = prev?.scheduled_time ?? null;
 
     // Optimistic update — immediately remove from calendar
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) =>
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) => (t.id === taskId ? { ...t, scheduled_date: null, scheduled_time: null } : t)),
     );
 
@@ -77,7 +75,7 @@ export function ScheduledTaskCard({
       { taskId, data: { scheduled_date: null, scheduled_time: null } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task unscheduled");
           toast.success(`Unscheduled "${title}"`, {
             id: `unschedule-${taskId}`,
@@ -85,21 +83,19 @@ export function ScheduledTaskCard({
               label: "Undo",
               onClick: () => {
                 // Optimistic undo — immediately restore on calendar
-                queryClient.setQueryData<TaskResponse[]>(
-                  getListTasksApiV1TasksGetQueryKey(),
-                  (old) =>
-                    old?.map((t) =>
-                      t.id === taskId
-                        ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
-                        : t,
-                    ),
+                queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
+                  old?.map((t) =>
+                    t.id === taskId
+                      ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
+                      : t,
+                  ),
                 );
                 updateTask.mutate(
                   { taskId, data: { scheduled_date: prevDate, scheduled_time: prevTime } },
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                   },
                 );
@@ -108,7 +104,7 @@ export function ScheduledTaskCard({
           });
         },
         onError: () => {
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to unschedule task", { id: `unschedule-err-${taskId}` });
         },
       },
@@ -116,11 +112,9 @@ export function ScheduledTaskCard({
   };
 
   const handleComplete = () => {
-    const previousTasks = queryClient.getQueryData<TaskResponse[]>(
-      getListTasksApiV1TasksGetQueryKey(),
-    );
+    const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
-    queryClient.setQueryData<TaskResponse[]>(getListTasksApiV1TasksGetQueryKey(), (old) => {
+    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
       if (!old) return old;
       return old.map((t) =>
         t.id === taskId
@@ -137,32 +131,30 @@ export function ScheduledTaskCard({
       { taskId, data: null },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce(isCompleted ? "Task reopened" : "Task completed");
           toast.success(isCompleted ? `Reopened "${title}"` : `Completed "${title}"`, {
             id: `complete-${taskId}`,
             action: {
               label: "Undo",
               onClick: () => {
-                queryClient.setQueryData<TaskResponse[]>(
-                  getListTasksApiV1TasksGetQueryKey(),
-                  (old) =>
-                    old?.map((t) =>
-                      t.id === taskId
-                        ? {
-                            ...t,
-                            status: isCompleted ? ("completed" as const) : ("pending" as const),
-                            completed_at: isCompleted ? new Date().toISOString() : null,
-                          }
-                        : t,
-                    ),
+                queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
+                  old?.map((t) =>
+                    t.id === taskId
+                      ? {
+                          ...t,
+                          status: isCompleted ? ("completed" as const) : ("pending" as const),
+                          completed_at: isCompleted ? new Date().toISOString() : null,
+                        }
+                      : t,
+                  ),
                 );
                 toggleComplete.mutate(
                   { taskId, data: null },
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                   },
                 );
@@ -171,7 +163,7 @@ export function ScheduledTaskCard({
           });
         },
         onError: () => {
-          queryClient.setQueryData(getListTasksApiV1TasksGetQueryKey(), previousTasks);
+          queryClient.setQueryData(dashboardTasksKey(), previousTasks);
           toast.error("Failed to complete task", { id: `complete-err-${taskId}` });
         },
       },
@@ -183,7 +175,7 @@ export function ScheduledTaskCard({
       { taskId },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
+          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task deleted");
           toast.success(`Deleted "${title}"`, {
             id: `delete-${taskId}`,
@@ -195,11 +187,11 @@ export function ScheduledTaskCard({
                   {
                     onSuccess: () =>
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       }),
                     onError: () => {
                       queryClient.invalidateQueries({
-                        queryKey: getListTasksApiV1TasksGetQueryKey(),
+                        queryKey: dashboardTasksKey(),
                       });
                       toast.error("Undo failed");
                     },

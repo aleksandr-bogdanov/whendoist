@@ -15,6 +15,7 @@ interface UIState {
   showCompleted: boolean;
   collapsedDomains: Set<number>;
   expandedSubtasks: Set<number>;
+  hideCompletedSubtasks: Set<number>;
   selectedTaskId: number | null;
   selectedDomainId: number | null;
   mobileTab: MobileTab;
@@ -34,6 +35,7 @@ interface UIActions {
   toggleCollapsedDomain: (domainId: number) => void;
   toggleExpandedSubtask: (taskId: number) => void;
   expandSubtask: (taskId: number) => void;
+  toggleHideCompletedSubtasks: (taskId: number) => void;
   selectTask: (taskId: number | null) => void;
   selectDomain: (domainId: number | null) => void;
   setMobileTab: (tab: MobileTab) => void;
@@ -59,6 +61,7 @@ export const useUIStore = create<UIState & UIActions>()(
       showCompleted: true,
       collapsedDomains: new Set<number>(),
       expandedSubtasks: new Set<number>(),
+      hideCompletedSubtasks: new Set<number>(),
       selectedTaskId: null,
       selectedDomainId: null,
       mobileTab: "tasks",
@@ -126,6 +129,21 @@ export const useUIStore = create<UIState & UIActions>()(
           return { expandedSubtasks: next };
         }),
 
+      toggleHideCompletedSubtasks: (taskId) =>
+        set((state) => {
+          const next = new Set(state.hideCompletedSubtasks);
+          if (next.has(taskId)) {
+            next.delete(taskId);
+          } else {
+            if (next.size >= 100) {
+              const oldest = next.values().next().value;
+              if (oldest !== undefined) next.delete(oldest);
+            }
+            next.add(taskId);
+          }
+          return { hideCompletedSubtasks: next };
+        }),
+
       selectTask: (taskId) => set({ selectedTaskId: taskId }),
       selectDomain: (domainId) =>
         set((state) => ({
@@ -167,6 +185,7 @@ export const useUIStore = create<UIState & UIActions>()(
         showCompleted: state.showCompleted,
         collapsedDomains: [...state.collapsedDomains],
         expandedSubtasks: [...state.expandedSubtasks],
+        hideCompletedSubtasks: [...state.hideCompletedSubtasks],
         mobileTab: state.mobileTab,
       }),
       storage: {
@@ -180,6 +199,9 @@ export const useUIStore = create<UIState & UIActions>()(
           }
           if (parsed?.state?.expandedSubtasks) {
             parsed.state.expandedSubtasks = new Set(parsed.state.expandedSubtasks);
+          }
+          if (parsed?.state?.hideCompletedSubtasks) {
+            parsed.state.hideCompletedSubtasks = new Set(parsed.state.hideCompletedSubtasks);
           }
           return parsed;
         },

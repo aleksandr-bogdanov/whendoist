@@ -7,7 +7,7 @@ All operations are user-scoped (multi-tenant).
 
 from datetime import UTC, date, datetime, time
 
-from sqlalchemy import case, func, select
+from sqlalchemy import Select, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -125,6 +125,81 @@ class TaskService:
     # Task Operations
     # =========================================================================
 
+    def _build_task_filters(
+        self,
+        query: Select,  # type: ignore[type-arg]
+        *,
+        domain_id: int | None = None,
+        parent_id: int | None = None,
+        status: str | None = "pending",
+        scheduled_date: date | None = None,
+        is_recurring: bool | None = None,
+        clarity: str | None = None,
+        top_level_only: bool = True,
+        has_domain: bool | None = None,
+        exclude_statuses: list[str] | None = None,
+    ) -> Select:  # type: ignore[type-arg]
+        """Build WHERE clauses shared by get_tasks() and count_tasks()."""
+        query = query.where(Task.user_id == self.user_id)
+
+        if has_domain is True:
+            query = query.where(Task.domain_id.isnot(None))
+        elif has_domain is False:
+            query = query.where(Task.domain_id.is_(None))
+        elif domain_id is not None:
+            query = query.where(Task.domain_id == domain_id)
+
+        if exclude_statuses:
+            query = query.where(Task.status.notin_(exclude_statuses))
+
+        if top_level_only and parent_id is None:
+            query = query.where(Task.parent_id.is_(None))
+        elif parent_id is not None:
+            query = query.where(Task.parent_id == parent_id)
+
+        if status:
+            query = query.where(Task.status == status)
+
+        if scheduled_date:
+            query = query.where(Task.scheduled_date == scheduled_date)
+
+        if is_recurring is not None:
+            query = query.where(Task.is_recurring == is_recurring)
+
+        if clarity is not None:
+            query = query.where(Task.clarity == clarity)
+
+        return query
+
+    async def count_tasks(
+        self,
+        *,
+        domain_id: int | None = None,
+        parent_id: int | None = None,
+        status: str | None = "pending",
+        scheduled_date: date | None = None,
+        is_recurring: bool | None = None,
+        clarity: str | None = None,
+        top_level_only: bool = True,
+        has_domain: bool | None = None,
+        exclude_statuses: list[str] | None = None,
+    ) -> int:
+        """Count tasks matching the given filters."""
+        query = self._build_task_filters(
+            select(func.count(Task.id)),
+            domain_id=domain_id,
+            parent_id=parent_id,
+            status=status,
+            scheduled_date=scheduled_date,
+            is_recurring=is_recurring,
+            clarity=clarity,
+            top_level_only=top_level_only,
+            has_domain=has_domain,
+            exclude_statuses=exclude_statuses,
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one()
+
     async def get_tasks(
         self,
         domain_id: int | None = None,
@@ -137,6 +212,8 @@ class TaskService:
         top_level_only: bool = True,
         has_domain: bool | None = None,
         exclude_statuses: list[str] | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[Task]:
         """
         Get tasks with optional filtering.
@@ -152,43 +229,21 @@ class TaskService:
             top_level_only: Only return top-level tasks (parent_id is None)
             has_domain: True = only tasks WITH a domain, False = only tasks WITHOUT (thoughts)
             exclude_statuses: List of statuses to exclude (e.g., ["deleted", "archived"])
+            limit: Max number of tasks to return
+            offset: Number of tasks to skip
         """
-        query = select(Task).where(Task.user_id == self.user_id)
-
-        # Filter by domain presence (has_domain takes precedence over domain_id)
-        if has_domain is True:
-            query = query.where(Task.domain_id.isnot(None))
-        elif has_domain is False:
-            query = query.where(Task.domain_id.is_(None))
-        elif domain_id is not None:
-            # Only apply domain_id filter if has_domain is not specified
-            query = query.where(Task.domain_id == domain_id)
-
-        # Exclude specific statuses
-        if exclude_statuses:
-            query = query.where(Task.status.notin_(exclude_statuses))
-
-        # Filter by parent
-        if top_level_only and parent_id is None:
-            query = query.where(Task.parent_id.is_(None))
-        elif parent_id is not None:
-            query = query.where(Task.parent_id == parent_id)
-
-        # Filter by status
-        if status:
-            query = query.where(Task.status == status)
-
-        # Filter by scheduled date
-        if scheduled_date:
-            query = query.where(Task.scheduled_date == scheduled_date)
-
-        # Filter by recurrence
-        if is_recurring is not None:
-            query = query.where(Task.is_recurring == is_recurring)
-
-        # Filter by clarity
-        if clarity is not None:
-            query = query.where(Task.clarity == clarity)
+        query = self._build_task_filters(
+            select(Task),
+            domain_id=domain_id,
+            parent_id=parent_id,
+            status=status,
+            scheduled_date=scheduled_date,
+            is_recurring=is_recurring,
+            clarity=clarity,
+            top_level_only=top_level_only,
+            has_domain=has_domain,
+            exclude_statuses=exclude_statuses,
+        )
 
         # Eager load relationships
         if include_subtasks:
@@ -209,13 +264,17 @@ class TaskService:
 
         # Order: unscheduled first, scheduled second, completed last
         # Then by impact (highest first), then position
-        # Note: scheduled_date alone (without time) counts as "scheduled" for separation
         schedule_order = case(
             (Task.status == "completed", 2),  # Completed last
-            (Task.scheduled_date.isnot(None), 1),  # Scheduled second (date only or date+time)
+            (Task.scheduled_date.isnot(None), 1),  # Scheduled second
             else_=0,  # Unscheduled first
         )
         query = query.order_by(schedule_order, Task.impact.asc(), Task.position, Task.created_at)
+
+        if offset is not None:
+            query = query.offset(offset)
+        if limit is not None:
+            query = query.limit(limit)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())
