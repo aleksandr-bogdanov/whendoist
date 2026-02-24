@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.85 — 2026-02-24
+
+### Fix: V4 audit findings (7 of 8)
+- **Input validation**: Added field validators to `TaskContentData` and `DomainContentData` batch models (control char stripping + length limits)
+- **Domain icon validation**: Added `@field_validator("icon")` to `DomainCreate` and `DomainUpdate` (50 char limit, control char stripping)
+- **Retention days**: Changed `completed_retention_days` from `Field(ge=1, le=7)` to `Literal[1, 3, 7]`
+- **Rate limit interval leak**: Store interval ID at module level, clear before creating new countdown
+- **Backup completeness**: Added `encryption_unlock_method` to backup export/import
+- **Undo error handling**: Added `onError` toast to toggle-complete and instance reschedule undo callbacks
+
+---
+
 ## v0.54.84 — 2026-02-24
 
 ### Docs: Pre-1.0 cleanup

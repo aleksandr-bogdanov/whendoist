@@ -331,7 +331,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                     );
                     scheduleInstance.mutate(
                       { instanceId, data: { scheduled_datetime: prevDatetime } },
-                      { onSuccess: () => invalidateInstances() },
+                      {
+                        onSuccess: () => invalidateInstances(),
+                        onError: () => toast.error("Undo failed"),
+                      },
                     );
                   },
                 },
@@ -431,7 +434,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                       );
                       scheduleInstance.mutate(
                         { instanceId, data: { scheduled_datetime: prevDatetime } },
-                        { onSuccess: () => invalidateInstances() },
+                        {
+                          onSuccess: () => invalidateInstances(),
+                          onError: () => toast.error("Undo failed"),
+                        },
                       );
                     },
                   },

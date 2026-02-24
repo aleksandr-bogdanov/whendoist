@@ -66,16 +66,19 @@ axios.interceptors.request.use(async (config) => {
 let isRedirecting = false;
 
 /** Show a countdown toast for rate limiting */
+let rateLimitIntervalId: ReturnType<typeof setInterval> | null = null;
 function showRateLimitCountdown(seconds: number) {
+  if (rateLimitIntervalId) clearInterval(rateLimitIntervalId);
   let remaining = seconds;
   toast.error(`Too many requests. Try again in ${remaining}s.`, {
     id: "rate-limit",
     duration: seconds * 1000 + 500,
   });
-  const interval = setInterval(() => {
+  rateLimitIntervalId = setInterval(() => {
     remaining -= 1;
     if (remaining <= 0) {
-      clearInterval(interval);
+      clearInterval(rateLimitIntervalId!);
+      rateLimitIntervalId = null;
       toast.dismiss("rate-limit");
       return;
     }

@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants import DOMAIN_NAME_MAX_LENGTH
+from app.constants import DOMAIN_ICON_MAX_LENGTH, DOMAIN_NAME_MAX_LENGTH
 from app.database import get_db
 from app.models import Domain, User
 from app.routers.auth import require_user
@@ -62,6 +62,16 @@ class DomainCreate(BaseModel):
             raise ValueError("Color must be a hex color (e.g. #FF5733)")
         return v
 
+    @field_validator("icon")
+    @classmethod
+    def validate_icon(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = _strip_control_chars(v).strip()
+        if len(v) > DOMAIN_ICON_MAX_LENGTH:
+            raise ValueError(f"Icon cannot exceed {DOMAIN_ICON_MAX_LENGTH} characters")
+        return v
+
 
 class DomainUpdate(BaseModel):
     """Request body for updating a domain."""
@@ -88,6 +98,16 @@ class DomainUpdate(BaseModel):
     def validate_color(cls, v: str | None) -> str | None:
         if v is not None and not HEX_COLOR_PATTERN.match(v):
             raise ValueError("Color must be a hex color (e.g. #FF5733)")
+        return v
+
+    @field_validator("icon")
+    @classmethod
+    def validate_icon(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = _strip_control_chars(v).strip()
+        if len(v) > DOMAIN_ICON_MAX_LENGTH:
+            raise ValueError(f"Icon cannot exceed {DOMAIN_ICON_MAX_LENGTH} characters")
         return v
 
 
@@ -199,6 +219,16 @@ class DomainContentData(BaseModel):
     id: int
     name: str
     position: int | None = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = _strip_control_chars(v).strip()
+        if not v:
+            raise ValueError("Name cannot be empty")
+        if len(v) > DOMAIN_NAME_MAX_LENGTH:
+            raise ValueError(f"Name cannot exceed {DOMAIN_NAME_MAX_LENGTH} characters")
+        return v
 
 
 class BatchUpdateDomainsRequest(BaseModel):

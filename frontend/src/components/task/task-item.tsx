@@ -269,6 +269,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                         queryKey: getListTasksApiV1TasksGetQueryKey(),
                       });
                     },
+                    onError: () => toast.error("Undo failed"),
                   },
                 );
               },
