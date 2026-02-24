@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.83 — 2026-02-24
+
+### Fix: CI TypeScript check + analytics decryption for encryption users
+- **CI** — Fixed `tsc` command in `.github/workflows/ci.yml` to use `-p tsconfig.app.json` so it actually type-checks frontend files (root tsconfig has `"files": []`)
+- **Analytics decryption** — Decrypt task titles and domain names on the analytics page for encryption users. Affected surfaces: recurring task list, domain breakdown chart, and recent completions. Mirrors the `useEffect` + fingerprint decryption pattern from the thoughts page.
+
 ## v0.54.82 — 2026-02-24
 
 ### Feat: Error boundary, code splitting, PWA reload prompt

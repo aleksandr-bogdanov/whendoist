@@ -150,7 +150,7 @@ jobs:
         run: cd frontend && npm ci
 
       - name: TypeScript check
-        run: cd frontend && npx tsc --noEmit
+        run: cd frontend && npx tsc -p tsconfig.app.json --noEmit
 
       - name: Biome lint + format check
         run: cd frontend && npx biome check .
