@@ -62,6 +62,10 @@ class DemoService:
         user = result.scalar_one_or_none()
 
         if user:
+            # Always reset wizard so demo starts with onboarding
+            user.wizard_completed = False
+            user.wizard_completed_at = None
+            await self.db.commit()
             return user
 
         # Create new demo user
@@ -73,7 +77,7 @@ class DemoService:
         user = User(
             email=email,
             name=display_names.get(profile, "Demo User"),
-            wizard_completed=True,
+            wizard_completed=False,
         )
         self.db.add(user)
         await self.db.flush()
@@ -98,6 +102,10 @@ class DemoService:
             return
 
         await self._clear_user_data(user_id)
+
+        # Reset wizard so demo always starts with onboarding
+        user.wizard_completed = False
+        user.wizard_completed_at = None
 
         # Determine profile from email
         profile = user.email.replace(DEMO_EMAIL_SUFFIX, "").replace("demo-", "")

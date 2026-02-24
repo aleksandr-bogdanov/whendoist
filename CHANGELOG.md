@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.91 — 2026-02-24
+
+### Feat: Demo users always start with onboarding wizard
+- Demo login now sets `wizard_completed=False` so the onboarding wizard shows on every demo session
+- Returning demo users get wizard reset on login; demo reset also resets wizard state
+
+---
+
 ## v0.54.90 — 2026-02-24
 
 ### Feat: Landing page redesign + demo login fix

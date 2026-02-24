@@ -48,7 +48,7 @@ class TestGetOrCreateDemoUser:
         assert user.id is not None
         assert user.email == f"demo-demo{DEMO_EMAIL_SUFFIX}"
         assert user.name == "Demo User"
-        assert user.wizard_completed is True
+        assert user.wizard_completed is False
 
         # Verify domains were seeded
         domains_result = await db_session.execute(select(Domain).where(Domain.user_id == user.id))
@@ -67,7 +67,7 @@ class TestGetOrCreateDemoUser:
 
         assert user.email == f"demo-blank{DEMO_EMAIL_SUFFIX}"
         assert user.name == "Blank Slate"
-        assert user.wizard_completed is True
+        assert user.wizard_completed is False
 
         # No domains or tasks
         domains_result = await db_session.execute(select(func.count(Domain.id)).where(Domain.user_id == user.id))
