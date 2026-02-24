@@ -17,25 +17,17 @@ import { useCryptoStore } from "@/stores/crypto-store";
 import { useUIStore } from "@/stores/ui-store";
 import { EnergySelector } from "./energy-selector";
 import { PendingPastBanner } from "./pending-past-banner";
-import { SortControls } from "./sort-controls";
+import { ColumnHeaders } from "./sort-controls";
 
 interface TaskPanelProps {
   tasks: TaskResponse[] | undefined;
   domains: DomainResponse[] | undefined;
   isLoading: boolean;
   onNewTask?: () => void;
-  onQuickAdd?: () => void;
   onEditTask?: (task: TaskResponse) => void;
 }
 
-export function TaskPanel({
-  tasks,
-  domains,
-  isLoading,
-  onNewTask,
-  onQuickAdd,
-  onEditTask,
-}: TaskPanelProps) {
+export function TaskPanel({ tasks, domains, isLoading, onNewTask, onEditTask }: TaskPanelProps) {
   const { sortField, sortDirection, energyLevel } = useUIStore();
   const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
   const queryClient = useQueryClient();
@@ -145,26 +137,14 @@ export function TaskPanel({
         data-task-panel-header
         className="relative flex items-center gap-2 px-2 sm:px-4 py-2 border-b backdrop-blur-md bg-muted/30"
       >
-        {/* Spectrum bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#167BFF] via-[#6D5EF6] to-[#A020C0] opacity-35" />
-
         <EnergySelector />
         <div className="flex-1" />
-        <SortControls />
-        <div className="flex items-center gap-1">
-          {onQuickAdd && (
-            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onQuickAdd}>
-              <Plus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Quick</span>
-            </Button>
-          )}
-          {onNewTask && (
-            <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNewTask}>
-              <Plus className="h-3.5 w-3.5" />
-              New Task
-            </Button>
-          )}
-        </div>
+        {onNewTask && (
+          <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNewTask}>
+            <Plus className="h-3.5 w-3.5" />
+            New Task
+          </Button>
+        )}
       </div>
 
       {/* Task list */}
@@ -173,6 +153,7 @@ export function TaskPanel({
           className="flex-1 min-h-0 overflow-y-auto relative sm:px-2 lg:px-4"
           data-task-scroll-area
         >
+          <ColumnHeaders />
           <StickyDomainHeader />
           <div className="p-2 sm:p-4 pb-nav-safe md:pb-4 space-y-2">
             <PendingPastBanner />

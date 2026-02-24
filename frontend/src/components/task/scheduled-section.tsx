@@ -124,7 +124,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
           className={cn(
             "flex w-full items-center gap-2 px-3 py-2 text-sm font-medium",
             "rounded-md hover:bg-[rgba(109,94,246,0.04)] transition-colors",
-            "border-t border-border mt-2 pt-3",
+            "border-t border-border/50 mt-6 pt-4",
           )}
         >
           <CalendarClock className="h-4 w-4 text-muted-foreground" />

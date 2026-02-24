@@ -7,8 +7,6 @@ const ENERGY_LEVELS = [
   { level: 3 as const, emoji: "\u{1F9E0}", color: "var(--brainstorm-color)" },
 ] as const;
 
-const DOT_COLORS = ["var(--autopilot-color)", "var(--normal-color)", "var(--brainstorm-color)"];
-
 export function EnergySelector() {
   const { energyLevel, setEnergyLevel } = useUIStore();
 
@@ -43,22 +41,6 @@ export function EnergySelector() {
             </button>
           );
         })}
-      </div>
-      {/* Clarity dots */}
-      <div className="flex items-center gap-1">
-        {DOT_COLORS.map((color, i) => (
-          <div
-            key={color}
-            className="rounded-full"
-            style={{
-              width: 6,
-              height: 6,
-              backgroundColor: color,
-              opacity: i < energyLevel ? 1 : 0.12,
-              transition: "opacity 0.2s",
-            }}
-          />
-        ))}
       </div>
     </div>
   );
