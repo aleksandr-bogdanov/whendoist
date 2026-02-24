@@ -4,6 +4,8 @@ User preferences API endpoints.
 Provides REST endpoints for managing task display preferences and E2E encryption.
 """
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,7 +28,7 @@ class PreferencesUpdate(BaseModel):
     """Request body for updating preferences."""
 
     show_completed_in_planner: bool | None = None
-    completed_retention_days: int | None = Field(None, ge=1, le=7)
+    completed_retention_days: Literal[1, 3, 7] | None = None
     show_completed_in_list: bool | None = None
     hide_recurring_after_completion: bool | None = None
     show_scheduled_in_list: bool | None = None

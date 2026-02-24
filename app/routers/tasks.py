@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import (
+    DOMAIN_NAME_MAX_LENGTH,
     GCAL_SYNC_DEFAULT_DURATION_MINUTES,
     TASK_DESCRIPTION_MAX_LENGTH,
     TASK_TITLE_MAX_LENGTH,
@@ -412,12 +413,42 @@ class TaskContentData(BaseModel):
     title: str
     description: str | None = None
 
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        v = _strip_control_chars(v).strip()
+        if not v:
+            raise ValueError("Title cannot be empty")
+        if len(v) > TASK_TITLE_MAX_LENGTH:
+            raise ValueError(f"Title cannot exceed {TASK_TITLE_MAX_LENGTH} characters")
+        return v
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        v = _strip_control_chars(v)
+        if len(v) > TASK_DESCRIPTION_MAX_LENGTH:
+            raise ValueError(f"Description cannot exceed {TASK_DESCRIPTION_MAX_LENGTH} characters")
+        return v
+
 
 class DomainContentData(BaseModel):
     """Single domain's content for batch update."""
 
     id: int
     name: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = _strip_control_chars(v).strip()
+        if not v:
+            raise ValueError("Name cannot be empty")
+        if len(v) > DOMAIN_NAME_MAX_LENGTH:
+            raise ValueError(f"Name cannot exceed {DOMAIN_NAME_MAX_LENGTH} characters")
+        return v
 
 
 class AllDataResponse(BaseModel):

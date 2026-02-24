@@ -163,6 +163,7 @@ class BackupPreferencesSchema(BaseModel):
     encryption_enabled: bool = False
     encryption_salt: str | None = None
     encryption_test_value: str | None = None
+    encryption_unlock_method: str | None = None
 
 
 class BackupSchema(BaseModel):
@@ -394,6 +395,7 @@ class BackupService:
                     encryption_enabled=prefs_data.encryption_enabled,
                     encryption_salt=prefs_data.encryption_salt,
                     encryption_test_value=prefs_data.encryption_test_value,
+                    encryption_unlock_method=prefs_data.encryption_unlock_method,
                 )
                 self.db.add(preferences)
 
@@ -501,6 +503,7 @@ class BackupService:
             "encryption_enabled": prefs.encryption_enabled,
             "encryption_salt": prefs.encryption_salt,
             "encryption_test_value": prefs.encryption_test_value,
+            "encryption_unlock_method": prefs.encryption_unlock_method,
         }
 
     def _parse_date(self, value: str | None) -> date | None:
