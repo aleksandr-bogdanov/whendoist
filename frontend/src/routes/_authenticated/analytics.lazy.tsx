@@ -1,7 +1,7 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { Activity, CheckCircle2, Clock, Flame, Loader2, Percent, Trophy } from "lucide-react";
-import { useState } from "react";
-import type { RecentCompletionItem } from "@/api/model";
+import { useEffect, useMemo, useState } from "react";
+import type { DomainBreakdownItem, RecentCompletionItem, RecurringStatItem } from "@/api/model";
 import {
   useGetAnalyticsApiV1AnalyticsGet,
   useGetRecentCompletionsApiV1AnalyticsRecentCompletionsGet,
@@ -16,6 +16,8 @@ import { StatCard } from "@/components/analytics/stat-card";
 import { VelocityChart } from "@/components/analytics/velocity-chart";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { decrypt, looksEncrypted } from "@/lib/crypto";
+import { useCryptoStore } from "@/stores/crypto-store";
 
 export const Route = createLazyFileRoute("/_authenticated/analytics")({
   component: AnalyticsPage,
@@ -30,6 +32,70 @@ const RANGE_OPTIONS = [
 function AnalyticsPage() {
   const [days, setDays] = useState(30);
   const { data, isLoading } = useGetAnalyticsApiV1AnalyticsGet({ days });
+  const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
+  const canDecrypt = encryptionEnabled && isUnlocked && derivedKey !== null;
+
+  // Decrypt recurring task titles for encryption users
+  const rawRecurring = data?.recurring_stats ?? [];
+  const recurringFingerprint = useMemo(
+    () => rawRecurring.map((r) => `${r.task_id}:${r.title?.slice(0, 8)}`).join(","),
+    [rawRecurring],
+  );
+  const [decryptedRecurring, setDecryptedRecurring] = useState<RecurringStatItem[]>([]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint tracks changes
+  useEffect(() => {
+    if (!canDecrypt || !derivedKey) {
+      setDecryptedRecurring(rawRecurring);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      rawRecurring.map(async (item) => {
+        if (!looksEncrypted(item.title)) return item;
+        try {
+          return { ...item, title: await decrypt(derivedKey, item.title) };
+        } catch {
+          return item;
+        }
+      }),
+    ).then((result) => {
+      if (!cancelled) setDecryptedRecurring(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [recurringFingerprint, canDecrypt, derivedKey]);
+
+  // Decrypt domain breakdown names for encryption users
+  const rawDomainBreakdown = data?.by_domain ?? [];
+  const domainFingerprint = useMemo(
+    () => rawDomainBreakdown.map((d) => `${d.domain_id}:${d.domain_name?.slice(0, 8)}`).join(","),
+    [rawDomainBreakdown],
+  );
+  const [decryptedDomains, setDecryptedDomains] = useState<DomainBreakdownItem[]>([]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint tracks changes
+  useEffect(() => {
+    if (!canDecrypt || !derivedKey) {
+      setDecryptedDomains(rawDomainBreakdown);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      rawDomainBreakdown.map(async (item) => {
+        if (!looksEncrypted(item.domain_name)) return item;
+        try {
+          return { ...item, domain_name: await decrypt(derivedKey, item.domain_name) };
+        } catch {
+          return item;
+        }
+      }),
+    ).then((result) => {
+      if (!cancelled) setDecryptedDomains(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [domainFingerprint, canDecrypt, derivedKey]);
 
   if (isLoading) {
     return (
@@ -94,7 +160,7 @@ function AnalyticsPage() {
 
         {/* Two-column layout */}
         <div className="grid gap-6 sm:grid-cols-2">
-          <DomainBreakdown data={data.by_domain} />
+          <DomainBreakdown data={decryptedDomains} />
           <DayOfWeekChart data={data.by_day_of_week} />
         </div>
 
@@ -104,7 +170,7 @@ function AnalyticsPage() {
         {/* Two-column layout */}
         <div className="grid gap-6 sm:grid-cols-2">
           <ImpactChart data={data.impact_distribution} />
-          <RecurringList data={data.recurring_stats} />
+          <RecurringList data={decryptedRecurring} />
         </div>
 
         {/* Recent completions + Velocity */}
@@ -189,8 +255,48 @@ function RecentCompletions() {
   const { data, isLoading } = useGetRecentCompletionsApiV1AnalyticsRecentCompletionsGet({
     limit: 20,
   });
+  const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
+  const canDecrypt = encryptionEnabled && isUnlocked && derivedKey !== null;
 
-  const items = (data ?? []) as RecentCompletionItem[];
+  const rawItems = (data ?? []) as RecentCompletionItem[];
+  const itemsFingerprint = useMemo(
+    () => rawItems.map((i) => `${i.id}:${i.title?.slice(0, 8)}`).join(","),
+    [rawItems],
+  );
+  const [items, setItems] = useState<RecentCompletionItem[]>([]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint tracks changes
+  useEffect(() => {
+    if (!canDecrypt || !derivedKey) {
+      setItems(rawItems);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      rawItems.map(async (item) => {
+        let { title, domain_name } = item;
+        if (looksEncrypted(title)) {
+          try {
+            title = await decrypt(derivedKey, title);
+          } catch {
+            /* keep original */
+          }
+        }
+        if (looksEncrypted(domain_name)) {
+          try {
+            domain_name = await decrypt(derivedKey, domain_name);
+          } catch {
+            /* keep original */
+          }
+        }
+        return { ...item, title, domain_name };
+      }),
+    ).then((result) => {
+      if (!cancelled) setItems(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [itemsFingerprint, canDecrypt, derivedKey]);
 
   return (
     <div className="rounded-xl border bg-card p-6 shadow-sm space-y-3">
