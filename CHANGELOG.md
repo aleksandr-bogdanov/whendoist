@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.99 — 2026-02-24
+
+### Fix: Illustration SVGs not served in production
+- Mounted `/illustrations` static directory from SPA dist so SVGs are served directly instead of falling through to SPA fallback (which returned HTML)
+- Added `illustrations/`, `assets/`, `icons/` to SPA fallback exclusion list
+
 ## v0.54.98 — 2026-02-24
 
 ### Fix: Demo login 500 error + landing page readability + animation tweaks
