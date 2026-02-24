@@ -128,7 +128,9 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   const { data: allTasks } = useListTasksApiV1TasksGet();
   useEffect(() => {
     if (open && task && allTasks) {
-      const stillExists = allTasks.some((t) => t.id === task.id);
+      const stillExists = allTasks.some(
+        (t) => t.id === task.id || t.subtasks?.some((st) => st.id === task.id),
+      );
       if (!stillExists) onOpenChange(false);
     }
   }, [open, task, allTasks, onOpenChange]);
