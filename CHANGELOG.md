@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.5 — 2026-02-25
+
+### Fix: Sticky header glass effect + clarity column alignment
+- Sticky sort header now has proper glass surface (`backdrop-blur-lg` 16px + 90% opacity) so domain headers don't show through
+- Fixed clarity column alignment: `calc()` padding values had no spaces around `+` operator, generating invalid CSS that the browser ignored — switched to explicit pixel values (`pr-[9px] sm:pr-[17px]`)
+
 ## v0.55.4 — 2026-02-25
 
 ### Feat: Sticky domain label in column headers + alignment fix
