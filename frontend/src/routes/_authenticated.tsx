@@ -75,7 +75,13 @@ function AuthenticatedLayout() {
       ) : (
         <AppShell userName={me?.name ?? undefined} userEmail={me?.email} />
       )}
-      {showWizard && <OnboardingWizard open={true} onComplete={() => setWizardDismissed(true)} />}
+      {showWizard && (
+        <OnboardingWizard
+          open={true}
+          onComplete={() => setWizardDismissed(true)}
+          userName={me?.name ?? undefined}
+        />
+      )}
     </AppErrorBoundary>
   );
 }
