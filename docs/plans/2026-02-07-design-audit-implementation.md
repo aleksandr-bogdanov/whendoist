@@ -9,7 +9,7 @@
 
 Ten changes from a comprehensive design audit of the task list view. Grouped into 9 stages ordered by risk (CSS-only first, structural changes last).
 
-**Mock:** `docs/archive/scratchpad/design-audit-options.html`
+**Mock:** `docs/scratchpad/design-audit-options.html`
 
 | # | Change | What | Complexity | Files |
 |---|--------|------|-----------|-------|
@@ -1208,7 +1208,7 @@ Final PR cleanup for the design audit implementation.
 
 ## Design Reference
 
-- **Mock (comparison):** `docs/archive/scratchpad/design-audit-options.html`
+- **Mock (comparison):** `docs/scratchpad/design-audit-options.html`
 - **Brand system:** `docs/brand/COLOR-SYSTEM.md`, `docs/brand/UI-KIT.md`
 - **Tokens:** `static/css/tokens.css`
 - **Previous refinements:** `docs/TASK-LIST-REFINEMENTS.md`

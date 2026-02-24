@@ -66,6 +66,9 @@ node_modules/
 # Frontend build artifacts
 frontend/dist/
 
+# Generated OpenAPI spec (orval fetches from running server)
+openapi.json
+
 # Playwright (legacy)
 /test-results/
 /playwright-report/

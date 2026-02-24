@@ -55,7 +55,7 @@ See the [Deployment Guide](docs/DEPLOYMENT.md) for production setup.
 | Page | Purpose |
 |------|---------|
 | **Tasks** | Day planning with task list + calendar |
-| **Thought Cabinet** | Quick capture inbox, promote thoughts to tasks |
+| **Thoughts** | Quick capture inbox, promote thoughts to tasks |
 | **Analytics** | Completion stats, trends, streaks |
 | **Settings** | Integrations, domains, security, preferences |
 
@@ -77,7 +77,6 @@ Filter tasks by how much energy they require:
 | **Mode** | Task mode: Autopilot, Normal, Brainstorm |
 | **Duration** | Time estimate (30m, 2h, etc.) |
 | **Scheduled** | When you plan to work on it |
-| **Due** | Deadline (optional) |
 | **Recurrence** | Daily, weekly, monthly, custom |
 
 ### Visual Scheduling
@@ -194,7 +193,7 @@ cd frontend && npm run dev          # Vite dev server with HMR
 cd frontend && npm run build        # Production build
 cd frontend && npx orval            # Regenerate API types from OpenAPI spec
 cd frontend && npx biome check .    # Lint + format check
-cd frontend && npx tsc --noEmit     # TypeScript type check
+cd frontend && npx tsc -p tsconfig.app.json --noEmit  # TypeScript type check
 ```
 
 ### Claude Code Skills
@@ -248,7 +247,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Post-v1.0 Backlog](docs/POST-1.0-BACKLOG.md) | Deferred work and future roadmap |
 | [Changelog](CHANGELOG.md) | Version history |
 | [Test Architecture](tests/README.md) | Testing patterns |
-| [Archived Docs](docs/archive/) | Historical audits, reviews, and plans |
+| [Plans & Archive](docs/plans/) | Historical audits, reviews, and implementation plans |
 
 ---
 

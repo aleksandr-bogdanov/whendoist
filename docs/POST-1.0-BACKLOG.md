@@ -1,17 +1,6 @@
 # Post-v1.0 Backlog
 
-> Deferred work and future roadmap. Compiled from v1.0 gate audits (Feb 9, 2026) and V1 roadmap planning.
->
-> See also: [V1 Roadmap (archived)](archive/2026-02-09-v1-roadmap.md)
-
----
-
-## Remaining Pre-v1.0 Items
-
-These should still be addressed before v1.0:
-
-- **Gesture discovery redesign** — Current swipe hint animation works but needs polished, branded onboarding flow
-- **Settings/gear redesign** — Hidden on mobile since v0.42.x; needs a mobile-friendly settings surface
+> Deferred work and future roadmap. Compiled from v1.0 gate audits and roadmap planning.
 
 ---
 
@@ -31,7 +20,6 @@ These should still be addressed before v1.0:
 
 - **Timezone on scheduled_time** — `scheduled_time` stored as bare Time (no TZ); materialized as UTC. A user in EST with a 9 AM task gets instances at 9 AM UTC = 4 AM EST. Needs user timezone preference + TZ-aware materialization
 - **Explicit recurrence_start + scheduled_date interaction** — Setting both `recurrence_start` and `scheduled_date` independently has quirks. Currently `scheduled_date` auto-populates from `recurrence_start` (or today) when not set, but explicitly setting both leads to confusing behavior. Simplify: either unify into one field or clarify precedence
-- **recurrence_rule validation** — Any dict accepted; malformed input silently produces zero instances. UI sends valid JSON so risk is API-only
 - **Monthly 31st skips short months** — `dateutil.rrule` with `bymonthday=31` skips Feb/Apr/Jun/Sep/Nov. Needs UI tooltip when `day_of_month > 28`
 - **regenerate_instances cleanup** — Changing a recurrence rule doesn't clean up completed/skipped instances from the old rule
 - **Skip/toggle state machine** — Toggling a skipped instance marks it completed (not pending). May surprise users expecting skip → pending → completed
@@ -53,7 +41,6 @@ These should still be addressed before v1.0:
 - **Passkey deletion rate limit** — `DELETE /api/v1/passkeys/{id}` has no rate limit
 - **Encryption timing oracle** — Client-side passphrase verification uses non-constant-time string comparison. Theoretical risk only
 - **Instance cleanup audit trail** — `cleanup_old_instances` permanently deletes 90+ day instances with no log
-- **Nonce-based CSP** — `script-src` still uses `'unsafe-inline'` (~45 `onclick` handlers). Fix: refactor all inline handlers to `addEventListener`, generate per-request nonce
 
 ### Infrastructure (Trigger-Based)
 
@@ -89,4 +76,4 @@ These should still be addressed before v1.0:
 
 ---
 
-*Source: [V1 Roadmap](archive/2026-02-09-v1-roadmap.md) and v1.0 gate audit reports (`docs/archive/2026-02-09-*.md`)*
+*Source: v1.0 gate audit reports (`docs/plans/2026-02-09-*.md`)*

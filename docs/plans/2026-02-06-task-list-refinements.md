@@ -9,7 +9,7 @@
 
 Eight targeted visual fixes from a design audit of the task list view. The changes reduce visual noise, improve scannability, and remove header controls that belong closer to the content they affect.
 
-**Mock:** `docs/archive/scratchpad/design-fixes-mock.html`
+**Mock:** `docs/scratchpad/design-fixes-mock.html`
 
 | # | Change | What | Complexity | Files |
 |---|--------|------|-----------|-------|
@@ -776,7 +776,7 @@ Final PR cleanup for task list visual refinements.
 
 ## Design Reference
 
-- **Mock (archived):** `docs/archive/scratchpad/design-fixes-mock.html`
+- **Mock (archived):** `docs/scratchpad/design-fixes-mock.html`
 - **Brand system:** `docs/brand/COLOR-SYSTEM.md`, `docs/brand/UI-KIT.md`
 - **Tokens:** `static/css/tokens.css`
 - **Previous redesigns:** `docs/archive/2026-01-TASK-LIST-HEADER-REDESIGN.md`, `docs/archive/2026-02-HEADER-REDESIGN-V2.md`
