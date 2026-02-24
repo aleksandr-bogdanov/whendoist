@@ -4,6 +4,11 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.0 — 2026-02-24
+
+### Fix: Completed section disappears when retention filter matches zero tasks
+- Changed early-return guard from `filtered.length === 0` to `tasks.length === 0` so the header and retention buttons stay visible even when the current filter window has no matches
+
 ## v0.54.99 — 2026-02-24
 
 ### Fix: Illustration SVGs not served in production
