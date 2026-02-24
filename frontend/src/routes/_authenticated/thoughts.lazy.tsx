@@ -231,7 +231,7 @@ function ThoughtsPage() {
           ) : decryptedTasks.length === 0 ? (
             <EmptyState
               illustration="/illustrations/empty-thoughts.svg"
-              illustrationClassName="animate-[emptyStateEntrance_0.4s_ease-out,thoughtsGlow_5s_ease-in-out_0.4s_infinite]"
+              illustrationClassName="animate-[emptyStateEntrance_0.4s_ease-out,thoughtsGlow_3s_ease-in-out_0.4s_infinite]"
               title="No thoughts yet"
               description="Type below to capture your first thought"
             />

@@ -153,7 +153,7 @@ function RocketIllustration() {
   return (
     <svg
       viewBox="0 0 120 120"
-      className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] animate-[rocketEntrance_0.6s_ease-out]"
+      className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] animate-[rocketEntrance_1.2s_ease-out]"
       aria-hidden="true"
     >
       <circle cx="60" cy="60" r="44" fill="#F3ECFA" />

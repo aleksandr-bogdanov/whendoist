@@ -79,19 +79,33 @@ class User(Base):
     wizard_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     wizard_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    todoist_token: Mapped["TodoistToken | None"] = relationship(back_populates="user", uselist=False)
-    google_token: Mapped["GoogleToken | None"] = relationship(back_populates="user", uselist=False)
-    calendar_selections: Mapped[list["GoogleCalendarSelection"]] = relationship(back_populates="user")
+    todoist_token: Mapped["TodoistToken | None"] = relationship(
+        back_populates="user", uselist=False, passive_deletes=True
+    )
+    google_token: Mapped["GoogleToken | None"] = relationship(
+        back_populates="user", uselist=False, passive_deletes=True
+    )
+    calendar_selections: Mapped[list["GoogleCalendarSelection"]] = relationship(
+        back_populates="user", passive_deletes=True
+    )
 
     # Native task management
-    domains: Mapped[list["Domain"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    tasks: Mapped[list["Task"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    domains: Mapped[list["Domain"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
+    tasks: Mapped[list["Task"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
 
     # User preferences
-    preferences: Mapped["UserPreferences | None"] = relationship(back_populates="user", uselist=False)
+    preferences: Mapped["UserPreferences | None"] = relationship(
+        back_populates="user", uselist=False, passive_deletes=True
+    )
 
     # Passkeys for E2E encryption unlock
-    passkeys: Mapped[list["UserPasskey"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    passkeys: Mapped[list["UserPasskey"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class TodoistToken(Base):
