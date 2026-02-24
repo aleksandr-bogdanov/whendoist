@@ -15,6 +15,7 @@ import { RecurringList } from "@/components/analytics/recurring-list";
 import { StatCard } from "@/components/analytics/stat-card";
 import { VelocityChart } from "@/components/analytics/velocity-chart";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { decrypt, looksEncrypted } from "@/lib/crypto";
 import { useCryptoStore } from "@/stores/crypto-store";
@@ -107,9 +108,12 @@ function AnalyticsPage() {
 
   if (!data) {
     return (
-      <div className="flex flex-1 items-center justify-center p-8">
-        <p className="text-muted-foreground">Failed to load analytics</p>
-      </div>
+      <EmptyState
+        className="flex-1 p-8"
+        illustration="/illustrations/empty-analytics.svg"
+        title="Failed to load analytics"
+        description="Try refreshing the page"
+      />
     );
   }
 

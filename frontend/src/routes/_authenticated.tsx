@@ -112,6 +112,12 @@ class AppErrorBoundary extends Component<
       return (
         <div className="flex h-[var(--app-height,100vh)] items-center justify-center p-8">
           <div className="text-center space-y-4 max-w-sm">
+            <img
+              src="/illustrations/error-generic.svg"
+              alt=""
+              aria-hidden="true"
+              className="mx-auto h-20 w-20"
+            />
             <h2 className="text-lg font-semibold">Something went wrong</h2>
             <p className="text-sm text-muted-foreground">
               {this.state.error?.message || "An unexpected error occurred."}
