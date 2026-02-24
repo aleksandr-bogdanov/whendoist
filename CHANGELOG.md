@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.90 — 2026-02-24
+
+### Feat: Landing page redesign + demo login fix
+- Ported legacy landing page design to React SPA: hero animation (task→calendar transfer), brand wordmark (Quicksand), value proposition, gradient CTA, trust/features meta block
+- Added `demo_login_enabled` to build-info API so "Try Demo Account" button actually appears when enabled
+- New `frontend/src/styles/login.css` with all animation keyframes, dark mode, and `prefers-reduced-motion` support
+
+---
+
 ## v0.54.89 — 2026-02-24
 
 ### Fix: Child task editor opens on click

@@ -11,6 +11,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from app import __version__
+from app.config import get_settings
 
 router = APIRouter(prefix="/build", tags=["build"])
 
@@ -65,6 +66,7 @@ async def get_build_info() -> JSONResponse:
         {
             "version": get_version(),
             "commit": get_git_commit(),
+            "demo_login_enabled": get_settings().demo_login_enabled,
             "repository": {
                 "url": "https://github.com/aleksandr-bogdanov/whendoist",
             },
