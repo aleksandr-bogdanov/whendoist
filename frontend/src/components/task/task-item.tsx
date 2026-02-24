@@ -810,21 +810,17 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                     <>
                       {/* Clarity */}
                       <span className="w-[var(--col-clarity)] text-center">
-                        <ClarityPill taskId={task.id} value={task.clarity} disabled={isCompleted} />
+                        <ClarityPill taskId={task.id} value={task.clarity} />
                       </span>
 
                       {/* Duration */}
                       <span className="w-[var(--col-duration)] text-center">
-                        <DurationPill
-                          taskId={task.id}
-                          value={task.duration_minutes}
-                          disabled={isCompleted}
-                        />
+                        <DurationPill taskId={task.id} value={task.duration_minutes} />
                       </span>
 
                       {/* Impact */}
                       <span className="w-[var(--col-impact)] text-center">
-                        <ImpactPill taskId={task.id} value={task.impact} disabled={isCompleted} />
+                        <ImpactPill taskId={task.id} value={task.impact} />
                       </span>
                     </>
                   )}
@@ -1232,21 +1228,17 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
               <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
                 {/* Clarity */}
                 <span className="w-[var(--col-clarity)] text-center">
-                  <ClarityPill taskId={subtask.id} value={subtask.clarity} disabled={isCompleted} />
+                  <ClarityPill taskId={subtask.id} value={subtask.clarity} />
                 </span>
 
                 {/* Duration */}
                 <span className="w-[var(--col-duration)] text-center">
-                  <DurationPill
-                    taskId={subtask.id}
-                    value={subtask.duration_minutes}
-                    disabled={isCompleted}
-                  />
+                  <DurationPill taskId={subtask.id} value={subtask.duration_minutes} />
                 </span>
 
                 {/* Impact */}
                 <span className="w-[var(--col-impact)] text-center">
-                  <ImpactPill taskId={subtask.id} value={subtask.impact} disabled={isCompleted} />
+                  <ImpactPill taskId={subtask.id} value={subtask.impact} />
                 </span>
               </span>
 

@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.88 — 2026-02-24
+
+### Feat: Allow editing completed tasks via metadata pills
+- Removed `disabled={isCompleted}` from Impact, Clarity, and Duration pills for both tasks and subtasks
+- Completed tasks now have interactive metadata pills — users can change values without reopening
+
+---
+
 ## v0.54.87 — 2026-02-24
 
 ### Feat: Redesign onboarding wizard to match legacy design
