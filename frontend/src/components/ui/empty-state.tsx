@@ -4,12 +4,14 @@ import { cn } from "@/lib/utils"
 
 interface EmptyStateProps extends React.ComponentProps<"div"> {
   illustration?: string
+  illustrationClassName?: string
   title: string
   description?: string
 }
 
 function EmptyState({
   illustration,
+  illustrationClassName,
   title,
   description,
   className,
@@ -30,7 +32,7 @@ function EmptyState({
           src={illustration}
           alt=""
           aria-hidden="true"
-          className="mb-4 h-20 w-20"
+          className={cn("mb-4 h-20 w-20", illustrationClassName)}
         />
       )}
       <p className="text-sm text-muted-foreground">{title}</p>

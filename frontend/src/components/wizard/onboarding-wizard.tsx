@@ -117,7 +117,7 @@ const DOMAIN_EMOJIS = [
 
 function WhendoistLogo() {
   return (
-    <div className="flex items-end justify-center gap-0.5 animate-[logoFloat_3s_ease-in-out_infinite]">
+    <div className="flex items-end justify-center gap-0.5 animate-[logoFloat_5s_ease-in-out_infinite]">
       <svg viewBox="38 40 180 160" className="w-[42px] h-[37px] mb-[5px] mr-0.5" aria-hidden="true">
         <rect
           x="48"
@@ -153,7 +153,7 @@ function RocketIllustration() {
   return (
     <svg
       viewBox="0 0 120 120"
-      className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px]"
+      className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] animate-[rocketEntrance_0.6s_ease-out]"
       aria-hidden="true"
     >
       <circle cx="60" cy="60" r="44" fill="#F3ECFA" />

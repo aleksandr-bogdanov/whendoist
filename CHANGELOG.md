@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.97 — 2026-02-24
+
+### Feat: Subtle animations for empty states and illustrations
+- Empty tasks: fade-in + scale entrance animation (0.4s, one-shot)
+- Empty thoughts: entrance + glacial brightness glow pulse (5s cycle)
+- Onboarding rocket: slide-up entrance with ease-out overshoot (0.6s, one-shot)
+- Onboarding logo float slowed from 3s to 5s for calmer feel
+- All new animations respect `prefers-reduced-motion`
+
 ## v0.54.96 — 2026-02-24
 
 ### Fix: PWA update toast keeps reappearing after reload
