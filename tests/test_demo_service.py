@@ -62,16 +62,16 @@ class TestGetOrCreateDemoUser:
         assert user.name == "Demo User"
         assert user.wizard_completed is False
 
-        # Verify domains were seeded
+        # Verify 5 domains were seeded
         domains_result = await db_session.execute(select(Domain).where(Domain.user_id == user.id))
         domains = list(domains_result.scalars().all())
-        assert len(domains) == 4
+        assert len(domains) == 5
 
-        # Verify tasks were seeded (active + completed + recurring + thoughts)
+        # Verify tasks were seeded (active + completed + recurring + archived + thoughts + subtasks)
         tasks_result = await db_session.execute(select(func.count(Task.id)).where(Task.user_id == user.id))
         task_count = tasks_result.scalar()
         assert task_count is not None
-        assert task_count >= 40  # ~17 active + ~28 completed + 4 recurring + 4 thoughts
+        assert task_count >= 70  # ~35 active + ~30 completed + 8 recurring + 6 archived + 6 thoughts + 5 subtasks
 
     async def test_create_blank_profile(self, db_session: AsyncSession, demo_service: DemoService):
         """Blank profile creates user with no data."""
@@ -105,10 +105,10 @@ class TestGetOrCreateDemoUser:
         assert user1.id != user2.id
         assert user1.email != user2.email
 
-        # Each should have their own 4 domains
+        # Each should have their own 5 domains
         for user in (user1, user2):
             domains_result = await db_session.execute(select(func.count(Domain.id)).where(Domain.user_id == user.id))
-            assert domains_result.scalar() == 4
+            assert domains_result.scalar() == 5
 
     async def test_invalid_profile_raises(self, demo_service: DemoService):
         """Invalid profile name raises ValueError."""
@@ -128,7 +128,29 @@ class TestSeedDataQuality:
         )
         completed_count = result.scalar()
         assert completed_count is not None
-        assert completed_count >= 25
+        assert completed_count >= 28
+
+    async def test_archived_tasks_seeded(self, db_session: AsyncSession, demo_service: DemoService):
+        """Verify archived tasks exist."""
+        user = await demo_service.get_or_create_demo_user("demo")
+
+        result = await db_session.execute(
+            select(func.count(Task.id)).where(Task.user_id == user.id, Task.status == "archived")
+        )
+        archived_count = result.scalar()
+        assert archived_count is not None
+        assert archived_count >= 6
+
+    async def test_subtasks_seeded(self, db_session: AsyncSession, demo_service: DemoService):
+        """Verify subtasks exist under parent tasks."""
+        user = await demo_service.get_or_create_demo_user("demo")
+
+        result = await db_session.execute(
+            select(func.count(Task.id)).where(Task.user_id == user.id, Task.parent_id.isnot(None))
+        )
+        subtask_count = result.scalar()
+        assert subtask_count is not None
+        assert subtask_count >= 5  # 3 for PRD + 2 for investor update
 
     async def test_recurring_instances_seeded(self, db_session: AsyncSession, demo_service: DemoService):
         """Verify recurring task instances were backfilled."""
@@ -137,7 +159,17 @@ class TestSeedDataQuality:
         result = await db_session.execute(select(func.count(TaskInstance.id)).where(TaskInstance.user_id == user.id))
         instance_count = result.scalar()
         assert instance_count is not None
-        assert instance_count >= 20  # 4 recurring tasks x ~5+ instances each
+        assert instance_count >= 40  # 8 recurring tasks with 14 days of backfill
+
+    async def test_five_domains_seeded(self, db_session: AsyncSession, demo_service: DemoService):
+        """Verify all 5 domains are created."""
+        user = await demo_service.get_or_create_demo_user("demo")
+
+        result = await db_session.execute(select(Domain).where(Domain.user_id == user.id))
+        domains = list(result.scalars().all())
+        assert len(domains) == 5
+        domain_names = {d.name for d in domains}
+        assert domain_names == {"Work", "Health & Fitness", "Personal", "Side Project", "Learning"}
 
     async def test_analytics_data_populated(self, db_session: AsyncSession, demo_service: DemoService):
         """Verify completed tasks have varied hours and multiple impact levels for charts."""
@@ -160,6 +192,65 @@ class TestSeedDataQuality:
         )
         hours = {row[0].hour for row in result.all() if row[0] is not None}
         assert len(hours) >= 5  # At least 5 distinct hours for "Active Hours" chart
+
+    async def test_deterministic_seeding(self, db_session: AsyncSession, demo_service: DemoService):
+        """Verify two demo users with same user_id pattern produce same instance statuses."""
+        user = await demo_service.get_or_create_demo_user("demo")
+
+        # Get all instance statuses ordered by date
+        result = await db_session.execute(
+            select(TaskInstance.status)
+            .where(TaskInstance.user_id == user.id)
+            .order_by(TaskInstance.instance_date, TaskInstance.id)
+        )
+        statuses_first = [row[0] for row in result.all()]
+
+        # Reset same user — should produce identical data
+        await demo_service.reset_demo_user(user.id)
+
+        result = await db_session.execute(
+            select(TaskInstance.status)
+            .where(TaskInstance.user_id == user.id)
+            .order_by(TaskInstance.instance_date, TaskInstance.id)
+        )
+        statuses_second = [row[0] for row in result.all()]
+
+        assert statuses_first == statuses_second
+
+    async def test_thoughts_seeded(self, db_session: AsyncSession, demo_service: DemoService):
+        """Verify thoughts (tasks with no domain) are created."""
+        user = await demo_service.get_or_create_demo_user("demo")
+
+        result = await db_session.execute(
+            select(func.count(Task.id)).where(
+                Task.user_id == user.id,
+                Task.domain_id.is_(None),
+                Task.parent_id.is_(None),
+                Task.status == "pending",
+            )
+        )
+        thought_count = result.scalar()
+        assert thought_count is not None
+        assert thought_count >= 6
+
+    async def test_overdue_tasks_seeded(self, db_session: AsyncSession, demo_service: DemoService):
+        """Verify overdue tasks exist (past-dated, still pending)."""
+        user = await demo_service.get_or_create_demo_user("demo")
+
+        from app.constants import get_user_today
+
+        today = get_user_today(None)
+        result = await db_session.execute(
+            select(func.count(Task.id)).where(
+                Task.user_id == user.id,
+                Task.status == "pending",
+                Task.scheduled_date < today,
+                Task.is_recurring.is_(False),
+            )
+        )
+        overdue_count = result.scalar()
+        assert overdue_count is not None
+        assert overdue_count >= 3
 
 
 class TestResetDemoUser:
@@ -203,7 +294,7 @@ class TestResetDemoUser:
         after_instance_count = after_instances.scalar()
         assert after_instance_count is not None
         assert before_instance_count is not None
-        assert after_instance_count >= 20  # Instances re-seeded
+        assert after_instance_count >= 40  # Instances re-seeded
 
     async def test_reset_blank_stays_empty(self, db_session: AsyncSession, demo_service: DemoService):
         """Reset on blank profile clears data and stays empty."""

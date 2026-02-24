@@ -173,6 +173,9 @@ class DemoService:
 
     async def _seed_demo_data(self, user_id: int) -> None:
         """Create sample domains, tasks, recurring instances, and completed history."""
+        # Deterministic randomness: same user_id always produces same data
+        random.seed(user_id)
+
         task_service = TaskService(self.db, user_id)
         today = get_user_today(None)  # UTC-based for demo
 
@@ -182,26 +185,34 @@ class DemoService:
         # --- Active tasks (via TaskService for proper position handling) ---
         await self._seed_active_tasks(task_service, domains, today)
 
+        # --- Overdue tasks ---
+        await self._seed_overdue_tasks(task_service, domains, today)
+
         # --- Recurring tasks with historical instances ---
         await self._seed_recurring_with_instances(task_service, domains, today, user_id)
 
         # --- Completed tasks (direct insertion for custom timestamps) ---
         await self._seed_completed_tasks(domains, today, user_id)
 
+        # --- Archived tasks ---
+        await self._seed_archived_tasks(domains, today, user_id)
+
         # --- Thoughts (no domain) ---
         await self._seed_thoughts(task_service)
 
     async def _seed_domains(self, task_service: TaskService) -> dict[str, Domain]:
-        """Create the 4 demo domains. Returns mapping of name -> Domain."""
-        product = await task_service.create_domain(name="Product", color="#3b82f6", icon="💡")
-        fitness = await task_service.create_domain(name="Fitness", color="#22c55e", icon="🏋️")
-        home = await task_service.create_domain(name="Home", color="#f59e0b", icon="🏡")
+        """Create the 5 demo domains. Returns mapping of name -> Domain."""
+        work = await task_service.create_domain(name="Work", color="#3b82f6", icon="💼")
+        health = await task_service.create_domain(name="Health & Fitness", color="#22c55e", icon="💪")
+        personal = await task_service.create_domain(name="Personal", color="#f59e0b", icon="🏠")
         side_project = await task_service.create_domain(name="Side Project", color="#a855f7", icon="🚀")
+        learning = await task_service.create_domain(name="Learning", color="#06b6d4", icon="📚")
         return {
-            "product": product,
-            "fitness": fitness,
-            "home": home,
+            "work": work,
+            "health": health,
+            "personal": personal,
             "side_project": side_project,
+            "learning": learning,
         }
 
     async def _seed_active_tasks(
@@ -210,172 +221,315 @@ class DemoService:
         domains: dict[str, Domain],
         today: date,
     ) -> None:
-        """Create ~17 pending tasks spread across day-2 to day+5."""
-        p = domains["product"]
-        f = domains["fitness"]
-        h = domains["home"]
+        """Create active tasks with dense calendar coverage across today through day+5."""
+        w = domains["work"]
+        h = domains["health"]
+        p = domains["personal"]
         s = domains["side_project"]
+        l = domains["learning"]  # noqa: E741
 
-        # --- Product (6) ---
-        await task_service.create_task(
-            title="Write product spec for notifications",
-            description="Define user stories, wireframes, and success metrics for push notification feature.",
-            domain_id=p.id,
+        # === TODAY: 6 time-slotted + 2 date-only ===
+        prd_task = await task_service.create_task(
+            title="Write PRD for search feature",
+            description="Define user stories, wireframes, and success metrics for the new search feature.",
+            domain_id=w.id,
             impact=1,
             clarity="brainstorm",
             scheduled_date=today,
             scheduled_time=time(10, 0),
+            duration_minutes=90,
+        )
+        # Subtasks for PRD
+        await task_service.create_task(
+            title="Define user stories and acceptance criteria",
+            parent_id=prd_task.id,
+            impact=2,
+            clarity="brainstorm",
+        )
+        await task_service.create_task(
+            title="Create wireframe sketches",
+            parent_id=prd_task.id,
+            impact=2,
+            clarity="brainstorm",
+        )
+        await task_service.create_task(
+            title="Write success metrics and KPIs",
+            parent_id=prd_task.id,
+            impact=2,
+            clarity="normal",
+        )
+
+        await task_service.create_task(
+            title="Review design mockups from Figma",
+            domain_id=w.id,
+            impact=2,
+            clarity="normal",
+            scheduled_date=today,
+            scheduled_time=time(11, 30),
+            duration_minutes=30,
+        )
+        await task_service.create_task(
+            title="Lunch with Sarah",
+            domain_id=p.id,
+            impact=3,
+            clarity="normal",
+            scheduled_date=today,
+            scheduled_time=time(13, 0),
             duration_minutes=60,
         )
-        await task_service.create_task(
-            title="Review PR #247 from backend team",
-            domain_id=p.id,
-            impact=2,
-            clarity="normal",
-            scheduled_date=today,
-            scheduled_time=time(14, 0),
-            duration_minutes=30,
-        )
-        await task_service.create_task(
-            title="Send standup update to Slack",
-            domain_id=p.id,
-            impact=3,
-            clarity="autopilot",
-            scheduled_date=today + timedelta(days=1),
-            scheduled_time=time(9, 30),
-            duration_minutes=10,
-        )
-        await task_service.create_task(
-            title="Prep user interview questions",
-            description="Focus on onboarding friction and feature discovery patterns.",
-            domain_id=p.id,
-            impact=2,
+        investor_task = await task_service.create_task(
+            title="Prepare Q4 investor update",
+            description="Pull metrics, draft narrative slides, and prepare talking points.",
+            domain_id=w.id,
+            impact=1,
             clarity="brainstorm",
-            scheduled_date=today + timedelta(days=1),
-            scheduled_time=time(11, 0),
-            duration_minutes=45,
+            scheduled_date=today,
+            scheduled_time=time(14, 30),
+            duration_minutes=60,
         )
+        # Subtasks for investor update
         await task_service.create_task(
-            title="Update roadmap Notion page",
-            domain_id=p.id,
-            impact=3,
+            title="Pull Q4 revenue and growth metrics",
+            parent_id=investor_task.id,
+            impact=1,
             clarity="normal",
-            scheduled_date=today + timedelta(days=2),
-            duration_minutes=20,
         )
         await task_service.create_task(
-            title="File Q1 expense reports",
-            domain_id=p.id,
-            impact=4,
-            clarity="autopilot",
-            scheduled_date=today + timedelta(days=2),
-            scheduled_time=time(16, 0),
-            duration_minutes=15,
+            title="Draft narrative slides",
+            parent_id=investor_task.id,
+            impact=1,
+            clarity="brainstorm",
         )
 
-        # --- Fitness (3) ---
         await task_service.create_task(
-            title="Gym: upper body day",
-            description="Bench press, overhead press, rows, curls. Progressive overload week 3.",
-            domain_id=f.id,
+            title="Grocery run — farmers market",
+            domain_id=p.id,
             impact=2,
-            clarity="normal",
-            scheduled_date=today,
-            scheduled_time=time(7, 0),
-            duration_minutes=45,
-        )
-        await task_service.create_task(
-            title="Book sports massage",
-            domain_id=f.id,
-            impact=4,
             clarity="autopilot",
-            scheduled_date=today + timedelta(days=3),
-        )
-        await task_service.create_task(
-            title="Research 5K training plans",
-            description="Compare Couch-to-5K vs Hal Higdon beginner plan.",
-            domain_id=f.id,
-            impact=3,
-            clarity="brainstorm",
-            scheduled_date=today + timedelta(days=2),
-            scheduled_time=time(19, 0),
-            duration_minutes=30,
-        )
-
-        # --- Home (4) ---
-        await task_service.create_task(
-            title="Grocery shopping",
-            domain_id=h.id,
-            impact=2,
-            clarity="normal",
-            scheduled_date=today - timedelta(days=1),
+            scheduled_date=today,
             scheduled_time=time(17, 0),
             duration_minutes=45,
         )
         await task_service.create_task(
-            title="Water plants",
-            domain_id=h.id,
-            impact=4,
-            clarity="autopilot",
-            scheduled_date=today + timedelta(days=1),
-            scheduled_time=time(8, 0),
-            duration_minutes=5,
-        )
-        await task_service.create_task(
-            title="Pay electricity bill",
-            domain_id=h.id,
-            impact=2,
-            clarity="autopilot",
-            scheduled_date=today,
-            duration_minutes=5,
-        )
-        await task_service.create_task(
-            title="Plan weekend hike with friends",
-            description="Check weather, pick trail, share directions in group chat.",
-            domain_id=h.id,
-            impact=3,
-            clarity="brainstorm",
-            scheduled_date=today + timedelta(days=1),
-            scheduled_time=time(20, 0),
-            duration_minutes=30,
-        )
-
-        # --- Side Project (4) ---
-        await task_service.create_task(
-            title="Design API architecture for auth service",
-            description="JWT vs session tokens, refresh flow, rate limiting strategy.",
+            title="Fix authentication bug in OAuth flow",
             domain_id=s.id,
             impact=1,
-            clarity="brainstorm",
-            scheduled_date=today - timedelta(days=2),
-            scheduled_time=time(20, 0),
-            duration_minutes=90,
-        )
-        await task_service.create_task(
-            title="Fix CSS layout bug on mobile",
-            domain_id=s.id,
-            impact=2,
             clarity="normal",
             scheduled_date=today,
             scheduled_time=time(19, 0),
-            duration_minutes=30,
+            duration_minutes=60,
+        )
+        # Date-only today
+        await task_service.create_task(
+            title="Pay rent",
+            domain_id=p.id,
+            impact=1,
+            clarity="autopilot",
+            scheduled_date=today,
+            duration_minutes=5,
         )
         await task_service.create_task(
-            title="Read chapter on event-driven systems",
-            domain_id=s.id,
+            title="Submit expense report",
+            domain_id=w.id,
             impact=3,
+            clarity="autopilot",
+            scheduled_date=today,
+            duration_minutes=15,
+        )
+
+        # === TOMORROW: 5 time-slotted + 1 date-only ===
+        tomorrow = today + timedelta(days=1)
+        await task_service.create_task(
+            title="Prep user interview questions",
+            description="Focus on onboarding friction and feature discovery patterns.",
+            domain_id=w.id,
+            impact=2,
             clarity="brainstorm",
-            scheduled_date=today + timedelta(days=2),
-            scheduled_time=time(21, 0),
+            scheduled_date=tomorrow,
+            scheduled_time=time(10, 30),
             duration_minutes=45,
         )
         await task_service.create_task(
-            title="Set up CI pipeline",
+            title="Coffee with Marcus re: partnership",
+            domain_id=w.id,
+            impact=2,
+            clarity="normal",
+            scheduled_date=tomorrow,
+            scheduled_time=time(13, 0),
+            duration_minutes=45,
+        )
+        await task_service.create_task(
+            title="Write blog post draft",
+            domain_id=s.id,
+            impact=2,
+            clarity="brainstorm",
+            scheduled_date=tomorrow,
+            scheduled_time=time(16, 0),
+            duration_minutes=90,
+        )
+        await task_service.create_task(
+            title="Run — 5K tempo",
+            domain_id=h.id,
+            impact=2,
+            clarity="normal",
+            scheduled_date=tomorrow,
+            scheduled_time=time(18, 0),
+            duration_minutes=40,
+        )
+        await task_service.create_task(
+            title="Complete online course module 3",
+            domain_id=l.id,
+            impact=3,
+            clarity="normal",
+            scheduled_date=tomorrow,
+            scheduled_time=time(20, 0),
+            duration_minutes=60,
+        )
+        await task_service.create_task(
+            title="Order new monitor for home office",
+            domain_id=w.id,
+            impact=3,
+            clarity="autopilot",
+            scheduled_date=tomorrow,
+        )
+
+        # === DAY +2: 4 tasks ===
+        day2 = today + timedelta(days=2)
+        await task_service.create_task(
+            title="Sprint planning prep",
+            description="Review backlog, estimate stories, prepare discussion points.",
+            domain_id=w.id,
+            impact=2,
+            clarity="brainstorm",
+            scheduled_date=day2,
+            scheduled_time=time(9, 0),
+            duration_minutes=60,
+        )
+        await task_service.create_task(
+            title="Dentist appointment",
+            domain_id=p.id,
+            impact=2,
+            clarity="autopilot",
+            scheduled_date=day2,
+            scheduled_time=time(14, 0),
+            duration_minutes=60,
+        )
+        await task_service.create_task(
+            title="Deploy side project to staging",
             domain_id=s.id,
             impact=2,
             clarity="normal",
-            scheduled_date=today + timedelta(days=5),
+            scheduled_date=day2,
+            scheduled_time=time(19, 0),
+            duration_minutes=45,
+        )
+        await task_service.create_task(
+            title="Read book chapter on system design",
+            domain_id=l.id,
+            impact=3,
+            clarity="brainstorm",
+            scheduled_date=day2,
+            scheduled_time=time(21, 0),
+            duration_minutes=45,
+        )
+
+        # === DAY +3: 3 tasks ===
+        day3 = today + timedelta(days=3)
+        await task_service.create_task(
+            title="Team workshop — retro and goals",
+            domain_id=w.id,
+            impact=1,
+            clarity="brainstorm",
+            scheduled_date=day3,
+            scheduled_time=time(10, 0),
+            duration_minutes=90,
+        )
+        await task_service.create_task(
+            title="Call plumber about kitchen sink",
+            domain_id=p.id,
+            impact=3,
+            clarity="normal",
+            scheduled_date=day3,
+            duration_minutes=15,
+        )
+        await task_service.create_task(
+            title="Outline conference talk",
+            domain_id=l.id,
+            impact=2,
+            clarity="brainstorm",
+            scheduled_date=day3,
+            scheduled_time=time(20, 0),
             duration_minutes=60,
+        )
+
+        # === DAY +4: 2 tasks ===
+        day4 = today + timedelta(days=4)
+        await task_service.create_task(
+            title="Book flight for conference",
+            domain_id=w.id,
+            impact=2,
+            clarity="autopilot",
+            scheduled_date=day4,
+            duration_minutes=20,
+        )
+        await task_service.create_task(
+            title="Design landing page for side project",
+            domain_id=s.id,
+            impact=2,
+            clarity="brainstorm",
+            scheduled_date=day4,
+            scheduled_time=time(19, 0),
+            duration_minutes=90,
+        )
+
+        # === DAY +5: 2 tasks ===
+        day5 = today + timedelta(days=5)
+        await task_service.create_task(
+            title="Quarterly OKR review",
+            domain_id=w.id,
+            impact=1,
+            clarity="brainstorm",
+            scheduled_date=day5,
+            scheduled_time=time(10, 0),
+            duration_minutes=60,
+        )
+        await task_service.create_task(
+            title="Deep clean apartment",
+            domain_id=p.id,
+            impact=3,
+            clarity="normal",
+            scheduled_date=day5,
+            duration_minutes=120,
+        )
+
+    async def _seed_overdue_tasks(
+        self,
+        task_service: TaskService,
+        domains: dict[str, Domain],
+        today: date,
+    ) -> None:
+        """Create 3 overdue tasks (past-dated, still pending)."""
+        await task_service.create_task(
+            title="Reply to partnership email",
+            domain_id=domains["work"].id,
+            impact=2,
+            clarity="normal",
+            scheduled_date=today - timedelta(days=1),
+        )
+        await task_service.create_task(
+            title="Return Amazon package",
+            domain_id=domains["personal"].id,
+            impact=4,
+            clarity="autopilot",
+            scheduled_date=today - timedelta(days=2),
+        )
+        await task_service.create_task(
+            title="Review pull request #312",
+            domain_id=domains["side_project"].id,
+            impact=2,
+            clarity="normal",
+            scheduled_date=today - timedelta(days=3),
+            duration_minutes=30,
         )
 
     async def _seed_recurring_with_instances(
@@ -385,90 +539,199 @@ class DemoService:
         today: date,
         user_id: int,
     ) -> None:
-        """Create recurring tasks and backfill 14 days of TaskInstance records."""
+        """Create 8 recurring tasks and backfill 14 days of TaskInstance records."""
         recurrence_start = today - timedelta(days=14)
 
-        # 1) Daily standup update (Product, autopilot)
+        # Pre-generate deterministic skip patterns (seeded in _seed_demo_data)
+        skip_rolls = [random.random() for _ in range(200)]
+        roll_idx = 0
+
+        def should_skip(threshold: float) -> bool:
+            nonlocal roll_idx
+            roll = skip_rolls[roll_idx % len(skip_rolls)]
+            roll_idx += 1
+            return roll >= threshold  # skip if roll >= threshold (i.e., complete if roll < threshold)
+
+        # 1) Morning standup (Work, daily weekdays)
         standup = await task_service.create_task(
-            title="Daily standup update",
-            domain_id=domains["product"].id,
+            title="Morning standup",
+            domain_id=domains["work"].id,
             impact=3,
             clarity="autopilot",
             is_recurring=True,
             recurrence_rule={"freq": "daily"},
             recurrence_start=recurrence_start,
-            scheduled_time=time(9, 30),
-            duration_minutes=10,
+            scheduled_time=time(9, 0),
+            duration_minutes=15,
         )
         for day_offset in range(-14, 3):
             d = today + timedelta(days=day_offset)
-            is_weekend = d.weekday() >= 5
-            if is_weekend:
-                continue  # Skip weekends for standup
+            if d.weekday() >= 5:
+                continue
             status = "pending"
             completed_at = None
             if day_offset < 0:
-                # Past: mostly completed, occasional skip
-                if random.random() < 0.85:
-                    status = "completed"
-                    completed_at = datetime(d.year, d.month, d.day, 9, 35, tzinfo=UTC)
-                else:
+                if should_skip(0.85):
                     status = "skipped"
-            inst = TaskInstance(
-                task_id=standup.id,
-                user_id=user_id,
-                instance_date=d,
-                scheduled_datetime=datetime(d.year, d.month, d.day, 9, 30, tzinfo=UTC),
-                status=status,
-                completed_at=completed_at,
+                else:
+                    status = "completed"
+                    completed_at = datetime(d.year, d.month, d.day, 9, 15, tzinfo=UTC)
+            self.db.add(
+                TaskInstance(
+                    task_id=standup.id,
+                    user_id=user_id,
+                    instance_date=d,
+                    scheduled_datetime=datetime(d.year, d.month, d.day, 9, 0, tzinfo=UTC),
+                    status=status,
+                    completed_at=completed_at,
+                )
             )
-            self.db.add(inst)
 
-        # 2) Gym workout (Fitness, normal) — Mon/Wed/Fri
+        # 2) Gym session (Health, Mon/Wed/Fri)
         gym = await task_service.create_task(
-            title="Gym workout",
-            domain_id=domains["fitness"].id,
+            title="Gym session",
+            domain_id=domains["health"].id,
             impact=2,
             clarity="normal",
             is_recurring=True,
             recurrence_rule={"freq": "weekly", "byday": ["MO", "WE", "FR"]},
             recurrence_start=recurrence_start,
             scheduled_time=time(7, 0),
-            duration_minutes=45,
+            duration_minutes=60,
         )
         for day_offset in range(-14, 3):
             d = today + timedelta(days=day_offset)
-            if d.weekday() not in (0, 2, 4):  # Mon=0, Wed=2, Fri=4
+            if d.weekday() not in (0, 2, 4):
                 continue
             status = "pending"
             completed_at = None
             if day_offset < 0:
-                if random.random() < 0.80:
-                    status = "completed"
-                    completed_at = datetime(d.year, d.month, d.day, 7, 50, tzinfo=UTC)
-                else:
+                if should_skip(0.80):
                     status = "skipped"
-            inst = TaskInstance(
-                task_id=gym.id,
-                user_id=user_id,
-                instance_date=d,
-                scheduled_datetime=datetime(d.year, d.month, d.day, 7, 0, tzinfo=UTC),
-                status=status,
-                completed_at=completed_at,
+                else:
+                    status = "completed"
+                    completed_at = datetime(d.year, d.month, d.day, 8, 0, tzinfo=UTC)
+            self.db.add(
+                TaskInstance(
+                    task_id=gym.id,
+                    user_id=user_id,
+                    instance_date=d,
+                    scheduled_datetime=datetime(d.year, d.month, d.day, 7, 0, tzinfo=UTC),
+                    status=status,
+                    completed_at=completed_at,
+                )
             )
-            self.db.add(inst)
 
-        # 3) Water all plants (Home, autopilot) — every 3 days
+        # 3) Weekly 1:1 with manager (Work, Thu)
+        one_on_one = await task_service.create_task(
+            title="Weekly 1:1 with manager",
+            domain_id=domains["work"].id,
+            impact=2,
+            clarity="normal",
+            is_recurring=True,
+            recurrence_rule={"freq": "weekly", "byday": ["TH"]},
+            recurrence_start=recurrence_start,
+            scheduled_time=time(14, 0),
+            duration_minutes=30,
+        )
+        for day_offset in range(-14, 3):
+            d = today + timedelta(days=day_offset)
+            if d.weekday() != 3:
+                continue
+            status = "pending"
+            completed_at = None
+            if day_offset < 0:
+                status = "completed"
+                completed_at = datetime(d.year, d.month, d.day, 14, 30, tzinfo=UTC)
+            self.db.add(
+                TaskInstance(
+                    task_id=one_on_one.id,
+                    user_id=user_id,
+                    instance_date=d,
+                    scheduled_datetime=datetime(d.year, d.month, d.day, 14, 0, tzinfo=UTC),
+                    status=status,
+                    completed_at=completed_at,
+                )
+            )
+
+        # 4) Sprint review (Work, Fri)
+        sprint_review = await task_service.create_task(
+            title="Sprint review",
+            domain_id=domains["work"].id,
+            impact=2,
+            clarity="normal",
+            is_recurring=True,
+            recurrence_rule={"freq": "weekly", "byday": ["FR"]},
+            recurrence_start=recurrence_start,
+            scheduled_time=time(15, 0),
+            duration_minutes=45,
+        )
+        for day_offset in range(-14, 3):
+            d = today + timedelta(days=day_offset)
+            if d.weekday() != 4:
+                continue
+            status = "pending"
+            completed_at = None
+            if day_offset < 0:
+                status = "completed"
+                completed_at = datetime(d.year, d.month, d.day, 15, 45, tzinfo=UTC)
+            self.db.add(
+                TaskInstance(
+                    task_id=sprint_review.id,
+                    user_id=user_id,
+                    instance_date=d,
+                    scheduled_datetime=datetime(d.year, d.month, d.day, 15, 0, tzinfo=UTC),
+                    status=status,
+                    completed_at=completed_at,
+                )
+            )
+
+        # 5) Meal prep (Health, Sun)
+        meal_prep = await task_service.create_task(
+            title="Meal prep",
+            domain_id=domains["health"].id,
+            impact=3,
+            clarity="normal",
+            is_recurring=True,
+            recurrence_rule={"freq": "weekly", "byday": ["SU"]},
+            recurrence_start=recurrence_start,
+            scheduled_time=time(10, 0),
+            duration_minutes=90,
+        )
+        for day_offset in range(-14, 3):
+            d = today + timedelta(days=day_offset)
+            if d.weekday() != 6:
+                continue
+            status = "pending"
+            completed_at = None
+            if day_offset < 0:
+                if should_skip(0.90):
+                    status = "skipped"
+                else:
+                    status = "completed"
+                    completed_at = datetime(d.year, d.month, d.day, 11, 30, tzinfo=UTC)
+            self.db.add(
+                TaskInstance(
+                    task_id=meal_prep.id,
+                    user_id=user_id,
+                    instance_date=d,
+                    scheduled_datetime=datetime(d.year, d.month, d.day, 10, 0, tzinfo=UTC),
+                    status=status,
+                    completed_at=completed_at,
+                )
+            )
+
+        # 6) Water plants (Personal, every 3 days)
         water = await task_service.create_task(
-            title="Water all plants",
-            domain_id=domains["home"].id,
+            title="Water plants",
+            domain_id=domains["personal"].id,
             impact=4,
             clarity="autopilot",
             is_recurring=True,
             recurrence_rule={"freq": "daily", "interval": 3},
             recurrence_start=recurrence_start,
             scheduled_time=time(8, 0),
-            duration_minutes=5,
+            duration_minutes=10,
         )
         for day_offset in range(-14, 3):
             d = today + timedelta(days=day_offset)
@@ -478,51 +741,89 @@ class DemoService:
             status = "pending"
             completed_at = None
             if day_offset < 0:
-                if random.random() < 0.90:
-                    status = "completed"
-                    completed_at = datetime(d.year, d.month, d.day, 8, 5, tzinfo=UTC)
-                else:
+                if should_skip(0.90):
                     status = "skipped"
-            inst = TaskInstance(
-                task_id=water.id,
-                user_id=user_id,
-                instance_date=d,
-                scheduled_datetime=datetime(d.year, d.month, d.day, 8, 0, tzinfo=UTC),
-                status=status,
-                completed_at=completed_at,
+                else:
+                    status = "completed"
+                    completed_at = datetime(d.year, d.month, d.day, 8, 10, tzinfo=UTC)
+            self.db.add(
+                TaskInstance(
+                    task_id=water.id,
+                    user_id=user_id,
+                    instance_date=d,
+                    scheduled_datetime=datetime(d.year, d.month, d.day, 8, 0, tzinfo=UTC),
+                    status=status,
+                    completed_at=completed_at,
+                )
             )
-            self.db.add(inst)
 
-        # 4) Weekly review & planning (Product, brainstorm) — Fridays
-        review = await task_service.create_task(
-            title="Weekly review & planning",
-            domain_id=domains["product"].id,
+        # 7) Evening coding session (Side Project, Tue/Thu)
+        coding = await task_service.create_task(
+            title="Evening coding session",
+            domain_id=domains["side_project"].id,
             impact=2,
-            clarity="brainstorm",
+            clarity="normal",
             is_recurring=True,
-            recurrence_rule={"freq": "weekly", "byday": ["FR"]},
+            recurrence_rule={"freq": "weekly", "byday": ["TU", "TH"]},
             recurrence_start=recurrence_start,
-            scheduled_time=time(16, 0),
-            duration_minutes=30,
+            scheduled_time=time(20, 0),
+            duration_minutes=90,
         )
         for day_offset in range(-14, 3):
             d = today + timedelta(days=day_offset)
-            if d.weekday() != 4:  # Friday only
+            if d.weekday() not in (1, 3):
                 continue
             status = "pending"
             completed_at = None
             if day_offset < 0:
-                status = "completed"
-                completed_at = datetime(d.year, d.month, d.day, 16, 35, tzinfo=UTC)
-            inst = TaskInstance(
-                task_id=review.id,
-                user_id=user_id,
-                instance_date=d,
-                scheduled_datetime=datetime(d.year, d.month, d.day, 16, 0, tzinfo=UTC),
-                status=status,
-                completed_at=completed_at,
+                if should_skip(0.75):
+                    status = "skipped"
+                else:
+                    status = "completed"
+                    completed_at = datetime(d.year, d.month, d.day, 21, 30, tzinfo=UTC)
+            self.db.add(
+                TaskInstance(
+                    task_id=coding.id,
+                    user_id=user_id,
+                    instance_date=d,
+                    scheduled_datetime=datetime(d.year, d.month, d.day, 20, 0, tzinfo=UTC),
+                    status=status,
+                    completed_at=completed_at,
+                )
             )
-            self.db.add(inst)
+
+        # 8) Reading time (Learning, daily)
+        reading = await task_service.create_task(
+            title="Reading time",
+            domain_id=domains["learning"].id,
+            impact=3,
+            clarity="normal",
+            is_recurring=True,
+            recurrence_rule={"freq": "daily"},
+            recurrence_start=recurrence_start,
+            scheduled_time=time(22, 0),
+            duration_minutes=30,
+        )
+        for day_offset in range(-14, 3):
+            d = today + timedelta(days=day_offset)
+            status = "pending"
+            completed_at = None
+            if day_offset < 0:
+                if should_skip(0.70):
+                    status = "skipped"
+                else:
+                    status = "completed"
+                    completed_at = datetime(d.year, d.month, d.day, 22, 30, tzinfo=UTC)
+            self.db.add(
+                TaskInstance(
+                    task_id=reading.id,
+                    user_id=user_id,
+                    instance_date=d,
+                    scheduled_datetime=datetime(d.year, d.month, d.day, 22, 0, tzinfo=UTC),
+                    status=status,
+                    completed_at=completed_at,
+                )
+            )
 
     async def _seed_completed_tasks(
         self,
@@ -530,53 +831,57 @@ class DemoService:
         today: date,
         user_id: int,
     ) -> None:
-        """Insert ~28 completed tasks with varied timestamps for analytics."""
-        p = domains["product"].id
-        f = domains["fitness"].id
-        h = domains["home"].id
+        """Insert ~30 completed tasks with varied timestamps for analytics."""
+        w = domains["work"].id
+        h = domains["health"].id
+        p = domains["personal"].id
         s = domains["side_project"].id
+        l = domains["learning"].id  # noqa: E741
 
         # (title, domain_id, impact, clarity, created_days_ago, completed_days_ago, completed_hour)
         completed_specs: list[tuple[str, int, int, str, int, int, int]] = [
-            # Product (~10)
-            ("Sprint planning for Q1", p, 1, "brainstorm", 5, 3, 10),
-            ("Update Jira board", p, 3, "autopilot", 2, 2, 14),
-            ("Write migration guide", p, 2, "normal", 8, 5, 11),
-            ("Review analytics dashboard mockup", p, 2, "normal", 4, 3, 15),
-            ("Send weekly metrics email", p, 3, "autopilot", 1, 1, 9),
-            ("Draft feature announcement", p, 2, "brainstorm", 10, 7, 16),
-            ("Triage bug reports from support", p, 1, "normal", 3, 2, 10),
-            ("Update API documentation", p, 3, "normal", 12, 9, 13),
-            ("Prepare board presentation", p, 1, "brainstorm", 20, 14, 11),
-            ("Review competitor product updates", p, 4, "brainstorm", 6, 4, 20),
-            # Fitness (~6)
-            ("Meal prep for the week", f, 3, "normal", 4, 3, 18),
-            ("Order new running shoes", f, 4, "autopilot", 7, 7, 21),
-            ("Schedule dentist appointment", f, 4, "autopilot", 9, 8, 10),
-            ("Try new HIIT workout video", f, 3, "normal", 5, 4, 7),
-            ("Renew gym membership", f, 4, "autopilot", 15, 13, 12),
-            ("Track weekly calories", f, 3, "normal", 2, 1, 20),
-            # Home (~6)
-            ("Clean garage", h, 3, "normal", 15, 10, 15),
-            ("Fix squeaky door hinge", h, 4, "normal", 3, 1, 16),
-            ("Order new shelf for office", h, 4, "autopilot", 8, 6, 21),
-            ("Deep clean kitchen", h, 2, "normal", 6, 5, 9),
-            ("Replace smoke detector batteries", h, 2, "autopilot", 25, 18, 14),
-            ("Call plumber about sink", h, 3, "normal", 4, 2, 11),
-            # Side Project (~6)
-            ("Deploy v0.3 to staging", s, 1, "normal", 6, 4, 20),
+            # Work (~10)
+            ("Sprint planning for Q1", w, 1, "brainstorm", 5, 3, 10),
+            ("Update Jira board with sprint tasks", w, 3, "autopilot", 2, 2, 14),
+            ("Write migration guide for API v2", w, 2, "normal", 8, 5, 11),
+            ("Review analytics dashboard mockup", w, 2, "normal", 4, 3, 15),
+            ("Send weekly metrics email to stakeholders", w, 3, "autopilot", 1, 1, 9),
+            ("Draft feature announcement for blog", w, 2, "brainstorm", 10, 7, 16),
+            ("Triage bug reports from support queue", w, 1, "normal", 3, 2, 10),
+            ("Update API documentation for v3 endpoints", w, 3, "normal", 12, 9, 13),
+            ("Prepare board presentation slides", w, 1, "brainstorm", 20, 14, 11),
+            ("Review competitor product launch", w, 4, "brainstorm", 6, 4, 20),
+            # Health & Fitness (~6)
+            ("Meal prep — chicken and rice bowls", h, 3, "normal", 4, 3, 18),
+            ("Order new running shoes from Nike", h, 4, "autopilot", 7, 7, 21),
+            ("Schedule annual physical exam", h, 4, "autopilot", 9, 8, 10),
+            ("Complete HIIT workout video series", h, 3, "normal", 5, 4, 7),
+            ("Renew gym membership for next year", h, 4, "autopilot", 15, 13, 12),
+            ("Log weekly calories and macros", h, 3, "normal", 2, 1, 20),
+            # Personal (~6)
+            ("Clean out garage and donate old items", p, 3, "normal", 15, 10, 15),
+            ("Fix squeaky bedroom door hinge", p, 4, "normal", 3, 1, 16),
+            ("Order standing desk for home office", p, 4, "autopilot", 8, 6, 21),
+            ("Deep clean kitchen — oven and fridge", p, 2, "normal", 6, 5, 9),
+            ("Replace smoke detector batteries", p, 2, "autopilot", 25, 18, 14),
+            ("Call electrician about outdoor lights", p, 3, "normal", 4, 2, 11),
+            # Side Project (~5)
+            ("Deploy v0.3 to staging environment", s, 1, "normal", 6, 4, 20),
             ("Write unit tests for auth module", s, 2, "normal", 5, 3, 19),
-            ("Fix memory leak in worker process", s, 1, "normal", 10, 8, 21),
+            ("Fix memory leak in background worker", s, 1, "normal", 10, 8, 21),
             ("Set up error monitoring with Sentry", s, 2, "normal", 14, 11, 18),
-            ("Refactor database connection pool", s, 2, "brainstorm", 8, 6, 20),
-            ("Design landing page wireframe", s, 3, "brainstorm", 3, 2, 19),
+            ("Refactor database connection pooling", s, 2, "brainstorm", 8, 6, 20),
+            # Learning (~3)
+            ("Complete TypeScript advanced patterns course", l, 2, "normal", 7, 5, 22),
+            ("Read chapter on distributed systems", l, 3, "brainstorm", 3, 2, 21),
+            ("Watch conference talk on WebAssembly", l, 4, "normal", 9, 7, 19),
         ]
 
-        for title, domain_id, impact, clarity, created_ago, completed_ago, hour in completed_specs:
+        for idx, (title, domain_id, impact, clarity, created_ago, completed_ago, hour) in enumerate(completed_specs):
             created_date = today - timedelta(days=created_ago)
             completed_date = today - timedelta(days=completed_ago)
-            # Add some minute variation
-            minute = random.randint(0, 45)
+            # Deterministic minute variation based on index
+            minute = (idx * 7 + 3) % 50
             task = Task(
                 user_id=user_id,
                 domain_id=domain_id,
@@ -591,25 +896,73 @@ class DemoService:
             )
             self.db.add(task)
 
+    async def _seed_archived_tasks(
+        self,
+        domains: dict[str, Domain],
+        today: date,
+        user_id: int,
+    ) -> None:
+        """Insert 6 archived tasks across multiple domains."""
+        w = domains["work"].id
+        h = domains["health"].id
+        p = domains["personal"].id
+        s = domains["side_project"].id
+        l = domains["learning"].id  # noqa: E741
+
+        # (title, domain_id, impact, clarity, archived_days_ago)
+        archived_specs: list[tuple[str, int, int, str, int]] = [
+            ("Cancel premium Notion plan", w, 4, "autopilot", 5),
+            ("Old meal prep recipe collection", h, 4, "normal", 8),
+            ("Research coworking spaces", p, 3, "brainstorm", 3),
+            ("Rewrite onboarding flow", s, 2, "brainstorm", 10),
+            ("Organize bookshelf by category", p, 4, "normal", 6),
+            ("Set up RSS reader", l, 4, "autopilot", 12),
+        ]
+
+        for title, domain_id, impact, clarity, archived_ago in archived_specs:
+            created_date = today - timedelta(days=archived_ago + 5)
+            archived_date = today - timedelta(days=archived_ago)
+            task = Task(
+                user_id=user_id,
+                domain_id=domain_id,
+                title=title,
+                impact=impact,
+                clarity=clarity,
+                status="archived",
+                created_at=datetime(created_date.year, created_date.month, created_date.day, 9, 0, tzinfo=UTC),
+                updated_at=datetime(archived_date.year, archived_date.month, archived_date.day, 12, 0, tzinfo=UTC),
+            )
+            self.db.add(task)
+
     async def _seed_thoughts(self, task_service: TaskService) -> None:
-        """Create thought items (tasks with no domain)."""
+        """Create 6 thought items (tasks with no domain)."""
         await task_service.create_task(
-            title="Research vacation spots for March",
+            title="Explore working remotely from Lisbon for a month",
             impact=4,
             clarity="brainstorm",
         )
         await task_service.create_task(
-            title="Cancel old streaming subscription",
+            title="Cancel HBO Max subscription",
             impact=3,
             clarity="autopilot",
         )
         await task_service.create_task(
-            title="Birthday gift ideas for Sarah",
+            title="Birthday gift ideas for Mom",
             impact=3,
             clarity="brainstorm",
         )
         await task_service.create_task(
-            title="Try that new ramen place downtown",
+            title="Try that new Thai place on 5th Avenue",
             impact=4,
             clarity="normal",
+        )
+        await task_service.create_task(
+            title="Look into home office tax deduction",
+            impact=3,
+            clarity="normal",
+        )
+        await task_service.create_task(
+            title="Learn to make sourdough bread",
+            impact=4,
+            clarity="brainstorm",
         )
