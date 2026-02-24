@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.4 — 2026-02-25
+
+### Feat: Sticky domain label in column headers + alignment fix
+- Domain name, emoji, and task count now fade into the sticky sort header as you scroll past each domain section (desktop, matching legacy behavior)
+- Fixed column header alignment: Clarity/Duration/Impact labels now align precisely with task row metadata pills (was shifted ~15px left at large breakpoints)
+
 ## v0.55.3 — 2026-02-25
 
 ### Chore: Overhaul demo seed data
