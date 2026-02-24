@@ -133,10 +133,6 @@ function DashboardPage() {
     setEditorOpen(true);
   }, []);
 
-  const handleQuickAdd = useCallback(() => {
-    setQuickAddOpen(true);
-  }, []);
-
   const handleEditTask = useCallback((task: TaskResponse) => {
     setEditingTask(task);
     setEditorOpen(true);
@@ -395,7 +391,6 @@ function DashboardPage() {
               domains={domains}
               isLoading={tasksLoading || domainsLoading}
               onNewTask={handleNewTask}
-              onQuickAdd={handleQuickAdd}
               onEditTask={handleEditTask}
             />
           </div>

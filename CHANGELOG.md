@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.1 — 2026-02-24
+
+### Chore: Task panel UX cleanup
+- Moved sort controls (Clarity/Duration/Impact) from toolbar into a sticky column header row aligned with task metadata
+- Removed gradient separator under task panel header (border-b is sufficient)
+- Removed colored clarity dots from energy selector (duplicated toggle icons)
+- Removed "+ Quick" button from toolbar (Thoughts page handles quick add)
+- Increased section separator spacing for Scheduled/Completed/Deleted sections
+
 ## v0.55.0 — 2026-02-24
 
 ### Fix: Completed section disappears when retention filter matches zero tasks
