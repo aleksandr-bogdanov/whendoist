@@ -4,6 +4,21 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.87 — 2026-02-24
+
+### Feat: Redesign onboarding wizard to match legacy design
+- Ported polished legacy wizard design: Whendoist logo with float animation, branded SVGs (rocket, Google Calendar, Todoist), glassmorphic cards, purple gradient CTA buttons
+- Welcome step: logo wordmark + personalized greeting + value proposition card
+- Energy step: 3 horizontal selectable mode cards with live task preview (color-coded accent bars)
+- Calendar step: branded connection card with Google icon, status indicator, privacy notice
+- Todoist step: centered branded card with Todoist logo
+- Domains step: 3-column suggestion chip grid with emoji picker for custom domains
+- Completion step: rocket illustration + pulsing "Open Tasks" button
+- Added `logoFloat` and `finalPulse` CSS keyframe animations with reduced-motion support
+- Renamed FOCUS energy label to BRAINSTORM
+
+---
+
 ## v0.54.86 — 2026-02-24
 
 ### Fix: Legacy frontend CSP inline script blocking
