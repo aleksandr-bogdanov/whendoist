@@ -2,13 +2,14 @@
 Demo login service for testing and PR preview deployments.
 
 Creates and manages demo user accounts that bypass Google OAuth.
-Demo users are regular User rows identified by email convention (demo-{profile}@whendoist.local).
+Each demo session gets a unique user with email demo-{profile}-{uuid}@whendoist.local.
 
 Gated by DEMO_LOGIN_ENABLED env var (default: false).
 """
 
 import logging
 import random
+import uuid
 from datetime import UTC, date, datetime, time, timedelta
 
 from sqlalchemy import delete, select
@@ -40,35 +41,45 @@ class DemoService:
         self.db = db
 
     @staticmethod
-    def demo_email(profile: str) -> str:
-        """Return the email address for a demo profile."""
-        return f"demo-{profile}{DEMO_EMAIL_SUFFIX}"
-
-    @staticmethod
     def is_demo_user(email: str) -> bool:
         """Check if an email belongs to a demo user."""
         return email.endswith(DEMO_EMAIL_SUFFIX)
 
-    async def get_or_create_demo_user(self, profile: str) -> User:
-        """Find or create a demo user for the given profile.
+    @staticmethod
+    def extract_profile(email: str) -> str | None:
+        """Extract profile name from a demo email.
 
-        Returns the User object. Commits the transaction.
+        Handles both formats:
+        - demo-{profile}-{uuid}@whendoist.local (new multi-tenant)
+        - demo-{profile}@whendoist.local (legacy)
+        """
+        if not email.endswith(DEMO_EMAIL_SUFFIX):
+            return None
+        local = email[: -len(DEMO_EMAIL_SUFFIX)]  # e.g. "demo-demo-abc123" or "demo-demo"
+        parts = local.split("-", 2)  # ['demo', 'demo', 'abc123'] or ['demo', 'demo']
+        if len(parts) >= 2 and parts[0] == "demo" and parts[1] in DEMO_VALID_PROFILES:
+            return parts[1]
+        return None
+
+    async def get_or_create_demo_user(self, profile: str) -> User:
+        """Create a new unique demo user for the given profile.
+
+        Each call creates a fresh user with isolated data.
+        Cleans up stale demo users before creating the new one.
         """
         if profile not in DEMO_VALID_PROFILES:
             raise ValueError(f"Invalid demo profile: {profile}")
 
-        email = self.demo_email(profile)
-        result = await self.db.execute(select(User).where(User.email == email))
-        user = result.scalar_one_or_none()
+        # Clean up stale demo users lazily
+        from app.config import get_settings
 
-        if user:
-            # Always reset wizard so demo starts with onboarding
-            user.wizard_completed = False
-            user.wizard_completed_at = None
-            await self.db.commit()
-            return user
+        settings = get_settings()
+        await self.cleanup_stale_users(settings.demo_cleanup_max_age_hours)
 
-        # Create new demo user
+        # Generate unique email
+        short_id = uuid.uuid4().hex[:8]
+        email = f"demo-{profile}-{short_id}{DEMO_EMAIL_SUFFIX}"
+
         display_names = {
             "demo": "Demo User",
             "encrypted": "Encryption Test",
@@ -108,12 +119,37 @@ class DemoService:
         user.wizard_completed_at = None
 
         # Determine profile from email
-        profile = user.email.replace(DEMO_EMAIL_SUFFIX, "").replace("demo-", "")
+        profile = self.extract_profile(user.email)
         if profile == "demo":
             await self._seed_demo_data(user_id)
 
         await self.db.commit()
         logger.info(f"Reset demo user: {user.email} (id={user_id})")
+
+    async def cleanup_stale_users(self, max_age_hours: int = 24) -> int:
+        """Delete demo users (and all their data) older than max_age_hours.
+
+        Returns the number of users deleted.
+        """
+        cutoff = datetime.now(UTC) - timedelta(hours=max_age_hours)
+
+        result = await self.db.execute(
+            select(User).where(
+                User.email.endswith(DEMO_EMAIL_SUFFIX),
+                User.created_at < cutoff,
+            )
+        )
+        stale_users = list(result.scalars().all())
+
+        for user in stale_users:
+            await self._clear_user_data(user.id)
+            await self.db.delete(user)
+
+        if stale_users:
+            await self.db.flush()
+            logger.info(f"Cleaned up {len(stale_users)} stale demo users")
+
+        return len(stale_users)
 
     async def _clear_user_data(self, user_id: int) -> None:
         """Delete all user-generated data, keeping the User row."""
