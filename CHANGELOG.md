@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.3 — 2026-02-25
+
+### Chore: Overhaul demo seed data
+- Expanded domains from 4 to 5 (Work, Health & Fitness, Personal, Side Project, Learning)
+- Doubled recurring tasks from 4 to 8 with realistic schedules (standup, gym, 1:1, sprint review, meal prep, water plants, coding sessions, reading)
+- Dense calendar coverage: 8 tasks today, 6 tomorrow, decreasing density through day+5
+- Added 3 overdue tasks, 6 archived tasks, 5 subtasks under 2 parent tasks, 6 thoughts
+- Made seeding deterministic via `random.seed(user_id)` — same demo data on every reset
+- Coherent persona: Alex Chen, senior PM at a tech startup
+
 ## v0.55.1 — 2026-02-24
 
 ### Chore: Task panel UX cleanup
