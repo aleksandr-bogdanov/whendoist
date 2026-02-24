@@ -92,6 +92,8 @@ def render_template(request: Request, template_name: str, context: dict) -> HTML
     context["csrf_token"] = get_csrf_token(request)
     context["app_version"] = __version__
     context["request"] = request
+    # Signal to CSP middleware that this is a legacy template with inline handlers
+    request.state.legacy_template = True
     return templates.TemplateResponse(template_name, context)
 
 

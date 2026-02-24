@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.54.86 — 2026-02-24
+
+### Fix: Legacy frontend CSP inline script blocking
+- Legacy Jinja2 templates use inline event handlers (`onclick`, `onchange`, etc.) incompatible with nonce-based CSP
+- `render_template` now flags legacy pages via `request.state.legacy_template`
+- CSP middleware uses `'unsafe-inline'` for legacy pages, nonce-based for React SPA
+
+---
+
 ## v0.54.85 — 2026-02-24
 
 ### Fix: V4 audit findings (7 of 8)
