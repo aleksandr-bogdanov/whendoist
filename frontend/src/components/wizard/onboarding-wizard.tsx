@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Lock } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getListDomainsApiV1DomainsGetQueryKey,
   useCreateDomainApiV1DomainsPost,
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 // ============================================================================
 
 const PANEL_IDS = ["welcome", "energy", "calendar", "todoist", "domains", "completion"] as const;
+const OPTIONAL_PANELS = new Set([2, 3]);
 
 const ENERGY_MODES = [
   { key: "zombie", emoji: "\u{1F9DF}", label: "ZOMBIE", desc: "Simple next actions" },
@@ -236,40 +237,70 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (v: string)
 function ProgressDots({ current }: { current: number }) {
   return (
     <div className="flex justify-center gap-2.5 sm:gap-2 py-3">
-      {PANEL_IDS.map((id, i) => (
-        <div
-          key={id}
-          className={cn(
-            "w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-250",
-            i === current && "bg-[var(--color-brand)] shadow-[0_0_0_3px_rgba(109,94,246,0.2)]",
-            i < current && "bg-[var(--color-brand)]",
-            i > current && "bg-muted-foreground/25",
-          )}
-        />
-      ))}
+      {PANEL_IDS.map((id, i) => {
+        const isOptional = OPTIONAL_PANELS.has(i);
+        const isCurrent = i === current;
+        const isCompleted = i < current;
+        return (
+          <div
+            key={id}
+            className={cn(
+              "w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-250",
+              isCurrent && "bg-[var(--color-brand)] shadow-[0_0_0_3px_rgba(109,94,246,0.2)]",
+              isCompleted && "bg-[var(--color-brand)]",
+              !isCurrent && !isCompleted && !isOptional && "bg-muted-foreground/25",
+              !isCurrent &&
+                !isCompleted &&
+                isOptional &&
+                "border-2 border-muted-foreground/25 bg-transparent",
+            )}
+          />
+        );
+      })}
     </div>
   );
 }
 
 // ============================================================================
-// Swipe Hint
+// Shared nav bar
 // ============================================================================
 
-function SwipeHint() {
+function WizardNav({
+  onBack,
+  primaryLabel,
+  primaryAction,
+  secondaryLabel,
+  secondaryAction,
+}: {
+  onBack?: () => void;
+  primaryLabel?: string;
+  primaryAction?: () => void;
+  secondaryLabel?: string;
+  secondaryAction?: () => void;
+}) {
   return (
-    <div className="flex items-center justify-center gap-1 text-[0.7rem] text-muted-foreground/40 mt-6 animate-[swipeHint_2s_ease-in-out_infinite]">
-      <span>swipe</span>
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-      >
-        <path d="M5 12h14M12 5l7 7-7 7" />
-      </svg>
+    <div className="flex justify-between items-center pt-6">
+      {onBack ? (
+        <Button variant="outline" className="h-11 sm:h-10 px-5 rounded-xl" onClick={onBack}>
+          Back
+        </Button>
+      ) : (
+        <div />
+      )}
+      {secondaryLabel && secondaryAction && !primaryLabel && (
+        <Button
+          variant="outline"
+          className="h-11 sm:h-10 px-5 rounded-xl"
+          onClick={secondaryAction}
+        >
+          {secondaryLabel}
+        </Button>
+      )}
+      {primaryLabel && primaryAction && (
+        <Button variant="cta" className="h-11 sm:h-10 px-5 rounded-xl" onClick={primaryAction}>
+          {primaryLabel}
+        </Button>
+      )}
     </div>
   );
 }
@@ -291,6 +322,20 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
   const queryClient = useQueryClient();
 
   const firstName = userName?.split(" ")[0] ?? "";
+
+  const scrollToPanel = useCallback((index: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const clamped = Math.max(0, Math.min(index, PANEL_IDS.length - 1));
+    el.scrollTo({ left: clamped * el.clientWidth, behavior: "smooth" });
+  }, []);
+
+  const goForward = useCallback(
+    () => scrollToPanel(currentPanel + 1),
+    [currentPanel, scrollToPanel],
+  );
+
+  const goBack = useCallback(() => scrollToPanel(currentPanel - 1), [currentPanel, scrollToPanel]);
 
   // Track current panel from scroll position
   useEffect(() => {
@@ -342,19 +387,19 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
 
         <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
           <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
-            <WelcomeStep firstName={firstName} />
+            <WelcomeStep firstName={firstName} onGetStarted={goForward} />
           </div>
           <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
-            <EnergyStep />
+            <EnergyStep onBack={goBack} onContinue={goForward} />
           </div>
           <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
-            <CalendarConnectStep />
+            <CalendarConnectStep onBack={goBack} onSkip={goForward} />
           </div>
           <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
-            <TodoistStep />
+            <TodoistStep onBack={goBack} onSkip={goForward} />
           </div>
           <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
-            <DomainsStep />
+            <DomainsStep onBack={goBack} onSkip={goForward} onContinue={goForward} />
           </div>
           <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
             <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
@@ -369,7 +414,7 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
 // Step 0: Welcome
 // ============================================================================
 
-function WelcomeStep({ firstName }: { firstName: string }) {
+function WelcomeStep({ firstName, onGetStarted }: { firstName: string; onGetStarted: () => void }) {
   return (
     <div className="flex flex-col items-center text-center">
       <div className="mb-3">
@@ -398,7 +443,15 @@ function WelcomeStep({ firstName }: { firstName: string }) {
         </p>
       </div>
 
-      <SwipeHint />
+      <div className="flex justify-center pt-6">
+        <Button
+          variant="cta"
+          className="h-12 sm:h-11 px-8 rounded-xl text-base"
+          onClick={onGetStarted}
+        >
+          Get Started
+        </Button>
+      </div>
     </div>
   );
 }
@@ -407,7 +460,7 @@ function WelcomeStep({ firstName }: { firstName: string }) {
 // Step 1: Energy Modes
 // ============================================================================
 
-function EnergyStep() {
+function EnergyStep({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
   const [selectedMode, setSelectedMode] = useState("normal");
   const visibleClarities = CLARITY_VISIBILITY[selectedMode] ?? [];
 
@@ -473,6 +526,8 @@ function EnergyStep() {
           })}
         </div>
       </div>
+
+      <WizardNav onBack={onBack} primaryLabel="Got it, continue" primaryAction={onContinue} />
     </div>
   );
 }
@@ -481,7 +536,7 @@ function EnergyStep() {
 // Step 2: Connect Calendar
 // ============================================================================
 
-function CalendarConnectStep() {
+function CalendarConnectStep({ onBack, onSkip }: { onBack: () => void; onSkip: () => void }) {
   return (
     <div className="flex flex-col">
       <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">
@@ -520,6 +575,8 @@ function CalendarConnectStep() {
         <Lock className="w-3 h-3 opacity-60" />
         Reads your calendar to find free time. Never edits events.
       </p>
+
+      <WizardNav onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
     </div>
   );
 }
@@ -528,7 +585,7 @@ function CalendarConnectStep() {
 // Step 3: Todoist Import
 // ============================================================================
 
-function TodoistStep() {
+function TodoistStep({ onBack, onSkip }: { onBack: () => void; onSkip: () => void }) {
   return (
     <div className="flex flex-col">
       <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">Already have tasks?</h1>
@@ -554,6 +611,8 @@ function TodoistStep() {
           Connect Todoist
         </Button>
       </div>
+
+      <WizardNav onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
     </div>
   );
 }
@@ -562,7 +621,15 @@ function TodoistStep() {
 // Step 4: Domains
 // ============================================================================
 
-function DomainsStep() {
+function DomainsStep({
+  onBack,
+  onSkip,
+  onContinue,
+}: {
+  onBack: () => void;
+  onSkip: () => void;
+  onContinue: () => void;
+}) {
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
   const [customDomains, setCustomDomains] = useState<Array<{ name: string; icon: string }>>([]);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -697,6 +764,14 @@ function DomainsStep() {
           </div>
         )}
       </div>
+
+      <WizardNav
+        onBack={onBack}
+        primaryLabel={allNames.size > 0 ? "Continue" : undefined}
+        primaryAction={allNames.size > 0 ? onContinue : undefined}
+        secondaryLabel={allNames.size > 0 ? undefined : "Skip"}
+        secondaryAction={allNames.size > 0 ? undefined : onSkip}
+      />
     </div>
   );
 }
