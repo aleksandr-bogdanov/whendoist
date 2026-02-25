@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Lock } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getListDomainsApiV1DomainsGetQueryKey,
   useCreateDomainApiV1DomainsPost,
@@ -18,19 +18,7 @@ import { cn } from "@/lib/utils";
 // Constants
 // ============================================================================
 
-const TOTAL_STEPS = 7;
-
-const STEP_IDS = [
-  "welcome",
-  "energy",
-  "cal-connect",
-  "cal-select",
-  "todoist",
-  "domains",
-  "completion",
-] as const;
-
-const OPTIONAL_STEPS = new Set([2, 4]);
+const PANEL_IDS = ["welcome", "energy", "calendar", "todoist", "domains", "completion"] as const;
 
 const ENERGY_MODES = [
   { key: "zombie", emoji: "\u{1F9DF}", label: "ZOMBIE", desc: "Simple next actions" },
@@ -245,79 +233,44 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (v: string)
 // Progress Dots
 // ============================================================================
 
-function ProgressDots({ current, total }: { current: number; total: number }) {
+function ProgressDots({ current }: { current: number }) {
   return (
-    <div className="flex justify-center gap-2.5 sm:gap-2 py-4">
-      {Array.from({ length: total }, (_, i) => {
-        const isOptional = OPTIONAL_STEPS.has(i);
-        const isCurrent = i === current;
-        const isCompleted = i < current;
-        return (
-          <div
-            key={STEP_IDS[i]}
-            className={cn(
-              "w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-250",
-              isCurrent && "bg-[var(--color-brand)] shadow-[0_0_0_3px_rgba(109,94,246,0.2)]",
-              isCompleted && "bg-[var(--color-brand)]",
-              !isCurrent && !isCompleted && !isOptional && "bg-muted-foreground/25",
-              !isCurrent &&
-                !isCompleted &&
-                isOptional &&
-                "border-2 border-muted-foreground/25 bg-transparent",
-            )}
-          />
-        );
-      })}
+    <div className="flex justify-center gap-2.5 sm:gap-2 py-3">
+      {PANEL_IDS.map((id, i) => (
+        <div
+          key={id}
+          className={cn(
+            "w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-250",
+            i === current && "bg-[var(--color-brand)] shadow-[0_0_0_3px_rgba(109,94,246,0.2)]",
+            i < current && "bg-[var(--color-brand)]",
+            i > current && "bg-muted-foreground/25",
+          )}
+        />
+      ))}
     </div>
   );
 }
 
 // ============================================================================
-// Shared nav bar
+// Swipe Hint
 // ============================================================================
 
-function WizardNav({
-  step,
-  onBack,
-  primaryLabel,
-  primaryAction,
-  secondaryLabel,
-  secondaryAction,
-}: {
-  step: number;
-  onBack?: () => void;
-  primaryLabel?: string;
-  primaryAction?: () => void;
-  secondaryLabel?: string;
-  secondaryAction?: () => void;
-}) {
+function SwipeHint() {
   return (
-    <>
-      <ProgressDots current={step} total={TOTAL_STEPS} />
-      <div className="flex justify-between items-center pt-2">
-        {onBack ? (
-          <Button variant="outline" className="h-11 sm:h-10 px-5 rounded-xl" onClick={onBack}>
-            Back
-          </Button>
-        ) : (
-          <div />
-        )}
-        {secondaryLabel && secondaryAction && !primaryLabel && (
-          <Button
-            variant="outline"
-            className="h-11 sm:h-10 px-5 rounded-xl"
-            onClick={secondaryAction}
-          >
-            {secondaryLabel}
-          </Button>
-        )}
-        {primaryLabel && primaryAction && (
-          <Button variant="cta" className="h-11 sm:h-10 px-5 rounded-xl" onClick={primaryAction}>
-            {primaryLabel}
-          </Button>
-        )}
-      </div>
-    </>
+    <div className="flex items-center justify-center gap-1 text-[0.7rem] text-muted-foreground/40 mt-6 animate-[swipeHint_2s_ease-in-out_infinite]">
+      <span>swipe</span>
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <path d="M5 12h14M12 5l7 7-7 7" />
+      </svg>
+    </div>
   );
 }
 
@@ -332,38 +285,38 @@ interface OnboardingWizardProps {
 }
 
 export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizardProps) {
-  const [step, setStep] = useState(0);
-  const [transitioning, setTransitioning] = useState(false);
+  const [currentPanel, setCurrentPanel] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const completeMutation = useCompleteWizardApiV1WizardCompletePost();
   const queryClient = useQueryClient();
 
   const firstName = userName?.split(" ")[0] ?? "";
 
-  const goTo = useCallback((target: number) => {
-    setTransitioning(true);
-    setTimeout(() => {
-      setStep(target);
-      setTransitioning(false);
-    }, 200);
+  // Track current panel from scroll position
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const panelWidth = el.clientWidth;
+      if (panelWidth === 0) return;
+      setCurrentPanel(Math.round(el.scrollLeft / panelWidth));
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const goForward = useCallback(
-    (from: number) => {
-      let next = from + 1;
-      if (next === 3) next = 4; // skip cal-select
-      goTo(Math.min(next, TOTAL_STEPS - 1));
-    },
-    [goTo],
-  );
-
-  const goBack = useCallback(
-    (from: number) => {
-      let prev = from - 1;
-      if (prev === 3) prev = 2; // skip cal-select
-      goTo(Math.max(prev, 0));
-    },
-    [goTo],
-  );
+  // Convert vertical wheel to horizontal scroll (desktop)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      e.preventDefault();
+      el.scrollBy({ left: e.deltaY });
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
 
   const handleFinish = () => {
     completeMutation.mutate(undefined, {
@@ -379,47 +332,33 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent
-        className="sm:max-w-[640px] p-0 gap-0 rounded-[20px] border-border/50 shadow-[var(--shadow-raised)]"
+        className="sm:max-w-[640px] p-0 gap-0 rounded-[20px] border-border/50 shadow-[var(--shadow-raised)] overflow-hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         showCloseButton={false}
       >
-        <div
-          className={cn(
-            "flex flex-col px-8 sm:px-12 pt-12 pb-10 transition-opacity duration-200",
-            transitioning && "opacity-0",
-          )}
-        >
-          {step === 0 && (
-            <WelcomeStep firstName={firstName} step={step} onGetStarted={() => goForward(step)} />
-          )}
-          {step === 1 && (
-            <EnergyStep
-              step={step}
-              onBack={() => goBack(step)}
-              onContinue={() => goForward(step)}
-            />
-          )}
-          {step === 2 && (
-            <CalendarConnectStep
-              step={step}
-              onBack={() => goBack(step)}
-              onSkip={() => goForward(step)}
-            />
-          )}
-          {step === 4 && (
-            <TodoistStep step={step} onBack={() => goBack(step)} onSkip={() => goForward(step)} />
-          )}
-          {step === 5 && (
-            <DomainsStep
-              step={step}
-              onBack={() => goBack(step)}
-              onSkip={() => goForward(step)}
-              onContinue={() => goForward(step)}
-            />
-          )}
-          {step === 6 && (
+        <div className="pt-5 pb-1">
+          <ProgressDots current={currentPanel} />
+        </div>
+
+        <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+            <WelcomeStep firstName={firstName} />
+          </div>
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+            <EnergyStep />
+          </div>
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+            <CalendarConnectStep />
+          </div>
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+            <TodoistStep />
+          </div>
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+            <DomainsStep />
+          </div>
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
             <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
-          )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -430,15 +369,7 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
 // Step 0: Welcome
 // ============================================================================
 
-function WelcomeStep({
-  firstName,
-  step,
-  onGetStarted,
-}: {
-  firstName: string;
-  step: number;
-  onGetStarted: () => void;
-}) {
+function WelcomeStep({ firstName }: { firstName: string }) {
   return (
     <div className="flex flex-col items-center text-center">
       <div className="mb-3">
@@ -467,18 +398,7 @@ function WelcomeStep({
         </p>
       </div>
 
-      <div className="pt-6">
-        <ProgressDots current={step} total={TOTAL_STEPS} />
-      </div>
-      <div className="flex justify-center pt-4">
-        <Button
-          variant="cta"
-          className="h-12 sm:h-11 px-8 rounded-xl text-base"
-          onClick={onGetStarted}
-        >
-          Get Started
-        </Button>
-      </div>
+      <SwipeHint />
     </div>
   );
 }
@@ -487,15 +407,7 @@ function WelcomeStep({
 // Step 1: Energy Modes
 // ============================================================================
 
-function EnergyStep({
-  step,
-  onBack,
-  onContinue,
-}: {
-  step: number;
-  onBack: () => void;
-  onContinue: () => void;
-}) {
+function EnergyStep() {
   const [selectedMode, setSelectedMode] = useState("normal");
   const visibleClarities = CLARITY_VISIBILITY[selectedMode] ?? [];
 
@@ -561,15 +473,6 @@ function EnergyStep({
           })}
         </div>
       </div>
-
-      <div className="pt-4">
-        <WizardNav
-          step={step}
-          onBack={onBack}
-          primaryLabel="Got it, continue"
-          primaryAction={onContinue}
-        />
-      </div>
     </div>
   );
 }
@@ -578,15 +481,7 @@ function EnergyStep({
 // Step 2: Connect Calendar
 // ============================================================================
 
-function CalendarConnectStep({
-  step,
-  onBack,
-  onSkip,
-}: {
-  step: number;
-  onBack: () => void;
-  onSkip: () => void;
-}) {
+function CalendarConnectStep() {
   return (
     <div className="flex flex-col">
       <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">
@@ -625,25 +520,15 @@ function CalendarConnectStep({
         <Lock className="w-3 h-3 opacity-60" />
         Reads your calendar to find free time. Never edits events.
       </p>
-
-      <WizardNav step={step} onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
     </div>
   );
 }
 
 // ============================================================================
-// Step 4: Todoist Import
+// Step 3: Todoist Import
 // ============================================================================
 
-function TodoistStep({
-  step,
-  onBack,
-  onSkip,
-}: {
-  step: number;
-  onBack: () => void;
-  onSkip: () => void;
-}) {
+function TodoistStep() {
   return (
     <div className="flex flex-col">
       <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">Already have tasks?</h1>
@@ -669,27 +554,15 @@ function TodoistStep({
           Connect Todoist
         </Button>
       </div>
-
-      <WizardNav step={step} onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
     </div>
   );
 }
 
 // ============================================================================
-// Step 5: Domains
+// Step 4: Domains
 // ============================================================================
 
-function DomainsStep({
-  step,
-  onBack,
-  onSkip,
-  onContinue,
-}: {
-  step: number;
-  onBack: () => void;
-  onSkip: () => void;
-  onContinue: () => void;
-}) {
+function DomainsStep() {
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
   const [customDomains, setCustomDomains] = useState<Array<{ name: string; icon: string }>>([]);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -738,8 +611,6 @@ function DomainsStep({
     setCustomIcon("\u{1F4C1}");
     setIsAddingCustom(false);
   };
-
-  const hasDomains = allNames.size > 0;
 
   return (
     <div className="flex flex-col">
@@ -826,21 +697,12 @@ function DomainsStep({
           </div>
         )}
       </div>
-
-      <WizardNav
-        step={step}
-        onBack={onBack}
-        primaryLabel={hasDomains ? "Continue" : undefined}
-        primaryAction={hasDomains ? onContinue : undefined}
-        secondaryLabel={hasDomains ? undefined : "Skip"}
-        secondaryAction={hasDomains ? undefined : onSkip}
-      />
     </div>
   );
 }
 
 // ============================================================================
-// Step 6: Completion
+// Step 5: Completion
 // ============================================================================
 
 function CompletionStep({ onFinish, isPending }: { onFinish: () => void; isPending: boolean }) {

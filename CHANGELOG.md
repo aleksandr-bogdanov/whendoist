@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.13 — 2026-02-25
+
+### Feat: Swipeable setup wizard
+
+Replaced button-based wizard navigation (Back/Next/Skip) with horizontal scroll-snap. Swipe on mobile, scroll on desktop. Progress dots track position. Action buttons (Connect Calendar, Connect Todoist, Open Tasks) remain.
+
+---
+
 ## v0.55.12 — 2026-02-25
 
 ### Fix: Demo seed data — add unscheduled domain tasks
