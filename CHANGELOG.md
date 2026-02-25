@@ -4,6 +4,11 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.7 — 2026-02-25
+
+### Fix: Align sticky domain label with actual domain names
+- Added `pl-9` (36px) to sticky domain label to match the left offset of domain names in cards (content padding + card border + trigger padding + chevron + gap)
+
 ## v0.55.6 — 2026-02-25
 
 ### Fix: Task rows painting above sticky header
