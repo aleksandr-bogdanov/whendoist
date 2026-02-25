@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.9 — 2026-02-25
+
+### Fix: Remove duplicate subtask count from clarity column
+- Parent task rows had active/total count in both the title-area badge and the clarity column — removed the clarity column duplicate
+- Subtask count badge now always shows `active/total` format (was only showing total when not hiding completed)
+- Added `self-center` to the subtask count badge button for proper vertical centering
+
 ## v0.55.8 — 2026-02-25
 
 ### Fix: Center clarity/duration/impact pills in column cells
