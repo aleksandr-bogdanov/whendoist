@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.18 — 2026-02-25
+
+### Chore: `just dev` runs both backend and frontend
+
+`just dev` now starts both the backend (port 8000) and frontend dev server (port 5173) in parallel. Ctrl+C stops both. The old backend-only command is available as `just dev-backend`.
+
+---
+
 ## v0.55.17 — 2026-02-25
 
 ### Fix: Wizard swipe on macOS trackpad
