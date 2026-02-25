@@ -4,6 +4,24 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.11 — 2026-02-25
+
+### Feat: Smart Quick Add V2
+
+Redesigned Quick Add as an intelligent single-field input with inline metadata parsing. Type naturally and metadata is extracted automatically.
+
+- **Syntax**: `@Domain` `!high` `?auto` `30m` `tomorrow` `// description`
+- **Autocomplete**: Dropdown for `@` domains, `?` clarity, `!` impact
+- **Metadata pills**: Colored dismissable pills below input showing parsed tokens
+- **chrono-node date guard**: Rejects ambiguous bare month names ("Jan", "May") that could be person names — only accepts dates with a certain day, weekday, or hour
+- **Sticky dismissals**: Pill dismissals persist while their trigger text remains in the input (Map-based tracking instead of clearing on every keystroke)
+- **Double-submit guard**: `isPending` check on both Enter key and `handleSave` prevents duplicate task creation
+- **Keep-open mode**: Checkbox to stay open for batch creation (persisted to localStorage)
+- **Syntax hints**: Dismissable reference row below pills
+
+New files: `task-parser.ts` (pure parsing logic), `smart-input-autocomplete.tsx` (dropdown component)
+New dependency: `chrono-node` (natural language date parsing)
+
 ## v0.55.10 — 2026-02-25
 
 ### Fix: Vertically center subtask count badge
