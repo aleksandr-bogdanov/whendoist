@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.12 — 2026-02-25
+
+### Fix: Demo seed data — add unscheduled domain tasks
+
+Moved 8 tasks from scheduled to unscheduled and added 3 new backlog tasks so demo users see content in domain areas, not just in the calendar.
+
+---
+
 ## v0.55.11 — 2026-02-25
 
 ### Feat: Smart Quick Add V2
