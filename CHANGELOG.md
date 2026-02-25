@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.25 — 2026-02-25
+
+### Fix: Sticky header height jump when scrolling between sections
+
+Fixed the task list sticky header (domain label + sort columns) changing height in real time when scrolling from domains to scheduled section. Added fixed height so the header size stays constant regardless of whether the domain label is visible.
+
+---
+
 ## v0.55.24 — 2026-02-25
 
 ### Feat: Analytics page redesign
