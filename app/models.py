@@ -80,13 +80,13 @@ class User(Base):
     wizard_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     todoist_token: Mapped["TodoistToken | None"] = relationship(
-        back_populates="user", uselist=False, passive_deletes=True
+        back_populates="user", uselist=False, cascade="all, delete-orphan", passive_deletes=True
     )
     google_token: Mapped["GoogleToken | None"] = relationship(
-        back_populates="user", uselist=False, passive_deletes=True
+        back_populates="user", uselist=False, cascade="all, delete-orphan", passive_deletes=True
     )
     calendar_selections: Mapped[list["GoogleCalendarSelection"]] = relationship(
-        back_populates="user", passive_deletes=True
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
 
     # Native task management
@@ -99,7 +99,7 @@ class User(Base):
 
     # User preferences
     preferences: Mapped["UserPreferences | None"] = relationship(
-        back_populates="user", uselist=False, passive_deletes=True
+        back_populates="user", uselist=False, cascade="all, delete-orphan", passive_deletes=True
     )
 
     # Passkeys for E2E encryption unlock
