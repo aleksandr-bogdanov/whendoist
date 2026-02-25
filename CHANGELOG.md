@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.17 — 2026-02-25
+
+### Fix: Wizard swipe on macOS trackpad
+
+Wheel handler now picks whichever axis has the larger delta (`deltaX` vs `deltaY`), so macOS trackpad horizontal two-finger swipe works alongside vertical mousewheel.
+
+---
+
 ## v0.55.16 — 2026-02-25
 
 ### Fix: User preferences race condition and cascade delete
