@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.20 — 2026-02-25
+
+### Fix: Wizard swipe — replace native scroll with transform
+
+Replaced `overflow-x: auto` + CSS `scroll-snap` with `overflow: hidden` + CSS `transform: translateX()`. Native scroll-snap couldn't handle macOS trackpad momentum — hard swipes flew to the last panel. Transform approach gives full control: one panel per gesture, no momentum overshoot. Dots now driven directly by React state instead of scroll position events.
+
+---
+
 ## v0.55.19 — 2026-02-25
 
 ### Fix: Wizard swipe infinite scroll and layout centering

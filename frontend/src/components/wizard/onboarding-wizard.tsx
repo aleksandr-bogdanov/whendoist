@@ -317,43 +317,25 @@ interface OnboardingWizardProps {
 
 export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizardProps) {
   const [currentPanel, setCurrentPanel] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const wheelCooldown = useRef(false);
+  const panelRef = useRef(currentPanel);
+  panelRef.current = currentPanel;
   const completeMutation = useCompleteWizardApiV1WizardCompletePost();
   const queryClient = useQueryClient();
 
   const firstName = userName?.split(" ")[0] ?? "";
 
-  const scrollToPanel = useCallback((index: number) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const clamped = Math.max(0, Math.min(index, PANEL_IDS.length - 1));
-    el.scrollTo({ left: clamped * el.clientWidth, behavior: "smooth" });
+  const goTo = useCallback((index: number) => {
+    setCurrentPanel(Math.max(0, Math.min(PANEL_IDS.length - 1, index)));
   }, []);
 
-  const goForward = useCallback(
-    () => scrollToPanel(currentPanel + 1),
-    [currentPanel, scrollToPanel],
-  );
+  const goForward = useCallback(() => goTo(panelRef.current + 1), [goTo]);
+  const goBack = useCallback(() => goTo(panelRef.current - 1), [goTo]);
 
-  const goBack = useCallback(() => scrollToPanel(currentPanel - 1), [currentPanel, scrollToPanel]);
-
-  // Track current panel from scroll position
+  // Wheel/trackpad: snap one panel per gesture with cooldown
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      const panelWidth = el.clientWidth;
-      if (panelWidth === 0) return;
-      setCurrentPanel(Math.round(el.scrollLeft / panelWidth));
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Snap one panel per wheel/trackpad gesture (with cooldown)
-  useEffect(() => {
-    const el = scrollRef.current;
+    const el = containerRef.current;
     if (!el) return;
     const handleWheel = (e: WheelEvent) => {
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
@@ -361,18 +343,37 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
       e.preventDefault();
       if (wheelCooldown.current) return;
       wheelCooldown.current = true;
-      const panelWidth = el.clientWidth;
-      const idx = Math.round(el.scrollLeft / panelWidth);
-      const target = delta > 0 ? idx + 1 : idx - 1;
-      const clamped = Math.max(0, Math.min(PANEL_IDS.length - 1, target));
-      el.scrollTo({ left: clamped * panelWidth, behavior: "smooth" });
+      if (delta > 0) goForward();
+      else goBack();
       setTimeout(() => {
         wheelCooldown.current = false;
       }, 600);
     };
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
+  }, [goForward, goBack]);
+
+  // Pointer swipe detection (touch + mouse drag)
+  const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    swipeStart.current = { x: e.clientX, y: e.clientY, t: Date.now() };
   }, []);
+
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!swipeStart.current) return;
+      const dx = e.clientX - swipeStart.current.x;
+      const dy = e.clientY - swipeStart.current.y;
+      const dt = Date.now() - swipeStart.current.t;
+      swipeStart.current = null;
+      // Need significant horizontal movement, more horizontal than vertical, within 1s
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) || dt > 1000) return;
+      if (dx < 0) goForward();
+      else goBack();
+    },
+    [goForward, goBack],
+  );
 
   const handleFinish = () => {
     completeMutation.mutate(undefined, {
@@ -396,24 +397,34 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
           <ProgressDots current={currentPanel} />
         </div>
 
-        <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-            <WelcomeStep firstName={firstName} onGetStarted={goForward} />
-          </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-            <EnergyStep onBack={goBack} onContinue={goForward} />
-          </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-            <CalendarConnectStep onBack={goBack} onSkip={goForward} />
-          </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-            <TodoistStep onBack={goBack} onSkip={goForward} />
-          </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-            <DomainsStep onBack={goBack} onSkip={goForward} onContinue={goForward} />
-          </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-            <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
+        <div
+          ref={containerRef}
+          className="overflow-hidden"
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+        >
+          <div
+            className="flex transition-transform duration-300 ease-out"
+            style={{ transform: `translateX(-${currentPanel * 100}%)` }}
+          >
+            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
+              <WelcomeStep firstName={firstName} onGetStarted={goForward} />
+            </div>
+            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
+              <EnergyStep onBack={goBack} onContinue={goForward} />
+            </div>
+            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
+              <CalendarConnectStep onBack={goBack} onSkip={goForward} />
+            </div>
+            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
+              <TodoistStep onBack={goBack} onSkip={goForward} />
+            </div>
+            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
+              <DomainsStep onBack={goBack} onSkip={goForward} onContinue={goForward} />
+            </div>
+            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
+              <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
+            </div>
           </div>
         </div>
       </DialogContent>
