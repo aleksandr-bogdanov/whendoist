@@ -11,16 +11,20 @@ Performance optimizations (v0.14.0):
 """
 
 from collections import defaultdict
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
+from statistics import median
 
 from sqlalchemy import Date, cast, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import (
+    AGING_STATS_LIMIT,
     HEATMAP_WEEKS,
     IMPACT_COLORS,
     IMPACT_LABELS,
+    RECENT_COMPLETIONS_LOOKBACK_DAYS,
     RECURRING_STATS_LIMIT,
+    STREAK_HISTORY_DAYS,
     TITLE_TRUNCATE_LENGTH,
     VELOCITY_DAYS,
 )
@@ -48,6 +52,7 @@ class AnalyticsService:
 
         Optimized to use ~10 queries instead of 26+.
         """
+        today = date.today()
         range_start = datetime.combine(start_date, datetime.min.time())
         range_end = datetime.combine(end_date + timedelta(days=1), datetime.min.time())
 
@@ -68,11 +73,10 @@ class AnalyticsService:
         by_domain = self._aggregate_by_domain(all_completions, domains_map)
         impact_distribution = self._aggregate_by_impact(all_completions)
 
-        # Query 4: Streaks (needs full history, separate query)
-        streaks = await self._calculate_streaks()
+        # Query 4: Streaks (bounded to STREAK_HISTORY_DAYS)
+        streaks = await self._calculate_streaks(today)
 
         # Query 5: Daily counts for heatmap + velocity (shared query)
-        today = date.today()
         heatmap_start = today - timedelta(days=today.weekday() + 7 * HEATMAP_WEEKS)
         velocity_start = today - timedelta(days=VELOCITY_DAYS + 6)  # +6 for 7-day rolling average
         counts_start = min(heatmap_start, velocity_start)
@@ -82,14 +86,16 @@ class AnalyticsService:
         velocity_data = self._build_velocity(daily_counts, today)
 
         # Query 6: Week comparison (single optimized query)
-        week_comparison = await self._get_week_comparison()
+        week_comparison = await self._get_week_comparison(today)
 
         # Query 7-8: Recurring stats (batch query, no N+1)
         recurring_stats = await self._get_recurring_stats(range_start, range_end)
 
-        # Query 9: Aging stats
+        # Query 9: Aging stats (bounded to AGING_STATS_LIMIT most recent)
         aging_stats = await self._get_aging_stats()
 
+        # Completion rate: completed-in-range as % of (completed-in-range + all pending).
+        # Answers "what fraction of my visible workload did I complete in this period?"
         total = total_completed + total_pending
         completion_rate = round((total_completed / total * 100) if total > 0 else 0, 1)
 
@@ -270,34 +276,29 @@ class AnalyticsService:
             for i in [1, 2, 3, 4]
         ]
 
-    async def _calculate_streaks(self) -> dict:
+    async def _calculate_streaks(self, today: date) -> dict:
         """
         Calculate current and longest completion streaks.
 
         Uses UNION ALL to combine Task and Instance dates.
+        Bounded to STREAK_HISTORY_DAYS to avoid full-history scans.
         """
+        history_cutoff = datetime.combine(today - timedelta(days=STREAK_HISTORY_DAYS), datetime.min.time())
+
         # Combined query for all completion dates
-        task_dates = (
-            select(cast(Task.completed_at, Date).label("d"))
-            .where(
-                Task.user_id == self.user_id,
-                Task.status == "completed",
-                Task.completed_at.isnot(None),
-            )
-            .distinct()
+        task_dates = select(cast(Task.completed_at, Date).label("d")).where(
+            Task.user_id == self.user_id,
+            Task.status == "completed",
+            Task.completed_at >= history_cutoff,
         )
 
-        instance_dates = (
-            select(cast(TaskInstance.completed_at, Date).label("d"))
-            .where(
-                TaskInstance.user_id == self.user_id,
-                TaskInstance.status == "completed",
-                TaskInstance.completed_at.isnot(None),
-            )
-            .distinct()
+        instance_dates = select(cast(TaskInstance.completed_at, Date).label("d")).where(
+            TaskInstance.user_id == self.user_id,
+            TaskInstance.status == "completed",
+            TaskInstance.completed_at >= history_cutoff,
         )
 
-        # UNION removes duplicates automatically
+        # Outer DISTINCT deduplicates across both sources
         combined = union_all(task_dates, instance_dates).subquery()
         query = select(combined.c.d).distinct()
         result = await self.db.execute(query)
@@ -311,7 +312,6 @@ class AnalyticsService:
             return {"current": 0, "longest": 0, "this_week": 0}
 
         sorted_dates = sorted(all_dates)
-        today = date.today()
 
         # Current streak (counting back from today or yesterday)
         current_streak = 0
@@ -430,13 +430,12 @@ class AnalyticsService:
             )
         return velocity
 
-    async def _get_week_comparison(self) -> dict:
+    async def _get_week_comparison(self, today: date) -> dict:
         """
         Compare this week vs last week.
 
         Uses single query with conditional aggregation.
         """
-        today = date.today()
         this_week_start = today - timedelta(days=today.weekday())
         last_week_start = this_week_start - timedelta(days=7)
         days_into_week = today.weekday() + 1
@@ -526,6 +525,7 @@ class AnalyticsService:
                 func.count().filter(TaskInstance.status == "completed").label("completed"),
             )
             .where(
+                TaskInstance.user_id == self.user_id,
                 TaskInstance.task_id.in_(task_ids),
                 TaskInstance.instance_date >= range_start.date(),
                 TaskInstance.instance_date <= range_end.date(),
@@ -561,31 +561,35 @@ class AnalyticsService:
         Calculates time from task creation to completion for completed tasks.
         Uses external_created_at (Todoist creation date) if available,
         otherwise falls back to created_at (database creation date).
+
+        Bounded to AGING_STATS_LIMIT most recent completions to cap memory/CPU.
         """
-        # Get completed tasks with creation and completion dates
-        completed_query = select(
-            Task.created_at,
-            Task.external_created_at,
-            Task.completed_at,
-        ).where(
-            Task.user_id == self.user_id,
-            Task.status == "completed",
-            Task.completed_at.isnot(None),
+        completed_query = (
+            select(
+                Task.created_at,
+                Task.external_created_at,
+                Task.completed_at,
+            )
+            .where(
+                Task.user_id == self.user_id,
+                Task.status == "completed",
+                Task.completed_at.isnot(None),
+            )
+            .order_by(Task.completed_at.desc())
+            .limit(AGING_STATS_LIMIT)
         )
         result = await self.db.execute(completed_query)
 
-        # Resolution time buckets (days from open to close)
         resolution_buckets = {
-            "same_day": 0,  # Completed same day as created
-            "within_week": 0,  # 1-7 days
-            "within_month": 0,  # 8-30 days
-            "over_month": 0,  # 30+ days
+            "same_day": 0,
+            "within_week": 0,
+            "within_month": 0,
+            "over_month": 0,
         }
 
-        resolution_times = []
+        resolution_times: list[int] = []
 
         for row in result:
-            # Prefer external_created_at (Todoist original date) over created_at (import date)
             created_at = row.external_created_at or row.created_at
             completed_at = row.completed_at
 
@@ -605,9 +609,8 @@ class AnalyticsService:
                 else:
                     resolution_buckets["over_month"] += 1
 
-        # Calculate averages
         avg_resolution = round(sum(resolution_times) / len(resolution_times), 1) if resolution_times else 0
-        median_resolution = sorted(resolution_times)[len(resolution_times) // 2] if resolution_times else 0
+        median_resolution = round(median(resolution_times)) if resolution_times else 0
 
         return {
             "buckets": resolution_buckets,
@@ -621,78 +624,66 @@ class AnalyticsService:
         Get most recent completed tasks.
 
         Uses UNION ALL for efficient combined query with domain join.
+        Date-bounded to RECENT_COMPLETIONS_LOOKBACK_DAYS to avoid full-history scans.
         """
-        # Get domains map
         domains_map = await self._get_domains_map()
 
-        # Get recent completed tasks
-        task_query = (
-            select(Task)
-            .where(
-                Task.user_id == self.user_id,
-                Task.status == "completed",
-                Task.completed_at.isnot(None),
-            )
-            .order_by(Task.completed_at.desc())
-            .limit(limit)
+        lookback_cutoff = datetime.combine(
+            date.today() - timedelta(days=RECENT_COMPLETIONS_LOOKBACK_DAYS),
+            datetime.min.time(),
         )
-        task_result = await self.db.execute(task_query)
-        tasks = list(task_result.scalars().all())
 
-        # Get recent completed instances
+        # Task completions (select only needed columns)
+        task_query = select(
+            Task.id.label("id"),
+            Task.id.label("task_id"),
+            Task.title.label("title"),
+            Task.completed_at.label("completed_at"),
+            Task.domain_id.label("domain_id"),
+            literal(False).label("is_instance"),
+        ).where(
+            Task.user_id == self.user_id,
+            Task.status == "completed",
+            Task.completed_at >= lookback_cutoff,
+        )
+
+        # Instance completions (join Task for title and domain_id)
         instance_query = (
-            select(TaskInstance, Task)
+            select(
+                TaskInstance.id.label("id"),
+                Task.id.label("task_id"),
+                Task.title.label("title"),
+                TaskInstance.completed_at.label("completed_at"),
+                Task.domain_id.label("domain_id"),
+                literal(True).label("is_instance"),
+            )
+            .select_from(TaskInstance)
             .join(Task, TaskInstance.task_id == Task.id)
             .where(
                 TaskInstance.user_id == self.user_id,
                 TaskInstance.status == "completed",
-                TaskInstance.completed_at.isnot(None),
+                TaskInstance.completed_at >= lookback_cutoff,
             )
-            .order_by(TaskInstance.completed_at.desc())
-            .limit(limit)
         )
-        instance_result = await self.db.execute(instance_query)
-        instances = list(instance_result.all())
 
-        # Combine and sort
+        # Combine with UNION ALL, sort and limit in DB
+        combined = union_all(task_query, instance_query).subquery()
+        query = select(combined).order_by(combined.c.completed_at.desc()).limit(limit)
+        result = await self.db.execute(query)
+
         completions = []
-
-        for task in tasks:
-            domain = domains_map.get(task.domain_id) if task.domain_id else None
+        for row in result:
+            domain = domains_map.get(row.domain_id) if row.domain_id else None
             completions.append(
                 {
-                    "id": task.id,
-                    "task_id": task.id,
-                    "title": task.title,
-                    "completed_at": task.completed_at,  # Keep for sorting
-                    "completed_at_display": task.completed_at.strftime("%b %d") if task.completed_at else "",
+                    "id": row.id,
+                    "task_id": row.task_id,
+                    "title": row.title,
+                    "completed_at_display": row.completed_at.strftime("%b %d") if row.completed_at else "",
                     "domain_name": domain.name if domain else "Thoughts",
                     "domain_icon": domain.icon if domain else "💭",
-                    "is_instance": False,
+                    "is_instance": bool(row.is_instance),
                 }
             )
 
-        for instance, task in instances:
-            domain = domains_map.get(task.domain_id) if task.domain_id else None
-            completions.append(
-                {
-                    "id": instance.id,
-                    "task_id": task.id,
-                    "title": task.title,
-                    "completed_at": instance.completed_at,  # Keep for sorting
-                    "completed_at_display": instance.completed_at.strftime("%b %d") if instance.completed_at else "",
-                    "domain_name": domain.name if domain else "Thoughts",
-                    "domain_icon": domain.icon if domain else "💭",
-                    "is_instance": True,
-                }
-            )
-
-        # Sort by completed_at descending and limit
-        completions.sort(key=lambda x: x["completed_at"] or datetime.min.replace(tzinfo=UTC), reverse=True)
-        result = completions[:limit]
-
-        # Remove datetime objects before returning (they can't be JSON serialized)
-        for item in result:
-            del item["completed_at"]
-
-        return result
+        return completions
