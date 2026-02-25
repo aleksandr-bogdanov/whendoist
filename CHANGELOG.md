@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.14 — 2026-02-25
+
+### Fix: Restore wizard nav buttons alongside swipe
+
+Restored Back/Next/Skip/Get Started buttons that were removed in v0.55.13. Buttons now coexist with horizontal scroll-snap — users can swipe or use buttons.
+
+---
+
 ## v0.55.13 — 2026-02-25
 
 ### Feat: Swipeable setup wizard
