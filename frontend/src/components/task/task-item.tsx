@@ -733,7 +733,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                       toggleHideCompletedSubtasks(task.id);
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="relative z-10"
+                    className="relative z-10 self-center"
                     title={
                       hideCompletedSubtasks.has(task.id)
                         ? "Show completed subtasks"
@@ -744,9 +744,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                       variant="secondary"
                       className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-accent"
                     >
-                      {hideCompletedSubtasks.has(task.id)
-                        ? `${subtaskStats?.activeCount}/${subtaskStats?.totalCount}`
-                        : subtaskStats?.totalCount}
+                      {subtaskStats?.activeCount}/{subtaskStats?.totalCount}
                     </Badge>
                   </button>
                 )}
@@ -794,15 +792,8 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
                   {isParent ? (
                     <>
-                      {/* Active / total subtask count */}
-                      <span className="w-[var(--col-clarity)] text-center text-[0.65rem] tabular-nums text-muted-foreground/60">
-                        {subtaskStats ? (
-                          <span>
-                            {subtaskStats.activeCount}
-                            <span className="opacity-50">/{subtaskStats.totalCount}</span>
-                          </span>
-                        ) : null}
-                      </span>
+                      {/* Empty clarity slot */}
+                      <span className="w-[var(--col-clarity)]" />
                       {/* Aggregated subtask duration: remaining / total */}
                       <span className="w-[var(--col-duration)] text-center text-[0.65rem] tabular-nums text-muted-foreground/60">
                         {subtaskStats && subtaskStats.totalDuration > 0 ? (
