@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.24 — 2026-02-25
+
+### Feat: Analytics page redesign
+
+Complete visual overhaul of the analytics dashboard. Hero gradient card with animated count-up and sparkline. Section grouping (Overview/Patterns/Details) with divider lines. Asymmetric grids for visual hierarchy. Two new charts: Active Hours (area chart with gradient) and Resolution Time (donut chart replacing stacked bar). All chart cards have subtitles explaining the data, hover lift effects, and proper tooltip styling (solid background, box shadow). Domain donut no longer clips. Sticky header with Apple glass effect keeps range selector accessible while scrolling. Range switching uses `keepPreviousData` for seamless transitions. Impact colors updated to match brand spec (P4 Min = grey). Recurring tasks show progress bars. Velocity chart has a visible legend.
+
+---
+
 ## v0.55.23 — 2026-02-25
 
 ### Fix: Wizard swipe animation and polish

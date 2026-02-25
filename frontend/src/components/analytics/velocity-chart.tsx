@@ -1,5 +1,6 @@
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -8,13 +9,16 @@ import {
   YAxis,
 } from "recharts";
 import type { VelocityItem } from "@/api/model";
+import { TOOLTIP_STYLE } from "@/components/analytics/tooltip-style";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface VelocityChartProps {
   data: VelocityItem[];
+  className?: string;
 }
 
-export function VelocityChart({ data }: VelocityChartProps) {
+export function VelocityChart({ data, className }: VelocityChartProps) {
   const formatted = data.map((d) => ({
     ...d,
     label: new Date(`${d.date}T12:00:00`).toLocaleDateString(undefined, {
@@ -24,9 +28,12 @@ export function VelocityChart({ data }: VelocityChartProps) {
   }));
 
   return (
-    <Card>
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>Velocity Trend</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Daily completions with 7-day rolling average
+        </p>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={240}>
@@ -46,20 +53,14 @@ export function VelocityChart({ data }: VelocityChartProps) {
               tickLine={false}
               width={32}
             />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(var(--card))",
-                borderColor: "hsl(var(--border))",
-                borderRadius: 8,
-                fontSize: 12,
-              }}
-              labelStyle={{ color: "hsl(var(--foreground))" }}
-            />
+            <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={{ color: "var(--foreground)" }} />
+            <Legend verticalAlign="top" height={28} iconSize={10} wrapperStyle={{ fontSize: 11 }} />
             <Line
               type="monotone"
               dataKey="count"
-              stroke="hsl(var(--muted-foreground))"
-              strokeWidth={1}
+              stroke="var(--color-brand-light)"
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
               dot={false}
               name="Daily"
             />

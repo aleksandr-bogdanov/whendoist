@@ -1,17 +1,22 @@
+import { keepPreviousData } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { Activity, CheckCircle2, Clock, Flame, Loader2, Percent, Trophy } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Activity, Clock, Flame, Loader2, Percent, Trophy } from "lucide-react";
+import { animate } from "motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Line, LineChart } from "recharts";
 import type { DomainBreakdownItem, RecentCompletionItem, RecurringStatItem } from "@/api/model";
 import {
   useGetAnalyticsApiV1AnalyticsGet,
   useGetRecentCompletionsApiV1AnalyticsRecentCompletionsGet,
 } from "@/api/queries/analytics/analytics";
+import { ActiveHoursChart } from "@/components/analytics/active-hours-chart";
 import { DailyChart } from "@/components/analytics/daily-chart";
 import { DayOfWeekChart } from "@/components/analytics/day-of-week-chart";
 import { DomainBreakdown } from "@/components/analytics/domain-breakdown";
 import { Heatmap } from "@/components/analytics/heatmap";
 import { ImpactChart } from "@/components/analytics/impact-chart";
 import { RecurringList } from "@/components/analytics/recurring-list";
+import { ResolutionChart } from "@/components/analytics/resolution-chart";
 import { StatCard } from "@/components/analytics/stat-card";
 import { VelocityChart } from "@/components/analytics/velocity-chart";
 import { Button } from "@/components/ui/button";
@@ -29,9 +34,45 @@ const RANGE_OPTIONS = [
   { label: "90d", value: 90 },
 ] as const;
 
+const PANEL_HOVER =
+  "transition-all duration-200 hover:-translate-y-0.5 hover:[box-shadow:var(--shadow-raised)]";
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <p className="uppercase tracking-[0.14em] font-bold text-[0.62rem] text-muted-foreground shrink-0">
+        {children}
+      </p>
+      <div className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
+
+function formatDateRange(days: number): string {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - days);
+  const fmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+  return `${fmt.format(start)} – ${fmt.format(end)}`;
+}
+
+/** Downsample an array to ~maxPoints evenly-spaced entries */
+function downsample<T>(arr: T[], maxPoints: number): T[] {
+  if (arr.length <= maxPoints) return arr;
+  const step = (arr.length - 1) / (maxPoints - 1);
+  const result: T[] = [];
+  for (let i = 0; i < maxPoints; i++) {
+    result.push(arr[Math.round(i * step)]);
+  }
+  return result;
+}
+
 function AnalyticsPage() {
   const [days, setDays] = useState(30);
-  const { data, isLoading } = useGetAnalyticsApiV1AnalyticsGet({ days });
+  const { data, isLoading, isFetching } = useGetAnalyticsApiV1AnalyticsGet(
+    { days },
+    { query: { placeholderData: keepPreviousData } },
+  );
   const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
   const canDecrypt = encryptionEnabled && isUnlocked && derivedKey !== null;
 
@@ -116,12 +157,21 @@ function AnalyticsPage() {
     );
   }
 
+  // Sparkline: show full range, downsampled to ~15 points
+  const sparkData = downsample(data.daily_completions, 15);
+
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 pb-nav-safe md:pb-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Analytics</h1>
+      {/* Sticky header — Apple glass */}
+      <div className="sticky top-0 z-10 backdrop-blur-2xl backdrop-saturate-[1.8] bg-white/60 dark:bg-[rgba(30,41,59,0.55)] border-b border-border/50">
+        <div className="mx-auto max-w-5xl flex items-center justify-between px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold">Analytics</h1>
+              <p className="text-xs text-muted-foreground">{formatDateRange(days)}</p>
+            </div>
+            {isFetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          </div>
           <div className="flex gap-1 rounded-lg border p-0.5">
             {RANGE_OPTIONS.map((opt) => (
               <Button
@@ -136,10 +186,21 @@ function AnalyticsPage() {
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard title="Completed" value={data.total_completed} icon={CheckCircle2} />
+      <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 pb-nav-safe md:pb-6">
+        {/* ── OVERVIEW ── */}
+        <SectionLabel>Overview</SectionLabel>
+
+        {/* Hero card */}
+        <HeroCard
+          completed={data.total_completed}
+          pending={data.total_pending}
+          sparkData={sparkData}
+        />
+
+        {/* Supporting stat cards */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <StatCard title="Completion Rate" value={`${data.completion_rate}%`} icon={Percent} />
           <StatCard
             title="Current Streak"
@@ -158,97 +219,110 @@ function AnalyticsPage() {
           />
         </div>
 
-        {/* Daily completions */}
-        <DailyChart data={data.daily_completions} />
+        {/* ── PATTERNS ── */}
+        <SectionLabel>Patterns</SectionLabel>
 
-        {/* Two-column layout */}
+        {/* Daily + Domain */}
+        <div className="grid gap-6 sm:grid-cols-[1.4fr_1fr]">
+          <DailyChart data={data.daily_completions} className={PANEL_HOVER} />
+          <DomainBreakdown data={decryptedDomains} className={PANEL_HOVER} />
+        </div>
+
+        {/* DayOfWeek + ActiveHours */}
         <div className="grid gap-6 sm:grid-cols-2">
-          <DomainBreakdown data={decryptedDomains} />
-          <DayOfWeekChart data={data.by_day_of_week} />
+          <DayOfWeekChart data={data.by_day_of_week} className={PANEL_HOVER} />
+          <ActiveHoursChart data={data.by_hour} className={PANEL_HOVER} />
         </div>
 
         {/* Heatmap */}
-        <Heatmap data={data.heatmap_data} />
+        <Heatmap data={data.heatmap_data} className={PANEL_HOVER} />
 
-        {/* Two-column layout */}
+        {/* Impact + Resolution */}
         <div className="grid gap-6 sm:grid-cols-2">
-          <ImpactChart data={data.impact_distribution} />
-          <RecurringList data={decryptedRecurring} />
+          <ImpactChart data={data.impact_distribution} className={PANEL_HOVER} />
+          <ResolutionChart
+            buckets={data.aging_stats.buckets}
+            avgDays={data.aging_stats.avg_days}
+            medianDays={data.aging_stats.median_days}
+            className={PANEL_HOVER}
+          />
         </div>
 
-        {/* Recent completions + Velocity */}
-        <div className="grid gap-6 sm:grid-cols-2">
+        {/* ── DETAILS ── */}
+        <SectionLabel>Details</SectionLabel>
+
+        {/* Velocity + Recent */}
+        <div className="grid gap-6 sm:grid-cols-[1.4fr_1fr]">
+          <VelocityChart data={data.velocity_data} className={PANEL_HOVER} />
           <RecentCompletions />
-          <VelocityChart data={data.velocity_data} />
         </div>
 
-        {/* Aging stats */}
-        <AgingStats
-          buckets={data.aging_stats.buckets}
-          avgDays={data.aging_stats.avg_days}
-          medianDays={data.aging_stats.median_days}
-        />
+        {/* Recurring */}
+        <RecurringList data={decryptedRecurring} className={PANEL_HOVER} />
       </div>
     </div>
   );
 }
 
-function AgingStats({
-  buckets,
-  avgDays,
-  medianDays,
+function HeroCard({
+  completed,
+  pending,
+  sparkData,
 }: {
-  buckets: { same_day: number; within_week: number; within_month: number; over_month: number };
-  avgDays: number;
-  medianDays: number;
+  completed: number;
+  pending: number;
+  sparkData: { count: number }[];
 }) {
-  const total = buckets.same_day + buckets.within_week + buckets.within_month + buckets.over_month;
-  if (total === 0) return null;
+  const valueRef = useRef<HTMLSpanElement>(null);
+  const hasAnimated = useRef(false);
 
-  const segments = [
-    { label: "Same day", count: buckets.same_day, color: "bg-green-500" },
-    { label: "Within week", count: buckets.within_week, color: "bg-blue-500" },
-    { label: "Within month", count: buckets.within_month, color: "bg-yellow-500" },
-    { label: "Over month", count: buckets.over_month, color: "bg-red-500" },
-  ];
+  useEffect(() => {
+    const el = valueRef.current;
+    if (!el || hasAnimated.current || completed === 0) return;
+
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) return;
+
+    hasAnimated.current = true;
+    animate(0, completed, {
+      duration: 0.6,
+      ease: "easeOut",
+      onUpdate(v) {
+        if (el) el.textContent = String(Math.round(v));
+      },
+    });
+  }, [completed]);
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
-      <h3 className="font-semibold">Resolution Time</h3>
-      {/* Stacked bar */}
-      <div className="flex h-4 overflow-hidden rounded-full">
-        {segments.map(
-          (s) =>
-            s.count > 0 && (
-              <div
-                key={s.label}
-                className={`${s.color} transition-all`}
-                style={{ width: `${(s.count / total) * 100}%` }}
+    <div
+      className="rounded-xl px-6 py-5 text-white"
+      style={{
+        background: "linear-gradient(135deg, #6D5EF6 0%, #8B7CF7 50%, #A78BFA 100%)",
+      }}
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-medium text-white/70 uppercase tracking-wide">
+            Tasks Completed
+          </p>
+          <span ref={valueRef} className="text-4xl font-bold tabular-nums leading-tight">
+            {completed}
+          </span>
+          <p className="text-sm text-white/70">{pending} pending</p>
+        </div>
+        {sparkData.length > 1 && (
+          <div style={{ width: 120, height: 48 }}>
+            <LineChart width={120} height={48} data={sparkData}>
+              <Line
+                type="monotone"
+                dataKey="count"
+                stroke="rgba(255,255,255,0.9)"
+                strokeWidth={2}
+                dot={false}
               />
-            ),
-        )}
-      </div>
-      {/* Legend */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        {segments.map((s) => (
-          <div key={s.label} className="flex items-center gap-1.5">
-            <div className={`h-2 w-2 rounded-full ${s.color}`} />
-            <span>
-              {s.label}: {s.count}
-            </span>
+            </LineChart>
           </div>
-        ))}
-      </div>
-      {/* Averages */}
-      <div className="flex gap-6 text-sm">
-        <div>
-          <span className="text-muted-foreground">Avg: </span>
-          <span className="font-medium">{avgDays}d</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground">Median: </span>
-          <span className="font-medium">{medianDays}d</span>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -302,7 +376,7 @@ function RecentCompletions() {
   }, [itemsFingerprint, canDecrypt, derivedKey]);
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow-sm space-y-3">
+    <div className={`rounded-xl border bg-card p-6 shadow-sm space-y-3 ${PANEL_HOVER}`}>
       <h3 className="font-semibold flex items-center gap-2">
         <Clock className="h-4 w-4 text-muted-foreground" />
         Recent Completions
