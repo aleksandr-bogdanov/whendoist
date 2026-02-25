@@ -47,7 +47,7 @@ export function DailyChart({ data }: DailyChartProps) {
               }}
               labelStyle={{ color: "hsl(var(--foreground))" }}
             />
-            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="count" fill="var(--color-brand)" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

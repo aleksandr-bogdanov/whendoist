@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.15 — 2026-02-25
+
+### Fix: Analytics page colors and scroll
+
+Fixed charts rendering as black instead of brand purple — all chart fills/strokes now use `--color-brand` (#6D5EF6). Fixed page not scrolling by replacing Radix ScrollArea with native overflow. Updated recurring rate colors to use brand purple for success states.
+
+---
+
 ## v0.55.14 — 2026-02-25
 
 ### Fix: Restore wizard nav buttons alongside swipe

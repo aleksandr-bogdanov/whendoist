@@ -37,7 +37,7 @@ export function RecurringList({ data }: RecurringListProps) {
             </div>
             <div className="shrink-0">
               <span
-                className={`text-sm font-medium tabular-nums ${task.rate >= 80 ? "text-green-500" : task.rate >= 50 ? "text-yellow-500" : "text-red-500"}`}
+                className={`text-sm font-medium tabular-nums ${task.rate >= 80 ? "text-brand" : task.rate >= 50 ? "text-amber-500" : "text-destructive"}`}
               >
                 {task.rate}%
               </span>

@@ -16,7 +16,6 @@ import { StatCard } from "@/components/analytics/stat-card";
 import { VelocityChart } from "@/components/analytics/velocity-chart";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { decrypt, looksEncrypted } from "@/lib/crypto";
 import { useCryptoStore } from "@/stores/crypto-store";
 
@@ -118,7 +117,7 @@ function AnalyticsPage() {
   }
 
   return (
-    <ScrollArea className="flex-1">
+    <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 pb-nav-safe md:pb-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -190,7 +189,7 @@ function AnalyticsPage() {
           medianDays={data.aging_stats.median_days}
         />
       </div>
-    </ScrollArea>
+    </div>
   );
 }
 
