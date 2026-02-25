@@ -2,6 +2,13 @@ default:
     @just --list
 
 dev:
+    #!/usr/bin/env bash
+    trap 'kill 0' EXIT
+    uv run uvicorn app.main:app --reload --port 8000 &
+    cd frontend && npm run dev &
+    wait
+
+dev-backend:
     uv run uvicorn app.main:app --reload --port 8000
 
 test:
