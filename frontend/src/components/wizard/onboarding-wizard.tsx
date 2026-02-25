@@ -18,8 +18,19 @@ import { cn } from "@/lib/utils";
 // Constants
 // ============================================================================
 
-const PANEL_IDS = ["welcome", "energy", "calendar", "todoist", "domains", "completion"] as const;
-const OPTIONAL_PANELS = new Set([2, 3]);
+const TOTAL_STEPS = 7;
+
+const STEP_IDS = [
+  "welcome",
+  "energy",
+  "cal-connect",
+  "cal-select",
+  "todoist",
+  "domains",
+  "completion",
+] as const;
+
+const OPTIONAL_STEPS = new Set([2, 4]);
 
 const ENERGY_MODES = [
   { key: "zombie", emoji: "\u{1F9DF}", label: "ZOMBIE", desc: "Simple next actions" },
@@ -234,16 +245,16 @@ function EmojiPicker({ value, onChange }: { value: string; onChange: (v: string)
 // Progress Dots
 // ============================================================================
 
-function ProgressDots({ current }: { current: number }) {
+function ProgressDots({ current, total }: { current: number; total: number }) {
   return (
-    <div className="flex justify-center gap-2.5 sm:gap-2 py-3">
-      {PANEL_IDS.map((id, i) => {
-        const isOptional = OPTIONAL_PANELS.has(i);
+    <div className="flex justify-center gap-2.5 sm:gap-2 py-4">
+      {Array.from({ length: total }, (_, i) => {
+        const isOptional = OPTIONAL_STEPS.has(i);
         const isCurrent = i === current;
         const isCompleted = i < current;
         return (
           <div
-            key={id}
+            key={STEP_IDS[i]}
             className={cn(
               "w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-250",
               isCurrent && "bg-[var(--color-brand)] shadow-[0_0_0_3px_rgba(109,94,246,0.2)]",
@@ -266,12 +277,14 @@ function ProgressDots({ current }: { current: number }) {
 // ============================================================================
 
 function WizardNav({
+  step,
   onBack,
   primaryLabel,
   primaryAction,
   secondaryLabel,
   secondaryAction,
 }: {
+  step: number;
   onBack?: () => void;
   primaryLabel?: string;
   primaryAction?: () => void;
@@ -279,29 +292,32 @@ function WizardNav({
   secondaryAction?: () => void;
 }) {
   return (
-    <div className="flex justify-between items-center pt-6">
-      {onBack ? (
-        <Button variant="outline" className="h-11 sm:h-10 px-5 rounded-xl" onClick={onBack}>
-          Back
-        </Button>
-      ) : (
-        <div />
-      )}
-      {secondaryLabel && secondaryAction && !primaryLabel && (
-        <Button
-          variant="outline"
-          className="h-11 sm:h-10 px-5 rounded-xl"
-          onClick={secondaryAction}
-        >
-          {secondaryLabel}
-        </Button>
-      )}
-      {primaryLabel && primaryAction && (
-        <Button variant="cta" className="h-11 sm:h-10 px-5 rounded-xl" onClick={primaryAction}>
-          {primaryLabel}
-        </Button>
-      )}
-    </div>
+    <>
+      <ProgressDots current={step} total={TOTAL_STEPS} />
+      <div className="flex justify-between items-center pt-2">
+        {onBack ? (
+          <Button variant="outline" className="h-11 sm:h-10 px-5 rounded-xl" onClick={onBack}>
+            Back
+          </Button>
+        ) : (
+          <div />
+        )}
+        {secondaryLabel && secondaryAction && !primaryLabel && (
+          <Button
+            variant="outline"
+            className="h-11 sm:h-10 px-5 rounded-xl"
+            onClick={secondaryAction}
+          >
+            {secondaryLabel}
+          </Button>
+        )}
+        {primaryLabel && primaryAction && (
+          <Button variant="cta" className="h-11 sm:h-10 px-5 rounded-xl" onClick={primaryAction}>
+            {primaryLabel}
+          </Button>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -316,26 +332,46 @@ interface OnboardingWizardProps {
 }
 
 export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizardProps) {
-  const [currentPanel, setCurrentPanel] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const wheelCooldown = useRef(false);
-  const panelRef = useRef(currentPanel);
-  panelRef.current = currentPanel;
+  const stepRef = useRef(step);
+  stepRef.current = step;
   const completeMutation = useCompleteWizardApiV1WizardCompletePost();
   const queryClient = useQueryClient();
 
   const firstName = userName?.split(" ")[0] ?? "";
 
-  const goTo = useCallback((index: number) => {
-    setCurrentPanel(Math.max(0, Math.min(PANEL_IDS.length - 1, index)));
+  const goTo = useCallback((target: number) => {
+    setTransitioning(true);
+    setTimeout(() => {
+      setStep(target);
+      setTransitioning(false);
+    }, 200);
   }, []);
 
-  const goForward = useCallback(() => goTo(panelRef.current + 1), [goTo]);
-  const goBack = useCallback(() => goTo(panelRef.current - 1), [goTo]);
+  const goForward = useCallback(
+    (from: number) => {
+      let next = from + 1;
+      if (next === 3) next = 4; // skip cal-select
+      goTo(Math.min(next, TOTAL_STEPS - 1));
+    },
+    [goTo],
+  );
 
-  // Wheel/trackpad: snap one panel per gesture with cooldown
+  const goBack = useCallback(
+    (from: number) => {
+      let prev = from - 1;
+      if (prev === 3) prev = 2; // skip cal-select
+      goTo(Math.max(prev, 0));
+    },
+    [goTo],
+  );
+
+  // Desktop: wheel/trackpad → navigate one step per gesture
   useEffect(() => {
-    const el = containerRef.current;
+    const el = wrapperRef.current;
     if (!el) return;
     const handleWheel = (e: WheelEvent) => {
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
@@ -343,34 +379,33 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
       e.preventDefault();
       if (wheelCooldown.current) return;
       wheelCooldown.current = true;
-      if (delta > 0) goForward();
-      else goBack();
+      if (delta > 0) goForward(stepRef.current);
+      else goBack(stepRef.current);
       setTimeout(() => {
         wheelCooldown.current = false;
-      }, 600);
+      }, 800);
     };
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
   }, [goForward, goBack]);
 
-  // Pointer swipe detection (touch + mouse drag)
-  const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
-
+  // Touch/pointer swipe detection
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    swipeStart.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+    // Only track primary pointer (finger / left mouse)
+    if (!e.isPrimary) return;
+    swipeStart.current = { x: e.clientX, y: e.clientY };
   }, []);
-
   const onPointerUp = useCallback(
     (e: React.PointerEvent) => {
-      if (!swipeStart.current) return;
+      if (!e.isPrimary || !swipeStart.current) return;
       const dx = e.clientX - swipeStart.current.x;
       const dy = e.clientY - swipeStart.current.y;
-      const dt = Date.now() - swipeStart.current.t;
       swipeStart.current = null;
-      // Need significant horizontal movement, more horizontal than vertical, within 1s
-      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) || dt > 1000) return;
-      if (dx < 0) goForward();
-      else goBack();
+      // Need 50px+ horizontal, more horizontal than vertical
+      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      if (dx < 0) goForward(stepRef.current);
+      else goBack(stepRef.current);
     },
     [goForward, goBack],
   );
@@ -389,43 +424,50 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent
-        className="sm:max-w-[640px] p-0 gap-0 rounded-[20px] border-border/50 shadow-[var(--shadow-raised)] overflow-hidden"
+        className="sm:max-w-[640px] p-0 gap-0 rounded-[20px] border-border/50 shadow-[var(--shadow-raised)]"
         onPointerDownOutside={(e) => e.preventDefault()}
         showCloseButton={false}
       >
-        <div className="pt-5 pb-1">
-          <ProgressDots current={currentPanel} />
-        </div>
-
         <div
-          ref={containerRef}
-          className="overflow-hidden"
+          ref={wrapperRef}
+          className={cn(
+            "flex flex-col px-8 sm:px-12 pt-12 pb-10 transition-opacity duration-200",
+            transitioning && "opacity-0",
+          )}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
         >
-          <div
-            className="flex transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(-${currentPanel * 100}%)` }}
-          >
-            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-              <WelcomeStep firstName={firstName} onGetStarted={goForward} />
-            </div>
-            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-              <EnergyStep onBack={goBack} onContinue={goForward} />
-            </div>
-            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-              <CalendarConnectStep onBack={goBack} onSkip={goForward} />
-            </div>
-            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-              <TodoistStep onBack={goBack} onSkip={goForward} />
-            </div>
-            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-              <DomainsStep onBack={goBack} onSkip={goForward} onContinue={goForward} />
-            </div>
-            <div className="min-w-full shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
-              <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
-            </div>
-          </div>
+          {step === 0 && (
+            <WelcomeStep firstName={firstName} step={step} onGetStarted={() => goForward(step)} />
+          )}
+          {step === 1 && (
+            <EnergyStep
+              step={step}
+              onBack={() => goBack(step)}
+              onContinue={() => goForward(step)}
+            />
+          )}
+          {step === 2 && (
+            <CalendarConnectStep
+              step={step}
+              onBack={() => goBack(step)}
+              onSkip={() => goForward(step)}
+            />
+          )}
+          {step === 4 && (
+            <TodoistStep step={step} onBack={() => goBack(step)} onSkip={() => goForward(step)} />
+          )}
+          {step === 5 && (
+            <DomainsStep
+              step={step}
+              onBack={() => goBack(step)}
+              onSkip={() => goForward(step)}
+              onContinue={() => goForward(step)}
+            />
+          )}
+          {step === 6 && (
+            <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -436,7 +478,15 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
 // Step 0: Welcome
 // ============================================================================
 
-function WelcomeStep({ firstName, onGetStarted }: { firstName: string; onGetStarted: () => void }) {
+function WelcomeStep({
+  firstName,
+  step,
+  onGetStarted,
+}: {
+  firstName: string;
+  step: number;
+  onGetStarted: () => void;
+}) {
   return (
     <div className="flex flex-col items-center text-center">
       <div className="mb-3">
@@ -465,7 +515,10 @@ function WelcomeStep({ firstName, onGetStarted }: { firstName: string; onGetStar
         </p>
       </div>
 
-      <div className="flex justify-center pt-6">
+      <div className="pt-6">
+        <ProgressDots current={step} total={TOTAL_STEPS} />
+      </div>
+      <div className="flex justify-center pt-4">
         <Button
           variant="cta"
           className="h-12 sm:h-11 px-8 rounded-xl text-base"
@@ -482,7 +535,15 @@ function WelcomeStep({ firstName, onGetStarted }: { firstName: string; onGetStar
 // Step 1: Energy Modes
 // ============================================================================
 
-function EnergyStep({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
+function EnergyStep({
+  step,
+  onBack,
+  onContinue,
+}: {
+  step: number;
+  onBack: () => void;
+  onContinue: () => void;
+}) {
   const [selectedMode, setSelectedMode] = useState("normal");
   const visibleClarities = CLARITY_VISIBILITY[selectedMode] ?? [];
 
@@ -549,7 +610,14 @@ function EnergyStep({ onBack, onContinue }: { onBack: () => void; onContinue: ()
         </div>
       </div>
 
-      <WizardNav onBack={onBack} primaryLabel="Got it, continue" primaryAction={onContinue} />
+      <div className="pt-4">
+        <WizardNav
+          step={step}
+          onBack={onBack}
+          primaryLabel="Got it, continue"
+          primaryAction={onContinue}
+        />
+      </div>
     </div>
   );
 }
@@ -558,7 +626,15 @@ function EnergyStep({ onBack, onContinue }: { onBack: () => void; onContinue: ()
 // Step 2: Connect Calendar
 // ============================================================================
 
-function CalendarConnectStep({ onBack, onSkip }: { onBack: () => void; onSkip: () => void }) {
+function CalendarConnectStep({
+  step,
+  onBack,
+  onSkip,
+}: {
+  step: number;
+  onBack: () => void;
+  onSkip: () => void;
+}) {
   return (
     <div className="flex flex-col">
       <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">
@@ -598,16 +674,24 @@ function CalendarConnectStep({ onBack, onSkip }: { onBack: () => void; onSkip: (
         Reads your calendar to find free time. Never edits events.
       </p>
 
-      <WizardNav onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
+      <WizardNav step={step} onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
     </div>
   );
 }
 
 // ============================================================================
-// Step 3: Todoist Import
+// Step 4: Todoist Import
 // ============================================================================
 
-function TodoistStep({ onBack, onSkip }: { onBack: () => void; onSkip: () => void }) {
+function TodoistStep({
+  step,
+  onBack,
+  onSkip,
+}: {
+  step: number;
+  onBack: () => void;
+  onSkip: () => void;
+}) {
   return (
     <div className="flex flex-col">
       <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">Already have tasks?</h1>
@@ -634,20 +718,22 @@ function TodoistStep({ onBack, onSkip }: { onBack: () => void; onSkip: () => voi
         </Button>
       </div>
 
-      <WizardNav onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
+      <WizardNav step={step} onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
     </div>
   );
 }
 
 // ============================================================================
-// Step 4: Domains
+// Step 5: Domains
 // ============================================================================
 
 function DomainsStep({
+  step,
   onBack,
   onSkip,
   onContinue,
 }: {
+  step: number;
   onBack: () => void;
   onSkip: () => void;
   onContinue: () => void;
@@ -700,6 +786,8 @@ function DomainsStep({
     setCustomIcon("\u{1F4C1}");
     setIsAddingCustom(false);
   };
+
+  const hasDomains = allNames.size > 0;
 
   return (
     <div className="flex flex-col">
@@ -788,18 +876,19 @@ function DomainsStep({
       </div>
 
       <WizardNav
+        step={step}
         onBack={onBack}
-        primaryLabel={allNames.size > 0 ? "Continue" : undefined}
-        primaryAction={allNames.size > 0 ? onContinue : undefined}
-        secondaryLabel={allNames.size > 0 ? undefined : "Skip"}
-        secondaryAction={allNames.size > 0 ? undefined : onSkip}
+        primaryLabel={hasDomains ? "Continue" : undefined}
+        primaryAction={hasDomains ? onContinue : undefined}
+        secondaryLabel={hasDomains ? undefined : "Skip"}
+        secondaryAction={hasDomains ? undefined : onSkip}
       />
     </div>
   );
 }
 
 // ============================================================================
-// Step 5: Completion
+// Step 6: Completion
 // ============================================================================
 
 function CompletionStep({ onFinish, isPending }: { onFinish: () => void; isPending: boolean }) {
