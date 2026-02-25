@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.16 — 2026-02-25
+
+### Fix: User preferences race condition and cascade delete
+
+Fixed two user_preferences bugs: (1) Race condition where concurrent requests for the same user both tried to INSERT preferences, causing UniqueViolationError — now uses savepoint with IntegrityError retry. (2) Demo user cleanup setting user_id to NULL instead of cascading delete — added `cascade="all, delete-orphan"` to User relationships missing it (preferences, todoist_token, google_token, calendar_selections). Fixes #480, #481, #486, #487, #493, #494.
+
+---
+
 ## v0.55.15 — 2026-02-25
 
 ### Fix: Analytics page colors and scroll

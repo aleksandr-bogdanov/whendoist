@@ -5,6 +5,7 @@ Provides CRUD operations for user preferences (task display settings).
 """
 
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import UserPasskey, UserPreferences
@@ -28,10 +29,19 @@ class PreferencesService:
         prefs = result.scalar_one_or_none()
 
         if not prefs:
-            # Create default preferences
-            prefs = UserPreferences(user_id=self.user_id)
-            self.db.add(prefs)
-            await self.db.flush()
+            # Create default preferences (use savepoint to handle race condition
+            # where concurrent requests both try to INSERT for the same user)
+            try:
+                async with self.db.begin_nested():
+                    prefs = UserPreferences(user_id=self.user_id)
+                    self.db.add(prefs)
+                    await self.db.flush()
+            except IntegrityError:
+                # Another request created preferences concurrently — fetch them
+                result = await self.db.execute(select(UserPreferences).where(UserPreferences.user_id == self.user_id))
+                prefs = result.scalar_one_or_none()
+                if not prefs:
+                    raise
 
         return prefs
 
