@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.22 — 2026-02-25
+
+### Fix: Wizard swipe — use native event listeners
+
+Replaced React synthetic `onPointerDown`/`onPointerUp` with native `addEventListener` for both touch and pointer events, following the same pattern as the calendar carousel. Touch events (`touchstart`/`touchend`) handle mobile swipe; `pointerdown` on the wrapper + `pointerup` on `document` handles desktop mouse drag (skips buttons/inputs). Wheel/trackpad handler unchanged.
+
+---
+
 ## v0.55.21 — 2026-02-25
 
 ### Fix: Restore original wizard layout with swipe support

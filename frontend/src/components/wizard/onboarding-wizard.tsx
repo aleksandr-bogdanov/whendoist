@@ -389,26 +389,61 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
     return () => el.removeEventListener("wheel", handleWheel);
   }, [goForward, goBack]);
 
-  // Touch/pointer swipe detection
-  const swipeStart = useRef<{ x: number; y: number } | null>(null);
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    // Only track primary pointer (finger / left mouse)
-    if (!e.isPrimary) return;
-    swipeStart.current = { x: e.clientX, y: e.clientY };
-  }, []);
-  const onPointerUp = useCallback(
-    (e: React.PointerEvent) => {
-      if (!e.isPrimary || !swipeStart.current) return;
-      const dx = e.clientX - swipeStart.current.x;
-      const dy = e.clientY - swipeStart.current.y;
-      swipeStart.current = null;
-      // Need 50px+ horizontal, more horizontal than vertical
+  // Touch swipe + desktop pointer-drag (native events, following carousel pattern)
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = true;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!tracking || e.changedTouches.length === 0) return;
+      tracking = false;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
       if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
       if (dx < 0) goForward(stepRef.current);
       else goBack(stepRef.current);
-    },
-    [goForward, goBack],
-  );
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return; // handled by touch events
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      if (target.closest("button, a, input, select")) return;
+      startX = e.clientX;
+      startY = e.clientY;
+      tracking = true;
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (!tracking || e.pointerType === "touch") return;
+      tracking = false;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      if (dx < 0) goForward(stepRef.current);
+      else goBack(stepRef.current);
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("pointerup", onPointerUp);
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("pointerup", onPointerUp);
+    };
+  }, [goForward, goBack]);
 
   const handleFinish = () => {
     completeMutation.mutate(undefined, {
@@ -434,8 +469,7 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
             "flex flex-col px-8 sm:px-12 pt-12 pb-10 transition-opacity duration-200",
             transitioning && "opacity-0",
           )}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
+          style={{ touchAction: "pan-y" }}
         >
           {step === 0 && (
             <WelcomeStep firstName={firstName} step={step} onGetStarted={() => goForward(step)} />
