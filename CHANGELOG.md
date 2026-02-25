@@ -4,6 +4,12 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.8 — 2026-02-25
+
+### Fix: Center clarity/duration/impact pills in column cells
+- Autopilot and Brainstorm clarity pills were left-aligned because `text-center` on the wrapper doesn't properly center `inline-flex` elements that overflow the fixed column width
+- Switched all metadata column wrappers from `text-center` to `flex justify-center` for proper centering regardless of pill width
+
 ## v0.55.7 — 2026-02-25
 
 ### Fix: Align sticky domain label with actual domain names

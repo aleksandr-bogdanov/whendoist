@@ -823,17 +823,17 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   ) : (
                     <>
                       {/* Clarity */}
-                      <span className="w-[var(--col-clarity)] text-center">
+                      <span className="w-[var(--col-clarity)] flex justify-center">
                         <ClarityPill taskId={task.id} value={task.clarity} />
                       </span>
 
                       {/* Duration */}
-                      <span className="w-[var(--col-duration)] text-center">
+                      <span className="w-[var(--col-duration)] flex justify-center">
                         <DurationPill taskId={task.id} value={task.duration_minutes} />
                       </span>
 
                       {/* Impact */}
-                      <span className="w-[var(--col-impact)] text-center">
+                      <span className="w-[var(--col-impact)] flex justify-center">
                         <ImpactPill taskId={task.id} value={task.impact} />
                       </span>
                     </>
@@ -1244,17 +1244,17 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
               {/* Metadata columns — grid-aligned with parent task */}
               <span className="hidden sm:flex items-center gap-[var(--col-gap)] flex-shrink-0">
                 {/* Clarity */}
-                <span className="w-[var(--col-clarity)] text-center">
+                <span className="w-[var(--col-clarity)] flex justify-center">
                   <ClarityPill taskId={subtask.id} value={subtask.clarity} />
                 </span>
 
                 {/* Duration */}
-                <span className="w-[var(--col-duration)] text-center">
+                <span className="w-[var(--col-duration)] flex justify-center">
                   <DurationPill taskId={subtask.id} value={subtask.duration_minutes} />
                 </span>
 
                 {/* Impact */}
-                <span className="w-[var(--col-impact)] text-center">
+                <span className="w-[var(--col-impact)] flex justify-center">
                   <ImpactPill taskId={subtask.id} value={subtask.impact} />
                 </span>
               </span>
