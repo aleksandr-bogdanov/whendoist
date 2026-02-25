@@ -116,7 +116,7 @@ export function ColumnHeaders() {
     >
       {/* Sticky domain label — fades in when domain header scrolls behind */}
       <div
-        className="flex items-center gap-1.5 min-w-0 overflow-hidden text-sm font-semibold text-foreground"
+        className="flex items-center gap-1.5 min-w-0 overflow-hidden text-sm font-semibold text-foreground pl-9"
         style={{ opacity: domainOpacity, flexGrow: domainOpacity > 0 ? domainOpacity / 0.85 : 0 }}
       >
         {domainInfo && domainOpacity > 0 && (
