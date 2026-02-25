@@ -141,7 +141,22 @@ See [docs/PWA-VIEWPORT-FIX.md](docs/PWA-VIEWPORT-FIX.md) for full details.
 - **State**: Zustand stores (`frontend/src/stores/`) for client-side state, TanStack Query for server state
 - **Routing**: TanStack Router with file-based routes (`frontend/src/routes/`)
 
-### 10. Toasts: Single duration, no hardcoding
+### 10. Smart Input: Reuse the shared hook, never duplicate
+The **smart input system** (inline `@domain`, `!priority`, `?clarity`, `30m`, `tomorrow`, `//notes` parsing)
+is a universal module. Whenever you need a text input that parses task metadata, use these:
+
+- **`frontend/src/hooks/use-smart-input.ts`** — `useSmartInput()` hook: all state, handlers, autocomplete logic, `tapToken()` for programmatic insertion
+- **`frontend/src/lib/task-parser.ts`** — pure parser: `parseTaskInput()`, `getAutocompleteSuggestions()`, types
+- **`frontend/src/components/task/smart-input-autocomplete.tsx`** — autocomplete dropdown UI
+- **`frontend/src/components/task/task-quick-add.tsx`** — shared UI: `MetadataPill`, `Kbd`, `PILL_STYLES`, `PILL_ICONS`
+
+**Rules:**
+- **Never duplicate** parser state, input change handlers, autocomplete navigation, or token dismissal logic — it all lives in `useSmartInput()`
+- To add smart input to a new component: call `useSmartInput({ domains })`, wire `inputRef`/`handleInputChange`/`handleKeyDown` to an `<Input>`, render `<SmartInputAutocomplete>` and `<MetadataPill>`s
+- The hook's `handleKeyDown` returns `boolean` — if `true`, autocomplete consumed the event; if `false`, handle Enter/submit yourself
+- For mobile tap selectors, use the hook's `tapToken(prefix, value, existingPattern)` to insert/replace tokens
+
+### 11. Toasts: Single duration, no hardcoding
 All toasts use **10 seconds** duration, defined once in `frontend/src/lib/toast.ts` (`TOAST_DURATION`)
 and applied globally via the `<Toaster>` component in `main.tsx`.
 

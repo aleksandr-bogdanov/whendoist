@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, X } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import type { DomainResponse, TaskCreate } from "@/api/model";
 import {
@@ -20,15 +20,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useCrypto } from "@/hooks/use-crypto";
+import { useSmartInput } from "@/hooks/use-smart-input";
 import { dashboardTasksKey } from "@/lib/query-keys";
-import {
-  type AutocompleteSuggestion,
-  EMPTY_PARSED,
-  getAutocompleteSuggestions,
-  type ParsedTaskMetadata,
-  type ParsedToken,
-  parseTaskInput,
-} from "@/lib/task-parser";
+import type { ParsedToken } from "@/lib/task-parser";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -40,7 +34,7 @@ interface TaskQuickAddProps {
 
 // ─── Pill colors per token type ─────────────────────────────────────────────
 
-const PILL_STYLES: Record<string, string> = {
+export const PILL_STYLES: Record<string, string> = {
   domain: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
   impact: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
   clarity: "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
@@ -49,7 +43,7 @@ const PILL_STYLES: Record<string, string> = {
   description: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
-const PILL_ICONS: Record<string, string> = {
+export const PILL_ICONS: Record<string, string> = {
   domain: "@",
   impact: "!",
   clarity: "?",
@@ -63,24 +57,20 @@ const PILL_ICONS: Record<string, string> = {
 export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps) {
   const queryClient = useQueryClient();
   const { encryptTaskFields } = useCrypto();
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Core state
-  const [rawInput, setRawInput] = useState("");
-  const [parsed, setParsed] = useState<ParsedTaskMetadata>({
-    ...EMPTY_PARSED,
-  });
-  const [dismissedTokens, setDismissedTokens] = useState<Map<string, string>>(new Map());
-
-  // Autocomplete state
-  const [acVisible, setAcVisible] = useState(false);
-  const [acSuggestions, setAcSuggestions] = useState<AutocompleteSuggestion[]>([]);
-  const [acSelectedIndex, setAcSelectedIndex] = useState(0);
-  const [acTriggerInfo, setAcTriggerInfo] = useState<{
-    start: number;
-    end: number;
-    type: string;
-  } | null>(null);
+  const {
+    inputRef,
+    rawInput,
+    parsed,
+    acVisible,
+    acSuggestions,
+    acSelectedIndex,
+    handleInputChange,
+    handleAcSelect,
+    handleDismissToken,
+    handleKeyDown: handleAcKeyDown,
+    reset: resetForm,
+  } = useSmartInput({ domains });
 
   // Preferences (persisted to localStorage)
   const [keepOpen, setKeepOpen] = useState(() => localStorage.getItem("qa-keep-open") === "1");
@@ -91,88 +81,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
   const createMutation = useCreateTaskApiV1TasksPost();
   const deleteMutation = useDeleteTaskApiV1TasksTaskIdDelete();
 
-  // ─── Handlers ───────────────────────────────────────────────────────────
-
-  const resetForm = useCallback(() => {
-    setRawInput("");
-    setParsed({ ...EMPTY_PARSED });
-    setDismissedTokens(new Map());
-    setAcVisible(false);
-    setAcSuggestions([]);
-    setAcSelectedIndex(0);
-    setAcTriggerInfo(null);
-  }, []);
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setRawInput(value);
-
-      // Prune stale dismissals — keep only those whose raw text is still in the input
-      const stillValid = new Map<string, string>();
-      for (const [type, rawText] of dismissedTokens) {
-        if (value.includes(rawText)) stillValid.set(type, rawText);
-      }
-      setDismissedTokens(stillValid);
-
-      // Parse metadata
-      const result = parseTaskInput(value, domains, new Set(stillValid.keys()));
-      setParsed(result);
-
-      // Check for autocomplete trigger
-      const cursorPos = e.target.selectionStart ?? value.length;
-      const acResult = getAutocompleteSuggestions(value, cursorPos, domains);
-      if (acResult && acResult.suggestions.length > 0) {
-        setAcSuggestions(acResult.suggestions);
-        setAcTriggerInfo({
-          start: acResult.triggerStart,
-          end: acResult.triggerEnd,
-          type: acResult.type,
-        });
-        setAcVisible(true);
-        setAcSelectedIndex(0);
-      } else {
-        setAcVisible(false);
-      }
-    },
-    [domains, dismissedTokens],
-  );
-
-  const handleAcSelect = useCallback(
-    (suggestion: AutocompleteSuggestion) => {
-      if (!acTriggerInfo) return;
-
-      const prefix = suggestion.type === "domain" ? "@" : suggestion.type === "impact" ? "!" : "?";
-      const insertText =
-        suggestion.type === "domain" ? suggestion.label : suggestion.label.toLowerCase();
-      const before = rawInput.slice(0, acTriggerInfo.start);
-      const after = rawInput.slice(acTriggerInfo.end);
-      const newInput = `${before}${prefix}${insertText} ${after}`;
-
-      setRawInput(newInput);
-      setParsed(parseTaskInput(newInput, domains));
-      setAcVisible(false);
-
-      // Restore focus with cursor after inserted text
-      requestAnimationFrame(() => {
-        const cursorPos = acTriggerInfo.start + prefix.length + insertText.length + 1;
-        inputRef.current?.focus();
-        inputRef.current?.setSelectionRange(cursorPos, cursorPos);
-      });
-    },
-    [acTriggerInfo, rawInput, domains],
-  );
-
-  const handleDismissToken = useCallback(
-    (token: ParsedToken) => {
-      const newDismissed = new Map(dismissedTokens);
-      newDismissed.set(token.type, token.raw);
-      setDismissedTokens(newDismissed);
-      setParsed(parseTaskInput(rawInput, domains, new Set(newDismissed.keys())));
-    },
-    [dismissedTokens, rawInput, domains],
-  );
-
+  // biome-ignore lint/correctness/useExhaustiveDependencies: inputRef is a stable ref
   const handleSave = useCallback(async () => {
     if (createMutation.isPending) return;
     if (!parsed.title.trim()) return;
@@ -243,45 +152,13 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      // Autocomplete navigation takes priority
-      if (acVisible && acSuggestions.length > 0) {
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          setAcSelectedIndex((i) => Math.min(i + 1, acSuggestions.length - 1));
-          return;
-        }
-        if (e.key === "ArrowUp") {
-          e.preventDefault();
-          setAcSelectedIndex((i) => Math.max(i - 1, 0));
-          return;
-        }
-        if (e.key === "Enter" || e.key === "Tab") {
-          e.preventDefault();
-          handleAcSelect(acSuggestions[acSelectedIndex]);
-          return;
-        }
-        if (e.key === "Escape") {
-          e.preventDefault();
-          setAcVisible(false);
-          return;
-        }
-      }
-
-      // Submit on Enter when autocomplete is not showing
+      if (handleAcKeyDown(e)) return;
       if (e.key === "Enter" && !e.shiftKey && parsed.title.trim() && !createMutation.isPending) {
         e.preventDefault();
         handleSave();
       }
     },
-    [
-      acVisible,
-      acSuggestions,
-      acSelectedIndex,
-      handleAcSelect,
-      parsed.title,
-      handleSave,
-      createMutation.isPending,
-    ],
+    [handleAcKeyDown, parsed.title, handleSave, createMutation.isPending],
   );
 
   // ─── Render ─────────────────────────────────────────────────────────────
@@ -395,7 +272,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
-function MetadataPill({ token, onDismiss }: { token: ParsedToken; onDismiss: () => void }) {
+export function MetadataPill({ token, onDismiss }: { token: ParsedToken; onDismiss: () => void }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${PILL_STYLES[token.type] ?? ""}`}
@@ -416,7 +293,7 @@ function MetadataPill({ token, onDismiss }: { token: ParsedToken; onDismiss: () 
   );
 }
 
-function Kbd({ children }: { children: React.ReactNode }) {
+export function Kbd({ children }: { children: React.ReactNode }) {
   return (
     <kbd className="inline-flex items-center justify-center rounded border border-muted-foreground/20 bg-muted px-1 py-px text-[10px] font-mono">
       {children}
