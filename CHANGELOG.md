@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.21 — 2026-02-25
+
+### Fix: Restore original wizard layout with swipe support
+
+Reverted wizard back to original one-step-at-a-time conditional rendering (pre-swipe changes). The simultaneous panel rendering (both scroll-snap and transform approaches) broke layout and scrolling. Swipe/wheel navigation is now layered on top of the original structure: wheel events with 800ms cooldown for desktop trackpad, pointer swipe detection for touch. Both trigger the same `goForward`/`goBack` that buttons use.
+
+---
+
 ## v0.55.20 — 2026-02-25
 
 ### Fix: Wizard swipe — replace native scroll with transform
