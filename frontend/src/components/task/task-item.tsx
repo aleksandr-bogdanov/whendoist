@@ -733,7 +733,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                       toggleHideCompletedSubtasks(task.id);
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="relative z-10 self-center"
+                    className="relative z-10 inline-flex items-center"
                     title={
                       hideCompletedSubtasks.has(task.id)
                         ? "Show completed subtasks"

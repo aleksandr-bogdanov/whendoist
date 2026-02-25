@@ -4,6 +4,11 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.10 — 2026-02-25
+
+### Fix: Vertically center subtask count badge
+- Badge button was a block element — changed to `inline-flex items-center` so the flex parent's `items-center` can properly center it
+
 ## v0.55.9 — 2026-02-25
 
 ### Fix: Remove duplicate subtask count from clarity column
