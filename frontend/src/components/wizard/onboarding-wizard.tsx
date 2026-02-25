@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Lock } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   getListDomainsApiV1DomainsGetQueryKey,
   useCreateDomainApiV1DomainsPost,
@@ -333,119 +333,186 @@ interface OnboardingWizardProps {
 
 export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizardProps) {
   const [step, setStep] = useState(0);
-  const [transitioning, setTransitioning] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  // "idle" | "exit" (old content sliding out) | "enter" (new content sliding in)
+  const [transition, setTransition] = useState<{
+    phase: "idle" | "exit" | "enter";
+    direction: "forward" | "back";
+  }>({ phase: "idle", direction: "forward" });
   const wheelCooldown = useRef(false);
   const stepRef = useRef(step);
   stepRef.current = step;
+  const innerRef = useRef<HTMLDivElement>(null);
+  const heightRef = useRef<HTMLDivElement>(null);
   const completeMutation = useCompleteWizardApiV1WizardCompletePost();
   const queryClient = useQueryClient();
 
   const firstName = userName?.split(" ")[0] ?? "";
 
-  const goTo = useCallback((target: number) => {
-    setTransitioning(true);
+  const goTo = useCallback((target: number, direction: "forward" | "back") => {
+    const heightEl = heightRef.current;
+    // Lock the current height so the dialog doesn't jump when content swaps
+    if (heightEl) {
+      heightEl.style.height = `${heightEl.scrollHeight}px`;
+    }
+
+    // Phase 1: slide old content out (180ms CSS transition)
+    setTransition({ phase: "exit", direction });
     setTimeout(() => {
+      // Swap content. "enter" phase positions the new content at its start offset
+      // with transitions DISABLED so it appears there instantly (no visible motion yet).
       setStep(target);
-      setTransitioning(false);
-    }, 200);
+      setTransition({ phase: "enter", direction });
+
+      // Wait for React to render the new step + browser to paint the offset position.
+      // Double-rAF ensures the enter position is committed to screen before we
+      // enable transitions and slide to center.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (heightEl) {
+            // Measure new content height: temporarily remove fixed height and
+            // disable the CSS transition so the browser doesn't animate the
+            // measurement. scrollHeight with overflow:hidden returns
+            // max(content, element) — so if the old height is larger, we'd
+            // read the old value. Removing style.height lets it collapse to
+            // content, giving us the true new height.
+            const oldHeight = heightEl.style.height;
+            heightEl.style.transition = "none";
+            heightEl.style.height = "";
+            const newHeight = heightEl.scrollHeight;
+            // Re-lock at old height, then animate to new
+            heightEl.style.height = oldHeight;
+            // Force layout so the browser registers the old height
+            void heightEl.offsetHeight;
+            heightEl.style.transition = "";
+            heightEl.style.height = `${newHeight}px`;
+          }
+          // Enable transitions and slide new content to center
+          setTransition({ phase: "idle", direction });
+          // Release fixed height after both slide (180ms) and height (200ms) finish
+          setTimeout(() => {
+            if (heightEl) heightEl.style.height = "";
+          }, 220);
+        });
+      });
+    }, 180);
   }, []);
+
+  const handleFinishRef = useRef<() => void>(() => {});
 
   const goForward = useCallback(
     (from: number) => {
+      if (from >= TOTAL_STEPS - 1) {
+        // Last step: swiping forward triggers finish
+        handleFinishRef.current();
+        return;
+      }
       let next = from + 1;
       if (next === 3) next = 4; // skip cal-select
-      goTo(Math.min(next, TOTAL_STEPS - 1));
+      goTo(next, "forward");
     },
     [goTo],
   );
 
   const goBack = useCallback(
     (from: number) => {
+      if (from <= 0) return; // First step: ignore swipe back
       let prev = from - 1;
       if (prev === 3) prev = 2; // skip cal-select
-      goTo(Math.max(prev, 0));
+      goTo(prev, "back");
     },
     [goTo],
   );
 
-  // Desktop: wheel/trackpad → navigate one step per gesture
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    const handleWheel = (e: WheelEvent) => {
-      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (Math.abs(delta) < 5) return;
-      e.preventDefault();
-      if (wheelCooldown.current) return;
-      wheelCooldown.current = true;
-      if (delta > 0) goForward(stepRef.current);
-      else goBack(stepRef.current);
-      setTimeout(() => {
-        wheelCooldown.current = false;
-      }, 800);
-    };
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    return () => el.removeEventListener("wheel", handleWheel);
-  }, [goForward, goBack]);
+  // Store goForward/goBack in refs so event handlers always use latest
+  const goForwardRef = useRef(goForward);
+  goForwardRef.current = goForward;
+  const goBackRef = useRef(goBack);
+  goBackRef.current = goBack;
 
-  // Touch swipe + desktop pointer-drag (native events, following carousel pattern)
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
+  // Callback ref: attaches swipe/wheel listeners when the portal mounts the DOM node.
+  // useEffect can't work here because Radix Dialog renders via a Portal, and the
+  // ref is still null when useEffect fires on mount.
+  const cleanupRef = useRef<(() => void) | null>(null);
+  const wrapperRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      // Clean up previous listeners
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+      if (!el) return;
 
-    let startX = 0;
-    let startY = 0;
-    let tracking = false;
+      // ── Wheel/trackpad: one step per gesture ──
+      const handleWheel = (e: WheelEvent) => {
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (Math.abs(delta) < 5) return;
+        e.preventDefault();
+        if (wheelCooldown.current) return;
+        wheelCooldown.current = true;
+        if (delta > 0) goForwardRef.current(stepRef.current);
+        else goBackRef.current(stepRef.current);
+        setTimeout(() => {
+          wheelCooldown.current = false;
+        }, 800);
+      };
 
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      tracking = true;
-    };
-    const onTouchEnd = (e: TouchEvent) => {
-      if (!tracking || e.changedTouches.length === 0) return;
-      tracking = false;
-      const dx = e.changedTouches[0].clientX - startX;
-      const dy = e.changedTouches[0].clientY - startY;
-      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-      if (dx < 0) goForward(stepRef.current);
-      else goBack(stepRef.current);
-    };
+      // ── Touch swipe ──
+      let startX = 0;
+      let startY = 0;
+      let tracking = false;
 
-    const onPointerDown = (e: PointerEvent) => {
-      if (e.pointerType === "touch") return; // handled by touch events
-      if (e.button !== 0) return;
-      const target = e.target as HTMLElement;
-      if (target.closest("button, a, input, select")) return;
-      startX = e.clientX;
-      startY = e.clientY;
-      tracking = true;
-    };
-    const onPointerUp = (e: PointerEvent) => {
-      if (!tracking || e.pointerType === "touch") return;
-      tracking = false;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-      if (dx < 0) goForward(stepRef.current);
-      else goBack(stepRef.current);
-    };
+      const onTouchStart = (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        tracking = true;
+      };
+      const onTouchEnd = (e: TouchEvent) => {
+        if (!tracking || e.changedTouches.length === 0) return;
+        tracking = false;
+        const dx = e.changedTouches[0].clientX - startX;
+        const dy = e.changedTouches[0].clientY - startY;
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        if (dx < 0) goForwardRef.current(stepRef.current);
+        else goBackRef.current(stepRef.current);
+      };
 
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
-    el.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("pointerup", onPointerUp);
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("pointerup", onPointerUp);
-    };
-  }, [goForward, goBack]);
+      // ── Desktop pointer drag ──
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.pointerType === "touch") return;
+        if (e.button !== 0) return;
+        const target = e.target as HTMLElement;
+        if (target.closest("button, a, input, select")) return;
+        startX = e.clientX;
+        startY = e.clientY;
+        tracking = true;
+      };
+      const onPointerUp = (e: PointerEvent) => {
+        if (!tracking || e.pointerType === "touch") return;
+        tracking = false;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        if (dx < 0) goForwardRef.current(stepRef.current);
+        else goBackRef.current(stepRef.current);
+      };
 
-  const handleFinish = () => {
+      el.addEventListener("wheel", handleWheel, { passive: false });
+      el.addEventListener("touchstart", onTouchStart, { passive: true });
+      el.addEventListener("touchend", onTouchEnd, { passive: true });
+      el.addEventListener("pointerdown", onPointerDown);
+      document.addEventListener("pointerup", onPointerUp);
+
+      cleanupRef.current = () => {
+        el.removeEventListener("wheel", handleWheel);
+        el.removeEventListener("touchstart", onTouchStart);
+        el.removeEventListener("touchend", onTouchEnd);
+        el.removeEventListener("pointerdown", onPointerDown);
+        document.removeEventListener("pointerup", onPointerUp);
+      };
+    },
+    [], // stable — handlers read from refs
+  );
+
+  const handleFinish = useCallback(() => {
     completeMutation.mutate(undefined, {
       onSuccess: () => {
         queryClient.invalidateQueries({
@@ -454,7 +521,8 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
         onComplete();
       },
     });
-  };
+  }, [completeMutation, queryClient, onComplete]);
+  handleFinishRef.current = handleFinish;
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
@@ -465,43 +533,77 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
       >
         <div
           ref={wrapperRef}
-          className={cn(
-            "flex flex-col px-8 sm:px-12 pt-12 pb-10 transition-opacity duration-200",
-            transitioning && "opacity-0",
-          )}
+          className="flex flex-col px-8 sm:px-12 pt-12 pb-10"
           style={{ touchAction: "pan-y" }}
         >
-          {step === 0 && (
-            <WelcomeStep firstName={firstName} step={step} onGetStarted={() => goForward(step)} />
-          )}
-          {step === 1 && (
-            <EnergyStep
-              step={step}
-              onBack={() => goBack(step)}
-              onContinue={() => goForward(step)}
-            />
-          )}
-          {step === 2 && (
-            <CalendarConnectStep
-              step={step}
-              onBack={() => goBack(step)}
-              onSkip={() => goForward(step)}
-            />
-          )}
-          {step === 4 && (
-            <TodoistStep step={step} onBack={() => goBack(step)} onSkip={() => goForward(step)} />
-          )}
-          {step === 5 && (
-            <DomainsStep
-              step={step}
-              onBack={() => goBack(step)}
-              onSkip={() => goForward(step)}
-              onContinue={() => goForward(step)}
-            />
-          )}
-          {step === 6 && (
-            <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
-          )}
+          {/* Height wrapper: animates between old/new content heights.
+              overflow-hidden only during transitions so button glow isn't clipped at rest. */}
+          <div
+            ref={heightRef}
+            className={cn(
+              "transition-[height] duration-200 ease-out",
+              transition.phase !== "idle" && "overflow-hidden",
+            )}
+          >
+            {/* Slide wrapper: translateX + opacity for directional slide */}
+            <div
+              ref={innerRef}
+              className={cn(
+                "flex flex-col",
+                transition.phase !== "enter" &&
+                  "transition-[transform,opacity] duration-180 ease-out",
+              )}
+              style={{
+                transform:
+                  transition.phase === "exit"
+                    ? `translateX(${transition.direction === "forward" ? "-60px" : "60px"})`
+                    : transition.phase === "enter"
+                      ? `translateX(${transition.direction === "forward" ? "60px" : "-60px"})`
+                      : "translateX(0)",
+                opacity: transition.phase === "exit" ? 0 : 1,
+              }}
+            >
+              {step === 0 && (
+                <WelcomeStep
+                  firstName={firstName}
+                  step={step}
+                  onGetStarted={() => goForward(step)}
+                />
+              )}
+              {step === 1 && (
+                <EnergyStep
+                  step={step}
+                  onBack={() => goBack(step)}
+                  onContinue={() => goForward(step)}
+                />
+              )}
+              {step === 2 && (
+                <CalendarConnectStep
+                  step={step}
+                  onBack={() => goBack(step)}
+                  onSkip={() => goForward(step)}
+                />
+              )}
+              {step === 4 && (
+                <TodoistStep
+                  step={step}
+                  onBack={() => goBack(step)}
+                  onSkip={() => goForward(step)}
+                />
+              )}
+              {step === 5 && (
+                <DomainsStep
+                  step={step}
+                  onBack={() => goBack(step)}
+                  onSkip={() => goForward(step)}
+                  onContinue={() => goForward(step)}
+                />
+              )}
+              {step === 6 && (
+                <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
+              )}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

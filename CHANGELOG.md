@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.23 — 2026-02-25
+
+### Fix: Wizard swipe animation and polish
+
+Replaced simple fade transition with directional slide animation (translateX + opacity). Added smooth height animation between steps of different sizes — locks current height before content swap, measures new content, animates between them. Fixed Radix Dialog Portal timing: replaced `useRef` + `useEffect` (ref was null on mount) with callback ref pattern. Swipe at boundaries: back on first step is a no-op, forward on last step triggers finish. Button glow no longer clipped — `overflow-hidden` only applied during active transitions.
+
+---
+
 ## v0.55.22 — 2026-02-25
 
 ### Fix: Wizard swipe — use native event listeners
