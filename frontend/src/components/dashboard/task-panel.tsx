@@ -155,7 +155,7 @@ export function TaskPanel({ tasks, domains, isLoading, onNewTask, onEditTask }: 
         >
           <ColumnHeaders />
           <StickyDomainHeader />
-          <div className="p-2 sm:p-4 pb-nav-safe md:pb-4 space-y-2">
+          <div className="p-2 sm:p-4 pb-nav-safe md:pb-4 space-y-2 isolate">
             <PendingPastBanner />
             <TaskList groups={pendingGroups} onEditTask={onEditTask} />
             <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />

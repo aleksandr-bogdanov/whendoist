@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.6 — 2026-02-25
+
+### Fix: Task rows painting above sticky header
+- Framer-motion `layout` prop on task rows creates promoted compositing layers (`will-change: transform`) that escaped the sticky header's backdrop-filter
+- Added `isolate` on the task content container to trap compositing layers in their own stacking context
+- Bumped sticky header to `z-20` so it paints above all task content
+
 ## v0.55.5 — 2026-02-25
 
 ### Fix: Sticky header glass effect + clarity column alignment
