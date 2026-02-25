@@ -1,15 +1,17 @@
 import { Repeat } from "lucide-react";
 import type { RecurringStatItem } from "@/api/model";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface RecurringListProps {
   data: RecurringStatItem[];
+  className?: string;
 }
 
-export function RecurringList({ data }: RecurringListProps) {
+export function RecurringList({ data, className }: RecurringListProps) {
   if (data.length === 0) {
     return (
-      <Card>
+      <Card className={cn(className)}>
         <CardHeader>
           <CardTitle>Recurring Tasks</CardTitle>
         </CardHeader>
@@ -21,7 +23,7 @@ export function RecurringList({ data }: RecurringListProps) {
   }
 
   return (
-    <Card>
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>Recurring Tasks</CardTitle>
       </CardHeader>
@@ -34,6 +36,9 @@ export function RecurringList({ data }: RecurringListProps) {
               <p className="text-xs text-muted-foreground">
                 {task.completed}/{task.total} completed
               </p>
+              <div className="h-2 w-full rounded-full bg-muted mt-1">
+                <div className="h-full rounded-full bg-brand" style={{ width: `${task.rate}%` }} />
+              </div>
             </div>
             <div className="shrink-0">
               <span

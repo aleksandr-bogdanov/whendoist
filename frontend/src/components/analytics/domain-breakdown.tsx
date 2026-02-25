@@ -1,9 +1,12 @@
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Cell, Label, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { DomainBreakdownItem } from "@/api/model";
+import { TOOLTIP_STYLE } from "@/components/analytics/tooltip-style";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface DomainBreakdownProps {
   data: DomainBreakdownItem[];
+  className?: string;
 }
 
 const COLORS = [
@@ -17,10 +20,10 @@ const COLORS = [
   "#14b8a6",
 ];
 
-export function DomainBreakdown({ data }: DomainBreakdownProps) {
+export function DomainBreakdown({ data, className }: DomainBreakdownProps) {
   if (data.length === 0) {
     return (
-      <Card>
+      <Card className={cn(className)}>
         <CardHeader>
           <CardTitle>By Domain</CardTitle>
         </CardHeader>
@@ -31,40 +34,46 @@ export function DomainBreakdown({ data }: DomainBreakdownProps) {
     );
   }
 
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+
   return (
-    <Card>
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle>By Domain</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          {total} tasks across {data.length} domains
+        </p>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <ResponsiveContainer width="100%" height={200} className="max-w-[200px]">
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey="count"
-                nameKey="domain_name"
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={80}
-                paddingAngle={2}
-              >
-                {data.map((entry, i) => (
-                  <Cell key={entry.domain_id} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  borderColor: "hsl(var(--border))",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-[180px] h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="count"
+                  nameKey="domain_name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={72}
+                  paddingAngle={2}
+                >
+                  {data.map((entry, i) => (
+                    <Cell key={entry.domain_id} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                  <Label
+                    value={total}
+                    position="center"
+                    className="fill-foreground"
+                    style={{ fontSize: 20, fontWeight: 700 }}
+                  />
+                </Pie>
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-sm">
             {data.map((d, i) => (
               <div key={d.domain_id} className="flex items-center gap-1.5">
                 <div

@@ -46,10 +46,10 @@ IMPACT_LABELS: dict[int, str] = {
 # Impact level colors (Tailwind-inspired palette)
 # Used in analytics charts and UI elements
 IMPACT_COLORS: dict[int, str] = {
-    1: "#dc2626",  # red-600 (High)
-    2: "#f97316",  # orange-500 (Mid)
-    3: "#eab308",  # yellow-500 (Low)
-    4: "#22c55e",  # green-500 (Min)
+    1: "#c9505a",  # brand impact-high
+    2: "#b8860b",  # brand impact-medium
+    3: "#1a9160",  # brand impact-low
+    4: "#6b7385",  # brand impact-min (grey)
 }
 
 
