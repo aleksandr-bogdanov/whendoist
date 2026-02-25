@@ -7,7 +7,7 @@ interface DomainBreakdownProps {
 }
 
 const COLORS = [
-  "hsl(var(--primary))",
+  "var(--color-brand)",
   "#f97316",
   "#22c55e",
   "#eab308",

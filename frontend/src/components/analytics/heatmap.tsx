@@ -10,10 +10,10 @@ interface HeatmapProps {
 function getIntensity(count: number, max: number): string {
   if (count === 0) return "bg-muted";
   const ratio = count / max;
-  if (ratio < 0.25) return "bg-primary/20";
-  if (ratio < 0.5) return "bg-primary/40";
-  if (ratio < 0.75) return "bg-primary/60";
-  return "bg-primary";
+  if (ratio < 0.25) return "bg-brand/20";
+  if (ratio < 0.5) return "bg-brand/40";
+  if (ratio < 0.75) return "bg-brand/60";
+  return "bg-brand";
 }
 
 export function Heatmap({ data }: HeatmapProps) {
@@ -73,10 +73,10 @@ export function Heatmap({ data }: HeatmapProps) {
         <div className="flex items-center gap-1 mt-3 text-[10px] text-muted-foreground">
           <span>Less</span>
           <div className="h-2.5 w-2.5 rounded-[2px] bg-muted" />
-          <div className="h-2.5 w-2.5 rounded-[2px] bg-primary/20" />
-          <div className="h-2.5 w-2.5 rounded-[2px] bg-primary/40" />
-          <div className="h-2.5 w-2.5 rounded-[2px] bg-primary/60" />
-          <div className="h-2.5 w-2.5 rounded-[2px] bg-primary" />
+          <div className="h-2.5 w-2.5 rounded-[2px] bg-brand/20" />
+          <div className="h-2.5 w-2.5 rounded-[2px] bg-brand/40" />
+          <div className="h-2.5 w-2.5 rounded-[2px] bg-brand/60" />
+          <div className="h-2.5 w-2.5 rounded-[2px] bg-brand" />
           <span>More</span>
         </div>
       </CardContent>

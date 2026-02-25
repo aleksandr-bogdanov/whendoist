@@ -66,7 +66,7 @@ export function VelocityChart({ data }: VelocityChartProps) {
             <Line
               type="monotone"
               dataKey="avg"
-              stroke="hsl(var(--primary))"
+              stroke="var(--color-brand)"
               strokeWidth={2}
               dot={false}
               name="7-day avg"

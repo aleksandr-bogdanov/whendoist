@@ -38,7 +38,7 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
                 fontSize: 12,
               }}
             />
-            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
+            <Bar dataKey="count" fill="var(--color-brand)" radius={[0, 3, 3, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
