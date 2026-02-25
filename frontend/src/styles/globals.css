@@ -336,6 +336,28 @@ body.reduced-motion * {
   }
 }
 
+/* Hide scrollbar for swipeable containers */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Swipe hint animation */
+@keyframes swipeHint {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(4px);
+    opacity: 0.7;
+  }
+}
+
 /* PWA standalone viewport fix */
 @media (display-mode: standalone) {
   html,
