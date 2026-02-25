@@ -221,14 +221,14 @@ class DemoService:
         domains: dict[str, Domain],
         today: date,
     ) -> None:
-        """Create active tasks with dense calendar coverage across today through day+5."""
+        """Create active tasks: some scheduled (calendar), some unscheduled (domain backlog)."""
         w = domains["work"]
         h = domains["health"]
         p = domains["personal"]
         s = domains["side_project"]
         l = domains["learning"]  # noqa: E741
 
-        # === TODAY: 6 time-slotted + 2 date-only ===
+        # === TODAY: 5 time-slotted + 2 date-only ===
         prd_task = await task_service.create_task(
             title="Write PRD for search feature",
             description="Define user stories, wireframes, and success metrics for the new search feature.",
@@ -310,15 +310,6 @@ class DemoService:
             scheduled_time=time(17, 0),
             duration_minutes=45,
         )
-        await task_service.create_task(
-            title="Fix authentication bug in OAuth flow",
-            domain_id=s.id,
-            impact=1,
-            clarity="normal",
-            scheduled_date=today,
-            scheduled_time=time(19, 0),
-            duration_minutes=60,
-        )
         # Date-only today
         await task_service.create_task(
             title="Pay rent",
@@ -337,7 +328,7 @@ class DemoService:
             duration_minutes=15,
         )
 
-        # === TOMORROW: 5 time-slotted + 1 date-only ===
+        # === TOMORROW: 4 time-slotted ===
         tomorrow = today + timedelta(days=1)
         await task_service.create_task(
             title="Prep user interview questions",
@@ -376,24 +367,8 @@ class DemoService:
             scheduled_time=time(18, 0),
             duration_minutes=40,
         )
-        await task_service.create_task(
-            title="Complete online course module 3",
-            domain_id=l.id,
-            impact=3,
-            clarity="normal",
-            scheduled_date=tomorrow,
-            scheduled_time=time(20, 0),
-            duration_minutes=60,
-        )
-        await task_service.create_task(
-            title="Order new monitor for home office",
-            domain_id=w.id,
-            impact=3,
-            clarity="autopilot",
-            scheduled_date=tomorrow,
-        )
 
-        # === DAY +2: 4 tasks ===
+        # === DAY +2: 3 tasks ===
         day2 = today + timedelta(days=2)
         await task_service.create_task(
             title="Sprint planning prep",
@@ -423,17 +398,8 @@ class DemoService:
             scheduled_time=time(19, 0),
             duration_minutes=45,
         )
-        await task_service.create_task(
-            title="Read book chapter on system design",
-            domain_id=l.id,
-            impact=3,
-            clarity="brainstorm",
-            scheduled_date=day2,
-            scheduled_time=time(21, 0),
-            duration_minutes=45,
-        )
 
-        # === DAY +3: 3 tasks ===
+        # === DAY +3: 2 tasks ===
         day3 = today + timedelta(days=3)
         await task_service.create_task(
             title="Team workshop — retro and goals",
@@ -445,14 +411,6 @@ class DemoService:
             duration_minutes=90,
         )
         await task_service.create_task(
-            title="Call plumber about kitchen sink",
-            domain_id=p.id,
-            impact=3,
-            clarity="normal",
-            scheduled_date=day3,
-            duration_minutes=15,
-        )
-        await task_service.create_task(
             title="Outline conference talk",
             domain_id=l.id,
             impact=2,
@@ -462,7 +420,7 @@ class DemoService:
             duration_minutes=60,
         )
 
-        # === DAY +4: 2 tasks ===
+        # === DAY +4: 1 task ===
         day4 = today + timedelta(days=4)
         await task_service.create_task(
             title="Book flight for conference",
@@ -472,17 +430,8 @@ class DemoService:
             scheduled_date=day4,
             duration_minutes=20,
         )
-        await task_service.create_task(
-            title="Design landing page for side project",
-            domain_id=s.id,
-            impact=2,
-            clarity="brainstorm",
-            scheduled_date=day4,
-            scheduled_time=time(19, 0),
-            duration_minutes=90,
-        )
 
-        # === DAY +5: 2 tasks ===
+        # === DAY +5: 1 task ===
         day5 = today + timedelta(days=5)
         await task_service.create_task(
             title="Quarterly OKR review",
@@ -493,13 +442,73 @@ class DemoService:
             scheduled_time=time(10, 0),
             duration_minutes=60,
         )
+
+        # === UNSCHEDULED: domain backlog tasks (no date, appear in domain areas) ===
+        await task_service.create_task(
+            title="Order new monitor for home office",
+            domain_id=w.id,
+            impact=3,
+            clarity="autopilot",
+        )
+        await task_service.create_task(
+            title="Update LinkedIn profile",
+            domain_id=w.id,
+            impact=4,
+            clarity="normal",
+        )
+        await task_service.create_task(
+            title="Research new protein supplement",
+            domain_id=h.id,
+            impact=3,
+            clarity="brainstorm",
+        )
+        await task_service.create_task(
+            title="Sign up for Saturday soccer league",
+            domain_id=h.id,
+            impact=3,
+            clarity="normal",
+        )
+        await task_service.create_task(
+            title="Call plumber about kitchen sink",
+            domain_id=p.id,
+            impact=3,
+            clarity="normal",
+            duration_minutes=15,
+        )
         await task_service.create_task(
             title="Deep clean apartment",
             domain_id=p.id,
             impact=3,
             clarity="normal",
-            scheduled_date=day5,
             duration_minutes=120,
+        )
+        await task_service.create_task(
+            title="Fix authentication bug in OAuth flow",
+            domain_id=s.id,
+            impact=1,
+            clarity="normal",
+            duration_minutes=60,
+        )
+        await task_service.create_task(
+            title="Design landing page for side project",
+            domain_id=s.id,
+            impact=2,
+            clarity="brainstorm",
+            duration_minutes=90,
+        )
+        await task_service.create_task(
+            title="Complete online course module 3",
+            domain_id=l.id,
+            impact=3,
+            clarity="normal",
+            duration_minutes=60,
+        )
+        await task_service.create_task(
+            title="Read book chapter on system design",
+            domain_id=l.id,
+            impact=3,
+            clarity="brainstorm",
+            duration_minutes=45,
         )
 
     async def _seed_overdue_tasks(
