@@ -318,6 +318,7 @@ interface OnboardingWizardProps {
 export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizardProps) {
   const [currentPanel, setCurrentPanel] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const wheelCooldown = useRef(false);
   const completeMutation = useCompleteWizardApiV1WizardCompletePost();
   const queryClient = useQueryClient();
 
@@ -350,15 +351,24 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Map wheel/trackpad gestures to horizontal scroll
+  // Snap one panel per wheel/trackpad gesture (with cooldown)
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const handleWheel = (e: WheelEvent) => {
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (Math.abs(delta) < 1) return;
+      if (Math.abs(delta) < 5) return;
       e.preventDefault();
-      el.scrollBy({ left: delta });
+      if (wheelCooldown.current) return;
+      wheelCooldown.current = true;
+      const panelWidth = el.clientWidth;
+      const idx = Math.round(el.scrollLeft / panelWidth);
+      const target = delta > 0 ? idx + 1 : idx - 1;
+      const clamped = Math.max(0, Math.min(PANEL_IDS.length - 1, target));
+      el.scrollTo({ left: clamped * panelWidth, behavior: "smooth" });
+      setTimeout(() => {
+        wheelCooldown.current = false;
+      }, 600);
     };
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
@@ -387,22 +397,22 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
         </div>
 
         <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
             <WelcomeStep firstName={firstName} onGetStarted={goForward} />
           </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
             <EnergyStep onBack={goBack} onContinue={goForward} />
           </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
             <CalendarConnectStep onBack={goBack} onSkip={goForward} />
           </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
             <TodoistStep onBack={goBack} onSkip={goForward} />
           </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
             <DomainsStep onBack={goBack} onSkip={goForward} onContinue={goForward} />
           </div>
-          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10">
+          <div className="min-w-full snap-start shrink-0 px-8 sm:px-12 pt-4 pb-10 flex flex-col justify-center">
             <CompletionStep onFinish={handleFinish} isPending={completeMutation.isPending} />
           </div>
         </div>

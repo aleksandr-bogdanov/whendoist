@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.19 — 2026-02-25
+
+### Fix: Wizard swipe infinite scroll and layout centering
+
+Fixed two wizard issues: (1) Trackpad/mousewheel caused infinite scrolling because raw pixel deltas were piped to `scrollBy` — now snaps one panel at a time with a 600ms cooldown. (2) Content was top-aligned with empty space below — panels now use `flex flex-col justify-center` to vertically center content.
+
+---
+
 ## v0.55.18 — 2026-02-25
 
 ### Chore: `just dev` runs both backend and frontend
