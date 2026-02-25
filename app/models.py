@@ -357,6 +357,7 @@ class Task(Base):
     __table_args__ = (
         # Performance indexes for common query patterns
         Index("ix_task_user_status", "user_id", "status"),
+        Index("ix_task_user_status_completed", "user_id", "status", "completed_at"),
         Index("ix_task_user_scheduled", "user_id", "scheduled_date"),
         Index("ix_task_user_domain", "user_id", "domain_id"),
         Index("ix_task_parent", "parent_id"),
@@ -397,6 +398,7 @@ class TaskInstance(Base):
         # Performance indexes for common query patterns
         Index("ix_instance_task_date", "task_id", "instance_date"),
         Index("ix_instance_user_status", "user_id", "status"),
+        Index("ix_instance_user_status_completed", "user_id", "status", "completed_at"),
         Index("ix_instance_user_date", "user_id", "instance_date"),
     )
 

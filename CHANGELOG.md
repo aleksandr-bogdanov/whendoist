@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.26 — 2026-02-25
+
+### Fix: Analytics query production readiness
+
+Bounded three unbounded queries that degrade with scale: `_get_aging_stats` (LIMIT 5000), `_calculate_streaks` (2-year lookback), `get_recent_completions` (365-day cutoff). Added composite indexes `(user_id, status, completed_at)` on both Task and TaskInstance tables. Fixed median calculation bug, eliminated multiple `date.today()` calls, removed redundant DISTINCT in streaks query.
+
+---
+
 ## v0.55.25 — 2026-02-25
 
 ### Fix: Sticky header height jump when scrolling between sections
