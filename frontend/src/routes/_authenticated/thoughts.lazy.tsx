@@ -18,7 +18,6 @@ import { Kbd, MetadataPill } from "@/components/task/task-quick-add";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCrypto } from "@/hooks/use-crypto";
 import { useSmartInput } from "@/hooks/use-smart-input";
 import { IMPACT_COLORS, IMPACT_OPTIONS } from "@/lib/task-utils";
@@ -291,7 +290,7 @@ function ThoughtsPage() {
       </div>
 
       {/* Card list */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-2xl">
           {tasksQuery.isLoading ? (
             <div className="flex justify-center py-12">
@@ -333,7 +332,7 @@ function ThoughtsPage() {
             ))
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input area */}
       <div className="border-t px-4 py-3 pb-nav-safe md:pb-3">
@@ -545,7 +544,7 @@ function TriagePanel({
   return (
     <div
       ref={panelRef}
-      className="border-t border-border/30 px-4 pb-4 pt-3 space-y-2.5 bg-accent/10 overflow-hidden"
+      className="border-t border-border/30 px-4 pb-4 pt-3 space-y-2.5 bg-accent/10"
     >
       {/* Smart input with autocomplete */}
       <div className="relative">
@@ -579,7 +578,7 @@ function TriagePanel({
       )}
 
       {/* Mobile tappable selectors (hidden on desktop) */}
-      <div className="space-y-3 md:hidden">
+      <div className="space-y-2.5 md:hidden">
         {/* Domain pills */}
         {domains.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -588,7 +587,7 @@ function TriagePanel({
                 key={d.id}
                 type="button"
                 className={cn(
-                  "rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors",
+                  "rounded-full shrink-0 px-3.5 py-2 text-[13px] font-medium transition-colors",
                   parsed.domainId === d.id
                     ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
                     : "bg-secondary text-secondary-foreground active:bg-secondary/80",

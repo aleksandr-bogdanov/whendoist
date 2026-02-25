@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.28 — 2026-02-26
+
+### Fix: Thoughts triage panel clipping on iPhone SE
+
+Removed two `overflow-hidden` declarations from the triage panel card wrapper and panel container that clipped domain chips, priority labels, and the Convert button at 375px width. Added `shrink-0` to domain chip buttons so flex wraps instead of shrinking text. Tightened mobile selector spacing to match panel rhythm.
+
+---
+
 ## v0.55.27 — 2026-02-25
 
 ### Feat: Thoughts page redesign — inbox cards, smart input triage, mobile selectors
