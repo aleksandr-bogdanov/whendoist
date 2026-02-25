@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.27 — 2026-02-25
+
+### Feat: Thoughts page redesign — inbox cards, smart input triage, mobile selectors
+
+Replaced chat-bubble layout with full-width inbox card list. Triage panel uses shared `useSmartInput()` hook for inline metadata parsing (`@domain`, `!priority`, `?clarity`, `30m`, `tomorrow`, `//notes`). Mobile gets tappable domain pills, priority buttons, and schedule quick-picks below the smart input. Extracted `useSmartInput` hook from duplicated code in Quick Add and Thoughts, added CLAUDE.md rule 10 to prevent future duplication.
+
+---
+
 ## v0.55.26 — 2026-02-25
 
 ### Fix: Analytics query production readiness
