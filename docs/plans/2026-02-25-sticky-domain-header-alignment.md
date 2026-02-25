@@ -1,5 +1,5 @@
 ---
-version:
+version: v0.55.4
 pr: 499
 created: 2026-02-25
 ---

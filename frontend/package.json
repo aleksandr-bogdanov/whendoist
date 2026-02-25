@@ -21,6 +21,7 @@
     "@tanstack/react-router": "^1.160.2",
     "@use-gesture/react": "^10.3.1",
     "axios": "^1.13.5",
+    "chrono-node": "^2.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.574.0",
