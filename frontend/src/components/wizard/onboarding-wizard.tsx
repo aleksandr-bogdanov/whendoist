@@ -350,14 +350,15 @@ export function OnboardingWizard({ open, onComplete, userName }: OnboardingWizar
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Convert vertical wheel to horizontal scroll (desktop)
+  // Map wheel/trackpad gestures to horizontal scroll
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const handleWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (Math.abs(delta) < 1) return;
       e.preventDefault();
-      el.scrollBy({ left: e.deltaY });
+      el.scrollBy({ left: delta });
     };
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
