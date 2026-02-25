@@ -112,7 +112,7 @@ export function ColumnHeaders() {
   return (
     <div
       ref={headerRef}
-      className="hidden sm:flex items-center justify-end pl-2 sm:pl-4 pr-[calc(0.5rem+1px)] sm:pr-[calc(1rem+1px)] py-1 sticky top-0 z-10 bg-background/80 backdrop-blur-sm"
+      className="hidden sm:flex items-center justify-end pl-2 sm:pl-4 pr-[9px] sm:pr-[17px] py-1 sticky top-0 z-10 bg-background/90 backdrop-blur-lg"
     >
       {/* Sticky domain label — fades in when domain header scrolls behind */}
       <div
