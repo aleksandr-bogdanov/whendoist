@@ -1,5 +1,5 @@
 import { ArrowRight, ChevronRight, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
@@ -57,11 +57,34 @@ export function ThoughtTriageDrawer({
   onDelete,
   onOpenChange,
 }: ThoughtTriageDrawerProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Track visual viewport to constrain drawer when iOS keyboard is open.
+  // vh units refer to the layout viewport which does NOT shrink for the keyboard,
+  // so the drawer overflows behind the keyboard and pushes content off-screen.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv || !thought) return;
+    const update = () => {
+      const el = contentRef.current;
+      if (!el) return;
+      const keyboardOffset = window.innerHeight - vv.height;
+      if (keyboardOffset > 100) {
+        el.style.maxHeight = `${vv.height - 20}px`;
+      } else {
+        el.style.maxHeight = "";
+      }
+    };
+    vv.addEventListener("resize", update);
+    return () => vv.removeEventListener("resize", update);
+  }, [thought]);
+
   return (
     <Drawer.Root open={!!thought} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
         <Drawer.Content
+          ref={contentRef}
           className={cn(
             "fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl",
             "bg-background border-t border-border",
