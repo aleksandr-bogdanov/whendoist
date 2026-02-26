@@ -330,7 +330,7 @@ export function ParentTaskSelect({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search tasks..."
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
               />
               {search && (
                 <button

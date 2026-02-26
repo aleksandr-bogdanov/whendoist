@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.32 — 2026-02-26
+
+### Fix: iOS auto-zoom on triage drawer inputs
+
+Bumped triage drawer textarea and parent task search input from `text-sm` (14px) to `text-base` (16px). iOS Safari auto-zooms any input with font-size below 16px, causing the page layout to break.
+
+---
+
 ## v0.55.31 — 2026-02-26
 
 ### Fix: Extended duration and date abbreviation parsing
