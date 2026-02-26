@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.38 — 2026-02-27
+
+### Fix: Parent task dropdown — prevent vaul dismiss on option tap
+
+The portal-inside-Drawer.Content approach (v0.55.37) placed the dropdown in the correct DOM subtree, but Radix's DismissableLayer still treated taps on dropdown options as "outside" clicks. Root cause: Radix uses its own layer stack rather than pure `Node.contains()`, so portaled elements aren't recognized as "inside" even when they're in the DOM tree.
+
+Fix: Intercept vaul's `onPointerDownOutside` on `Drawer.Content`. A capture-phase `pointerdown` listener on `document` sets a ref flag when the tap target has `[data-vaul-no-drag]`. The `onPointerDownOutside` callback checks this flag and calls `e.preventDefault()`, which vaul propagates to Radix, suppressing the dismiss.
+
+---
+
 ## v0.55.37 — 2026-02-27
 
 ### Fix: Parent dropdown actually works now + remove all keyboard hacking

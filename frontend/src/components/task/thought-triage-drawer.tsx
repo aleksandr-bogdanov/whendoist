@@ -1,5 +1,5 @@
 import { ArrowRight, ChevronRight, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
@@ -57,6 +57,18 @@ export function ThoughtTriageDrawer({
   onDelete,
   onOpenChange,
 }: ThoughtTriageDrawerProps) {
+  // Track whether a pointerdown landed on the parent-task dropdown (which has
+  // data-vaul-no-drag).  We use a capture-phase listener so the flag is set
+  // BEFORE Radix's bubble-phase DismissableLayer fires onPointerDownOutside.
+  const dropdownTappedRef = useRef(false);
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      dropdownTappedRef.current = !!(e.target as HTMLElement)?.closest?.("[data-vaul-no-drag]");
+    };
+    document.addEventListener("pointerdown", handler, true);
+    return () => document.removeEventListener("pointerdown", handler, true);
+  }, []);
+
   return (
     <Drawer.Root open={!!thought} onOpenChange={onOpenChange} repositionInputs={false}>
       <Drawer.Portal>
@@ -67,6 +79,11 @@ export function ThoughtTriageDrawer({
             "bg-background border-t border-border",
             "max-h-[85vh] max-w-lg mx-auto",
           )}
+          onPointerDownOutside={(e) => {
+            if (dropdownTappedRef.current) {
+              e.preventDefault();
+            }
+          }}
         >
           <div className="mx-auto mt-3 mb-1 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
           <Drawer.Title className="sr-only">Triage thought</Drawer.Title>
