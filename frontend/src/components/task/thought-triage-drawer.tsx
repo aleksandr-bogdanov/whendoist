@@ -62,21 +62,27 @@ export function ThoughtTriageDrawer({
   // Track visual viewport to constrain drawer when iOS keyboard is open.
   // vh units refer to the layout viewport which does NOT shrink for the keyboard,
   // so the drawer overflows behind the keyboard and pushes content off-screen.
+  // In PWA standalone mode, visualViewport.resize may not fire — listen to window.resize too.
   useEffect(() => {
+    if (!thought) return;
     const vv = window.visualViewport;
-    if (!vv || !thought) return;
     const update = () => {
       const el = contentRef.current;
       if (!el) return;
-      const keyboardOffset = window.innerHeight - vv.height;
+      const viewH = vv?.height ?? window.innerHeight;
+      const keyboardOffset = window.innerHeight - viewH;
       if (keyboardOffset > 100) {
-        el.style.maxHeight = `${vv.height - 20}px`;
+        el.style.maxHeight = `${viewH - 20}px`;
       } else {
         el.style.maxHeight = "";
       }
     };
-    vv.addEventListener("resize", update);
-    return () => vv.removeEventListener("resize", update);
+    vv?.addEventListener("resize", update);
+    window.addEventListener("resize", update);
+    return () => {
+      vv?.removeEventListener("resize", update);
+      window.removeEventListener("resize", update);
+    };
   }, [thought]);
 
   return (
@@ -245,8 +251,8 @@ function DrawerBody({
 
   return (
     <>
-      {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2">
+      {/* Scrollable body — no flex-1 so it sizes to content, not filling the drawer */}
+      <div className="overflow-y-auto px-4 pb-2 space-y-2">
         {/* Clean title input — tokens are extracted, only human-readable title shown */}
         <textarea
           ref={inputRef}
@@ -427,8 +433,8 @@ function DrawerBody({
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="border-t bg-background px-4 py-2.5 flex items-center gap-3">
+      {/* Footer — pb-safe handles safe-area inset without a separate spacer */}
+      <div className="border-t bg-background px-4 py-2.5 pb-safe flex items-center gap-3">
         <Button
           variant="ghost"
           size="sm"
@@ -458,9 +464,6 @@ function DrawerBody({
           )}
         </Button>
       </div>
-
-      {/* Keyboard spacer — keeps footer visible above soft keyboard */}
-      <div className="h-safe pb-2" />
 
       {/* Nested calendar drawer */}
       <Drawer.NestedRoot open={calendarOpen} onOpenChange={setCalendarOpen}>

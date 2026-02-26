@@ -256,13 +256,12 @@ export function ParentTaskSelect({
     const maxDropH = 192;
 
     if (spaceBelow >= maxDropH || spaceBelow >= spaceAbove) {
-      // Position below trigger
+      // Position below trigger — no maxHeight on outer; inner max-h constrains the list
       setDropdownStyle({
         position: "fixed",
         top: rect.bottom + 4,
         left: rect.left,
         width: rect.width,
-        maxHeight: Math.min(maxDropH, spaceBelow),
         zIndex: 9999,
       });
     } else {
@@ -272,7 +271,6 @@ export function ParentTaskSelect({
         bottom: viewH - rect.top + 4,
         left: rect.left,
         width: rect.width,
-        maxHeight: Math.min(maxDropH, spaceAbove),
         zIndex: 9999,
       });
     }
@@ -334,8 +332,9 @@ export function ParentTaskSelect({
         createPortal(
           <div
             ref={dropdownRef}
-            className="rounded-md border bg-popover text-popover-foreground shadow-md"
+            className="rounded-md border bg-popover text-popover-foreground shadow-md overflow-hidden"
             style={dropdownStyle}
+            onTouchMove={(e) => e.stopPropagation()}
           >
             {/* Search */}
             <div className="flex items-center gap-2 px-3 py-2 border-b">
@@ -358,8 +357,15 @@ export function ParentTaskSelect({
               )}
             </div>
 
-            {/* Options */}
-            <div className="max-h-48 overflow-y-auto py-1">
+            {/* Options — touch-action/overscroll for iOS scroll containment */}
+            <div
+              className="max-h-48 overflow-y-auto py-1"
+              style={{
+                touchAction: "pan-y",
+                overscrollBehaviorY: "contain",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
               <button
                 type="button"
                 className={cn(
