@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.37 — 2026-02-27
+
+### Fix: Parent dropdown actually works now + remove all keyboard hacking
+
+Two root causes found and fixed:
+1. **Portal was always null**: `useRef` for portal container was evaluated during render (when `.current` is still `null`). Since `ParentTaskSelect` manages its own `open` state, clicking the trigger re-renders ParentTaskSelect but NOT DrawerBody — so `portalRef.current` was never re-evaluated. The dropdown was ALWAYS portaling to `document.body`, making the v0.55.35 portal fix a complete no-op. Fixed by using `useState` as a callback ref (`ref={setPortalEl}`), which triggers a re-render when the element mounts.
+2. **Removed all keyboard hacking**: Every approach (inline styles, spacer div) either fought vaul's transform animations or created stale state. Removed entirely. Set `repositionInputs={false}` to prevent vaul from interfering. The drawer is content-sized, clean open/close animation.
+
+---
+
 ## v0.55.36 — 2026-02-26
 
 ### Fix: Replace inline style hacking with React-state keyboard spacer

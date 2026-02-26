@@ -1,5 +1,5 @@
 import { ArrowRight, ChevronRight, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
@@ -57,34 +57,8 @@ export function ThoughtTriageDrawer({
   onDelete,
   onOpenChange,
 }: ThoughtTriageDrawerProps) {
-  const [keyboardH, setKeyboardH] = useState(0);
-
-  // Track iOS keyboard height as React state. Instead of hacking inline styles on
-  // Drawer.Content (which fights vaul's transform-based animations and leaves stale
-  // styles between thoughts), we render a spacer div inside the flex column that
-  // pushes content above the keyboard. React state = automatic cleanup on unmount.
-  useEffect(() => {
-    if (!thought) {
-      setKeyboardH(0);
-      return;
-    }
-    const vv = window.visualViewport;
-    const update = () => {
-      const viewH = Math.min(vv?.height ?? window.innerHeight, window.innerHeight);
-      const kbH = window.innerHeight - viewH;
-      setKeyboardH(kbH > 100 ? kbH : 0);
-    };
-    vv?.addEventListener("resize", update);
-    window.addEventListener("resize", update);
-    return () => {
-      vv?.removeEventListener("resize", update);
-      window.removeEventListener("resize", update);
-      setKeyboardH(0);
-    };
-  }, [thought]);
-
   return (
-    <Drawer.Root open={!!thought} onOpenChange={onOpenChange}>
+    <Drawer.Root open={!!thought} onOpenChange={onOpenChange} repositionInputs={false}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
         <Drawer.Content
@@ -107,11 +81,6 @@ export function ThoughtTriageDrawer({
               onDelete={onDelete}
             />
           )}
-
-          {/* Keyboard spacer: occupies space at the bottom of the flex column, pushing
-              content above the iOS keyboard. Lives in the DOM as a normal div so it
-              doesn't fight vaul's transforms. React state ensures clean reset. */}
-          {keyboardH > 0 && <div className="shrink-0" style={{ height: keyboardH }} />}
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
@@ -142,7 +111,11 @@ function DrawerBody({
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [parentId, setParentId] = useState<number | null>(null);
-  const portalRef = useRef<HTMLDivElement>(null);
+  // useState as callback ref: triggers re-render when the element mounts so
+  // ParentTaskSelect receives the actual element (not null) on the next render.
+  // A useRef would stay null because refs are set after render, and DrawerBody
+  // doesn't re-render when ParentTaskSelect opens its dropdown.
+  const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
 
   const {
     inputRef,
@@ -254,8 +227,8 @@ function DrawerBody({
 
   return (
     <>
-      {/* Scrollable body — min-h-0 allows it to shrink when keyboard spacer is present */}
-      <div className="overflow-y-auto min-h-0 px-4 pb-2 space-y-2">
+      {/* Scrollable body */}
+      <div className="overflow-y-auto px-4 pb-2 space-y-2">
         {/* Clean title input — tokens are extracted, only human-readable title shown */}
         <textarea
           ref={inputRef}
@@ -306,7 +279,7 @@ function DrawerBody({
                 domains={domains}
                 selectedId={parentId}
                 currentDomainId={parsed.domainId}
-                portalContainer={portalRef.current}
+                portalContainer={portalEl}
                 onSelect={(id) => {
                   setParentId(id);
                   // Auto-sync domain to match parent task's domain
@@ -437,8 +410,8 @@ function DrawerBody({
         </div>
       </div>
 
-      {/* Footer — shrink-0 prevents it from collapsing when keyboard spacer is active */}
-      <div className="border-t bg-background px-4 py-2.5 pb-safe flex items-center gap-3 shrink-0">
+      {/* Footer */}
+      <div className="border-t bg-background px-4 py-2.5 pb-safe flex items-center gap-3">
         <Button
           variant="ghost"
           size="sm"
@@ -471,7 +444,7 @@ function DrawerBody({
 
       {/* Portal target for ParentTaskSelect dropdown — must be inside Drawer.Content
           so vaul/Radix doesn't treat clicks on the dropdown as "outside" dismissals */}
-      <div ref={portalRef} />
+      <div ref={setPortalEl} />
 
       {/* Nested calendar drawer */}
       <Drawer.NestedRoot open={calendarOpen} onOpenChange={setCalendarOpen}>
