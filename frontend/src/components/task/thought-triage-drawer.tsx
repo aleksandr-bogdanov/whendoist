@@ -1,5 +1,5 @@
 import { ArrowRight, ChevronRight, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
@@ -57,18 +57,6 @@ export function ThoughtTriageDrawer({
   onDelete,
   onOpenChange,
 }: ThoughtTriageDrawerProps) {
-  // Track whether a pointerdown landed on the parent-task dropdown (which has
-  // data-vaul-no-drag).  We use a capture-phase listener so the flag is set
-  // BEFORE Radix's bubble-phase DismissableLayer fires onPointerDownOutside.
-  const dropdownTappedRef = useRef(false);
-  useEffect(() => {
-    const handler = (e: PointerEvent) => {
-      dropdownTappedRef.current = !!(e.target as HTMLElement)?.closest?.("[data-vaul-no-drag]");
-    };
-    document.addEventListener("pointerdown", handler, true);
-    return () => document.removeEventListener("pointerdown", handler, true);
-  }, []);
-
   return (
     <Drawer.Root open={!!thought} onOpenChange={onOpenChange} repositionInputs={false}>
       <Drawer.Portal>
@@ -80,7 +68,21 @@ export function ThoughtTriageDrawer({
             "max-h-[85vh] max-w-lg mx-auto",
           )}
           onPointerDownOutside={(e) => {
-            if (dropdownTappedRef.current) {
+            // Radix fires this when a pointerdown lands outside Drawer.Content.
+            // The parent-task dropdown is portaled (position:fixed) and Radix's
+            // layer system may not recognize it as "inside".  Check the original
+            // native event target: if it's inside a [data-vaul-no-drag] element
+            // (our dropdown), suppress the dismiss.
+            const target = (e as unknown as CustomEvent<{ originalEvent: PointerEvent }>).detail
+              ?.originalEvent?.target as HTMLElement | null;
+            if (target?.closest?.("[data-vaul-no-drag]")) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            const target = (e as unknown as CustomEvent<{ originalEvent: Event }>).detail
+              ?.originalEvent?.target as HTMLElement | null;
+            if (target?.closest?.("[data-vaul-no-drag]")) {
               e.preventDefault();
             }
           }}

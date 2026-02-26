@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.39 — 2026-02-27
+
+### Fix: Remove capture-phase listener that blocked parent dropdown on iOS
+
+v0.55.38's capture-phase `pointerdown` listener on `document` prevented the parent dropdown from opening on iOS. Replaced with a simpler approach: check `e.detail.originalEvent.target` directly inside `onPointerDownOutside` and `onInteractOutside` callbacks. No global listeners, no refs — the dismiss suppression is now entirely self-contained in the event callbacks.
+
+---
+
 ## v0.55.38 — 2026-02-27
 
 ### Fix: Parent task dropdown — prevent vaul dismiss on option tap
