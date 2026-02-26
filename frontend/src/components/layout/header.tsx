@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogOut, Monitor, Moon, Sun } from "lucide-react";
 import { useRef } from "react";
+import { DemoPill } from "@/components/demo-pill";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -101,6 +102,11 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
         >
           <WIcon className="h-[28px] w-[30px]" />
         </Link>
+
+        {/* Demo pill — mobile only, centered */}
+        <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
+          <DemoPill />
+        </div>
 
         {/* Navigation tabs — desktop only (mobile uses bottom nav) */}
         <nav className="ml-auto hidden md:flex items-center gap-1">

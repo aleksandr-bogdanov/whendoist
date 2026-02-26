@@ -4,12 +4,22 @@ import { useCallback, useRef, useState } from "react";
 import { useHaptics } from "@/hooks/use-haptics";
 import { cn } from "@/lib/utils";
 
+const SWIPE_COLORS = {
+  green: { bg: "bg-green-500", bgFaint: "bg-green-500/20", text: "text-green-600" },
+  blue: { bg: "bg-blue-500", bgFaint: "bg-blue-500/20", text: "text-blue-600" },
+  red: { bg: "bg-red-500", bgFaint: "bg-red-500/20", text: "text-red-600" },
+} as const;
+
 interface TaskSwipeRowProps {
   children: React.ReactNode;
   onSwipeRight?: () => void;
   onSwipeLeft?: () => void;
   onLongPress?: () => void;
   disabled?: boolean;
+  rightIcon?: React.ComponentType<{ className?: string }>;
+  rightColor?: keyof typeof SWIPE_COLORS;
+  leftIcon?: React.ComponentType<{ className?: string }>;
+  leftColor?: keyof typeof SWIPE_COLORS;
 }
 
 const THRESHOLD = 130;
@@ -28,6 +38,10 @@ export function TaskSwipeRow({
   onSwipeLeft,
   onLongPress,
   disabled,
+  rightIcon: RightIcon = Check,
+  rightColor = "green",
+  leftIcon: LeftIcon = CalendarDays,
+  leftColor = "blue",
 }: TaskSwipeRowProps) {
   const [deltaX, setDeltaX] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
@@ -70,7 +84,7 @@ export function TaskSwipeRow({
       // Check interactive elements
       if (first) {
         const target = event.target as HTMLElement;
-        if (target.closest("button, input, select, a, [role='button']")) {
+        if (target.closest("button, input, select, a")) {
           cancel();
           return;
         }
@@ -176,36 +190,40 @@ export function TaskSwipeRow({
 
   return (
     <div className="relative overflow-hidden touch-pan-y">
-      {/* Swipe-right indicator (complete) */}
+      {/* Swipe-right indicator */}
       <div
         className={cn(
           "absolute inset-y-0 left-0 flex items-center px-4 transition-opacity",
           showCompleteIndicator ? "opacity-100" : "opacity-0",
-          phase === "trigger" && direction === "right" ? "bg-green-500" : "bg-green-500/20",
+          phase === "trigger" && direction === "right"
+            ? SWIPE_COLORS[rightColor].bg
+            : SWIPE_COLORS[rightColor].bgFaint,
         )}
         style={{ width: Math.max(0, deltaX) }}
       >
-        <Check
+        <RightIcon
           className={cn(
             "h-5 w-5 transition-transform",
-            phase === "trigger" ? "text-white scale-125" : "text-green-600",
+            phase === "trigger" ? "text-white scale-125" : SWIPE_COLORS[rightColor].text,
           )}
         />
       </div>
 
-      {/* Swipe-left indicator (schedule) */}
+      {/* Swipe-left indicator */}
       <div
         className={cn(
           "absolute inset-y-0 right-0 flex items-center justify-end px-4 transition-opacity",
           showScheduleIndicator ? "opacity-100" : "opacity-0",
-          phase === "trigger" && direction === "left" ? "bg-blue-500" : "bg-blue-500/20",
+          phase === "trigger" && direction === "left"
+            ? SWIPE_COLORS[leftColor].bg
+            : SWIPE_COLORS[leftColor].bgFaint,
         )}
         style={{ width: Math.max(0, -deltaX) }}
       >
-        <CalendarDays
+        <LeftIcon
           className={cn(
             "h-5 w-5 transition-transform",
-            phase === "trigger" ? "text-white scale-125" : "text-blue-600",
+            phase === "trigger" ? "text-white scale-125" : SWIPE_COLORS[leftColor].text,
           )}
         />
       </div>

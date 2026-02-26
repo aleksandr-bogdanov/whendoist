@@ -2,7 +2,7 @@
  * Inline task input parser for Smart Quick Add V2.
  *
  * Parses a single text input to extract task metadata tokens:
- *   @Domain   → domain assignment (fuzzy autocomplete)
+ *   #Domain   → domain assignment (fuzzy autocomplete)
  *   !high/!mid/!low/!min → impact 1-4
  *   ?auto/?brain/?normal → clarity mode
  *   30m / 1h / 2h30m → duration in minutes
@@ -90,8 +90,6 @@ const CLARITY_LABEL_MAP: Record<string, string> = {
 
 const DURATION_PATTERN = /(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/g;
 
-const DOMAIN_PATTERN = /@(\S+)/g;
-
 // ─── Parser ─────────────────────────────────────────────────────────────────
 
 export const EMPTY_PARSED: ParsedTaskMetadata = {
@@ -148,36 +146,75 @@ export function parseTaskInput(
     }
   }
 
-  // Step 2: Domain (@Name) — last matched wins, only last removed from title
+  // Step 2: Domain (#Name) — greedy match against known domain names (handles multi-word)
   if (!dismissed.has("domain")) {
     const activeDomains = domains.filter((d) => !d.is_archived);
-    let lastDomainMatch: { match: RegExpExecArray; domain: DomainResponse } | null = null;
-    for (const domainMatch of working.matchAll(new RegExp(DOMAIN_PATTERN.source, "g"))) {
-      const matchStart = domainMatch.index ?? 0;
-      // Skip if @ is not at start or preceded by whitespace (avoids emails like user@domain)
-      if (matchStart > 0 && !/\s/.test(working[matchStart - 1])) continue;
-      const query = domainMatch[1].toLowerCase();
-      const matched = activeDomains.find(
-        (d) => d.name.toLowerCase() === query || d.name.toLowerCase().startsWith(query),
-      );
-      if (matched) {
-        lastDomainMatch = { match: domainMatch as unknown as RegExpExecArray, domain: matched };
+    // Sort longest name first for greedy matching
+    const sortedDomains = [...activeDomains].sort((a, b) => b.name.length - a.name.length);
+
+    let lastDomainMatch: {
+      start: number;
+      end: number;
+      domain: DomainResponse;
+      raw: string;
+    } | null = null;
+
+    for (let pos = 0; pos < working.length; pos++) {
+      if (working[pos] !== "#") continue;
+      if (pos > 0 && !/\s/.test(working[pos - 1])) continue;
+
+      const afterHash = working.slice(pos + 1);
+      let matched = false;
+
+      // Try exact multi-word match against known domain names (longest first)
+      for (const d of sortedDomains) {
+        const dName = d.name.toLowerCase();
+        if (afterHash.toLowerCase().startsWith(dName)) {
+          const charAfter = afterHash[dName.length];
+          if (charAfter === undefined || /\s/.test(charAfter)) {
+            lastDomainMatch = {
+              start: pos,
+              end: pos + 1 + d.name.length,
+              domain: d,
+              raw: working.slice(pos, pos + 1 + d.name.length),
+            };
+            matched = true;
+            break;
+          }
+        }
+      }
+
+      // Fall back to single-word fuzzy match (#hea → "Health and Fitness")
+      if (!matched) {
+        const wordMatch = afterHash.match(/^(\S+)/);
+        if (wordMatch) {
+          const query = wordMatch[1].toLowerCase();
+          const d = activeDomains.find(
+            (dd) => dd.name.toLowerCase() === query || dd.name.toLowerCase().startsWith(query),
+          );
+          if (d) {
+            lastDomainMatch = {
+              start: pos,
+              end: pos + 1 + wordMatch[1].length,
+              domain: d,
+              raw: working.slice(pos, pos + 1 + wordMatch[1].length),
+            };
+          }
+        }
       }
     }
+
     if (lastDomainMatch) {
-      const { match: dm, domain: d } = lastDomainMatch;
-      domainId = d.id;
-      domainName = d.name;
-      const start = dm.index ?? 0;
-      const end = start + dm[0].length;
+      domainId = lastDomainMatch.domain.id;
+      domainName = lastDomainMatch.domain.name;
       tokens.push({
         type: "domain",
-        raw: dm[0],
-        label: `${d.icon ? `${d.icon} ` : ""}${d.name}`,
-        startIndex: start,
-        endIndex: end,
+        raw: lastDomainMatch.raw,
+        label: `${lastDomainMatch.domain.icon ? `${lastDomainMatch.domain.icon} ` : ""}${lastDomainMatch.domain.name}`,
+        startIndex: lastDomainMatch.start,
+        endIndex: lastDomainMatch.end,
       });
-      working = working.slice(0, start) + working.slice(end);
+      working = working.slice(0, lastDomainMatch.start) + working.slice(lastDomainMatch.end);
     }
   }
 
@@ -370,7 +407,7 @@ export function getAutocompleteSuggestions(
   if (i < 0) return null;
 
   const triggerChar = input[i];
-  if (triggerChar !== "@" && triggerChar !== "?" && triggerChar !== "!") return null;
+  if (triggerChar !== "#" && triggerChar !== "?" && triggerChar !== "!") return null;
 
   // Ensure trigger is at start of input or preceded by whitespace
   if (i > 0 && !/\s/.test(input[i - 1])) return null;
@@ -379,7 +416,7 @@ export function getAutocompleteSuggestions(
   const triggerStart = i;
   const triggerEnd = cursorPos;
 
-  if (triggerChar === "@") {
+  if (triggerChar === "#") {
     const activeDomains = domains.filter((d) => !d.is_archived);
     let matches: DomainResponse[];
     if (!prefix) {

@@ -14,8 +14,11 @@ export interface UseSmartInputOptions {
   domains: DomainResponse[];
 }
 
-export function useSmartInput({ initialInput = "", domains }: UseSmartInputOptions) {
-  const inputRef = useRef<HTMLInputElement>(null);
+export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement = HTMLInputElement>({
+  initialInput = "",
+  domains,
+}: UseSmartInputOptions) {
+  const inputRef = useRef<E>(null);
 
   // Core state
   const [rawInput, setRawInput] = useState(initialInput);
@@ -47,7 +50,7 @@ export function useSmartInput({ initialInput = "", domains }: UseSmartInputOptio
   }, []);
 
   const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<E>) => {
       const value = e.target.value;
       setRawInput(value);
 
@@ -85,7 +88,7 @@ export function useSmartInput({ initialInput = "", domains }: UseSmartInputOptio
     (suggestion: AutocompleteSuggestion) => {
       if (!acTriggerInfo) return;
 
-      const prefix = suggestion.type === "domain" ? "@" : suggestion.type === "impact" ? "!" : "?";
+      const prefix = suggestion.type === "domain" ? "#" : suggestion.type === "impact" ? "!" : "?";
       const insertText =
         suggestion.type === "domain" ? suggestion.label : suggestion.label.toLowerCase();
       const before = rawInput.slice(0, acTriggerInfo.start);
@@ -108,12 +111,16 @@ export function useSmartInput({ initialInput = "", domains }: UseSmartInputOptio
 
   const handleDismissToken = useCallback(
     (token: ParsedToken) => {
-      const newDismissed = new Map(dismissedTokens);
-      newDismissed.set(token.type, token.raw);
-      setDismissedTokens(newDismissed);
-      setParsed(parseTaskInput(rawInput, domains, new Set(newDismissed.keys())));
+      // Remove the raw token text from input so it can't resurface
+      const newInput = rawInput
+        .replace(token.raw, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+      setRawInput(newInput);
+      setParsed(parseTaskInput(newInput, domains));
+      setDismissedTokens(new Map());
     },
-    [dismissedTokens, rawInput, domains],
+    [rawInput, domains],
   );
 
   /** Insert or replace a token in rawInput by prefix+value, matching existingPattern. */

@@ -16,24 +16,24 @@ This plan redesigns Quick Add as an intelligent single-field input with inline m
 
 | Token | Metadata | Examples | Trigger |
 |-------|----------|----------|---------|
-| `@DomainName` | Domain | `@Work`, `@Personal` | Fuzzy autocomplete on `@` |
+| `#DomainName` | Domain | `#Work`, `#Personal` | Fuzzy autocomplete on `#` |
 | `!critical` `!high` `!med` `!low` | Impact 1-4 | `Fix bug !high` | Keyword match |
 | `?auto` `?brain` `?normal` | Clarity | `Research ?brain` | Autocomplete on `?` |
 | `30m` `1h` `2h30m` | Duration | `Review PR 30m` | Bare number+unit |
 | Natural language | Date/time | `tomorrow`, `next monday at 3pm` | chrono-node |
 | `//` | Description | `Fix bug // timeout errors` | Split separator |
 
-All trigger symbols (`@`, `!`, `?`, `//`) are on the iPhone number pad (one tap from letters). Duration uses bare tokens (no prefix needed).
+All trigger symbols (`#`, `!`, `?`, `//`) are on the iPhone number pad (one tap from letters). Duration uses bare tokens (no prefix needed).
 
 ## UI Design
 
 - **Container**: Modal dialog (same as current — shadcn Dialog)
 - **Single input field**: Plain `<Input>`, all parsing happens behind the scenes
 - **Metadata bar**: Row of colored dismissable pills below input showing parsed tokens
-- **Autocomplete dropdown**: Appears below input when typing `@` or `?`
+- **Autocomplete dropdown**: Appears below input when typing `#` or `?`
 - **Hint row**: Subtle syntax reference below metadata bar, dismissable (persisted to localStorage)
 - **Keep-open toggle**: Checkbox in footer to stay open for batch creation (persisted to localStorage)
-- **Placeholder**: `e.g. Fix login bug @Work !high 30m tomorrow`
+- **Placeholder**: `e.g. Fix login bug #Work !high 30m tomorrow`
 
 ## Files to Create
 
@@ -43,19 +43,19 @@ Pure functions, no React. Two main exports:
 
 **`parseTaskInput(input, domains, dismissedTypes?)`** → `ParsedTaskMetadata`
 - Runs synchronously on every keystroke (<1ms)
-- Processing order: description `//` → domain `@` → impact `!` → clarity `?` → duration → date (chrono-node)
+- Processing order: description `//` → domain `#` → impact `!` → clarity `?` → duration → date (chrono-node)
 - Each token type is extracted and removed from working text; remainder becomes title
 - `dismissedTypes` set skips extraction for types the user manually dismissed via pill X
 - Last-wins for duplicate tokens (e.g. `!high !low` → impact=4)
 - Returns parsed metadata + array of `ParsedToken` objects for pill display
 
 **`getAutocompleteSuggestions(input, cursorPos, domains)`** → suggestions + trigger position
-- Scans backwards from cursor to find `@` or `?` trigger
-- For `@`: fuzzy-matches domains (startsWith, then includes)
+- Scans backwards from cursor to find `#` or `?` trigger
+- For `#`: fuzzy-matches domains (startsWith, then includes)
 - For `?`: filters clarity options by prefix
 
 Key regex patterns:
-- Domain: `/@(\S+)/g`
+- Domain: `/#(\S+)/g`
 - Impact: `/!(critical|high|med|low)\b/gi` → map to 1-4
 - Clarity: `/\?(auto(?:pilot)?|brain(?:storm)?|normal)\b/gi`
 - Duration: `/(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/g`
@@ -103,15 +103,15 @@ Same interface (`TaskQuickAddProps` with `open`, `onOpenChange`, `domains`) — 
 │ Type naturally — metadata detected  │
 │                                     │
 │ ┌─────────────────────────────────┐ │
-│ │ Fix login @Work !high 30m tmrw  │ │
+│ │ Fix login #Work !high 30m tmrw  │ │
 │ └─────────────────────────────────┘ │
 │ ┌──────────────────────┐            │
-│ │ autocomplete dropdown│ (if @/?)  │
+│ │ autocomplete dropdown│ (if #/?)  │
 │ └──────────────────────┘            │
 │                                     │
 │ [🔵 Work][🟡 High][🟢 30m][🌹 Tmrw]│
 │                                     │
-│ @ domain  ! priority  ? mode  ...   │
+│ # domain  ! priority  ? mode  ...   │
 │                                     │
 │ [✓] Keep open              [Create] │
 └─────────────────────────────────────┘

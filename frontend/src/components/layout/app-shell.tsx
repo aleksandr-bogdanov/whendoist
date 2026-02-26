@@ -33,7 +33,10 @@ export function AppShell({ userName, userEmail }: AppShellProps) {
         <Outlet />
       </main>
       <MobileNav />
-      <DemoPill />
+      {/* Desktop only — mobile version is in the header */}
+      <div className="hidden md:block fixed bottom-4 right-4 z-50">
+        <DemoPill />
+      </div>
       <LiveAnnouncer />
       {debugActive && <PwaDebugOverlay onClose={() => toggleDebug()} />}
     </div>
