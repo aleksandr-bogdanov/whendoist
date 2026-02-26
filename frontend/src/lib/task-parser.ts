@@ -88,7 +88,8 @@ const CLARITY_LABEL_MAP: Record<string, string> = {
   brainstorm: "Brainstorm",
 };
 
-const DURATION_PATTERN = /(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/g;
+const DURATION_PATTERN =
+  /(?<![a-zA-Z])(\d+(?:hrs?|h)\s?\d+(?:mins?|m)|\d+(?:hrs?|h)|\d+(?:mins?|m))(?![a-zA-Z])/gi;
 
 // ─── Parser ─────────────────────────────────────────────────────────────────
 
@@ -471,8 +472,8 @@ export function getAutocompleteSuggestions(
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function parseDuration(raw: string): number | null {
-  const match = raw.match(/^(?:(\d+)h)?(?:(\d+)m)?$/);
-  if (!match) return null;
+  const match = raw.match(/^(?:(\d+)(?:hrs?|h))?\s?(?:(\d+)(?:mins?|m))?$/i);
+  if (!match || (!match[1] && !match[2])) return null;
   const hours = match[1] ? Number.parseInt(match[1], 10) : 0;
   const minutes = match[2] ? Number.parseInt(match[2], 10) : 0;
   const total = hours * 60 + minutes;
@@ -487,7 +488,7 @@ function formatDurationShort(minutes: number): string {
 }
 
 /** Abbreviations chrono-node doesn't handle natively */
-const DATE_ABBR_PATTERN = /\b(tmr|tmrw)\b/gi;
+const DATE_ABBR_PATTERN = /\b(tmr|tmrw|tod|tom|yes|yest)\b/gi;
 
 /** Reject ambiguous chrono results (bare month names like "Jan", "May", "March"). */
 function isLikelyDate(result: chrono.ParsedResult): boolean {
@@ -514,10 +515,17 @@ interface DateMatch {
 function parseDateFromText(text: string): DateMatch | null {
   const allMatches: DateMatch[] = [];
 
-  // 1. Handle short abbreviations (tmr, tmrw → tomorrow)
+  // 1. Handle short abbreviations (tod → today, tom/tmr/tmrw → tomorrow, yes/yest → yesterday)
   for (const m of text.matchAll(DATE_ABBR_PATTERN)) {
+    const abbr = m[1].toLowerCase();
     const d = new Date();
-    d.setDate(d.getDate() + 1); // tmr, tmrw → tomorrow
+    if (abbr === "tod") {
+      // today — offset 0
+    } else if (abbr === "yes" || abbr === "yest") {
+      d.setDate(d.getDate() - 1);
+    } else {
+      d.setDate(d.getDate() + 1); // tom, tmr, tmrw → tomorrow
+    }
     allMatches.push({
       date: toDateString(d),
       time: null,

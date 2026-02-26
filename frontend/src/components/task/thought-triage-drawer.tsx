@@ -92,7 +92,7 @@ export function ThoughtTriageDrawer({
 /* ------------------------------------------------------------------ */
 
 const SCHEDULE_DATE_PATTERN =
-  /\b(today|tomorrow|tmrw?|(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2})\b/i;
+  /\b(today|tod|tomorrow|tom|tmrw?|yes|yest|(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2})\b/i;
 const IMPACT_PATTERN = /!(high|mid|low|min|p[1-4])\b/i;
 const IMPACT_KEYWORDS: Record<number, string> = { 1: "high", 2: "mid", 3: "low", 4: "min" };
 

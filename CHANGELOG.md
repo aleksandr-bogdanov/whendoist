@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.31 — 2026-02-26
+
+### Fix: Extended duration and date abbreviation parsing
+
+Duration parser now supports spaced compound formats (`2h 30m`), and longer suffixes (`30min`, `1hr`, `2hrs`). Added date abbreviations: `tod` (today), `tom` (tomorrow), `yes`/`yest` (yesterday).
+
+---
+
 ## v0.55.30 — 2026-02-26
 
 ### Fix: Domain symbol @ → #, triage drawer bug fixes
