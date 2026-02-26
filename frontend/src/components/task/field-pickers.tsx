@@ -245,17 +245,37 @@ export function ParentTaskSelect({
     setSearch("");
   };
 
-  // Position dropdown above the trigger (fixed, portaled to escape overflow)
+  // Position dropdown below the trigger (fixed, portaled to escape overflow)
   useEffect(() => {
     if (!open || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    setDropdownStyle({
-      position: "fixed",
-      bottom: window.innerHeight - rect.top + 4,
-      left: rect.left,
-      width: rect.width,
-      zIndex: 9999,
-    });
+    const vv = window.visualViewport;
+    const viewH = vv?.height ?? window.innerHeight;
+    const spaceBelow = viewH - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
+    const maxDropH = 192;
+
+    if (spaceBelow >= maxDropH || spaceBelow >= spaceAbove) {
+      // Position below trigger
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: Math.min(maxDropH, spaceBelow),
+        zIndex: 9999,
+      });
+    } else {
+      // Position above trigger (more room above)
+      setDropdownStyle({
+        position: "fixed",
+        bottom: viewH - rect.top + 4,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: Math.min(maxDropH, spaceAbove),
+        zIndex: 9999,
+      });
+    }
   }, [open]);
 
   // Close on click outside (check both trigger and portaled dropdown)
@@ -275,11 +295,6 @@ export function ParentTaskSelect({
     };
     document.addEventListener("pointerdown", handler);
     return () => document.removeEventListener("pointerdown", handler);
-  }, [open]);
-
-  // Auto-focus search when opening
-  useEffect(() => {
-    if (open) setTimeout(() => searchRef.current?.focus(), 0);
   }, [open]);
 
   return (

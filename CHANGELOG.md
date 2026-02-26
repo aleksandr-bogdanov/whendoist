@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.33 — 2026-02-26
+
+### Fix: iOS keyboard breaks triage drawer layout and parent dropdown
+
+Triage drawer now tracks `visualViewport.height` and dynamically constrains its max-height when the iOS keyboard is open — `vh` units refer to the layout viewport which doesn't shrink for the keyboard, causing the drawer to overflow behind it and push content off-screen. Parent task dropdown no longer auto-focuses the search input (which triggered the keyboard inside the drawer), and uses `visualViewport`-aware positioning with automatic above/below placement.
+
+---
+
 ## v0.55.32 — 2026-02-26
 
 ### Fix: iOS auto-zoom on triage drawer inputs
