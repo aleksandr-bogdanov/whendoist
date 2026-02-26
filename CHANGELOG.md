@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.36 — 2026-02-26
+
+### Fix: Replace inline style hacking with React-state keyboard spacer
+
+**Root cause of jerkiness + stale gap**: Previous approach mutated `el.style.bottom` and `el.style.maxHeight` directly on vaul's `Drawer.Content` element, which fought with vaul's transform-based open/close animations (causing jerky appearance) and left stale inline styles between thoughts (causing the gap on second open). Replaced with a React state-controlled spacer `<div>` inside the flex column that pushes content above the keyboard — zero inline style mutation on vaul's element. `setKeyboardH(0)` in cleanup ensures clean slate between thoughts. Added `min-h-0` on scrollable body (enables flex-shrink when spacer is active) and `shrink-0` on footer (prevents it from collapsing).
+
+---
+
 ## v0.55.35 — 2026-02-26
 
 ### Fix: Root-cause fixes for iOS triage drawer — portal, keyboard shift, cleanup

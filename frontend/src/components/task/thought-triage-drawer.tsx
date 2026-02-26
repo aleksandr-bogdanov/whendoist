@@ -57,44 +57,29 @@ export function ThoughtTriageDrawer({
   onDelete,
   onOpenChange,
 }: ThoughtTriageDrawerProps) {
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [keyboardH, setKeyboardH] = useState(0);
 
-  // Shift drawer above the iOS keyboard.
-  // position:fixed + bottom:0 anchors to the LAYOUT viewport, which doesn't move for
-  // the keyboard. We detect the keyboard via visualViewport / window.resize and shift
-  // the drawer up by setting `bottom` + constraining `maxHeight`.
-  // In PWA standalone mode, visualViewport.resize may not fire — listen to both.
+  // Track iOS keyboard height as React state. Instead of hacking inline styles on
+  // Drawer.Content (which fights vaul's transform-based animations and leaves stale
+  // styles between thoughts), we render a spacer div inside the flex column that
+  // pushes content above the keyboard. React state = automatic cleanup on unmount.
   useEffect(() => {
-    if (!thought) return;
+    if (!thought) {
+      setKeyboardH(0);
+      return;
+    }
     const vv = window.visualViewport;
     const update = () => {
-      const el = contentRef.current;
-      if (!el) return;
-      // Use the smaller of visualViewport and innerHeight to detect keyboard
       const viewH = Math.min(vv?.height ?? window.innerHeight, window.innerHeight);
-      const keyboardH = window.innerHeight - viewH;
-      if (keyboardH > 100) {
-        // Move the drawer above the keyboard and cap its height to visible area
-        el.style.bottom = `${keyboardH}px`;
-        el.style.maxHeight = `${viewH - 20}px`;
-      } else {
-        el.style.bottom = "";
-        el.style.maxHeight = "";
-      }
+      const kbH = window.innerHeight - viewH;
+      setKeyboardH(kbH > 100 ? kbH : 0);
     };
-    // Run immediately in case keyboard state is already known
-    update();
     vv?.addEventListener("resize", update);
     window.addEventListener("resize", update);
     return () => {
       vv?.removeEventListener("resize", update);
       window.removeEventListener("resize", update);
-      // Clear stale inline styles so the next thought starts clean
-      const el = contentRef.current;
-      if (el) {
-        el.style.bottom = "";
-        el.style.maxHeight = "";
-      }
+      setKeyboardH(0);
     };
   }, [thought]);
 
@@ -103,7 +88,6 @@ export function ThoughtTriageDrawer({
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
         <Drawer.Content
-          ref={contentRef}
           className={cn(
             "fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl",
             "bg-background border-t border-border",
@@ -123,6 +107,11 @@ export function ThoughtTriageDrawer({
               onDelete={onDelete}
             />
           )}
+
+          {/* Keyboard spacer: occupies space at the bottom of the flex column, pushing
+              content above the iOS keyboard. Lives in the DOM as a normal div so it
+              doesn't fight vaul's transforms. React state ensures clean reset. */}
+          {keyboardH > 0 && <div className="shrink-0" style={{ height: keyboardH }} />}
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
@@ -265,8 +254,8 @@ function DrawerBody({
 
   return (
     <>
-      {/* Scrollable body — no flex-1 so it sizes to content, not filling the drawer */}
-      <div className="overflow-y-auto px-4 pb-2 space-y-2">
+      {/* Scrollable body — min-h-0 allows it to shrink when keyboard spacer is present */}
+      <div className="overflow-y-auto min-h-0 px-4 pb-2 space-y-2">
         {/* Clean title input — tokens are extracted, only human-readable title shown */}
         <textarea
           ref={inputRef}
@@ -448,8 +437,8 @@ function DrawerBody({
         </div>
       </div>
 
-      {/* Footer — pb-safe handles safe-area inset without a separate spacer */}
-      <div className="border-t bg-background px-4 py-2.5 pb-safe flex items-center gap-3">
+      {/* Footer — shrink-0 prevents it from collapsing when keyboard spacer is active */}
+      <div className="border-t bg-background px-4 py-2.5 pb-safe flex items-center gap-3 shrink-0">
         <Button
           variant="ghost"
           size="sm"
