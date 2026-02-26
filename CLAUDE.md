@@ -142,7 +142,7 @@ See [docs/PWA-VIEWPORT-FIX.md](docs/PWA-VIEWPORT-FIX.md) for full details.
 - **Routing**: TanStack Router with file-based routes (`frontend/src/routes/`)
 
 ### 10. Smart Input: Reuse the shared hook, never duplicate
-The **smart input system** (inline `@domain`, `!priority`, `?clarity`, `30m`, `tomorrow`, `//notes` parsing)
+The **smart input system** (inline `#domain`, `!priority`, `?clarity`, `30m`, `tomorrow`, `//notes` parsing)
 is a universal module. Whenever you need a text input that parses task metadata, use these:
 
 - **`frontend/src/hooks/use-smart-input.ts`** — `useSmartInput()` hook: all state, handlers, autocomplete logic, `tapToken()` for programmatic insertion

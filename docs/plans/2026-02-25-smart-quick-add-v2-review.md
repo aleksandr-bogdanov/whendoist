@@ -16,7 +16,7 @@ The previous review got **5 of 8 findings wrong or partially wrong**.
 | `//` in URLs triggers separator | **WRONG** | Regex `(^|\s)\/\/` requires whitespace before `//`. `https://` has `:` before `//`. |
 | Impact vocabulary mismatch | **WRONG** | Code uses `High/Mid/Low/Min` — matches app constants exactly. |
 | `2m` USB cable → 2 min | **PARTIALLY WRONG** | `parseDuration` rejects < 5 min. `2m` → 2 → rejected. But `5m`+ still false-positive. |
-| Email `@` triggers domain | **WRONG** | Parser skips `@` not preceded by whitespace. `john@work.com` won't match. |
+| Email `#` triggers domain | **WRONG** | Parser skips `#` not preceded by whitespace. `john#work.com` won't match. |
 | No ARIA on autocomplete | **CORRECT** | |
 | `!` trigger not wired | **WRONG** | Lines 408-419 handle `!` trigger explicitly. |
 | Dismissals reset on keystroke | **CORRECT** | But rated minor — should be major. |

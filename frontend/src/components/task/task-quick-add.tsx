@@ -44,7 +44,7 @@ export const PILL_STYLES: Record<string, string> = {
 };
 
 export const PILL_ICONS: Record<string, string> = {
-  domain: "@",
+  domain: "#",
   impact: "!",
   clarity: "?",
   duration: "\u23F1", // stopwatch
@@ -187,7 +187,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
               value={rawInput}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder="e.g. Fix login @Work !high 30m tomorrow"
+              placeholder="e.g. Fix login #Work !high 30m tomorrow"
               autoFocus
             />
             <SmartInputAutocomplete
@@ -216,7 +216,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
             <div className="flex items-start gap-1.5">
               <div className="flex-1 text-[11px] text-muted-foreground leading-relaxed space-y-0.5">
                 <p>
-                  <Kbd>@</Kbd> domain <Kbd>!</Kbd> impact <Kbd>?</Kbd> clarity
+                  <Kbd>#</Kbd> domain <Kbd>!</Kbd> impact <Kbd>?</Kbd> clarity
                 </p>
                 <p>
                   <Kbd>30m</Kbd> / <Kbd>1h</Kbd> duration

@@ -4,11 +4,35 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.30 — 2026-02-26
+
+### Fix: Domain symbol @ → #, triage drawer bug fixes
+
+Changed domain token prefix from `@` to `#` (like Todoist) across parser, autocomplete, smart input hook, quick-add, and triage drawer. Fixed three triage drawer bugs: date replacement now uses dynamic token matching instead of static regex (handles chrono-node dates like "next friday"), duration replacement handles compound formats like `2h30m`, and changing domain via chip row now clears parent task if it's in a different domain.
+
+---
+
+## v0.55.29 — 2026-02-26
+
+### Refactor: Bottom sheet triage drawer for thoughts
+
+Replaced inline `ThoughtTriageCard` expansion (which consumed ~60% of iPhone viewport) with a vaul-based bottom sheet drawer that slides up as an overlay. Extracted reusable `DomainChipRow`, `ImpactButtonRow`, and `ScheduleButtonRow` picker components into `field-pickers.tsx`. Added collapsible "More options" section with duration and clarity pickers. Convert button now shows domain color. Thoughts page dropped from ~640 to ~340 lines — card list is now a simple flat list of tappable rows with swipe always enabled.
+
+---
+
+## v0.55.28 — 2026-02-26
+
+### Fix: Thoughts triage panel clipping on iPhone SE
+
+Removed two `overflow-hidden` declarations from the triage panel card wrapper and panel container that clipped domain chips, priority labels, and the Convert button at 375px width. Added `shrink-0` to domain chip buttons so flex wraps instead of shrinking text. Tightened mobile selector spacing to match panel rhythm.
+
+---
+
 ## v0.55.27 — 2026-02-25
 
 ### Feat: Thoughts page redesign — inbox cards, smart input triage, mobile selectors
 
-Replaced chat-bubble layout with full-width inbox card list. Triage panel uses shared `useSmartInput()` hook for inline metadata parsing (`@domain`, `!priority`, `?clarity`, `30m`, `tomorrow`, `//notes`). Mobile gets tappable domain pills, priority buttons, and schedule quick-picks below the smart input. Extracted `useSmartInput` hook from duplicated code in Quick Add and Thoughts, added CLAUDE.md rule 10 to prevent future duplication.
+Replaced chat-bubble layout with full-width inbox card list. Triage panel uses shared `useSmartInput()` hook for inline metadata parsing (`#domain`, `!priority`, `?clarity`, `30m`, `tomorrow`, `//notes`). Mobile gets tappable domain pills, priority buttons, and schedule quick-picks below the smart input. Extracted `useSmartInput` hook from duplicated code in Quick Add and Thoughts, added CLAUDE.md rule 10 to prevent future duplication.
 
 ---
 
@@ -138,7 +162,7 @@ Moved 8 tasks from scheduled to unscheduled and added 3 new backlog tasks so dem
 
 Redesigned Quick Add as an intelligent single-field input with inline metadata parsing. Type naturally and metadata is extracted automatically.
 
-- **Syntax**: `@Domain` `!high` `?auto` `30m` `tomorrow` `// description`
+- **Syntax**: `#Domain` `!high` `?auto` `30m` `tomorrow` `// description`
 - **Autocomplete**: Dropdown for `@` domains, `?` clarity, `!` impact
 - **Metadata pills**: Colored dismissable pills below input showing parsed tokens
 - **chrono-node date guard**: Rejects ambiguous bare month names ("Jan", "May") that could be person names — only accepts dates with a certain day, weekday, or hour
