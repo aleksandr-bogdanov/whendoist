@@ -59,29 +59,42 @@ export function ThoughtTriageDrawer({
 }: ThoughtTriageDrawerProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Track visual viewport to constrain drawer when iOS keyboard is open.
-  // vh units refer to the layout viewport which does NOT shrink for the keyboard,
-  // so the drawer overflows behind the keyboard and pushes content off-screen.
-  // In PWA standalone mode, visualViewport.resize may not fire — listen to window.resize too.
+  // Shift drawer above the iOS keyboard.
+  // position:fixed + bottom:0 anchors to the LAYOUT viewport, which doesn't move for
+  // the keyboard. We detect the keyboard via visualViewport / window.resize and shift
+  // the drawer up by setting `bottom` + constraining `maxHeight`.
+  // In PWA standalone mode, visualViewport.resize may not fire — listen to both.
   useEffect(() => {
     if (!thought) return;
     const vv = window.visualViewport;
     const update = () => {
       const el = contentRef.current;
       if (!el) return;
-      const viewH = vv?.height ?? window.innerHeight;
-      const keyboardOffset = window.innerHeight - viewH;
-      if (keyboardOffset > 100) {
+      // Use the smaller of visualViewport and innerHeight to detect keyboard
+      const viewH = Math.min(vv?.height ?? window.innerHeight, window.innerHeight);
+      const keyboardH = window.innerHeight - viewH;
+      if (keyboardH > 100) {
+        // Move the drawer above the keyboard and cap its height to visible area
+        el.style.bottom = `${keyboardH}px`;
         el.style.maxHeight = `${viewH - 20}px`;
       } else {
+        el.style.bottom = "";
         el.style.maxHeight = "";
       }
     };
+    // Run immediately in case keyboard state is already known
+    update();
     vv?.addEventListener("resize", update);
     window.addEventListener("resize", update);
     return () => {
       vv?.removeEventListener("resize", update);
       window.removeEventListener("resize", update);
+      // Clear stale inline styles so the next thought starts clean
+      const el = contentRef.current;
+      if (el) {
+        el.style.bottom = "";
+        el.style.maxHeight = "";
+      }
     };
   }, [thought]);
 
@@ -140,6 +153,7 @@ function DrawerBody({
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [parentId, setParentId] = useState<number | null>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const {
     inputRef,
@@ -303,6 +317,7 @@ function DrawerBody({
                 domains={domains}
                 selectedId={parentId}
                 currentDomainId={parsed.domainId}
+                portalContainer={portalRef.current}
                 onSelect={(id) => {
                   setParentId(id);
                   // Auto-sync domain to match parent task's domain
@@ -464,6 +479,10 @@ function DrawerBody({
           )}
         </Button>
       </div>
+
+      {/* Portal target for ParentTaskSelect dropdown — must be inside Drawer.Content
+          so vaul/Radix doesn't treat clicks on the dropdown as "outside" dismissals */}
+      <div ref={portalRef} />
 
       {/* Nested calendar drawer */}
       <Drawer.NestedRoot open={calendarOpen} onOpenChange={setCalendarOpen}>

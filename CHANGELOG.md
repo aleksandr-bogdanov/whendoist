@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.35 — 2026-02-26
+
+### Fix: Root-cause fixes for iOS triage drawer — portal, keyboard shift, cleanup
+
+Three root-cause fixes:
+1. **Dropdown portaled inside Drawer.Content**: The parent dropdown was portaled to `document.body`, causing vaul (via Radix Dialog) to treat every tap on a dropdown option as an "outside click" and dismiss the entire drawer. Now portals to a container inside `Drawer.Content` so containment checks pass. Added `data-vaul-no-drag` to prevent drag interference.
+2. **Keyboard shifts drawer up**: Instead of only constraining `maxHeight` (which left the footer behind the keyboard), now sets `bottom: keyboardHeight` to physically move the drawer above the keyboard. The footer (Delete/Convert) is always visible.
+3. **Stale style cleanup**: The viewport effect now clears `bottom` and `maxHeight` inline styles on cleanup, preventing the "second thought" bug where stale keyboard-era styles persisted to the next drawer open. Also runs `update()` immediately on mount.
+
+---
+
 ## v0.55.34 — 2026-02-26
 
 ### Fix: Three remaining iOS triage drawer issues

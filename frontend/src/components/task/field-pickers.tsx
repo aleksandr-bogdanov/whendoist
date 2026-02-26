@@ -176,6 +176,8 @@ interface ParentTaskSelectProps {
   /** Domain of the task being triaged — used for smart grouping. */
   currentDomainId: number | null;
   onSelect: (id: number | null) => void;
+  /** Portal target inside Drawer.Content — prevents vaul from closing on dropdown tap. */
+  portalContainer?: HTMLElement | null;
 }
 
 export function ParentTaskSelect({
@@ -184,6 +186,7 @@ export function ParentTaskSelect({
   selectedId,
   currentDomainId,
   onSelect,
+  portalContainer,
 }: ParentTaskSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -327,11 +330,13 @@ export function ParentTaskSelect({
         />
       </button>
 
-      {/* Dropdown — portaled to escape overflow:auto clipping */}
+      {/* Dropdown — portaled to portalContainer (inside Drawer.Content) so vaul/Radix
+          doesn't treat taps on options as "outside" clicks that dismiss the drawer */}
       {open &&
         createPortal(
           <div
             ref={dropdownRef}
+            data-vaul-no-drag
             className="rounded-md border bg-popover text-popover-foreground shadow-md overflow-hidden"
             style={dropdownStyle}
             onTouchMove={(e) => e.stopPropagation()}
@@ -418,7 +423,7 @@ export function ParentTaskSelect({
               )}
             </div>
           </div>,
-          document.body,
+          portalContainer ?? document.body,
         )}
     </div>
   );
