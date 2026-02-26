@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.34 — 2026-02-26
+
+### Fix: Three remaining iOS triage drawer issues
+
+1. **Keyboard gap in PWA mode**: Removed `flex-1` from scrollable body (was expanding to fill drawer height beyond content), removed separate `h-safe` spacer div, moved safe-area padding into footer with `pb-safe`. Added `window.resize` listener alongside `visualViewport.resize` since PWA standalone mode fires the former.
+2. **Parent dropdown not scrollable**: Added `touch-action: pan-y`, `overscroll-behavior-y: contain`, and `-webkit-overflow-scrolling: touch` to the options list. Added `onTouchMove` stop-propagation on the portaled dropdown to prevent vaul's drag gesture from capturing scroll events.
+3. **Parent dropdown oversized**: Removed `maxHeight` from inline dropdown positioning styles — the inner `max-h-48` constrains the scrollable list, and the outer container now uses `overflow-hidden` to clip to content.
+
+---
+
 ## v0.55.33 — 2026-02-26
 
 ### Fix: iOS keyboard breaks triage drawer layout and parent dropdown
