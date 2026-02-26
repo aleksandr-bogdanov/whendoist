@@ -231,7 +231,7 @@ function DrawerBody({
           onChange={handleTitleEdit}
           onKeyDown={handleKeyDown}
           placeholder="What's the task?"
-          className="w-full text-sm bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden"
+          className="w-full text-base bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden"
           rows={1}
         />
 
