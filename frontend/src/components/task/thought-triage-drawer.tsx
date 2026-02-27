@@ -1,13 +1,8 @@
-import { ArrowRight, ChevronRight, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ArrowRight, ChevronRight, Search, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
-import {
-  DomainChipRow,
-  ImpactButtonRow,
-  ParentTaskSelect,
-  ScheduleButtonRow,
-} from "@/components/task/field-pickers";
+import { DomainChipRow, ImpactButtonRow, ScheduleButtonRow } from "@/components/task/field-pickers";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useSmartInput } from "@/hooks/use-smart-input";
@@ -67,25 +62,6 @@ export function ThoughtTriageDrawer({
             "bg-background border-t border-border",
             "max-h-[85vh] max-w-lg mx-auto",
           )}
-          onPointerDownOutside={(e) => {
-            // Radix fires this when a pointerdown lands outside Drawer.Content.
-            // The parent-task dropdown is portaled (position:fixed) and Radix's
-            // layer system may not recognize it as "inside".  Check the original
-            // native event target: if it's inside a [data-vaul-no-drag] element
-            // (our dropdown), suppress the dismiss.
-            const target = (e as unknown as CustomEvent<{ originalEvent: PointerEvent }>).detail
-              ?.originalEvent?.target as HTMLElement | null;
-            if (target?.closest?.("[data-vaul-no-drag]")) {
-              e.preventDefault();
-            }
-          }}
-          onInteractOutside={(e) => {
-            const target = (e as unknown as CustomEvent<{ originalEvent: Event }>).detail
-              ?.originalEvent?.target as HTMLElement | null;
-            if (target?.closest?.("[data-vaul-no-drag]")) {
-              e.preventDefault();
-            }
-          }}
         >
           <div className="mx-auto mt-3 mb-1 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
           <Drawer.Title className="sr-only">Triage thought</Drawer.Title>
@@ -129,12 +105,9 @@ function DrawerBody({
   onDelete: (thought: TaskResponse) => void;
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [parentPickerOpen, setParentPickerOpen] = useState(false);
   const [parentId, setParentId] = useState<number | null>(null);
-  // useState as callback ref: triggers re-render when the element mounts so
-  // ParentTaskSelect receives the actual element (not null) on the next render.
-  // A useRef would stay null because refs are set after render, and DrawerBody
-  // doesn't re-render when ParentTaskSelect opens its dropdown.
-  const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
+  const [parentSearch, setParentSearch] = useState("");
 
   const {
     inputRef,
@@ -288,39 +261,43 @@ function DrawerBody({
           </div>
         </div>
 
-        {/* Parent task — inline label + dropdown */}
+        {/* Parent task — inline label + trigger for nested drawer */}
         {parentTasks.length > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-muted-foreground shrink-0 w-[50px]">Parent</span>
-            <div className="flex-1">
-              <ParentTaskSelect
-                parentTasks={parentTasks}
-                domains={domains}
-                selectedId={parentId}
-                currentDomainId={parsed.domainId}
-                portalContainer={portalEl}
-                onSelect={(id) => {
-                  setParentId(id);
-                  // Auto-sync domain to match parent task's domain
-                  if (id !== null) {
-                    const parent = parentTasks.find((t) => t.id === id);
-                    if (parent?.domain_id && parent.domain_id !== parsed.domainId) {
-                      const parentDomain = domains.find((d) => d.id === parent.domain_id);
-                      if (parentDomain) {
-                        const cur = parsed.domainName;
-                        const pattern = cur
-                          ? new RegExp(
-                              `#${cur.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=\\s|$)`,
-                              "i",
-                            )
-                          : /#\S+/;
-                        tapToken("#", parentDomain.name ?? "", pattern);
-                      }
-                    }
-                  }
-                }}
-              />
-            </div>
+            <button
+              type="button"
+              className={cn(
+                "flex-1 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors active:scale-95",
+                parentId !== null
+                  ? "bg-primary/10 text-primary"
+                  : "bg-secondary text-secondary-foreground active:bg-secondary/80",
+              )}
+              onClick={() => {
+                setParentSearch("");
+                setParentPickerOpen(true);
+              }}
+            >
+              <span className="flex items-center gap-1.5 truncate min-w-0">
+                {parentId !== null ? (
+                  <>
+                    {(() => {
+                      const p = parentTasks.find((t) => t.id === parentId);
+                      const d = p?.domain_id ? domains.find((dm) => dm.id === p.domain_id) : null;
+                      return (
+                        <>
+                          {d?.icon && <span className="shrink-0">{d.icon}</span>}
+                          <span className="truncate">{p?.title ?? "Unknown"}</span>
+                        </>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  <span>None</span>
+                )}
+              </span>
+              <ChevronRight className="h-3 w-3 opacity-50 shrink-0 ml-1.5" />
+            </button>
           </div>
         )}
 
@@ -461,9 +438,35 @@ function DrawerBody({
         </Button>
       </div>
 
-      {/* Portal target for ParentTaskSelect dropdown — must be inside Drawer.Content
-          so vaul/Radix doesn't treat clicks on the dropdown as "outside" dismissals */}
-      <div ref={setPortalEl} />
+      {/* Nested parent-task picker drawer */}
+      <ParentPickerDrawer
+        open={parentPickerOpen}
+        onOpenChange={setParentPickerOpen}
+        parentTasks={parentTasks}
+        domains={domains}
+        selectedId={parentId}
+        currentDomainId={parsed.domainId}
+        search={parentSearch}
+        onSearchChange={setParentSearch}
+        onSelect={(id) => {
+          setParentId(id);
+          setParentPickerOpen(false);
+          // Auto-sync domain to match parent task's domain
+          if (id !== null) {
+            const parent = parentTasks.find((t) => t.id === id);
+            if (parent?.domain_id && parent.domain_id !== parsed.domainId) {
+              const parentDomain = domains.find((d) => d.id === parent.domain_id);
+              if (parentDomain) {
+                const cur = parsed.domainName;
+                const pattern = cur
+                  ? new RegExp(`#${cur.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=\\s|$)`, "i")
+                  : /#\S+/;
+                tapToken("#", parentDomain.name ?? "", pattern);
+              }
+            }
+          }
+        }}
+      />
 
       {/* Nested calendar drawer */}
       <Drawer.NestedRoot open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -501,5 +504,162 @@ function DrawerBody({
         </Drawer.Portal>
       </Drawer.NestedRoot>
     </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  ParentPickerDrawer — nested drawer for parent task selection       */
+/* ------------------------------------------------------------------ */
+
+function ParentPickerDrawer({
+  open,
+  onOpenChange,
+  parentTasks,
+  domains,
+  selectedId,
+  currentDomainId,
+  search,
+  onSearchChange,
+  onSelect,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  parentTasks: TaskResponse[];
+  domains: DomainResponse[];
+  selectedId: number | null;
+  currentDomainId: number | null;
+  search: string;
+  onSearchChange: (s: string) => void;
+  onSelect: (id: number | null) => void;
+}) {
+  // Smart ordering: parents with subtasks first, then same-domain, then rest
+  const taskGroups = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    const eligible = parentTasks
+      .filter((t) => t.domain_id != null)
+      .filter((t) => !q || t.title.toLowerCase().includes(q));
+
+    const parentsSameDomain: TaskResponse[] = [];
+    const parentsOther: TaskResponse[] = [];
+    const sameDomain: TaskResponse[] = [];
+    const rest: TaskResponse[] = [];
+
+    const isSameDomain = (t: TaskResponse) =>
+      currentDomainId != null && t.domain_id === currentDomainId;
+
+    for (const t of eligible) {
+      const isParent = (t.subtasks?.length ?? 0) > 0;
+      if (isParent && isSameDomain(t)) parentsSameDomain.push(t);
+      else if (isParent) parentsOther.push(t);
+      else if (isSameDomain(t)) sameDomain.push(t);
+      else rest.push(t);
+    }
+
+    const groups: { label: string; tasks: TaskResponse[] }[] = [];
+    if (parentsSameDomain.length > 0)
+      groups.push({ label: "Parents · same domain", tasks: parentsSameDomain });
+    if (parentsOther.length > 0) groups.push({ label: "Parents", tasks: parentsOther });
+    if (sameDomain.length > 0) groups.push({ label: "Same domain", tasks: sameDomain });
+    if (rest.length > 0) groups.push({ label: "Other", tasks: rest });
+    return groups;
+  }, [parentTasks, currentDomainId, search]);
+
+  const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
+  const showLabels = !search && taskGroups.length > 1;
+
+  return (
+    <Drawer.NestedRoot open={open} onOpenChange={onOpenChange}>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
+        <Drawer.Content
+          className={cn(
+            "fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl",
+            "bg-background border-t border-border",
+            "max-w-lg mx-auto max-h-[70vh] flex flex-col",
+          )}
+        >
+          <div className="mx-auto mt-3 mb-2 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
+          <Drawer.Title className="px-4 text-sm font-semibold mb-2">
+            Select parent task
+          </Drawer.Title>
+
+          {/* Search */}
+          <div className="flex items-center gap-2 px-4 pb-2">
+            <div className="flex-1 flex items-center gap-2 rounded-lg bg-secondary px-3 py-1.5">
+              <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <input
+                value={search}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search tasks..."
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => onSearchChange("")}
+                  className="text-muted-foreground active:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Task list */}
+          <div className="overflow-y-auto px-2 pb-8 space-y-0.5">
+            <button
+              type="button"
+              className={cn(
+                "w-full px-3 py-2.5 text-left text-sm rounded-lg transition-colors",
+                selectedId === null && "bg-accent font-medium",
+              )}
+              onClick={() => onSelect(null)}
+            >
+              None (top-level)
+            </button>
+
+            {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
+
+            {taskGroups.map((group, gi) => (
+              <div key={group.label}>
+                {gi > 0 && <div className="h-px bg-border mx-2 my-1" />}
+                {showLabels && (
+                  <div className="px-3 pt-2 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {group.label}
+                  </div>
+                )}
+                {group.tasks.map((t) => {
+                  const domain = t.domain_id ? domains.find((d) => d.id === t.domain_id) : null;
+                  const subtaskCount = t.subtasks?.length ?? 0;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={cn(
+                        "w-full px-3 py-2.5 text-left text-sm rounded-lg flex items-center gap-2 transition-colors",
+                        selectedId === t.id && "bg-accent font-medium",
+                      )}
+                      onClick={() => onSelect(t.id)}
+                    >
+                      {domain?.icon && <span className="shrink-0">{domain.icon}</span>}
+                      <span className="truncate">{t.title}</span>
+                      {subtaskCount > 0 && (
+                        <span className="shrink-0 text-[10px] text-muted-foreground ml-auto">
+                          ·{subtaskCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+
+            {totalFiltered === 0 && search && (
+              <div className="px-3 py-2 text-sm text-muted-foreground">No matching tasks</div>
+            )}
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.NestedRoot>
   );
 }

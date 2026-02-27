@@ -4,6 +4,21 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.41 — 2026-02-27
+
+### Fix: Replace parent dropdown with nested drawer (tested on-device)
+
+After testing 4 approaches on-device (A: nested drawer, B: onOpenChange guard, C: onPointerDownOutside, D: inline list), only the **nested drawer** worked on iOS PWA. Portaled dropdowns inside vaul drawers fundamentally can't work because Radix's DismissableLayer uses React synthetic capture events for inside/outside detection, and the timing breaks on iOS touch devices.
+
+- Replaced `ParentTaskSelect` (portaled dropdown) with `ParentPickerDrawer` (nested bottom sheet via `Drawer.NestedRoot`)
+- Preserved smart grouping logic (parents with subtasks first, same-domain priority)
+- Added search bar in the nested picker
+- Removed all `onPointerDownOutside`/`onInteractOutside` hacks from Drawer.Content
+- Removed portal container state (`portalEl`)
+- Removed test page (`/test-dropdown`) and temporary link
+
+---
+
 ## v0.55.40 — 2026-02-27
 
 ### Test: Parent dropdown approach comparison page
