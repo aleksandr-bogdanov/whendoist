@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.45 — 2026-02-27
+
+### Feat: Apple Glass treatment for thoughts page + bottom nav
+
+Thoughts header is now a glassy sticky bar — content scrolls behind it with backdrop-blur. Floating input bar has a solid opaque background with ring + shadow. Bottom nav is significantly glassier (lower tint opacity, stronger blur).
+
+---
+
 ## v0.55.44 — 2026-02-27
 
 ### Feat: Floating input + infinite fade on thoughts page (mobile)
