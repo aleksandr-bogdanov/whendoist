@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.44 — 2026-02-27
+
+### Feat: Floating input + infinite fade on thoughts page (mobile)
+
+Thoughts list now extends to the bottom with a gradient fade-out mimicking Apple's glass infinite canvas. The "What's on your mind?" input floats above the bottom nav on mobile. Desktop layout unchanged.
+
+---
+
 ## v0.55.43 — 2026-02-27
 
 ### Feat: Toast + flash animation when parent task auto-switches domain

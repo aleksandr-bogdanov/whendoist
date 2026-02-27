@@ -250,59 +250,69 @@ function ThoughtsPage() {
         <p className="text-xs text-muted-foreground">Capture ideas, then triage them into tasks</p>
       </div>
 
-      {/* Card list */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-2xl">
-          {tasksQuery.isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : sortedThoughts.length === 0 ? (
-            <EmptyState
-              illustration="/illustrations/empty-thoughts.svg"
-              illustrationClassName="animate-[emptyStateEntrance_0.4s_ease-out,thoughtsGlow_3s_ease-in-out_0.4s_infinite]"
-              title="No thoughts yet"
-              description="Type below to capture your first thought"
-            />
-          ) : (
-            sortedThoughts.map((thought) => (
-              <TaskSwipeRow
-                key={thought.id}
-                onSwipeLeft={() => handleDelete(thought)}
-                leftIcon={Trash2}
-                leftColor="red"
-              >
-                <div className="border-b border-border/50">
-                  <ThoughtCard thought={thought} onTap={() => setSelectedThought(thought)} />
-                </div>
-              </TaskSwipeRow>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Input area */}
-      <div className="border-t px-4 py-3 pb-nav-safe md:pb-3">
-        <div className="mx-auto flex max-w-2xl gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="What's on your mind?"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            disabled={createTask.isPending}
-          />
-          <Button size="icon" onClick={handleSend} disabled={!input.trim() || createTask.isPending}>
-            {createTask.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+      {/* Content area — relative container for floating input + fade */}
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        {/* Scrollable list — extends behind floating input on mobile */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="mx-auto w-full max-w-2xl pb-52 md:pb-4">
+            {tasksQuery.isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : sortedThoughts.length === 0 ? (
+              <EmptyState
+                illustration="/illustrations/empty-thoughts.svg"
+                illustrationClassName="animate-[emptyStateEntrance_0.4s_ease-out,thoughtsGlow_3s_ease-in-out_0.4s_infinite]"
+                title="No thoughts yet"
+                description="Type below to capture your first thought"
+              />
             ) : (
-              <Send className="h-4 w-4" />
+              sortedThoughts.map((thought) => (
+                <TaskSwipeRow
+                  key={thought.id}
+                  onSwipeLeft={() => handleDelete(thought)}
+                  leftIcon={Trash2}
+                  leftColor="red"
+                >
+                  <div className="border-b border-border/50">
+                    <ThoughtCard thought={thought} onTap={() => setSelectedThought(thought)} />
+                  </div>
+                </TaskSwipeRow>
+              ))
             )}
-          </Button>
+          </div>
+        </div>
+
+        {/* Bottom fade — mimics infinite canvas, Apple glass style (mobile only) */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-60 bg-gradient-to-t from-background from-15% via-background/60 via-50% to-transparent md:hidden" />
+
+        {/* Floating input — above bottom nav on mobile, static with border on desktop */}
+        <div className="absolute z-10 inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.5rem)] px-4 md:static md:bottom-auto md:z-auto md:border-t md:py-3">
+          <div className="mx-auto flex max-w-2xl gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="What's on your mind?"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              disabled={createTask.isPending}
+            />
+            <Button
+              size="icon"
+              onClick={handleSend}
+              disabled={!input.trim() || createTask.isPending}
+            >
+              {createTask.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
