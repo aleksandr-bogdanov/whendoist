@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedThoughtsRouteImport } from './routes/_authenticated/thoughts'
+import { Route as AuthenticatedTestDropdownRouteImport } from './routes/_authenticated/test-dropdown'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
@@ -50,6 +51,14 @@ const AuthenticatedThoughtsRoute = AuthenticatedThoughtsRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_authenticated/thoughts.lazy').then((d) => d.Route),
 )
+const AuthenticatedTestDropdownRoute =
+  AuthenticatedTestDropdownRouteImport.update({
+    id: '/test-dropdown',
+    path: '/test-dropdown',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/test-dropdown.lazy').then((d) => d.Route),
+  )
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -78,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/test-dropdown': typeof AuthenticatedTestDropdownRoute
   '/thoughts': typeof AuthenticatedThoughtsRoute
 }
 export interface FileRoutesByTo {
@@ -88,6 +98,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/test-dropdown': typeof AuthenticatedTestDropdownRoute
   '/thoughts': typeof AuthenticatedThoughtsRoute
 }
 export interface FileRoutesById {
@@ -100,6 +111,7 @@ export interface FileRoutesById {
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/test-dropdown': typeof AuthenticatedTestDropdownRoute
   '/_authenticated/thoughts': typeof AuthenticatedThoughtsRoute
 }
 export interface FileRouteTypes {
@@ -112,6 +124,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/dashboard'
     | '/settings'
+    | '/test-dropdown'
     | '/thoughts'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -122,6 +135,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/dashboard'
     | '/settings'
+    | '/test-dropdown'
     | '/thoughts'
   id:
     | '__root__'
@@ -133,6 +147,7 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics'
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
+    | '/_authenticated/test-dropdown'
     | '/_authenticated/thoughts'
   fileRoutesById: FileRoutesById
 }
@@ -188,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedThoughtsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/test-dropdown': {
+      id: '/_authenticated/test-dropdown'
+      path: '/test-dropdown'
+      fullPath: '/test-dropdown'
+      preLoaderRoute: typeof AuthenticatedTestDropdownRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -216,6 +238,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedTestDropdownRoute: typeof AuthenticatedTestDropdownRoute
   AuthenticatedThoughtsRoute: typeof AuthenticatedThoughtsRoute
 }
 
@@ -223,6 +246,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedTestDropdownRoute: AuthenticatedTestDropdownRoute,
   AuthenticatedThoughtsRoute: AuthenticatedThoughtsRoute,
 }
 
