@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.47 — 2026-02-27
+
+### Feat: Glossier bottom nav + glassy input container
+
+Bottom nav: 80px blur, saturate 2.2, specular top border for glossy depth. Input bar container is now glassy (backdrop-blur + translucent white tint) matching the nav, while Input and Button stay opaque.
+
+---
+
 ## v0.55.46 — 2026-02-27
 
 ### Fix: Thoughts fade extends to screen edge + much glassier header and nav

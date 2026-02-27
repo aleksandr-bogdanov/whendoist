@@ -289,7 +289,7 @@ function ThoughtsPage() {
 
         {/* Floating input — above bottom nav on mobile, static with border on desktop */}
         <div className="absolute z-10 inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.5rem)] px-4 md:static md:bottom-auto md:z-auto md:border-t md:py-3">
-          <div className="mx-auto flex max-w-2xl gap-2 rounded-2xl bg-background p-2 shadow-lg ring-1 ring-border/40 md:rounded-none md:bg-transparent md:p-0 md:shadow-none md:ring-0">
+          <div className="mx-auto flex max-w-2xl gap-2 rounded-2xl backdrop-blur-[80px] backdrop-saturate-[2.2] bg-white/30 dark:bg-white/[0.10] p-2 shadow-lg ring-1 ring-inset ring-white/40 dark:ring-white/[0.15] border border-white/50 dark:border-white/[0.12] md:rounded-none md:bg-transparent md:p-0 md:shadow-none md:ring-0 md:backdrop-blur-none md:backdrop-saturate-100 md:border-0">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
