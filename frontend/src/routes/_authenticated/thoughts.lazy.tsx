@@ -246,8 +246,8 @@ function ThoughtsPage() {
     <div className="flex h-full flex-col min-h-0">
       {/* Content area — relative container for floating input + fade */}
       <div className="relative flex-1 min-h-0 flex flex-col">
-        {/* Scrollable list — extends behind floating input on mobile */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Scrollable list — flex column so sticky input stays at bottom */}
+        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
           {/* Glassy sticky header — content scrolls behind it */}
           <div className="sticky top-0 z-20 px-4 py-3 backdrop-blur-3xl backdrop-saturate-200 bg-white/25 dark:bg-[rgba(30,41,59,0.20)] border-b border-white/15 dark:border-white/[0.06]">
             <h1 className="text-lg font-semibold">Thoughts</h1>
@@ -255,7 +255,9 @@ function ThoughtsPage() {
               Capture ideas, then triage them into tasks
             </p>
           </div>
-          <div className="mx-auto w-full max-w-2xl pb-52 md:pb-4">
+
+          {/* List wrapper — flex-1 pushes input to bottom when list is short */}
+          <div className="mx-auto w-full max-w-2xl flex-1">
             {tasksQuery.isLoading ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -282,39 +284,42 @@ function ThoughtsPage() {
               ))
             )}
           </div>
+
+          {/* Sticky input — INSIDE scroll container so touch-scroll propagates correctly */}
+          <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.5rem)] z-10 px-4 shrink-0 md:bottom-0 md:border-t md:bg-background md:py-3">
+            <div className="mx-auto flex max-w-2xl gap-2 rounded-2xl backdrop-blur-[80px] backdrop-saturate-[2.2] bg-white/30 dark:bg-white/[0.10] p-2 shadow-lg ring-1 ring-inset ring-white/40 dark:ring-white/[0.15] border border-white/50 dark:border-white/[0.12] md:rounded-none md:bg-transparent md:p-0 md:shadow-none md:ring-0 md:backdrop-blur-none md:backdrop-saturate-100 md:border-0">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="What's on your mind?"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                disabled={createTask.isPending}
+              />
+              <Button
+                size="icon"
+                onClick={handleSend}
+                disabled={!input.trim() || createTask.isPending}
+              >
+                {createTask.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Scroll clearance — lets last items scroll above sticky input + nav */}
+          <div className="h-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+1rem)] shrink-0 md:hidden" />
         </div>
 
         {/* Bottom fade — mimics infinite canvas, Apple glass style (mobile only) */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-background/50 via-background/15 via-60% to-transparent md:hidden" />
-
-        {/* Floating input — above bottom nav on mobile, static with border on desktop */}
-        <div className="fixed z-40 inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.5rem)] px-4 md:static md:bottom-auto md:z-auto md:border-t md:py-3">
-          <div className="mx-auto flex max-w-2xl gap-2 rounded-2xl backdrop-blur-[80px] backdrop-saturate-[2.2] bg-white/30 dark:bg-white/[0.10] p-2 shadow-lg ring-1 ring-inset ring-white/40 dark:ring-white/[0.15] border border-white/50 dark:border-white/[0.12] md:rounded-none md:bg-transparent md:p-0 md:shadow-none md:ring-0 md:backdrop-blur-none md:backdrop-saturate-100 md:border-0">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="What's on your mind?"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              disabled={createTask.isPending}
-            />
-            <Button
-              size="icon"
-              onClick={handleSend}
-              disabled={!input.trim() || createTask.isPending}
-            >
-              {createTask.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* Triage drawer */}
