@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.53 — 2026-02-27
+
+### Fix: Domain flash animation uses React state instead of imperactive DOM
+
+The domain row flash (triggered when a parent task auto-switches the domain) was barely visible — hex `#color15` produced only 8% opacity. Replaced imperative `el.style` manipulation with React state-driven class toggling (`bg-primary/20`), leveraging the existing `transition-all duration-300` for a smooth fade in/out. Removed unused `domainRowRef`.
+
+---
+
 ## v0.55.52 — 2026-02-27
 
 ### Fix: Remove domain-switch toast that covered triage drawer buttons
