@@ -244,16 +244,17 @@ function ThoughtsPage() {
 
   return (
     <div className="flex h-full flex-col min-h-0">
-      {/* Header */}
-      <div className="border-b px-4 py-3">
-        <h1 className="text-lg font-semibold">Thoughts</h1>
-        <p className="text-xs text-muted-foreground">Capture ideas, then triage them into tasks</p>
-      </div>
-
       {/* Content area — relative container for floating input + fade */}
       <div className="relative flex-1 min-h-0 flex flex-col">
         {/* Scrollable list — extends behind floating input on mobile */}
         <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Glassy sticky header — content scrolls behind it */}
+          <div className="sticky top-0 z-20 px-4 py-3 backdrop-blur-2xl backdrop-saturate-[1.8] bg-background/80 dark:bg-background/70 border-b border-border/30">
+            <h1 className="text-lg font-semibold">Thoughts</h1>
+            <p className="text-xs text-muted-foreground">
+              Capture ideas, then triage them into tasks
+            </p>
+          </div>
           <div className="mx-auto w-full max-w-2xl pb-52 md:pb-4">
             {tasksQuery.isLoading ? (
               <div className="flex justify-center py-12">
@@ -288,7 +289,7 @@ function ThoughtsPage() {
 
         {/* Floating input — above bottom nav on mobile, static with border on desktop */}
         <div className="absolute z-10 inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.5rem)] px-4 md:static md:bottom-auto md:z-auto md:border-t md:py-3">
-          <div className="mx-auto flex max-w-2xl gap-2">
+          <div className="mx-auto flex max-w-2xl gap-2 rounded-2xl bg-background p-2 shadow-lg ring-1 ring-border/40 md:rounded-none md:bg-transparent md:p-0 md:shadow-none md:ring-0">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
