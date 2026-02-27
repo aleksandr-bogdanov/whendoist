@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createLazyFileRoute } from "@tanstack/react-router";
+import { createLazyFileRoute, Link } from "@tanstack/react-router";
 import { ChevronDown, Loader2, Send, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -245,9 +245,17 @@ function ThoughtsPage() {
   return (
     <div className="flex h-full flex-col min-h-0">
       {/* Header */}
-      <div className="border-b px-4 py-3">
-        <h1 className="text-lg font-semibold">Thoughts</h1>
-        <p className="text-xs text-muted-foreground">Capture ideas, then triage them into tasks</p>
+      <div className="border-b px-4 py-3 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">Thoughts</h1>
+          <p className="text-xs text-muted-foreground">
+            Capture ideas, then triage them into tasks
+          </p>
+        </div>
+        {/* TODO: remove after dropdown test */}
+        <Link to="/test-dropdown" className="text-xs text-primary underline shrink-0">
+          Test page
+        </Link>
       </div>
 
       {/* Card list */}
