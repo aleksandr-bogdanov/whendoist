@@ -1,6 +1,5 @@
 import { ArrowRight, ChevronRight, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { DomainChipRow, ImpactButtonRow, ScheduleButtonRow } from "@/components/task/field-pickers";
@@ -468,9 +467,6 @@ function DrawerBody({
                     el.style.borderRadius = "";
                   }, 600);
                 }
-                toast.info(
-                  `Domain switched to ${parentDomain.icon ?? ""} ${parentDomain.name} to match parent task`,
-                );
               }
             }
           }

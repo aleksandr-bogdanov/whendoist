@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.52 — 2026-02-27
+
+### Fix: Remove domain-switch toast that covered triage drawer buttons
+
+The toast fired when a parent task auto-switched the domain was rendered at the global `bottom-right` position, covering the drawer's footer buttons. The domain row flash animation already provides sufficient in-context feedback. Removed the toast; the flash stays.
+
+---
+
 ## v0.55.51 — 2026-02-27
 
 ### Fix: Triage drawer — Convert button uses primary color, domain chips redesigned
