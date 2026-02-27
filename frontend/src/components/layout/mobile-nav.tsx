@@ -42,12 +42,12 @@ export function MobileNav() {
         "left-[var(--nav-pill-mx)] right-[var(--nav-pill-mx)]",
         "bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb))]",
         "rounded-[var(--nav-pill-radius)]",
-        // Apple Glass: heavy blur + saturate + very translucent tint
-        "backdrop-blur-3xl backdrop-saturate-[1.8]",
-        "bg-white/35 dark:bg-[rgba(30,41,59,0.30)]",
+        // Apple Glass: max blur + saturate + very low tint for see-through effect
+        "backdrop-blur-3xl backdrop-saturate-200",
+        "bg-white/20 dark:bg-[rgba(30,41,59,0.15)]",
         // Specular ring for glass edge definition
-        "ring-1 ring-inset ring-white/30 dark:ring-white/[0.12]",
-        "shadow-xl shadow-black/[0.08] dark:shadow-black/40",
+        "ring-1 ring-inset ring-white/25 dark:ring-white/[0.10]",
+        "shadow-2xl shadow-black/[0.10] dark:shadow-black/50",
       )}
     >
       <div className="flex h-[var(--nav-pill-height)] items-center justify-around">

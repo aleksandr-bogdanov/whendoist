@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.46 — 2026-02-27
+
+### Fix: Thoughts fade extends to screen edge + much glassier header and nav
+
+Fade gradient now extends 384px with only 50% opacity at the bottom — items are visible all the way to the safe area instead of vanishing at the nav midpoint. Header glass dropped from 80% to 25% opacity with `backdrop-blur-3xl`. Nav tint lowered to 20% opacity for true see-through glass.
+
+---
+
 ## v0.55.45 — 2026-02-27
 
 ### Feat: Apple Glass treatment for thoughts page + bottom nav
