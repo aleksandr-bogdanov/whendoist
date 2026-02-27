@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.50 — 2026-02-27
+
+### Fix: Fast scrolling causes entire page to rubber-band on iOS
+
+Added `overscroll-behavior: contain` to the scroll container. Prevents scroll chaining to the body when hitting scroll bounds.
+
+---
+
 ## v0.55.49 — 2026-02-27
 
 ### Fix: Input bar hijacks scroll on mobile — structural fix

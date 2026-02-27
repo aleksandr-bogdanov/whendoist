@@ -247,7 +247,7 @@ function ThoughtsPage() {
       {/* Content area — relative container for floating input + fade */}
       <div className="relative flex-1 min-h-0 flex flex-col">
         {/* Scrollable list — flex column so sticky input stays at bottom */}
-        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 flex flex-col">
           {/* Glassy sticky header — content scrolls behind it */}
           <div className="sticky top-0 z-20 px-4 py-3 backdrop-blur-3xl backdrop-saturate-200 bg-white/25 dark:bg-[rgba(30,41,59,0.20)] border-b border-white/15 dark:border-white/[0.06]">
             <h1 className="text-lg font-semibold">Thoughts</h1>
