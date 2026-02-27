@@ -1,5 +1,5 @@
 import { ArrowRight, ChevronRight, Search, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { DomainChipRow, ImpactButtonRow, ScheduleButtonRow } from "@/components/task/field-pickers";
@@ -108,7 +108,7 @@ function DrawerBody({
   const [parentPickerOpen, setParentPickerOpen] = useState(false);
   const [parentId, setParentId] = useState<number | null>(null);
   const [parentSearch, setParentSearch] = useState("");
-  const domainRowRef = useRef<HTMLDivElement>(null);
+  const [domainFlash, setDomainFlash] = useState(false);
 
   const {
     inputRef,
@@ -229,7 +229,12 @@ function DrawerBody({
         />
 
         {/* Domain — label + full-bleed scrollable chips */}
-        <div ref={domainRowRef} className="relative pl-[58px] transition-all duration-300">
+        <div
+          className={cn(
+            "relative pl-[58px] rounded-lg transition-all duration-300",
+            domainFlash && "bg-primary/20",
+          )}
+        >
           <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
             Domain
           </span>
@@ -458,15 +463,8 @@ function DrawerBody({
                   : /#\S+/;
                 tapToken("#", parentDomain.name ?? "", pattern);
                 // Flash the domain row to draw attention
-                const el = domainRowRef.current;
-                if (el) {
-                  el.style.backgroundColor = `${parentDomain.color ?? "#6B7385"}15`;
-                  el.style.borderRadius = "8px";
-                  setTimeout(() => {
-                    el.style.backgroundColor = "";
-                    el.style.borderRadius = "";
-                  }, 600);
-                }
+                setDomainFlash(true);
+                setTimeout(() => setDomainFlash(false), 800);
               }
             }
           }
