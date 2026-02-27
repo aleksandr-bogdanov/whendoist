@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.48 — 2026-02-27
+
+### Fix: Floating input scrolls with content on mobile touch
+
+Changed input container from `absolute` to `fixed` positioning so it's locked to the viewport like the bottom nav, preventing it from getting dragged during scroll momentum on mobile Safari.
+
+---
+
 ## v0.55.47 — 2026-02-27
 
 ### Feat: Glossier bottom nav + glassy input container
