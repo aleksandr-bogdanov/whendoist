@@ -24,21 +24,16 @@ export function DomainChipRow({ domains, selectedId, onSelect }: DomainChipRowPr
     <div className="flex gap-1.5 w-max">
       {domains.map((d) => {
         const isActive = selectedId === d.id;
-        const color = d.color ?? "#6B7385";
         return (
           <button
             key={d.id}
             type="button"
-            className="rounded-lg shrink-0 px-2.5 py-1.5 text-[13px] font-medium transition-all active:scale-95"
-            style={
+            className={cn(
+              "rounded-lg shrink-0 px-2.5 py-1.5 text-[13px] font-medium transition-all active:scale-95",
               isActive
-                ? {
-                    backgroundColor: `${color}20`,
-                    color,
-                    boxShadow: `inset 0 0 0 1.5px ${color}50`,
-                  }
-                : { backgroundColor: `${color}10`, color: `${color}90` }
-            }
+                ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/30"
+                : "bg-secondary text-secondary-foreground active:bg-secondary/80",
+            )}
             onClick={() => onSelect(d.id, d.name ?? "")}
           >
             {d.icon && <span>{d.icon}</span>} {d.name}
