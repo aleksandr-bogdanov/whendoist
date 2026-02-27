@@ -249,7 +249,7 @@ function ThoughtsPage() {
         {/* Scrollable list — extends behind floating input on mobile */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {/* Glassy sticky header — content scrolls behind it */}
-          <div className="sticky top-0 z-20 px-4 py-3 backdrop-blur-2xl backdrop-saturate-[1.8] bg-background/80 dark:bg-background/70 border-b border-border/30">
+          <div className="sticky top-0 z-20 px-4 py-3 backdrop-blur-3xl backdrop-saturate-200 bg-white/25 dark:bg-[rgba(30,41,59,0.20)] border-b border-white/15 dark:border-white/[0.06]">
             <h1 className="text-lg font-semibold">Thoughts</h1>
             <p className="text-xs text-muted-foreground">
               Capture ideas, then triage them into tasks
@@ -285,7 +285,7 @@ function ThoughtsPage() {
         </div>
 
         {/* Bottom fade — mimics infinite canvas, Apple glass style (mobile only) */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-60 bg-gradient-to-t from-background from-15% via-background/60 via-50% to-transparent md:hidden" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-background/50 via-background/15 via-60% to-transparent md:hidden" />
 
         {/* Floating input — above bottom nav on mobile, static with border on desktop */}
         <div className="absolute z-10 inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.5rem)] px-4 md:static md:bottom-auto md:z-auto md:border-t md:py-3">
