@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.49 — 2026-02-27
+
+### Fix: Input bar hijacks scroll on mobile — structural fix
+
+Root cause: `fixed` positioning placed the input outside the scroll container's DOM tree. Touch events on it propagated to the body instead of the thoughts scroll container, causing the header to shift while the list froze. Fix: moved input inside the scroll container using `sticky bottom-[X]`. Scroll container is now `flex flex-col` with `flex-1` on the list wrapper to push input to the bottom when the list is short. Added a clearance spacer for scroll past the input.
+
+---
+
 ## v0.55.48 — 2026-02-27
 
 ### Fix: Floating input scrolls with content on mobile touch
