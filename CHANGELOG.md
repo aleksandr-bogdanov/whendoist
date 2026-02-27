@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.51 — 2026-02-27
+
+### Fix: Triage drawer — Convert button uses primary color, domain chips redesigned
+
+"Convert to Task" button now uses the app's primary color instead of the domain color (which could be gray). Domain chips switched from domain-colored backgrounds to neutral `bg-secondary` with `primary` selected state. Domain row left padding aligned with other field rows (54px → 58px).
+
+---
+
 ## v0.55.50 — 2026-02-27
 
 ### Fix: Fast scrolling causes entire page to rubber-band on iOS

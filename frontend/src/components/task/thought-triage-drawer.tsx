@@ -189,11 +189,6 @@ function DrawerBody({
     [handleAcKeyDown, canConvert, handleSubmit],
   );
 
-  const domainColor =
-    parsed.domainId !== null
-      ? (domains.find((d) => d.id === parsed.domainId)?.color ?? null)
-      : null;
-
   const handleDateSelect = useCallback(
     (iso: string) => {
       // Toggle-off: tap active date to clear
@@ -235,7 +230,7 @@ function DrawerBody({
         />
 
         {/* Domain — label + full-bleed scrollable chips */}
-        <div ref={domainRowRef} className="relative pl-[54px] transition-all duration-300">
+        <div ref={domainRowRef} className="relative pl-[58px] transition-all duration-300">
           <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
             Domain
           </span>
@@ -424,7 +419,6 @@ function DrawerBody({
           className="flex-1 h-10 text-[13px] font-semibold transition-colors duration-200"
           disabled={!canConvert}
           onClick={handleSubmit}
-          style={domainColor ? { backgroundColor: domainColor, color: "#fff" } : undefined}
         >
           {parsed.domainId === null ? (
             <>
