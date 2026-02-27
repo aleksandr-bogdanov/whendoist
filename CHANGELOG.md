@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.40 — 2026-02-27
+
+### Test: Parent dropdown approach comparison page
+
+Added `/test-dropdown` route with 4 different approaches for parent task selection inside a vaul drawer, testable on-device:
+- **A: Nested Drawer** — parent picker as a nested bottom sheet (like calendar)
+- **B: onOpenChange guard** — portal to body, suppress drawer close via ref flag
+- **C: onPointerDownOutside** — portal inside Content + event interception (current approach)
+- **D: Inline list** — no dropdown, scrollable list directly in drawer body
+
+---
+
 ## v0.55.39 — 2026-02-27
 
 ### Fix: Remove capture-phase listener that blocked parent dropdown on iOS
