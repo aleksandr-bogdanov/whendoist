@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.42 — 2026-02-27
+
+### Fix: Triage drawer footer has no bottom padding in mobile web
+
+`pb-safe` resolves to `env(safe-area-inset-bottom, 0px)` which is `0` in mobile web (no home indicator). Changed to `pb-[max(0.625rem,env(safe-area-inset-bottom))]` so the footer always has at least `0.625rem` bottom padding.
+
+---
+
 ## v0.55.41 — 2026-02-27
 
 ### Fix: Replace parent dropdown with nested drawer (tested on-device)

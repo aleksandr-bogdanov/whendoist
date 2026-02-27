@@ -407,7 +407,7 @@ function DrawerBody({
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-background px-4 py-2.5 pb-safe flex items-center gap-3">
+      <div className="border-t bg-background px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] flex items-center gap-3">
         <Button
           variant="ghost"
           size="sm"
