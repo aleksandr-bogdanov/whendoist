@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.43 — 2026-02-27
+
+### Feat: Toast + flash animation when parent task auto-switches domain
+
+When selecting a parent task from a different domain, the domain now visually flashes with the new domain's color and a toast confirms the switch (e.g. "Domain switched to 🎨 Design to match parent task").
+
+---
+
 ## v0.55.42 — 2026-02-27
 
 ### Fix: Triage drawer footer has no bottom padding in mobile web
