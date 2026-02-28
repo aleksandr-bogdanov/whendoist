@@ -250,7 +250,7 @@ function ThoughtsPage() {
         <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 flex flex-col">
           {/* Glassy sticky header — content scrolls behind it */}
           <div className="sticky top-0 z-20 px-4 py-3 backdrop-blur-3xl backdrop-saturate-200 bg-white/25 dark:bg-[rgba(30,41,59,0.20)] border-b border-white/15 dark:border-white/[0.06]">
-            <h1 className="text-lg font-semibold">Thoughts</h1>
+            <h1 className="text-xl font-bold">Thoughts</h1>
             <p className="text-xs text-muted-foreground">
               Capture ideas, then triage them into tasks
             </p>
@@ -265,7 +265,8 @@ function ThoughtsPage() {
             ) : sortedThoughts.length === 0 ? (
               <EmptyState
                 illustration="/illustrations/empty-thoughts.svg"
-                illustrationClassName="animate-[emptyStateEntrance_0.4s_ease-out,thoughtsGlow_3s_ease-in-out_0.4s_infinite]"
+                illustrationClassName="h-28 w-28 animate-[emptyStateEntrance_0.4s_ease-out,thoughtsGlow_3s_ease-in-out_0.4s_infinite]"
+                className="py-16"
                 title="No thoughts yet"
                 description="Type below to capture your first thought"
               />
@@ -319,7 +320,7 @@ function ThoughtsPage() {
         </div>
 
         {/* Bottom fade — mimics infinite canvas, Apple glass style (mobile only) */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-96 bg-gradient-to-t from-background/50 via-background/15 via-60% to-transparent md:hidden" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background/50 via-background/15 via-60% to-transparent md:hidden" />
       </div>
 
       {/* Triage drawer */}
@@ -347,7 +348,7 @@ function ThoughtCard({ thought, onTap }: { thought: TaskResponse; onTap: () => v
   return (
     // biome-ignore lint/a11y/useSemanticElements: div contains nested buttons, can't use <button>
     <div
-      className="group flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-accent/50"
+      className="group flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-colors hover:bg-accent/50"
       onClick={onTap}
       onKeyDown={(e) => {
         if (e.key === "Enter") onTap();
@@ -355,19 +356,19 @@ function ThoughtCard({ thought, onTap }: { thought: TaskResponse; onTap: () => v
       role="button"
       tabIndex={0}
     >
-      {/* Dot indicator */}
-      <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
+      {/* Dot indicator — desktop only */}
+      <div className="hidden md:block h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
 
       {/* Title */}
-      <p className="flex-1 min-w-0 text-sm truncate">{thought.title}</p>
+      <p className="flex-1 min-w-0 text-base truncate">{thought.title}</p>
 
       {/* Timestamp */}
-      <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
+      <span className="text-[11px] text-muted-foreground/70 whitespace-nowrap shrink-0">
         {timeAgo}
       </span>
 
       {/* Expand affordance */}
-      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-muted-foreground" />
+      <ChevronDown className="hidden md:block h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-muted-foreground" />
     </div>
   );
 }

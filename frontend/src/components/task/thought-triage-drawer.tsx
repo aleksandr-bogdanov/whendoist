@@ -224,18 +224,18 @@ function DrawerBody({
           onChange={handleTitleEdit}
           onKeyDown={handleKeyDown}
           placeholder="What's the task?"
-          className="w-full text-base bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden"
+          className="w-full text-base bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden border-b border-border/40 focus:border-primary transition-colors"
           rows={1}
         />
 
         {/* Domain — label + full-bleed scrollable chips */}
         <div
           className={cn(
-            "relative pl-[58px] rounded-lg transition-all duration-300",
+            "relative pl-16 rounded-lg transition-all duration-300",
             domainFlash && "bg-primary/20",
           )}
         >
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground">
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
             Domain
           </span>
           <div className="-mr-4 pr-4 overflow-x-auto scrollbar-hide touch-pan-x">
@@ -265,7 +265,7 @@ function DrawerBody({
         {/* Parent task — inline label + trigger for nested drawer */}
         {parentTasks.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground shrink-0 w-[50px]">Parent</span>
+            <span className="text-xs text-muted-foreground shrink-0 w-14">Parent</span>
             <button
               type="button"
               className={cn(
@@ -304,7 +304,7 @@ function DrawerBody({
 
         {/* Impact — inline label + buttons */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground shrink-0 w-[50px]">Impact</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">Impact</span>
           <div className="flex-1">
             <ImpactButtonRow
               value={parsed.impact}
@@ -321,7 +321,7 @@ function DrawerBody({
 
         {/* Schedule — inline label + buttons */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground shrink-0 w-[50px]">When</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">When</span>
           <div className="flex-1">
             <ScheduleButtonRow
               selectedDate={parsed.scheduledDate}
@@ -334,7 +334,7 @@ function DrawerBody({
 
         {/* Duration — inline label + chips */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground shrink-0 w-[50px]">Duration</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">Duration</span>
           <div className="flex-1 flex gap-1.5">
             {DURATION_PRESETS.map((m) => {
               const isActive = parsed.durationMinutes === m;
@@ -369,7 +369,7 @@ function DrawerBody({
 
         {/* Clarity — inline label + colored chips */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground shrink-0 w-[50px]">Clarity</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">Clarity</span>
           <div className="flex-1 flex gap-1.5">
             {CLARITY_OPTIONS.map((opt) => {
               const isActive = parsed.clarity === opt.value;
