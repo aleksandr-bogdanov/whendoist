@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.55 — 2026-02-28
+
+### Fix: Thoughts page mobile visual hierarchy and touch targets
+
+Thought card title bumped from 14px to 16px (`text-base`), row padding from `py-3` to `py-3.5` (~52px rows). Dot indicator and chevron hidden on mobile (`hidden md:block/flex`) to reclaim horizontal space. Page title upgraded to `text-xl font-bold`. Triage drawer labels unified to `text-xs` (12px) with `w-14` columns and textarea gets a bottom border for editability signal. Empty state illustration enlarged to 112px. Bottom fade gradient reduced from 384px to 192px.
+
+---
+
 ## v0.55.54 — 2026-02-28
 
 ### Fix: Mobile touch targets too small in header, triage drawer, and calendar
