@@ -82,11 +82,11 @@ function Calendar({ className, defaultMonth, ...props }: DayPickerProps) {
               caption_label: "text-base font-semibold",
               nav: "absolute inset-x-0 top-0 flex items-center justify-between h-10 px-1 z-10 pointer-events-none",
               button_previous: cn(
-                "inline-flex items-center justify-center h-9 w-9 rounded-lg pointer-events-auto",
+                "inline-flex items-center justify-center h-10 w-10 rounded-lg pointer-events-auto",
                 "bg-secondary hover:bg-accent text-foreground active:scale-95",
               ),
               button_next: cn(
-                "inline-flex items-center justify-center h-9 w-9 rounded-lg pointer-events-auto",
+                "inline-flex items-center justify-center h-10 w-10 rounded-lg pointer-events-auto",
                 "bg-secondary hover:bg-accent text-foreground active:scale-95",
               ),
               month_grid: "w-full border-collapse",
