@@ -13,9 +13,16 @@ interface ParentTaskPickerProps {
   task: TaskResponse;
   parentTasks: TaskResponse[];
   domains: DomainResponse[];
+  /** Called after a parent change is applied — provides the new parent's domain_id for auto-sync. */
+  onParentChanged?: (parentDomainId: number | null) => void;
 }
 
-export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPickerProps) {
+export function ParentTaskPicker({
+  task,
+  parentTasks,
+  domains,
+  onParentChanged,
+}: ParentTaskPickerProps) {
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -95,6 +102,14 @@ export function ParentTaskPicker({ task, parentTasks, domains }: ParentTaskPicke
     setCurrentParentId(newParentId);
     setOpen(false);
     setSearch("");
+
+    // Notify parent for domain auto-sync
+    if (newParentId !== null) {
+      const parent = parentTasks.find((t) => t.id === newParentId);
+      onParentChanged?.(parent?.domain_id ?? null);
+    } else {
+      onParentChanged?.(null);
+    }
 
     // Optimistic cache update
     if (newParentId !== null) {

@@ -2,17 +2,21 @@ import { ArrowRight, ChevronRight, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
-import { DomainChipRow, ImpactButtonRow, ScheduleButtonRow } from "@/components/task/field-pickers";
+import {
+  ClarityChipRow,
+  DomainChipRow,
+  DurationPickerRow,
+  ImpactButtonRow,
+  RecurrencePresetRow,
+  type RecurrencePresetValue,
+  ScheduleButtonRow,
+  TimePickerField,
+} from "@/components/task/field-pickers";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useSmartInput } from "@/hooks/use-smart-input";
 import { parseTaskInput } from "@/lib/task-parser";
-import {
-  CLARITY_COLORS,
-  CLARITY_OPTIONS,
-  DURATION_PRESETS,
-  formatDurationLabel,
-} from "@/lib/task-utils";
+import { formatDurationLabel } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -29,6 +33,9 @@ export interface ConvertData {
   scheduled_date?: string | null;
   scheduled_time?: string | null;
   description?: string | null;
+  is_recurring?: boolean;
+  recurrence_rule?: Record<string, unknown> | null;
+  recurrence_start?: string | null;
 }
 
 interface ThoughtTriageDrawerProps {
@@ -109,6 +116,9 @@ function DrawerBody({
   const [parentId, setParentId] = useState<number | null>(null);
   const [parentSearch, setParentSearch] = useState("");
   const [domainFlash, setDomainFlash] = useState(false);
+  const [description, setDescription] = useState("");
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
+  const [recurrence, setRecurrence] = useState<RecurrencePresetValue | null>(null);
 
   const {
     inputRef,
@@ -121,6 +131,12 @@ function DrawerBody({
 
   // Local display state — preserves trailing whitespace that the parser's .trim() would eat
   const [displayTitle, setDisplayTitle] = useState(parsed.title);
+
+  // Seed description from parsed //notes on first render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only run on mount
+  useEffect(() => {
+    if (parsed.description) setDescription(parsed.description);
+  }, []);
 
   // Auto-resize textarea whenever displayed title changes (initial, typing, tapToken, toggle)
   // biome-ignore lint/correctness/useExhaustiveDependencies: displayTitle triggers resize on content change
@@ -164,6 +180,9 @@ function DrawerBody({
 
   const handleSubmit = useCallback(() => {
     if (!canConvert || !parsed.domainId) return;
+    const finalDescription = description.trim() || parsed.description || null;
+    const isRecurring =
+      recurrence !== null && recurrence.preset !== "none" && recurrence.rule !== null;
     onConvert(thought, {
       domain_id: parsed.domainId,
       title: parsed.title.trim(),
@@ -173,9 +192,14 @@ function DrawerBody({
       duration_minutes: parsed.durationMinutes ?? undefined,
       scheduled_date: parsed.scheduledDate,
       scheduled_time: parsed.scheduledTime,
-      description: parsed.description,
+      description: finalDescription,
+      is_recurring: isRecurring || undefined,
+      recurrence_rule: isRecurring ? (recurrence!.rule as Record<string, unknown>) : undefined,
+      recurrence_start: isRecurring
+        ? (parsed.scheduledDate ?? new Date().toISOString().split("T")[0])
+        : undefined,
     });
-  }, [canConvert, parsed, thought, onConvert, parentId]);
+  }, [canConvert, parsed, thought, onConvert, parentId, description, recurrence]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -330,77 +354,92 @@ function DrawerBody({
           </div>
         </div>
 
-        {/* Duration — inline label + chips */}
+        {/* Duration — inline label + chips + custom */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground shrink-0 w-14">Duration</span>
-          <div className="flex-1 flex gap-1.5">
-            {DURATION_PRESETS.map((m) => {
-              const isActive = parsed.durationMinutes === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  className={cn(
-                    "rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors active:scale-95",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground active:bg-secondary/80",
-                  )}
-                  onClick={() => {
-                    if (parsed.durationMinutes === m) {
-                      clearTokenType("duration");
-                    } else {
-                      const durToken = parsed.tokens.find((t) => t.type === "duration");
-                      const durPattern = durToken
-                        ? new RegExp(durToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-                        : /(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/i;
-                      tapToken("", formatDurationLabel(m), durPattern);
-                    }
-                  }}
-                >
-                  {formatDurationLabel(m)}
-                </button>
-              );
-            })}
+          <div className="flex-1">
+            <DurationPickerRow
+              value={parsed.durationMinutes}
+              showCustom
+              onChange={(m) => {
+                if (m === null || parsed.durationMinutes === m) {
+                  clearTokenType("duration");
+                } else {
+                  const durToken = parsed.tokens.find((t) => t.type === "duration");
+                  const durPattern = durToken
+                    ? new RegExp(durToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+                    : /(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/i;
+                  tapToken("", formatDurationLabel(m), durPattern);
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Time — visible when date is set */}
+        {parsed.scheduledDate && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground shrink-0 w-14">Time</span>
+            <div className="flex-1">
+              <TimePickerField
+                value={parsed.scheduledTime ?? ""}
+                visible
+                onChange={(time) => {
+                  const timeToken = parsed.tokens.find((t) => t.type === "date");
+                  if (timeToken && time) {
+                    const datePattern = new RegExp(
+                      timeToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                      "i",
+                    );
+                    tapToken("", `${timeToken.raw} ${time}`.trim(), datePattern);
+                  } else if (time && parsed.scheduledDate) {
+                    tapToken("", time, /(?<![a-zA-Z\d])\d{1,2}:\d{2}(?:[ap]m)?(?![a-zA-Z])/i);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Recurrence — preset chips */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground shrink-0 w-14">Repeat</span>
+          <div className="flex-1">
+            <RecurrencePresetRow value={recurrence} onChange={setRecurrence} />
           </div>
         </div>
 
         {/* Clarity — inline label + colored chips */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground shrink-0 w-14">Clarity</span>
-          <div className="flex-1 flex gap-1.5">
-            {CLARITY_OPTIONS.map((opt) => {
-              const isActive = parsed.clarity === opt.value;
-              const isDefaultHint = parsed.clarity === null && opt.value === "normal";
-              const color = CLARITY_COLORS[opt.value];
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  className="rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all active:scale-95"
-                  style={
-                    isActive
-                      ? { backgroundColor: color, color: "#fff", boxShadow: `0 0 0 2px ${color}40` }
-                      : isDefaultHint
-                        ? {
-                            backgroundColor: `${color}12`,
-                            color,
-                            border: `1.5px dashed ${color}60`,
-                          }
-                        : { backgroundColor: `${color}12`, color }
-                  }
-                  onClick={() => {
-                    if (parsed.clarity === opt.value) {
-                      clearTokenType("clarity");
-                    } else {
-                      tapToken("?", opt.value, /\?(autopilot|normal|brainstorm)\b/i);
-                    }
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+          <div className="flex-1">
+            <ClarityChipRow
+              value={parsed.clarity}
+              onChange={(clarity) => {
+                if (parsed.clarity === clarity) {
+                  clearTokenType("clarity");
+                } else {
+                  tapToken("?", clarity, /\?(autopilot|normal|brainstorm)\b/i);
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Notes / Description */}
+        <div className="flex items-start gap-2 pt-1 border-t border-border/30">
+          <span className="text-xs text-muted-foreground shrink-0 w-14 pt-2">Notes</span>
+          <div className="flex-1">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onFocus={() => setDescriptionFocused(true)}
+              onBlur={() => setDescriptionFocused(false)}
+              placeholder="Add notes..."
+              rows={descriptionFocused || description ? 3 : 1}
+              className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
+              data-vaul-no-drag
+            />
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, Loader2, RotateCcw, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { DomainResponse, TaskCreate, TaskResponse, TaskUpdate } from "@/api/model";
 import {
@@ -17,7 +17,17 @@ import {
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
+import {
+  ClarityChipRow,
+  DomainChipRow,
+  DurationPickerRow,
+  ImpactButtonRow,
+  ScheduleButtonRow,
+  TimePickerField,
+} from "@/components/task/field-pickers";
+import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomplete";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -26,15 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Sheet,
   SheetContent,
@@ -42,16 +45,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
 import { useCrypto } from "@/hooks/use-crypto";
+import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
-import {
-  CLARITY_OPTIONS,
-  DURATION_PRESETS,
-  formatDurationLabel,
-  IMPACT_COLORS,
-  IMPACT_OPTIONS,
-} from "@/lib/task-utils";
+import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { ParentTaskPicker } from "./parent-task-picker";
 import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
@@ -69,16 +66,14 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   const queryClient = useQueryClient();
   const { encryptTaskFields } = useCrypto();
   const flashUpdatedTask = useUIStore((s) => s.flashUpdatedTask);
-  const titleRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [domainId, setDomainId] = useState<string>("none");
+  const [domainId, setDomainId] = useState<number | null>(null);
   const [impact, setImpact] = useState(4);
   const [clarity, setClarity] = useState("normal");
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
-  const [customDuration, setCustomDuration] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
@@ -87,17 +82,82 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   const [recurrenceEnd, setRecurrenceEnd] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
+  const [domainFlash, setDomainFlash] = useState(false);
+
+  const markDirty = useCallback(() => setDirty(true), []);
+
+  // Smart input consumer (Approach A) — tokens in title are detected and consumed
+  const smartCallbacks = useMemo(
+    () => ({
+      onDomain: (id: number) => {
+        setDomainId(id);
+        markDirty();
+      },
+      onImpact: (v: number) => {
+        setImpact(v);
+        markDirty();
+      },
+      onClarity: (v: string) => {
+        setClarity(v);
+        markDirty();
+      },
+      onDuration: (m: number) => {
+        setDurationMinutes(m);
+        markDirty();
+      },
+      onScheduledDate: (d: string) => {
+        setScheduledDate(d);
+        markDirty();
+      },
+      onScheduledTime: (t: string) => {
+        setScheduledTime(t);
+        markDirty();
+      },
+      onDescription: (d: string) => {
+        setDescription(d);
+        markDirty();
+      },
+    }),
+    [markDirty],
+  );
+
+  const {
+    titleRef,
+    flashTarget,
+    processTitle,
+    acVisible,
+    acSuggestions,
+    acSelectedIndex,
+    handleAcSelect,
+    handleKeyDown: handleSmartKeyDown,
+  } = useSmartInputConsumer(domains, smartCallbacks);
+
+  // Auto-resize title textarea
+  const resizeTitle = useCallback(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.style.height = "0";
+      el.style.height = `${el.scrollHeight}px`;
+    });
+  }, [titleRef]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: title change triggers resize
+  useEffect(() => {
+    resizeTitle();
+  }, [title, resizeTitle]);
 
   // Populate form when task changes
   useEffect(() => {
     if (task) {
       setTitle(task.title);
       setDescription(task.description ?? "");
-      setDomainId(task.domain_id != null ? String(task.domain_id) : "none");
+      setDomainId(task.domain_id ?? null);
       setImpact(task.impact);
       setClarity(task.clarity ?? "normal");
       setDurationMinutes(task.duration_minutes);
-      setCustomDuration(task.duration_minutes ? String(task.duration_minutes) : "");
       setScheduledDate(task.scheduled_date ?? "");
       setScheduledTime(task.scheduled_time ?? "");
       setIsRecurring(task.is_recurring);
@@ -109,11 +169,10 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     } else {
       setTitle("");
       setDescription("");
-      setDomainId("none");
+      setDomainId(null);
       setImpact(4);
       setClarity("normal");
       setDurationMinutes(null);
-      setCustomDuration("");
       setScheduledDate("");
       setScheduledTime("");
       setIsRecurring(false);
@@ -140,7 +199,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     if (open) {
       setTimeout(() => titleRef.current?.focus(), 100);
     }
-  }, [open]);
+  }, [open, titleRef]);
 
   // Pending past instances for recurring tasks
   const pendingPastQuery = usePendingPastCountApiV1InstancesPendingPastCountGet({
@@ -157,8 +216,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   const toggleCompleteMutation = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-
-  const markDirty = () => setDirty(true);
 
   const handleClose = () => {
     if (dirty) {
@@ -183,13 +240,11 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       description: description.trim() || null,
     });
 
-    const parsedDomainId = domainId !== "none" ? Number(domainId) : null;
-
     if (isEdit && task) {
       const data: TaskUpdate = {
         title: encrypted.title,
         description: encrypted.description,
-        domain_id: parsedDomainId,
+        domain_id: domainId,
         impact,
         clarity,
         duration_minutes: durationMinutes,
@@ -219,7 +274,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       const data: TaskCreate = {
         title: encrypted.title!,
         description: encrypted.description,
-        domain_id: parsedDomainId,
+        domain_id: domainId,
         impact,
         clarity,
         duration_minutes: durationMinutes,
@@ -279,19 +334,6 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     );
   };
 
-  const handleDurationPreset = (m: number) => {
-    setDurationMinutes(durationMinutes === m ? null : m);
-    setCustomDuration(durationMinutes === m ? "" : String(m));
-    markDirty();
-  };
-
-  const handleCustomDuration = (val: string) => {
-    setCustomDuration(val);
-    const n = Number(val);
-    setDurationMinutes(n > 0 && n <= 1440 ? n : null);
-    markDirty();
-  };
-
   const handleToggleComplete = () => {
     if (!task) return;
     const wasCompleted = task.status === "completed" || !!task.completed_at;
@@ -319,6 +361,27 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     );
   };
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const cleaned = processTitle(e.target.value);
+    setTitle(cleaned);
+    markDirty();
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (handleSmartKeyDown(e)) {
+      // Autocomplete consumed the event — if it was Enter/Tab, apply the selection
+      if ((e.key === "Enter" || e.key === "Tab") && acSuggestions[acSelectedIndex]) {
+        const cleaned = handleAcSelect(acSuggestions[acSelectedIndex], title);
+        setTitle(cleaned);
+        markDirty();
+      }
+      return;
+    }
+    // Don't submit on Enter in editor — allow multiline
+  };
+
+  const titleInputRef = useRef<HTMLDivElement>(null);
+
   return (
     <>
       <Sheet open={open} onOpenChange={handleClose}>
@@ -332,212 +395,154 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             </SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-5 px-4 pb-4">
-            {/* Title */}
+          <div className="space-y-4 px-4 pb-4">
+            {/* Title — smart input (Approach A: tokens consumed) */}
             <div className="space-y-1.5">
               <Label htmlFor="task-title" className="text-xs font-medium">
                 Title
               </Label>
-              <Input
-                ref={titleRef}
-                id="task-title"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  markDirty();
-                }}
-                placeholder="What needs to be done?"
-                className="h-9"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <Label htmlFor="task-desc" className="text-xs font-medium">
-                Description
-              </Label>
-              <Textarea
-                id="task-desc"
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  markDirty();
-                }}
-                placeholder="Add details..."
-                rows={3}
-                className="resize-none"
-              />
+              <div ref={titleInputRef} className="relative">
+                <textarea
+                  ref={titleRef}
+                  id="task-title"
+                  value={title}
+                  onChange={handleTitleChange}
+                  onKeyDown={handleTitleKeyDown}
+                  placeholder="What needs to be done? (try #domain !high 30m)"
+                  className="w-full text-sm bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-2 px-3 resize-none overflow-hidden rounded-md border border-input focus:ring-1 focus:ring-ring transition-colors"
+                  rows={1}
+                />
+                <SmartInputAutocomplete
+                  suggestions={acSuggestions}
+                  visible={acVisible}
+                  selectedIndex={acSelectedIndex}
+                  onSelect={(s) => {
+                    const cleaned = handleAcSelect(s, title);
+                    setTitle(cleaned);
+                    markDirty();
+                  }}
+                />
+              </div>
             </div>
 
             {/* Domain */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Domain</Label>
-              <Select
-                value={domainId}
-                onValueChange={(v) => {
-                  setDomainId(v);
+            <EditorFieldRow label="Domain" flash={flashTarget === "domain" || domainFlash}>
+              <DomainChipRow
+                domains={domains}
+                selectedId={domainId}
+                onSelect={(id) => {
+                  setDomainId(domainId === id ? null : id);
                   markDirty();
                 }}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="No domain" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Thought (no domain)</SelectItem>
-                  {domains
-                    .filter((d) => !d.is_archived)
-                    .map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>
-                        {d.icon ? `${d.icon} ` : ""}
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+              />
+            </EditorFieldRow>
 
             {/* Parent task (edit mode only — immediate apply with undo) */}
             {isEdit && task && parentTasks && parentTasks.length > 0 && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Parent Task</Label>
-                <ParentTaskPicker task={task} parentTasks={parentTasks} domains={domains} />
-              </div>
+              <EditorFieldRow label="Parent">
+                <ParentTaskPicker
+                  task={task}
+                  parentTasks={parentTasks}
+                  domains={domains}
+                  onParentChanged={(parentDomainId) => {
+                    // Auto-sync domain to match parent's domain
+                    if (parentDomainId !== null && parentDomainId !== domainId) {
+                      setDomainId(parentDomainId);
+                      setDomainFlash(true);
+                      setTimeout(() => setDomainFlash(false), 800);
+                      markDirty();
+                    }
+                  }}
+                />
+              </EditorFieldRow>
             )}
 
             {/* Impact */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Impact</Label>
-              <div className="flex gap-1.5">
-                {IMPACT_OPTIONS.map((opt) => (
-                  <Button
-                    key={opt.value}
-                    type="button"
-                    variant={impact === opt.value ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 h-8 text-xs"
-                    style={
-                      impact === opt.value
-                        ? {
-                            backgroundColor: IMPACT_COLORS[opt.value],
-                            borderColor: IMPACT_COLORS[opt.value],
-                            color: "white",
-                          }
-                        : undefined
-                    }
-                    onClick={() => {
-                      setImpact(opt.value);
-                      markDirty();
-                    }}
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
+            <EditorFieldRow label="Impact" flash={flashTarget === "impact"}>
+              <ImpactButtonRow
+                value={impact}
+                onChange={(v) => {
+                  setImpact(impact === v ? 4 : v);
+                  markDirty();
+                }}
+              />
+            </EditorFieldRow>
 
-            {/* Clarity / Mode */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Mode</Label>
-              <div className="flex gap-1.5">
-                {CLARITY_OPTIONS.map((opt) => (
-                  <Button
-                    key={opt.value}
-                    type="button"
-                    variant={clarity === opt.value ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 h-8 text-xs"
-                    onClick={() => {
-                      setClarity(opt.value);
-                      markDirty();
-                    }}
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
+            {/* Clarity */}
+            <EditorFieldRow label="Clarity" flash={flashTarget === "clarity"}>
+              <ClarityChipRow
+                value={clarity}
+                onChange={(v) => {
+                  setClarity(clarity === v ? "normal" : v);
+                  markDirty();
+                }}
+              />
+            </EditorFieldRow>
 
             {/* Duration */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Duration</Label>
-              <div className="flex gap-1.5 items-center">
-                {DURATION_PRESETS.map((m) => (
-                  <Button
-                    key={m}
-                    type="button"
-                    variant={durationMinutes === m ? "default" : "outline"}
-                    size="sm"
-                    className="h-7 text-xs px-2"
-                    onClick={() => handleDurationPreset(m)}
-                  >
-                    {formatDurationLabel(m)}
-                  </Button>
-                ))}
-                <Input
-                  type="number"
-                  min={1}
-                  max={1440}
-                  value={customDuration}
-                  onChange={(e) => handleCustomDuration(e.target.value)}
-                  placeholder="min"
-                  className="h-7 w-16 text-xs"
-                />
-              </div>
-            </div>
+            <EditorFieldRow label="Duration" flash={flashTarget === "duration"}>
+              <DurationPickerRow
+                value={durationMinutes}
+                showCustom
+                onChange={(m) => {
+                  setDurationMinutes(m);
+                  markDirty();
+                }}
+              />
+            </EditorFieldRow>
 
-            {/* Scheduled date + time */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Scheduled</Label>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="date"
-                  value={scheduledDate}
-                  onChange={(e) => {
-                    setScheduledDate(e.target.value);
-                    markDirty();
-                  }}
-                  className="h-8 text-xs flex-1"
-                />
-                <Input
-                  type="time"
-                  value={scheduledTime}
-                  onChange={(e) => {
-                    setScheduledTime(e.target.value);
-                    markDirty();
-                  }}
-                  className="h-8 text-xs w-28"
-                />
-              </div>
-              <div className="flex gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-[10px] px-2"
-                  onClick={() => {
-                    setScheduledDate(new Date().toISOString().split("T")[0]);
-                    markDirty();
-                  }}
-                >
-                  Today
-                </Button>
-                {(scheduledDate || scheduledTime) && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-[10px] px-2 text-muted-foreground"
-                    onClick={() => {
-                      setScheduledDate("");
-                      setScheduledTime("");
-                      markDirty();
+            {/* Schedule */}
+            <EditorFieldRow label="When" flash={flashTarget === "schedule"}>
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <div>
+                    <ScheduleButtonRow
+                      selectedDate={scheduledDate || null}
+                      onSelectDate={(iso) => {
+                        setScheduledDate(scheduledDate === iso ? "" : iso);
+                        markDirty();
+                      }}
+                      onClear={() => {
+                        setScheduledDate("");
+                        setScheduledTime("");
+                        markDirty();
+                      }}
+                      onCalendarOpen={() => setCalendarOpen(true)}
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+                  <Calendar
+                    mode="single"
+                    selected={scheduledDate ? new Date(`${scheduledDate}T00:00:00`) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+                        setScheduledDate(iso);
+                        setCalendarOpen(false);
+                        markDirty();
+                      }
                     }}
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </div>
+                    defaultMonth={
+                      scheduledDate ? new Date(`${scheduledDate}T00:00:00`) : new Date()
+                    }
+                    className="mx-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </EditorFieldRow>
+
+            {/* Time — progressive disclosure: only when date is set */}
+            <EditorFieldRow label="Time">
+              <TimePickerField
+                value={scheduledTime}
+                visible={!!scheduledDate}
+                onChange={(t) => {
+                  setScheduledTime(t);
+                  markDirty();
+                }}
+              />
+            </EditorFieldRow>
 
             {/* Recurrence */}
             <div className="space-y-1.5">
@@ -580,6 +585,22 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
               )}
             </div>
 
+            {/* Notes / Description */}
+            <EditorFieldRow label="Notes" flash={flashTarget === "description"}>
+              <textarea
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  markDirty();
+                }}
+                onFocus={() => setDescriptionFocused(true)}
+                onBlur={() => setDescriptionFocused(false)}
+                placeholder="Add notes..."
+                rows={descriptionFocused || description ? 3 : 1}
+                className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
+              />
+            </EditorFieldRow>
+
             {/* Batch complete past instances */}
             {isEdit && task?.is_recurring && pendingPastCount > 0 && (
               <div className="pt-2 border-t">
@@ -609,7 +630,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
               </div>
             )}
 
-            {/* Editor actions: promote / complete */}
+            {/* Editor actions: complete / reopen */}
             {isEdit && task && (
               <div className="flex gap-2 pt-2 border-t">
                 <Button
@@ -708,5 +729,28 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  EditorFieldRow — label + content + optional flash                  */
+/* ------------------------------------------------------------------ */
+
+function EditorFieldRow({
+  label,
+  children,
+  flash,
+}: {
+  label: string;
+  children: React.ReactNode;
+  flash?: boolean;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium">{label}</Label>
+      <div className={cn("rounded-lg transition-all duration-300", flash && "bg-primary/20")}>
+        {children}
+      </div>
+    </div>
   );
 }

@@ -1,19 +1,23 @@
 import { ArrowRight, ChevronRight, MousePointerClick, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
-import { DomainChipRow, ImpactButtonRow, ScheduleButtonRow } from "@/components/task/field-pickers";
+import {
+  ClarityChipRow,
+  DomainChipRow,
+  DurationPickerRow,
+  ImpactButtonRow,
+  RecurrencePresetRow,
+  type RecurrencePresetValue,
+  ScheduleButtonRow,
+  TimePickerField,
+} from "@/components/task/field-pickers";
 import type { ConvertData } from "@/components/task/thought-triage-drawer";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSmartInput } from "@/hooks/use-smart-input";
 import { parseTaskInput } from "@/lib/task-parser";
-import {
-  CLARITY_COLORS,
-  CLARITY_OPTIONS,
-  DURATION_PRESETS,
-  formatDurationLabel,
-} from "@/lib/task-utils";
+import { formatDurationLabel } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -92,6 +96,9 @@ function InspectorBody({
   const [parentId, setParentId] = useState<number | null>(null);
   const [domainFlash, setDomainFlash] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [description, setDescription] = useState("");
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
+  const [recurrence, setRecurrence] = useState<RecurrencePresetValue | null>(null);
 
   const {
     inputRef,
@@ -103,6 +110,12 @@ function InspectorBody({
   } = useSmartInput<HTMLTextAreaElement>({ initialInput: thought.title, domains });
 
   const [displayTitle, setDisplayTitle] = useState(parsed.title);
+
+  // Seed description from parsed //notes on first render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only run on mount
+  useEffect(() => {
+    if (parsed.description) setDescription(parsed.description);
+  }, []);
 
   // Auto-resize textarea
   // biome-ignore lint/correctness/useExhaustiveDependencies: displayTitle triggers resize
@@ -141,6 +154,9 @@ function InspectorBody({
 
   const handleSubmit = useCallback(() => {
     if (!canConvert || !parsed.domainId) return;
+    const finalDescription = description.trim() || parsed.description || null;
+    const isRecurring =
+      recurrence !== null && recurrence.preset !== "none" && recurrence.rule !== null;
     onConvert(thought, {
       domain_id: parsed.domainId,
       title: parsed.title.trim(),
@@ -150,9 +166,14 @@ function InspectorBody({
       duration_minutes: parsed.durationMinutes ?? undefined,
       scheduled_date: parsed.scheduledDate,
       scheduled_time: parsed.scheduledTime,
-      description: parsed.description,
+      description: finalDescription,
+      is_recurring: isRecurring || undefined,
+      recurrence_rule: isRecurring ? (recurrence!.rule as Record<string, unknown>) : undefined,
+      recurrence_start: isRecurring
+        ? (parsed.scheduledDate ?? new Date().toISOString().split("T")[0])
+        : undefined,
     });
-  }, [canConvert, parsed, thought, onConvert, parentId]);
+  }, [canConvert, parsed, thought, onConvert, parentId, description, recurrence]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -312,79 +333,78 @@ function InspectorBody({
 
         {/* Duration */}
         <FieldRow label="Duration">
-          <div className="flex gap-1.5 md:gap-1">
-            {DURATION_PRESETS.map((m) => {
-              const isActive = parsed.durationMinutes === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  className={cn(
-                    "rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
-                    "md:rounded-md md:px-2 md:py-1",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                  )}
-                  onClick={() => {
-                    if (parsed.durationMinutes === m) {
-                      clearTokenType("duration");
-                    } else {
-                      const durToken = parsed.tokens.find((t) => t.type === "duration");
-                      const durPattern = durToken
-                        ? new RegExp(durToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-                        : /(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/i;
-                      tapToken("", formatDurationLabel(m), durPattern);
-                    }
-                  }}
-                >
-                  {formatDurationLabel(m)}
-                </button>
-              );
-            })}
-          </div>
+          <DurationPickerRow
+            value={parsed.durationMinutes}
+            showCustom
+            onChange={(m) => {
+              if (m === null || parsed.durationMinutes === m) {
+                clearTokenType("duration");
+              } else {
+                const durToken = parsed.tokens.find((t) => t.type === "duration");
+                const durPattern = durToken
+                  ? new RegExp(durToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+                  : /(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/i;
+                tapToken("", formatDurationLabel(m), durPattern);
+              }
+            }}
+          />
+        </FieldRow>
+
+        {/* Time */}
+        <FieldRow label="Time">
+          <TimePickerField
+            value={parsed.scheduledTime ?? ""}
+            visible={!!parsed.scheduledDate}
+            onChange={(time) => {
+              // Time isn't a token — we store it alongside the date parse
+              // For now, inject as part of the raw input via date token area
+              // The parser extracts time from chrono; direct setting needs the token approach
+              const timeToken = parsed.tokens.find((t) => t.type === "date");
+              if (timeToken && time) {
+                // Append time after the date token
+                const datePattern = new RegExp(
+                  timeToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                  "i",
+                );
+                tapToken("", `${timeToken.raw} ${time}`.trim(), datePattern);
+              } else if (time && parsed.scheduledDate) {
+                // No date token but we have a parsed date — append time
+                tapToken("", time, /(?<![a-zA-Z\d])\d{1,2}:\d{2}(?:[ap]m)?(?![a-zA-Z])/i);
+              }
+            }}
+          />
+        </FieldRow>
+
+        {/* Recurrence — preset chips */}
+        <FieldRow label="Repeat">
+          <RecurrencePresetRow value={recurrence} onChange={setRecurrence} />
         </FieldRow>
 
         {/* Clarity */}
         <FieldRow label="Clarity">
-          <div className="flex gap-1.5 md:gap-1">
-            {CLARITY_OPTIONS.map((opt) => {
-              const isActive = parsed.clarity === opt.value;
-              const isDefaultHint = parsed.clarity === null && opt.value === "normal";
-              const color = CLARITY_COLORS[opt.value];
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  className="rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all md:rounded-md md:px-2 md:py-1 md:hover:brightness-110"
-                  style={
-                    isActive
-                      ? {
-                          backgroundColor: color,
-                          color: "#fff",
-                          boxShadow: `0 0 0 2px ${color}40`,
-                        }
-                      : isDefaultHint
-                        ? {
-                            backgroundColor: `${color}12`,
-                            color,
-                            border: `1.5px dashed ${color}60`,
-                          }
-                        : { backgroundColor: `${color}12`, color }
-                  }
-                  onClick={() => {
-                    if (parsed.clarity === opt.value) {
-                      clearTokenType("clarity");
-                    } else {
-                      tapToken("?", opt.value, /\?(autopilot|normal|brainstorm)\b/i);
-                    }
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
+          <ClarityChipRow
+            value={parsed.clarity}
+            onChange={(clarity) => {
+              if (parsed.clarity === clarity) {
+                clearTokenType("clarity");
+              } else {
+                tapToken("?", clarity, /\?(autopilot|normal|brainstorm)\b/i);
+              }
+            }}
+          />
+        </FieldRow>
+
+        {/* Notes / Description */}
+        <FieldRow label="Notes">
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onFocus={() => setDescriptionFocused(true)}
+            onBlur={() => setDescriptionFocused(false)}
+            placeholder="Add notes..."
+            rows={descriptionFocused || description ? 3 : 1}
+            className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
+          />
         </FieldRow>
       </div>
 
