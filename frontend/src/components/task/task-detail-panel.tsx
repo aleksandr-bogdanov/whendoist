@@ -1,25 +1,26 @@
 /**
  * TaskDetailPanel — inline task editor for the dashboard right pane (desktop).
  *
- * Mirrors the pattern of TaskInspector in the thoughts page: the right pane
- * shows an empty state when no task is selected, and a full editor when a
- * task is selected. Uses TaskFieldsBody for the shared field layout.
+ * Supports two modes:
+ * - "edit": editing an existing task (populated from task prop)
+ * - "create": creating a new task (empty fields)
  *
- * Unlike the Sheet-based TaskEditor, this component lives inline in the
- * split layout and doesn't overlay the page.
+ * When mode is "idle" (no task selected, not creating), shows an empty state
+ * with keyboard navigation hints.
  */
 
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, Loader2, MousePointerClick, RotateCcw, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { CheckCircle, Loader2, MousePointerClick, Plus, RotateCcw, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { DomainResponse, TaskResponse, TaskUpdate } from "@/api/model";
+import type { DomainResponse, TaskCreate, TaskResponse, TaskUpdate } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
   useBatchCompleteInstancesApiV1InstancesBatchCompletePost,
   usePendingPastCountApiV1InstancesPendingPastCountGet,
 } from "@/api/queries/instances/instances";
 import {
+  useCreateTaskApiV1TasksPost,
   useDeleteTaskApiV1TasksTaskIdDelete,
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
@@ -49,10 +50,20 @@ interface TaskDetailPanelProps {
   task: TaskResponse | null;
   domains: DomainResponse[];
   parentTasks: TaskResponse[];
+  /** "idle" = no task, show empty state. "edit" = editing task. "create" = new task form. */
+  mode: "idle" | "edit" | "create";
+  /** Called when the user closes the panel (X button, Escape, or after create). */
+  onClose: () => void;
 }
 
-export function TaskDetailPanel({ task, domains, parentTasks }: TaskDetailPanelProps) {
-  if (!task) {
+export function TaskDetailPanel({
+  task,
+  domains,
+  parentTasks,
+  mode,
+  onClose,
+}: TaskDetailPanelProps) {
+  if (mode === "idle") {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center space-y-2">
@@ -61,75 +72,102 @@ export function TaskDetailPanel({ task, domains, parentTasks }: TaskDetailPanelP
           <p className="text-xs text-muted-foreground/60">
             <kbd className="px-1 py-0.5 rounded border border-border text-[10px]">j</kbd>{" "}
             <kbd className="px-1 py-0.5 rounded border border-border text-[10px]">k</kbd> to
-            navigate
+            navigate, <kbd className="px-1 py-0.5 rounded border border-border text-[10px]">n</kbd>{" "}
+            to create
           </p>
         </div>
       </div>
     );
   }
 
-  return <DetailBody key={task.id} task={task} domains={domains} parentTasks={parentTasks} />;
+  return (
+    <DetailBody
+      key={mode === "create" ? "create" : task!.id}
+      task={mode === "edit" ? task! : null}
+      domains={domains}
+      parentTasks={parentTasks}
+      onClose={onClose}
+    />
+  );
 }
 
 /* ------------------------------------------------------------------ */
-/*  DetailBody — remounts per task via key={task.id}                    */
+/*  DetailBody — handles both edit and create modes                    */
 /* ------------------------------------------------------------------ */
 
 function DetailBody({
   task,
   domains,
   parentTasks,
+  onClose,
 }: {
-  task: TaskResponse;
+  task: TaskResponse | null;
   domains: DomainResponse[];
   parentTasks: TaskResponse[];
+  onClose: () => void;
 }) {
+  const isEdit = !!task;
   const queryClient = useQueryClient();
   const { encryptTaskFields } = useCrypto();
   const flashUpdatedTask = useUIStore((s) => s.flashUpdatedTask);
 
-  // Field state — populated from task on mount (key={task.id} forces remount)
-  const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description ?? "");
-  const [domainId, setDomainId] = useState<number | null>(task.domain_id ?? null);
-  const [impact, setImpact] = useState(task.impact);
-  const [clarity, setClarity] = useState(task.clarity ?? "normal");
-  const [durationMinutes, setDurationMinutes] = useState<number | null>(task.duration_minutes);
-  const [scheduledDate, setScheduledDate] = useState(task.scheduled_date ?? "");
-  const [scheduledTime, setScheduledTime] = useState(task.scheduled_time ?? "");
-  const [isRecurring, setIsRecurring] = useState(task.is_recurring);
+  // Field state — populated from task on mount (edit) or empty (create)
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [description, setDescription] = useState(task?.description ?? "");
+  const [domainId, setDomainId] = useState<number | null>(task?.domain_id ?? null);
+  const [impact, setImpact] = useState(task?.impact ?? 4);
+  const [clarity, setClarity] = useState(task?.clarity ?? "normal");
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(
+    task?.duration_minutes ?? null,
+  );
+  const [scheduledDate, setScheduledDate] = useState(task?.scheduled_date ?? "");
+  const [scheduledTime, setScheduledTime] = useState(task?.scheduled_time ?? "");
+  const [isRecurring, setIsRecurring] = useState(task?.is_recurring ?? false);
   const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(
-    task.recurrence_rule ? (task.recurrence_rule as unknown as RecurrenceRule) : null,
+    task?.recurrence_rule ? (task.recurrence_rule as unknown as RecurrenceRule) : null,
   );
   const [recurrenceStart, setRecurrenceStart] = useState<string | null>(
-    task.recurrence_start ?? null,
+    task?.recurrence_start ?? null,
   );
-  const [recurrenceEnd, setRecurrenceEnd] = useState<string | null>(task.recurrence_end ?? null);
+  const [recurrenceEnd, setRecurrenceEnd] = useState<string | null>(task?.recurrence_end ?? null);
   const [dirty, setDirty] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const markDirty = useCallback(() => setDirty(true), []);
 
   // Mutations
+  const createMutation = useCreateTaskApiV1TasksPost();
   const updateMutation = useUpdateTaskApiV1TasksTaskIdPut();
   const deleteMutation = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreMutation = useRestoreTaskApiV1TasksTaskIdRestorePost();
   const toggleCompleteMutation = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
 
-  // Pending past instances for recurring tasks
+  // Pending past instances for recurring tasks (edit mode only)
   const pendingPastQuery = usePendingPastCountApiV1InstancesPendingPastCountGet({
-    query: { enabled: !!task.is_recurring },
+    query: { enabled: isEdit && !!task?.is_recurring },
   });
   const pendingPastCount =
     (pendingPastQuery.data as { pending_count?: number } | undefined)?.pending_count ?? 0;
   const batchComplete = useBatchCompleteInstancesApiV1InstancesBatchCompletePost();
 
-  const isSaving = updateMutation.isPending;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
     queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
   }, [queryClient]);
+
+  // Focus title on mount for create mode
+  useEffect(() => {
+    if (!isEdit) {
+      // Small delay to let TaskFieldsBody mount and create the textarea ref
+      const timer = setTimeout(() => {
+        const titleEl = document.getElementById("task-title") as HTMLTextAreaElement | null;
+        titleEl?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isEdit]);
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -142,37 +180,68 @@ function DetailBody({
       description: description.trim() || null,
     });
 
-    const data: TaskUpdate = {
-      title: encrypted.title,
-      description: encrypted.description,
-      domain_id: domainId,
-      impact,
-      clarity,
-      duration_minutes: durationMinutes,
-      scheduled_date: scheduledDate || null,
-      scheduled_time: scheduledTime || null,
-      is_recurring: isRecurring,
-      recurrence_rule: recurrenceRule as TaskUpdate["recurrence_rule"],
-      recurrence_start: recurrenceStart,
-      recurrence_end: recurrenceEnd,
-    };
+    if (isEdit && task) {
+      const data: TaskUpdate = {
+        title: encrypted.title,
+        description: encrypted.description,
+        domain_id: domainId,
+        impact,
+        clarity,
+        duration_minutes: durationMinutes,
+        scheduled_date: scheduledDate || null,
+        scheduled_time: scheduledTime || null,
+        is_recurring: isRecurring,
+        recurrence_rule: recurrenceRule as TaskUpdate["recurrence_rule"],
+        recurrence_start: recurrenceStart,
+        recurrence_end: recurrenceEnd,
+      };
 
-    updateMutation.mutate(
-      { taskId: task.id, data },
-      {
-        onSuccess: () => {
-          announce("Task updated");
-          toast.success("Task updated", { id: `save-${task.id}` });
-          invalidateQueries();
-          flashUpdatedTask(task.id);
-          setDirty(false);
+      updateMutation.mutate(
+        { taskId: task.id, data },
+        {
+          onSuccess: () => {
+            announce("Task updated");
+            toast.success("Task updated", { id: `save-${task.id}` });
+            invalidateQueries();
+            flashUpdatedTask(task.id);
+            setDirty(false);
+          },
+          onError: () => toast.error("Failed to update task", { id: `save-err-${task.id}` }),
         },
-        onError: () => toast.error("Failed to update task", { id: `save-err-${task.id}` }),
-      },
-    );
+      );
+    } else {
+      const data: TaskCreate = {
+        title: encrypted.title!,
+        description: encrypted.description,
+        domain_id: domainId,
+        impact,
+        clarity,
+        duration_minutes: durationMinutes,
+        scheduled_date: scheduledDate || null,
+        scheduled_time: scheduledTime || null,
+        is_recurring: isRecurring,
+        recurrence_rule: recurrenceRule as TaskCreate["recurrence_rule"],
+        recurrence_start: recurrenceStart,
+        recurrence_end: recurrenceEnd,
+      };
+
+      createMutation.mutate(
+        { data },
+        {
+          onSuccess: () => {
+            announce("Task created");
+            toast.success("Task created");
+            invalidateQueries();
+            onClose();
+          },
+          onError: () => toast.error("Failed to create task"),
+        },
+      );
+    }
   };
 
   const handleDelete = () => {
+    if (!task) return;
     deleteMutation.mutate(
       { taskId: task.id },
       {
@@ -196,6 +265,7 @@ function DetailBody({
           });
           invalidateQueries();
           setShowDeleteConfirm(false);
+          onClose();
         },
         onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),
       },
@@ -203,6 +273,7 @@ function DetailBody({
   };
 
   const handleToggleComplete = () => {
+    if (!task) return;
     const wasCompleted = task.status === "completed" || !!task.completed_at;
     toggleCompleteMutation.mutate(
       { taskId: task.id, data: null },
@@ -260,6 +331,22 @@ function DetailBody({
   return (
     <>
       <div className="flex flex-col h-full">
+        {/* Header with title and close button */}
+        <div className="flex items-center justify-between px-5 py-3 border-b">
+          <h2 className="text-sm font-semibold">{isEdit ? "Edit Task" : "New Task"}</h2>
+          <button
+            type="button"
+            onClick={() => {
+              if (dirty && !window.confirm("You have unsaved changes. Discard?")) return;
+              onClose();
+            }}
+            className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+            title="Close (Esc)"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-5">
           <TaskFieldsBody
@@ -271,8 +358,8 @@ function DetailBody({
             onDirty={markDirty}
           />
 
-          {/* Batch complete past instances */}
-          {task.is_recurring && pendingPastCount > 0 && (
+          {/* Batch complete past instances (edit mode, recurring only) */}
+          {isEdit && task?.is_recurring && pendingPastCount > 0 && (
             <div className="pt-3 mt-3 border-t">
               <Button
                 variant="outline"
@@ -300,100 +387,116 @@ function DetailBody({
             </div>
           )}
 
-          {/* Metadata timestamps */}
-          <div className="text-[11px] text-muted-foreground pt-3 mt-3 border-t">
-            {task.created_at && (
-              <span>
-                Created{" "}
-                {new Date(task.created_at).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-            )}
-            {task.completed_at && (
-              <span>
-                {" · "}Completed{" "}
-                {new Date(task.completed_at).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-            )}
-          </div>
+          {/* Metadata timestamps (edit mode only) */}
+          {isEdit && task && (
+            <div className="text-[11px] text-muted-foreground pt-3 mt-3 border-t">
+              {task.created_at && (
+                <span>
+                  Created{" "}
+                  {new Date(task.created_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+              )}
+              {task.completed_at && (
+                <span>
+                  {" · "}Completed{" "}
+                  {new Date(task.completed_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer — action buttons */}
         <div className="border-t bg-background px-5 py-3 flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs gap-1"
-            onClick={handleToggleComplete}
-            disabled={toggleCompleteMutation.isPending}
-          >
-            {task.status === "completed" || task.completed_at ? (
-              <>
-                <RotateCcw className="h-3.5 w-3.5" />
-                Reopen
-              </>
-            ) : (
-              <>
-                <CheckCircle className="h-3.5 w-3.5" />
-                Complete
-              </>
-            )}
-          </Button>
-          <div className="flex-1" />
-          <Button
-            variant="destructive"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setShowDeleteConfirm(true)}
-            title="Delete task"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {isEdit && task && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1"
+                onClick={handleToggleComplete}
+                disabled={toggleCompleteMutation.isPending}
+              >
+                {task.status === "completed" || task.completed_at ? (
+                  <>
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Reopen
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    Complete
+                  </>
+                )}
+              </Button>
+              <div className="flex-1" />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowDeleteConfirm(true)}
+                title="Delete task"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+          {!isEdit && <div className="flex-1" />}
           <Button
             onClick={handleSave}
-            disabled={isSaving || !title.trim() || !dirty}
+            disabled={isSaving || !title.trim() || (isEdit && !dirty)}
             size="sm"
-            className="text-xs"
+            className="text-xs gap-1"
           >
             {isSaving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-            Save
+            {isEdit ? (
+              "Save"
+            ) : (
+              <>
+                <Plus className="h-3.5 w-3.5" />
+                Create Task
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      {/* Delete confirmation */}
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete &ldquo;{task.title}&rdquo;?
-              {(task.subtasks?.length ?? 0) > 0 &&
-                ` This will also delete ${task.subtasks!.length} subtask(s).`}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete confirmation (edit mode only) */}
+      {isEdit && task && (
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Task</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete &ldquo;{task.title}&rdquo;?
+                {(task.subtasks?.length ?? 0) > 0 &&
+                  ` This will also delete ${task.subtasks!.length} subtask(s).`}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

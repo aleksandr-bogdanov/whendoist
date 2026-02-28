@@ -47,6 +47,7 @@ function DashboardPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskResponse | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const [gcalBannerDismissed, setGcalBannerDismissed] = useState(
     () => localStorage.getItem("gcal-banner-dismissed") === "1",
@@ -133,14 +134,22 @@ function DashboardPage() {
   });
 
   const handleNewTask = useCallback(() => {
-    setEditingTask(null);
-    setEditorOpen(true);
-  }, []);
+    if (window.matchMedia(MD_QUERY).matches) {
+      // Desktop: show create form in right pane
+      selectTask(null);
+      setCreating(true);
+    } else {
+      // Mobile: open Sheet editor
+      setEditingTask(null);
+      setEditorOpen(true);
+    }
+  }, [selectTask]);
 
   const handleEditTask = useCallback(
     (task: TaskResponse) => {
       if (window.matchMedia(MD_QUERY).matches) {
         // Desktop: show inline detail panel in right pane
+        setCreating(false);
         selectTask(task.id);
       } else {
         // Mobile: open Sheet editor
@@ -173,11 +182,15 @@ function DashboardPage() {
         },
         {
           key: "n",
-          description: "New task (editor)",
+          description: "New task",
           category: "Tasks",
           excludeInputs: true,
           handler: () => {
-            if (!stateRef.current.isModalOpen) {
+            if (stateRef.current.isModalOpen) return;
+            if (window.matchMedia(MD_QUERY).matches) {
+              selectTask(null);
+              setCreating(true);
+            } else {
               setEditingTask(null);
               setEditorOpen(true);
             }
@@ -323,14 +336,17 @@ function DashboardPage() {
         },
         {
           key: "Escape",
-          description: "Close dialog / clear selection",
+          description: "Close panel / clear selection",
           category: "Navigation",
           preventDefault: false,
           handler: () => {
             // Only clear selection if no modal is open
             // (modals handle their own Escape via Radix)
-            if (!stateRef.current.isModalOpen && stateRef.current.selectedTaskId !== null) {
-              selectTask(null);
+            if (!stateRef.current.isModalOpen) {
+              if (stateRef.current.selectedTaskId !== null) {
+                selectTask(null);
+              }
+              setCreating(false);
             }
           },
         },
@@ -370,12 +386,25 @@ function DashboardPage() {
     [selectedTaskId, decryptedTasks],
   );
 
+  // Clear creating mode when a task gets selected (j/k, click)
+  useEffect(() => {
+    if (selectedTaskId !== null) setCreating(false);
+  }, [selectedTaskId]);
+
   // Clear selection if the selected task disappears (deleted, moved, etc.)
   useEffect(() => {
     if (selectedTaskId && decryptedTasks.length > 0 && !selectedTask) {
       selectTask(null);
     }
   }, [selectedTaskId, selectedTask, decryptedTasks.length, selectTask]);
+
+  // Determine right pane mode
+  const detailPanelMode = creating ? "create" : selectedTask ? "edit" : "idle";
+
+  const handleCloseDetailPanel = useCallback(() => {
+    setCreating(false);
+    selectTask(null);
+  }, [selectTask]);
 
   const safedomains = decryptedDomains;
   const safeTasks = decryptedTasks;
@@ -428,18 +457,20 @@ function DashboardPage() {
             />
           </div>
 
-          {/* Right pane — task detail (desktop, task selected) or calendar */}
+          {/* Right pane — task detail (edit/create) or calendar (idle) */}
           <div
             className={`flex flex-col min-w-0 ${
               mobileTab === "calendar" ? "flex-1" : "hidden"
             } md:flex md:flex-[2] md:min-w-0 md:border-l md:border-border`}
           >
-            {selectedTask ? (
-              /* Inline task editor — replaces calendar when a task is selected */
+            {detailPanelMode !== "idle" ? (
+              /* Inline task editor — replaces calendar when editing or creating */
               <TaskDetailPanel
                 task={selectedTask}
                 domains={safedomains}
                 parentTasks={parentTasks}
+                mode={detailPanelMode}
+                onClose={handleCloseDetailPanel}
               />
             ) : (
               /* Calendar panel — default view when no task selected */
