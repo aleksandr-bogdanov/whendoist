@@ -564,25 +564,25 @@ function ThoughtCard({
       {/* Title */}
       <p className="flex-1 min-w-0 text-sm truncate">{thought.title}</p>
 
-      {/* Hover actions — desktop only, replace timestamp on hover */}
-      <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          type="button"
-          className="p-1 rounded-md hover:bg-destructive/10 text-destructive/60 hover:text-destructive transition-colors"
-          title="Delete"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+      {/* Timestamp + hover trash — both use opacity to avoid layout shift */}
+      <div className="relative flex items-center shrink-0">
+        <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap transition-opacity md:group-hover:opacity-0">
+          {timeAgo}
+        </span>
+        <div className="hidden md:flex items-center absolute inset-0 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            className="p-1 rounded-md hover:bg-destructive/10 text-destructive/60 hover:text-destructive transition-colors"
+            title="Delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
-
-      {/* Timestamp — hide on desktop hover */}
-      <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap shrink-0 md:group-hover:hidden">
-        {timeAgo}
-      </span>
     </div>
   );
 }
