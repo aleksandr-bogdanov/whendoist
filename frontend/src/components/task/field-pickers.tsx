@@ -21,7 +21,7 @@ export function DomainChipRow({ domains, selectedId, onSelect }: DomainChipRowPr
   if (domains.length === 0) return null;
 
   return (
-    <div className="flex gap-1.5 w-max">
+    <div className="flex gap-1.5 w-max md:w-auto md:flex-wrap md:gap-1">
       {domains.map((d) => {
         const isActive = selectedId === d.id;
         return (
@@ -30,6 +30,7 @@ export function DomainChipRow({ domains, selectedId, onSelect }: DomainChipRowPr
             type="button"
             className={cn(
               "rounded-lg shrink-0 px-2.5 py-2 text-[13px] font-medium transition-all active:scale-95",
+              "md:rounded-md md:px-2 md:py-1 md:active:scale-100",
               isActive
                 ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/30"
                 : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -55,7 +56,7 @@ interface ImpactButtonRowProps {
 
 export function ImpactButtonRow({ value, onChange }: ImpactButtonRowProps) {
   return (
-    <div className="grid grid-cols-4 gap-1.5">
+    <div className="grid grid-cols-4 gap-1.5 md:gap-1">
       {IMPACT_VALUES.map((v) => {
         const isActive = value === v || (value === null && v === 4);
         const color = IMPACT_COLORS[v];
@@ -63,7 +64,7 @@ export function ImpactButtonRow({ value, onChange }: ImpactButtonRowProps) {
           <button
             key={v}
             type="button"
-            className="rounded-lg py-2 text-[13px] font-medium transition-all active:scale-95"
+            className="rounded-lg py-2 text-[13px] font-medium transition-all active:scale-95 md:rounded-md md:py-1 md:active:scale-100 md:hover:brightness-110"
             style={
               isActive
                 ? { backgroundColor: color, color: "#fff", boxShadow: `0 0 0 2px ${color}40` }
@@ -104,11 +105,12 @@ export function ScheduleButtonRow({
   const isCustomDate = selectedDate && selectedDate !== todayStr && selectedDate !== tomorrowStr;
 
   return (
-    <div className="flex gap-1.5 items-center">
+    <div className="flex gap-1.5 items-center md:gap-1">
       <button
         type="button"
         className={cn(
           "rounded-lg px-3 py-2 text-[13px] font-medium transition-colors active:scale-95",
+          "md:rounded-md md:px-2.5 md:py-1 md:active:scale-100",
           selectedDate === todayStr
             ? "bg-primary text-primary-foreground"
             : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -121,6 +123,7 @@ export function ScheduleButtonRow({
         type="button"
         className={cn(
           "rounded-lg px-3 py-2 text-[13px] font-medium transition-colors active:scale-95",
+          "md:rounded-md md:px-2.5 md:py-1 md:active:scale-100",
           selectedDate === tomorrowStr
             ? "bg-primary text-primary-foreground"
             : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -133,6 +136,7 @@ export function ScheduleButtonRow({
         type="button"
         className={cn(
           "rounded-lg px-2 py-2 text-[13px] font-medium transition-colors active:scale-95",
+          "md:rounded-md md:py-1 md:active:scale-100 md:hover:bg-secondary/80",
           isCustomDate
             ? "bg-primary text-primary-foreground"
             : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -145,7 +149,7 @@ export function ScheduleButtonRow({
       {selectedDate && (
         <button
           type="button"
-          className="rounded-lg px-2 py-2 text-[13px] text-muted-foreground active:text-foreground"
+          className="rounded-lg px-2 py-2 text-[13px] text-muted-foreground active:text-foreground md:py-1 md:hover:text-foreground"
           onClick={onClear}
         >
           Clear

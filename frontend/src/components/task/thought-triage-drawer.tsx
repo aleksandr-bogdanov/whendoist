@@ -281,18 +281,16 @@ function DrawerBody({
             >
               <span className="flex items-center gap-1.5 truncate min-w-0">
                 {parentId !== null ? (
-                  <>
-                    {(() => {
-                      const p = parentTasks.find((t) => t.id === parentId);
-                      const d = p?.domain_id ? domains.find((dm) => dm.id === p.domain_id) : null;
-                      return (
-                        <>
-                          {d?.icon && <span className="shrink-0">{d.icon}</span>}
-                          <span className="truncate">{p?.title ?? "Unknown"}</span>
-                        </>
-                      );
-                    })()}
-                  </>
+                  (() => {
+                    const p = parentTasks.find((t) => t.id === parentId);
+                    const d = p?.domain_id ? domains.find((dm) => dm.id === p.domain_id) : null;
+                    return (
+                      <>
+                        {d?.icon && <span className="shrink-0">{d.icon}</span>}
+                        <span className="truncate">{p?.title ?? "Unknown"}</span>
+                      </>
+                    );
+                  })()
                 ) : (
                   <span>None</span>
                 )}

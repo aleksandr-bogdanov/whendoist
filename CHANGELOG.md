@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.57 — 2026-02-28
+
+### Fix: Desktop inspector compact field pickers
+
+De-touchify the desktop inspector's field pickers: all buttons shrink from `py-2` to `md:py-1`, `rounded-lg` to `md:rounded-md`, and `active:scale-95` neutralized on desktop via `md:active:scale-100`. Domain chips now wrap instead of horizontal scrolling. Impact and Clarity buttons gain `md:hover:brightness-110` for mouse-friendly feedback. Mobile drawer unchanged.
+
+---
+
 ## v0.55.56 — 2026-02-28
 
 ### Feat: Desktop split-pane layout for Thoughts page
