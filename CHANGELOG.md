@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.54 — 2026-02-28
+
+### Fix: Mobile touch targets too small in header, triage drawer, and calendar
+
+Header action buttons (theme toggle, logout) enlarged from ~26px to 44px touch targets on mobile using responsive classes (`p-3 md:p-1.5`, `h-5 w-5 md:h-3.5 md:w-3.5`). Triage drawer chips and buttons (domain, impact, schedule, duration, clarity, parent task) bumped from `py-1.5` (~32px) to `py-2` (~36px). Calendar nav arrows increased from `h-9 w-9` to `h-10 w-10`. Parent picker search bar and clear button also enlarged. Desktop sizes unchanged.
+
+---
+
 ## v0.55.53 — 2026-02-27
 
 ### Fix: Domain flash animation uses React state instead of imperactive DOM

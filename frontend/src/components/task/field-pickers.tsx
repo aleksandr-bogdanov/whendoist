@@ -29,7 +29,7 @@ export function DomainChipRow({ domains, selectedId, onSelect }: DomainChipRowPr
             key={d.id}
             type="button"
             className={cn(
-              "rounded-lg shrink-0 px-2.5 py-1.5 text-[13px] font-medium transition-all active:scale-95",
+              "rounded-lg shrink-0 px-2.5 py-2 text-[13px] font-medium transition-all active:scale-95",
               isActive
                 ? "bg-primary/10 text-primary ring-1 ring-inset ring-primary/30"
                 : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -63,7 +63,7 @@ export function ImpactButtonRow({ value, onChange }: ImpactButtonRowProps) {
           <button
             key={v}
             type="button"
-            className="rounded-lg py-1.5 text-[13px] font-medium transition-all active:scale-95"
+            className="rounded-lg py-2 text-[13px] font-medium transition-all active:scale-95"
             style={
               isActive
                 ? { backgroundColor: color, color: "#fff", boxShadow: `0 0 0 2px ${color}40` }
@@ -108,7 +108,7 @@ export function ScheduleButtonRow({
       <button
         type="button"
         className={cn(
-          "rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors active:scale-95",
+          "rounded-lg px-3 py-2 text-[13px] font-medium transition-colors active:scale-95",
           selectedDate === todayStr
             ? "bg-primary text-primary-foreground"
             : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -120,7 +120,7 @@ export function ScheduleButtonRow({
       <button
         type="button"
         className={cn(
-          "rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors active:scale-95",
+          "rounded-lg px-3 py-2 text-[13px] font-medium transition-colors active:scale-95",
           selectedDate === tomorrowStr
             ? "bg-primary text-primary-foreground"
             : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -132,7 +132,7 @@ export function ScheduleButtonRow({
       <button
         type="button"
         className={cn(
-          "rounded-lg px-2 py-1.5 text-[13px] font-medium transition-colors active:scale-95",
+          "rounded-lg px-2 py-2 text-[13px] font-medium transition-colors active:scale-95",
           isCustomDate
             ? "bg-primary text-primary-foreground"
             : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -145,7 +145,7 @@ export function ScheduleButtonRow({
       {selectedDate && (
         <button
           type="button"
-          className="rounded-lg px-2 py-1.5 text-[13px] text-muted-foreground active:text-foreground"
+          className="rounded-lg px-2 py-2 text-[13px] text-muted-foreground active:text-foreground"
           onClick={onClear}
         >
           Clear
@@ -300,7 +300,7 @@ export function ParentTaskSelect({
         ref={triggerRef}
         type="button"
         className={cn(
-          "flex items-center justify-between w-full rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors active:scale-95",
+          "flex items-center justify-between w-full rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors active:scale-95",
           selectedParent
             ? "bg-primary/10 text-primary"
             : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -369,7 +369,7 @@ export function ParentTaskSelect({
               <button
                 type="button"
                 className={cn(
-                  "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer",
+                  "w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors cursor-pointer",
                   selectedId === null && "bg-accent font-medium",
                 )}
                 onClick={() => handleSelect(null)}

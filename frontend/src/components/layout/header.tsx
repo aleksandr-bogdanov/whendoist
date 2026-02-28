@@ -130,24 +130,24 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
         </nav>
 
         {/* Right side actions */}
-        <div className="ml-auto md:ml-3 flex items-center gap-1">
+        <div className="ml-auto md:ml-3 flex items-center gap-0.5 md:gap-1">
           <button
             type="button"
             onClick={() => setTheme(themeCycle[theme])}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+            className="p-3 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors"
             title={`Theme: ${theme}`}
           >
-            <ThemeIcon className="h-3.5 w-3.5" />
+            <ThemeIcon className="h-5 w-5 md:h-3.5 md:w-3.5" />
           </button>
           <button
             type="button"
             onClick={() => {
               window.location.href = "/auth/logout";
             }}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+            className="p-3 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors"
             title="Logout"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-5 w-5 md:h-3.5 md:w-3.5" />
           </button>
         </div>
       </div>

@@ -269,7 +269,7 @@ function DrawerBody({
             <button
               type="button"
               className={cn(
-                "flex-1 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors active:scale-95",
+                "flex-1 flex items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors active:scale-95",
                 parentId !== null
                   ? "bg-primary/10 text-primary"
                   : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -343,7 +343,7 @@ function DrawerBody({
                   key={m}
                   type="button"
                   className={cn(
-                    "rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors active:scale-95",
+                    "rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors active:scale-95",
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-secondary-foreground active:bg-secondary/80",
@@ -379,7 +379,7 @@ function DrawerBody({
                 <button
                   key={opt.value}
                   type="button"
-                  className="rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-all active:scale-95"
+                  className="rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all active:scale-95"
                   style={
                     isActive
                       ? { backgroundColor: color, color: "#fff", boxShadow: `0 0 0 2px ${color}40` }
@@ -588,8 +588,8 @@ function ParentPickerDrawer({
 
           {/* Search */}
           <div className="flex items-center gap-2 px-4 pb-2">
-            <div className="flex-1 flex items-center gap-2 rounded-lg bg-secondary px-3 py-1.5">
-              <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <div className="flex-1 flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
               <input
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
@@ -600,9 +600,9 @@ function ParentPickerDrawer({
                 <button
                   type="button"
                   onClick={() => onSearchChange("")}
-                  className="text-muted-foreground active:text-foreground"
+                  className="p-1 text-muted-foreground active:text-foreground"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
             </div>
