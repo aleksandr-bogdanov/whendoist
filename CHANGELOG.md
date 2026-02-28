@@ -4,6 +4,34 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.59 — 2026-02-28
+
+### Feat: Unified task editor — smart input + shared fields convergence
+
+Converges three task editing surfaces (Task Editor, Thought Triage Inspector, Thought Triage Drawer) to share the same field set, controls, and interaction patterns.
+
+**Phase 1 — Smart Input + Missing Fields:**
+- Extract shared field components into `field-pickers.tsx`: `ClarityChipRow`, `DurationPickerRow`, `TimePickerField`
+- Add missing fields to triage (inspector + drawer): description textarea, custom duration, time picker
+- Create `useSmartInputConsumer` hook (Approach A: tokens consumed from title, field state independent)
+- Refactor task editor: replace Select/Input with chip-based pickers (DomainChipRow, ImpactButtonRow, ClarityChipRow, ScheduleButtonRow, DurationPickerRow), add smart input, add toggle-off for all fields
+
+**Phase 2 — Interaction Polish:**
+- Domain auto-sync: changing parent task auto-switches domain with flash animation
+- Toggle-off audit: all field pickers support click-to-deselect in both surfaces
+
+**Phase 3 — Recurrence in Triage:**
+- Create `RecurrencePresetRow` shared component (None/Daily/Weekdays/Weekly/Monthly chips)
+- Add recurrence presets to triage inspector and drawer with `ConvertData` extension
+
+**Phase 4 — Dashboard Split Layout:**
+- Create `TaskFieldsBody` shared component for Approach A surfaces
+- Create `TaskDetailPanel` for inline task editing in dashboard right pane
+- Dashboard split layout: clicking a task on desktop shows inline editor in right pane (replaces calendar), mobile keeps Sheet editor
+- Keyboard shortcuts `e`/`Enter` use inline panel on desktop, Sheet on mobile
+
+---
+
 ## v0.55.58 — 2026-02-28
 
 ### Fix: Thought list trash icon layout flash on hover-out

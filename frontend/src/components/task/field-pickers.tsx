@@ -2,7 +2,14 @@ import { CalendarDays, ChevronDown, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { DomainResponse, TaskResponse } from "@/api/model";
-import { IMPACT_COLORS, IMPACT_LABELS } from "@/lib/task-utils";
+import {
+  CLARITY_COLORS,
+  CLARITY_OPTIONS,
+  DURATION_PRESETS,
+  formatDurationLabel,
+  IMPACT_COLORS,
+  IMPACT_LABELS,
+} from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 
 const IMPACT_VALUES = [1, 2, 3, 4] as const;
@@ -162,6 +169,213 @@ export function ScheduleButtonRow({
 function formatShortDate(iso: string): string {
   const d = new Date(`${iso}T00:00:00`);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/* ------------------------------------------------------------------ */
+/*  ClarityChipRow                                                     */
+/* ------------------------------------------------------------------ */
+
+interface ClarityChipRowProps {
+  value: string | null;
+  onChange: (clarity: string) => void;
+}
+
+export function ClarityChipRow({ value, onChange }: ClarityChipRowProps) {
+  return (
+    <div className="flex gap-1.5 md:gap-1">
+      {CLARITY_OPTIONS.map((opt) => {
+        const isActive = value === opt.value;
+        const isDefaultHint = value === null && opt.value === "normal";
+        const color = CLARITY_COLORS[opt.value];
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            className="rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all md:rounded-md md:px-2 md:py-1 md:hover:brightness-110"
+            style={
+              isActive
+                ? {
+                    backgroundColor: color,
+                    color: "#fff",
+                    boxShadow: `0 0 0 2px ${color}40`,
+                  }
+                : isDefaultHint
+                  ? {
+                      backgroundColor: `${color}12`,
+                      color,
+                      border: `1.5px dashed ${color}60`,
+                    }
+                  : { backgroundColor: `${color}12`, color }
+            }
+            onClick={() => onChange(opt.value)}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  DurationPickerRow                                                  */
+/* ------------------------------------------------------------------ */
+
+interface DurationPickerRowProps {
+  value: number | null;
+  onChange: (minutes: number | null) => void;
+  /** Show custom number input after presets. Default: false. */
+  showCustom?: boolean;
+}
+
+export function DurationPickerRow({ value, onChange, showCustom }: DurationPickerRowProps) {
+  const [customInput, setCustomInput] = useState(
+    value && !DURATION_PRESETS.includes(value as (typeof DURATION_PRESETS)[number])
+      ? String(value)
+      : "",
+  );
+
+  const handlePreset = (m: number) => {
+    onChange(value === m ? null : m);
+    setCustomInput("");
+  };
+
+  const handleCustom = (val: string) => {
+    setCustomInput(val);
+    const n = Number(val);
+    onChange(n > 0 && n <= 1440 ? n : null);
+  };
+
+  return (
+    <div className="flex gap-1.5 items-center md:gap-1">
+      {DURATION_PRESETS.map((m) => {
+        const isActive = value === m;
+        return (
+          <button
+            key={m}
+            type="button"
+            className={cn(
+              "rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+              "md:rounded-md md:px-2 md:py-1",
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+            )}
+            onClick={() => handlePreset(m)}
+          >
+            {formatDurationLabel(m)}
+          </button>
+        );
+      })}
+      {showCustom && (
+        <input
+          type="number"
+          min={1}
+          max={1440}
+          value={customInput}
+          onChange={(e) => handleCustom(e.target.value)}
+          placeholder="min"
+          className="h-8 w-14 rounded-md border border-input bg-transparent px-2 text-[13px] outline-none focus:ring-1 focus:ring-ring md:h-7 md:w-12 md:text-xs"
+        />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  TimePickerField                                                    */
+/* ------------------------------------------------------------------ */
+
+interface TimePickerFieldProps {
+  value: string;
+  onChange: (time: string) => void;
+  /** Only renders when true (progressive disclosure — show when date is set). */
+  visible: boolean;
+}
+
+export function TimePickerField({ value, onChange, visible }: TimePickerFieldProps) {
+  if (!visible) return null;
+
+  return (
+    <input
+      type="time"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-8 w-28 rounded-md border border-input bg-transparent px-2 text-[13px] outline-none focus:ring-1 focus:ring-ring md:h-7 md:text-xs"
+    />
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  RecurrencePresetRow                                                */
+/* ------------------------------------------------------------------ */
+
+export interface RecurrencePresetValue {
+  preset: string;
+  rule: { freq: string; interval: number; days_of_week?: string[] } | null;
+}
+
+const RECURRENCE_PRESETS: { key: string; label: string }[] = [
+  { key: "none", label: "None" },
+  { key: "daily", label: "Daily" },
+  { key: "weekdays", label: "Weekdays" },
+  { key: "weekly", label: "Weekly" },
+  { key: "monthly", label: "Monthly" },
+];
+
+const WEEKDAY_KEYS = ["MO", "TU", "WE", "TH", "FR"];
+
+function presetToRecurrenceRule(preset: string): RecurrencePresetValue["rule"] {
+  switch (preset) {
+    case "daily":
+      return { freq: "daily", interval: 1 };
+    case "weekdays":
+      return { freq: "weekly", interval: 1, days_of_week: [...WEEKDAY_KEYS] };
+    case "weekly":
+      return { freq: "weekly", interval: 1 };
+    case "monthly":
+      return { freq: "monthly", interval: 1 };
+    default:
+      return null;
+  }
+}
+
+interface RecurrencePresetRowProps {
+  value: RecurrencePresetValue | null;
+  onChange: (value: RecurrencePresetValue) => void;
+}
+
+export function RecurrencePresetRow({ value, onChange }: RecurrencePresetRowProps) {
+  const activePreset = value?.preset ?? "none";
+
+  return (
+    <div className="flex gap-1.5 flex-wrap md:gap-1">
+      {RECURRENCE_PRESETS.map((p) => {
+        const isActive = activePreset === p.key;
+        return (
+          <button
+            key={p.key}
+            type="button"
+            className={cn(
+              "rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+              "md:rounded-md md:px-2 md:py-1",
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+            )}
+            onClick={() =>
+              onChange({
+                preset: isActive && p.key !== "none" ? "none" : p.key,
+                rule: isActive && p.key !== "none" ? null : presetToRecurrenceRule(p.key),
+              })
+            }
+          >
+            {p.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ */

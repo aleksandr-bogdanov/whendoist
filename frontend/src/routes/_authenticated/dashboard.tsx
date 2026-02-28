@@ -15,6 +15,7 @@ import { CalendarPanel } from "@/components/calendar/calendar-panel";
 import { TaskPanel } from "@/components/dashboard/task-panel";
 import { GestureDiscovery } from "@/components/gesture-discovery";
 import { ShortcutsHelp } from "@/components/shortcuts-help";
+import { TaskDetailPanel } from "@/components/task/task-detail-panel";
 import { TaskDndContext } from "@/components/task/task-dnd-context";
 import { TaskEditor } from "@/components/task/task-editor";
 import { TaskQuickAdd } from "@/components/task/task-quick-add";
@@ -23,6 +24,9 @@ import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
 import { useUIStore } from "@/stores/ui-store";
+
+/** Matches Tailwind md: breakpoint for JS-level desktop checks. */
+const MD_QUERY = "(min-width: 768px)";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -133,10 +137,19 @@ function DashboardPage() {
     setEditorOpen(true);
   }, []);
 
-  const handleEditTask = useCallback((task: TaskResponse) => {
-    setEditingTask(task);
-    setEditorOpen(true);
-  }, []);
+  const handleEditTask = useCallback(
+    (task: TaskResponse) => {
+      if (window.matchMedia(MD_QUERY).matches) {
+        // Desktop: show inline detail panel in right pane
+        selectTask(task.id);
+      } else {
+        // Mobile: open Sheet editor
+        setEditingTask(task);
+        setEditorOpen(true);
+      }
+    },
+    [selectTask],
+  );
 
   // Keyboard shortcuts
   useShortcuts(
@@ -238,7 +251,11 @@ function DashboardPage() {
             const { selectedTaskId: sel, tasks: all, isModalOpen: modal } = stateRef.current;
             if (modal || sel === null || !all) return;
             const task = all.find((t) => t.id === sel);
-            if (task) {
+            if (!task) return;
+            if (window.matchMedia(MD_QUERY).matches) {
+              // Desktop: task is already selected, right panel shows it
+              // Selection was set by j/k or click — no extra action needed
+            } else {
               setEditingTask(task);
               setEditorOpen(true);
             }
@@ -254,7 +271,10 @@ function DashboardPage() {
             const { selectedTaskId: sel, tasks: all, isModalOpen: modal } = stateRef.current;
             if (modal || sel === null || !all) return;
             const task = all.find((t) => t.id === sel);
-            if (task) {
+            if (!task) return;
+            if (window.matchMedia(MD_QUERY).matches) {
+              // Desktop: right panel already shows the selected task
+            } else {
               setEditingTask(task);
               setEditorOpen(true);
             }
@@ -344,6 +364,19 @@ function DashboardPage() {
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [selectedTaskId]);
 
+  // Derive selected task for the inline detail panel
+  const selectedTask = useMemo(
+    () => (selectedTaskId ? (decryptedTasks.find((t) => t.id === selectedTaskId) ?? null) : null),
+    [selectedTaskId, decryptedTasks],
+  );
+
+  // Clear selection if the selected task disappears (deleted, moved, etc.)
+  useEffect(() => {
+    if (selectedTaskId && decryptedTasks.length > 0 && !selectedTask) {
+      selectTask(null);
+    }
+  }, [selectedTaskId, selectedTask, decryptedTasks.length, selectTask]);
+
   const safedomains = decryptedDomains;
   const safeTasks = decryptedTasks;
 
@@ -395,35 +428,47 @@ function DashboardPage() {
             />
           </div>
 
-          {/* Calendar panel */}
+          {/* Right pane — task detail (desktop, task selected) or calendar */}
           <div
             className={`flex flex-col min-w-0 ${
               mobileTab === "calendar" ? "flex-1" : "hidden"
-            } md:flex md:flex-[2] md:min-w-0`}
+            } md:flex md:flex-[2] md:min-w-0 md:border-l md:border-border`}
           >
-            {showGcalBanner && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border-b text-sm">
-                <CalendarPlus className="h-4 w-4 text-primary flex-shrink-0" />
-                <span className="flex-1">
-                  Connect Google Calendar to see your events alongside tasks.
-                </span>
-                <a
-                  href="/auth/google"
-                  className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  Connect
-                </a>
-                <button
-                  type="button"
-                  onClick={dismissGcalBanner}
-                  className="p-0.5 rounded hover:bg-accent"
-                  title="Dismiss"
-                >
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </div>
+            {selectedTask ? (
+              /* Inline task editor — replaces calendar when a task is selected */
+              <TaskDetailPanel
+                task={selectedTask}
+                domains={safedomains}
+                parentTasks={parentTasks}
+              />
+            ) : (
+              /* Calendar panel — default view when no task selected */
+              <>
+                {showGcalBanner && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border-b text-sm">
+                    <CalendarPlus className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="flex-1">
+                      Connect Google Calendar to see your events alongside tasks.
+                    </span>
+                    <a
+                      href="/auth/google"
+                      className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      Connect
+                    </a>
+                    <button
+                      type="button"
+                      onClick={dismissGcalBanner}
+                      className="p-0.5 rounded hover:bg-accent"
+                      title="Dismiss"
+                    >
+                      <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                )}
+                <CalendarPanel tasks={safeTasks} onTaskClick={handleEditTask} />
+              </>
             )}
-            <CalendarPanel tasks={safeTasks} onTaskClick={handleEditTask} />
           </div>
         </div>
 
