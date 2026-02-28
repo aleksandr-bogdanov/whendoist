@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.60 — 2026-02-28
+
+### Fix: Desktop inline panel — close button + unified create/edit
+
+- Add X close button to the inline task detail panel header (returns to calendar view)
+- "New Task" (`n`) on desktop now opens the inline panel in create mode instead of the Sheet overlay — same form, same controls, consistent experience
+- Escape key closes the panel (both edit and create modes)
+- Dirty-check confirmation when closing with unsaved changes
+
+---
+
 ## v0.55.59 — 2026-02-28
 
 ### Feat: Unified task editor — smart input + shared fields convergence
