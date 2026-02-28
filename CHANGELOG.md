@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.56 — 2026-02-28
+
+### Feat: Desktop split-pane layout for Thoughts page
+
+Thoughts page now uses a master-detail split pane on desktop (md: breakpoint): left pane (flex-[3]) shows the thought list with capture input, right pane (flex-[2]) shows a new TaskInspector for triaging thoughts. Clicking a thought populates the inspector with the same triage fields (domain, parent, impact, schedule, duration, clarity). Desktop pickers use Radix Popovers instead of nested Vaul drawers. Hover-reveal delete button on list rows replaces the old chevron affordance. Keyboard navigation: j/k to move selection, d/Backspace to delete, Escape to deselect. Auto-advance to next thought after triage. Glassmorphic sub-header replaced with simple heading on desktop. Mobile UX completely unchanged.
+
+---
+
 ## v0.55.55 — 2026-02-28
 
 ### Fix: Thoughts page mobile visual hierarchy and touch targets
