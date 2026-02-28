@@ -207,10 +207,7 @@ function InspectorBody({
         {/* Domain */}
         <FieldRow label="Domain">
           <div
-            className={cn(
-              "rounded-lg transition-all duration-300 overflow-x-auto scrollbar-hide",
-              domainFlash && "bg-primary/20",
-            )}
+            className={cn("rounded-lg transition-all duration-300", domainFlash && "bg-primary/20")}
           >
             <DomainChipRow
               domains={domains}
@@ -315,7 +312,7 @@ function InspectorBody({
 
         {/* Duration */}
         <FieldRow label="Duration">
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 md:gap-1">
             {DURATION_PRESETS.map((m) => {
               const isActive = parsed.durationMinutes === m;
               return (
@@ -324,6 +321,7 @@ function InspectorBody({
                   type="button"
                   className={cn(
                     "rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+                    "md:rounded-md md:px-2 md:py-1",
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
@@ -349,7 +347,7 @@ function InspectorBody({
 
         {/* Clarity */}
         <FieldRow label="Clarity">
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 md:gap-1">
             {CLARITY_OPTIONS.map((opt) => {
               const isActive = parsed.clarity === opt.value;
               const isDefaultHint = parsed.clarity === null && opt.value === "normal";
@@ -358,7 +356,7 @@ function InspectorBody({
                 <button
                   key={opt.value}
                   type="button"
-                  className="rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all"
+                  className="rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all md:rounded-md md:px-2 md:py-1 md:hover:brightness-110"
                   style={
                     isActive
                       ? {
@@ -431,7 +429,7 @@ function InspectorBody({
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="text-xs text-muted-foreground shrink-0 w-16 pt-2">{label}</span>
+      <span className="text-xs text-muted-foreground shrink-0 w-16 pt-2 md:pt-1">{label}</span>
       <div className="flex-1 min-w-0">{children}</div>
     </div>
   );
@@ -507,6 +505,7 @@ function ParentPickerPopover({
           type="button"
           className={cn(
             "flex items-center justify-between w-full rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+            "md:rounded-md md:px-2 md:py-1",
             selectedParent
               ? "bg-primary/10 text-primary"
               : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
