@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.58 — 2026-02-28
+
+### Fix: Thought list trash icon layout flash on hover-out
+
+Trash icon and timestamp now cross-fade using opacity in a shared container instead of toggling display:none on the timestamp. Eliminates the brief layout shift (trash jumping left) when the mouse leaves a thought row.
+
+---
+
 ## v0.55.57 — 2026-02-28
 
 ### Fix: Desktop inspector compact field pickers
