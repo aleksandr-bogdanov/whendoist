@@ -24,6 +24,7 @@ from app.auth.google import TokenRefreshError, refresh_access_token
 from app.constants import (
     GCAL_MAX_EVENTS,
     GCAL_PAGE_SIZE,
+    GCAL_SYNC_BATCH_DELAY_SECONDS,
     GCAL_SYNC_DEFAULT_DURATION_MINUTES,
     TOKEN_REFRESH_BACKOFF_BASE,
     TOKEN_REFRESH_BUFFER_SECONDS,
@@ -237,6 +238,19 @@ class GoogleCalendarClient:
             await self.db.rollback()
             raise
 
+    async def refresh_token_if_needed(self) -> None:
+        """Refresh token and update client headers if token is expiring.
+
+        Safe to call periodically during long-running operations (e.g. bulk sync)
+        to prevent token expiry mid-session.
+        """
+        if not self._needs_refresh():
+            return
+        await self._ensure_valid_token()
+        if self._client:
+            self._client.headers["Authorization"] = f"Bearer {self.google_token.access_token}"
+            logger.debug("Updated client Authorization header after token refresh")
+
     async def list_calendars(self) -> list[GoogleCalendar]:
         """List all calendars the user has access to."""
         client = self._ensure_client()
@@ -404,8 +418,8 @@ class GoogleCalendarClient:
     async def clear_all_events(self, calendar_id: str) -> int:
         """Delete all events from a calendar. Returns count of deleted events.
 
-        Fetches all event IDs via pagination, then deletes each one.
-        Silently ignores 404/410 for individual events.
+        Fetches all event IDs via pagination, then deletes each one
+        with throttling to avoid Google API rate limits.
         """
         client = self._ensure_client()
         event_ids: list[str] = []
@@ -426,14 +440,22 @@ class GoogleCalendarClient:
             if not page_token:
                 break
 
-        # Delete each event
+        # Delete each event with throttling (~5 QPS)
+        deleted = 0
+        failed = 0
         for event_id in event_ids:
+            await asyncio.sleep(GCAL_SYNC_BATCH_DELAY_SECONDS)
             try:
                 await self.delete_event(calendar_id, event_id)
-            except Exception:
-                logger.debug(f"Failed to clear event {event_id} from calendar {calendar_id}")
+                deleted += 1
+            except Exception as e:
+                failed += 1
+                logger.warning(f"Failed to clear event {event_id} from calendar {calendar_id}: {e}")
 
-        return len(event_ids)
+        if failed:
+            logger.warning(f"clear_all_events: {deleted} deleted, {failed} failed out of {len(event_ids)}")
+
+        return deleted
 
     async def create_event(self, calendar_id: str, event: dict) -> str:
         """Create an event in the specified calendar. Returns the event_id."""
@@ -478,7 +500,6 @@ def build_event_data(
     scheduled_date: date,
     scheduled_time: time | None,
     duration_minutes: int | None,
-    impact: int,
     is_completed: bool,
     user_timezone: str,
 ) -> dict:
@@ -491,7 +512,6 @@ def build_event_data(
         scheduled_date: The date the task is scheduled for
         scheduled_time: Optional time of day
         duration_minutes: Duration in minutes (used for timed events)
-        impact: Priority level (1-4)
         is_completed: Whether the task is completed
         user_timezone: IANA timezone string
     """
@@ -527,7 +547,6 @@ def compute_sync_hash(
     scheduled_date: date,
     scheduled_time: time | None,
     duration_minutes: int | None,
-    impact: int,
     status: str,
 ) -> str:
     """Compute a hash of syncable fields to detect changes."""
@@ -538,7 +557,6 @@ def compute_sync_hash(
             "scheduled_date": scheduled_date.isoformat(),
             "scheduled_time": scheduled_time.isoformat() if scheduled_time else None,
             "duration_minutes": duration_minutes,
-            "impact": impact,
             "status": status,
         },
         sort_keys=True,

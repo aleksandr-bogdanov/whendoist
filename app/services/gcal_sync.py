@@ -204,7 +204,6 @@ class GCalSyncService:
             scheduled_date=eff_date,
             scheduled_time=task.scheduled_time,
             duration_minutes=task.duration_minutes,
-            impact=task.impact,
             status=task.status,
         )
 
@@ -226,7 +225,6 @@ class GCalSyncService:
             scheduled_date=eff_date,
             scheduled_time=task.scheduled_time,
             duration_minutes=task.duration_minutes,
-            impact=task.impact,
             is_completed=is_completed,
             user_timezone=timezone,
         )
@@ -299,14 +297,14 @@ class GCalSyncService:
         title = GCAL_SYNC_ENCRYPTED_PLACEHOLDER if prefs.encryption_enabled else task.title
         description = None if prefs.encryption_enabled else task.description
 
-        # Recurring tasks only sync when they have a specific time
-        scheduled_time = task.scheduled_time
-        if not scheduled_time:
+        # Skipped instances should not appear in Google Calendar
+        if instance.status == "skipped":
             await self._unsync_instance(instance.id, prefs.gcal_sync_calendar_id)
             return
 
         timezone = await self._get_timezone(prefs)
         is_completed = instance.status == "completed"
+        scheduled_time = task.scheduled_time
 
         current_hash = compute_sync_hash(
             title=title,
@@ -314,7 +312,6 @@ class GCalSyncService:
             scheduled_date=instance.instance_date,
             scheduled_time=scheduled_time,
             duration_minutes=task.duration_minutes,
-            impact=task.impact,
             status=instance.status,
         )
 
@@ -336,7 +333,6 @@ class GCalSyncService:
             scheduled_date=instance.instance_date,
             scheduled_time=scheduled_time,
             duration_minutes=task.duration_minutes,
-            impact=task.impact,
             is_completed=is_completed,
             user_timezone=timezone,
         )
@@ -501,13 +497,14 @@ class GCalSyncService:
         )
         tasks = list(tasks_result.scalars().all())
 
-        # Get all task instances for recurring tasks
+        # Get all task instances for recurring tasks (exclude skipped)
         instances_result = await self.db.execute(
             select(TaskInstance)
             .join(Task, TaskInstance.task_id == Task.id)
             .where(
                 TaskInstance.user_id == self.user_id,
                 Task.status != "archived",
+                TaskInstance.status != "skipped",
             )
         )
         instances = list(instances_result.scalars().all())
@@ -553,7 +550,6 @@ class GCalSyncService:
                         scheduled_date=eff_date,
                         scheduled_time=task.scheduled_time,
                         duration_minutes=task.duration_minutes,
-                        impact=task.impact,
                         status=task.status,
                     )
 
@@ -572,7 +568,6 @@ class GCalSyncService:
                             scheduled_date=eff_date,
                             scheduled_time=task.scheduled_time,
                             duration_minutes=task.duration_minutes,
-                            impact=task.impact,
                             is_completed=is_completed,
                             user_timezone=timezone,
                         )
@@ -587,9 +582,10 @@ class GCalSyncService:
                             sync_record.last_synced_at = datetime.now(UTC)
                             stats["updated"] += 1
                             _report()
-                            # Periodic flush to prevent orphan events on crash
+                            # Periodic flush + token refresh to prevent orphan events and token expiry
                             if (stats["created"] + stats["updated"]) % 50 == 0:
                                 await self.db.flush()
+                                await client.refresh_token_if_needed()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise  # Will be caught by outer try/except
@@ -614,7 +610,6 @@ class GCalSyncService:
                             scheduled_date=eff_date,
                             scheduled_time=task.scheduled_time,
                             duration_minutes=task.duration_minutes,
-                            impact=task.impact,
                             is_completed=is_completed,
                             user_timezone=timezone,
                         )
@@ -634,9 +629,10 @@ class GCalSyncService:
                             self.db.add(new_sync)
                             stats["created"] += 1
                             _report()
-                            # Periodic flush to prevent orphan events on crash
+                            # Periodic flush + token refresh
                             if (stats["created"] + stats["updated"]) % 50 == 0:
                                 await self.db.flush()
+                                await client.refresh_token_if_needed()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise  # Will be caught by outer try/except
@@ -659,12 +655,8 @@ class GCalSyncService:
                     if not parent_task:
                         continue
 
-                    # Recurring tasks only sync when they have a specific time
-                    scheduled_time = parent_task.scheduled_time
-                    if not scheduled_time:
-                        continue
-
                     is_completed = instance.status == "completed"
+                    scheduled_time = parent_task.scheduled_time
                     p_title = GCAL_SYNC_ENCRYPTED_PLACEHOLDER if encrypted else parent_task.title
                     p_desc = None if encrypted else parent_task.description
                     current_hash = compute_sync_hash(
@@ -673,7 +665,6 @@ class GCalSyncService:
                         scheduled_date=instance.instance_date,
                         scheduled_time=scheduled_time,
                         duration_minutes=parent_task.duration_minutes,
-                        impact=parent_task.impact,
                         status=instance.status,
                     )
 
@@ -691,7 +682,6 @@ class GCalSyncService:
                             scheduled_date=instance.instance_date,
                             scheduled_time=scheduled_time,
                             duration_minutes=parent_task.duration_minutes,
-                            impact=parent_task.impact,
                             is_completed=is_completed,
                             user_timezone=timezone,
                         )
@@ -706,9 +696,10 @@ class GCalSyncService:
                             sync_record.last_synced_at = datetime.now(UTC)
                             stats["updated"] += 1
                             _report()
-                            # Periodic flush to prevent orphan events on crash
+                            # Periodic flush + token refresh
                             if (stats["created"] + stats["updated"]) % 50 == 0:
                                 await self.db.flush()
+                                await client.refresh_token_if_needed()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise
@@ -732,7 +723,6 @@ class GCalSyncService:
                             scheduled_date=instance.instance_date,
                             scheduled_time=scheduled_time,
                             duration_minutes=parent_task.duration_minutes,
-                            impact=parent_task.impact,
                             is_completed=is_completed,
                             user_timezone=timezone,
                         )
@@ -752,9 +742,10 @@ class GCalSyncService:
                             self.db.add(new_sync)
                             stats["created"] += 1
                             _report()
-                            # Periodic flush to prevent orphan events on crash
+                            # Periodic flush + token refresh
                             if (stats["created"] + stats["updated"]) % 50 == 0:
                                 await self.db.flush()
+                                await client.refresh_token_if_needed()
                         except Exception as e:
                             if _is_calendar_error(e):
                                 raise

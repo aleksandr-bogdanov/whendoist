@@ -4,6 +4,21 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.64 — 2026-03-01
+
+### Fix: GCal sync reliability — 8 bugs fixed end-to-end
+
+- **clear_all_events throttling**: Added 0.2s delay between deletes to avoid Google API rate limits; failures now logged at warning level instead of silently swallowed
+- **Mid-session token refresh**: `GoogleCalendarClient.refresh_token_if_needed()` updates httpx headers during long-running bulk syncs, preventing silent failure when tokens expire
+- **Instance router sync triggers**: All 8 instance mutation endpoints (complete, uncomplete, toggle, skip, unskip, schedule, batch-complete, batch-past) now fire GCal sync
+- **Unique constraints on sync records**: Added `(user_id, task_id)` and `(user_id, task_instance_id)` unique constraints with dedup migration to prevent duplicate events from race conditions
+- **Recurring all-day events**: Recurring task instances without `scheduled_time` now create all-day events instead of being silently excluded
+- **Skipped instances excluded**: Skipped instances no longer appear as active events in GCal; `sync_task_instance` unsyncs them
+- **Hash cleanup**: Removed `impact` from `compute_sync_hash` (it doesn't affect event payload) to avoid wasted API calls
+- **Batch update triggers sync**: `POST /tasks/batch-update` (encryption toggle) now triggers bulk GCal sync
+
+---
+
 ## v0.55.63 — 2026-03-01
 
 ### Fix: Toast position — bottom-center like every real app

@@ -951,6 +951,10 @@ async def batch_update_tasks(
         await bump_data_version(db, user.id)
     await db.commit()
 
+    # Sync updated titles/descriptions to Google Calendar
+    if updated_count > 0:
+        asyncio.create_task(_fire_and_forget_bulk_sync(user.id))
+
     failed_ids = [e.id for e in errors] if errors else None
     return BatchUpdateTasksResponse(
         updated_count=updated_count,
