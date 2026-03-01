@@ -104,7 +104,10 @@ function ThoughtsPage() {
 
   // Decrypt thoughts
   const thoughtsKey = useMemo(
-    () => thoughts.map((t) => `${t.id}:${t.title?.slice(0, 8)}`).join(","),
+    () =>
+      thoughts
+        .map((t) => `${t.id}:${t.title?.slice(0, 8)}:${t.description?.slice(0, 8)}`)
+        .join(","),
     [thoughts],
   );
   // biome-ignore lint/correctness/useExhaustiveDependencies: thoughtsKey is a stable fingerprint
@@ -121,7 +124,10 @@ function ThoughtsPage() {
   // Decrypt parent tasks (for triage drawer/inspector parent selector)
   const [decryptedParentTasks, setDecryptedParentTasks] = useState<TaskResponse[]>([]);
   const parentTasksKey = useMemo(
-    () => rawParentTasks.map((t) => `${t.id}:${t.title?.slice(0, 8)}`).join(","),
+    () =>
+      rawParentTasks
+        .map((t) => `${t.id}:${t.title?.slice(0, 8)}:${t.description?.slice(0, 8)}`)
+        .join(","),
     [rawParentTasks],
   );
   // biome-ignore lint/correctness/useExhaustiveDependencies: parentTasksKey is a stable fingerprint

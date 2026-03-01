@@ -62,7 +62,10 @@ function DashboardPage() {
 
   // Decrypt tasks for keyboard shortcuts, CalendarPanel, and DnD context
   const tasksFingerprint = useMemo(
-    () => (tasks ?? []).map((t) => `${t.id}:${t.title?.slice(0, 8)}`).join(","),
+    () =>
+      (tasks ?? [])
+        .map((t) => `${t.id}:${t.title?.slice(0, 8)}:${t.description?.slice(0, 8)}`)
+        .join(","),
     [tasks],
   );
   // biome-ignore lint/correctness/useExhaustiveDependencies: fingerprint tracks changes
