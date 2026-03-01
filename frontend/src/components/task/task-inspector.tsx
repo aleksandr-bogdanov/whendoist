@@ -5,7 +5,7 @@
  */
 
 import { ArrowRight, ChevronRight, MousePointerClick, Search, Trash2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
   ClarityChipRow,
@@ -19,8 +19,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RichText } from "@/components/ui/rich-text";
 import type { ConvertData } from "@/hooks/use-triage-form";
 import { useTriageForm } from "@/hooks/use-triage-form";
+import { hasLinks } from "@/lib/rich-text-parser";
 import { groupParentTasks } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 
@@ -89,6 +91,7 @@ function InspectorBody({
   onDelete: (thought: TaskResponse) => void;
 }) {
   const form = useTriageForm({ thought, domains, parentTasks, onConvert });
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   return (
     <div className="flex flex-col h-full">
@@ -210,15 +213,29 @@ function InspectorBody({
 
         {/* Notes */}
         <FieldRow label="Notes">
-          <textarea
-            value={form.description}
-            onChange={(e) => form.setDescription(e.target.value)}
-            onFocus={() => form.setDescriptionFocused(true)}
-            onBlur={() => form.setDescriptionFocused(false)}
-            placeholder="Add notes..."
-            rows={form.descriptionFocused || form.description ? 3 : 1}
-            className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
-          />
+          {!form.descriptionFocused && form.description && hasLinks(form.description) ? (
+            <button
+              type="button"
+              onClick={() => {
+                form.setDescriptionFocused(true);
+                requestAnimationFrame(() => descriptionRef.current?.focus());
+              }}
+              className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] text-left whitespace-pre-wrap min-h-[4.5rem] cursor-text hover:border-ring/50 transition-colors"
+            >
+              <RichText>{form.description}</RichText>
+            </button>
+          ) : (
+            <textarea
+              ref={descriptionRef}
+              value={form.description}
+              onChange={(e) => form.setDescription(e.target.value)}
+              onFocus={() => form.setDescriptionFocused(true)}
+              onBlur={() => form.setDescriptionFocused(false)}
+              placeholder="Add notes..."
+              rows={form.descriptionFocused || form.description ? 3 : 1}
+              className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
+            />
+          )}
         </FieldRow>
       </div>
 

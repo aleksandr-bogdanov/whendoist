@@ -7,6 +7,7 @@ import {
   CLARITY_OPTIONS,
   DURATION_PRESETS,
   formatDurationLabel,
+  groupParentTasks,
   IMPACT_COLORS,
   IMPACT_LABELS,
 } from "@/lib/task-utils";
@@ -420,37 +421,10 @@ export function ParentTaskSelect({
     [selectedParent, domains],
   );
 
-  // Smart ordering: parents with subtasks first, then same-domain, then rest
-  const taskGroups = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    const eligible = parentTasks
-      .filter((t) => t.domain_id != null)
-      .filter((t) => !q || t.title.toLowerCase().includes(q));
-
-    const parentsSameDomain: TaskResponse[] = [];
-    const parentsOther: TaskResponse[] = [];
-    const sameDomain: TaskResponse[] = [];
-    const rest: TaskResponse[] = [];
-
-    const isSameDomain = (t: TaskResponse) =>
-      currentDomainId != null && t.domain_id === currentDomainId;
-
-    for (const t of eligible) {
-      const isParent = (t.subtasks?.length ?? 0) > 0;
-      if (isParent && isSameDomain(t)) parentsSameDomain.push(t);
-      else if (isParent) parentsOther.push(t);
-      else if (isSameDomain(t)) sameDomain.push(t);
-      else rest.push(t);
-    }
-
-    const groups: { label: string; tasks: TaskResponse[] }[] = [];
-    if (parentsSameDomain.length > 0)
-      groups.push({ label: "Parents · same domain", tasks: parentsSameDomain });
-    if (parentsOther.length > 0) groups.push({ label: "Parents", tasks: parentsOther });
-    if (sameDomain.length > 0) groups.push({ label: "Same domain", tasks: sameDomain });
-    if (rest.length > 0) groups.push({ label: "Other", tasks: rest });
-    return groups;
-  }, [parentTasks, currentDomainId, search]);
+  const taskGroups = useMemo(
+    () => groupParentTasks(parentTasks, currentDomainId, search),
+    [parentTasks, currentDomainId, search],
+  );
 
   const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
   const showLabels = !search && taskGroups.length > 1;

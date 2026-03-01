@@ -52,6 +52,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RichText } from "@/components/ui/rich-text";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import {
   formatDate,
@@ -704,7 +705,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                       isCompleted && "line-through text-muted-foreground",
                     )}
                   >
-                    {task.title}
+                    <RichText>{task.title}</RichText>
                   </span>
                 </button>
 
@@ -1228,7 +1229,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
                     isCompleted && "line-through text-muted-foreground",
                   )}
                 >
-                  {subtask.title}
+                  <RichText>{subtask.title}</RichText>
                 </span>
               </button>
 

@@ -1,22 +1,15 @@
-import { useQueryClient } from "@tanstack/react-query";
+/**
+ * TaskEditor — Sheet (slide-over) for creating and editing tasks.
+ *
+ * All form state + save/delete/complete logic lives in useTaskForm.
+ * This component handles: Sheet UI, smart input (Approach A), and
+ * field rendering with EditorFieldRow layout.
+ */
+
 import { CheckCircle, Loader2, RotateCcw, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
-import type { DomainResponse, TaskCreate, TaskResponse, TaskUpdate } from "@/api/model";
-import {
-  getListInstancesApiV1InstancesGetQueryKey,
-  useBatchCompleteInstancesApiV1InstancesBatchCompletePost,
-  usePendingPastCountApiV1InstancesPendingPastCountGet,
-} from "@/api/queries/instances/instances";
-import {
-  useCreateTaskApiV1TasksPost,
-  useDeleteTaskApiV1TasksTaskIdDelete,
-  useListTasksApiV1TasksGet,
-  useRestoreTaskApiV1TasksTaskIdRestorePost,
-  useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
-  useUpdateTaskApiV1TasksTaskIdPut,
-} from "@/api/queries/tasks/tasks";
-import { announce } from "@/components/live-announcer";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { DomainResponse, TaskResponse } from "@/api/model";
+import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
 import {
   ClarityChipRow,
   DomainChipRow,
@@ -45,14 +38,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useCrypto } from "@/hooks/use-crypto";
 import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
-import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
-import { TOAST_DURATION_SHORT } from "@/lib/toast";
+import { useTaskForm } from "@/hooks/use-task-form";
+import { DASHBOARD_TASKS_PARAMS } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
-import { useUIStore } from "@/stores/ui-store";
 import { ParentTaskPicker } from "./parent-task-picker";
-import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
+import { RecurrencePicker } from "./recurrence-picker";
 
 interface TaskEditorProps {
   open: boolean;
@@ -63,65 +54,45 @@ interface TaskEditorProps {
 }
 
 export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: TaskEditorProps) {
-  const isEdit = !!task;
-  const queryClient = useQueryClient();
-  const { encryptTaskFields } = useCrypto();
-  const flashUpdatedTask = useUIStore((s) => s.flashUpdatedTask);
+  const form = useTaskForm({ task: task ?? null, onDone: () => onOpenChange(false) });
 
-  // Form state
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [domainId, setDomainId] = useState<number | null>(null);
-  const [impact, setImpact] = useState(4);
-  const [clarity, setClarity] = useState("normal");
-  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(null);
-  const [recurrenceStart, setRecurrenceStart] = useState<string | null>(null);
-  const [recurrenceEnd, setRecurrenceEnd] = useState<string | null>(null);
-  const [dirty, setDirty] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [descriptionFocused, setDescriptionFocused] = useState(false);
   const [domainFlash, setDomainFlash] = useState(false);
-
-  const markDirty = useCallback(() => setDirty(true), []);
 
   // Smart input consumer (Approach A) — tokens in title are detected and consumed
   const smartCallbacks = useMemo(
     () => ({
       onDomain: (id: number) => {
-        setDomainId(id);
-        markDirty();
+        form.handlers.onDomainChange(id);
+        form.markDirty();
       },
       onImpact: (v: number) => {
-        setImpact(v);
-        markDirty();
+        form.handlers.onImpactChange(v);
+        form.markDirty();
       },
       onClarity: (v: string) => {
-        setClarity(v);
-        markDirty();
+        form.handlers.onClarityChange(v);
+        form.markDirty();
       },
       onDuration: (m: number) => {
-        setDurationMinutes(m);
-        markDirty();
+        form.handlers.onDurationChange(m);
+        form.markDirty();
       },
       onScheduledDate: (d: string) => {
-        setScheduledDate(d);
-        markDirty();
+        form.handlers.onScheduledDateChange(d);
+        form.markDirty();
       },
       onScheduledTime: (t: string) => {
-        setScheduledTime(t);
-        markDirty();
+        form.handlers.onScheduledTimeChange(t);
+        form.markDirty();
       },
       onDescription: (d: string) => {
-        setDescription(d);
-        markDirty();
+        form.handlers.onDescriptionChange(d);
+        form.markDirty();
       },
     }),
-    [markDirty],
+    [form.handlers, form.markDirty],
   );
 
   const {
@@ -148,41 +119,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
   // biome-ignore lint/correctness/useExhaustiveDependencies: title change triggers resize
   useEffect(() => {
     resizeTitle();
-  }, [title, resizeTitle]);
-
-  // Populate form when task changes
-  useEffect(() => {
-    if (task) {
-      setTitle(task.title);
-      setDescription(task.description ?? "");
-      setDomainId(task.domain_id ?? null);
-      setImpact(task.impact);
-      setClarity(task.clarity ?? "normal");
-      setDurationMinutes(task.duration_minutes);
-      setScheduledDate(task.scheduled_date ?? "");
-      setScheduledTime(task.scheduled_time ?? "");
-      setIsRecurring(task.is_recurring);
-      setRecurrenceRule(
-        task.recurrence_rule ? (task.recurrence_rule as unknown as RecurrenceRule) : null,
-      );
-      setRecurrenceStart(task.recurrence_start ?? null);
-      setRecurrenceEnd(task.recurrence_end ?? null);
-    } else {
-      setTitle("");
-      setDescription("");
-      setDomainId(null);
-      setImpact(4);
-      setClarity("normal");
-      setDurationMinutes(null);
-      setScheduledDate("");
-      setScheduledTime("");
-      setIsRecurring(false);
-      setRecurrenceRule(null);
-      setRecurrenceStart(null);
-      setRecurrenceEnd(null);
-    }
-    setDirty(false);
-  }, [task]);
+  }, [form.values.title, resizeTitle]);
 
   // Close editor if the task being edited is deleted/archived
   const { data: allTasks } = useListTasksApiV1TasksGet(DASHBOARD_TASKS_PARAMS);
@@ -202,198 +139,40 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     }
   }, [open, titleRef]);
 
-  // Pending past instances for recurring tasks
-  const pendingPastQuery = usePendingPastCountApiV1InstancesPendingPastCountGet({
-    query: { enabled: !!task?.is_recurring && open },
-  });
-  const pendingPastCount =
-    (pendingPastQuery.data as { pending_count?: number } | undefined)?.pending_count ?? 0;
-  const batchComplete = useBatchCompleteInstancesApiV1InstancesBatchCompletePost();
-
-  const createMutation = useCreateTaskApiV1TasksPost();
-  const updateMutation = useUpdateTaskApiV1TasksTaskIdPut();
-  const deleteMutation = useDeleteTaskApiV1TasksTaskIdDelete();
-  const restoreMutation = useRestoreTaskApiV1TasksTaskIdRestorePost();
-  const toggleCompleteMutation = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
-
-  const isSaving = createMutation.isPending || updateMutation.isPending;
-
   const handleClose = () => {
-    if (dirty) {
+    if (form.dirty) {
       if (!window.confirm("You have unsaved changes. Discard?")) return;
     }
     onOpenChange(false);
   };
 
-  const invalidateQueries = () => {
-    queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-    queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
-  };
-
-  const handleSave = async () => {
-    if (!title.trim()) {
-      toast.error("Title is required");
-      return;
-    }
-
-    const encrypted = await encryptTaskFields({
-      title: title.trim(),
-      description: description.trim() || null,
-    });
-
-    if (isEdit && task) {
-      const data: TaskUpdate = {
-        title: encrypted.title,
-        description: encrypted.description,
-        domain_id: domainId,
-        impact,
-        clarity,
-        duration_minutes: durationMinutes,
-        scheduled_date: scheduledDate || null,
-        scheduled_time: scheduledTime || null,
-        is_recurring: isRecurring,
-        recurrence_rule: recurrenceRule as TaskUpdate["recurrence_rule"],
-        recurrence_start: recurrenceStart,
-        recurrence_end: recurrenceEnd,
-      };
-
-      updateMutation.mutate(
-        { taskId: task.id, data },
-        {
-          onSuccess: () => {
-            announce("Task updated");
-            toast.success("Task updated", {
-              id: `save-${task.id}`,
-              duration: TOAST_DURATION_SHORT,
-            });
-            invalidateQueries();
-            flashUpdatedTask(task.id);
-            setDirty(false);
-            onOpenChange(false);
-          },
-          onError: () => toast.error("Failed to update task", { id: `save-err-${task.id}` }),
-        },
-      );
-    } else {
-      const data: TaskCreate = {
-        title: encrypted.title!,
-        description: encrypted.description,
-        domain_id: domainId,
-        impact,
-        clarity,
-        duration_minutes: durationMinutes,
-        scheduled_date: scheduledDate || null,
-        scheduled_time: scheduledTime || null,
-        is_recurring: isRecurring,
-        recurrence_rule: recurrenceRule as TaskCreate["recurrence_rule"],
-        recurrence_start: recurrenceStart,
-        recurrence_end: recurrenceEnd,
-      };
-
-      createMutation.mutate(
-        { data },
-        {
-          onSuccess: () => {
-            announce("Task created");
-            toast.success("Task created", { duration: TOAST_DURATION_SHORT });
-            invalidateQueries();
-            setDirty(false);
-            onOpenChange(false);
-          },
-          onError: () => toast.error("Failed to create task"),
-        },
-      );
-    }
-  };
-
-  const handleDelete = () => {
-    if (!task) return;
-    deleteMutation.mutate(
-      { taskId: task.id },
-      {
-        onSuccess: () => {
-          toast.success("Task deleted", {
-            id: `delete-${task.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                restoreMutation.mutate(
-                  { taskId: task.id },
-                  {
-                    onSuccess: () => {
-                      toast.success("Task restored", { id: `restore-${task.id}` });
-                      invalidateQueries();
-                    },
-                  },
-                );
-              },
-            },
-          });
-          invalidateQueries();
-          setShowDeleteConfirm(false);
-          onOpenChange(false);
-        },
-        onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),
-      },
-    );
-  };
-
-  const handleToggleComplete = () => {
-    if (!task) return;
-    const wasCompleted = task.status === "completed" || !!task.completed_at;
-    toggleCompleteMutation.mutate(
-      { taskId: task.id, data: null },
-      {
-        onSuccess: () => {
-          invalidateQueries();
-          toast.success(wasCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
-            id: `complete-${task.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                toggleCompleteMutation.mutate(
-                  { taskId: task.id, data: null },
-                  { onSuccess: () => invalidateQueries() },
-                );
-              },
-            },
-          });
-          onOpenChange(false);
-        },
-        onError: () => toast.error("Failed to update task", { id: `complete-err-${task.id}` }),
-      },
-    );
-  };
-
   const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const cleaned = processTitle(e.target.value);
-    setTitle(cleaned);
-    markDirty();
+    form.handlers.onTitleChange(cleaned);
+    form.markDirty();
   };
 
   const handleTitleKeyDown = (e: React.KeyboardEvent) => {
     if (handleSmartKeyDown(e)) {
       // Autocomplete consumed the event — if it was Enter/Tab, apply the selection
       if ((e.key === "Enter" || e.key === "Tab") && acSuggestions[acSelectedIndex]) {
-        const cleaned = handleAcSelect(acSuggestions[acSelectedIndex], title);
-        setTitle(cleaned);
-        markDirty();
+        const cleaned = handleAcSelect(acSuggestions[acSelectedIndex], form.values.title);
+        form.handlers.onTitleChange(cleaned);
+        form.markDirty();
       }
       return;
     }
     // Don't submit on Enter in editor — allow multiline
   };
 
-  const titleInputRef = useRef<HTMLDivElement>(null);
-
   return (
     <>
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto" showCloseButton>
           <SheetHeader>
-            <SheetTitle>{isEdit ? "Edit Task" : "New Task"}</SheetTitle>
+            <SheetTitle>{form.isEdit ? "Edit Task" : "New Task"}</SheetTitle>
             <SheetDescription>
-              {isEdit
+              {form.isEdit
                 ? "Update the task details below."
                 : "Fill in the details to create a new task."}
             </SheetDescription>
@@ -405,11 +184,11 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
               <Label htmlFor="task-title" className="text-xs font-medium">
                 Title
               </Label>
-              <div ref={titleInputRef} className="relative">
+              <div className="relative">
                 <textarea
                   ref={titleRef}
                   id="task-title"
-                  value={title}
+                  value={form.values.title}
                   onChange={handleTitleChange}
                   onKeyDown={handleTitleKeyDown}
                   placeholder="What needs to be done? (try #domain !high 30m)"
@@ -421,9 +200,9 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                   visible={acVisible}
                   selectedIndex={acSelectedIndex}
                   onSelect={(s) => {
-                    const cleaned = handleAcSelect(s, title);
-                    setTitle(cleaned);
-                    markDirty();
+                    const cleaned = handleAcSelect(s, form.values.title);
+                    form.handlers.onTitleChange(cleaned);
+                    form.markDirty();
                   }}
                 />
               </div>
@@ -433,16 +212,16 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             <EditorFieldRow label="Domain" flash={flashTarget === "domain" || domainFlash}>
               <DomainChipRow
                 domains={domains}
-                selectedId={domainId}
+                selectedId={form.values.domainId}
                 onSelect={(id) => {
-                  setDomainId(domainId === id ? null : id);
-                  markDirty();
+                  form.handlers.onDomainChange(form.values.domainId === id ? null : id);
+                  form.markDirty();
                 }}
               />
             </EditorFieldRow>
 
             {/* Parent task (edit mode only — immediate apply with undo) */}
-            {isEdit && task && parentTasks && parentTasks.length > 0 && (
+            {form.isEdit && task && parentTasks && parentTasks.length > 0 && (
               <EditorFieldRow label="Parent">
                 <ParentTaskPicker
                   task={task}
@@ -450,11 +229,11 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                   domains={domains}
                   onParentChanged={(parentDomainId) => {
                     // Auto-sync domain to match parent's domain
-                    if (parentDomainId !== null && parentDomainId !== domainId) {
-                      setDomainId(parentDomainId);
+                    if (parentDomainId !== null && parentDomainId !== form.values.domainId) {
+                      form.handlers.onDomainChange(parentDomainId);
                       setDomainFlash(true);
                       setTimeout(() => setDomainFlash(false), 800);
-                      markDirty();
+                      form.markDirty();
                     }
                   }}
                 />
@@ -464,10 +243,10 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Impact */}
             <EditorFieldRow label="Impact" flash={flashTarget === "impact"}>
               <ImpactButtonRow
-                value={impact}
+                value={form.values.impact}
                 onChange={(v) => {
-                  setImpact(impact === v ? 4 : v);
-                  markDirty();
+                  form.handlers.onImpactChange(form.values.impact === v ? 4 : v);
+                  form.markDirty();
                 }}
               />
             </EditorFieldRow>
@@ -475,10 +254,10 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Clarity */}
             <EditorFieldRow label="Clarity" flash={flashTarget === "clarity"}>
               <ClarityChipRow
-                value={clarity}
+                value={form.values.clarity}
                 onChange={(v) => {
-                  setClarity(clarity === v ? "normal" : v);
-                  markDirty();
+                  form.handlers.onClarityChange(form.values.clarity === v ? "normal" : v);
+                  form.markDirty();
                 }}
               />
             </EditorFieldRow>
@@ -486,11 +265,11 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Duration */}
             <EditorFieldRow label="Duration" flash={flashTarget === "duration"}>
               <DurationPickerRow
-                value={durationMinutes}
+                value={form.values.durationMinutes}
                 showCustom
                 onChange={(m) => {
-                  setDurationMinutes(m);
-                  markDirty();
+                  form.handlers.onDurationChange(m);
+                  form.markDirty();
                 }}
               />
             </EditorFieldRow>
@@ -501,15 +280,17 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                 <PopoverTrigger asChild>
                   <div>
                     <ScheduleButtonRow
-                      selectedDate={scheduledDate || null}
+                      selectedDate={form.values.scheduledDate || null}
                       onSelectDate={(iso) => {
-                        setScheduledDate(scheduledDate === iso ? "" : iso);
-                        markDirty();
+                        form.handlers.onScheduledDateChange(
+                          form.values.scheduledDate === iso ? "" : iso,
+                        );
+                        form.markDirty();
                       }}
                       onClear={() => {
-                        setScheduledDate("");
-                        setScheduledTime("");
-                        markDirty();
+                        form.handlers.onScheduledDateChange("");
+                        form.handlers.onScheduledTimeChange("");
+                        form.markDirty();
                       }}
                       onCalendarOpen={() => setCalendarOpen(true)}
                     />
@@ -518,17 +299,23 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                 <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
                   <Calendar
                     mode="single"
-                    selected={scheduledDate ? new Date(`${scheduledDate}T00:00:00`) : undefined}
+                    selected={
+                      form.values.scheduledDate
+                        ? new Date(`${form.values.scheduledDate}T00:00:00`)
+                        : undefined
+                    }
                     onSelect={(date) => {
                       if (date) {
                         const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-                        setScheduledDate(iso);
+                        form.handlers.onScheduledDateChange(iso);
                         setCalendarOpen(false);
-                        markDirty();
+                        form.markDirty();
                       }
                     }}
                     defaultMonth={
-                      scheduledDate ? new Date(`${scheduledDate}T00:00:00`) : new Date()
+                      form.values.scheduledDate
+                        ? new Date(`${form.values.scheduledDate}T00:00:00`)
+                        : new Date()
                     }
                     className="mx-auto"
                   />
@@ -539,11 +326,11 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Time — progressive disclosure: only when date is set */}
             <EditorFieldRow label="Time">
               <TimePickerField
-                value={scheduledTime}
-                visible={!!scheduledDate}
+                value={form.values.scheduledTime}
+                visible={!!form.values.scheduledDate}
                 onChange={(t) => {
-                  setScheduledTime(t);
-                  markDirty();
+                  form.handlers.onScheduledTimeChange(t);
+                  form.markDirty();
                 }}
               />
             </EditorFieldRow>
@@ -554,36 +341,36 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                 <Label className="text-xs font-medium">Repeat</Label>
                 <Button
                   type="button"
-                  variant={isRecurring ? "default" : "outline"}
+                  variant={form.values.isRecurring ? "default" : "outline"}
                   size="sm"
                   className="h-6 text-[10px] px-2"
                   onClick={() => {
-                    const next = !isRecurring;
-                    setIsRecurring(next);
+                    const next = !form.values.isRecurring;
+                    form.handlers.onRecurringChange(next);
                     if (!next) {
-                      setRecurrenceRule(null);
-                      setRecurrenceStart(null);
-                      setRecurrenceEnd(null);
-                    } else if (!recurrenceRule) {
-                      setRecurrenceRule({ freq: "daily", interval: 1 });
+                      form.handlers.onRecurrenceRuleChange(null);
+                      form.handlers.onRecurrenceStartChange(null);
+                      form.handlers.onRecurrenceEndChange(null);
+                    } else if (!form.values.recurrenceRule) {
+                      form.handlers.onRecurrenceRuleChange({ freq: "daily", interval: 1 });
                     }
-                    markDirty();
+                    form.markDirty();
                   }}
                 >
-                  {isRecurring ? "On" : "Off"}
+                  {form.values.isRecurring ? "On" : "Off"}
                 </Button>
               </div>
-              {isRecurring && (
+              {form.values.isRecurring && (
                 <RecurrencePicker
-                  rule={recurrenceRule}
-                  recurrenceStart={recurrenceStart}
-                  recurrenceEnd={recurrenceEnd}
+                  rule={form.values.recurrenceRule}
+                  recurrenceStart={form.values.recurrenceStart}
+                  recurrenceEnd={form.values.recurrenceEnd}
                   onChange={(rule, start, end) => {
-                    setRecurrenceRule(rule);
-                    setRecurrenceStart(start);
-                    setRecurrenceEnd(end);
-                    if (!rule) setIsRecurring(false);
-                    markDirty();
+                    form.handlers.onRecurrenceRuleChange(rule);
+                    form.handlers.onRecurrenceStartChange(start);
+                    form.handlers.onRecurrenceEndChange(end);
+                    if (!rule) form.handlers.onRecurringChange(false);
+                    form.markDirty();
                   }}
                 />
               )}
@@ -592,59 +379,44 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Notes / Description */}
             <EditorFieldRow label="Notes" flash={flashTarget === "description"}>
               <textarea
-                value={description}
+                value={form.values.description}
                 onChange={(e) => {
-                  setDescription(e.target.value);
-                  markDirty();
+                  form.handlers.onDescriptionChange(e.target.value);
+                  form.markDirty();
                 }}
                 onFocus={() => setDescriptionFocused(true)}
                 onBlur={() => setDescriptionFocused(false)}
                 placeholder="Add notes..."
-                rows={descriptionFocused || description ? 3 : 1}
+                rows={descriptionFocused || form.values.description ? 3 : 1}
                 className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
               />
             </EditorFieldRow>
 
             {/* Batch complete past instances */}
-            {isEdit && task?.is_recurring && pendingPastCount > 0 && (
+            {form.isEdit && task?.is_recurring && form.pendingPastCount > 0 && (
               <div className="pt-2 border-t">
                 <Button
                   variant="outline"
                   size="sm"
                   className="text-xs w-full"
-                  disabled={batchComplete.isPending}
-                  onClick={() => {
-                    const today = new Date().toISOString().split("T")[0];
-                    batchComplete.mutate(
-                      { data: { task_id: task.id, before_date: today } },
-                      {
-                        onSuccess: (data) => {
-                          const count = (data as { completed_count?: number }).completed_count ?? 0;
-                          invalidateQueries();
-                          toast.success(`Completed ${count} past instance(s)`, {
-                            duration: TOAST_DURATION_SHORT,
-                          });
-                        },
-                        onError: () => toast.error("Failed to complete past instances"),
-                      },
-                    );
-                  }}
+                  disabled={form.isBatchCompleting}
+                  onClick={form.handleBatchComplete}
                 >
-                  {batchComplete.isPending && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                  Complete {pendingPastCount} past instance(s)
+                  {form.isBatchCompleting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                  Complete {form.pendingPastCount} past instance(s)
                 </Button>
               </div>
             )}
 
             {/* Editor actions: complete / reopen */}
-            {isEdit && task && (
+            {form.isEdit && task && (
               <div className="flex gap-2 pt-2 border-t">
                 <Button
                   variant="outline"
                   size="sm"
                   className="text-xs gap-1"
-                  onClick={handleToggleComplete}
-                  disabled={toggleCompleteMutation.isPending}
+                  onClick={() => form.handleToggleComplete(() => onOpenChange(false))}
+                  disabled={form.isToggling}
                 >
                   {task.status === "completed" || task.completed_at ? (
                     <>
@@ -662,7 +434,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             )}
 
             {/* Metadata timestamps */}
-            {isEdit && task && (
+            {form.isEdit && task && (
               <div className="text-[11px] text-muted-foreground pt-2 border-t">
                 {task.created_at && (
                   <span>
@@ -689,15 +461,19 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
 
             {/* Save / Delete */}
             <div className="flex gap-2 pt-2 border-t">
-              <Button onClick={handleSave} disabled={isSaving || !title.trim()} className="flex-1">
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEdit ? "Save Changes" : "Create Task"}
+              <Button
+                onClick={form.handleSave}
+                disabled={form.isSaving || !form.values.title.trim()}
+                className="flex-1"
+              >
+                {form.isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {form.isEdit ? "Save Changes" : "Create Task"}
               </Button>
-              {isEdit && (
+              {form.isEdit && (
                 <Button
                   variant="destructive"
                   size="icon"
-                  onClick={() => setShowDeleteConfirm(true)}
+                  onClick={() => form.setShowDeleteConfirm(true)}
                   title="Delete task"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -709,7 +485,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       </Sheet>
 
       {/* Delete confirmation */}
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <Dialog open={form.showDeleteConfirm} onOpenChange={form.setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
@@ -720,15 +496,11 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+            <Button variant="outline" onClick={() => form.setShowDeleteConfirm(false)}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button variant="destructive" onClick={form.handleDelete} disabled={form.isDeleting}>
+              {form.isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>

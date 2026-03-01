@@ -104,6 +104,13 @@ export const IMPACT_KEYWORDS: Record<number, string> = {
   4: "min",
 };
 
+/** Non-global clarity pattern for single-match replacement via tapToken. */
+export const CLARITY_TOKEN_PATTERN = /\?(autopilot|normal|brainstorm)\b/i;
+
+/** Non-global duration pattern for single-match replacement via tapToken. */
+export const DURATION_TOKEN_PATTERN =
+  /(?<![a-zA-Z])(\d+(?:hrs?|h)\s?\d+(?:mins?|m)|\d+(?:hrs?|h)|\d+(?:mins?|m))(?![a-zA-Z])/i;
+
 /** Date token pattern for replacing schedule tokens via tapToken. */
 export const SCHEDULE_DATE_PATTERN =
   /\b(today|tod|tomorrow|tom|tmrw?|yes|yest|(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2})\b/i;

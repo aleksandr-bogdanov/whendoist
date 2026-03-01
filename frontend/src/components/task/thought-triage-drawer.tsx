@@ -5,7 +5,7 @@
  */
 
 import { ArrowRight, ChevronRight, Search, Trash2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Drawer } from "vaul";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
@@ -19,7 +19,9 @@ import {
 } from "@/components/task/field-pickers";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { RichText } from "@/components/ui/rich-text";
 import { type ConvertData, useTriageForm } from "@/hooks/use-triage-form";
+import { hasLinks } from "@/lib/rich-text-parser";
 import { groupParentTasks } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 
@@ -95,6 +97,7 @@ function DrawerBody({
   onDelete: (thought: TaskResponse) => void;
 }) {
   const form = useTriageForm({ thought, domains, parentTasks, onConvert });
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   // Drawer-specific state for nested parent picker
   const [parentPickerOpen, setParentPickerOpen] = useState(false);
@@ -239,16 +242,31 @@ function DrawerBody({
         <div className="flex items-start gap-2 pt-1 border-t border-border/30">
           <span className="text-xs text-muted-foreground shrink-0 w-14 pt-2">Notes</span>
           <div className="flex-1">
-            <textarea
-              value={form.description}
-              onChange={(e) => form.setDescription(e.target.value)}
-              onFocus={() => form.setDescriptionFocused(true)}
-              onBlur={() => form.setDescriptionFocused(false)}
-              placeholder="Add notes..."
-              rows={form.descriptionFocused || form.description ? 3 : 1}
-              className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
-              data-vaul-no-drag
-            />
+            {!form.descriptionFocused && form.description && hasLinks(form.description) ? (
+              <button
+                type="button"
+                data-vaul-no-drag
+                onClick={() => {
+                  form.setDescriptionFocused(true);
+                  requestAnimationFrame(() => descriptionRef.current?.focus());
+                }}
+                className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-[13px] text-left whitespace-pre-wrap min-h-[4.5rem] cursor-text hover:border-ring/50 transition-colors"
+              >
+                <RichText>{form.description}</RichText>
+              </button>
+            ) : (
+              <textarea
+                ref={descriptionRef}
+                value={form.description}
+                onChange={(e) => form.setDescription(e.target.value)}
+                onFocus={() => form.setDescriptionFocused(true)}
+                onBlur={() => form.setDescriptionFocused(false)}
+                placeholder="Add notes..."
+                rows={form.descriptionFocused || form.description ? 3 : 1}
+                className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
+                data-vaul-no-drag
+              />
+            )}
           </div>
         </div>
       </div>

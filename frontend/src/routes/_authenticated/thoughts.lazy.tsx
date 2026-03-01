@@ -256,7 +256,7 @@ function ThoughtsPage() {
       };
       if (data.parent_id != null) updateData.parent_id = data.parent_id;
       if (data.impact !== undefined) updateData.impact = data.impact;
-      if (data.clarity) updateData.clarity = data.clarity;
+      if (data.clarity !== undefined) updateData.clarity = data.clarity;
       if (data.duration_minutes) updateData.duration_minutes = data.duration_minutes;
       if (data.scheduled_date) updateData.scheduled_date = data.scheduled_date;
       if (data.scheduled_time) updateData.scheduled_time = data.scheduled_time;

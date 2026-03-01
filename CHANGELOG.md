@@ -4,9 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.67 — 2026-03-01
+
+### Refactor: Consolidate task creation — phase 2, useTaskForm + rich text
+
+- **`useTaskForm` hook**: Extracted all form state, save/delete/complete logic from TaskEditor and TaskDetailPanel into `frontend/src/hooks/use-task-form.ts` — both components are now thin rendering shells
+- **`RichText` component**: New `frontend/src/components/ui/rich-text.tsx` renders clickable links (markdown `[text](url)` and bare URLs) in task descriptions
+- **`rich-text-parser`**: Zero-dependency parser in `frontend/src/lib/rich-text-parser.ts` for link extraction
+- **Net -444 lines** across TaskEditor, TaskDetailPanel, field-pickers, task-fields-body, and more
+
+---
+
 ## v0.55.66 — 2026-03-01
 
-### Refactor: Consolidate task creation — eliminate 530 lines of duplication
+### Refactor: Consolidate task creation — phase 1, useTriageForm + useTaskCreate
 
 - **`useTriageForm` hook**: Extracted ~400 lines of shared state + handlers from ThoughtTriageDrawer and TaskInspector into `frontend/src/hooks/use-triage-form.ts` — both components are now thin layout shells
 - **`useTaskCreate` hook**: Centralized encrypt → create → toast/undo → invalidate pattern in `frontend/src/hooks/use-task-create.ts` — used by TaskQuickAdd, DomainGroup, SubtaskGhostRow
