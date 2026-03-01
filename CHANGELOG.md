@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.68 — 2026-03-01
+
+### Fix: Triage recurrence bug + audit cleanup
+
+- **Bug fix**: Recurrence fields (`is_recurring`, `recurrence_rule`, `recurrence_start`) were silently dropped when converting thoughts to tasks — users could set recurrence in triage but it never reached the API
+- **Consistency**: Exported `TIME_TOKEN_PATTERN` from `task-parser.ts` alongside other token constants; replaced inline regex in `use-triage-form.ts`
+- **Import cleanup**: `ConvertData` type now imported from canonical source (`use-triage-form`) instead of re-export chain
+- **Audit doc**: Added `docs/plans/2026-03-01-task-creation-editing-duplication-audit.md`
+
+---
+
 ## v0.55.67 — 2026-03-01
 
 ### Refactor: Consolidate task creation — phase 2, useTaskForm + rich text

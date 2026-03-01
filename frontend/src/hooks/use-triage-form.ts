@@ -19,6 +19,7 @@ import {
   IMPACT_TOKEN_PATTERN,
   parseTaskInput,
   SCHEDULE_DATE_PATTERN,
+  TIME_TOKEN_PATTERN,
 } from "@/lib/task-parser";
 import { formatDurationLabel } from "@/lib/task-utils";
 
@@ -300,7 +301,7 @@ export function useTriageForm({
         const datePattern = new RegExp(timeToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
         tapToken("", `${timeToken.raw} ${time}`.trim(), datePattern);
       } else if (time && parsed.scheduledDate) {
-        tapToken("", time, /(?<![a-zA-Z\d])\d{1,2}:\d{2}(?:[ap]m)?(?![a-zA-Z])/i);
+        tapToken("", time, TIME_TOKEN_PATTERN);
       }
     },
     [parsed.tokens, parsed.scheduledDate, tapToken],

@@ -15,12 +15,13 @@ import {
 } from "@/api/queries/tasks/tasks";
 import { TaskInspector } from "@/components/task/task-inspector";
 import { TaskSwipeRow } from "@/components/task/task-swipe-row";
-import { type ConvertData, ThoughtTriageDrawer } from "@/components/task/thought-triage-drawer";
+import { ThoughtTriageDrawer } from "@/components/task/thought-triage-drawer";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
+import type { ConvertData } from "@/hooks/use-triage-form";
 import { cn } from "@/lib/utils";
 
 export const Route = createLazyFileRoute("/_authenticated/thoughts")({
@@ -261,6 +262,9 @@ function ThoughtsPage() {
       if (data.scheduled_date) updateData.scheduled_date = data.scheduled_date;
       if (data.scheduled_time) updateData.scheduled_time = data.scheduled_time;
       if (encrypted.description) updateData.description = encrypted.description;
+      if (data.is_recurring) updateData.is_recurring = data.is_recurring;
+      if (data.recurrence_rule) updateData.recurrence_rule = data.recurrence_rule;
+      if (data.recurrence_start) updateData.recurrence_start = data.recurrence_start;
 
       const domainName = domains.find((d) => d.id === data.domain_id)?.name ?? "domain";
 
