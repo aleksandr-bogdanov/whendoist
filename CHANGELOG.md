@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.71 — 2026-03-02
+
+### Fix: Add close button to TaskInspector on thoughts page
+
+- Added an X close button to the TaskInspector desktop right-pane header, matching the TaskDetailPanel pattern on the dashboard. Previously the only way to dismiss the inspector was pressing Escape — non-keyboard users had no discoverable dismiss mechanism.
+
+---
+
 ## v0.55.70 — 2026-03-02
 
 ### Feat: Smart input for inline-add surfaces + baseline seeding bugfix
