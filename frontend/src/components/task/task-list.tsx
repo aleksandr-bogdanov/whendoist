@@ -1,7 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { ArrowUpFromDot } from "lucide-react";
 import { motion } from "motion/react";
-import type { TaskResponse } from "@/api/model";
+import type { DomainResponse, TaskResponse } from "@/api/model";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { DomainGroup as DomainGroupType } from "@/lib/task-utils";
 import { DomainGroup } from "./domain-group";
@@ -9,11 +9,12 @@ import { useDndState } from "./task-dnd-context";
 
 interface TaskListProps {
   groups: DomainGroupType[];
+  domains: DomainResponse[];
   onSelectTask?: (taskId: number) => void;
   onEditTask?: (task: TaskResponse) => void;
 }
 
-export function TaskList({ groups, onSelectTask, onEditTask }: TaskListProps) {
+export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskListProps) {
   // Make the entire task list a drop zone for unscheduling / promoting subtasks
   const { setNodeRef, isOver } = useDroppable({
     id: "task-list-drop",
@@ -61,6 +62,7 @@ export function TaskList({ groups, onSelectTask, onEditTask }: TaskListProps) {
           <DomainGroup
             domain={group.domain}
             tasks={group.tasks}
+            allDomains={domains}
             onSelectTask={onSelectTask}
             onEditTask={onEditTask}
           />

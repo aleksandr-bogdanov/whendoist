@@ -236,6 +236,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Subtasks](docs/SUBTASKS.md) | Three-level hierarchy, container model, enforced constraints |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
+| [Smart Input](docs/SMART-INPUT.md) | Two-hook token parsing architecture — design decisions and file map |
 | [Calendar DnD](docs/CALENDAR-DND.md) | dnd-kit in nested scroll containers — bugs and working patterns |
 | [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with `data_version` change tracking |
 | [PWA Viewport Fix](docs/PWA-VIEWPORT-FIX.md) | iOS viewport shrinking bug — diagnosis and workaround |

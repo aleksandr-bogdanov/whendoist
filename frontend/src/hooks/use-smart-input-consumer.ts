@@ -40,10 +40,20 @@ export interface SmartInputConsumerCallbacks {
 export function useSmartInputConsumer(
   domains: DomainResponse[],
   callbacks: SmartInputConsumerCallbacks,
+  initialTitle?: string,
 ) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const [flashTarget, setFlashTarget] = useState<FlashTarget>(null);
   const prevParseRef = useRef<ParsedTaskMetadata | null>(null);
+
+  // Baseline seeding: parse the initial title on mount so that any token-like
+  // text already in the title (e.g. "30m" in "Fix 30m timeout bug") is treated
+  // as "previously seen" and won't be consumed on the first edit keystroke.
+  const baselineSeeded = useRef(false);
+  if (initialTitle && !baselineSeeded.current) {
+    prevParseRef.current = parseTaskInput(initialTitle, domains);
+    baselineSeeded.current = true;
+  }
 
   // Autocomplete state
   const [acVisible, setAcVisible] = useState(false);

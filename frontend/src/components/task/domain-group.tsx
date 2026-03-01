@@ -2,7 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { Fragment, useCallback, useRef, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import { toast } from "sonner";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost } from "@/api/queries/tasks/tasks";
@@ -11,12 +11,15 @@ import { TaskSwipeRow } from "@/components/task/task-swipe-row";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useDevice } from "@/hooks/use-device";
 import { useHaptics } from "@/hooks/use-haptics";
+import { useSmartInput } from "@/hooks/use-smart-input";
 import { useTaskCreate } from "@/hooks/use-task-create";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
+import { SmartInputAutocomplete } from "./smart-input-autocomplete";
 import { useDndState } from "./task-dnd-context";
 import { TaskItem } from "./task-item";
+import { MetadataPill } from "./task-quick-add";
 
 function TaskInsertionZone({ id, isActive }: { id: string; isActive: boolean }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -46,11 +49,18 @@ function TaskInsertionZone({ id, isActive }: { id: string; isActive: boolean }) 
 interface DomainGroupProps {
   domain: DomainResponse | null;
   tasks: TaskResponse[];
+  allDomains: DomainResponse[];
   onSelectTask?: (taskId: number) => void;
   onEditTask?: (task: TaskResponse) => void;
 }
 
-export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainGroupProps) {
+export function DomainGroup({
+  domain,
+  tasks,
+  allDomains,
+  onSelectTask,
+  onEditTask,
+}: DomainGroupProps) {
   const { collapsedDomains, toggleCollapsedDomain, setMobileTab, selectTask, requestSubtaskAdd } =
     useUIStore();
   const { prefersTouch, hasTouch } = useDevice();
@@ -63,22 +73,39 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
 
   // Inline add-task state
   const [addingTask, setAddingTask] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const addInputRef = useRef<HTMLInputElement>(null);
+  const {
+    inputRef: addInputRef,
+    rawInput,
+    parsed,
+    acVisible,
+    acSuggestions,
+    acSelectedIndex,
+    handleInputChange,
+    handleAcSelect,
+    handleDismissToken,
+    handleKeyDown: handleAcKeyDown,
+    reset: resetSmartInput,
+  } = useSmartInput({ domains: allDomains });
   const { create: createTask, isPending: createPending } = useTaskCreate();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: inputRef is a stable ref
   const handleInlineAdd = useCallback(async () => {
-    const trimmed = newTaskTitle.trim();
-    if (!trimmed) return;
+    if (!parsed.title.trim()) return;
 
     // Clear input immediately for fast UX
-    setNewTaskTitle("");
-    addInputRef.current?.focus();
+    resetSmartInput();
+    requestAnimationFrame(() => addInputRef.current?.focus());
 
     await createTask(
       {
-        title: trimmed,
-        domain_id: domain?.id ?? null,
+        title: parsed.title.trim(),
+        description: parsed.description,
+        domain_id: parsed.domainId ?? domain?.id ?? null,
+        impact: parsed.impact ?? undefined,
+        clarity: parsed.clarity ?? undefined,
+        duration_minutes: parsed.durationMinutes,
+        scheduled_date: parsed.scheduledDate,
+        scheduled_time: parsed.scheduledTime,
       },
       {
         onSuccess: (created) => {
@@ -89,7 +116,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
         },
       },
     );
-  }, [newTaskTitle, domain, createTask, queryClient]);
+  }, [parsed, domain, createTask, queryClient, resetSmartInput]);
 
   // Action sheet state
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
@@ -275,35 +302,55 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
 
           {/* Inline add task */}
           {addingTask ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5">
-              <input
-                ref={(el) => {
-                  (addInputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
-                  el?.focus();
-                }}
-                type="text"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newTaskTitle.trim()) {
-                    e.preventDefault();
-                    handleInlineAdd();
-                  }
-                  if (e.key === "Escape") {
-                    setAddingTask(false);
-                    setNewTaskTitle("");
-                  }
-                }}
-                onBlur={() => {
-                  if (!newTaskTitle.trim()) {
-                    setAddingTask(false);
-                    setNewTaskTitle("");
-                  }
-                }}
-                placeholder="Task title..."
-                className="flex-1 h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
-                disabled={createPending}
-              />
+            <div className="px-3 py-1.5 space-y-1">
+              <div className="relative">
+                <input
+                  ref={(el) => {
+                    (addInputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+                    el?.focus();
+                  }}
+                  type="text"
+                  value={rawInput}
+                  onChange={handleInputChange}
+                  onKeyDown={(e) => {
+                    if (handleAcKeyDown(e)) return;
+                    if (e.key === "Enter" && parsed.title.trim()) {
+                      e.preventDefault();
+                      handleInlineAdd();
+                    }
+                    if (e.key === "Escape") {
+                      setAddingTask(false);
+                      resetSmartInput();
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!rawInput.trim()) {
+                      setAddingTask(false);
+                      resetSmartInput();
+                    }
+                  }}
+                  placeholder="Task title... (#domain !high 30m)"
+                  className="w-full h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
+                  disabled={createPending}
+                />
+                <SmartInputAutocomplete
+                  suggestions={acSuggestions}
+                  visible={acVisible}
+                  selectedIndex={acSelectedIndex}
+                  onSelect={handleAcSelect}
+                />
+              </div>
+              {parsed.tokens.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {parsed.tokens.map((token) => (
+                    <MetadataPill
+                      key={token.type}
+                      token={token}
+                      onDismiss={() => handleDismissToken(token)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <button
