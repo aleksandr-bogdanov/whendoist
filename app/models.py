@@ -499,6 +499,10 @@ class GoogleCalendarEventSync(Base):
         ),
         Index("ix_gcal_sync_user_task", "user_id", "task_id"),
         Index("ix_gcal_sync_user_instance", "user_id", "task_instance_id"),
+        # Prevent duplicate sync records for the same task/instance
+        # (NULL values don't conflict in unique constraints, which is correct here)
+        UniqueConstraint("user_id", "task_id", name="uq_gcal_sync_user_task"),
+        UniqueConstraint("user_id", "task_instance_id", name="uq_gcal_sync_user_instance"),
     )
 
 

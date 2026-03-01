@@ -4,20 +4,72 @@ Task Instance API endpoints.
 Provides REST endpoints for managing recurring task instances.
 """
 
+import asyncio
+import logging
 from datetime import date, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy import select as sa_select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
-from app.models import TaskInstance, User
+from app.database import async_session_factory, get_db
+from app.models import Task, TaskInstance, User
 from app.routers.auth import require_user
 from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
 
+logger = logging.getLogger("whendoist.instances")
+
 router = APIRouter(prefix="/instances", tags=["instances"])
+
+
+# =============================================================================
+# GCal Sync Helpers (fire-and-forget, mirrors pattern from tasks.py)
+# =============================================================================
+
+
+async def _fire_and_forget_sync_instance(instance_id: int, task_id: int, user_id: int) -> None:
+    """Fire-and-forget: sync a task instance to Google Calendar."""
+    try:
+        async with async_session_factory() as db:
+            from app.services.gcal_sync import GCalSyncService
+            from app.services.task_service import TaskService
+
+            sync_service = GCalSyncService(db, user_id)
+            task_service = TaskService(db, user_id)
+            task = await task_service.get_task(task_id)
+
+            result = await db.execute(
+                sa_select(TaskInstance).join(Task).where(TaskInstance.id == instance_id, Task.user_id == user_id)
+            )
+            instance = result.scalar_one_or_none()
+
+            if task and instance:
+                await sync_service.sync_task_instance(instance, task)
+            await db.commit()
+    except Exception as e:
+        from app.auth.google import TokenRefreshError
+        from app.services.gcal_sync import CalendarGoneError
+
+        if isinstance(e, (CalendarGoneError, TokenRefreshError)):
+            logger.warning(f"GCal sync auto-disabled for user {user_id}: {e}")
+        else:
+            logger.warning(f"GCal sync failed for instance {instance_id}: {e}")
+
+
+async def _fire_and_forget_bulk_sync(user_id: int) -> None:
+    """Fire-and-forget: run a bulk sync to Google Calendar."""
+    try:
+        async with async_session_factory() as db:
+            from app.services.gcal_sync import GCalSyncService
+
+            sync_service = GCalSyncService(db, user_id)
+            await sync_service.bulk_sync()
+            await db.commit()
+    except Exception as e:
+        logger.warning(f"GCal bulk sync failed for user {user_id}: {e}")
 
 
 # =============================================================================
@@ -136,6 +188,9 @@ async def complete_instance(
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     await db.commit()
+
+    asyncio.create_task(_fire_and_forget_sync_instance(instance_id, instance.task_id, user.id))
+
     return {"status": "completed", "instance_id": instance_id}
 
 
@@ -151,6 +206,9 @@ async def uncomplete_instance(
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     await db.commit()
+
+    asyncio.create_task(_fire_and_forget_sync_instance(instance_id, instance.task_id, user.id))
+
     return {"status": "pending", "instance_id": instance_id}
 
 
@@ -166,6 +224,9 @@ async def toggle_instance_complete(
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     await db.commit()
+
+    asyncio.create_task(_fire_and_forget_sync_instance(instance_id, instance.task_id, user.id))
+
     return {
         "status": instance.status,
         "instance_id": instance_id,
@@ -185,6 +246,10 @@ async def skip_instance(
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     await db.commit()
+
+    # sync_task_instance will unsync skipped instances from GCal
+    asyncio.create_task(_fire_and_forget_sync_instance(instance_id, instance.task_id, user.id))
+
     return {"status": "skipped", "instance_id": instance_id}
 
 
@@ -201,6 +266,9 @@ async def schedule_instance(
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     await db.commit()
+
+    asyncio.create_task(_fire_and_forget_sync_instance(instance_id, instance.task_id, user.id))
+
     return _instance_to_response(instance)
 
 
@@ -234,6 +302,10 @@ async def batch_complete_instances(
     service = RecurrenceService(db, user.id, timezone=timezone)
     count = await service.batch_complete_instances(data.task_id, data.before_date)
     await db.commit()
+
+    if count > 0:
+        asyncio.create_task(_fire_and_forget_bulk_sync(user.id))
+
     return {"completed_count": count}
 
 
@@ -267,6 +339,10 @@ async def batch_past_instances(
     else:
         raise HTTPException(status_code=400, detail="Invalid action. Use 'complete' or 'skip'.")
     await db.commit()
+
+    if count > 0:
+        asyncio.create_task(_fire_and_forget_bulk_sync(user.id))
+
     return {"affected_count": count}
 
 
@@ -282,4 +358,7 @@ async def unskip_instance(
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     await db.commit()
+
+    asyncio.create_task(_fire_and_forget_sync_instance(instance_id, instance.task_id, user.id))
+
     return {"status": "pending", "instance_id": instance_id}
