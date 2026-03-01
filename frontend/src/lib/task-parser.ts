@@ -111,6 +111,9 @@ export const CLARITY_TOKEN_PATTERN = /\?(autopilot|normal|brainstorm)\b/i;
 export const DURATION_TOKEN_PATTERN =
   /(?<![a-zA-Z])(\d+(?:hrs?|h)\s?\d+(?:mins?|m)|\d+(?:hrs?|h)|\d+(?:mins?|m))(?![a-zA-Z])/i;
 
+/** Time token pattern for replacing time-of-day tokens via tapToken. */
+export const TIME_TOKEN_PATTERN = /(?<![a-zA-Z\d])\d{1,2}:\d{2}(?:[ap]m)?(?![a-zA-Z])/i;
+
 /** Date token pattern for replacing schedule tokens via tapToken. */
 export const SCHEDULE_DATE_PATTERN =
   /\b(today|tod|tomorrow|tom|tmrw?|yes|yest|(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2})\b/i;
