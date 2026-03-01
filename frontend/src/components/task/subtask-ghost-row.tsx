@@ -118,7 +118,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
                   handleCancel();
                 }
               }}
-              placeholder="Subtask title... (#domain !high 30m)"
+              placeholder="Subtask title... (!high 30m tomorrow)"
               className="w-full h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
               disabled={isPending}
             />
