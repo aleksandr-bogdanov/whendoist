@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { useCrypto } from "@/hooks/use-crypto";
 import { dashboardTasksKey } from "@/lib/query-keys";
+import { TOAST_DURATION_SHORT } from "@/lib/toast";
 import { useUIStore } from "@/stores/ui-store";
 import type { RecurrenceRule } from "./recurrence-picker";
 
@@ -201,7 +202,10 @@ function DetailBody({
         {
           onSuccess: () => {
             announce("Task updated");
-            toast.success("Task updated", { id: `save-${task.id}` });
+            toast.success("Task updated", {
+              id: `save-${task.id}`,
+              duration: TOAST_DURATION_SHORT,
+            });
             invalidateQueries();
             flashUpdatedTask(task.id);
             setDirty(false);
@@ -230,7 +234,7 @@ function DetailBody({
         {
           onSuccess: () => {
             announce("Task created");
-            toast.success("Task created");
+            toast.success("Task created", { duration: TOAST_DURATION_SHORT });
             invalidateQueries();
             onClose();
           },
@@ -374,7 +378,9 @@ function DetailBody({
                       onSuccess: (data) => {
                         const count = (data as { completed_count?: number }).completed_count ?? 0;
                         invalidateQueries();
-                        toast.success(`Completed ${count} past instance(s)`);
+                        toast.success(`Completed ${count} past instance(s)`, {
+                          duration: TOAST_DURATION_SHORT,
+                        });
                       },
                       onError: () => toast.error("Failed to complete past instances"),
                     },
