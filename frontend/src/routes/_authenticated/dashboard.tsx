@@ -17,7 +17,7 @@ import { GestureDiscovery } from "@/components/gesture-discovery";
 import { ShortcutsHelp } from "@/components/shortcuts-help";
 import { TaskDetailPanel } from "@/components/task/task-detail-panel";
 import { TaskDndContext } from "@/components/task/task-dnd-context";
-import { TaskEditor } from "@/components/task/task-editor";
+import { TaskEditDrawer } from "@/components/task/task-edit-drawer";
 import { TaskQuickAdd } from "@/components/task/task-quick-add";
 import { Button } from "@/components/ui/button";
 import { useCrypto } from "@/hooks/use-crypto";
@@ -503,8 +503,8 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* Task Editor Sheet */}
-        <TaskEditor
+        {/* Task Edit Drawer (mobile bottom sheet) */}
+        <TaskEditDrawer
           open={editorOpen}
           onOpenChange={setEditorOpen}
           task={editingTask}
