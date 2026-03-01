@@ -26,7 +26,12 @@ function RootLayout() {
       </RootErrorBoundary>
       <Toaster
         richColors
-        position={isMobileViewport ? "top-center" : "top-right"}
+        position="bottom-center"
+        offset={
+          isMobileViewport
+            ? "calc(env(safe-area-inset-bottom, 0px) + var(--nav-pill-mb) + var(--nav-pill-height) + 0.75rem)"
+            : undefined
+        }
         toastOptions={{ duration: TOAST_DURATION }}
       />
     </ThemeProvider>
