@@ -356,6 +356,15 @@ async def full_sync(
     if _is_sync_running(user.id):
         return BulkSyncResponse(success=True, error="Sync already in progress.")
 
-    asyncio.create_task(_background_bulk_sync(user.id))
+    # Clear all sync records so bulk_sync recreates every event from scratch,
+    # instead of skipping tasks whose hash hasn't changed.
+    await db.execute(
+        delete(GoogleCalendarEventSync).where(
+            GoogleCalendarEventSync.user_id == user.id,
+        )
+    )
+    await db.commit()
+
+    asyncio.create_task(_background_bulk_sync(user.id, clear_calendar=True))
 
     return BulkSyncResponse(success=True)
