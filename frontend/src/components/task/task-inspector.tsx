@@ -1,5 +1,11 @@
+/**
+ * TaskInspector — desktop right-pane for thought → task triage.
+ *
+ * This is a thin layout shell. All form logic lives in useTriageForm.
+ */
+
 import { ArrowRight, ChevronRight, MousePointerClick, Search, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
   ClarityChipRow,
@@ -7,27 +13,16 @@ import {
   DurationPickerRow,
   ImpactButtonRow,
   RecurrencePresetRow,
-  type RecurrencePresetValue,
   ScheduleButtonRow,
   TimePickerField,
 } from "@/components/task/field-pickers";
-import type { ConvertData } from "@/components/task/thought-triage-drawer";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useSmartInput } from "@/hooks/use-smart-input";
-import { parseTaskInput } from "@/lib/task-parser";
-import { formatDurationLabel } from "@/lib/task-utils";
+import type { ConvertData } from "@/hooks/use-triage-form";
+import { useTriageForm } from "@/hooks/use-triage-form";
+import { groupParentTasks } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
-
-/* ------------------------------------------------------------------ */
-/*  Constants (shared with DrawerBody)                                 */
-/* ------------------------------------------------------------------ */
-
-const SCHEDULE_DATE_PATTERN =
-  /\b(today|tod|tomorrow|tom|tmrw?|yes|yest|(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2})\b/i;
-const IMPACT_PATTERN = /!(high|mid|low|min|p[1-4])\b/i;
-const IMPACT_KEYWORDS: Record<number, string> = { 1: "high", 2: "mid", 3: "low", 4: "min" };
 
 /* ------------------------------------------------------------------ */
 /*  TaskInspector — desktop right-pane for triage                      */
@@ -77,7 +72,7 @@ export function TaskInspector({
 }
 
 /* ------------------------------------------------------------------ */
-/*  InspectorBody — remounts per thought via key={thought.id}          */
+/*  InspectorBody — thin layout shell powered by useTriageForm         */
 /* ------------------------------------------------------------------ */
 
 function InspectorBody({
@@ -93,122 +88,7 @@ function InspectorBody({
   onConvert: (thought: TaskResponse, data: ConvertData) => void;
   onDelete: (thought: TaskResponse) => void;
 }) {
-  const [parentId, setParentId] = useState<number | null>(null);
-  const [domainFlash, setDomainFlash] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [description, setDescription] = useState("");
-  const [descriptionFocused, setDescriptionFocused] = useState(false);
-  const [recurrence, setRecurrence] = useState<RecurrencePresetValue | null>(null);
-
-  const {
-    inputRef,
-    parsed,
-    handleDismissToken,
-    handleKeyDown: handleAcKeyDown,
-    tapToken,
-    setInput,
-  } = useSmartInput<HTMLTextAreaElement>({ initialInput: thought.title, domains });
-
-  const [displayTitle, setDisplayTitle] = useState(parsed.title);
-
-  // Seed description from parsed //notes on first render
-  // biome-ignore lint/correctness/useExhaustiveDependencies: only run on mount
-  useEffect(() => {
-    if (parsed.description) setDescription(parsed.description);
-  }, []);
-
-  // Auto-resize textarea
-  // biome-ignore lint/correctness/useExhaustiveDependencies: displayTitle triggers resize
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    requestAnimationFrame(() => {
-      el.style.height = "0";
-      el.style.height = `${el.scrollHeight}px`;
-    });
-  }, [displayTitle, inputRef]);
-
-  const handleTitleEdit = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newTitle = e.target.value;
-      const tokenStr = parsed.tokens.map((t) => t.raw).join(" ");
-      const rebuilt = tokenStr ? `${tokenStr} ${newTitle}` : newTitle;
-      setInput(rebuilt);
-
-      const result = parseTaskInput(rebuilt, domains);
-      const normalized = newTitle.replace(/\s{2,}/g, " ").trim();
-      setDisplayTitle(normalized === result.title ? newTitle : result.title);
-    },
-    [parsed.tokens, setInput, domains],
-  );
-
-  const clearTokenType = useCallback(
-    (type: string) => {
-      const token = parsed.tokens.find((t) => t.type === type);
-      if (token) handleDismissToken(token);
-    },
-    [parsed.tokens, handleDismissToken],
-  );
-
-  const canConvert = parsed.domainId !== null && parsed.title.trim().length > 0;
-
-  const handleSubmit = useCallback(() => {
-    if (!canConvert || !parsed.domainId) return;
-    const finalDescription = description.trim() || parsed.description || null;
-    const isRecurring =
-      recurrence !== null && recurrence.preset !== "none" && recurrence.rule !== null;
-    onConvert(thought, {
-      domain_id: parsed.domainId,
-      title: parsed.title.trim(),
-      parent_id: parentId,
-      impact: parsed.impact ?? undefined,
-      clarity: parsed.clarity ?? undefined,
-      duration_minutes: parsed.durationMinutes ?? undefined,
-      scheduled_date: parsed.scheduledDate,
-      scheduled_time: parsed.scheduledTime,
-      description: finalDescription,
-      is_recurring: isRecurring || undefined,
-      recurrence_rule: isRecurring ? (recurrence!.rule as Record<string, unknown>) : undefined,
-      recurrence_start: isRecurring
-        ? (parsed.scheduledDate ?? new Date().toISOString().split("T")[0])
-        : undefined,
-    });
-  }, [canConvert, parsed, thought, onConvert, parentId, description, recurrence]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (handleAcKeyDown(e)) return;
-      if (e.key === "Enter" && !e.shiftKey && canConvert) {
-        e.preventDefault();
-        handleSubmit();
-      }
-    },
-    [handleAcKeyDown, canConvert, handleSubmit],
-  );
-
-  const handleDateSelect = useCallback(
-    (iso: string) => {
-      if (iso === parsed.scheduledDate) {
-        clearTokenType("date");
-        return;
-      }
-      const d = new Date(`${iso}T00:00:00`);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tmr = new Date(today);
-      tmr.setDate(tmr.getDate() + 1);
-      let label: string;
-      if (d.getTime() === today.getTime()) label = "today";
-      else if (d.getTime() === tmr.getTime()) label = "tomorrow";
-      else label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toLowerCase();
-      const dateToken = parsed.tokens.find((t) => t.type === "date");
-      const datePattern = dateToken
-        ? new RegExp(dateToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-        : SCHEDULE_DATE_PATTERN;
-      tapToken("", label, datePattern);
-    },
-    [tapToken, parsed.scheduledDate, parsed.tokens, clearTokenType],
-  );
+  const form = useTriageForm({ thought, domains, parentTasks, onConvert });
 
   return (
     <div className="flex flex-col h-full">
@@ -216,10 +96,10 @@ function InspectorBody({
       <div className="flex-1 overflow-y-auto p-5 space-y-3">
         {/* Title */}
         <textarea
-          ref={inputRef}
-          value={displayTitle}
-          onChange={handleTitleEdit}
-          onKeyDown={handleKeyDown}
+          ref={form.inputRef}
+          value={form.displayTitle}
+          onChange={form.handleTitleEdit}
+          onKeyDown={form.handleKeyDown}
           placeholder="What's the task?"
           className="w-full text-base font-medium bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden border-b border-border/40 focus:border-primary transition-colors"
           rows={1}
@@ -228,26 +108,15 @@ function InspectorBody({
         {/* Domain */}
         <FieldRow label="Domain">
           <div
-            className={cn("rounded-lg transition-all duration-300", domainFlash && "bg-primary/20")}
+            className={cn(
+              "rounded-lg transition-all duration-300",
+              form.domainFlash && "bg-primary/20",
+            )}
           >
             <DomainChipRow
               domains={domains}
-              selectedId={parsed.domainId}
-              onSelect={(id, name) => {
-                if (id === parsed.domainId) {
-                  clearTokenType("domain");
-                } else {
-                  const cur = parsed.domainName;
-                  const pattern = cur
-                    ? new RegExp(`#${cur.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=\\s|$)`, "i")
-                    : /#\S+/;
-                  tapToken("#", name, pattern);
-                  if (parentId !== null) {
-                    const parent = parentTasks.find((t) => t.id === parentId);
-                    if (parent && parent.domain_id !== id) setParentId(null);
-                  }
-                }
-              }}
+              selectedId={form.parsed.domainId}
+              onSelect={form.handleDomainSelect}
             />
           </div>
         </FieldRow>
@@ -258,25 +127,10 @@ function InspectorBody({
             <ParentPickerPopover
               parentTasks={parentTasks}
               domains={domains}
-              selectedId={parentId}
-              currentDomainId={parsed.domainId}
+              selectedId={form.parentId}
+              currentDomainId={form.parsed.domainId}
               onSelect={(id) => {
-                setParentId(id);
-                if (id !== null) {
-                  const parent = parentTasks.find((t) => t.id === id);
-                  if (parent?.domain_id && parent.domain_id !== parsed.domainId) {
-                    const parentDomain = domains.find((d) => d.id === parent.domain_id);
-                    if (parentDomain) {
-                      const cur = parsed.domainName;
-                      const pattern = cur
-                        ? new RegExp(`#${cur.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=\\s|$)`, "i")
-                        : /#\S+/;
-                      tapToken("#", parentDomain.name ?? "", pattern);
-                      setDomainFlash(true);
-                      setTimeout(() => setDomainFlash(false), 800);
-                    }
-                  }
-                }
+                form.handleParentSelect(id);
               }}
             />
           </FieldRow>
@@ -284,28 +138,19 @@ function InspectorBody({
 
         {/* Impact */}
         <FieldRow label="Impact">
-          <ImpactButtonRow
-            value={parsed.impact}
-            onChange={(impact) => {
-              if (parsed.impact === impact) {
-                clearTokenType("impact");
-              } else {
-                tapToken("!", IMPACT_KEYWORDS[impact], IMPACT_PATTERN);
-              }
-            }}
-          />
+          <ImpactButtonRow value={form.parsed.impact} onChange={form.handleImpactChange} />
         </FieldRow>
 
         {/* When */}
         <FieldRow label="When">
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <Popover open={form.calendarOpen} onOpenChange={form.setCalendarOpen}>
             <PopoverTrigger asChild>
               <div>
                 <ScheduleButtonRow
-                  selectedDate={parsed.scheduledDate}
-                  onSelectDate={handleDateSelect}
-                  onClear={() => clearTokenType("date")}
-                  onCalendarOpen={() => setCalendarOpen(true)}
+                  selectedDate={form.parsed.scheduledDate}
+                  onSelectDate={form.handleDateSelect}
+                  onClear={() => form.clearTokenType("date")}
+                  onCalendarOpen={() => form.setCalendarOpen(true)}
                 />
               </div>
             </PopoverTrigger>
@@ -313,17 +158,21 @@ function InspectorBody({
               <Calendar
                 mode="single"
                 selected={
-                  parsed.scheduledDate ? new Date(`${parsed.scheduledDate}T00:00:00`) : undefined
+                  form.parsed.scheduledDate
+                    ? new Date(`${form.parsed.scheduledDate}T00:00:00`)
+                    : undefined
                 }
                 onSelect={(date) => {
                   if (date) {
                     const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-                    handleDateSelect(iso);
-                    setCalendarOpen(false);
+                    form.handleDateSelect(iso);
+                    form.setCalendarOpen(false);
                   }
                 }}
                 defaultMonth={
-                  parsed.scheduledDate ? new Date(`${parsed.scheduledDate}T00:00:00`) : new Date()
+                  form.parsed.scheduledDate
+                    ? new Date(`${form.parsed.scheduledDate}T00:00:00`)
+                    : new Date()
                 }
                 className="mx-auto"
               />
@@ -334,75 +183,40 @@ function InspectorBody({
         {/* Duration */}
         <FieldRow label="Duration">
           <DurationPickerRow
-            value={parsed.durationMinutes}
+            value={form.parsed.durationMinutes}
             showCustom
-            onChange={(m) => {
-              if (m === null || parsed.durationMinutes === m) {
-                clearTokenType("duration");
-              } else {
-                const durToken = parsed.tokens.find((t) => t.type === "duration");
-                const durPattern = durToken
-                  ? new RegExp(durToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-                  : /(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/i;
-                tapToken("", formatDurationLabel(m), durPattern);
-              }
-            }}
+            onChange={form.handleDurationChange}
           />
         </FieldRow>
 
         {/* Time */}
         <FieldRow label="Time">
           <TimePickerField
-            value={parsed.scheduledTime ?? ""}
-            visible={!!parsed.scheduledDate}
-            onChange={(time) => {
-              // Time isn't a token — we store it alongside the date parse
-              // For now, inject as part of the raw input via date token area
-              // The parser extracts time from chrono; direct setting needs the token approach
-              const timeToken = parsed.tokens.find((t) => t.type === "date");
-              if (timeToken && time) {
-                // Append time after the date token
-                const datePattern = new RegExp(
-                  timeToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-                  "i",
-                );
-                tapToken("", `${timeToken.raw} ${time}`.trim(), datePattern);
-              } else if (time && parsed.scheduledDate) {
-                // No date token but we have a parsed date — append time
-                tapToken("", time, /(?<![a-zA-Z\d])\d{1,2}:\d{2}(?:[ap]m)?(?![a-zA-Z])/i);
-              }
-            }}
+            value={form.parsed.scheduledTime ?? ""}
+            visible={!!form.parsed.scheduledDate}
+            onChange={form.handleTimeChange}
           />
         </FieldRow>
 
-        {/* Recurrence — preset chips */}
+        {/* Recurrence */}
         <FieldRow label="Repeat">
-          <RecurrencePresetRow value={recurrence} onChange={setRecurrence} />
+          <RecurrencePresetRow value={form.recurrence} onChange={form.setRecurrence} />
         </FieldRow>
 
         {/* Clarity */}
         <FieldRow label="Clarity">
-          <ClarityChipRow
-            value={parsed.clarity}
-            onChange={(clarity) => {
-              if (parsed.clarity === clarity) {
-                clearTokenType("clarity");
-              } else {
-                tapToken("?", clarity, /\?(autopilot|normal|brainstorm)\b/i);
-              }
-            }}
-          />
+          <ClarityChipRow value={form.parsed.clarity} onChange={form.handleClarityChange} />
         </FieldRow>
 
-        {/* Notes / Description */}
+        {/* Notes */}
         <FieldRow label="Notes">
           <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onFocus={() => setDescriptionFocused(true)}
-            onBlur={() => setDescriptionFocused(false)}
+            value={form.description}
+            onChange={(e) => form.setDescription(e.target.value)}
+            onFocus={() => form.setDescriptionFocused(true)}
+            onBlur={() => form.setDescriptionFocused(false)}
             placeholder="Add notes..."
-            rows={descriptionFocused || description ? 3 : 1}
+            rows={form.descriptionFocused || form.description ? 3 : 1}
             className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
           />
         </FieldRow>
@@ -422,10 +236,10 @@ function InspectorBody({
 
         <Button
           className="flex-1 h-9 text-[13px] font-semibold transition-colors duration-200"
-          disabled={!canConvert}
-          onClick={handleSubmit}
+          disabled={!form.canConvert}
+          onClick={form.handleSubmit}
         >
-          {parsed.domainId === null ? (
+          {form.parsed.domainId === null ? (
             <>
               Pick a domain
               <ChevronRight className="h-3.5 w-3.5 ml-1 -rotate-90" />
@@ -484,36 +298,10 @@ function ParentPickerPopover({
     [selectedParent, domains],
   );
 
-  const taskGroups = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    const eligible = parentTasks
-      .filter((t) => t.domain_id != null)
-      .filter((t) => !q || t.title.toLowerCase().includes(q));
-
-    const parentsSameDomain: TaskResponse[] = [];
-    const parentsOther: TaskResponse[] = [];
-    const sameDomain: TaskResponse[] = [];
-    const rest: TaskResponse[] = [];
-
-    const isSameDomain = (t: TaskResponse) =>
-      currentDomainId != null && t.domain_id === currentDomainId;
-
-    for (const t of eligible) {
-      const isParent = (t.subtasks?.length ?? 0) > 0;
-      if (isParent && isSameDomain(t)) parentsSameDomain.push(t);
-      else if (isParent) parentsOther.push(t);
-      else if (isSameDomain(t)) sameDomain.push(t);
-      else rest.push(t);
-    }
-
-    const groups: { label: string; tasks: TaskResponse[] }[] = [];
-    if (parentsSameDomain.length > 0)
-      groups.push({ label: "Parents · same domain", tasks: parentsSameDomain });
-    if (parentsOther.length > 0) groups.push({ label: "Parents", tasks: parentsOther });
-    if (sameDomain.length > 0) groups.push({ label: "Same domain", tasks: sameDomain });
-    if (rest.length > 0) groups.push({ label: "Other", tasks: rest });
-    return groups;
-  }, [parentTasks, currentDomainId, search]);
+  const taskGroups = useMemo(
+    () => groupParentTasks(parentTasks, currentDomainId, search),
+    [parentTasks, currentDomainId, search],
+  );
 
   const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
   const showLabels = !search && taskGroups.length > 1;

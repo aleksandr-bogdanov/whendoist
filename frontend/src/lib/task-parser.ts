@@ -91,6 +91,23 @@ const CLARITY_LABEL_MAP: Record<string, string> = {
 const DURATION_PATTERN =
   /(?<![a-zA-Z])(\d+(?:hrs?|h)\s?\d+(?:mins?|m)|\d+(?:hrs?|h)|\d+(?:mins?|m))(?![a-zA-Z])/gi;
 
+// ─── Triage token constants (exported for tapToken-based field pickers) ─────
+
+/** Non-global impact pattern for single-match replacement via tapToken. */
+export const IMPACT_TOKEN_PATTERN = /!(high|mid|low|min|p[1-4])\b/i;
+
+/** Human-readable impact keywords by numeric level, for tapToken insertion. */
+export const IMPACT_KEYWORDS: Record<number, string> = {
+  1: "high",
+  2: "mid",
+  3: "low",
+  4: "min",
+};
+
+/** Date token pattern for replacing schedule tokens via tapToken. */
+export const SCHEDULE_DATE_PATTERN =
+  /\b(today|tod|tomorrow|tom|tmrw?|yes|yest|(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2})\b/i;
+
 // ─── Parser ─────────────────────────────────────────────────────────────────
 
 export const EMPTY_PARSED: ParsedTaskMetadata = {

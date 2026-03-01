@@ -1,12 +1,6 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
-import type { DomainResponse, TaskCreate } from "@/api/model";
-import {
-  useCreateTaskApiV1TasksPost,
-  useDeleteTaskApiV1TasksTaskIdDelete,
-} from "@/api/queries/tasks/tasks";
+import type { DomainResponse } from "@/api/model";
 import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,9 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useCrypto } from "@/hooks/use-crypto";
 import { useSmartInput } from "@/hooks/use-smart-input";
-import { dashboardTasksKey } from "@/lib/query-keys";
+import { useTaskCreate } from "@/hooks/use-task-create";
 import type { ParsedToken } from "@/lib/task-parser";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -55,9 +48,6 @@ export const PILL_ICONS: Record<string, string> = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps) {
-  const queryClient = useQueryClient();
-  const { encryptTaskFields } = useCrypto();
-
   const {
     inputRef,
     rawInput,
@@ -78,56 +68,26 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
     () => localStorage.getItem("qa-hints-dismissed") !== "1",
   );
 
-  const createMutation = useCreateTaskApiV1TasksPost();
-  const deleteMutation = useDeleteTaskApiV1TasksTaskIdDelete();
+  const { create, isPending } = useTaskCreate();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: inputRef is a stable ref
   const handleSave = useCallback(async () => {
-    if (createMutation.isPending) return;
+    if (isPending) return;
     if (!parsed.title.trim()) return;
 
-    const encrypted = await encryptTaskFields({
-      title: parsed.title.trim(),
-      description: parsed.description?.trim() || null,
-    });
-
-    const data: TaskCreate = {
-      title: encrypted.title!,
-      description: encrypted.description,
-      domain_id: parsed.domainId,
-      impact: parsed.impact ?? 4,
-      clarity: parsed.clarity ?? "normal",
-      duration_minutes: parsed.durationMinutes,
-      scheduled_date: parsed.scheduledDate,
-      scheduled_time: parsed.scheduledTime,
-    };
-
-    createMutation.mutate(
-      { data },
+    await create(
       {
-        onSuccess: (created) => {
-          queryClient.invalidateQueries({
-            queryKey: dashboardTasksKey(),
-          });
-          toast.success(`Created "${parsed.title.trim()}"`, {
-            id: `create-${created.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                deleteMutation.mutate(
-                  { taskId: created.id },
-                  {
-                    onSuccess: () =>
-                      queryClient.invalidateQueries({
-                        queryKey: dashboardTasksKey(),
-                      }),
-                    onError: () => toast.error("Undo failed"),
-                  },
-                );
-              },
-            },
-          });
-
+        title: parsed.title.trim(),
+        description: parsed.description,
+        domain_id: parsed.domainId,
+        impact: parsed.impact ?? undefined,
+        clarity: parsed.clarity ?? undefined,
+        duration_minutes: parsed.durationMinutes,
+        scheduled_date: parsed.scheduledDate,
+        scheduled_time: parsed.scheduledTime,
+      },
+      {
+        onSuccess: () => {
           if (keepOpen) {
             resetForm();
             requestAnimationFrame(() => inputRef.current?.focus());
@@ -136,29 +96,19 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
             onOpenChange(false);
           }
         },
-        onError: () => toast.error("Failed to create task"),
       },
     );
-  }, [
-    parsed,
-    encryptTaskFields,
-    createMutation,
-    deleteMutation,
-    queryClient,
-    keepOpen,
-    resetForm,
-    onOpenChange,
-  ]);
+  }, [parsed, isPending, create, keepOpen, resetForm, onOpenChange]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (handleAcKeyDown(e)) return;
-      if (e.key === "Enter" && !e.shiftKey && parsed.title.trim() && !createMutation.isPending) {
+      if (e.key === "Enter" && !e.shiftKey && parsed.title.trim() && !isPending) {
         e.preventDefault();
         handleSave();
       }
     },
-    [handleAcKeyDown, parsed.title, handleSave, createMutation.isPending],
+    [handleAcKeyDown, parsed.title, handleSave, isPending],
   );
 
   // ─── Render ─────────────────────────────────────────────────────────────
@@ -260,8 +210,8 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
             Keep open
           </label>
 
-          <Button onClick={handleSave} disabled={createMutation.isPending || !parsed.title.trim()}>
-            {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button onClick={handleSave} disabled={isPending || !parsed.title.trim()}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create
           </Button>
         </DialogFooter>
