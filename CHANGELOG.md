@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.63 — 2026-03-01
+
+### Fix: Toast position — bottom-center like every real app
+
+- Toasts moved to `bottom-center` on all viewports (from top-right desktop / top-center mobile)
+- Mobile offset dynamically clears the nav pill using `calc(env(safe-area-inset-bottom) + nav pill height + margin)`
+- Desktop uses Sonner's default bottom offset
+
+---
+
 ## v0.55.62 — 2026-03-01
 
 ### Fix: GCal full re-sync actually re-syncs + visible error logging
