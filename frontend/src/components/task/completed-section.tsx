@@ -16,9 +16,9 @@ import { useUIStore } from "@/stores/ui-store";
 import { TaskItem } from "./task-item";
 
 const RETENTION_OPTIONS = [
-  { days: 1, label: "1d" },
-  { days: 3, label: "3d" },
-  { days: 7, label: "7d" },
+  { days: 1 as const, label: "1d" },
+  { days: 3 as const, label: "3d" },
+  { days: 7 as const, label: "7d" },
 ];
 
 interface CompletedSectionProps {

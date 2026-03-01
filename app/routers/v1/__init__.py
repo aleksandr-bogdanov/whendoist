@@ -22,6 +22,7 @@ from app.routers import (
     passkeys,
     preferences,
     tasks,
+    url_utils,
     wizard,
 )
 
@@ -41,3 +42,4 @@ router.include_router(gcal_sync.router)
 router.include_router(me.router)
 router.include_router(analytics.router)
 router.include_router(csrf.router)
+router.include_router(url_utils.router)

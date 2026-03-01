@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RichText } from "@/components/ui/rich-text";
+import { usePasteUrl } from "@/hooks/use-paste-url";
 import type { ConvertData } from "@/hooks/use-triage-form";
 import { useTriageForm } from "@/hooks/use-triage-form";
 import { hasLinks } from "@/lib/rich-text-parser";
@@ -92,6 +93,12 @@ function InspectorBody({
 }) {
   const form = useTriageForm({ thought, domains, parentTasks, onConvert });
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  const { onPaste: handleDescriptionPaste } = usePasteUrl({
+    getValue: () => form.description,
+    setValue: form.setDescription,
+    textareaRef: descriptionRef,
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -229,6 +236,7 @@ function InspectorBody({
               ref={descriptionRef}
               value={form.description}
               onChange={(e) => form.setDescription(e.target.value)}
+              onPaste={handleDescriptionPaste}
               onFocus={() => form.setDescriptionFocused(true)}
               onBlur={() => form.setDescriptionFocused(false)}
               placeholder="Add notes..."

@@ -29,6 +29,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RichText } from "@/components/ui/rich-text";
+import { usePasteUrl } from "@/hooks/use-paste-url";
 import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
 import { hasLinks } from "@/lib/rich-text-parser";
 import { cn } from "@/lib/utils";
@@ -90,6 +91,16 @@ export function TaskFieldsBody({
   const [domainFlash, setDomainFlash] = useState(false);
 
   const markDirty = useCallback(() => onDirty?.(), [onDirty]);
+
+  const { onPaste: handleDescriptionPaste } = usePasteUrl({
+    getValue: () => values.description,
+    setValue: (v) => {
+      handlers.onDescriptionChange(v);
+      markDirty();
+    },
+    textareaRef: descriptionRef,
+    onDirty: markDirty,
+  });
 
   // Smart input consumer (Approach A)
   const smartCallbacks = {
@@ -378,6 +389,7 @@ export function TaskFieldsBody({
               handlers.onDescriptionChange(e.target.value);
               markDirty();
             }}
+            onPaste={handleDescriptionPaste}
             onFocus={() => setDescriptionFocused(true)}
             onBlur={() => setDescriptionFocused(false)}
             placeholder="Add notes..."
