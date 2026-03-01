@@ -6,6 +6,7 @@ import type { DomainResponse, SubtaskResponse, TaskResponse } from "@/api/model"
 import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
 import { dashboardTasksKey } from "@/lib/query-keys";
+import { groupParentTasks } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -47,43 +48,10 @@ export function ParentTaskPicker({
     [currentParent, domains],
   );
 
-  // Smart ordering: parents first, then same-domain, then rest
-  const taskGroups = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    const eligible = parentTasks
-      .filter((t) => t.id !== task.id)
-      .filter((t) => t.domain_id != null) // exclude Thoughts — not real tasks
-      .filter((t) => !q || t.title.toLowerCase().includes(q));
-
-    const parentsSameDomain: TaskResponse[] = [];
-    const parentsOther: TaskResponse[] = [];
-    const sameDomain: TaskResponse[] = [];
-    const rest: TaskResponse[] = [];
-
-    const isSameDomain = (t: TaskResponse) =>
-      task.domain_id != null && t.domain_id === task.domain_id;
-
-    for (const t of eligible) {
-      const isParent = (t.subtasks?.length ?? 0) > 0;
-      if (isParent && isSameDomain(t)) {
-        parentsSameDomain.push(t);
-      } else if (isParent) {
-        parentsOther.push(t);
-      } else if (isSameDomain(t)) {
-        sameDomain.push(t);
-      } else {
-        rest.push(t);
-      }
-    }
-
-    const groups: { label: string; tasks: TaskResponse[] }[] = [];
-    if (parentsSameDomain.length > 0)
-      groups.push({ label: "Parents · same domain", tasks: parentsSameDomain });
-    if (parentsOther.length > 0) groups.push({ label: "Parents", tasks: parentsOther });
-    if (sameDomain.length > 0) groups.push({ label: "Same domain", tasks: sameDomain });
-    if (rest.length > 0) groups.push({ label: "Other", tasks: rest });
-    return groups;
-  }, [parentTasks, task.id, task.domain_id, search]);
+  const taskGroups = useMemo(
+    () => groupParentTasks(parentTasks, task.domain_id, search, task.id),
+    [parentTasks, task.id, task.domain_id, search],
+  );
 
   const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
   const showLabels = !search && taskGroups.length > 1;

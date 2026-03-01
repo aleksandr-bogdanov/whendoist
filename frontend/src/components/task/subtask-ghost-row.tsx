@@ -1,15 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import type { TaskCreate, TaskResponse } from "@/api/model";
-import {
-  useCreateTaskApiV1TasksPost,
-  useDeleteTaskApiV1TasksTaskIdDelete,
-} from "@/api/queries/tasks/tasks";
-import { useCrypto } from "@/hooks/use-crypto";
-import { dashboardTasksKey } from "@/lib/query-keys";
+import type { TaskResponse } from "@/api/model";
+import { useTaskCreate } from "@/hooks/use-task-create";
 import { useUIStore } from "@/stores/ui-store";
 
 interface SubtaskGhostRowProps {
@@ -21,10 +14,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const queryClient = useQueryClient();
-  const createTask = useCreateTaskApiV1TasksPost();
-  const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
-  const { encryptTaskFields } = useCrypto();
+  const { create, isPending } = useTaskCreate();
   const { subtaskAddFocusId, clearSubtaskAddFocus, toggleExpandedSubtask } = useUIStore();
 
   const shouldAutoFocus = subtaskAddFocusId === parentTask.id;
@@ -46,56 +36,21 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
     const trimmed = title.trim();
     if (!trimmed) return;
 
-    const encrypted = await encryptTaskFields({ title: trimmed });
-    const data: TaskCreate = {
-      title: encrypted.title!,
-      parent_id: parentTask.id,
-      domain_id: parentTask.domain_id,
-      impact: 4,
-      clarity: "normal",
-    };
-
     setTitle("");
     inputRef.current?.focus();
 
-    createTask.mutate(
-      { data },
+    await create(
       {
-        onSuccess: (created) => {
-          queryClient.invalidateQueries({
-            queryKey: dashboardTasksKey(),
-          });
-          toast.success(`Created subtask "${trimmed}"`, {
-            id: `create-subtask-${created.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                deleteTask.mutate(
-                  { taskId: created.id },
-                  {
-                    onSuccess: () =>
-                      queryClient.invalidateQueries({
-                        queryKey: dashboardTasksKey(),
-                      }),
-                    onError: () => toast.error("Undo failed"),
-                  },
-                );
-              },
-            },
-          });
-        },
-        onError: () => toast.error("Failed to create subtask"),
+        title: trimmed,
+        parent_id: parentTask.id,
+        domain_id: parentTask.domain_id,
+      },
+      {
+        toastMessage: `Created subtask "${trimmed}"`,
+        errorMessage: "Failed to create subtask",
       },
     );
-  }, [
-    title,
-    parentTask.id,
-    parentTask.domain_id,
-    createTask,
-    deleteTask,
-    queryClient,
-    encryptTaskFields,
-  ]);
+  }, [title, parentTask.id, parentTask.domain_id, create]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
@@ -138,7 +93,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
             }}
             placeholder="Subtask title..."
             className="flex-1 h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
-            disabled={createTask.isPending}
+            disabled={isPending}
           />
         </div>
       ) : (

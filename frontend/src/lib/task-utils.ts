@@ -313,6 +313,61 @@ export function isOverdue(dateStr: string | null): boolean {
   return date < today;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Parent task grouping (shared by all parent-picker UI variants)     */
+/* ------------------------------------------------------------------ */
+
+export interface ParentTaskGroup {
+  label: string;
+  tasks: TaskResponse[];
+}
+
+/**
+ * Group parent-task candidates into smart-ordered buckets:
+ * "Parents · same domain" → "Parents" → "Same domain" → "Other".
+ *
+ * @param parentTasks  Full list of potential parent tasks.
+ * @param currentDomainId  The domain currently selected on the child task.
+ * @param search  Free-text search query (filters by title).
+ * @param excludeTaskId  Task to exclude from results (e.g. the task being edited).
+ */
+export function groupParentTasks(
+  parentTasks: TaskResponse[],
+  currentDomainId: number | null,
+  search: string,
+  excludeTaskId?: number,
+): ParentTaskGroup[] {
+  const q = search.toLowerCase().trim();
+  const eligible = parentTasks
+    .filter((t) => (excludeTaskId != null ? t.id !== excludeTaskId : true))
+    .filter((t) => t.domain_id != null)
+    .filter((t) => !q || t.title.toLowerCase().includes(q));
+
+  const parentsSameDomain: TaskResponse[] = [];
+  const parentsOther: TaskResponse[] = [];
+  const sameDomain: TaskResponse[] = [];
+  const rest: TaskResponse[] = [];
+
+  const isSameDomain = (t: TaskResponse) =>
+    currentDomainId != null && t.domain_id === currentDomainId;
+
+  for (const t of eligible) {
+    const isParent = (t.subtasks?.length ?? 0) > 0;
+    if (isParent && isSameDomain(t)) parentsSameDomain.push(t);
+    else if (isParent) parentsOther.push(t);
+    else if (isSameDomain(t)) sameDomain.push(t);
+    else rest.push(t);
+  }
+
+  const groups: ParentTaskGroup[] = [];
+  if (parentsSameDomain.length > 0)
+    groups.push({ label: "Parents \u00b7 same domain", tasks: parentsSameDomain });
+  if (parentsOther.length > 0) groups.push({ label: "Parents", tasks: parentsOther });
+  if (sameDomain.length > 0) groups.push({ label: "Same domain", tasks: sameDomain });
+  if (rest.length > 0) groups.push({ label: "Other", tasks: rest });
+  return groups;
+}
+
 /**
  * Group scheduled tasks by date for the scheduled section.
  */

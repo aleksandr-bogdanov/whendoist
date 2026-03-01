@@ -4,18 +4,14 @@ import { ChevronDown, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { DomainResponse, TaskCreate, TaskResponse } from "@/api/model";
-import {
-  useCreateTaskApiV1TasksPost,
-  useDeleteTaskApiV1TasksTaskIdDelete,
-  useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
-} from "@/api/queries/tasks/tasks";
+import type { DomainResponse, TaskResponse } from "@/api/model";
+import { useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost } from "@/api/queries/tasks/tasks";
 import { TaskActionSheet } from "@/components/mobile/task-action-sheet";
 import { TaskSwipeRow } from "@/components/task/task-swipe-row";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useCrypto } from "@/hooks/use-crypto";
 import { useDevice } from "@/hooks/use-device";
 import { useHaptics } from "@/hooks/use-haptics";
+import { useTaskCreate } from "@/hooks/use-task-create";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -69,59 +65,31 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
   const [addingTask, setAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const addInputRef = useRef<HTMLInputElement>(null);
-  const createTask = useCreateTaskApiV1TasksPost();
-  const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
-  const { encryptTaskFields } = useCrypto();
+  const { create: createTask, isPending: createPending } = useTaskCreate();
 
   const handleInlineAdd = useCallback(async () => {
     const trimmed = newTaskTitle.trim();
     if (!trimmed) return;
-    const encrypted = await encryptTaskFields({ title: trimmed });
-    const data: TaskCreate = {
-      title: encrypted.title!,
-      domain_id: domain?.id ?? null,
-      impact: 4,
-      clarity: "normal",
-    };
 
     // Clear input immediately for fast UX
     setNewTaskTitle("");
     addInputRef.current?.focus();
 
-    createTask.mutate(
-      { data },
+    await createTask(
+      {
+        title: trimmed,
+        domain_id: domain?.id ?? null,
+      },
       {
         onSuccess: (created) => {
           // Append real task to cache — stable key, no flicker
           queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
             old ? [...old, created] : [created],
           );
-          toast.success(`Created "${trimmed}"`, {
-            id: `create-${created.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                deleteTask.mutate(
-                  { taskId: created.id },
-                  {
-                    onSuccess: () =>
-                      queryClient.invalidateQueries({
-                        queryKey: dashboardTasksKey(),
-                      }),
-                    onError: () => toast.error("Undo failed"),
-                  },
-                );
-              },
-            },
-          });
-        },
-        onError: () => toast.error("Failed to create task"),
-        onSettled: () => {
-          queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
         },
       },
     );
-  }, [newTaskTitle, domain, createTask, deleteTask, queryClient, encryptTaskFields]);
+  }, [newTaskTitle, domain, createTask, queryClient]);
 
   // Action sheet state
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
@@ -334,7 +302,7 @@ export function DomainGroup({ domain, tasks, onSelectTask, onEditTask }: DomainG
                 }}
                 placeholder="Task title..."
                 className="flex-1 h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
-                disabled={createTask.isPending}
+                disabled={createPending}
               />
             </div>
           ) : (

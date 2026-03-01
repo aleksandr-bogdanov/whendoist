@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.66 — 2026-03-01
+
+### Refactor: Consolidate task creation — eliminate 530 lines of duplication
+
+- **`useTriageForm` hook**: Extracted ~400 lines of shared state + handlers from ThoughtTriageDrawer and TaskInspector into `frontend/src/hooks/use-triage-form.ts` — both components are now thin layout shells
+- **`useTaskCreate` hook**: Centralized encrypt → create → toast/undo → invalidate pattern in `frontend/src/hooks/use-task-create.ts` — used by TaskQuickAdd, DomainGroup, SubtaskGhostRow
+- **`groupParentTasks` utility**: Moved parent task grouping logic to `frontend/src/lib/task-utils.ts` — used by 3 parent picker components
+- **Triage constants**: Exported `IMPACT_TOKEN_PATTERN`, `IMPACT_KEYWORDS`, `SCHEDULE_DATE_PATTERN` from `task-parser.ts` instead of duplicating regexes
+
+---
+
 ## v0.55.65 — 2026-03-01
 
 ### Fix: Close edit panel on save
