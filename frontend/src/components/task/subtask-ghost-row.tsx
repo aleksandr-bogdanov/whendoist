@@ -1,25 +1,44 @@
 import { Plus } from "lucide-react";
 import { motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { TaskResponse } from "@/api/model";
+import { useSmartInput } from "@/hooks/use-smart-input";
 import { useTaskCreate } from "@/hooks/use-task-create";
 import { useUIStore } from "@/stores/ui-store";
+import { SmartInputAutocomplete } from "./smart-input-autocomplete";
+import { MetadataPill } from "./task-quick-add";
 
 interface SubtaskGhostRowProps {
   parentTask: TaskResponse;
   depth: number;
 }
 
+// Subtasks inherit parent's domain — #domain autocomplete is not needed.
+// All other tokens (!impact, ?clarity, 30m, tomorrow, //) work without domains.
+const EMPTY_DOMAINS: never[] = [];
+
 export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const {
+    inputRef,
+    rawInput,
+    parsed,
+    acVisible,
+    acSuggestions,
+    acSelectedIndex,
+    handleInputChange,
+    handleAcSelect,
+    handleDismissToken,
+    handleKeyDown: handleAcKeyDown,
+    reset: resetSmartInput,
+  } = useSmartInput({ domains: EMPTY_DOMAINS });
   const { create, isPending } = useTaskCreate();
   const { subtaskAddFocusId, clearSubtaskAddFocus, toggleExpandedSubtask } = useUIStore();
 
   const shouldAutoFocus = subtaskAddFocusId === parentTask.id;
   const hasRealSubtasks = (parentTask.subtasks?.length ?? 0) > 0;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: inputRef is a stable ref
   useEffect(() => {
     if (shouldAutoFocus) {
       setIsEditing(true);
@@ -32,34 +51,40 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
     }
   }, [shouldAutoFocus, clearSubtaskAddFocus]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: inputRef is a stable ref
   const handleCreate = useCallback(async () => {
-    const trimmed = title.trim();
-    if (!trimmed) return;
+    if (!parsed.title.trim()) return;
 
-    setTitle("");
-    inputRef.current?.focus();
+    resetSmartInput();
+    requestAnimationFrame(() => inputRef.current?.focus());
 
     await create(
       {
-        title: trimmed,
+        title: parsed.title.trim(),
+        description: parsed.description,
         parent_id: parentTask.id,
-        domain_id: parentTask.domain_id,
+        domain_id: parsed.domainId ?? parentTask.domain_id,
+        impact: parsed.impact ?? undefined,
+        clarity: parsed.clarity ?? undefined,
+        duration_minutes: parsed.durationMinutes,
+        scheduled_date: parsed.scheduledDate,
+        scheduled_time: parsed.scheduledTime,
       },
       {
-        toastMessage: `Created subtask "${trimmed}"`,
+        toastMessage: `Created subtask "${parsed.title.trim()}"`,
         errorMessage: "Failed to create subtask",
       },
     );
-  }, [title, parentTask.id, parentTask.domain_id, create]);
+  }, [parsed, parentTask.id, parentTask.domain_id, create, resetSmartInput]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
-    setTitle("");
+    resetSmartInput();
     // Collapse the expansion if parent has no real subtasks (was a temporary expand)
     if (!hasRealSubtasks) {
       toggleExpandedSubtask(parentTask.id);
     }
-  }, [hasRealSubtasks, parentTask.id, toggleExpandedSubtask]);
+  }, [hasRealSubtasks, parentTask.id, toggleExpandedSubtask, resetSmartInput]);
 
   return (
     <motion.div
@@ -69,32 +94,52 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
     >
       {isEditing ? (
         <div
-          className="flex items-center gap-1.5 py-1.5"
+          className="py-1.5 space-y-1"
           style={{ marginLeft: `${depth * 24}px`, paddingLeft: 12 }}
         >
-          <input
-            ref={inputRef}
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && title.trim()) {
-                e.preventDefault();
-                handleCreate();
-              }
-              if (e.key === "Escape") {
-                handleCancel();
-              }
-            }}
-            onBlur={() => {
-              if (!title.trim()) {
-                handleCancel();
-              }
-            }}
-            placeholder="Subtask title..."
-            className="flex-1 h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
-            disabled={isPending}
-          />
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={rawInput}
+              onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (handleAcKeyDown(e)) return;
+                if (e.key === "Enter" && parsed.title.trim()) {
+                  e.preventDefault();
+                  handleCreate();
+                }
+                if (e.key === "Escape") {
+                  handleCancel();
+                }
+              }}
+              onBlur={() => {
+                if (!rawInput.trim()) {
+                  handleCancel();
+                }
+              }}
+              placeholder="Subtask title... (#domain !high 30m)"
+              className="w-full h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
+              disabled={isPending}
+            />
+            <SmartInputAutocomplete
+              suggestions={acSuggestions}
+              visible={acVisible}
+              selectedIndex={acSelectedIndex}
+              onSelect={handleAcSelect}
+            />
+          </div>
+          {parsed.tokens.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {parsed.tokens.map((token) => (
+                <MetadataPill
+                  key={token.type}
+                  token={token}
+                  onDismiss={() => handleDismissToken(token)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <button

@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.70 — 2026-03-02
+
+### Feat: Smart input for inline-add surfaces + baseline seeding bugfix
+
+- **Inline-add smart input**: Domain group and subtask inline-add inputs now support smart input tokens (`#domain`, `!high`, `?auto`, `30m`, `tomorrow`, `// notes`). Tokens are shown as dismissible pills below the input; autocomplete triggers on `#`, `!`, `?` prefixes. Previously these surfaces only accepted a plain title.
+- **Baseline seeding fix**: `useSmartInputConsumer` now parses the initial title on mount and seeds `prevParseRef`, preventing false-positive token consumption when editing tasks that contain token-like text (e.g. "Fix 30m timeout bug" — the `30m` is no longer silently consumed on first edit keystroke).
+- Added `docs/SMART-INPUT.md` — evergreen architecture doc covering the two-hook design, token types, edit-mode safety, and file map.
+
+---
+
 ## v0.55.69 — 2026-03-01
 
 ### Feat: Auto-convert pasted URLs to markdown links

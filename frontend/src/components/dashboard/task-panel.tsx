@@ -157,7 +157,7 @@ export function TaskPanel({ tasks, domains, isLoading, onNewTask, onEditTask }: 
           <StickyDomainHeader />
           <div className="p-2 sm:p-4 pb-nav-safe md:pb-4 space-y-2 isolate">
             <PendingPastBanner />
-            <TaskList groups={pendingGroups} onEditTask={onEditTask} />
+            <TaskList groups={pendingGroups} domains={decryptedDomains} onEditTask={onEditTask} />
             <ScheduledSection tasks={scheduledTasks} onEditTask={onEditTask} />
             <CompletedSection tasks={completedTasks} onEditTask={onEditTask} />
             <DeletedSection />
