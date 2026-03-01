@@ -1,9 +1,11 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { useDevice } from "@/hooks/use-device";
 import { useGlobalKeyHandler } from "@/hooks/use-shortcuts";
 import { useViewport } from "@/hooks/use-viewport";
+import { TOAST_DURATION } from "@/lib/toast";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -11,7 +13,7 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   // Apply device CSS classes and manage viewport height globally
-  useDevice();
+  const { isMobileViewport } = useDevice();
   useViewport();
 
   // Global keyboard shortcut dispatcher
@@ -22,6 +24,11 @@ function RootLayout() {
       <RootErrorBoundary>
         <Outlet />
       </RootErrorBoundary>
+      <Toaster
+        richColors
+        position={isMobileViewport ? "top-center" : "top-right"}
+        toastOptions={{ duration: TOAST_DURATION }}
+      />
     </ThemeProvider>
   );
 }

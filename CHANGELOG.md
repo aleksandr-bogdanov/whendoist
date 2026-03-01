@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.61 — 2026-03-01
+
+### Fix: Move toasts out of button/nav-pill collision zone
+
+- Toasts now render `top-right` on desktop, `top-center` on mobile — no longer block save/delete buttons or the mobile nav pill
+- Add `TOAST_DURATION_SHORT` (4s) for simple confirmations (save, create, update); errors and undo toasts keep the full 10s
+- Toaster moved from `main.tsx` to `__root.tsx` for reactive viewport-aware positioning via `useDevice()`
+
+---
+
 ## v0.55.60 — 2026-02-28
 
 ### Fix: Desktop inline panel — close button + unified create/edit

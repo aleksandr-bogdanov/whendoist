@@ -48,6 +48,7 @@ import {
 import { useCrypto } from "@/hooks/use-crypto";
 import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
+import { TOAST_DURATION_SHORT } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { ParentTaskPicker } from "./parent-task-picker";
@@ -261,7 +262,10 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         {
           onSuccess: () => {
             announce("Task updated");
-            toast.success("Task updated", { id: `save-${task.id}` });
+            toast.success("Task updated", {
+              id: `save-${task.id}`,
+              duration: TOAST_DURATION_SHORT,
+            });
             invalidateQueries();
             flashUpdatedTask(task.id);
             setDirty(false);
@@ -291,7 +295,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         {
           onSuccess: () => {
             announce("Task created");
-            toast.success("Task created");
+            toast.success("Task created", { duration: TOAST_DURATION_SHORT });
             invalidateQueries();
             setDirty(false);
             onOpenChange(false);
@@ -617,7 +621,9 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                         onSuccess: (data) => {
                           const count = (data as { completed_count?: number }).completed_count ?? 0;
                           invalidateQueries();
-                          toast.success(`Completed ${count} past instance(s)`);
+                          toast.success(`Completed ${count} past instance(s)`, {
+                            duration: TOAST_DURATION_SHORT,
+                          });
                         },
                         onError: () => toast.error("Failed to complete past instances"),
                       },
