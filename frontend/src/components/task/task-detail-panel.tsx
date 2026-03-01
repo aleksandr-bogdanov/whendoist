@@ -209,6 +209,7 @@ function DetailBody({
             invalidateQueries();
             flashUpdatedTask(task.id);
             setDirty(false);
+            onClose();
           },
           onError: () => toast.error("Failed to update task", { id: `save-err-${task.id}` }),
         },

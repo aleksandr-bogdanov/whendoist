@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.65 — 2026-03-01
+
+### Fix: Close edit panel on save
+
+- Desktop inline edit panel now closes automatically after saving a task (was already closing on create and delete)
+
+---
+
 ## v0.55.64 — 2026-03-01
 
 ### Fix: GCal sync reliability — 8 bugs fixed end-to-end
