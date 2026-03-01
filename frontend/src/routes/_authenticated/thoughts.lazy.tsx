@@ -504,6 +504,7 @@ function ThoughtsPage() {
             parentTasks={decryptedParentTasks}
             onConvert={handleConvert}
             onDelete={handleDelete}
+            onClose={() => setSelectedId(null)}
           />
         </div>
       </div>

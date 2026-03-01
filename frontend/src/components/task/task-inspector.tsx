@@ -37,6 +37,7 @@ interface TaskInspectorProps {
   parentTasks: TaskResponse[];
   onConvert: (thought: TaskResponse, data: ConvertData) => void;
   onDelete: (thought: TaskResponse) => void;
+  onClose: () => void;
 }
 
 export function TaskInspector({
@@ -45,6 +46,7 @@ export function TaskInspector({
   parentTasks,
   onConvert,
   onDelete,
+  onClose,
 }: TaskInspectorProps) {
   if (!thought) {
     return (
@@ -70,6 +72,7 @@ export function TaskInspector({
       parentTasks={parentTasks}
       onConvert={onConvert}
       onDelete={onDelete}
+      onClose={onClose}
     />
   );
 }
@@ -84,12 +87,14 @@ function InspectorBody({
   parentTasks,
   onConvert,
   onDelete,
+  onClose,
 }: {
   thought: TaskResponse;
   domains: DomainResponse[];
   parentTasks: TaskResponse[];
   onConvert: (thought: TaskResponse, data: ConvertData) => void;
   onDelete: (thought: TaskResponse) => void;
+  onClose: () => void;
 }) {
   const form = useTriageForm({ thought, domains, parentTasks, onConvert });
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -102,6 +107,19 @@ function InspectorBody({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Header with close button */}
+      <div className="flex items-center justify-between px-5 py-3 border-b">
+        <h2 className="text-sm font-semibold">Triage Thought</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+          title="Close (Esc)"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto p-5 space-y-3">
         {/* Title */}
