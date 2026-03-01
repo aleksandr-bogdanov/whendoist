@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.69 — 2026-03-01
+
+### Feat: Auto-convert pasted URLs to markdown links
+
+- **Backend**: New `POST /api/v1/url/title` endpoint — fetches page `<title>` (or `og:title`) via httpx, falls back to hostname
+- **Frontend**: `usePasteUrl` hook — detects bare URL pastes in description textareas, immediately inserts `[…](url)` placeholder, then replaces `…` with the fetched page title
+- Wired into all 3 description surfaces: TaskFieldsBody, TaskInspector, ThoughtTriageDrawer
+- Makes the markdown link format discoverable: when editing, users see `[Title](url)` and learn they can change the link text
+- Orval types regenerated for the new endpoint
+
+---
+
 ## v0.55.68 — 2026-03-01
 
 ### Fix: Triage recurrence bug + audit cleanup
