@@ -14,7 +14,7 @@
  * setters. The title stays clean.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
   ClarityChipRow,
@@ -28,7 +28,9 @@ import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomple
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RichText } from "@/components/ui/rich-text";
 import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
+import { hasLinks } from "@/lib/rich-text-parser";
 import { cn } from "@/lib/utils";
 import { ParentTaskPicker } from "./parent-task-picker";
 import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
@@ -84,6 +86,7 @@ export function TaskFieldsBody({
 }: TaskFieldsBodyProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [descriptionFocused, setDescriptionFocused] = useState(false);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const [domainFlash, setDomainFlash] = useState(false);
 
   const markDirty = useCallback(() => onDirty?.(), [onDirty]);
@@ -356,18 +359,32 @@ export function TaskFieldsBody({
 
       {/* Notes / Description */}
       <FieldRow label="Notes" flash={flashTarget === "description"}>
-        <textarea
-          value={values.description}
-          onChange={(e) => {
-            handlers.onDescriptionChange(e.target.value);
-            markDirty();
-          }}
-          onFocus={() => setDescriptionFocused(true)}
-          onBlur={() => setDescriptionFocused(false)}
-          placeholder="Add notes..."
-          rows={descriptionFocused || values.description ? 3 : 1}
-          className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
-        />
+        {!descriptionFocused && values.description && hasLinks(values.description) ? (
+          <button
+            type="button"
+            onClick={() => {
+              setDescriptionFocused(true);
+              requestAnimationFrame(() => descriptionRef.current?.focus());
+            }}
+            className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] text-left whitespace-pre-wrap min-h-[4.5rem] cursor-text hover:border-ring/50 transition-colors"
+          >
+            <RichText>{values.description}</RichText>
+          </button>
+        ) : (
+          <textarea
+            ref={descriptionRef}
+            value={values.description}
+            onChange={(e) => {
+              handlers.onDescriptionChange(e.target.value);
+              markDirty();
+            }}
+            onFocus={() => setDescriptionFocused(true)}
+            onBlur={() => setDescriptionFocused(false)}
+            placeholder="Add notes..."
+            rows={descriptionFocused || values.description ? 3 : 1}
+            className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
+          />
+        )}
       </FieldRow>
     </div>
   );

@@ -13,6 +13,8 @@ import type { DomainResponse, TaskResponse } from "@/api/model";
 import type { RecurrencePresetValue } from "@/components/task/field-pickers";
 import { useSmartInput } from "@/hooks/use-smart-input";
 import {
+  CLARITY_TOKEN_PATTERN,
+  DURATION_TOKEN_PATTERN,
   IMPACT_KEYWORDS,
   IMPACT_TOKEN_PATTERN,
   parseTaskInput,
@@ -270,7 +272,7 @@ export function useTriageForm({
       if (parsed.clarity === clarity) {
         clearTokenType("clarity");
       } else {
-        tapToken("?", clarity, /\?(autopilot|normal|brainstorm)\b/i);
+        tapToken("?", clarity, CLARITY_TOKEN_PATTERN);
       }
     },
     [parsed.clarity, clearTokenType, tapToken],
@@ -284,7 +286,7 @@ export function useTriageForm({
         const durToken = parsed.tokens.find((t) => t.type === "duration");
         const durPattern = durToken
           ? new RegExp(durToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-          : /(?<![a-zA-Z])(\d+h\d+m|\d+h|\d+m)(?![a-zA-Z])/i;
+          : DURATION_TOKEN_PATTERN;
         tapToken("", formatDurationLabel(m), durPattern);
       }
     },
