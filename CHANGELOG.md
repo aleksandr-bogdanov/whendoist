@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.72 — 2026-03-02
+
+### Feat: Mobile task edit drawer (bottom sheet)
+
+- Replaced the full-screen Radix Sheet (`TaskEditor`) with a vaul bottom drawer (`TaskEditDrawer`) for mobile task create/edit. The drawer slides up from the bottom with swipe-to-dismiss, matching the triage drawer's native feel.
+- Compact inline-label layout: all fields (domain, impact, when, duration, time, repeat, clarity, notes) use `w-14` label + flex-1 content rows instead of stacked labels, keeping more fields above the fold.
+- Recurrence uses `RecurrencePresetRow` (preset buttons) instead of full `RecurrencePicker`, mapping existing rules to the closest preset on open.
+- Nested drawers for calendar date picker and parent task picker (edit mode), with immediate server mutation + undo toast for parent changes.
+- Sticky footer with Delete, Complete/Reopen, and Save/Create buttons, using `env(safe-area-inset-bottom)` for iOS safe area.
+- Smart input (Approach A) with autocomplete, URL paste handling in notes, and domain chip horizontal scroll with `data-vaul-no-drag`.
+
+---
+
 ## v0.55.71 — 2026-03-02
 
 ### Fix: Add close button to TaskInspector on thoughts page
