@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.62 — 2026-03-01
+
+### Fix: GCal full re-sync actually re-syncs + visible error logging
+
+- Full re-sync (`POST /full-sync`) now deletes all sync records and clears the calendar before rebuilding, matching the enable flow — previously it skipped unchanged tasks by hash, never verifying they existed in GCal
+- Fire-and-forget sync errors promoted from `debug` to `warning` so failures are visible in production logs
+
+---
+
 ## v0.55.61 — 2026-03-01
 
 ### Fix: Move toasts out of button/nav-pill collision zone

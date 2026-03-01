@@ -58,7 +58,7 @@ async def _fire_and_forget_sync_task(task_id: int, user_id: int) -> None:
         if isinstance(e, (CalendarGoneError, TokenRefreshError)):
             logger.warning(f"GCal sync auto-disabled for user {user_id}: {e}")
         else:
-            logger.debug(f"GCal sync failed for task {task_id}: {e}")
+            logger.warning(f"GCal sync failed for task {task_id}: {e}")
 
 
 async def _fire_and_forget_unsync_task(task_id: int, user_id: int) -> None:
@@ -74,7 +74,7 @@ async def _fire_and_forget_unsync_task(task_id: int, user_id: int) -> None:
                 await sync_service.unsync_task(task)
             await db.commit()
     except Exception as e:
-        logger.debug(f"GCal unsync failed for task {task_id}: {e}")
+        logger.warning(f"GCal unsync failed for task {task_id}: {e}")
 
 
 async def _fire_and_forget_sync_instance(instance_id: int, task_id: int, user_id: int) -> None:
@@ -105,7 +105,7 @@ async def _fire_and_forget_sync_instance(instance_id: int, task_id: int, user_id
         if isinstance(e, (CalendarGoneError, TokenRefreshError)):
             logger.warning(f"GCal sync auto-disabled for user {user_id}: {e}")
         else:
-            logger.debug(f"GCal sync failed for instance {instance_id}: {e}")
+            logger.warning(f"GCal sync failed for instance {instance_id}: {e}")
 
 
 async def _fire_and_forget_bulk_sync(user_id: int) -> None:
@@ -118,7 +118,7 @@ async def _fire_and_forget_bulk_sync(user_id: int) -> None:
             await sync_service.bulk_sync()
             await db.commit()
     except Exception as e:
-        logger.debug(f"GCal bulk sync failed for user {user_id}: {e}")
+        logger.warning(f"GCal bulk sync failed for user {user_id}: {e}")
 
 
 # =============================================================================
