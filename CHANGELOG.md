@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.96 — 2026-03-02
+
+### Feat: Multi-select — Phase 6 (task view integration)
+
+- ⌘+Click on task row checkbox toggles selection instead of completion when modifier held
+- Selected rows show left-border accent (2px primary) + `bg-primary/5` tint instead of ring treatment
+- Batch drag from task list to calendar stacks tasks with 5-min gaps (like plan-my-day placement)
+- Batch reparenting blocked with informative toast — only single-task reparent allowed
+- ⌘+A selects all visible tasks in the current view
+- Delete/Backspace deletes selected tasks (with confirmation if > 3)
+- ⌘+Enter completes selected tasks (or reopens if all already completed)
+
+---
+
 ## v0.55.95 — 2026-03-02
 
 ### Feat: Multi-select — Phase 5 (batch edit popover)

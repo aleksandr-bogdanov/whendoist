@@ -22,7 +22,9 @@ import { TaskQuickAdd } from "@/components/task/task-quick-add";
 import { Button } from "@/components/ui/button";
 import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
+import { batchDelete, batchToggleComplete } from "@/lib/batch-mutations";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
+import { taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 
 /** Matches Tailwind md: breakpoint for JS-level desktop checks. */
@@ -351,6 +353,75 @@ function DashboardPage() {
               }
               setCreating(false);
             }
+          },
+        },
+        // ── Multi-select shortcuts (§7 / §8) ─────────────────────────
+        {
+          key: "a",
+          description: "Select all visible tasks",
+          category: "Selection",
+          meta: true,
+          displayKey: "⌘A",
+          excludeInputs: true,
+          handler: () => {
+            if (stateRef.current.isModalOpen) return;
+            const ids = stateRef.current.visibleTaskIds.map((id) => taskSelectionId(id));
+            if (ids.length > 0) useSelectionStore.getState().selectAll(ids);
+          },
+        },
+        {
+          key: "Delete",
+          description: "Delete selected tasks",
+          category: "Selection",
+          excludeInputs: true,
+          showInHelp: false,
+          handler: () => {
+            if (stateRef.current.isModalOpen) return;
+            const selectedIds = useSelectionStore.getState().selectedIds;
+            if (selectedIds.size === 0) return;
+            const allTasks = stateRef.current.tasks;
+            const targets = allTasks.filter((t) => selectedIds.has(taskSelectionId(t.id)));
+            if (targets.length === 0) return;
+            if (targets.length > 3 && !window.confirm(`Delete ${targets.length} tasks?`)) return;
+            batchDelete(queryClient, targets);
+            useSelectionStore.getState().clear();
+          },
+        },
+        {
+          key: "Backspace",
+          description: "Delete selected tasks",
+          category: "Selection",
+          excludeInputs: true,
+          handler: () => {
+            if (stateRef.current.isModalOpen) return;
+            const selectedIds = useSelectionStore.getState().selectedIds;
+            if (selectedIds.size === 0) return;
+            const allTasks = stateRef.current.tasks;
+            const targets = allTasks.filter((t) => selectedIds.has(taskSelectionId(t.id)));
+            if (targets.length === 0) return;
+            if (targets.length > 3 && !window.confirm(`Delete ${targets.length} tasks?`)) return;
+            batchDelete(queryClient, targets);
+            useSelectionStore.getState().clear();
+          },
+        },
+        {
+          key: "Enter",
+          description: "Complete selected tasks",
+          category: "Selection",
+          meta: true,
+          displayKey: "⌘↵",
+          excludeInputs: true,
+          handler: () => {
+            if (stateRef.current.isModalOpen) return;
+            const selectedIds = useSelectionStore.getState().selectedIds;
+            if (selectedIds.size === 0) return;
+            const allTasks = stateRef.current.tasks;
+            const targets = allTasks.filter((t) => selectedIds.has(taskSelectionId(t.id)));
+            if (targets.length === 0) return;
+            const pending = targets.filter((t) => t.status !== "completed");
+            const completing = pending.length > 0;
+            batchToggleComplete(queryClient, completing ? pending : targets, completing);
+            useSelectionStore.getState().clear();
           },
         },
       ],

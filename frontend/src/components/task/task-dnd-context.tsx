@@ -666,6 +666,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         dropDate = String(over.data.current?.dateStr ?? "");
         dropTime = null;
         isDateGroupDrop = true;
+      } else if (overId.startsWith("task-drop-")) {
+        // Batch reparenting is blocked — only single-task reparent allowed (§7)
+        toast.error("Batch reparenting is not supported — drop one task at a time");
+        return;
       } else {
         // Unsupported drop zone for batch drag — do nothing
         return;
@@ -681,6 +685,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         minutesDelta = timeToMinutes(dropTime) - timeToMinutes(anchorItem.time);
       }
 
+      // Detect task-list-to-calendar batch: anchor has no time (unscheduled).
+      // In this case, stack tasks with 5-min gaps starting at the drop time (§7).
+      const isStackDrop = dropTime && !anchorItem.time && !isAnytimeDrop && !isDateGroupDrop;
+
       // ── Snapshot for undo ──
       const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
       const previousInstances = queryClient.getQueryData<InstanceResponse[]>(
@@ -690,6 +698,10 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       // ── Build updates per item ──
       const taskUpdates: { id: number; date: string; time: string | null; title: string }[] = [];
       const instanceUpdates: { id: number; datetime: string | null; title: string }[] = [];
+
+      // For stack drops, track the running time offset (5-min gaps per task duration)
+      let stackMinutes = dropTime ? timeToMinutes(dropTime) : 0;
+      const STACK_GAP_MINUTES = 5;
 
       for (const item of batchItems) {
         if (isAnytimeDrop) {
@@ -709,6 +721,22 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             const newDatetime = item.time ? `${dropDate}T${item.time}` : null;
             instanceUpdates.push({ id: item.id, datetime: newDatetime, title: item.title });
           }
+        } else if (isStackDrop) {
+          // Task-list-to-calendar: stack with 5-min gaps (like plan-my-day placement)
+          const stackTime = minutesToTime(Math.min(stackMinutes, 1439));
+          if (item.type === "task") {
+            taskUpdates.push({ id: item.id, date: dropDate, time: stackTime, title: item.title });
+          } else {
+            instanceUpdates.push({
+              id: item.id,
+              datetime: `${dropDate}T${stackTime}`,
+              title: item.title,
+            });
+          }
+          // Advance by task duration (or default 30m) + 5-min gap
+          const lookupTask = cachedTasks.find((t) => t.id === item.id);
+          const dur = lookupTask?.duration_minutes ?? 30;
+          stackMinutes += dur + STACK_GAP_MINUTES;
         } else {
           // Calendar time slot: apply time+day delta, preserving cross-day relative offsets
           const { date: newDate, time: newTime } = applyDelta(item, daysDelta, minutesDelta);

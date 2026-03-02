@@ -622,7 +622,7 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 className={cn(
                   "group relative flex items-center gap-[var(--col-gap)] py-1.5 sm:py-2 transition-all duration-150 border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
                   isSelected && "bg-[rgba(109,94,246,0.08)]",
-                  isMultiSelected && "ring-2 ring-primary bg-primary/10",
+                  isMultiSelected && "bg-primary/5",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
                   isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
@@ -639,13 +639,19 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 }}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
-                  borderLeftWidth: 3,
-                  borderLeftColor: isParent ? "var(--border)" : impactColor,
+                  borderLeftWidth: isMultiSelected ? 2 : 3,
+                  borderLeftColor: isMultiSelected
+                    ? "hsl(var(--primary))"
+                    : isParent
+                      ? "var(--border)"
+                      : impactColor,
                   borderLeftStyle: "solid",
-                  borderRadius: isParent ? undefined : "4px 0 0 4px",
-                  backgroundColor: isParent
+                  borderRadius: isParent && !isMultiSelected ? undefined : "4px 0 0 4px",
+                  backgroundColor: isMultiSelected
                     ? undefined
-                    : (IMPACT_WASHES[task.impact] ?? IMPACT_WASHES[4]),
+                    : isParent
+                      ? undefined
+                      : (IMPACT_WASHES[task.impact] ?? IMPACT_WASHES[4]),
                 }}
                 {...attributes}
                 {...listeners}
@@ -654,7 +660,16 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 <button
                   type="button"
                   className="flex-shrink-0 cursor-pointer relative z-10 [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
-                  onClick={handleToggleComplete}
+                  onClick={(e) => {
+                    // ⌘+Click on checkbox toggles selection, NOT completion (§7)
+                    if (e.metaKey || e.ctrlKey) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      useSelectionStore.getState().toggle(multiSelectionId);
+                      return;
+                    }
+                    handleToggleComplete(e);
+                  }}
                   onPointerDown={(e) => e.stopPropagation()}
                   disabled={isCompletePending}
                   title={isCompleted ? "Mark as pending" : "Mark as complete"}
