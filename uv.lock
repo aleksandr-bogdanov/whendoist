@@ -1233,7 +1233,7 @@ wheels = [
 
 [[package]]
 name = "whendoist"
-version = "0.55.96"
+version = "0.55.97"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },

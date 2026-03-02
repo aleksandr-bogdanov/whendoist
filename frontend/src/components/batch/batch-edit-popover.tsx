@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import {
@@ -29,11 +29,34 @@ function parseDuration(raw: string): number | null {
   return null;
 }
 
+function formatDurationValue(minutes: number): string {
+  if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60}h`;
+  return `${minutes}m`;
+}
+
 /* ------------------------------------------------------------------ */
-/*  Unset sentinel for Select components                               */
+/*  Unset / Mixed sentinels for Select components                      */
 /* ------------------------------------------------------------------ */
 
 const UNSET = "__unset__";
+const MIXED = "__mixed__";
+
+/* ------------------------------------------------------------------ */
+/*  Compute intersection of a field across tasks                       */
+/* ------------------------------------------------------------------ */
+
+/** Returns the common value if all tasks share it, MIXED if they differ, or UNSET if all null/undefined */
+function computeFieldValue<T>(tasks: TaskResponse[], getter: (t: TaskResponse) => T): string {
+  if (tasks.length === 0) return UNSET;
+  const values = tasks.map(getter);
+  const nonNull = values.filter((v) => v != null);
+  if (nonNull.length === 0) return UNSET;
+  const first = nonNull[0];
+  if (nonNull.length === values.length && nonNull.every((v) => v === first)) {
+    return String(first);
+  }
+  return MIXED;
+}
 
 /* ------------------------------------------------------------------ */
 /*  BatchEditForm                                                       */
@@ -41,15 +64,28 @@ const UNSET = "__unset__";
 
 interface BatchEditFormProps {
   tasks: TaskResponse[];
+  /** Number of instances in the selection (for messaging) */
+  instanceCount?: number;
   onDone: () => void;
 }
 
-export function BatchEditForm({ tasks, onDone }: BatchEditFormProps) {
+export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFormProps) {
   const queryClient = useQueryClient();
   const count = tasks.length;
-  const noun = count === 1 ? "task" : "tasks";
+  const instanceOnly = count === 0 && instanceCount > 0;
 
-  // Field state — undefined = unset ("—"), not touched
+  // Compute intersection values for pre-filling
+  const defaults = useMemo(
+    () => ({
+      impact: computeFieldValue(tasks, (t) => t.impact),
+      clarity: computeFieldValue(tasks, (t) => t.clarity),
+      duration: computeFieldValue(tasks, (t) => t.duration_minutes),
+      domain: computeFieldValue(tasks, (t) => t.domain_id),
+    }),
+    [tasks],
+  );
+
+  // Field state — initialized from intersection
   const [impact, setImpact] = useState<string>(UNSET);
   const [clarity, setClarity] = useState<string>(UNSET);
   const [durationInput, setDurationInput] = useState("");
@@ -59,16 +95,17 @@ export function BatchEditForm({ tasks, onDone }: BatchEditFormProps) {
   const { data: domains = [] } = useListDomainsApiV1DomainsGet({});
   const activeDomains = domains.filter((d: DomainResponse) => !d.is_archived);
 
-  // Reset form when selection count changes (taskCount used as trigger)
-  const taskCount = tasks.length;
+  // Reset form when selection changes — pre-fill from intersection
   useEffect(() => {
-    if (taskCount >= 0) {
-      setImpact(UNSET);
-      setClarity(UNSET);
-      setDurationInput("");
-      setDomainId(UNSET);
-    }
-  }, [taskCount]);
+    setImpact(defaults.impact !== MIXED ? defaults.impact : UNSET);
+    setClarity(defaults.clarity !== MIXED ? defaults.clarity : UNSET);
+    setDurationInput(
+      defaults.duration !== MIXED && defaults.duration !== UNSET
+        ? formatDurationValue(Number(defaults.duration))
+        : "",
+    );
+    setDomainId(defaults.domain !== MIXED ? defaults.domain : UNSET);
+  }, [defaults]);
 
   const hasChanges =
     impact !== UNSET || clarity !== UNSET || durationInput.trim() !== "" || domainId !== UNSET;
@@ -90,6 +127,31 @@ export function BatchEditForm({ tasks, onDone }: BatchEditFormProps) {
     onDone();
   }, [impact, clarity, durationInput, domainId, tasks, queryClient, onDone]);
 
+  // Instance-only selection: fields can't be edited
+  if (instanceOnly) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm font-medium">
+          {instanceCount} {instanceCount === 1 ? "instance" : "instances"} selected
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Instance fields are inherited from the parent task — edit the series instead.
+        </p>
+        <div className="flex justify-end pt-1">
+          <button
+            type="button"
+            onClick={onDone}
+            className="px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const noun = count === 1 ? "task" : "tasks";
+
   return (
     <div className="flex flex-col gap-3">
       {/* Header */}
@@ -97,11 +159,19 @@ export function BatchEditForm({ tasks, onDone }: BatchEditFormProps) {
         Edit {count} {noun}
       </p>
 
+      {/* Note when mixed selection includes instances */}
+      {instanceCount > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Applied to {count} {noun} ({instanceCount}{" "}
+          {instanceCount === 1 ? "instance" : "instances"} skipped).
+        </p>
+      )}
+
       {/* Impact (Priority) */}
       <FieldRow label="Impact">
         <Select value={impact} onValueChange={setImpact}>
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue placeholder="\u2014" />
+            <SelectValue placeholder={defaults.impact === MIXED ? "Mixed" : "\u2014"} />
           </SelectTrigger>
           <SelectContent position="popper" align="start">
             <SelectItem value={UNSET}>&mdash;</SelectItem>
@@ -118,7 +188,7 @@ export function BatchEditForm({ tasks, onDone }: BatchEditFormProps) {
       <FieldRow label="Clarity">
         <Select value={clarity} onValueChange={setClarity}>
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue placeholder="\u2014" />
+            <SelectValue placeholder={defaults.clarity === MIXED ? "Mixed" : "\u2014"} />
           </SelectTrigger>
           <SelectContent position="popper" align="start">
             <SelectItem value={UNSET}>&mdash;</SelectItem>
@@ -143,7 +213,7 @@ export function BatchEditForm({ tasks, onDone }: BatchEditFormProps) {
               handleApply();
             }
           }}
-          placeholder="\u2014"
+          placeholder={defaults.duration === MIXED ? "Mixed" : "\u2014"}
           className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
         />
       </FieldRow>
@@ -152,7 +222,7 @@ export function BatchEditForm({ tasks, onDone }: BatchEditFormProps) {
       <FieldRow label="Domain">
         <Select value={domainId} onValueChange={setDomainId}>
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue placeholder="\u2014" />
+            <SelectValue placeholder={defaults.domain === MIXED ? "Mixed" : "\u2014"} />
           </SelectTrigger>
           <SelectContent position="popper" align="start">
             <SelectItem value={UNSET}>&mdash;</SelectItem>

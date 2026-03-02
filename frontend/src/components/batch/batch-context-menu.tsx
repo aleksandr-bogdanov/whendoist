@@ -1,7 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, CalendarX2, Check, Pencil, Trash2, Undo2 } from "lucide-react";
+import { CalendarDays, CalendarX2, Check, FastForward, Pencil, Trash2, Undo2 } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import type { TaskResponse } from "@/api/model";
 import { Calendar } from "@/components/ui/calendar";
 import {
   ContextMenuItem,
@@ -13,11 +12,14 @@ import {
 import {
   batchDelete,
   batchReschedule,
+  batchRescheduleInstances,
+  batchSkipInstances,
   batchToggleComplete,
+  batchToggleCompleteInstances,
   batchUnschedule,
+  batchUnscheduleInstances,
 } from "@/lib/batch-mutations";
-import { dashboardTasksKey } from "@/lib/query-keys";
-import { useSelectionStore } from "@/stores/selection-store";
+import { resolveSelection, useSelectionStore } from "@/stores/selection-store";
 
 /** Dismiss the Radix ContextMenu by dispatching Escape (used after date picker selection) */
 function dismissContextMenu() {
@@ -36,46 +38,64 @@ export function BatchContextMenuItems() {
   const clear = useSelectionStore((s) => s.clear);
   const queryClient = useQueryClient();
 
-  const tasks = useMemo(() => {
-    const cached = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey()) ?? [];
-    const result: TaskResponse[] = [];
-    for (const id of selectedIds) {
-      if (id.startsWith("task-")) {
-        const taskId = Number(id.slice(5));
-        const task = cached.find((t) => t.id === taskId);
-        if (task) result.push(task);
-      }
-    }
-    return result;
-  }, [selectedIds, queryClient]);
+  const { tasks, instances } = useMemo(
+    () => resolveSelection(queryClient, selectedIds),
+    [selectedIds, queryClient],
+  );
 
   const count = selectedIds.size;
   const noun = count === 1 ? "item" : "items";
-  const allCompleted =
+  const hasInstances = instances.length > 0;
+  const hasTasks = tasks.length > 0;
+  const allTasksCompleted =
     tasks.length > 0 && tasks.every((t) => t.status === "completed" || !!t.completed_at);
-  const anyCompleted = tasks.some((t) => t.status === "completed" || !!t.completed_at);
-  const anyScheduled = tasks.some((t) => t.scheduled_date != null);
+  const allInstancesCompleted =
+    instances.length > 0 && instances.every((i) => i.status === "completed");
+  const allCompleted =
+    (hasTasks || hasInstances) &&
+    (!hasTasks || allTasksCompleted) &&
+    (!hasInstances || allInstancesCompleted);
+  const anyCompleted =
+    tasks.some((t) => t.status === "completed" || !!t.completed_at) ||
+    instances.some((i) => i.status === "completed");
+  const anyScheduled =
+    tasks.some((t) => t.scheduled_date != null) ||
+    instances.some((i) => i.scheduled_datetime != null);
 
   const handleComplete = useCallback(async () => {
     const completing = !allCompleted;
-    const targets = completing
+    const taskTargets = completing
       ? tasks.filter((t) => t.status !== "completed" && !t.completed_at)
       : tasks;
-    await batchToggleComplete(queryClient, targets, completing);
+    const instanceTargets = completing
+      ? instances.filter((i) => i.status !== "completed")
+      : instances;
+    await Promise.all([
+      batchToggleComplete(queryClient, taskTargets, completing),
+      batchToggleCompleteInstances(queryClient, instanceTargets, completing),
+    ]);
     clear();
-  }, [tasks, allCompleted, queryClient, clear]);
+  }, [tasks, instances, allCompleted, queryClient, clear]);
 
   const handleReopen = useCallback(async () => {
-    const completed = tasks.filter((t) => t.status === "completed" || !!t.completed_at);
-    await batchToggleComplete(queryClient, completed, false);
+    const completedTasks = tasks.filter((t) => t.status === "completed" || !!t.completed_at);
+    const completedInstances = instances.filter((i) => i.status === "completed");
+    await Promise.all([
+      batchToggleComplete(queryClient, completedTasks, false),
+      batchToggleCompleteInstances(queryClient, completedInstances, false),
+    ]);
     clear();
-  }, [tasks, queryClient, clear]);
+  }, [tasks, instances, queryClient, clear]);
 
   const handleUnschedule = useCallback(async () => {
-    const scheduled = tasks.filter((t) => t.scheduled_date != null);
-    await batchUnschedule(queryClient, scheduled);
+    const scheduledTasks = tasks.filter((t) => t.scheduled_date != null);
+    const scheduledInstances = instances.filter((i) => i.scheduled_datetime != null);
+    await Promise.all([
+      batchUnschedule(queryClient, scheduledTasks),
+      batchUnscheduleInstances(queryClient, scheduledInstances),
+    ]);
     clear();
-  }, [tasks, queryClient, clear]);
+  }, [tasks, instances, queryClient, clear]);
 
   const handleReschedule = useCallback(
     async (date: Date | undefined) => {
@@ -84,13 +104,20 @@ export function BatchContextMenuItems() {
       const mm = String(date.getMonth() + 1).padStart(2, "0");
       const dd = String(date.getDate()).padStart(2, "0");
       const dateStr = `${yyyy}-${mm}-${dd}`;
-      await batchReschedule(queryClient, tasks, dateStr);
+      await Promise.all([
+        batchReschedule(queryClient, tasks, dateStr),
+        batchRescheduleInstances(queryClient, instances, dateStr),
+      ]);
       clear();
-      // Dismiss the context menu (Calendar clicks don't auto-close like ContextMenuItem)
       dismissContextMenu();
     },
-    [tasks, queryClient, clear],
+    [tasks, instances, queryClient, clear],
   );
+
+  const handleSkip = useCallback(async () => {
+    await batchSkipInstances(queryClient, instances);
+    clear();
+  }, [instances, queryClient, clear]);
 
   const handleDelete = useCallback(async () => {
     if (
@@ -154,11 +181,24 @@ export function BatchContextMenuItems() {
 
       <ContextMenuSeparator />
 
-      {/* Delete */}
-      <ContextMenuItem onSelect={handleDelete} className="text-destructive focus:text-destructive">
-        <Trash2 className="h-3.5 w-3.5 mr-2" />
-        Delete {count} {noun}
-      </ContextMenuItem>
+      {/* Skip — only when instances are in selection */}
+      {hasInstances && (
+        <ContextMenuItem onSelect={handleSkip}>
+          <FastForward className="h-3.5 w-3.5 mr-2" />
+          Skip {instances.length} {instances.length === 1 ? "instance" : "instances"}
+        </ContextMenuItem>
+      )}
+
+      {/* Delete — tasks only (instances can't be deleted) */}
+      {hasTasks && (
+        <ContextMenuItem
+          onSelect={handleDelete}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="h-3.5 w-3.5 mr-2" />
+          Delete {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+        </ContextMenuItem>
+      )}
     </>
   );
 }

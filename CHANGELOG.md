@@ -4,6 +4,21 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.97 — 2026-03-02
+
+### Feat: Multi-select — Instance support, polish & command palette
+
+- Instance-aware batch operations: Complete, Unschedule, Skip, and Reschedule now work on recurring instances alongside tasks
+- New `resolveSelection()` helper splits selection IDs into tasks and instances from their respective TanStack Query caches
+- "Skip" button in floating action bar and context menu when instances are selected (instances can't be deleted)
+- Batch edit popover pre-fills fields when all selected tasks share the same value, shows "Mixed" placeholder when they differ
+- Instance-only edit shows informational message ("edit the series instead"); mixed selection notes skipped instances
+- `avoidCollisions` on batch edit popover — auto-flips to bottom when insufficient space above
+- ⌘+A shows brief "Selected N tasks" toast (2s duration)
+- Command palette expanded: Unschedule, Reschedule (date picker), and Edit actions added to batch footer
+
+---
+
 ## v0.55.96 — 2026-03-02
 
 ### Feat: Multi-select — Phase 6 (task view integration)

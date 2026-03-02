@@ -366,7 +366,10 @@ function DashboardPage() {
           handler: () => {
             if (stateRef.current.isModalOpen) return;
             const ids = stateRef.current.visibleTaskIds.map((id) => taskSelectionId(id));
-            if (ids.length > 0) useSelectionStore.getState().selectAll(ids);
+            if (ids.length > 0) {
+              useSelectionStore.getState().selectAll(ids);
+              toast(`Selected ${ids.length} tasks`, { duration: 2000 });
+            }
           },
         },
         {

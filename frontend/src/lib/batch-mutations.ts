@@ -1,6 +1,13 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { TaskResponse } from "@/api/model";
+import type { InstanceResponse, TaskResponse } from "@/api/model";
+import {
+  getListInstancesApiV1InstancesGetQueryKey,
+  scheduleInstanceApiV1InstancesInstanceIdSchedulePut,
+  skipInstanceApiV1InstancesInstanceIdSkipPost,
+  toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost,
+  unskipInstanceApiV1InstancesInstanceIdUnskipPost,
+} from "@/api/queries/instances/instances";
 import {
   deleteTaskApiV1TasksTaskIdDelete,
   restoreTaskApiV1TasksTaskIdRestorePost,
@@ -194,4 +201,125 @@ export function batchReschedule(queryClient: QueryClient, tasks: TaskResponse[],
       }),
     label: "Rescheduled",
   });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Instance batch operations                                          */
+/* ------------------------------------------------------------------ */
+
+/** Invalidate all instance query caches */
+function invalidateInstances(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
+}
+
+/**
+ * Execute a batch mutation on instances with toast + undo support.
+ * Simpler than executeBatch since instance caches are keyed per date-range
+ * and we just invalidate rather than doing fine-grained optimistic updates.
+ */
+async function executeInstanceBatch(
+  queryClient: QueryClient,
+  instances: InstanceResponse[],
+  mutateFn: (instance: InstanceResponse) => Promise<unknown>,
+  undoFn: (instance: InstanceResponse) => Promise<unknown>,
+  label: string,
+): Promise<void> {
+  if (instances.length === 0) return;
+
+  const results = await Promise.allSettled(instances.map(mutateFn));
+  const succeeded = results.filter((r) => r.status === "fulfilled").length;
+  const failed = results.filter((r) => r.status === "rejected").length;
+
+  if (failed === instances.length) {
+    toast.error(`Failed to ${label.toLowerCase()} instances`);
+    return;
+  }
+
+  invalidateInstances(queryClient);
+
+  const noun = instances.length === 1 ? "instance" : "instances";
+  const message =
+    failed > 0
+      ? `${label} ${succeeded} of ${instances.length} ${noun}. ${failed} failed.`
+      : `${label} ${succeeded} ${noun}`;
+
+  const succeededInstances = instances.filter((_, i) => results[i].status === "fulfilled");
+
+  toast.success(message, {
+    id: `batch-instance-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
+    action: {
+      label: "Undo",
+      onClick: () => {
+        Promise.allSettled(succeededInstances.map(undoFn)).then(() => {
+          invalidateInstances(queryClient);
+        });
+      },
+    },
+  });
+}
+
+/** Batch toggle complete for instances */
+export function batchToggleCompleteInstances(
+  queryClient: QueryClient,
+  instances: InstanceResponse[],
+  completing: boolean,
+) {
+  return executeInstanceBatch(
+    queryClient,
+    instances,
+    (inst) => toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id),
+    (inst) => toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id),
+    completing ? "Completed" : "Reopened",
+  );
+}
+
+/** Batch skip instances */
+export function batchSkipInstances(queryClient: QueryClient, instances: InstanceResponse[]) {
+  return executeInstanceBatch(
+    queryClient,
+    instances,
+    (inst) => skipInstanceApiV1InstancesInstanceIdSkipPost(inst.id),
+    (inst) => unskipInstanceApiV1InstancesInstanceIdUnskipPost(inst.id),
+    "Skipped",
+  );
+}
+
+/** Batch unschedule instances (set scheduled_datetime to null) */
+export function batchUnscheduleInstances(queryClient: QueryClient, instances: InstanceResponse[]) {
+  return executeInstanceBatch(
+    queryClient,
+    instances,
+    (inst) =>
+      scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+        scheduled_datetime: null,
+      }),
+    (inst) =>
+      scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+        scheduled_datetime: inst.scheduled_datetime,
+      }),
+    "Unscheduled",
+  );
+}
+
+/** Batch reschedule instances to a new datetime */
+export function batchRescheduleInstances(
+  queryClient: QueryClient,
+  instances: InstanceResponse[],
+  dateStr: string,
+) {
+  // Instances use scheduled_datetime (ISO datetime), so we append T00:00:00
+  const datetime = `${dateStr}T00:00:00`;
+  return executeInstanceBatch(
+    queryClient,
+    instances,
+    (inst) =>
+      scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+        scheduled_datetime: datetime,
+      }),
+    (inst) =>
+      scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+        scheduled_datetime: inst.scheduled_datetime,
+      }),
+    "Rescheduled",
+  );
 }
