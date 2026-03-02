@@ -1,14 +1,18 @@
 import { useDndMonitor, useDroppable } from "@dnd-kit/core";
-import { keepPreviousData } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles } from "lucide-react";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { InstanceResponse, TaskResponse } from "@/api/model";
 import {
   useGetCalendarsApiV1CalendarsGet,
   useGetEventsApiV1EventsGet,
 } from "@/api/queries/api/api";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
-import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
+import {
+  useListTasksApiV1TasksGet,
+  useUpdateTaskApiV1TasksTaskIdPut,
+} from "@/api/queries/tasks/tasks";
 import { Button } from "@/components/ui/button";
 import { useCarousel } from "@/hooks/use-carousel";
 import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
@@ -20,15 +24,17 @@ import {
   getSectionBoundaries,
   PREV_DAY_HOURS,
   parseDate,
+  planTasks,
   snapToZoomStep,
   todayString,
   ZOOM_STEPS,
 } from "@/lib/calendar-utils";
+import { dashboardTasksKey } from "@/lib/query-keys";
+import { filterByEnergy } from "@/lib/task-utils";
 import { useUIStore } from "@/stores/ui-store";
 import { AnytimeInstancePill } from "./anytime-instance-pill";
 import { AnytimeTaskPill } from "./anytime-task-pill";
 import { DayColumn } from "./day-column";
-import { PlanMode } from "./plan-mode";
 
 const CENTER_INDEX = 2; // 5 panels: 0, 1, [2], 3, 4
 const PANEL_OFFSETS = [-2, -1, 0, 1, 2];
@@ -39,14 +45,21 @@ interface CalendarPanelProps {
 }
 
 export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
-  const { calendarHourHeight, calendarCenterDate, setCalendarHourHeight, setCalendarCenterDate } =
-    useUIStore();
+  const {
+    calendarHourHeight,
+    calendarCenterDate,
+    setCalendarHourHeight,
+    setCalendarCenterDate,
+    energyLevel,
+  } = useUIStore();
   useSyncCalendarHourHeight();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const savedScrollTop = useRef<number | null>(null);
-  const [planModeOpen, setPlanModeOpen] = useState(false);
+  const [isPlanMode, setIsPlanMode] = useState(false);
+  const queryClient = useQueryClient();
+  const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
 
   // 5 carousel panel dates
   const panelDates = useMemo(
@@ -225,7 +238,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     onNavigate: commitNavigation,
     onVisiblePanelChange: setVisiblePanel,
     containerRef: carouselRef,
-    disabled: isDndDragging,
+    disabled: isDndDragging || isPlanMode,
   });
 
   // After any date change, recenter the carousel to panel 2 (center)
@@ -274,6 +287,118 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       savedScrollTop.current = null;
     }
   }, [calendarCenterDate]);
+
+  // Exit plan mode on date navigation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: calendarCenterDate change should exit plan mode
+  useEffect(() => {
+    setIsPlanMode(false);
+  }, [calendarCenterDate]);
+
+  // Exit plan mode on Escape
+  useEffect(() => {
+    if (!isPlanMode) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsPlanMode(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isPlanMode]);
+
+  // Plan execution: bin-pack tasks into selected range, fire API calls, show undo toast
+  const handlePlanExecute = useCallback(
+    async (startMinutes: number, endMinutes: number) => {
+      // Eligible: unscheduled, pending, top-level, matching energy
+      const eligible = tasks.filter(
+        (t) =>
+          !t.scheduled_date && !t.completed_at && t.status !== "completed" && t.parent_id === null,
+      );
+      const filtered = filterByEnergy(eligible, energyLevel);
+
+      if (filtered.length === 0) {
+        toast.info("No unscheduled tasks to schedule");
+        setIsPlanMode(false);
+        return;
+      }
+
+      const planned = planTasks(
+        filtered,
+        safeEvents,
+        displayDate,
+        startMinutes,
+        endMinutes,
+        safeAllStatusTasks,
+        safeInstances,
+      );
+
+      if (planned.length === 0) {
+        toast.info("No free slots in the selected range");
+        setIsPlanMode(false);
+        return;
+      }
+
+      // Snapshot for undo
+      const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+
+      // Optimistic update
+      const updates = new Map(planned.map((p) => [p.taskId, p]));
+      queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
+        if (!old) return old;
+        return old.map((t) => {
+          const plan = updates.get(t.id);
+          if (!plan) return t;
+          const timeStr = `${String(plan.scheduledHour).padStart(2, "0")}:${String(plan.scheduledMinutes).padStart(2, "0")}:00`;
+          return { ...t, scheduled_date: displayDate, scheduled_time: timeStr };
+        });
+      });
+
+      setIsPlanMode(false);
+
+      // Fire API calls
+      const results = await Promise.allSettled(
+        planned.map((p) => {
+          const timeStr = `${String(p.scheduledHour).padStart(2, "0")}:${String(p.scheduledMinutes).padStart(2, "0")}`;
+          return updateTask.mutateAsync({
+            taskId: p.taskId,
+            data: { scheduled_date: displayDate, scheduled_time: timeStr },
+          });
+        }),
+      );
+
+      const successCount = results.filter((r) => r.status === "fulfilled").length;
+      await queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
+
+      const taskWord = successCount === 1 ? "task" : "tasks";
+      toast.success(`Scheduled ${successCount} ${taskWord}`, {
+        id: "plan-my-day",
+        action: {
+          label: "Undo",
+          onClick: () => {
+            queryClient.setQueryData(dashboardTasksKey(), previousTasks);
+            Promise.allSettled(
+              planned.map((p) =>
+                updateTask.mutateAsync({
+                  taskId: p.taskId,
+                  data: { scheduled_date: null, scheduled_time: null },
+                }),
+              ),
+            ).then(() => {
+              queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
+            });
+          },
+        },
+      });
+    },
+    [
+      tasks,
+      energyLevel,
+      safeEvents,
+      displayDate,
+      safeAllStatusTasks,
+      safeInstances,
+      queryClient,
+      updateTask,
+    ],
+  );
 
   // Auto-scroll during dnd-kit drag near top/bottom edges (vertical) and
   // auto-navigate to previous/next day near left/right edges (horizontal).
@@ -459,13 +584,22 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             </Button>
           )}
           <Button
-            variant="cta"
+            variant={isPlanMode ? "outline" : "cta"}
             size="sm"
             className="h-8 text-xs gap-1.5"
-            onClick={() => setPlanModeOpen(true)}
+            onClick={() => setIsPlanMode((v) => !v)}
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            Plan My Day
+            {isPlanMode ? (
+              <>
+                <X className="h-3.5 w-3.5" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3.5 w-3.5" />
+                Plan My Day
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -543,6 +677,8 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                       calendarColors={calendarColors}
                       onTaskClick={onTaskClick}
                       isActivePanel={i === CENTER_INDEX}
+                      isPlanMode={isPlanMode && i === CENTER_INDEX}
+                      onPlanExecute={handlePlanExecute}
                     />
                   </div>
                 ))}
@@ -575,14 +711,12 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         </div>
       </div>
 
-      {/* Plan mode dialog */}
-      <PlanMode
-        open={planModeOpen}
-        onOpenChange={setPlanModeOpen}
-        tasks={tasks}
-        events={safeEvents}
-        centerDate={calendarCenterDate}
-      />
+      {/* Plan mode hint */}
+      {isPlanMode && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full bg-primary/90 text-primary-foreground text-xs font-medium shadow-md pointer-events-none animate-in fade-in duration-200">
+          Drag on the calendar to select a time range
+        </div>
+      )}
     </div>
   );
 }

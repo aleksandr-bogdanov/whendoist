@@ -574,13 +574,17 @@ export interface PlannedTask {
   durationMinutes: number;
 }
 
-/** First-fit bin packing of tasks into free slots */
+/** First-fit bin packing of tasks into free slots within a user-selected range */
 export function planTasks(
   tasks: TaskResponse[],
   events: EventResponse[],
   dateStr: string,
+  rangeStartMinutes: number,
+  rangeEndMinutes: number,
+  scheduledTasks: TaskResponse[] = [],
+  instances: InstanceResponse[] = [],
 ): PlannedTask[] {
-  // Collect occupied time ranges from events and already-scheduled tasks
+  // Collect occupied time ranges from events, scheduled tasks, and instances
   const occupied: TimeRange[] = [];
 
   for (const event of events) {
@@ -590,11 +594,21 @@ export function planTasks(
     occupied.push(eventToTimeRange(event));
   }
 
-  // Day boundaries: 8am to 8pm
-  const dayStart = 8 * 60;
-  const dayEnd = 20 * 60;
+  for (const task of scheduledTasks) {
+    if (task.scheduled_date !== dateStr || !task.scheduled_time) continue;
+    const range = taskToTimeRange(task);
+    if (range) occupied.push(range);
+  }
 
-  const freeSlots = findFreeSlots(occupied, dayStart, dayEnd);
+  for (const inst of instances) {
+    if (inst.instance_date !== dateStr || !inst.scheduled_datetime) continue;
+    const dt = new Date(inst.scheduled_datetime);
+    const startMin = dt.getHours() * 60 + dt.getMinutes();
+    const duration = inst.duration_minutes ?? 30;
+    occupied.push({ startMinutes: startMin, endMinutes: startMin + duration });
+  }
+
+  const freeSlots = findFreeSlots(occupied, rangeStartMinutes, rangeEndMinutes);
   if (freeSlots.length === 0) return [];
 
   // Sort tasks: smaller duration first, then higher impact (lower number = higher)

@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.77 — 2026-03-02
+
+### Feat: Plan My Day — drag-to-select time range (replaces dialog)
+
+- Replaced the dialog-based "Plan My Day" with interactive calendar selection mode: click the button, drag on the calendar to select a time range, click "Plan Tasks" to auto-schedule into that range only.
+- Algorithm now also considers already-scheduled tasks and recurring instances as occupied slots (previously only Google Calendar events).
+- Supports undo via toast, Escape to cancel, and snaps selections to 15-minute intervals.
+
+---
+
 ## v0.55.76 — 2026-03-02
 
 ### Fix: Desktop layout polish — border alignment, subtask editing, separator

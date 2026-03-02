@@ -50,6 +50,10 @@ interface DayColumnProps {
   onTaskClick?: (task: TaskResponse) => void;
   /** Whether this panel is the currently visible/active one (receives drop events) */
   isActivePanel?: boolean;
+  /** Whether plan-my-day selection mode is active */
+  isPlanMode?: boolean;
+  /** Called when user clicks "Plan Tasks" after selecting a time range */
+  onPlanExecute?: (startMinutes: number, endMinutes: number) => void;
 }
 
 export function DayColumn({
@@ -62,11 +66,70 @@ export function DayColumn({
   calendarColors,
   onTaskClick,
   isActivePanel = false,
+  isPlanMode = false,
+  onPlanExecute,
 }: DayColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
   const isToday = centerDate === todayString();
   const totalHeight = EXTENDED_TOTAL_HOURS * hourHeight;
   const boundaries = useMemo(() => getSectionBoundaries(hourHeight), [hourHeight]);
+
+  // ── Plan mode selection state ──────────────────────────────────────────────
+  const [planDragging, setPlanDragging] = useState(false);
+  const [planSelection, setPlanSelection] = useState<{ start: number; end: number } | null>(null);
+  const planAnchorRef = useRef(0);
+
+  // Clear selection when plan mode exits
+  useEffect(() => {
+    if (!isPlanMode) {
+      setPlanSelection(null);
+      setPlanDragging(false);
+    }
+  }, [isPlanMode]);
+
+  const pointerToCurrentDayMinutes = useCallback(
+    (e: React.PointerEvent) => {
+      if (!columnRef.current) return 0;
+      const rect = columnRef.current.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const absoluteMinutes = (offsetY / hourHeight) * 60;
+      const currentDayMinutes = absoluteMinutes - PREV_DAY_HOURS * 60;
+      return Math.round(currentDayMinutes / 15) * 15; // Snap to 15 min
+    },
+    [hourHeight],
+  );
+
+  const handlePlanPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isPlanMode || !columnRef.current) return;
+      if ((e.target as HTMLElement).closest("[data-plan-button]")) return;
+      const minutes = pointerToCurrentDayMinutes(e);
+      if (minutes < 0 || minutes >= 24 * 60) return;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      setPlanDragging(true);
+      planAnchorRef.current = minutes;
+      setPlanSelection({ start: minutes, end: Math.min(minutes + 15, 24 * 60) });
+    },
+    [isPlanMode, pointerToCurrentDayMinutes],
+  );
+
+  const handlePlanPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!planDragging) return;
+      const minutes = pointerToCurrentDayMinutes(e);
+      const clamped = Math.max(0, Math.min(24 * 60, minutes));
+      const anchor = planAnchorRef.current;
+      setPlanSelection({
+        start: Math.min(anchor, clamped),
+        end: Math.max(anchor + 15, clamped),
+      });
+    },
+    [planDragging, pointerToCurrentDayMinutes],
+  );
+
+  const handlePlanPointerUp = useCallback(() => {
+    setPlanDragging(false);
+  }, []);
 
   // Day name for separators (e.g., "FRIDAY")
   const centerDayName = useMemo(() => {
@@ -248,7 +311,14 @@ export function DayColumn({
   return (
     <div className="flex flex-col flex-1 min-w-0">
       {/* Time grid — single 44-hour column */}
-      <div ref={columnRef} className="relative flex-1" style={{ height: `${totalHeight}px` }}>
+      <div
+        ref={columnRef}
+        className={`relative flex-1 ${isPlanMode ? "cursor-crosshair" : ""}`}
+        style={{ height: `${totalHeight}px`, touchAction: isPlanMode ? "none" : undefined }}
+        onPointerDown={isPlanMode ? handlePlanPointerDown : undefined}
+        onPointerMove={isPlanMode ? handlePlanPointerMove : undefined}
+        onPointerUp={isPlanMode ? handlePlanPointerUp : undefined}
+      >
         {/* Background regions — graduated dimming (prev: 0.7, today: 1.0, next: 0.85) */}
         {/* Prev evening — stronger dim */}
         <div
@@ -329,8 +399,40 @@ export function DayColumn({
           </div>
         )}
 
+        {/* Plan mode selection overlay */}
+        {isPlanMode && planSelection && (
+          <div
+            className="absolute left-0 right-0 bg-primary/10 border-y-2 border-dashed border-primary/40 z-[15] pointer-events-none flex flex-col items-center justify-center gap-1"
+            style={{
+              top: `${((PREV_DAY_HOURS * 60 + planSelection.start) / 60) * hourHeight}px`,
+              height: `${Math.max(((planSelection.end - planSelection.start) / 60) * hourHeight, 20)}px`,
+            }}
+          >
+            <span className="text-xs font-mono font-medium text-primary drop-shadow-sm">
+              {formatTime(Math.floor(planSelection.start / 60), planSelection.start % 60)}
+              {" \u2013 "}
+              {formatTime(Math.floor(planSelection.end / 60), planSelection.end % 60)}
+            </span>
+            {!planDragging && (
+              <button
+                type="button"
+                data-plan-button
+                className="pointer-events-auto px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold shadow-sm hover:bg-primary/90 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlanExecute?.(planSelection.start, planSelection.end);
+                }}
+              >
+                Plan Tasks
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Rendered items */}
-        <div className="absolute inset-y-0 left-px right-0 pr-0.5 z-[1]">
+        <div
+          className={`absolute inset-y-0 left-px right-0 pr-0.5 z-[1] ${isPlanMode ? "pointer-events-none" : ""}`}
+        >
           {positioned.map((item) => {
             const timeLabel = getTimeLabel(item.startMinutes, item.endMinutes);
             const isDimmed = item.daySection === "prev" || item.daySection === "next";
