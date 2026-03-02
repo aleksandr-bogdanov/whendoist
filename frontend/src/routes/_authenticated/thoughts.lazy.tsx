@@ -23,6 +23,7 @@ import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
 import type { ConvertData } from "@/hooks/use-triage-form";
 import { cn } from "@/lib/utils";
+import { useUIStore } from "@/stores/ui-store";
 
 export const Route = createLazyFileRoute("/_authenticated/thoughts")({
   component: ThoughtsPage,
@@ -393,6 +394,21 @@ function ThoughtsPage() {
       .querySelector(`[data-thought-id="${selectedId}"]`)
       ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [selectedId]);
+
+  // Bridge: search palette navigates here with a one-shot ID
+  const searchNavigateId = useUIStore((s) => s.searchNavigateId);
+  const clearSearchNavigateId = useUIStore((s) => s.setSearchNavigateId);
+  useEffect(() => {
+    if (searchNavigateId) {
+      setSelectedId(searchNavigateId);
+      clearSearchNavigateId(null);
+      requestAnimationFrame(() => {
+        document
+          .querySelector(`[data-thought-id="${searchNavigateId}"]`)
+          ?.scrollIntoView({ block: "center", behavior: "smooth" });
+      });
+    }
+  }, [searchNavigateId, clearSearchNavigateId]);
 
   /* ---------------------------------------------------------------- */
   /*  Render                                                           */

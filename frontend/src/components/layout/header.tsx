@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { LogOut, Monitor, Moon, Search, Sun } from "lucide-react";
 import { useRef } from "react";
 import { DemoPill } from "@/components/demo-pill";
 import { cn } from "@/lib/utils";
@@ -131,6 +131,14 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
 
         {/* Right side actions */}
         <div className="ml-auto md:ml-3 flex items-center gap-0.5 md:gap-1">
+          <button
+            type="button"
+            onClick={() => useUIStore.getState().setSearchOpen(true)}
+            className="p-3 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors"
+            title="Search (⌘K)"
+          >
+            <Search className="h-5 w-5 md:h-3.5 md:w-3.5" />
+          </button>
           <button
             type="button"
             onClick={() => setTheme(themeCycle[theme])}

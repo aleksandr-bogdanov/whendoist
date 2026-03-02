@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.78 — 2026-03-02
+
+### Feat: Cmd+K task search palette
+
+- Global fuzzy search palette (Cmd+K / Ctrl+K / `/`) available from any authenticated page.
+- Client-side fuzzy matching via fuse.js over decrypted tasks — works with E2EE enabled.
+- Results grouped by Tasks, Thoughts, and Completed with match highlighting.
+- Keyboard navigation (arrow keys, Enter to open, Escape to close).
+- Selecting a task navigates to dashboard; selecting a thought navigates to thoughts page.
+- Search icon added to header for discoverability.
+
+---
+
 ## v0.55.77 — 2026-03-02
 
 ### Feat: Plan My Day — drag-to-select time range (replaces dialog)
@@ -13,7 +26,6 @@ Development history of Whendoist. Per-patch details in git history.
 - Supports undo via toast, Escape to cancel, and snaps selections to 15-minute intervals.
 
 ---
-
 ## v0.55.76 — 2026-03-02
 
 ### Fix: Desktop layout polish — border alignment, subtask editing, separator

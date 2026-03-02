@@ -2,6 +2,7 @@ import { Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { DemoPill } from "@/components/demo-pill";
 import { LiveAnnouncer } from "@/components/live-announcer";
+import { SearchPalette } from "@/components/search/search-palette";
 import { Header } from "./header";
 import { MobileNav } from "./mobile-nav";
 import { PwaDebugOverlay } from "./pwa-debug-overlay";
@@ -38,6 +39,7 @@ export function AppShell({ userName, userEmail }: AppShellProps) {
         <DemoPill />
       </div>
       <LiveAnnouncer />
+      <SearchPalette />
       {debugActive && <PwaDebugOverlay onClose={() => toggleDebug()} />}
     </div>
   );
