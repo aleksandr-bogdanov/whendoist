@@ -67,7 +67,7 @@ export function useSmartInputConsumer(
 
   const flash = useCallback((target: FlashTarget) => {
     setFlashTarget(target);
-    setTimeout(() => setFlashTarget(null), 800);
+    setTimeout(() => setFlashTarget(null), 650);
   }, []);
 
   /**

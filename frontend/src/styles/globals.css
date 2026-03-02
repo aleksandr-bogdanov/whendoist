@@ -209,6 +209,23 @@ body.reduced-motion * {
   transition-duration: 0.01ms !important;
 }
 
+/* Field flash — ring pulse when a smart-input token is consumed */
+@keyframes field-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(109, 94, 246, 0);
+  }
+  30% {
+    box-shadow: 0 0 0 2px rgba(109, 94, 246, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(109, 94, 246, 0);
+  }
+}
+
+.animate-field-flash {
+  animation: field-flash 600ms ease-out;
+}
+
 /* Completion pulse animation for checkbox */
 @keyframes completion-pulse {
   0% {
@@ -332,6 +349,12 @@ body.reduced-motion * {
     0%,
     100% {
       box-shadow: var(--shadow-cta);
+    }
+  }
+  @keyframes field-flash {
+    0%,
+    100% {
+      box-shadow: none;
     }
   }
 }

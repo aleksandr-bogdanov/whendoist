@@ -189,7 +189,7 @@ function DrawerBody({
       onDomain: (id: number) => {
         form.handlers.onDomainChange(id);
         setDomainFlash(true);
-        setTimeout(() => setDomainFlash(false), 800);
+        setTimeout(() => setDomainFlash(false), 650);
         form.markDirty();
       },
       onImpact: (v: number) => {
@@ -324,8 +324,8 @@ function DrawerBody({
         {/* Domain */}
         <div
           className={cn(
-            "relative pl-16 rounded-lg transition-all duration-300",
-            (flashTarget === "domain" || domainFlash) && "bg-primary/20",
+            "relative pl-16 rounded-lg",
+            (flashTarget === "domain" || domainFlash) && "animate-field-flash",
           )}
         >
           <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -384,8 +384,8 @@ function DrawerBody({
         {/* Impact */}
         <div
           className={cn(
-            "flex items-center gap-2 rounded-lg transition-all duration-300",
-            flashTarget === "impact" && "bg-primary/20",
+            "flex items-center gap-2 rounded-lg",
+            flashTarget === "impact" && "animate-field-flash",
           )}
         >
           <span className="text-xs text-muted-foreground shrink-0 w-14">Impact</span>
@@ -403,8 +403,8 @@ function DrawerBody({
         {/* When (Schedule) */}
         <div
           className={cn(
-            "flex items-center gap-2 rounded-lg transition-all duration-300",
-            flashTarget === "schedule" && "bg-primary/20",
+            "flex items-center gap-2 rounded-lg",
+            flashTarget === "schedule" && "animate-field-flash",
           )}
         >
           <span className="text-xs text-muted-foreground shrink-0 w-14">When</span>
@@ -428,8 +428,8 @@ function DrawerBody({
         {/* Duration */}
         <div
           className={cn(
-            "flex items-center gap-2 rounded-lg transition-all duration-300",
-            flashTarget === "duration" && "bg-primary/20",
+            "flex items-center gap-2 rounded-lg",
+            flashTarget === "duration" && "animate-field-flash",
           )}
         >
           <span className="text-xs text-muted-foreground shrink-0 w-14">Duration</span>
@@ -473,8 +473,8 @@ function DrawerBody({
         {/* Clarity */}
         <div
           className={cn(
-            "flex items-center gap-2 rounded-lg transition-all duration-300",
-            flashTarget === "clarity" && "bg-primary/20",
+            "flex items-center gap-2 rounded-lg",
+            flashTarget === "clarity" && "animate-field-flash",
           )}
         >
           <span className="text-xs text-muted-foreground shrink-0 w-14">Clarity</span>
@@ -643,7 +643,7 @@ function DrawerBody({
             if (parentDomainId !== null && parentDomainId !== form.values.domainId) {
               form.handlers.onDomainChange(parentDomainId);
               setDomainFlash(true);
-              setTimeout(() => setDomainFlash(false), 800);
+              setTimeout(() => setDomainFlash(false), 650);
               form.markDirty();
             }
           }}

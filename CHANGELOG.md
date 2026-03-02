@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.75 — 2026-03-02
+
+### Fix: Replace field flash background with ring animation
+
+- Replaced `bg-primary/20` background flash with a `box-shadow` ring pulse (`@keyframes field-flash`). The old background rendered behind child buttons creating ugly "bleeding through gaps" artifacts.
+- Removed `transition-all` (which transitioned every CSS property) in favor of a scoped CSS animation on `box-shadow` only.
+- Applied consistently across all 6 flash surfaces: mobile edit drawer, desktop editor, task fields body, task inspector, thought triage drawer, and smart input consumer hook.
+
+---
+
 ## v0.55.74 — 2026-03-02
 
 ### Feat: Sort parent task picker by domain

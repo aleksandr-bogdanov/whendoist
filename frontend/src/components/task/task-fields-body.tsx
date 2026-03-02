@@ -227,7 +227,7 @@ export function TaskFieldsBody({
               if (parentDomainId !== null && parentDomainId !== values.domainId) {
                 handlers.onDomainChange(parentDomainId);
                 setDomainFlash(true);
-                setTimeout(() => setDomainFlash(false), 800);
+                setTimeout(() => setDomainFlash(false), 650);
                 markDirty();
               }
             }}
@@ -418,9 +418,7 @@ function FieldRow({
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium">{label}</Label>
-      <div className={cn("rounded-lg transition-all duration-300", flash && "bg-primary/20")}>
-        {children}
-      </div>
+      <div className={cn("rounded-lg", flash && "animate-field-flash")}>{children}</div>
     </div>
   );
 }
