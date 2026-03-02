@@ -590,6 +590,53 @@ export interface PlannedTask {
   durationMinutes: number;
 }
 
+// ─── Plan Strategy Interface ─────────────────────────────────────────────────
+
+export type TaskSorter = (tasks: TaskResponse[]) => TaskResponse[];
+export type SlotSelector = (
+  task: TaskResponse,
+  duration: number,
+  slots: FreeSlot[],
+) => number | null; // slot index, or null to skip
+
+export interface PlanStrategy {
+  id: string;
+  label: string;
+  description: string;
+  sortTasks: TaskSorter;
+  selectSlot: SlotSelector;
+}
+
+/** Sort by duration ASC, then impact ASC (pack more tasks into the day) */
+function compactSort(tasks: TaskResponse[]): TaskResponse[] {
+  return [...tasks].sort((a, b) => {
+    const durDiff = (a.duration_minutes ?? 30) - (b.duration_minutes ?? 30);
+    if (durDiff !== 0) return durDiff;
+    return a.impact - b.impact;
+  });
+}
+
+/** First-fit: pick the first slot with enough remaining space */
+function firstFitSelect(_task: TaskResponse, duration: number, slots: FreeSlot[]): number | null {
+  for (let i = 0; i < slots.length; i++) {
+    const remaining = slots[i].endMinutes - slots[i].cursor;
+    if (remaining >= duration) return i;
+  }
+  return null;
+}
+
+export const COMPACT_STRATEGY: PlanStrategy = {
+  id: "compact",
+  label: "Compact",
+  description: "Pack as many tasks as possible into the time range",
+  sortTasks: compactSort,
+  selectSlot: firstFitSelect,
+};
+
+export const PLAN_STRATEGIES: Record<string, PlanStrategy> = {
+  compact: COMPACT_STRATEGY,
+};
+
 /** First-fit bin packing of tasks into free slots within a user-selected range */
 export function planTasks(
   tasks: TaskResponse[],
@@ -599,6 +646,7 @@ export function planTasks(
   rangeEndMinutes: number,
   scheduledTasks: TaskResponse[] = [],
   instances: InstanceResponse[] = [],
+  strategy: PlanStrategy = COMPACT_STRATEGY,
 ): PlannedTask[] {
   // Collect occupied time ranges from events, scheduled tasks, and instances
   const occupied: TimeRange[] = [];
@@ -627,37 +675,28 @@ export function planTasks(
   const freeSlots = findFreeSlots(occupied, rangeStartMinutes, rangeEndMinutes);
   if (freeSlots.length === 0) return [];
 
-  // Sort tasks: smaller duration first, then higher impact (lower number = higher)
-  const sortedTasks = [...tasks].sort((a, b) => {
-    const durDiff = (a.duration_minutes ?? 30) - (b.duration_minutes ?? 30);
-    if (durDiff !== 0) return durDiff;
-    return a.impact - b.impact;
-  });
-
+  const sortedTasks = strategy.sortTasks(tasks);
   const planned: PlannedTask[] = [];
 
   for (const task of sortedTasks) {
     const duration = task.duration_minutes ?? 30;
+    const slotIndex = strategy.selectSlot(task, duration, freeSlots);
 
-    // Find first slot with enough space
-    for (const slot of freeSlots) {
-      const remaining = slot.endMinutes - slot.cursor;
-      if (remaining >= duration) {
-        const startMinutes = slot.cursor;
-        const hour = Math.floor(startMinutes / 60);
-        const minutes = startMinutes % 60;
+    if (slotIndex !== null) {
+      const slot = freeSlots[slotIndex];
+      const startMinutes = slot.cursor;
+      const hour = Math.floor(startMinutes / 60);
+      const minutes = startMinutes % 60;
 
-        planned.push({
-          taskId: task.id,
-          title: task.title,
-          scheduledHour: hour,
-          scheduledMinutes: minutes,
-          durationMinutes: duration,
-        });
+      planned.push({
+        taskId: task.id,
+        title: task.title,
+        scheduledHour: hour,
+        scheduledMinutes: minutes,
+        durationMinutes: duration,
+      });
 
-        slot.cursor += duration + 5; // 5-minute buffer between tasks
-        break;
-      }
+      slot.cursor += duration + 5; // 5-minute buffer between tasks
     }
   }
 

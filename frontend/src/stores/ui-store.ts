@@ -26,6 +26,7 @@ interface UIState {
   subtaskAddFocusId: number | null;
   searchOpen: boolean;
   searchNavigateId: number | null;
+  planStrategy: string;
 }
 
 interface UIActions {
@@ -49,6 +50,7 @@ interface UIActions {
   clearSubtaskAddFocus: () => void;
   setSearchOpen: (open: boolean) => void;
   setSearchNavigateId: (id: number | null) => void;
+  setPlanStrategy: (id: string) => void;
 }
 
 let flashScrollTimer: ReturnType<typeof setTimeout>;
@@ -75,6 +77,7 @@ export const useUIStore = create<UIState & UIActions>()(
       subtaskAddFocusId: null,
       searchOpen: false,
       searchNavigateId: null,
+      planStrategy: "compact",
       calendarCenterDate: (() => {
         const now = new Date();
         if (now.getHours() >= 20) {
@@ -169,6 +172,7 @@ export const useUIStore = create<UIState & UIActions>()(
       clearSubtaskAddFocus: () => set({ subtaskAddFocusId: null }),
       setSearchOpen: (open) => set({ searchOpen: open }),
       setSearchNavigateId: (id) => set({ searchNavigateId: id }),
+      setPlanStrategy: (id) => set({ planStrategy: id }),
       flashUpdatedTask: (taskId) => {
         clearTimeout(flashScrollTimer);
         clearTimeout(flashClearTimer);
@@ -195,6 +199,7 @@ export const useUIStore = create<UIState & UIActions>()(
         expandedSubtasks: [...state.expandedSubtasks],
         hideCompletedSubtasks: [...state.hideCompletedSubtasks],
         mobileTab: state.mobileTab,
+        planStrategy: state.planStrategy,
       }),
       storage: {
         getItem: (name) => {
