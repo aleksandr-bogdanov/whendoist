@@ -1,13 +1,15 @@
 import { useNavigate } from "@tanstack/react-router";
 import Fuse, { type FuseResultMatch, type IFuseOptions } from "fuse.js";
-import { Search } from "lucide-react";
+import { Lightbulb, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
+import { MetadataPill } from "@/components/task/task-quick-add";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
+import { useTaskCreate } from "@/hooks/use-task-create";
 import { type SearchResult, useTaskSearch } from "@/hooks/use-task-search";
 import {
   COMMAND_CATEGORIES,
@@ -15,6 +17,7 @@ import {
   usePaletteCommands,
 } from "@/lib/palette-commands";
 import { DASHBOARD_TASKS_PARAMS } from "@/lib/query-keys";
+import { parseTaskInput } from "@/lib/task-parser";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -29,7 +32,9 @@ interface CommandSearchResult {
 
 type PaletteItem =
   | { type: "task"; result: SearchResult }
-  | { type: "command"; result: CommandSearchResult };
+  | { type: "command"; result: CommandSearchResult }
+  | { type: "create-task" }
+  | { type: "create-thought" };
 
 /* ------------------------------------------------------------------ */
 /*  Command Fuse options                                               */
@@ -189,12 +194,22 @@ export function SearchPalette() {
     };
   }, [domainsFingerprint, decryptDomains]);
 
+  /* ---- Task creation ---- */
+  const { create, isPending: isCreating } = useTaskCreate();
+
   /* ---- Fuzzy task search ---- */
   const { search } = useTaskSearch(tasks, domains);
   const taskResults = useMemo(
     () => (searchQuery && !isCommandMode ? search(searchQuery) : []),
     [searchQuery, isCommandMode, search],
   );
+
+  /* ---- Parse query for creation fallthrough ---- */
+  const parsed = useMemo(
+    () => (searchQuery && !isCommandMode ? parseTaskInput(searchQuery, domains) : null),
+    [searchQuery, isCommandMode, domains],
+  );
+  const showCreate = !!parsed?.title.trim();
 
   // Group task results: Tasks (pending/scheduled), Thoughts, Completed
   const grouped = useMemo(() => {
@@ -229,14 +244,18 @@ export function SearchPalette() {
       return items;
     }
 
-    // Search mode: tasks first, then commands as "Actions"
+    // Search mode: tasks first, then commands as "Actions", then create
     const items: PaletteItem[] = [];
     for (const r of grouped.taskGroup) items.push({ type: "task", result: r });
     for (const r of grouped.thoughtGroup) items.push({ type: "task", result: r });
     for (const r of grouped.completedGroup) items.push({ type: "task", result: r });
     for (const r of commandResults) items.push({ type: "command", result: r });
+    if (showCreate) {
+      items.push({ type: "create-task" });
+      items.push({ type: "create-thought" });
+    }
     return items;
-  }, [isCommandMode, commandResults, grouped]);
+  }, [isCommandMode, commandResults, grouped, showCreate]);
 
   /* ---- Reset on open/close ---- */
   useEffect(() => {
@@ -307,16 +326,40 @@ export function SearchPalette() {
     [setSearchOpen],
   );
 
+  /* ---- Create task / thought from palette ---- */
+  const handleCreate = useCallback(
+    (asThought: boolean) => {
+      if (!parsed?.title.trim() || isCreating) return;
+      setSearchOpen(false);
+      setQuery("");
+      create({
+        title: parsed.title.trim(),
+        description: parsed.description,
+        domain_id: asThought ? null : parsed.domainId,
+        impact: parsed.impact ?? undefined,
+        clarity: parsed.clarity ?? undefined,
+        duration_minutes: parsed.durationMinutes,
+        scheduled_date: asThought ? null : parsed.scheduledDate,
+        scheduled_time: asThought ? null : parsed.scheduledTime,
+      });
+    },
+    [parsed, isCreating, setSearchOpen, create],
+  );
+
   /* ---- Unified select ---- */
   const handleSelectItem = useCallback(
     (item: PaletteItem) => {
       if (item.type === "task") {
         handleSelectTask(item.result);
-      } else {
+      } else if (item.type === "command") {
         handleSelectCommand(item.result.command);
+      } else if (item.type === "create-task") {
+        handleCreate(false);
+      } else if (item.type === "create-thought") {
+        handleCreate(true);
       }
     },
-    [handleSelectTask, handleSelectCommand],
+    [handleSelectTask, handleSelectCommand, handleCreate],
   );
 
   /* ---- Keyboard navigation inside palette ---- */
@@ -328,12 +371,16 @@ export function SearchPalette() {
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && showCreate) {
+        // Cmd+Enter = capture thought (global shortcut within palette)
+        e.preventDefault();
+        handleCreate(true);
       } else if (e.key === "Enter" && flatItems[selectedIndex]) {
         e.preventDefault();
         handleSelectItem(flatItems[selectedIndex]);
       }
     },
-    [flatItems, selectedIndex, handleSelectItem],
+    [flatItems, selectedIndex, handleSelectItem, showCreate, handleCreate],
   );
 
   // Scroll selected item into view
@@ -437,6 +484,70 @@ export function SearchPalette() {
     });
   }
 
+  /* ---- Render create section ---- */
+  function renderCreateSection() {
+    if (!showCreate || !parsed) return null;
+    const mac = navigator.platform?.includes("Mac");
+    const createTaskIdx = flatItems.findIndex((i) => i.type === "create-task");
+    const createThoughtIdx = flatItems.findIndex((i) => i.type === "create-thought");
+    return (
+      <div>
+        <div className="px-3 pt-3 pb-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          Create
+        </div>
+        {/* Create task */}
+        <button
+          type="button"
+          data-search-index={createTaskIdx}
+          className={cn(
+            "w-full px-3 py-2 text-sm cursor-pointer transition-colors text-left",
+            "hover:bg-accent/50",
+            createTaskIdx === selectedIndex && "bg-accent",
+          )}
+          onClick={() => handleCreate(false)}
+          onMouseEnter={() => setSelectedIndex(createTaskIdx)}
+        >
+          <div className="flex items-center gap-2">
+            <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="flex-1 min-w-0 truncate">
+              Create task &ldquo;{parsed.title.trim()}&rdquo;
+            </span>
+            <kbd className="ml-auto shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
+              &crarr;
+            </kbd>
+          </div>
+          {parsed.tokens.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5 ml-6">
+              {parsed.tokens.map((token) => (
+                <MetadataPill key={token.type} token={token} />
+              ))}
+            </div>
+          )}
+        </button>
+        {/* Capture thought */}
+        <button
+          type="button"
+          data-search-index={createThoughtIdx}
+          className={cn(
+            "w-full px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 text-left",
+            "hover:bg-accent/50",
+            createThoughtIdx === selectedIndex && "bg-accent",
+          )}
+          onClick={() => handleCreate(true)}
+          onMouseEnter={() => setSelectedIndex(createThoughtIdx)}
+        >
+          <Lightbulb className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1 min-w-0 truncate">
+            Capture thought &ldquo;{parsed.title.trim()}&rdquo;
+          </span>
+          <kbd className="ml-auto shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
+            {mac ? "\u2318" : "Ctrl+"}↵
+          </kbd>
+        </button>
+      </div>
+    );
+  }
+
   /* ---- Determine empty state ---- */
   const hasCommandResults = commandResults.length > 0;
   const hasAnyResults = flatItems.length > 0;
@@ -476,12 +587,13 @@ export function SearchPalette() {
             /* Command mode: commands grouped by category */
             renderCommandsByCategory(commandResults)
           ) : (
-            /* Search mode: tasks + commands in "Actions" section */
+            /* Search mode: tasks + commands + create fallthrough */
             <>
               {renderTaskSection("Tasks", grouped.taskGroup)}
               {renderTaskSection("Thoughts", grouped.thoughtGroup)}
               {renderTaskSection("Completed", grouped.completedGroup)}
               {hasCommandResults && searchQuery && renderCommandSection("Actions", commandResults)}
+              {renderCreateSection()}
             </>
           )}
         </div>
@@ -495,6 +607,14 @@ export function SearchPalette() {
             <span>
               <kbd className="font-mono">&crarr;</kbd> {isCommandMode ? "run" : "open"}
             </span>
+            {showCreate && !isCommandMode && (
+              <span>
+                <kbd className="font-mono">
+                  {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}↵
+                </kbd>{" "}
+                thought
+              </span>
+            )}
             <span>
               <kbd className="font-mono">esc</kbd> close
             </span>
