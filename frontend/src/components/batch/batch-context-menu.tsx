@@ -142,8 +142,12 @@ export function BatchContextMenuItems() {
 
       <ContextMenuSeparator />
 
-      {/* Edit — placeholder for Phase 5 */}
-      <ContextMenuItem disabled>
+      {/* Edit — opens batch edit popover (anchored in FloatingActionBar) */}
+      <ContextMenuItem
+        onSelect={() => {
+          window.dispatchEvent(new Event("open-batch-edit"));
+        }}
+      >
         <Pencil className="h-3.5 w-3.5 mr-2" />
         Edit{"\u2026"}
       </ContextMenuItem>

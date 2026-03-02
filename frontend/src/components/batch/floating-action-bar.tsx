@@ -1,7 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarX2, Check, Pencil, Trash2, Undo2, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type { TaskResponse } from "@/api/model";
+import { BatchEditForm } from "@/components/batch/batch-edit-popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { batchDelete, batchToggleComplete, batchUnschedule } from "@/lib/batch-mutations";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
@@ -54,6 +56,21 @@ export function FloatingActionBar() {
     setVisible(false);
     const timer = setTimeout(() => setMounted(false), 200);
     return () => clearTimeout(timer);
+  }, [count]);
+
+  /* ---- Batch edit popover state ---- */
+  const [editOpen, setEditOpen] = useState(false);
+
+  // Allow context menu to open the edit popover via custom event
+  useEffect(() => {
+    const handler = () => setEditOpen(true);
+    window.addEventListener("open-batch-edit", handler);
+    return () => window.removeEventListener("open-batch-edit", handler);
+  }, []);
+
+  // Close popover when selection is cleared
+  useEffect(() => {
+    if (count === 0) setEditOpen(false);
   }, [count]);
 
   /* ---- Handlers ---- */
@@ -125,8 +142,21 @@ export function FloatingActionBar() {
           <ActionButton icon={CalendarX2} label="Unschedule" onClick={handleUnschedule} />
         )}
 
-        {/* Edit… placeholder for Phase 5 */}
-        <ActionButton icon={Pencil} label="Edit\u2026" onClick={() => {}} disabled />
+        {/* Edit… — opens batch edit popover */}
+        <Popover open={editOpen} onOpenChange={setEditOpen}>
+          <PopoverTrigger asChild>
+            <ActionButton icon={Pencil} label="Edit\u2026" onClick={() => setEditOpen(true)} />
+          </PopoverTrigger>
+          <PopoverContent side="top" sideOffset={8} className="w-72">
+            <BatchEditForm
+              tasks={tasks}
+              onDone={() => {
+                setEditOpen(false);
+                clear();
+              }}
+            />
+          </PopoverContent>
+        </Popover>
 
         <Divider />
 
@@ -141,21 +171,19 @@ export function FloatingActionBar() {
 /*  ActionButton                                                       */
 /* ------------------------------------------------------------------ */
 
-function ActionButton({
-  icon: Icon,
-  label,
-  onClick,
-  destructive,
-  disabled,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  onClick: () => void;
-  destructive?: boolean;
-  disabled?: boolean;
-}) {
+const ActionButton = React.forwardRef<
+  HTMLButtonElement,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    onClick: () => void;
+    destructive?: boolean;
+    disabled?: boolean;
+  }
+>(({ icon: Icon, label, onClick, destructive, disabled, ...props }, ref) => {
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onClick}
       disabled={disabled}
@@ -164,12 +192,14 @@ function ActionButton({
         "hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed",
         destructive && "text-destructive hover:bg-destructive/10",
       )}
+      {...props}
     >
       <Icon className="h-4 w-4" />
       <span className="hidden sm:inline">{label}</span>
     </button>
   );
-}
+});
+ActionButton.displayName = "ActionButton";
 
 /* ------------------------------------------------------------------ */
 /*  Divider                                                            */
