@@ -5,16 +5,18 @@ import { useDevice } from "@/hooks/use-device";
 
 const HINT_SHOWN_KEY = "gesture-hint-shown";
 const LONGPRESS_HINT_KEY = "longpress-hint-shown";
+const CMDK_HINT_KEY = "cmdk-hint-shown";
 const HINT_DELAY_MS = 1500;
 
 /**
- * Progressive disclosure of swipe and long-press gestures on mobile.
+ * Progressive disclosure of gestures (mobile) and keyboard shortcuts (desktop).
  *
- * (a) Animated swipe hint on first task row on first visit
- * (b) Long-press tooltip toast shown once after first task interaction
+ * (a) Animated swipe hint on first task row on first visit (mobile)
+ * (b) Long-press tooltip toast shown once after first task interaction (mobile)
+ * (c) Cmd+K palette hint shown once on first desktop visit
  */
 export function GestureDiscovery() {
-  const { prefersTouch, hasTouch } = useDevice();
+  const { prefersTouch, hasTouch, hasMouse } = useDevice();
   const [showHint, setShowHint] = useState(false);
   const isTouchDevice = prefersTouch || hasTouch;
 
@@ -68,6 +70,20 @@ export function GestureDiscovery() {
       if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
     };
   }, [isTouchDevice]);
+
+  // (c) Cmd+K hint: show once on desktop after a short delay
+  useEffect(() => {
+    if (!hasMouse || prefersTouch) return;
+    if (localStorage.getItem(CMDK_HINT_KEY)) return;
+
+    const timer = setTimeout(() => {
+      localStorage.setItem(CMDK_HINT_KEY, "1");
+      const shortcut = navigator.platform?.includes("Mac") ? "⌘K" : "Ctrl+K";
+      toast.info(`Tip: press ${shortcut} to search, create tasks, or run commands`);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [hasMouse, prefersTouch]);
 
   return (
     <AnimatePresence>

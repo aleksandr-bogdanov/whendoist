@@ -1035,7 +1035,17 @@ function CompletionStep({ onFinish, isPending }: { onFinish: () => void; isPendi
       </div>
 
       <h1 className="text-2xl font-bold tracking-tight mb-2">You're all set</h1>
-      <p className="text-sm font-medium text-muted-foreground mb-8">Your day awaits</p>
+      <p className="text-sm font-medium text-muted-foreground mb-2">Your day awaits</p>
+
+      <p className="text-xs text-muted-foreground/70 mb-8">
+        Pro tip: press{" "}
+        <kbd className="text-[10px] font-medium bg-muted/60 border border-border/50 rounded px-1 py-0.5">
+          {typeof navigator !== "undefined" && navigator.platform?.includes("Mac")
+            ? "⌘K"
+            : "Ctrl+K"}
+        </kbd>{" "}
+        anytime to search, create tasks, or run commands
+      </p>
 
       <Button
         variant="cta"

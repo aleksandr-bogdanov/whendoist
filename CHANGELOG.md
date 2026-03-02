@@ -4,6 +4,21 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.90 — 2026-03-02
+
+### Feat: Command palette — Phase 5 (5 enhancements + discoverability)
+
+- **Subtask search**: Subtasks are now indexed alongside parents in Fuse.js; results show as "Parent > Subtask" and navigate to the parent with subtask expanded
+- **Smart filters**: Type `@today`, `@tomorrow`, `@overdue`, `@unscheduled`, `@week`, `@completed` or `#DomainName` to filter search results; active filters show as pills
+- **Description snippet**: When Fuse matches on a task's description, a truncated snippet with the matched portion highlighted shows below the title
+- **Merge quick-add into palette**: Replaced the plain input with `useSmartInput()` — full smart parsing (autocomplete, pills, token dismissal) works directly in the palette; standalone QuickAdd dialog deprecated
+- **Multi-select + batch actions**: Cmd/Ctrl+Click to select multiple tasks; batch bar supports Complete, Schedule Today/Tomorrow, Move to domain, Delete
+- **Backend**: New `POST /api/v1/tasks/batch-action` endpoint for bulk task operations
+- **Discoverability**: Desktop header now shows a visible search bar with `⌘K` badge (Linear/Notion pattern); first-visit desktop toast hints about Cmd+K; onboarding wizard completion step mentions the shortcut
+- New files: `palette-filters.ts`, `palette-batch-actions.tsx`
+
+---
+
 ## v0.55.89 — 2026-03-02
 
 ### Feat: Command palette — Phase 4 (task action drilldown)

@@ -49,7 +49,7 @@ export function usePaletteCommands(): PaletteCommand[] {
   const toggleShowScheduled = useUIStore((s) => s.toggleShowScheduled);
   const toggleShowCompleted = useUIStore((s) => s.toggleShowCompleted);
   const toggleSort = useUIStore((s) => s.toggleSort);
-  const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
+  const searchOpen = useUIStore((s) => s.searchOpen);
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
   const setShortcutsHelpOpen = useUIStore((s) => s.setShortcutsHelpOpen);
 
@@ -98,8 +98,8 @@ export function usePaletteCommands(): PaletteCommand[] {
         icon: Plus,
         shortcut: "Q",
         handler: () => {
-          setSearchOpen(false);
-          setQuickAddOpen(true);
+          // Palette is now the unified creation surface
+          if (!searchOpen) setSearchOpen(true);
         },
       },
       {
@@ -287,7 +287,7 @@ export function usePaletteCommands(): PaletteCommand[] {
       toggleShowScheduled,
       toggleShowCompleted,
       toggleSort,
-      setQuickAddOpen,
+      searchOpen,
       setSearchOpen,
       setShortcutsHelpOpen,
     ],

@@ -1,6 +1,6 @@
 import Fuse, { type FuseResultMatch, type IFuseOptions } from "fuse.js";
 import { useCallback, useMemo } from "react";
-import type { DomainResponse, TaskResponse } from "@/api/model";
+import type { DomainResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 
 interface FlatTask {
   task: TaskResponse;
@@ -9,6 +9,8 @@ interface FlatTask {
   domainName: string | null;
   isThought: boolean;
   isCompleted: boolean;
+  subtask: SubtaskResponse | null;
+  parentTask: TaskResponse | null;
 }
 
 export interface SearchResult {
@@ -16,6 +18,8 @@ export interface SearchResult {
   domain: DomainResponse | null;
   isThought: boolean;
   matches: readonly FuseResultMatch[] | undefined;
+  subtask: SubtaskResponse | null;
+  parentTask: TaskResponse | null;
 }
 
 const MAX_RESULTS = 30;
@@ -53,7 +57,22 @@ export function useTaskSearch(tasks: TaskResponse[], domains: DomainResponse[]) 
         domainName: task.domain_id ? (domainMap.get(task.domain_id)?.name ?? null) : null,
         isThought: task.domain_id === null,
         isCompleted: task.status === "completed",
+        subtask: null,
+        parentTask: null,
       });
+      // Index each subtask as a separate entry pointing to its parent
+      for (const sub of task.subtasks ?? []) {
+        items.push({
+          task,
+          title: sub.title ?? "",
+          description: sub.description ?? "",
+          domainName: task.domain_id ? (domainMap.get(task.domain_id)?.name ?? null) : null,
+          isThought: task.domain_id === null,
+          isCompleted: sub.status === "completed",
+          subtask: sub,
+          parentTask: task,
+        });
+      }
     }
     return items;
   }, [tasks, domainMap]);
@@ -70,6 +89,8 @@ export function useTaskSearch(tasks: TaskResponse[], domains: DomainResponse[]) 
           : null,
         isThought: result.item.isThought,
         matches: result.matches ?? undefined,
+        subtask: result.item.subtask,
+        parentTask: result.item.parentTask,
       }));
     },
     [fuse, domainMap],

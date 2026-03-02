@@ -131,13 +131,26 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
 
         {/* Right side actions */}
         <div className="ml-auto md:ml-3 flex items-center gap-0.5 md:gap-1">
+          {/* Mobile: icon-only search button */}
           <button
             type="button"
             onClick={() => useUIStore.getState().setSearchOpen(true)}
-            className="p-3 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors"
+            className="p-3 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors md:hidden"
             title="Search (⌘K)"
           >
-            <Search className="h-5 w-5 md:h-3.5 md:w-3.5" />
+            <Search className="h-5 w-5" />
+          </button>
+          {/* Desktop: search bar with ⌘K badge */}
+          <button
+            type="button"
+            onClick={() => useUIStore.getState().setSearchOpen(true)}
+            className="hidden md:flex items-center gap-2 h-8 pl-2.5 pr-2 rounded-lg border border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:border-border transition-colors cursor-pointer w-[180px] lg:w-[220px]"
+          >
+            <Search className="h-3.5 w-3.5 shrink-0 opacity-60" />
+            <span className="text-xs flex-1 text-left">Search...</span>
+            <kbd className="text-[10px] font-medium bg-background/80 border border-border/50 rounded px-1.5 py-0.5 leading-none">
+              {navigator.platform?.includes("Mac") ? "⌘K" : "Ctrl+K"}
+            </kbd>
           </button>
           <button
             type="button"
