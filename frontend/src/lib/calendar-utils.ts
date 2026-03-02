@@ -570,7 +570,16 @@ export function findFreeSlots(
     slots.push({ startMinutes: finalStart, endMinutes: dayEndMinutes, cursor: finalStart });
   }
 
-  return slots;
+  // Belt-and-suspenders: hard-clamp all slots to the requested window.
+  // The occupied-range filter above should already prevent out-of-range slots,
+  // but this guarantees correctness regardless of edge cases.
+  return slots
+    .map((s) => {
+      const start = Math.max(s.startMinutes, dayStartMinutes);
+      const end = Math.min(s.endMinutes, dayEndMinutes);
+      return { startMinutes: start, endMinutes: end, cursor: Math.max(s.cursor, start) };
+    })
+    .filter((s) => s.endMinutes - s.startMinutes >= 15);
 }
 
 export interface PlannedTask {

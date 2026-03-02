@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.84 — 2026-03-02
+
+### Fix: Plan My Day — thoughts excluded, GCal undo race condition, range clamping
+
+- **Thoughts excluded**: Tasks with `domain_id=null` (thoughts) are now skipped by Plan My Day — they're brainstorm items, not schedulable work.
+- **GCal undo race condition**: `_fire_and_forget_sync_task` now re-checks the task state after committing the sync. If the task was unscheduled during the Google API call (e.g. rapid undo), the stale event is cleaned up immediately instead of being orphaned.
+- **Range clamping**: `findFreeSlots()` now hard-clamps all output slots to the requested `[start, end]` window as a safety net, preventing any remaining edge cases from leaking tasks outside the selection.
+
+---
+
 ## v0.55.83 — 2026-03-02
 
 ### Docs: Calendar integration section in README
