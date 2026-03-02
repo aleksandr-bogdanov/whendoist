@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/context-menu";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
+import { taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 
 interface AnytimeTaskPillProps {
   task: TaskResponse;
@@ -26,6 +27,8 @@ interface AnytimeTaskPillProps {
 }
 
 export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
+  const selectionId = taskSelectionId(task.id);
+  const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
   const isCompleted = task.status === "completed";
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
@@ -170,17 +173,28 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
         <button
           ref={setNodeRef}
           type="button"
-          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing max-w-[180px] flex-shrink-0 ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""}`}
+          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing max-w-[180px] flex-shrink-0 ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
           style={{
             borderLeft: `3px solid ${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}`,
             backgroundColor: `${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}1A`,
           }}
-          onClick={onClick}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) {
+              e.stopPropagation();
+              useSelectionStore.getState().toggle(selectionId);
+              return;
+            }
+            useSelectionStore.getState().clear();
+            onClick?.();
+          }}
           title={task.title}
           {...listeners}
           {...attributes}
         >
-          <span className={isCompleted ? "line-through decoration-1" : ""}>{task.title}</span>
+          <span className={isCompleted ? "line-through decoration-1" : ""}>
+            {isMultiSelected && <Check className="inline h-2.5 w-2.5 mr-0.5 text-primary" />}
+            {task.title}
+          </span>
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">

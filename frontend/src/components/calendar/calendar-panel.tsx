@@ -34,6 +34,7 @@ import {
 } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { filterByEnergy } from "@/lib/task-utils";
+import { useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnytimeInstancePill } from "./anytime-instance-pill";
 import { AnytimeTaskPill } from "./anytime-task-pill";
@@ -306,6 +307,13 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
+  }, [isPlanMode]);
+
+  // Clear multi-selection when entering Plan My Day (mutually exclusive modes)
+  useEffect(() => {
+    if (isPlanMode) {
+      useSelectionStore.getState().clear();
+    }
   }, [isPlanMode]);
 
   // Invalidate all task-related queries so calendar + task panel both refresh

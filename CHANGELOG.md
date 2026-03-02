@@ -4,6 +4,22 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.91 — 2026-03-02
+
+### Feat: Multi-select — Phase 1 (selection infrastructure)
+
+- New `useSelectionStore` Zustand store with `selectedIds` Set, `toggle`, `clear`, `selectAll` actions
+- Cmd/Ctrl+Click toggles task/instance selection on calendar cards, anytime pills, and task list rows
+- Plain click clears selection before existing behavior fires
+- Visual treatment: `ring-2 ring-primary` highlight + `bg-primary/10` tint on selected items; checkmark badge on scheduled cards, inline check icon on pills
+- Global Escape key listener clears selection
+- Entering Plan My Day mode clears any active selection (mutually exclusive modes)
+- Google Calendar events remain non-selectable (read-only)
+- Selection identity keys: `task-{id}` for tasks, `instance-{id}` for recurring instances
+- New file: `selection-store.ts`; plan doc: `2026-03-02-multi-select-batch-operations.md`
+
+---
+
 ## v0.55.90 — 2026-03-02
 
 ### Feat: Command palette — Phase 5 (5 enhancements + discoverability)

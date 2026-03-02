@@ -20,6 +20,7 @@ import {
 import type { PositionedItem } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
+import { taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 
 interface ScheduledTaskCardProps {
   item: PositionedItem;
@@ -49,6 +50,9 @@ export function ScheduledTaskCard({
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
+
+  const selectionId = taskSelectionId(taskId);
+  const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `scheduled-task-${taskId}`,
@@ -212,7 +216,7 @@ export function ScheduledTaskCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
+          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-2 ring-primary z-[2]" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${Math.max(item.height, 18)}px`,
@@ -222,8 +226,25 @@ export function ScheduledTaskCard({
             backgroundColor: `${impactColor}2A`,
           }}
           title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
-          onClick={() => onClick?.()}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) {
+              e.stopPropagation();
+              useSelectionStore.getState().toggle(selectionId);
+              return;
+            }
+            useSelectionStore.getState().clear();
+            onClick?.();
+          }}
         >
+          {/* Selection overlay + badge */}
+          {isMultiSelected && (
+            <>
+              <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+              <div className="absolute top-0.5 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
+                <Check className="h-2 w-2" strokeWidth={3} />
+              </div>
+            </>
+          )}
           {/* Drag handle — covers entire card, receives pointer events for dnd-kit */}
           <div className="absolute inset-0" {...listeners} {...attributes} />
           {/* Content — pointer-events-none so clicks/drags pass through to drag handle */}
