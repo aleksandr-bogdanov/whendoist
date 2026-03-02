@@ -380,11 +380,16 @@ function DashboardPage() {
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [selectedTaskId]);
 
-  // Derive selected task for the inline detail panel
-  const selectedTask = useMemo(
-    () => (selectedTaskId ? (decryptedTasks.find((t) => t.id === selectedTaskId) ?? null) : null),
-    [selectedTaskId, decryptedTasks],
-  );
+  // Derive selected task for the inline detail panel (search subtasks too)
+  const selectedTask = useMemo(() => {
+    if (!selectedTaskId) return null;
+    for (const t of decryptedTasks) {
+      if (t.id === selectedTaskId) return t;
+      const sub = t.subtasks?.find((st) => st.id === selectedTaskId);
+      if (sub) return sub as unknown as TaskResponse;
+    }
+    return null;
+  }, [selectedTaskId, decryptedTasks]);
 
   // Clear creating mode when a task gets selected (j/k, click)
   useEffect(() => {
@@ -441,7 +446,7 @@ function DashboardPage() {
         </div>
 
         {/* Main content: split pane on desktop, tab-switched on mobile */}
-        <div className="flex flex-1 min-h-0 md:gap-1">
+        <div className="flex flex-1 min-h-0">
           {/* Task panel */}
           <div
             className={`flex flex-col min-w-0 min-h-0 ${
@@ -461,7 +466,7 @@ function DashboardPage() {
           <div
             className={`flex flex-col min-w-0 ${
               mobileTab === "calendar" ? "flex-1" : "hidden"
-            } md:flex md:flex-[2] md:min-w-0`}
+            } md:flex md:flex-[2] md:min-w-0 md:border-l md:border-border`}
           >
             {detailPanelMode !== "idle" ? (
               /* Inline task editor — replaces calendar when editing or creating */
