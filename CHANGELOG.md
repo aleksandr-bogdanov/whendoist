@@ -4,6 +4,22 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.92 — 2026-03-02
+
+### Feat: Multi-select — Phase 2 (floating action bar)
+
+- New `FloatingActionBar` component renders globally in `AppShell` — appears when any tasks are selected
+- Slide-up/fade animation on enter, slide-down/fade on exit (200ms CSS transition)
+- Buttons: close (clear selection), count label, Complete/Reopen, Unschedule, Edit… (Phase 5 placeholder), Delete
+- Contextual visibility per plan §2: "Reopen" when all completed, hide Unschedule when all completed or none scheduled
+- Delete confirmation dialog when > 3 items selected
+- New `executeBatch()` helper (`lib/batch-mutations.ts`) — snapshots TanStack Query cache, fires parallel mutations via `Promise.allSettled`, shows single undo toast with partial-failure handling
+- Pre-built `batchToggleComplete()`, `batchDelete()`, `batchUnschedule()` wrappers using raw orval API functions
+- Mobile positioning above nav pill using `--nav-pill-*` CSS variables; desktop at `bottom-6`
+- New files: `components/batch/floating-action-bar.tsx`, `lib/batch-mutations.ts`
+
+---
+
 ## v0.55.91 — 2026-03-02
 
 ### Feat: Multi-select — Phase 1 (selection infrastructure)

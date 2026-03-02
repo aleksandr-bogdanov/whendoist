@@ -1,5 +1,6 @@
 import { Outlet } from "@tanstack/react-router";
 import { useState } from "react";
+import { FloatingActionBar } from "@/components/batch/floating-action-bar";
 import { DemoPill } from "@/components/demo-pill";
 import { LiveAnnouncer } from "@/components/live-announcer";
 import { SearchPalette } from "@/components/search/search-palette";
@@ -38,6 +39,7 @@ export function AppShell({ userName, userEmail }: AppShellProps) {
         <Outlet />
       </main>
       <MobileNav />
+      <FloatingActionBar />
       {/* Desktop only — mobile version is in the header */}
       <div className="hidden md:block fixed bottom-4 right-4 z-50">
         <DemoPill />
