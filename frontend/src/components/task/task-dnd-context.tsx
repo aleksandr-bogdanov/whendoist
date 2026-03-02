@@ -34,11 +34,12 @@ import {
 } from "@/api/queries/instances/instances";
 import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
-import { offsetToTime, PREV_DAY_START_HOUR } from "@/lib/calendar-utils";
+import { addDays, offsetToTime, PREV_DAY_START_HOUR, toDateString } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { formatScheduleTarget } from "@/lib/task-utils";
+import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
-import { TaskDragOverlay } from "./task-drag-overlay";
+import { BatchDragOverlay, TaskDragOverlay } from "./task-drag-overlay";
 
 // --- DnD state context (shared with TaskItem for drop-target validation) ---
 interface DndStateContextValue {
@@ -69,6 +70,10 @@ export interface DragState {
     | "reparent"
     | "promote"
     | null;
+  /** True when dragging a task that belongs to the multi-selection set */
+  isBatchDrag: boolean;
+  /** Number of OTHER selected items (excluding the anchor) */
+  batchCount: number;
 }
 
 interface TaskDndContextProps {
@@ -113,6 +118,70 @@ function parseTaskId(id: UniqueIdentifier): number {
     return Number.parseInt(s.replace("task-drop-", ""), 10);
   }
   return typeof id === "string" ? Number.parseInt(id, 10) : Number(id);
+}
+
+/** Convert "HH:MM:SS" time string to total minutes since midnight */
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/** Convert total minutes since midnight to "HH:MM:SS" time string */
+function minutesToTime(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+}
+
+/** Compute day difference between two YYYY-MM-DD date strings */
+function daysBetween(from: string, to: string): number {
+  const a = new Date(`${from}T00:00:00`);
+  const b = new Date(`${to}T00:00:00`);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+/**
+ * Describes a selected item participating in a batch drag — enough info
+ * to compute the delta and fire the correct mutation.
+ */
+interface BatchItem {
+  type: "task" | "instance";
+  id: number;
+  date: string | null;
+  /** "HH:MM:SS" or null for anytime tasks */
+  time: string | null;
+  title: string;
+}
+
+/**
+ * Apply a (daysDelta, minutesDelta) to a single BatchItem.
+ * Returns the new { date, time } — handles wrap-past-midnight and clamp-negative-time.
+ */
+function applyDelta(
+  item: BatchItem,
+  daysDelta: number,
+  minutesDelta: number,
+): { date: string; time: string | null } {
+  const baseDate = item.date ?? toDateString(new Date());
+  // Anytime tasks: only shift days, stay anytime
+  if (!item.time) {
+    return { date: addDays(baseDate, daysDelta), time: null };
+  }
+  let newMinutes = timeToMinutes(item.time) + minutesDelta;
+  let extraDays = 0;
+  // Wrap past midnight: ≥1440 → next day
+  while (newMinutes >= 1440) {
+    newMinutes -= 1440;
+    extraDays++;
+  }
+  // Clamp negative time: < 0 → 00:00 (don't go to previous day)
+  if (newMinutes < 0) {
+    newMinutes = 0;
+  }
+  return {
+    date: addDays(baseDate, daysDelta + extraDays),
+    time: minutesToTime(newMinutes),
+  };
 }
 
 /**
@@ -176,6 +245,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     activeInstance: null,
     overId: null,
     overType: null,
+    isBatchDrag: false,
+    batchCount: 0,
   });
 
   // Sensors: pointer for mouse, touch with delay to avoid conflicts with swipe
@@ -255,12 +326,29 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       const instance = isInstance
         ? ((event.active.data.current?.instance as InstanceResponse | null) ?? null)
         : null;
+
+      // Detect batch drag: is the dragged item part of the multi-selection?
+      const selectedIds = useSelectionStore.getState().selectedIds;
+      let isBatch = false;
+      let batchCount = 0;
+      if (selectedIds.size > 1) {
+        const selKey = isInstance
+          ? instanceSelectionId(Number.parseInt(activeIdStr.replace("instance-", ""), 10))
+          : taskSelectionId(parseTaskId(event.active.id));
+        if (selectedIds.has(selKey)) {
+          isBatch = true;
+          batchCount = selectedIds.size - 1; // exclude the anchor
+        }
+      }
+
       setDragState({
         activeId: event.active.id,
         activeTask: task,
         activeInstance: instance,
         overId: null,
         overType: null,
+        isBatchDrag: isBatch,
+        batchCount,
       });
     },
     [findTask],
@@ -461,18 +549,333 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     [queryClient, scheduleInstance, calendarHourHeight],
   );
 
+  // ── Batch drag handler ─────────────────────────────────────────────────
+  const handleBatchDrop = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || !active) return;
+
+      const overId = String(over.id);
+      const activeIdStr = String(active.id);
+      const isAnchorInstance = activeIdStr.startsWith("instance-");
+
+      // Resolve all selected items into BatchItems
+      const selectedIds = useSelectionStore.getState().selectedIds;
+      const cachedTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey()) ?? [];
+      const cachedInstances =
+        queryClient.getQueryData<InstanceResponse[]>(getListInstancesApiV1InstancesGetQueryKey()) ??
+        [];
+
+      const batchItems: BatchItem[] = [];
+      let anchorItem: BatchItem | null = null;
+
+      for (const selId of selectedIds) {
+        if (selId.startsWith("task-")) {
+          const numId = Number.parseInt(selId.replace("task-", ""), 10);
+          const t = cachedTasks.find((x) => x.id === numId);
+          if (!t) continue;
+          const item: BatchItem = {
+            type: "task",
+            id: numId,
+            date: t.scheduled_date,
+            time: t.scheduled_time,
+            title: t.title,
+          };
+          batchItems.push(item);
+          // Match anchor: check all prefixed forms of draggable IDs
+          if (
+            !isAnchorInstance &&
+            (activeIdStr === `anytime-task-${numId}` ||
+              activeIdStr === `scheduled-task-${numId}` ||
+              activeIdStr === String(numId))
+          ) {
+            anchorItem = item;
+          }
+        } else if (selId.startsWith("instance-")) {
+          const numId = Number.parseInt(selId.replace("instance-", ""), 10);
+          const inst = cachedInstances.find((x) => x.id === numId);
+          if (!inst) continue;
+          let instTime: string | null = null;
+          if (inst.scheduled_datetime) {
+            const dt = new Date(inst.scheduled_datetime);
+            instTime = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}:00`;
+          }
+          const item: BatchItem = {
+            type: "instance",
+            id: numId,
+            date: inst.instance_date,
+            time: instTime,
+            title: inst.task_title,
+          };
+          batchItems.push(item);
+          if (isAnchorInstance && activeIdStr === `instance-${numId}`) {
+            anchorItem = item;
+          }
+        }
+      }
+
+      if (!anchorItem || batchItems.length === 0) return;
+
+      // ── Compute drop target (date + time) based on drop zone ──
+      let dropDate: string | null = null;
+      let dropTime: string | null = null; // null = anytime drop or date-group drop
+      let isAnytimeDrop = false;
+      let isDateGroupDrop = false;
+
+      if (overId.startsWith("calendar-overlay-")) {
+        // Calendar time slot drop — full date + time
+        const droppableData = over.data.current as {
+          centerDate: string;
+          prevDate: string;
+          nextDate: string;
+          boundaries: { prevEnd: number; currentStart: number; currentEnd: number };
+          getScrollTop: () => number;
+          getCalendarRect?: () => DOMRect | null;
+        };
+        const calRect = droppableData.getCalendarRect?.();
+        const calTop = calRect?.top ?? over.rect.top;
+        const scrollTop = droppableData.getScrollTop();
+        const pointerY = lastPointerRef.current.y;
+        const offsetY = pointerY - calTop + scrollTop;
+
+        if (offsetY < droppableData.boundaries.prevEnd) {
+          dropDate = droppableData.prevDate;
+          const sectionOffsetY = offsetY;
+          const { hour, minutes } = offsetToTime(
+            sectionOffsetY,
+            calendarHourHeight,
+            PREV_DAY_START_HOUR,
+          );
+          dropTime = `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+        } else if (offsetY < droppableData.boundaries.currentEnd) {
+          dropDate = droppableData.centerDate;
+          const sectionOffsetY = offsetY - droppableData.boundaries.currentStart;
+          const { hour, minutes } = offsetToTime(sectionOffsetY, calendarHourHeight, 0);
+          dropTime = `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+        } else {
+          dropDate = droppableData.nextDate;
+          const sectionOffsetY = offsetY - droppableData.boundaries.currentEnd;
+          const { hour, minutes } = offsetToTime(sectionOffsetY, calendarHourHeight, 0);
+          dropTime = `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+        }
+      } else if (overId.startsWith("anytime-drop-")) {
+        dropDate = String(over.data.current?.dateStr ?? "");
+        dropTime = null;
+        isAnytimeDrop = true;
+      } else if (overId.startsWith("date-group-")) {
+        dropDate = String(over.data.current?.dateStr ?? "");
+        dropTime = null;
+        isDateGroupDrop = true;
+      } else {
+        // Unsupported drop zone for batch drag — do nothing
+        return;
+      }
+
+      if (!dropDate) return;
+
+      // ── Compute delta from anchor's old position to drop position ──
+      const anchorDate = anchorItem.date ?? toDateString(new Date());
+      const daysDelta = daysBetween(anchorDate, dropDate);
+      let minutesDelta = 0;
+      if (dropTime && anchorItem.time) {
+        minutesDelta = timeToMinutes(dropTime) - timeToMinutes(anchorItem.time);
+      }
+
+      // ── Snapshot for undo ──
+      const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
+      const previousInstances = queryClient.getQueryData<InstanceResponse[]>(
+        getListInstancesApiV1InstancesGetQueryKey(),
+      );
+
+      // ── Build updates per item ──
+      const taskUpdates: { id: number; date: string; time: string | null; title: string }[] = [];
+      const instanceUpdates: { id: number; datetime: string | null; title: string }[] = [];
+
+      for (const item of batchItems) {
+        if (isAnytimeDrop) {
+          // All become anytime; preserve relative day offsets from anchor
+          const itemDayOffset = item.date ? daysBetween(anchorDate, item.date) : 0;
+          const newDate = addDays(dropDate, itemDayOffset);
+          if (item.type === "task") {
+            taskUpdates.push({ id: item.id, date: newDate, time: null, title: item.title });
+          } else {
+            instanceUpdates.push({ id: item.id, datetime: null, title: item.title });
+          }
+        } else if (isDateGroupDrop) {
+          // All move to the target date; times preserved; no day offsets
+          if (item.type === "task") {
+            taskUpdates.push({ id: item.id, date: dropDate, time: item.time, title: item.title });
+          } else {
+            const newDatetime = item.time ? `${dropDate}T${item.time}` : null;
+            instanceUpdates.push({ id: item.id, datetime: newDatetime, title: item.title });
+          }
+        } else {
+          // Calendar time slot: apply time+day delta, preserving cross-day relative offsets
+          const { date: newDate, time: newTime } = applyDelta(item, daysDelta, minutesDelta);
+          if (item.type === "task") {
+            taskUpdates.push({ id: item.id, date: newDate, time: newTime, title: item.title });
+          } else {
+            const newDatetime = newTime ? `${newDate}T${newTime}` : null;
+            instanceUpdates.push({ id: item.id, datetime: newDatetime, title: item.title });
+          }
+        }
+      }
+
+      // ── Optimistic cache updates ──
+      if (taskUpdates.length > 0) {
+        queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
+          if (!old) return old;
+          let updated = old;
+          for (const u of taskUpdates) {
+            updated = updateTaskOrSubtaskInCache(updated, u.id, {
+              scheduled_date: u.date,
+              scheduled_time: u.time,
+            });
+          }
+          return updated;
+        });
+      }
+      if (instanceUpdates.length > 0) {
+        queryClient.setQueryData<InstanceResponse[]>(
+          getListInstancesApiV1InstancesGetQueryKey(),
+          (old) => {
+            if (!old) return old;
+            return old.map((inst) => {
+              const u = instanceUpdates.find((x) => x.id === inst.id);
+              if (!u) return inst;
+              return { ...inst, scheduled_datetime: u.datetime };
+            });
+          },
+        );
+      }
+
+      // ── Fire mutations (parallel via Promise.allSettled) ──
+      const totalCount = taskUpdates.length + instanceUpdates.length;
+      const mutations: Promise<unknown>[] = [];
+
+      for (const u of taskUpdates) {
+        mutations.push(
+          new Promise((resolve, reject) => {
+            updateTask.mutate(
+              { taskId: u.id, data: { scheduled_date: u.date, scheduled_time: u.time } },
+              { onSuccess: resolve, onError: reject },
+            );
+          }),
+        );
+      }
+      for (const u of instanceUpdates) {
+        mutations.push(
+          new Promise((resolve, reject) => {
+            scheduleInstance.mutate(
+              { instanceId: u.id, data: { scheduled_datetime: u.datetime } },
+              { onSuccess: resolve, onError: reject },
+            );
+          }),
+        );
+      }
+
+      Promise.allSettled(mutations).then((results) => {
+        const succeeded = results.filter((r) => r.status === "fulfilled").length;
+        const failed = totalCount - succeeded;
+
+        queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
+        queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
+
+        if (failed === 0) {
+          announce(`Moved ${totalCount} ${totalCount === 1 ? "task" : "tasks"}`);
+          toast.success(
+            `Moved ${totalCount} ${totalCount === 1 ? "task" : "tasks"} to ${formatScheduleTarget(dropDate, dropTime)}`,
+            {
+              id: `batch-move-${Date.now()}`,
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  // Restore full snapshots
+                  if (previousTasks) queryClient.setQueryData(dashboardTasksKey(), previousTasks);
+                  if (previousInstances)
+                    queryClient.setQueryData(
+                      getListInstancesApiV1InstancesGetQueryKey(),
+                      previousInstances,
+                    );
+                  // Fire reverse mutations
+                  for (const item of batchItems) {
+                    if (item.type === "task") {
+                      updateTask.mutate(
+                        {
+                          taskId: item.id,
+                          data: { scheduled_date: item.date, scheduled_time: item.time },
+                        },
+                        {
+                          onSuccess: () =>
+                            queryClient.invalidateQueries({ queryKey: dashboardTasksKey() }),
+                          onError: () => toast.error("Undo partially failed"),
+                        },
+                      );
+                    } else {
+                      const origDatetime =
+                        item.time && item.date ? `${item.date}T${item.time}` : null;
+                      scheduleInstance.mutate(
+                        { instanceId: item.id, data: { scheduled_datetime: origDatetime } },
+                        {
+                          onSuccess: () =>
+                            queryClient.invalidateQueries({
+                              queryKey: getListInstancesApiV1InstancesGetQueryKey(),
+                            }),
+                          onError: () => toast.error("Undo partially failed"),
+                        },
+                      );
+                    }
+                  }
+                },
+              },
+            },
+          );
+        } else if (succeeded > 0) {
+          toast.warning(`Moved ${succeeded} of ${totalCount} tasks. ${failed} failed.`, {
+            id: `batch-move-partial-${Date.now()}`,
+          });
+        } else {
+          // All failed — restore snapshots
+          if (previousTasks) queryClient.setQueryData(dashboardTasksKey(), previousTasks);
+          if (previousInstances)
+            queryClient.setQueryData(
+              getListInstancesApiV1InstancesGetQueryKey(),
+              previousInstances,
+            );
+          toast.error(`Failed to move ${totalCount} tasks`, {
+            id: `batch-move-err-${Date.now()}`,
+          });
+        }
+
+        // Clear selection after successful drop (§3: "selection cleared after drop")
+        useSelectionStore.getState().clear();
+      });
+    },
+    [queryClient, updateTask, scheduleInstance, calendarHourHeight],
+  );
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
+      // Capture batch state before clearing drag
+      const wasBatchDrag = dragState.isBatchDrag;
       setDragState({
         activeId: null,
         activeTask: null,
         activeInstance: null,
         overId: null,
         overType: null,
+        isBatchDrag: false,
+        batchCount: 0,
       });
 
       if (!over || !active) return;
+
+      // ── Batch drag: apply delta to all selected items ─────────────
+      if (wasBatchDrag) {
+        handleBatchDrop(event);
+        return;
+      }
 
       // Handle instance drops first
       if (handleInstanceDrop(event)) return;
@@ -1064,7 +1467,15 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         );
       }
     },
-    [findTask, queryClient, updateTask, calendarHourHeight, handleInstanceDrop],
+    [
+      findTask,
+      queryClient,
+      updateTask,
+      calendarHourHeight,
+      handleInstanceDrop,
+      handleBatchDrop,
+      dragState.isBatchDrag,
+    ],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -1074,6 +1485,8 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       activeInstance: null,
       overId: null,
       overType: null,
+      isBatchDrag: false,
+      batchCount: 0,
     });
   }, []);
 
@@ -1157,7 +1570,26 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     >
       <DndStateCtx.Provider value={dndStateValue}>{children}</DndStateCtx.Provider>
       <DragOverlay dropAnimation={null} modifiers={overlayModifiers}>
-        {dragState.activeTask ? (
+        {dragState.isBatchDrag && dragState.activeTask ? (
+          <div ref={overlayContentRef} className="transition-all duration-150">
+            <BatchDragOverlay
+              anchorTask={dragState.activeTask}
+              additionalCount={dragState.batchCount}
+            />
+          </div>
+        ) : dragState.isBatchDrag && dragState.activeInstance ? (
+          <div ref={overlayContentRef} className="transition-all duration-150">
+            <BatchDragOverlay
+              anchorTask={
+                {
+                  ...dragState.activeInstance,
+                  title: dragState.activeInstance.task_title,
+                } as unknown as TaskResponse
+              }
+              additionalCount={dragState.batchCount}
+            />
+          </div>
+        ) : dragState.activeTask ? (
           <div
             ref={overlayContentRef}
             className={
