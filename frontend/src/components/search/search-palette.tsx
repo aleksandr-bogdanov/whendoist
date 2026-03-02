@@ -157,27 +157,28 @@ export function SearchPalette() {
     }
   }, [searchOpen]);
 
-  /* ---- Cmd+K global listener ---- */
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchOpen(!searchOpen);
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [searchOpen, setSearchOpen]);
+  /* ---- Keyboard shortcuts (Cmd+K + /) ---- */
+  const searchOpenRef = useRef(searchOpen);
+  searchOpenRef.current = searchOpen;
 
-  /* ---- "/" shortcut via useShortcuts ---- */
   useShortcuts(
     useMemo(
       () => [
+        {
+          key: "k",
+          meta: true,
+          displayKey: "\u2318K",
+          description: "Search tasks",
+          category: "Navigation",
+          excludeInputs: false,
+          handler: () => setSearchOpen(!searchOpenRef.current),
+        },
         {
           key: "/",
           description: "Search tasks",
           category: "Navigation",
           excludeInputs: true,
+          showInHelp: false,
           handler: () => setSearchOpen(true),
         },
       ],

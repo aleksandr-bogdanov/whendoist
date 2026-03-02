@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.79 — 2026-03-02
+
+### Refactor: Unified shortcut system with modifier key support
+
+- Extended `useShortcuts` to support `meta` modifier (Cmd/Ctrl), eliminating the need for manual `addEventListener` workarounds.
+- Removed `STATIC_SHORTCUTS` hack from shortcuts-help — all shortcuts now flow through one registry.
+- Added `displayKey` field to `ShortcutDef` for custom help modal labels (e.g. `⌘K`).
+- Updated CLAUDE.md: no-corners-cut philosophy, maintenance burden over implementation complexity.
+
+---
+
 ## v0.55.78 — 2026-03-02
 
 ### Feat: Cmd+K task search palette

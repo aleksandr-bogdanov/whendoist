@@ -9,7 +9,13 @@ Task scheduling app: native tasks + Google Calendar.
 
 ## Vibecode-First Project
 
-This is a vibecoded project. Testing philosophy:
+This is a fully vibecoded project — **never cut corners.** Implementation complexity
+doesn't matter; only maintenance burden does. Do it right the first time: clean
+architecture, proper abstractions, single source of truth. Never create workarounds
+or parallel systems that duplicate responsibility — they become tomorrow's bugs.
+If a design decision is questionable, flag it and fix it now, not later.
+
+Testing philosophy:
 
 - **Only write tests that run in CI automatically** — no manual test execution
 - **No E2E/Playwright tests** — they require manual setup and won't be run

@@ -11,6 +11,10 @@ interface ShortcutDef {
   showInHelp?: boolean;
   /** Prevent default browser behavior (default: true) */
   preventDefault?: boolean;
+  /** Requires Cmd (Mac) or Ctrl (Windows/Linux) modifier */
+  meta?: boolean;
+  /** Display label for the help modal (e.g. "⌘K") — derived automatically if omitted */
+  displayKey?: string;
 }
 
 const registeredShortcuts: ShortcutDef[] = [];
@@ -49,8 +53,8 @@ export function getRegisteredShortcuts(): ShortcutDef[] {
 export function useGlobalKeyHandler() {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Skip if a modifier key is held (Ctrl/Meta shortcuts are browser-level)
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const hasMeta = e.ctrlKey || e.metaKey;
+      const hasAlt = e.altKey;
 
       const inInput = (e.target as HTMLElement)?.matches?.(
         'input, textarea, select, [contenteditable="true"]',
@@ -58,6 +62,15 @@ export function useGlobalKeyHandler() {
 
       for (const shortcut of registeredShortcuts) {
         if (shortcut.key !== e.key) continue;
+
+        // Modifier matching: meta shortcuts require Cmd/Ctrl,
+        // plain shortcuts reject any modifier
+        if (shortcut.meta) {
+          if (!hasMeta) continue;
+        } else {
+          if (hasMeta || hasAlt) continue;
+        }
+
         if (shortcut.excludeInputs && inInput) continue;
 
         if (shortcut.preventDefault !== false) {

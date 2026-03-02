@@ -16,33 +16,17 @@ const KEY_LABELS: Record<string, string> = {
   ArrowRight: "\u2192",
 };
 
-/** Static shortcuts that bypass useShortcuts (e.g. modifier-key combos) */
-const STATIC_SHORTCUTS: {
-  category: string;
-  key: string;
-  description: string;
-  displayKey: string;
-}[] = [
-  { category: "Navigation", key: "cmd+k", description: "Search tasks", displayKey: "\u2318K" },
-];
-
 export function ShortcutsHelp({ open, onOpenChange }: ShortcutsHelpProps) {
   const grouped = (() => {
     const all = getRegisteredShortcuts();
     const map = new Map<string, { key: string; description: string; displayKey?: string }[]>();
-    // Add static shortcuts first
-    for (const s of STATIC_SHORTCUTS) {
-      if (!map.has(s.category)) map.set(s.category, []);
-      map
-        .get(s.category)!
-        .push({ key: s.key, description: s.description, displayKey: s.displayKey });
-    }
     for (const s of all) {
       const cat = s.category;
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat)!.push({
         key: s.key,
         description: s.description,
+        displayKey: s.displayKey,
       });
     }
     return map;
