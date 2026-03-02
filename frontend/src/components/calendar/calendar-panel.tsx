@@ -319,10 +319,12 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       // Plan mode always targets the center panel — use calendarCenterDate, not displayDate
       const targetDate = calendarCenterDate;
 
-      // Flatten: parents replaced by their subtasks, standalone tasks kept as-is
+      // Flatten: parents replaced by their subtasks, standalone tasks kept as-is.
+      // Skip thoughts (domain_id=null) — they're brainstorm items, not schedulable.
       const eligible: TaskResponse[] = [];
       for (const t of tasks) {
         if (t.scheduled_date || t.completed_at || t.status === "completed") continue;
+        if (t.domain_id === null) continue;
         if (t.subtasks && t.subtasks.length > 0) {
           // Parent task — schedule its subtasks instead
           for (const st of t.subtasks) {

@@ -40,7 +40,13 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 async def _fire_and_forget_sync_task(task_id: int, user_id: int) -> None:
-    """Fire-and-forget: sync a task to Google Calendar in a background coroutine."""
+    """Fire-and-forget: sync a task to Google Calendar in a background coroutine.
+
+    Includes a race-condition guard: after committing the sync, re-checks the task
+    in a fresh session. If it was unscheduled while we were calling Google's API
+    (e.g. Plan My Day undo), the unsync runs immediately. Without this, the undo's
+    own sync fires before our sync record exists, leaving a stale Google event.
+    """
     try:
         async with async_session_factory() as db:
             from app.services.gcal_sync import GCalSyncService
@@ -51,6 +57,20 @@ async def _fire_and_forget_sync_task(task_id: int, user_id: int) -> None:
             if task:
                 await sync_service.sync_task(task)
             await db.commit()
+
+        # Race-condition guard: re-check task state with a fresh session.
+        # If the task was unscheduled during sync (e.g. Plan My Day undo fired
+        # while we were awaiting the Google API), our sync record now exists but
+        # the undo's unsync already ran and found nothing. Clean up now.
+        async with async_session_factory() as db:
+            from app.services.gcal_sync import GCalSyncService
+
+            task_service = TaskService(db, user_id)
+            task = await task_service.get_task(task_id)
+            if task and not task.scheduled_date and not (task.status == "completed" and task.completed_at):
+                sync_service = GCalSyncService(db, user_id)
+                await sync_service.unsync_task(task)
+                await db.commit()
     except Exception as e:
         from app.auth.google import TokenRefreshError
         from app.services.gcal_sync import CalendarGoneError
