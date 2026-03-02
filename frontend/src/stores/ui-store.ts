@@ -27,6 +27,7 @@ interface UIState {
   searchOpen: boolean;
   searchNavigateId: number | null;
   planStrategy: string;
+  shortcutsHelpOpen: boolean;
 }
 
 interface UIActions {
@@ -51,6 +52,7 @@ interface UIActions {
   setSearchOpen: (open: boolean) => void;
   setSearchNavigateId: (id: number | null) => void;
   setPlanStrategy: (id: string) => void;
+  setShortcutsHelpOpen: (open: boolean) => void;
 }
 
 let flashScrollTimer: ReturnType<typeof setTimeout>;
@@ -78,6 +80,7 @@ export const useUIStore = create<UIState & UIActions>()(
       searchOpen: false,
       searchNavigateId: null,
       planStrategy: "compact",
+      shortcutsHelpOpen: false,
       calendarCenterDate: (() => {
         const now = new Date();
         if (now.getHours() >= 20) {
@@ -173,6 +176,7 @@ export const useUIStore = create<UIState & UIActions>()(
       setSearchOpen: (open) => set({ searchOpen: open }),
       setSearchNavigateId: (id) => set({ searchNavigateId: id }),
       setPlanStrategy: (id) => set({ planStrategy: id }),
+      setShortcutsHelpOpen: (open) => set({ shortcutsHelpOpen: open }),
       flashUpdatedTask: (taskId) => {
         clearTimeout(flashScrollTimer);
         clearTimeout(flashClearTimer);
