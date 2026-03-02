@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.95 — 2026-03-02
+
+### Feat: Multi-select — Phase 5 (batch edit popover)
+
+- "Edit..." button in floating action bar now opens a popover with Impact, Clarity, Duration, and Domain fields
+- "Edit..." item in batch context menu opens the same popover (via custom event dispatch)
+- All fields start in unset "—" state; only explicitly-changed fields are applied on "Apply"
+- Duration input accepts flexible formats: "30", "30m", "1h", "1.5h"
+- New `batchEdit()` batch mutation helper applies partial field updates with single undo toast
+- Uses existing `executeBatch()` infrastructure: optimistic update, parallel mutations, undo via snapshot restore
+
+---
+
 ## v0.55.94 — 2026-03-02
 
 ### Feat: Multi-select — Phase 4 (batch context menu & reschedule)

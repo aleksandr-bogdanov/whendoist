@@ -152,6 +152,31 @@ export function batchUnschedule(queryClient: QueryClient, tasks: TaskResponse[])
   });
 }
 
+/** Batch edit — apply partial field updates to all tasks, single undo toast */
+export function batchEdit(
+  queryClient: QueryClient,
+  tasks: TaskResponse[],
+  fields: Partial<Pick<TaskResponse, "impact" | "clarity" | "duration_minutes" | "domain_id">>,
+) {
+  const taskIds = new Set(tasks.map((t) => t.id));
+
+  return executeBatch({
+    queryClient,
+    tasks,
+    applyOptimistic: (cached) => cached.map((t) => (taskIds.has(t.id) ? { ...t, ...fields } : t)),
+    mutateFn: (task) => updateTaskApiV1TasksTaskIdPut(task.id, fields),
+    undoFn: (task) => {
+      // Restore each task's original values for the changed fields
+      const restore: Record<string, unknown> = {};
+      for (const key of Object.keys(fields)) {
+        restore[key] = (task as unknown as Record<string, unknown>)[key];
+      }
+      return updateTaskApiV1TasksTaskIdPut(task.id, restore);
+    },
+    label: "Edited",
+  });
+}
+
 /** Batch reschedule tasks to a new date (times preserved) */
 export function batchReschedule(queryClient: QueryClient, tasks: TaskResponse[], date: string) {
   const taskIds = new Set(tasks.map((t) => t.id));
