@@ -76,6 +76,7 @@ export function DayColumn({
 
   // ── Plan mode selection state ──────────────────────────────────────────────
   const [planDragging, setPlanDragging] = useState(false);
+  const planDraggingRef = useRef(false); // Ref avoids stale closure in pointer move handler
   const [planSelection, setPlanSelection] = useState<{ start: number; end: number } | null>(null);
   const planAnchorRef = useRef(0);
 
@@ -84,6 +85,7 @@ export function DayColumn({
     if (!isPlanMode) {
       setPlanSelection(null);
       setPlanDragging(false);
+      planDraggingRef.current = false;
     }
   }, [isPlanMode]);
 
@@ -105,7 +107,9 @@ export function DayColumn({
       if ((e.target as HTMLElement).closest("[data-plan-button]")) return;
       const minutes = pointerToCurrentDayMinutes(e);
       if (minutes < 0 || minutes >= 24 * 60) return;
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      e.preventDefault(); // Prevent scroll interference during drag
+      columnRef.current.setPointerCapture(e.pointerId);
+      planDraggingRef.current = true;
       setPlanDragging(true);
       planAnchorRef.current = minutes;
       setPlanSelection({ start: minutes, end: Math.min(minutes + 15, 24 * 60) });
@@ -115,7 +119,7 @@ export function DayColumn({
 
   const handlePlanPointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!planDragging) return;
+      if (!planDraggingRef.current) return; // Ref is always current (no stale closure)
       const minutes = pointerToCurrentDayMinutes(e);
       const clamped = Math.max(0, Math.min(24 * 60, minutes));
       const anchor = planAnchorRef.current;
@@ -124,10 +128,11 @@ export function DayColumn({
         end: Math.max(anchor + 15, clamped),
       });
     },
-    [planDragging, pointerToCurrentDayMinutes],
+    [pointerToCurrentDayMinutes],
   );
 
   const handlePlanPointerUp = useCallback(() => {
+    planDraggingRef.current = false;
     setPlanDragging(false);
   }, []);
 

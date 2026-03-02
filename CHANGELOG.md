@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.81 — 2026-03-02
+
+### Fix: Plan My Day — time range leaking past selection boundary
+
+- **Root cause**: `findFreeSlots()` iterated over ALL occupied ranges (events, tasks, instances) from the entire day, creating free slots between them even outside the user's selected time window. A 2-hour morning selection with tasks later in the day would produce slots extending to noon and beyond.
+- **Fix**: Filter occupied ranges to only those overlapping `[rangeStart, rangeEnd]` before computing free slots.
+- **Pointer handlers**: Use ref for dragging flag (avoids stale React closure), capture on column element (not arbitrary child), prevent default to avoid scroll interference.
+
+---
+
 ## v0.55.80 — 2026-03-02
 
 ### Fix: Plan My Day — time range, parent tasks, undo
