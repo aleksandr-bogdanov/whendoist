@@ -222,23 +222,25 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
-export function MetadataPill({ token, onDismiss }: { token: ParsedToken; onDismiss: () => void }) {
+export function MetadataPill({ token, onDismiss }: { token: ParsedToken; onDismiss?: () => void }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${PILL_STYLES[token.type] ?? ""}`}
     >
       <span className="opacity-50">{PILL_ICONS[token.type]}</span>
       {token.label}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDismiss();
-        }}
-        className="ml-0.5 opacity-40 hover:opacity-100 transition-opacity"
-      >
-        <X className="h-2.5 w-2.5" />
-      </button>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss();
+          }}
+          className="ml-0.5 opacity-40 hover:opacity-100 transition-opacity"
+        >
+          <X className="h-2.5 w-2.5" />
+        </button>
+      )}
     </span>
   );
 }

@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.87 — 2026-03-02
+
+### Feat: Command palette — Phase 2 (creation fallthrough)
+
+- Search palette now doubles as a task creation interface: type anything and "Create task" / "Capture thought" options appear below search results
+- When search returns zero results, the create section is the primary content — no more dead-end "No results found"
+- The smart input parser (`parseTaskInput`) runs on the query in real-time, extracting domain, priority, duration, date, and description tokens shown as metadata pills
+- Enter = create task (with all parsed metadata), Cmd+Enter = capture thought (no domain/schedule, just the idea)
+- Made `MetadataPill.onDismiss` optional so the component can be reused in read-only contexts (palette pills have no dismiss button)
+
+---
+
 ## v0.55.86 — 2026-03-02
 
 ### Feat: Command palette — Phase 1
