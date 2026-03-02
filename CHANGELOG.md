@@ -4,6 +4,24 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.93 — 2026-03-02
+
+### Feat: Multi-select — Phase 3 (batch drag on calendar)
+
+- Dragging a selected task initiates a batch drag for all selected items
+- Time+day delta computed from anchor task's position to drop position, applied to all items
+- Stacked drag overlay: shows anchor task name + "+ N more tasks" label with offset shadow cards
+- Calendar time slot drop: preserves cross-day relative offsets between all batch items
+- Anytime section drop: all items become anytime, relative day offsets preserved
+- Date group header drop: all items move to target date, times preserved
+- Edge cases: anytime tasks get day-only delta, wrap-past-midnight, clamp-negative-time
+- Instance support: uses `scheduleInstance` API for recurring instances in the batch
+- Single undo toast restores all items to their original positions
+- Partial failure handling: success/warning/error toasts based on mutation results
+- Selection cleared after successful batch drop
+
+---
+
 ## v0.55.92 — 2026-03-02
 
 ### Feat: Multi-select — Phase 2 (floating action bar)

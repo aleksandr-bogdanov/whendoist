@@ -1,4 +1,4 @@
-import { Clock, CornerDownRight } from "lucide-react";
+import { Clock, Copy, CornerDownRight } from "lucide-react";
 import type { TaskResponse } from "@/api/model";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration, IMPACT_COLORS } from "@/lib/task-utils";
@@ -35,6 +35,53 @@ export function TaskDragOverlay({ task, isReparenting }: TaskDragOverlayProps) {
           P{task.impact}
         </Badge>
       </span>
+    </div>
+  );
+}
+
+// --- Batch (multi-select) drag overlay with stacked-card effect ---
+
+interface BatchDragOverlayProps {
+  anchorTask: TaskResponse;
+  additionalCount: number;
+}
+
+export function BatchDragOverlay({ anchorTask, additionalCount }: BatchDragOverlayProps) {
+  return (
+    <div className="relative">
+      {/* Stacked card shadows behind the main pill */}
+      <div className="absolute inset-0 translate-x-1 translate-y-1 rounded-md border bg-muted/60 shadow-md" />
+      {additionalCount > 1 && (
+        <div className="absolute inset-0 translate-x-2 translate-y-2 rounded-md border bg-muted/40 shadow-sm" />
+      )}
+      {/* Main pill — anchor task */}
+      <div className="relative flex flex-col rounded-md border bg-background/95 shadow-lg backdrop-blur-sm max-w-xs">
+        <div className="flex items-center gap-2 px-3 py-2">
+          <span className="text-sm font-medium truncate flex-1">{anchorTask.title}</span>
+          <span className="flex items-center gap-1.5 flex-shrink-0">
+            {anchorTask.duration_minutes && (
+              <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
+                <Clock className="h-3 w-3" />
+                {formatDuration(anchorTask.duration_minutes)}
+              </span>
+            )}
+            <Badge
+              className="text-[10px] px-1.5 py-0 text-white"
+              style={{
+                backgroundColor: IMPACT_COLORS[anchorTask.impact] ?? IMPACT_COLORS[4],
+              }}
+            >
+              P{anchorTask.impact}
+            </Badge>
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 border-t border-dashed px-3 py-1.5 text-xs text-muted-foreground">
+          <Copy className="h-3 w-3" />
+          <span>
+            + {additionalCount} more {additionalCount === 1 ? "task" : "tasks"}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
