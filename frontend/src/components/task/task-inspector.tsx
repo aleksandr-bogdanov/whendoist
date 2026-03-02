@@ -342,8 +342,8 @@ function ParentPickerPopover({
   );
 
   const taskGroups = useMemo(
-    () => groupParentTasks(parentTasks, currentDomainId, search),
-    [parentTasks, currentDomainId, search],
+    () => groupParentTasks(parentTasks, currentDomainId, search, undefined, domains),
+    [parentTasks, currentDomainId, search, domains],
   );
 
   const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);

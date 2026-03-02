@@ -708,8 +708,8 @@ function ParentPickerDrawer({
   }, [task.parent_id]);
 
   const taskGroups = useMemo(
-    () => groupParentTasks(parentTasks, task.domain_id, search, task.id),
-    [parentTasks, task.id, task.domain_id, search],
+    () => groupParentTasks(parentTasks, task.domain_id, search, task.id, domains),
+    [parentTasks, task.id, task.domain_id, search, domains],
   );
 
   const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
