@@ -1,13 +1,18 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarX2, Check, Pencil, Trash2, Undo2, X } from "lucide-react";
+import { CalendarX2, Check, FastForward, Pencil, Trash2, Undo2, X } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import type { TaskResponse } from "@/api/model";
 import { BatchEditForm } from "@/components/batch/batch-edit-popover";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { batchDelete, batchToggleComplete, batchUnschedule } from "@/lib/batch-mutations";
-import { dashboardTasksKey } from "@/lib/query-keys";
+import {
+  batchDelete,
+  batchSkipInstances,
+  batchToggleComplete,
+  batchToggleCompleteInstances,
+  batchUnschedule,
+  batchUnscheduleInstances,
+} from "@/lib/batch-mutations";
 import { cn } from "@/lib/utils";
-import { useSelectionStore } from "@/stores/selection-store";
+import { resolveSelection, useSelectionStore } from "@/stores/selection-store";
 
 /* ------------------------------------------------------------------ */
 /*  FloatingActionBar                                                  */
@@ -19,26 +24,27 @@ export function FloatingActionBar() {
   const queryClient = useQueryClient();
   const count = selectedIds.size;
 
-  /* ---- Resolve selected IDs → TaskResponse objects from cache ---- */
-  const tasks = useMemo(() => {
-    if (count === 0) return [];
-    const cached = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey()) ?? [];
-    const result: TaskResponse[] = [];
-    for (const id of selectedIds) {
-      if (id.startsWith("task-")) {
-        const taskId = Number(id.slice(5));
-        const task = cached.find((t) => t.id === taskId);
-        if (task) result.push(task);
-      }
-      // Instance support deferred to later phases
-    }
-    return result;
-  }, [selectedIds, count, queryClient]);
+  /* ---- Resolve selected IDs → tasks + instances from cache ---- */
+  const { tasks, instances } = useMemo(
+    () => resolveSelection(queryClient, selectedIds),
+    [selectedIds, queryClient],
+  );
 
-  /* ---- Contextual visibility (per §2 table) ---- */
-  const allCompleted =
+  const hasInstances = instances.length > 0;
+  const hasTasks = tasks.length > 0;
+
+  /* ---- Contextual visibility ---- */
+  const allTasksCompleted =
     tasks.length > 0 && tasks.every((t) => t.status === "completed" || !!t.completed_at);
-  const anyScheduled = tasks.some((t) => t.scheduled_date != null);
+  const allInstancesCompleted =
+    instances.length > 0 && instances.every((i) => i.status === "completed");
+  const allCompleted =
+    (hasTasks || hasInstances) &&
+    (!hasTasks || allTasksCompleted) &&
+    (!hasInstances || allInstancesCompleted);
+  const anyScheduled =
+    tasks.some((t) => t.scheduled_date != null) ||
+    instances.some((i) => i.scheduled_datetime != null);
 
   /* ---- Slide-up / slide-down animation ---- */
   const [visible, setVisible] = useState(false);
@@ -73,22 +79,31 @@ export function FloatingActionBar() {
     if (count === 0) setEditOpen(false);
   }, [count]);
 
-  /* ---- Handlers ---- */
+  /* ---- Handlers (dual-dispatch: tasks + instances) ---- */
   const handleComplete = useCallback(async () => {
     const completing = !allCompleted;
-    // If mixed selection, only complete the pending ones
-    const targets = completing
+    const taskTargets = completing
       ? tasks.filter((t) => t.status !== "completed" && !t.completed_at)
       : tasks;
-    await batchToggleComplete(queryClient, targets, completing);
+    const instanceTargets = completing
+      ? instances.filter((i) => i.status !== "completed")
+      : instances;
+    await Promise.all([
+      batchToggleComplete(queryClient, taskTargets, completing),
+      batchToggleCompleteInstances(queryClient, instanceTargets, completing),
+    ]);
     clear();
-  }, [tasks, allCompleted, queryClient, clear]);
+  }, [tasks, instances, allCompleted, queryClient, clear]);
 
   const handleUnschedule = useCallback(async () => {
-    const scheduled = tasks.filter((t) => t.scheduled_date != null);
-    await batchUnschedule(queryClient, scheduled);
+    const scheduledTasks = tasks.filter((t) => t.scheduled_date != null);
+    const scheduledInstances = instances.filter((i) => i.scheduled_datetime != null);
+    await Promise.all([
+      batchUnschedule(queryClient, scheduledTasks),
+      batchUnscheduleInstances(queryClient, scheduledInstances),
+    ]);
     clear();
-  }, [tasks, queryClient, clear]);
+  }, [tasks, instances, queryClient, clear]);
 
   const handleDelete = useCallback(async () => {
     if (tasks.length > 3 && !window.confirm(`Delete ${tasks.length} tasks? This can be undone.`)) {
@@ -97,6 +112,11 @@ export function FloatingActionBar() {
     await batchDelete(queryClient, tasks);
     clear();
   }, [tasks, queryClient, clear]);
+
+  const handleSkip = useCallback(async () => {
+    await batchSkipInstances(queryClient, instances);
+    clear();
+  }, [instances, queryClient, clear]);
 
   if (!mounted) return null;
 
@@ -147,9 +167,10 @@ export function FloatingActionBar() {
           <PopoverTrigger asChild>
             <ActionButton icon={Pencil} label="Edit\u2026" onClick={() => setEditOpen(true)} />
           </PopoverTrigger>
-          <PopoverContent side="top" sideOffset={8} className="w-72">
+          <PopoverContent side="top" avoidCollisions sideOffset={8} className="w-72">
             <BatchEditForm
               tasks={tasks}
+              instanceCount={instances.length}
               onDone={() => {
                 setEditOpen(false);
                 clear();
@@ -160,8 +181,13 @@ export function FloatingActionBar() {
 
         <Divider />
 
-        {/* Delete */}
-        <ActionButton icon={Trash2} label="Delete" onClick={handleDelete} destructive />
+        {/* Skip — only when instances are selected */}
+        {hasInstances && <ActionButton icon={FastForward} label="Skip" onClick={handleSkip} />}
+
+        {/* Delete — tasks only (instances can't be deleted) */}
+        {hasTasks && (
+          <ActionButton icon={Trash2} label="Delete" onClick={handleDelete} destructive />
+        )}
       </div>
     </div>
   );
