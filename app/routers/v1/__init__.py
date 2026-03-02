@@ -13,6 +13,7 @@ from app.routers import (
     analytics,
     backup,
     build_info,
+    calendar_feed,
     csrf,
     domains,
     gcal_sync,
@@ -43,3 +44,4 @@ router.include_router(me.router)
 router.include_router(analytics.router)
 router.include_router(csrf.router)
 router.include_router(url_utils.router)
+router.include_router(calendar_feed.router)

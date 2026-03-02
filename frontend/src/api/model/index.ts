@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.55.68
+ * OpenAPI spec version: 0.55.82
  */
 
 export * from './agingBuckets';
@@ -46,6 +46,10 @@ export * from './encryptionSetupRequest';
 export * from './encryptionSetupResponse';
 export * from './encryptionStatusResponse';
 export * from './eventResponse';
+export * from './feedDisableResponse';
+export * from './feedEnableResponse';
+export * from './feedRegenerateResponse';
+export * from './feedStatusResponse';
 export * from './getAnalyticsApiV1AnalyticsGetParams';
 export * from './getEventsApiV1EventsGetParams';
 export * from './getRecentCompletionsApiV1AnalyticsRecentCompletionsGetParams';
