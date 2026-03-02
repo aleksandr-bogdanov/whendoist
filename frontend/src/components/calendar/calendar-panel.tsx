@@ -19,10 +19,12 @@ import { useCarousel } from "@/hooks/use-carousel";
 import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
 import {
   addDays,
+  COMPACT_STRATEGY,
   EXTENDED_TOTAL_HOURS,
   getExtendedHourLabels,
   getNextZoomStep,
   getSectionBoundaries,
+  PLAN_STRATEGIES,
   PREV_DAY_HOURS,
   parseDate,
   planTasks,
@@ -52,6 +54,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     setCalendarHourHeight,
     setCalendarCenterDate,
     energyLevel,
+    planStrategy: strategyId,
   } = useUIStore();
   useSyncCalendarHourHeight();
 
@@ -354,6 +357,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         return;
       }
 
+      const strategy = PLAN_STRATEGIES[strategyId] ?? COMPACT_STRATEGY;
       const planned = planTasks(
         filtered,
         safeEvents,
@@ -362,6 +366,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         endMinutes,
         safeAllStatusTasks,
         safeInstances,
+        strategy,
       );
 
       if (planned.length === 0) {
@@ -413,6 +418,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       safeInstances,
       updateTask,
       invalidateTaskQueries,
+      strategyId,
     ],
   );
 

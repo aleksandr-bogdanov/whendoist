@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.85 — 2026-03-02
+
+### Refactor: Pluggable Plan My Day strategies
+
+- Extracted the Plan My Day scheduling algorithm into a `PlanStrategy` interface with two variability points: `TaskSorter` (ordering) and `SlotSelector` (slot picking)
+- Current behavior preserved as `COMPACT_STRATEGY` (duration ASC + first-fit) — the default and only option
+- Added `PLAN_STRATEGIES` registry for future strategy additions
+- Added `planStrategy` to UI store (persisted to localStorage) and wired through `calendar-panel.tsx`
+
+---
+
 ## v0.55.84 — 2026-03-02
 
 ### Fix: Plan My Day — thoughts excluded, GCal undo race condition, range clamping
