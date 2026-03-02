@@ -9,6 +9,7 @@ import {
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
+import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
 import { announce } from "@/components/live-announcer";
 import {
   ContextMenu,
@@ -198,23 +199,32 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
-        <ContextMenuItem onClick={() => onClick?.()}>
-          <Pencil className="h-3.5 w-3.5 mr-2" />
-          Edit
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleUnschedule}>
-          <CalendarOff className="h-3.5 w-3.5 mr-2" />
-          Unschedule
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleComplete}>
-          <Check className="h-3.5 w-3.5 mr-2" />
-          {isCompleted ? "Reopen" : "Complete"}
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-          <Trash2 className="h-3.5 w-3.5 mr-2" />
-          Delete
-        </ContextMenuItem>
+        {isMultiSelected ? (
+          <BatchContextMenuItems />
+        ) : (
+          <>
+            <ContextMenuItem onClick={() => onClick?.()}>
+              <Pencil className="h-3.5 w-3.5 mr-2" />
+              Edit
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleUnschedule}>
+              <CalendarOff className="h-3.5 w-3.5 mr-2" />
+              Unschedule
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleComplete}>
+              <Check className="h-3.5 w-3.5 mr-2" />
+              {isCompleted ? "Reopen" : "Complete"}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              onClick={handleDelete}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-2" />
+              Delete
+            </ContextMenuItem>
+          </>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   );

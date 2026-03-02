@@ -151,3 +151,22 @@ export function batchUnschedule(queryClient: QueryClient, tasks: TaskResponse[])
     label: "Unscheduled",
   });
 }
+
+/** Batch reschedule tasks to a new date (times preserved) */
+export function batchReschedule(queryClient: QueryClient, tasks: TaskResponse[], date: string) {
+  const taskIds = new Set(tasks.map((t) => t.id));
+
+  return executeBatch({
+    queryClient,
+    tasks,
+    applyOptimistic: (cached) =>
+      cached.map((t) => (taskIds.has(t.id) ? { ...t, scheduled_date: date } : t)),
+    mutateFn: (task) => updateTaskApiV1TasksTaskIdPut(task.id, { scheduled_date: date }),
+    undoFn: (task) =>
+      updateTaskApiV1TasksTaskIdPut(task.id, {
+        scheduled_date: task.scheduled_date,
+        scheduled_time: task.scheduled_time,
+      }),
+    label: "Rescheduled",
+  });
+}
