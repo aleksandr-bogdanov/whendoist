@@ -14,7 +14,7 @@ import {
 import { CalendarPanel } from "@/components/calendar/calendar-panel";
 import { TaskPanel } from "@/components/dashboard/task-panel";
 import { GestureDiscovery } from "@/components/gesture-discovery";
-import { ShortcutsHelp } from "@/components/shortcuts-help";
+
 import { TaskDetailPanel } from "@/components/task/task-detail-panel";
 import { TaskDndContext } from "@/components/task/task-dnd-context";
 import { TaskEditDrawer } from "@/components/task/task-edit-drawer";
@@ -48,7 +48,8 @@ function DashboardPage() {
   const [editingTask, setEditingTask] = useState<TaskResponse | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
+  const shortcutsHelpOpen = useUIStore((s) => s.shortcutsHelpOpen);
+  const setShortcutsHelpOpen = useUIStore((s) => s.setShortcutsHelpOpen);
   const [gcalBannerDismissed, setGcalBannerDismissed] = useState(
     () => localStorage.getItem("gcal-banner-dismissed") === "1",
   );
@@ -351,7 +352,7 @@ function DashboardPage() {
           },
         },
       ],
-      [selectTask, queryClient, toggleComplete, deleteTask],
+      [selectTask, queryClient, toggleComplete, deleteTask, setShortcutsHelpOpen],
     ),
   );
 
@@ -371,7 +372,7 @@ function DashboardPage() {
       localStorage.setItem("shortcuts-toast-shown", "1");
     }, 2000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [setShortcutsHelpOpen]);
 
   // Scroll selected task into view
   useEffect(() => {
@@ -519,9 +520,6 @@ function DashboardPage() {
 
         {/* Quick Add Dialog */}
         <TaskQuickAdd open={quickAddOpen} onOpenChange={setQuickAddOpen} domains={safedomains} />
-
-        {/* Shortcuts Help Modal */}
-        <ShortcutsHelp open={shortcutsHelpOpen} onOpenChange={setShortcutsHelpOpen} />
 
         {/* Mobile gesture hints (first-time only) */}
         <GestureDiscovery />

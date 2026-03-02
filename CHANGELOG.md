@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.86 — 2026-03-02
+
+### Feat: Command palette — Phase 1
+
+- Added command mode to the search palette: type `>` to browse/search ~23 commands across Navigation, Tasks, Appearance, Filters, Data, and Help categories
+- Commands show keyboard shortcuts on the right side (Superhuman training pattern) to teach users standalone hotkeys
+- In regular search mode, matching commands appear in an "Actions" section below task results
+- Created `palette-commands.ts` command registry with `usePaletteCommands()` hook
+- Added search button to the mobile bottom nav (since mobile users can't Cmd+K)
+- Moved ShortcutsHelp to global mount in app-shell so it can be opened from any page via command palette
+
+---
+
 ## v0.55.85 — 2026-03-02
 
 ### Refactor: Pluggable Plan My Day strategies

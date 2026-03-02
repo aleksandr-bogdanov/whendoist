@@ -3,6 +3,8 @@ import { useState } from "react";
 import { DemoPill } from "@/components/demo-pill";
 import { LiveAnnouncer } from "@/components/live-announcer";
 import { SearchPalette } from "@/components/search/search-palette";
+import { ShortcutsHelp } from "@/components/shortcuts-help";
+import { useUIStore } from "@/stores/ui-store";
 import { Header } from "./header";
 import { MobileNav } from "./mobile-nav";
 import { PwaDebugOverlay } from "./pwa-debug-overlay";
@@ -13,6 +15,8 @@ interface AppShellProps {
 }
 
 export function AppShell({ userName, userEmail }: AppShellProps) {
+  const shortcutsHelpOpen = useUIStore((s) => s.shortcutsHelpOpen);
+  const setShortcutsHelpOpen = useUIStore((s) => s.setShortcutsHelpOpen);
   const [debugActive, setDebugActive] = useState(() => sessionStorage.getItem("pwa-debug") === "1");
 
   function toggleDebug() {
@@ -40,6 +44,7 @@ export function AppShell({ userName, userEmail }: AppShellProps) {
       </div>
       <LiveAnnouncer />
       <SearchPalette />
+      <ShortcutsHelp open={shortcutsHelpOpen} onOpenChange={setShortcutsHelpOpen} />
       {debugActive && <PwaDebugOverlay onClose={() => toggleDebug()} />}
     </div>
   );

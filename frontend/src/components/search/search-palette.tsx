@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import Fuse, { type FuseResultMatch, type IFuseOptions } from "fuse.js";
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
@@ -8,9 +9,42 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
 import { type SearchResult, useTaskSearch } from "@/hooks/use-task-search";
+import {
+  COMMAND_CATEGORIES,
+  type PaletteCommand,
+  usePaletteCommands,
+} from "@/lib/palette-commands";
 import { DASHBOARD_TASKS_PARAMS } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+interface CommandSearchResult {
+  command: PaletteCommand;
+  matches: readonly FuseResultMatch[] | undefined;
+}
+
+type PaletteItem =
+  | { type: "task"; result: SearchResult }
+  | { type: "command"; result: CommandSearchResult };
+
+/* ------------------------------------------------------------------ */
+/*  Command Fuse options                                               */
+/* ------------------------------------------------------------------ */
+
+const commandFuseOptions: IFuseOptions<PaletteCommand> = {
+  keys: [
+    { name: "label", weight: 0.7 },
+    { name: "keywords", weight: 0.3 },
+  ],
+  threshold: 0.4,
+  ignoreLocation: true,
+  includeMatches: true,
+  minMatchCharLength: 1,
+};
 
 /* ------------------------------------------------------------------ */
 /*  Highlight helper — wraps matched chars in <mark>                   */
@@ -66,6 +100,18 @@ function DomainBadge({ domain }: { domain: DomainResponse }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Shortcut badge (Superhuman training pattern)                       */
+/* ------------------------------------------------------------------ */
+
+function ShortcutBadge({ shortcut }: { shortcut: string }) {
+  return (
+    <kbd className="ml-auto shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
+      {shortcut}
+    </kbd>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  SearchPalette                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -80,6 +126,28 @@ export function SearchPalette() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  /* ---- Detect command mode ---- */
+  const isCommandMode = query.startsWith(">");
+  const searchQuery = isCommandMode ? query.slice(1).trimStart() : query.trim();
+
+  /* ---- Commands ---- */
+  const commands = usePaletteCommands();
+  const commandFuse = useMemo(() => new Fuse(commands, commandFuseOptions), [commands]);
+
+  const commandResults: CommandSearchResult[] = useMemo(() => {
+    if (!searchQuery) {
+      // In command mode with empty query after ">", show all commands
+      if (isCommandMode) {
+        return commands.map((c) => ({ command: c, matches: undefined }));
+      }
+      return [];
+    }
+    return commandFuse.search(searchQuery, { limit: 15 }).map((r) => ({
+      command: r.item,
+      matches: r.matches ?? undefined,
+    }));
+  }, [searchQuery, isCommandMode, commandFuse, commands]);
 
   /* ---- Data: piggyback on dashboard TQ cache ---- */
   const { data: rawTasks } = useListTasksApiV1TasksGet(DASHBOARD_TASKS_PARAMS);
@@ -121,17 +189,20 @@ export function SearchPalette() {
     };
   }, [domainsFingerprint, decryptDomains]);
 
-  /* ---- Fuzzy search ---- */
+  /* ---- Fuzzy task search ---- */
   const { search } = useTaskSearch(tasks, domains);
-  const results = useMemo(() => (query.trim() ? search(query) : []), [query, search]);
+  const taskResults = useMemo(
+    () => (searchQuery && !isCommandMode ? search(searchQuery) : []),
+    [searchQuery, isCommandMode, search],
+  );
 
-  // Group results: Tasks (pending/scheduled with domain), Thoughts (no domain), Completed
+  // Group task results: Tasks (pending/scheduled), Thoughts, Completed
   const grouped = useMemo(() => {
     const taskGroup: SearchResult[] = [];
     const thoughtGroup: SearchResult[] = [];
     const completedGroup: SearchResult[] = [];
 
-    for (const r of results) {
+    for (const r of taskResults) {
       if (r.task.status === "completed") {
         completedGroup.push(r);
       } else if (r.isThought) {
@@ -141,13 +212,31 @@ export function SearchPalette() {
       }
     }
     return { taskGroup, thoughtGroup, completedGroup };
-  }, [results]);
+  }, [taskResults]);
 
-  // Flat list for keyboard navigation
-  const flatResults = useMemo(
-    () => [...grouped.taskGroup, ...grouped.thoughtGroup, ...grouped.completedGroup],
-    [grouped],
-  );
+  /* ---- Build flat item list for keyboard navigation ---- */
+  const flatItems: PaletteItem[] = useMemo(() => {
+    if (isCommandMode) {
+      // Command mode: only commands, grouped by category
+      const items: PaletteItem[] = [];
+      for (const cat of COMMAND_CATEGORIES) {
+        for (const r of commandResults) {
+          if (r.command.category === cat) {
+            items.push({ type: "command", result: r });
+          }
+        }
+      }
+      return items;
+    }
+
+    // Search mode: tasks first, then commands as "Actions"
+    const items: PaletteItem[] = [];
+    for (const r of grouped.taskGroup) items.push({ type: "task", result: r });
+    for (const r of grouped.thoughtGroup) items.push({ type: "task", result: r });
+    for (const r of grouped.completedGroup) items.push({ type: "task", result: r });
+    for (const r of commandResults) items.push({ type: "command", result: r });
+    return items;
+  }, [isCommandMode, commandResults, grouped]);
 
   /* ---- Reset on open/close ---- */
   useEffect(() => {
@@ -168,7 +257,7 @@ export function SearchPalette() {
           key: "k",
           meta: true,
           displayKey: "\u2318K",
-          description: "Search tasks",
+          description: "Search / commands",
           category: "Navigation",
           excludeInputs: false,
           handler: () => setSearchOpen(!searchOpenRef.current),
@@ -186,18 +275,16 @@ export function SearchPalette() {
     ),
   );
 
-  /* ---- Navigation: select result ---- */
-  const handleSelect = useCallback(
+  /* ---- Select a task ---- */
+  const handleSelectTask = useCallback(
     (result: SearchResult) => {
       setSearchOpen(false);
       setQuery("");
 
       if (result.isThought) {
-        // Thought: navigate to thoughts page, bridge via store
         setSearchNavigateId(result.task.id);
         navigate({ to: "/thoughts" });
       } else {
-        // Domain task: navigate to dashboard and select
         selectTask(result.task.id);
         navigate({ to: "/dashboard" });
         setTimeout(() => {
@@ -210,21 +297,43 @@ export function SearchPalette() {
     [setSearchOpen, selectTask, setSearchNavigateId, navigate],
   );
 
+  /* ---- Execute a command ---- */
+  const handleSelectCommand = useCallback(
+    (cmd: PaletteCommand) => {
+      setSearchOpen(false);
+      setQuery("");
+      cmd.handler();
+    },
+    [setSearchOpen],
+  );
+
+  /* ---- Unified select ---- */
+  const handleSelectItem = useCallback(
+    (item: PaletteItem) => {
+      if (item.type === "task") {
+        handleSelectTask(item.result);
+      } else {
+        handleSelectCommand(item.result.command);
+      }
+    },
+    [handleSelectTask, handleSelectCommand],
+  );
+
   /* ---- Keyboard navigation inside palette ---- */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedIndex((prev) => Math.min(prev + 1, flatResults.length - 1));
+        setSelectedIndex((prev) => Math.min(prev + 1, flatItems.length - 1));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((prev) => Math.max(prev - 1, 0));
-      } else if (e.key === "Enter" && flatResults[selectedIndex]) {
+      } else if (e.key === "Enter" && flatItems[selectedIndex]) {
         e.preventDefault();
-        handleSelect(flatResults[selectedIndex]);
+        handleSelectItem(flatItems[selectedIndex]);
       }
     },
-    [flatResults, selectedIndex, handleSelect],
+    [flatItems, selectedIndex, handleSelectItem],
   );
 
   // Scroll selected item into view
@@ -233,16 +342,16 @@ export function SearchPalette() {
     el?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
-  // Reset selection when query changes (not just when results ref changes)
+  // Reset selection when query changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: query drives reset intentionally
   useEffect(() => {
     setSelectedIndex(0);
   }, [query]);
 
-  /* ---- Render ---- */
+  /* ---- Render helpers ---- */
   let flatIndex = -1;
 
-  function renderSection(label: string, items: SearchResult[]) {
+  function renderTaskSection(label: string, items: SearchResult[]) {
     if (items.length === 0) return null;
     return (
       <div>
@@ -263,7 +372,7 @@ export function SearchPalette() {
                 "hover:bg-accent/50",
                 idx === selectedIndex && "bg-accent",
               )}
-              onClick={() => handleSelect(result)}
+              onClick={() => handleSelectTask(result)}
               onMouseEnter={() => setSelectedIndex(idx)}
             >
               <span className="flex-1 min-w-0 truncate">
@@ -280,12 +389,65 @@ export function SearchPalette() {
     );
   }
 
+  function renderCommandSection(label: string, items: CommandSearchResult[]) {
+    if (items.length === 0) return null;
+    return (
+      <div>
+        <div className="px-3 pt-3 pb-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          {label}
+        </div>
+        {items.map((r) => {
+          flatIndex++;
+          const idx = flatIndex;
+          const labelMatch = r.matches?.find((m) => m.key === "label");
+          const Icon = r.command.icon;
+          return (
+            <button
+              type="button"
+              key={r.command.id}
+              data-search-index={idx}
+              className={cn(
+                "w-full px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 text-left",
+                "hover:bg-accent/50",
+                idx === selectedIndex && "bg-accent",
+              )}
+              onClick={() => handleSelectCommand(r.command)}
+              onMouseEnter={() => setSelectedIndex(idx)}
+            >
+              {Icon && <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />}
+              <span className="flex-1 min-w-0 truncate">
+                <HighlightedText
+                  text={r.command.label}
+                  indices={labelMatch?.indices as [number, number][] | undefined}
+                />
+              </span>
+              {r.command.shortcut && <ShortcutBadge shortcut={r.command.shortcut} />}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* ---- Group commands by category ---- */
+  function renderCommandsByCategory(results: CommandSearchResult[]) {
+    return COMMAND_CATEGORIES.map((cat) => {
+      const items = results.filter((r) => r.command.category === cat);
+      return <span key={cat}>{renderCommandSection(cat, items)}</span>;
+    });
+  }
+
+  /* ---- Determine empty state ---- */
+  const hasCommandResults = commandResults.length > 0;
+  const hasAnyResults = flatItems.length > 0;
+  const showEmptyState = !!searchQuery && !hasAnyResults;
+
   return (
     <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
       <DialogContent
         showCloseButton={false}
         className="top-[15%] translate-y-0 p-0 gap-0 sm:max-w-lg"
-        aria-label="Search tasks"
+        aria-label="Search tasks and commands"
       >
         {/* Search input */}
         <div className="flex items-center gap-2 px-3 border-b">
@@ -295,7 +457,7 @@ export function SearchPalette() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search tasks..."
+            placeholder="Search or type > for commands..."
             className="flex-1 h-11 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
             autoFocus
           />
@@ -306,29 +468,41 @@ export function SearchPalette() {
 
         {/* Results */}
         <div ref={listRef} className="max-h-[50vh] overflow-y-auto">
-          {query.trim() && flatResults.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">No tasks found</div>
+          {showEmptyState ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              {isCommandMode ? "No commands found" : "No results found"}
+            </div>
+          ) : isCommandMode ? (
+            /* Command mode: commands grouped by category */
+            renderCommandsByCategory(commandResults)
           ) : (
+            /* Search mode: tasks + commands in "Actions" section */
             <>
-              {renderSection("Tasks", grouped.taskGroup)}
-              {renderSection("Thoughts", grouped.thoughtGroup)}
-              {renderSection("Completed", grouped.completedGroup)}
+              {renderTaskSection("Tasks", grouped.taskGroup)}
+              {renderTaskSection("Thoughts", grouped.thoughtGroup)}
+              {renderTaskSection("Completed", grouped.completedGroup)}
+              {hasCommandResults && searchQuery && renderCommandSection("Actions", commandResults)}
             </>
           )}
         </div>
 
         {/* Footer hint */}
-        {flatResults.length > 0 && (
+        {hasAnyResults && (
           <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground flex items-center gap-3">
             <span>
               <kbd className="font-mono">&uarr;&darr;</kbd> navigate
             </span>
             <span>
-              <kbd className="font-mono">&crarr;</kbd> open
+              <kbd className="font-mono">&crarr;</kbd> {isCommandMode ? "run" : "open"}
             </span>
             <span>
               <kbd className="font-mono">esc</kbd> close
             </span>
+            {!isCommandMode && (
+              <span className="ml-auto">
+                <kbd className="font-mono">&gt;</kbd> commands
+              </span>
+            )}
           </div>
         )}
       </DialogContent>

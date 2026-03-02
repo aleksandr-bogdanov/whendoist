@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, LayoutDashboard, Lightbulb, Plus, Settings } from "lucide-react";
+import { BarChart3, LayoutDashboard, Lightbulb, Plus, Search, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -17,6 +17,7 @@ export function MobileNav() {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
+  const setSearchOpen = useUIStore((s) => s.setSearchOpen);
 
   const renderLink = (item: (typeof leftNav)[number] | (typeof rightNav)[number]) => {
     const isActive = currentPath.startsWith(item.to);
@@ -54,6 +55,14 @@ export function MobileNav() {
     >
       <div className="flex h-[var(--nav-pill-height)] items-center justify-around">
         {leftNav.map(renderLink)}
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Search className="h-5 w-5" />
+          <span>Search</span>
+        </button>
         <button
           type="button"
           onClick={() => setQuickAddOpen(true)}
