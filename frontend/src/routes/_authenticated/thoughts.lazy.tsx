@@ -167,15 +167,21 @@ function ThoughtsPage() {
   /*  Handlers                                                         */
   /* ---------------------------------------------------------------- */
 
-  const handleThoughtTap = useCallback((thought: TaskResponse) => {
-    if (window.matchMedia(MD_QUERY).matches) {
-      // Desktop: populate inspector
-      setSelectedId(thought.id);
-    } else {
-      // Mobile: open drawer
-      setDrawerThought(thought);
-    }
-  }, []);
+  const pushPaletteRecent = useUIStore((s) => s.pushPaletteRecent);
+
+  const handleThoughtTap = useCallback(
+    (thought: TaskResponse) => {
+      pushPaletteRecent(thought.id);
+      if (window.matchMedia(MD_QUERY).matches) {
+        // Desktop: populate inspector
+        setSelectedId(thought.id);
+      } else {
+        // Mobile: open drawer
+        setDrawerThought(thought);
+      }
+    },
+    [pushPaletteRecent],
+  );
 
   const handleSend = async () => {
     const trimmed = input.trim();

@@ -26,6 +26,7 @@ interface UIState {
   subtaskAddFocusId: number | null;
   searchOpen: boolean;
   searchNavigateId: number | null;
+  paletteRecents: number[];
   planStrategy: string;
   shortcutsHelpOpen: boolean;
 }
@@ -51,6 +52,7 @@ interface UIActions {
   clearSubtaskAddFocus: () => void;
   setSearchOpen: (open: boolean) => void;
   setSearchNavigateId: (id: number | null) => void;
+  pushPaletteRecent: (taskId: number) => void;
   setPlanStrategy: (id: string) => void;
   setShortcutsHelpOpen: (open: boolean) => void;
 }
@@ -79,6 +81,7 @@ export const useUIStore = create<UIState & UIActions>()(
       subtaskAddFocusId: null,
       searchOpen: false,
       searchNavigateId: null,
+      paletteRecents: [],
       planStrategy: "compact",
       shortcutsHelpOpen: false,
       calendarCenterDate: (() => {
@@ -175,6 +178,13 @@ export const useUIStore = create<UIState & UIActions>()(
       clearSubtaskAddFocus: () => set({ subtaskAddFocusId: null }),
       setSearchOpen: (open) => set({ searchOpen: open }),
       setSearchNavigateId: (id) => set({ searchNavigateId: id }),
+      pushPaletteRecent: (taskId) =>
+        set((state) => ({
+          paletteRecents: [taskId, ...state.paletteRecents.filter((id) => id !== taskId)].slice(
+            0,
+            8,
+          ),
+        })),
       setPlanStrategy: (id) => set({ planStrategy: id }),
       setShortcutsHelpOpen: (open) => set({ shortcutsHelpOpen: open }),
       flashUpdatedTask: (taskId) => {
