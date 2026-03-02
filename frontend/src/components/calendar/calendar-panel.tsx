@@ -10,6 +10,7 @@ import {
 } from "@/api/queries/api/api";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import {
+  getListTasksApiV1TasksGetQueryKey,
   useListTasksApiV1TasksGet,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
@@ -304,14 +305,45 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     return () => document.removeEventListener("keydown", handler);
   }, [isPlanMode]);
 
+  // Invalidate all task-related queries so calendar + task panel both refresh
+  const invalidateTaskQueries = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
+    queryClient.invalidateQueries({
+      queryKey: getListTasksApiV1TasksGetQueryKey({ status: "all" }),
+    });
+  }, [queryClient]);
+
   // Plan execution: bin-pack tasks into selected range, fire API calls, show undo toast
   const handlePlanExecute = useCallback(
     async (startMinutes: number, endMinutes: number) => {
-      // Eligible: unscheduled, pending, top-level, matching energy
-      const eligible = tasks.filter(
-        (t) =>
-          !t.scheduled_date && !t.completed_at && t.status !== "completed" && t.parent_id === null,
-      );
+      // Plan mode always targets the center panel — use calendarCenterDate, not displayDate
+      const targetDate = calendarCenterDate;
+
+      // Flatten: parents replaced by their subtasks, standalone tasks kept as-is
+      const eligible: TaskResponse[] = [];
+      for (const t of tasks) {
+        if (t.scheduled_date || t.completed_at || t.status === "completed") continue;
+        if (t.subtasks && t.subtasks.length > 0) {
+          // Parent task — schedule its subtasks instead
+          for (const st of t.subtasks) {
+            if (st.scheduled_date || st.status === "completed") continue;
+            eligible.push({
+              ...st,
+              parent_id: t.id,
+              domain_id: t.domain_id,
+              domain_name: t.domain_name,
+              scheduled_time: st.scheduled_time ?? null,
+              is_recurring: false,
+              recurrence_rule: null,
+              completed_at: null,
+              subtasks: [],
+            } as unknown as TaskResponse);
+          }
+        } else if (t.parent_id === null) {
+          // Standalone task (no subtasks, not a subtask itself)
+          eligible.push(t);
+        }
+      }
       const filtered = filterByEnergy(eligible, energyLevel);
 
       if (filtered.length === 0) {
@@ -323,7 +355,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       const planned = planTasks(
         filtered,
         safeEvents,
-        displayDate,
+        targetDate,
         startMinutes,
         endMinutes,
         safeAllStatusTasks,
@@ -336,21 +368,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         return;
       }
 
-      // Snapshot for undo
-      const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
-
-      // Optimistic update
-      const updates = new Map(planned.map((p) => [p.taskId, p]));
-      queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
-        if (!old) return old;
-        return old.map((t) => {
-          const plan = updates.get(t.id);
-          if (!plan) return t;
-          const timeStr = `${String(plan.scheduledHour).padStart(2, "0")}:${String(plan.scheduledMinutes).padStart(2, "0")}:00`;
-          return { ...t, scheduled_date: displayDate, scheduled_time: timeStr };
-        });
-      });
-
       setIsPlanMode(false);
 
       // Fire API calls
@@ -359,13 +376,13 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           const timeStr = `${String(p.scheduledHour).padStart(2, "0")}:${String(p.scheduledMinutes).padStart(2, "0")}`;
           return updateTask.mutateAsync({
             taskId: p.taskId,
-            data: { scheduled_date: displayDate, scheduled_time: timeStr },
+            data: { scheduled_date: targetDate, scheduled_time: timeStr },
           });
         }),
       );
 
       const successCount = results.filter((r) => r.status === "fulfilled").length;
-      await queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
+      await invalidateTaskQueries();
 
       const taskWord = successCount === 1 ? "task" : "tasks";
       toast.success(`Scheduled ${successCount} ${taskWord}`, {
@@ -373,7 +390,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         action: {
           label: "Undo",
           onClick: () => {
-            queryClient.setQueryData(dashboardTasksKey(), previousTasks);
             Promise.allSettled(
               planned.map((p) =>
                 updateTask.mutateAsync({
@@ -381,9 +397,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                   data: { scheduled_date: null, scheduled_time: null },
                 }),
               ),
-            ).then(() => {
-              queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-            });
+            ).then(() => invalidateTaskQueries());
           },
         },
       });
@@ -392,11 +406,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       tasks,
       energyLevel,
       safeEvents,
-      displayDate,
+      calendarCenterDate,
       safeAllStatusTasks,
       safeInstances,
-      queryClient,
       updateTask,
+      invalidateTaskQueries,
     ],
   );
 

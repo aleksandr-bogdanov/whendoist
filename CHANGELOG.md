@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.80 — 2026-03-02
+
+### Fix: Plan My Day — time range, parent tasks, undo
+
+- **Time range**: Used `calendarCenterDate` (center panel) instead of `displayDate` (visible panel) — wrong date meant no occupied slots found, entire day appeared free.
+- **Parent tasks**: Parents with subtasks are now skipped; their individual subtasks are scheduled as standalone items.
+- **Undo**: Invalidates both dashboard and allStatus task queries so the calendar refreshes. Removed fragile optimistic cache update.
+
+---
+
 ## v0.55.79 — 2026-03-02
 
 ### Refactor: Unified shortcut system with modifier key support
