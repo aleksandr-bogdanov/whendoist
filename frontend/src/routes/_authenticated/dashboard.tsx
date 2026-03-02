@@ -98,6 +98,7 @@ function DashboardPage() {
     setMobileTab,
     selectedTaskId,
     selectTask,
+    pushPaletteRecent,
     quickAddOpen: storeQuickAddOpen,
     setQuickAddOpen: setStoreQuickAddOpen,
   } = useUIStore();
@@ -148,6 +149,7 @@ function DashboardPage() {
 
   const handleEditTask = useCallback(
     (task: TaskResponse) => {
+      pushPaletteRecent(task.id);
       if (window.matchMedia(MD_QUERY).matches) {
         // Desktop: show inline detail panel in right pane
         setCreating(false);
@@ -158,7 +160,7 @@ function DashboardPage() {
         setEditorOpen(true);
       }
     },
-    [selectTask],
+    [selectTask, pushPaletteRecent],
   );
 
   // Keyboard shortcuts

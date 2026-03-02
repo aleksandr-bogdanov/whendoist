@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import Fuse, { type FuseResultMatch, type IFuseOptions } from "fuse.js";
-import { Lightbulb, Plus, Search } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Lightbulb, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
@@ -34,7 +34,14 @@ type PaletteItem =
   | { type: "task"; result: SearchResult }
   | { type: "command"; result: CommandSearchResult }
   | { type: "create-task" }
-  | { type: "create-thought" };
+  | { type: "create-thought" }
+  | {
+      type: "stat";
+      label: string;
+      count: number;
+      to: string;
+      icon: React.ComponentType<{ className?: string }>;
+    };
 
 /* ------------------------------------------------------------------ */
 /*  Command Fuse options                                               */
@@ -125,6 +132,8 @@ export function SearchPalette() {
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
   const selectTask = useUIStore((s) => s.selectTask);
   const setSearchNavigateId = useUIStore((s) => s.setSearchNavigateId);
+  const pushPaletteRecent = useUIStore((s) => s.pushPaletteRecent);
+  const paletteRecents = useUIStore((s) => s.paletteRecents);
   const navigate = useNavigate();
 
   const [query, setQuery] = useState("");
@@ -211,6 +220,67 @@ export function SearchPalette() {
   );
   const showCreate = !!parsed?.title.trim();
 
+  /* ---- Empty-state data: recents + "Right Now" ---- */
+  const domainMap = useMemo(() => new Map(domains.map((d) => [d.id, d])), [domains]);
+
+  const recentResults: SearchResult[] = useMemo(() => {
+    if (searchQuery || isCommandMode) return [];
+    return paletteRecents
+      .map((id) => {
+        const task = tasks.find((t) => t.id === id);
+        if (!task) return null;
+        const domain = task.domain_id ? domainMap.get(task.domain_id) : undefined;
+        return {
+          task,
+          domain: domain ?? undefined,
+          isThought: task.domain_id === null,
+          matches: undefined,
+        } as SearchResult;
+      })
+      .filter((r): r is SearchResult => r !== null);
+  }, [searchQuery, isCommandMode, paletteRecents, tasks, domainMap]);
+
+  const rightNowStats = useMemo(() => {
+    if (searchQuery || isCommandMode) return [];
+    const today = new Date().toISOString().split("T")[0];
+    const todayCount = tasks.filter(
+      (t) => t.scheduled_date === today && t.status !== "completed",
+    ).length;
+    const overdueCount = tasks.filter(
+      (t) => t.status !== "completed" && t.scheduled_date !== null && t.scheduled_date < today,
+    ).length;
+    const thoughtCount = tasks.filter(
+      (t) => t.domain_id === null && t.parent_id === null && t.status !== "completed",
+    ).length;
+
+    const stats: PaletteItem[] = [];
+    if (todayCount > 0)
+      stats.push({
+        type: "stat",
+        label: `${todayCount} task${todayCount === 1 ? "" : "s"} today`,
+        count: todayCount,
+        to: "/dashboard",
+        icon: CalendarCheck,
+      });
+    if (overdueCount > 0)
+      stats.push({
+        type: "stat",
+        label: `${overdueCount} overdue`,
+        count: overdueCount,
+        to: "/dashboard",
+        icon: AlertTriangle,
+      });
+    if (thoughtCount > 0)
+      stats.push({
+        type: "stat",
+        label: `${thoughtCount} thought${thoughtCount === 1 ? "" : "s"}`,
+        count: thoughtCount,
+        to: "/thoughts",
+        icon: Lightbulb,
+      });
+    return stats;
+  }, [searchQuery, isCommandMode, tasks]);
+
   // Group task results: Tasks (pending/scheduled), Thoughts, Completed
   const grouped = useMemo(() => {
     const taskGroup: SearchResult[] = [];
@@ -230,6 +300,8 @@ export function SearchPalette() {
   }, [taskResults]);
 
   /* ---- Build flat item list for keyboard navigation ---- */
+  const isEmptyState = !searchQuery && !isCommandMode;
+
   const flatItems: PaletteItem[] = useMemo(() => {
     if (isCommandMode) {
       // Command mode: only commands, grouped by category
@@ -244,6 +316,14 @@ export function SearchPalette() {
       return items;
     }
 
+    if (isEmptyState) {
+      // Empty state: recents + right now stats
+      const items: PaletteItem[] = [];
+      for (const r of recentResults) items.push({ type: "task", result: r });
+      for (const s of rightNowStats) items.push(s);
+      return items;
+    }
+
     // Search mode: tasks first, then commands as "Actions", then create
     const items: PaletteItem[] = [];
     for (const r of grouped.taskGroup) items.push({ type: "task", result: r });
@@ -255,7 +335,15 @@ export function SearchPalette() {
       items.push({ type: "create-thought" });
     }
     return items;
-  }, [isCommandMode, commandResults, grouped, showCreate]);
+  }, [
+    isCommandMode,
+    isEmptyState,
+    commandResults,
+    grouped,
+    showCreate,
+    recentResults,
+    rightNowStats,
+  ]);
 
   /* ---- Reset on open/close ---- */
   useEffect(() => {
@@ -297,6 +385,7 @@ export function SearchPalette() {
   /* ---- Select a task ---- */
   const handleSelectTask = useCallback(
     (result: SearchResult) => {
+      pushPaletteRecent(result.task.id);
       setSearchOpen(false);
       setQuery("");
 
@@ -313,7 +402,7 @@ export function SearchPalette() {
         }, 150);
       }
     },
-    [setSearchOpen, selectTask, setSearchNavigateId, navigate],
+    [setSearchOpen, selectTask, setSearchNavigateId, pushPaletteRecent, navigate],
   );
 
   /* ---- Execute a command ---- */
@@ -346,6 +435,16 @@ export function SearchPalette() {
     [parsed, isCreating, setSearchOpen, create],
   );
 
+  /* ---- Navigate to a stat route ---- */
+  const handleSelectStat = useCallback(
+    (to: string) => {
+      setSearchOpen(false);
+      setQuery("");
+      navigate({ to });
+    },
+    [setSearchOpen, navigate],
+  );
+
   /* ---- Unified select ---- */
   const handleSelectItem = useCallback(
     (item: PaletteItem) => {
@@ -357,9 +456,11 @@ export function SearchPalette() {
         handleCreate(false);
       } else if (item.type === "create-thought") {
         handleCreate(true);
+      } else if (item.type === "stat") {
+        handleSelectStat(item.to);
       }
     },
-    [handleSelectTask, handleSelectCommand, handleCreate],
+    [handleSelectTask, handleSelectCommand, handleCreate, handleSelectStat],
   );
 
   /* ---- Keyboard navigation inside palette ---- */
@@ -476,6 +577,42 @@ export function SearchPalette() {
     );
   }
 
+  function renderStatSection(label: string, items: PaletteItem[]) {
+    const stats = items.filter(
+      (i): i is Extract<PaletteItem, { type: "stat" }> => i.type === "stat",
+    );
+    if (stats.length === 0) return null;
+    return (
+      <div>
+        <div className="px-3 pt-3 pb-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          {label}
+        </div>
+        {stats.map((stat) => {
+          flatIndex++;
+          const idx = flatIndex;
+          const Icon = stat.icon;
+          return (
+            <button
+              type="button"
+              key={stat.label}
+              data-search-index={idx}
+              className={cn(
+                "w-full px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 text-left",
+                "hover:bg-accent/50",
+                idx === selectedIndex && "bg-accent",
+              )}
+              onClick={() => handleSelectStat(stat.to)}
+              onMouseEnter={() => setSelectedIndex(idx)}
+            >
+              <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="flex-1 min-w-0 truncate">{stat.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   /* ---- Group commands by category ---- */
   function renderCommandsByCategory(results: CommandSearchResult[]) {
     return COMMAND_CATEGORIES.map((cat) => {
@@ -551,7 +688,7 @@ export function SearchPalette() {
   /* ---- Determine empty state ---- */
   const hasCommandResults = commandResults.length > 0;
   const hasAnyResults = flatItems.length > 0;
-  const showEmptyState = !!searchQuery && !hasAnyResults;
+  const showNoResults = !!searchQuery && !hasAnyResults;
 
   return (
     <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
@@ -579,10 +716,22 @@ export function SearchPalette() {
 
         {/* Results */}
         <div ref={listRef} className="max-h-[50vh] overflow-y-auto">
-          {showEmptyState ? (
+          {showNoResults ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
               {isCommandMode ? "No commands found" : "No results found"}
             </div>
+          ) : isEmptyState ? (
+            /* Empty state: recents + right now */
+            hasAnyResults ? (
+              <>
+                {renderTaskSection("Recent", recentResults)}
+                {renderStatSection("Right now", rightNowStats)}
+              </>
+            ) : (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                Type to search tasks or <kbd className="font-mono">&gt;</kbd> for commands
+              </div>
+            )
           ) : isCommandMode ? (
             /* Command mode: commands grouped by category */
             renderCommandsByCategory(commandResults)
@@ -607,7 +756,7 @@ export function SearchPalette() {
             <span>
               <kbd className="font-mono">&crarr;</kbd> {isCommandMode ? "run" : "open"}
             </span>
-            {showCreate && !isCommandMode && (
+            {showCreate && !isCommandMode && !isEmptyState && (
               <span>
                 <kbd className="font-mono">
                   {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}↵

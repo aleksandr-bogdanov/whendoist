@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.88 — 2026-03-02
+
+### Feat: Command palette — Phase 3 (empty state: recents + "Right Now")
+
+- When the palette opens with an empty query, it now shows two sections instead of a blank screen
+- **Recent**: last 8 tasks the user interacted with (selected on dashboard, tapped on thoughts, or opened via palette) — session-only ring buffer, not persisted
+- **Right Now**: computed counts from in-memory tasks — "N tasks today", "N overdue", "N thoughts" — each clickable to navigate to the relevant page
+- As soon as the user types, recents disappear and search results take over
+- Added `paletteRecents` + `pushPaletteRecent()` to ui-store (session-only, not in `partialize`)
+
+---
+
 ## v0.55.87 — 2026-03-02
 
 ### Feat: Command palette — Phase 2 (creation fallthrough)
