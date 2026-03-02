@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.83 — 2026-03-02
+
+### Docs: Calendar integration section in README
+
+- Added "Calendar Integration" section to README explaining both GCal Sync (real-time push) and Calendar Feed (iCal subscription), when to use which, and the overlap caveat
+- Created `docs/CALENDAR-FEED.md` — full reference: what's included, recurring task RRULE handling, caching, security, refresh intervals, endpoints
+- Added Calendar Feed to the documentation index
+
+---
+
 ## v0.55.82 — 2026-03-02
 
 ### Feat: iCal calendar subscription feed
