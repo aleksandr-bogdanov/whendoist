@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.76 — 2026-03-02
+
+### Fix: Desktop layout polish — border alignment, subtask editing, separator
+
+- Removed `md:gap-1` between task panel and right pane so the header border-bottom spans flush to the calendar separator (no 4px void).
+- Moved `border-l` from CalendarPanel to the right pane wrapper so both CalendarPanel and TaskDetailPanel share the same left border (fixes missing separator when editing).
+- Fixed subtask editing on desktop: `selectedTask` lookup now searches within parent tasks' subtask arrays, preventing the "clear stale selection" effect from immediately discarding the subtask ID.
+
+---
+
 ## v0.55.75 — 2026-03-02
 
 ### Fix: Replace field flash background with ring animation
