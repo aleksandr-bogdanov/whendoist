@@ -461,7 +461,7 @@ function DashboardPage() {
           <div
             className={`flex flex-col min-w-0 ${
               mobileTab === "calendar" ? "flex-1" : "hidden"
-            } md:flex md:flex-[2] md:min-w-0 md:border-l md:border-border`}
+            } md:flex md:flex-[2] md:min-w-0`}
           >
             {detailPanelMode !== "idle" ? (
               /* Inline task editor — replaces calendar when editing or creating */

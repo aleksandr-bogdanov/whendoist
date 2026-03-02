@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.73 — 2026-03-02
+
+### Fix: Polish desktop layout — remove domain gap and calendar border stacking
+
+- Removed top padding from task list content so the first domain block sits flush below the sticky column headers (no extra gap at initial scroll position).
+- Fixed calendar border triple-stacking: removed duplicate left border from the right pane wrapper, stripped top border and top rounded corners from the calendar panel so it flows flush from the header gradient, keeping only the bottom-right rounding and shadow.
+
+---
+
 ## v0.55.72 — 2026-03-02
 
 ### Feat: Mobile task edit drawer (bottom sheet)

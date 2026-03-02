@@ -323,19 +323,25 @@ export interface ParentTaskGroup {
 }
 
 /**
- * Group parent-task candidates into smart-ordered buckets:
- * "Parents · same domain" → "Parents" → "Same domain" → "Other".
+ * Group parent-task candidates by domain.
+ *
+ * Groups are ordered: current task's domain first, then remaining domains
+ * in their user-defined `position` order.  Within each domain, parents
+ * (tasks that already have subtasks) sort before non-parents, and both
+ * sub-groups are sorted alphabetically by title.
  *
  * @param parentTasks  Full list of potential parent tasks.
  * @param currentDomainId  The domain currently selected on the child task.
  * @param search  Free-text search query (filters by title).
  * @param excludeTaskId  Task to exclude from results (e.g. the task being edited).
+ * @param domains  Domain list for labels and sort order.
  */
 export function groupParentTasks(
   parentTasks: TaskResponse[],
   currentDomainId: number | null,
   search: string,
   excludeTaskId?: number,
+  domains?: DomainResponse[],
 ): ParentTaskGroup[] {
   const q = search.toLowerCase().trim();
   const eligible = parentTasks
@@ -343,29 +349,45 @@ export function groupParentTasks(
     .filter((t) => t.domain_id != null)
     .filter((t) => !q || t.title.toLowerCase().includes(q));
 
-  const parentsSameDomain: TaskResponse[] = [];
-  const parentsOther: TaskResponse[] = [];
-  const sameDomain: TaskResponse[] = [];
-  const rest: TaskResponse[] = [];
-
-  const isSameDomain = (t: TaskResponse) =>
-    currentDomainId != null && t.domain_id === currentDomainId;
-
-  for (const t of eligible) {
-    const isParent = (t.subtasks?.length ?? 0) > 0;
-    if (isParent && isSameDomain(t)) parentsSameDomain.push(t);
-    else if (isParent) parentsOther.push(t);
-    else if (isSameDomain(t)) sameDomain.push(t);
-    else rest.push(t);
+  // Build domain lookup
+  const domainMap = new Map<number, DomainResponse>();
+  if (domains) {
+    for (const d of domains) domainMap.set(d.id, d);
   }
 
-  const groups: ParentTaskGroup[] = [];
-  if (parentsSameDomain.length > 0)
-    groups.push({ label: "Parents \u00b7 same domain", tasks: parentsSameDomain });
-  if (parentsOther.length > 0) groups.push({ label: "Parents", tasks: parentsOther });
-  if (sameDomain.length > 0) groups.push({ label: "Same domain", tasks: sameDomain });
-  if (rest.length > 0) groups.push({ label: "Other", tasks: rest });
-  return groups;
+  // Bucket tasks by domain_id
+  const byDomain = new Map<number, TaskResponse[]>();
+  for (const t of eligible) {
+    const did = t.domain_id!;
+    const arr = byDomain.get(did);
+    if (arr) arr.push(t);
+    else byDomain.set(did, [t]);
+  }
+
+  // Sort within each domain: parents first, then alphabetically
+  for (const tasks of byDomain.values()) {
+    tasks.sort((a, b) => {
+      const aParent = (a.subtasks?.length ?? 0) > 0;
+      const bParent = (b.subtasks?.length ?? 0) > 0;
+      if (aParent !== bParent) return aParent ? -1 : 1;
+      return a.title.localeCompare(b.title);
+    });
+  }
+
+  // Sort domain groups: current domain first, then by domain position
+  const domainEntries = [...byDomain.entries()].sort(([aId], [bId]) => {
+    if (aId === currentDomainId) return -1;
+    if (bId === currentDomainId) return 1;
+    const aPos = domainMap.get(aId)?.position ?? 999;
+    const bPos = domainMap.get(bId)?.position ?? 999;
+    return aPos - bPos;
+  });
+
+  return domainEntries.map(([domainId, tasks]) => {
+    const domain = domainMap.get(domainId);
+    const label = domain ? `${domain.icon ?? ""} ${domain.name}`.trim() : "Unknown";
+    return { label, tasks };
+  });
 }
 
 /**
