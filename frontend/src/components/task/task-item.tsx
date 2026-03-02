@@ -62,6 +62,7 @@ import {
   isOverdue,
 } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
+import { taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 import { SubtaskGhostRow } from "./subtask-ghost-row";
 import { useDndState } from "./task-dnd-context";
@@ -98,6 +99,8 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
   const unskipInstance = useUnskipInstanceApiV1InstancesInstanceIdUnskipPost();
   const isSelected = selectedTaskId === task.id;
+  const multiSelectionId = taskSelectionId(task.id);
+  const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(multiSelectionId));
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
   const isExpanded = expandedSubtasks.has(task.id);
@@ -618,11 +621,21 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                 className={cn(
                   "group relative flex items-center gap-[var(--col-gap)] py-1.5 sm:py-2 transition-all duration-150 border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
                   isSelected && "bg-[rgba(109,94,246,0.08)]",
+                  isMultiSelected && "ring-2 ring-primary bg-primary/10",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
                   isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
                   isReparentTarget && "bg-[#6D5EF6]/8 shadow-[-4px_0_12px_rgba(109,94,246,0.15)]",
                 )}
+                onClickCapture={(e) => {
+                  if (e.metaKey || e.ctrlKey) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    useSelectionStore.getState().toggle(multiSelectionId);
+                    return;
+                  }
+                  useSelectionStore.getState().clear();
+                }}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
                   borderLeftWidth: 3,

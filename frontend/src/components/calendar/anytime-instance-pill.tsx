@@ -18,6 +18,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { IMPACT_COLORS } from "@/lib/task-utils";
+import { instanceSelectionId, useSelectionStore } from "@/stores/selection-store";
 
 interface AnytimeInstancePillProps {
   instance: InstanceResponse;
@@ -30,6 +31,8 @@ export function AnytimeInstancePill({
   parentTask,
   onTaskClick,
 }: AnytimeInstancePillProps) {
+  const selectionId = instanceSelectionId(instance.id);
+  const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
   const isCompleted = instance.status === "completed";
   const isSkipped = instance.status === "skipped";
   const isDone = isCompleted || isSkipped;
@@ -153,15 +156,26 @@ export function AnytimeInstancePill({
       <ContextMenuTrigger asChild>
         <button
           type="button"
-          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-pointer max-w-[180px] flex-shrink-0 ${isDone ? "opacity-50" : ""}`}
+          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-pointer max-w-[180px] flex-shrink-0 ${isDone ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
           style={{
             borderLeft: `3px solid ${impactColor}`,
             backgroundColor: `${impactColor}1A`,
           }}
-          onClick={() => parentTask && onTaskClick?.(parentTask)}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) {
+              e.stopPropagation();
+              useSelectionStore.getState().toggle(selectionId);
+              return;
+            }
+            useSelectionStore.getState().clear();
+            parentTask && onTaskClick?.(parentTask);
+          }}
           title={instance.task_title}
         >
-          <span className={isDone ? "line-through decoration-1" : ""}>↻ {instance.task_title}</span>
+          <span className={isDone ? "line-through decoration-1" : ""}>
+            {isMultiSelected && <Check className="inline h-2.5 w-2.5 mr-0.5 text-primary" />}↻{" "}
+            {instance.task_title}
+          </span>
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
