@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.74 — 2026-03-02
+
+### Feat: Sort parent task picker by domain
+
+- Replaced the 4-tier semantic grouping ("Parents · same domain" → "Parents" → "Same domain" → "Other") with domain-based grouping: tasks are grouped under their domain name with icon, current domain shown first, rest in position order.
+- Within each domain group, parents (tasks with existing subtasks) sort first, then non-parents, both alphabetically by title.
+- Applied consistently across all 5 parent picker surfaces (mobile drawer, desktop picker, task inspector, field pickers, thought triage drawer).
+
+---
+
 ## v0.55.73 — 2026-03-02
 
 ### Fix: Polish desktop layout — remove domain gap and calendar border stacking
