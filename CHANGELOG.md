@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.82 — 2026-03-02
+
+### Feat: iCal calendar subscription feed
+
+- **New feature**: Subscribe to Whendoist tasks from Apple Calendar, Google Calendar, Outlook, or any iCal-compatible app via a `.ics` subscription URL
+- **Recurring tasks**: Emitted as VEVENT+RRULE (not materialized instances) so calendar apps show occurrences beyond the 60-day window. EXDATE for skipped instances, override VEVENTs for completed instances
+- **All-day events**: Use `VALUE=DATE` format to avoid timezone-offset wrong-day bugs
+- **Security**: Token-in-URL authentication (256-bit `secrets.token_urlsafe`), `Referrer-Policy: no-referrer`, IP rate limiting
+- **Caching**: In-memory cache keyed on `(user_id, data_version)` — zero queries when data hasn't changed
+- **Settings UI**: Enable/disable toggle, copy-to-clipboard feed URL, regenerate with confirmation dialog, GCal sync overlap warning, blocked state when encryption is enabled
+- **Files**: `app/services/calendar_feed.py` (feed generation), `app/routers/calendar_feed.py` (endpoints), `feed_token` column on `UserPreferences`
+
+---
+
 ## v0.55.81 — 2026-03-02
 
 ### Fix: Plan My Day — time range leaking past selection boundary

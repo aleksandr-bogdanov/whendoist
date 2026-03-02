@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.55.68
+ * OpenAPI spec version: 0.55.82
  */
 
 export type ImportPreviewResponseProjectsItem = { [key: string]: unknown };

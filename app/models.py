@@ -241,6 +241,9 @@ class UserPreferences(Base):
     # Snapshot preferences
     snapshots_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Calendar feed token (iCal subscription URL authentication)
+    feed_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True, index=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

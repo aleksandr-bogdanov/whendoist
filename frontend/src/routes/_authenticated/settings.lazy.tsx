@@ -1,9 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute, Link as RouterLink, useNavigate } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
   Calendar,
+  Check,
+  Copy,
   Database,
   Download,
   Info,
@@ -14,7 +17,9 @@ import {
   Monitor,
   Moon,
   Plus,
+  RefreshCw,
   RotateCcw,
+  Rss,
   Settings2,
   Shield,
   Sun,
@@ -39,6 +44,13 @@ import {
   useToggleSnapshotsApiV1BackupSnapshotsEnabledPut,
 } from "@/api/queries/backup/backup";
 import { useGetBuildInfoApiV1BuildInfoGet } from "@/api/queries/build/build";
+import {
+  getGetFeedStatusApiV1CalendarFeedStatusGetQueryKey,
+  useDisableFeedApiV1CalendarFeedDisablePost,
+  useEnableFeedApiV1CalendarFeedEnablePost,
+  useGetFeedStatusApiV1CalendarFeedStatusGet,
+  useRegenerateFeedApiV1CalendarFeedRegeneratePost,
+} from "@/api/queries/calendar-feed/calendar-feed";
 import {
   getListDomainsApiV1DomainsGetQueryKey,
   useBatchUpdateDomainsApiV1DomainsBatchUpdatePost,
@@ -138,6 +150,8 @@ function SettingsPage() {
         <GoogleCalendarSection />
         <Separator />
         <GCalSyncSection />
+        <Separator />
+        <CalendarFeedSection />
         <Separator />
         <TodoistSection />
         <Separator />
@@ -439,6 +453,177 @@ function GCalSyncSection() {
           </Button>
         </div>
       )}
+    </SettingsCard>
+  );
+}
+
+// ============================================================================
+// Calendar Feed Section
+// ============================================================================
+
+function CalendarFeedSection() {
+  const feedQuery = useGetFeedStatusApiV1CalendarFeedStatusGet();
+  const enableFeed = useEnableFeedApiV1CalendarFeedEnablePost();
+  const disableFeed = useDisableFeedApiV1CalendarFeedDisablePost();
+  const regenerateFeed = useRegenerateFeedApiV1CalendarFeedRegeneratePost();
+  const queryClient = useQueryClient();
+  const [copied, setCopied] = useState(false);
+  const [showRegenConfirm, setShowRegenConfirm] = useState(false);
+
+  const feedStatus = feedQuery.data;
+  const isBlocked = feedStatus?.encryption_enabled ?? false;
+
+  const invalidateFeedStatus = () => {
+    queryClient.invalidateQueries({
+      queryKey: getGetFeedStatusApiV1CalendarFeedStatusGetQueryKey(),
+    });
+  };
+
+  const handleToggle = (checked: boolean) => {
+    if (checked) {
+      enableFeed.mutate(undefined, {
+        onSuccess: () => {
+          invalidateFeedStatus();
+          toast.success("Calendar feed enabled");
+        },
+        onError: () => toast.error("Failed to enable calendar feed"),
+      });
+    } else {
+      disableFeed.mutate(undefined, {
+        onSuccess: () => {
+          invalidateFeedStatus();
+          toast.success("Calendar feed disabled");
+        },
+        onError: () => toast.error("Failed to disable calendar feed"),
+      });
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!feedStatus?.feed_url) return;
+    try {
+      await navigator.clipboard.writeText(feedStatus.feed_url);
+      setCopied(true);
+      toast.success("Feed URL copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy URL");
+    }
+  };
+
+  const handleRegenerate = () => {
+    regenerateFeed.mutate(undefined, {
+      onSuccess: () => {
+        invalidateFeedStatus();
+        setShowRegenConfirm(false);
+        toast.success("Feed URL regenerated");
+      },
+      onError: () => toast.error("Failed to regenerate feed URL"),
+    });
+  };
+
+  return (
+    <SettingsCard title="Calendar Feed" icon={<Rss className="h-4 w-4" />}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium">iCal subscription feed</p>
+          <p className="text-xs text-muted-foreground">
+            Subscribe from Apple Calendar, Google Calendar, or Outlook
+          </p>
+        </div>
+        <Switch
+          checked={feedStatus?.enabled ?? false}
+          onCheckedChange={handleToggle}
+          disabled={isBlocked || enableFeed.isPending || disableFeed.isPending}
+        />
+      </div>
+
+      {isBlocked && (
+        <p className="text-xs text-muted-foreground">
+          Calendar feed is unavailable when E2E encryption is enabled.
+        </p>
+      )}
+
+      {feedStatus?.enabled && feedStatus.feed_url && (
+        <div className="space-y-3">
+          {/* Feed URL */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Feed URL</Label>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={feedStatus.feed_url}
+                className="font-mono text-xs h-8"
+                onFocus={(e) => e.target.select()}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 shrink-0"
+                onClick={handleCopy}
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Paste this URL into your calendar app's "Subscribe to calendar" option.
+            </p>
+          </div>
+
+          {/* GCal sync overlap warning */}
+          {feedStatus.gcal_sync_enabled && (
+            <div className="flex items-start gap-2 rounded-md bg-amber-500/10 p-2.5">
+              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                You have Google Calendar sync enabled. Using both in Google Calendar will create
+                duplicate events. The calendar feed is for other apps (Apple Calendar, Outlook).
+              </p>
+            </div>
+          )}
+
+          {/* Regenerate */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Regenerating creates a new URL and invalidates the old one.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowRegenConfirm(true)}
+            >
+              <RefreshCw className="h-3 w-3" />
+              Regenerate URL
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Regenerate confirmation dialog */}
+      <Dialog open={showRegenConfirm} onOpenChange={setShowRegenConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Regenerate Feed URL?</DialogTitle>
+            <DialogDescription>
+              This will create a new URL and immediately invalidate the old one. Any calendar apps
+              using the current URL will stop receiving updates until you re-subscribe with the new
+              URL.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRegenConfirm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRegenerate} disabled={regenerateFeed.isPending}>
+              {regenerateFeed.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Regenerate"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SettingsCard>
   );
 }
