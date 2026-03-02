@@ -16,7 +16,6 @@ const rightNav = [
 export function MobileNav() {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
-  const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen);
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
 
   const renderLink = (item: (typeof leftNav)[number] | (typeof rightNav)[number]) => {
@@ -65,7 +64,7 @@ export function MobileNav() {
         </button>
         <button
           type="button"
-          onClick={() => setQuickAddOpen(true)}
+          onClick={() => setSearchOpen(true)}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[var(--shadow-cta)] transition-transform active:scale-95"
         >
           <Plus className="h-5 w-5" />

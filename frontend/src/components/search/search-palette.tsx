@@ -1,15 +1,18 @@
 import { useNavigate } from "@tanstack/react-router";
 import Fuse, { type FuseResultMatch, type IFuseOptions } from "fuse.js";
-import { AlertTriangle, CalendarCheck, Lightbulb, Plus, Search } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Check, Lightbulb, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
+import { PaletteBatchActions } from "@/components/search/palette-batch-actions";
 import { PaletteTaskActions } from "@/components/search/palette-task-actions";
+import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomplete";
 import { MetadataPill } from "@/components/task/task-quick-add";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
+import { useSmartInput } from "@/hooks/use-smart-input";
 import { useTaskCreate } from "@/hooks/use-task-create";
 import { type SearchResult, useTaskSearch } from "@/hooks/use-task-search";
 import {
@@ -17,8 +20,8 @@ import {
   type PaletteCommand,
   usePaletteCommands,
 } from "@/lib/palette-commands";
+import { type PaletteFilter, parseFilterTokens } from "@/lib/palette-filters";
 import { DASHBOARD_TASKS_PARAMS } from "@/lib/query-keys";
-import { parseTaskInput } from "@/lib/task-parser";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -93,6 +96,43 @@ function HighlightedText({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Description snippet — shows matched description excerpt            */
+/* ------------------------------------------------------------------ */
+
+function DescriptionSnippet({
+  description,
+  matchIndices,
+}: {
+  description: string;
+  matchIndices: ReadonlyArray<readonly [number, number]>;
+}) {
+  if (!matchIndices.length) return null;
+
+  // Find the first match and extract ~60 chars around it
+  const [matchStart, matchEnd] = matchIndices[0];
+  const contextRadius = 30;
+  const snippetStart = Math.max(0, matchStart - contextRadius);
+  const snippetEnd = Math.min(description.length, matchEnd + contextRadius + 1);
+  const snippet = description.slice(snippetStart, snippetEnd);
+
+  // Adjust indices relative to snippet
+  const adjustedIndices: [number, number][] = matchIndices
+    .filter(([s, e]) => s >= snippetStart && e < snippetEnd)
+    .map(([s, e]) => [s - snippetStart, e - snippetStart]);
+
+  const prefix = snippetStart > 0 ? "..." : "";
+  const suffix = snippetEnd < description.length ? "..." : "";
+
+  return (
+    <span className="text-xs text-muted-foreground block truncate mt-0.5">
+      {prefix}
+      <HighlightedText text={snippet} indices={adjustedIndices} />
+      {suffix}
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Domain badge — emoji or color dot + name                           */
 /* ------------------------------------------------------------------ */
 
@@ -132,40 +172,18 @@ export function SearchPalette() {
   const searchOpen = useUIStore((s) => s.searchOpen);
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
   const selectTask = useUIStore((s) => s.selectTask);
+  const expandSubtask = useUIStore((s) => s.expandSubtask);
   const setSearchNavigateId = useUIStore((s) => s.setSearchNavigateId);
   const pushPaletteRecent = useUIStore((s) => s.pushPaletteRecent);
   const paletteRecents = useUIStore((s) => s.paletteRecents);
   const navigate = useNavigate();
 
-  const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [drilldownResult, setDrilldownResult] = useState<SearchResult | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(new Set());
   const listRef = useRef<HTMLDivElement>(null);
 
-  /* ---- Detect command mode ---- */
-  const isCommandMode = query.startsWith(">");
-  const searchQuery = isCommandMode ? query.slice(1).trimStart() : query.trim();
-
-  /* ---- Commands ---- */
-  const commands = usePaletteCommands();
-  const commandFuse = useMemo(() => new Fuse(commands, commandFuseOptions), [commands]);
-
-  const commandResults: CommandSearchResult[] = useMemo(() => {
-    if (!searchQuery) {
-      // In command mode with empty query after ">", show all commands
-      if (isCommandMode) {
-        return commands.map((c) => ({ command: c, matches: undefined }));
-      }
-      return [];
-    }
-    return commandFuse.search(searchQuery, { limit: 15 }).map((r) => ({
-      command: r.item,
-      matches: r.matches ?? undefined,
-    }));
-  }, [searchQuery, isCommandMode, commandFuse, commands]);
-
-  /* ---- Data: piggyback on dashboard TQ cache ---- */
+  /* ---- Data: piggyback on dashboard TQ cache (hoisted for useSmartInput) ---- */
   const { data: rawTasks } = useListTasksApiV1TasksGet(DASHBOARD_TASKS_PARAMS);
   const { data: rawDomains } = useListDomainsApiV1DomainsGet();
   const { decryptTasks, decryptDomains } = useCrypto();
@@ -205,25 +223,84 @@ export function SearchPalette() {
     };
   }, [domainsFingerprint, decryptDomains]);
 
+  /* ---- Smart input (replaces useState + parseTaskInput) ---- */
+  const smartInput = useSmartInput({ domains });
+  const {
+    inputRef,
+    rawInput,
+    parsed,
+    acVisible,
+    acSuggestions,
+    acSelectedIndex,
+    handleInputChange: handleSmartInputChange,
+    handleAcSelect,
+    handleDismissToken,
+    handleKeyDown: handleAcKeyDown,
+    reset: resetSmartInput,
+  } = smartInput;
+
+  /* ---- Detect command mode ---- */
+  const isCommandMode = rawInput.startsWith(">");
+  const searchQuery = isCommandMode ? rawInput.slice(1).trimStart() : rawInput.trim();
+
+  /* ---- Commands ---- */
+  const commands = usePaletteCommands();
+  const commandFuse = useMemo(() => new Fuse(commands, commandFuseOptions), [commands]);
+
+  const commandResults: CommandSearchResult[] = useMemo(() => {
+    if (!searchQuery) {
+      // In command mode with empty query after ">", show all commands
+      if (isCommandMode) {
+        return commands.map((c) => ({ command: c, matches: undefined }));
+      }
+      return [];
+    }
+    return commandFuse.search(searchQuery, { limit: 15 }).map((r) => ({
+      command: r.item,
+      matches: r.matches ?? undefined,
+    }));
+  }, [searchQuery, isCommandMode, commandFuse, commands]);
+
   /* ---- Task creation ---- */
   const { create, isPending: isCreating } = useTaskCreate();
 
+  /* ---- Filter tokens (applied to parsed.title which has metadata stripped) ---- */
+  const searchText = isCommandMode ? "" : parsed.title;
+  const { cleanQuery, filters: activeFilters } = useMemo(
+    () =>
+      searchText
+        ? parseFilterTokens(searchText, domains)
+        : { cleanQuery: "", filters: [] as PaletteFilter[] },
+    [searchText, domains],
+  );
+
   /* ---- Fuzzy task search ---- */
-  const { search } = useTaskSearch(tasks, domains);
-  const taskResults = useMemo(
-    () => (searchQuery && !isCommandMode ? search(searchQuery) : []),
-    [searchQuery, isCommandMode, search],
-  );
-
-  /* ---- Parse query for creation fallthrough ---- */
-  const parsed = useMemo(
-    () => (searchQuery && !isCommandMode ? parseTaskInput(searchQuery, domains) : null),
-    [searchQuery, isCommandMode, domains],
-  );
-  const showCreate = !!parsed?.title.trim();
-
-  /* ---- Empty-state data: recents + "Right Now" ---- */
   const domainMap = useMemo(() => new Map(domains.map((d) => [d.id, d])), [domains]);
+  const { search } = useTaskSearch(tasks, domains);
+  const taskResults = useMemo(() => {
+    if (isCommandMode) return [];
+    // When we have filters but no text query, search over all tasks
+    const hasFilters = activeFilters.length > 0;
+    const raw = cleanQuery
+      ? search(cleanQuery)
+      : hasFilters
+        ? tasks.map((t) => ({
+            task: t,
+            domain: t.domain_id ? (domainMap.get(t.domain_id) ?? null) : null,
+            isThought: t.domain_id === null,
+            matches: undefined,
+            subtask: null,
+            parentTask: null,
+          }))
+        : [];
+    if (!hasFilters) return raw;
+    return raw.filter((r) => activeFilters.every((f) => f.predicate(r.task, r.domain)));
+  }, [cleanQuery, isCommandMode, search, activeFilters, tasks, domainMap]);
+
+  /* ---- Creation fallthrough (parsed comes from useSmartInput now) ---- */
+  const showCreate = !isCommandMode && !!parsed.title.trim();
+
+  /* ---- Domain map (used by taskResults and empty state) ---- */
 
   const recentResults: SearchResult[] = useMemo(() => {
     if (searchQuery || isCommandMode) return [];
@@ -234,9 +311,11 @@ export function SearchPalette() {
         const domain = task.domain_id ? domainMap.get(task.domain_id) : undefined;
         return {
           task,
-          domain: domain ?? undefined,
+          domain: domain ?? null,
           isThought: task.domain_id === null,
           matches: undefined,
+          subtask: null,
+          parentTask: null,
         } as SearchResult;
       })
       .filter((r): r is SearchResult => r !== null);
@@ -348,11 +427,13 @@ export function SearchPalette() {
   ]);
 
   /* ---- Reset on open/close ---- */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only reset on open/close transition
   useEffect(() => {
     if (searchOpen) {
-      setQuery("");
+      resetSmartInput();
       setSelectedIndex(0);
       setDrilldownResult(null);
+      setSelectedTaskIds(new Set());
     }
   }, [searchOpen]);
 
@@ -388,42 +469,56 @@ export function SearchPalette() {
   /* ---- Select a task ---- */
   const handleSelectTask = useCallback(
     (result: SearchResult) => {
-      pushPaletteRecent(result.task.id);
+      // For subtasks, navigate to the parent task and expand its subtasks
+      const targetTaskId = result.parentTask?.id ?? result.task.id;
+      pushPaletteRecent(targetTaskId);
       setSearchOpen(false);
-      setQuery("");
+      resetSmartInput();
+
+      if (result.parentTask) {
+        expandSubtask(result.parentTask.id);
+      }
 
       if (result.isThought) {
-        setSearchNavigateId(result.task.id);
+        setSearchNavigateId(targetTaskId);
         navigate({ to: "/thoughts" });
       } else {
-        selectTask(result.task.id);
+        selectTask(targetTaskId);
         navigate({ to: "/dashboard" });
         setTimeout(() => {
           document
-            .querySelector(`[data-task-id="${result.task.id}"]`)
+            .querySelector(`[data-task-id="${targetTaskId}"]`)
             ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }, 150);
       }
     },
-    [setSearchOpen, selectTask, setSearchNavigateId, pushPaletteRecent, navigate],
+    [
+      setSearchOpen,
+      resetSmartInput,
+      selectTask,
+      expandSubtask,
+      setSearchNavigateId,
+      pushPaletteRecent,
+      navigate,
+    ],
   );
 
   /* ---- Execute a command ---- */
   const handleSelectCommand = useCallback(
     (cmd: PaletteCommand) => {
       setSearchOpen(false);
-      setQuery("");
+      resetSmartInput();
       cmd.handler();
     },
-    [setSearchOpen],
+    [setSearchOpen, resetSmartInput],
   );
 
   /* ---- Create task / thought from palette ---- */
   const handleCreate = useCallback(
     (asThought: boolean) => {
-      if (!parsed?.title.trim() || isCreating) return;
+      if (!parsed.title.trim() || isCreating) return;
       setSearchOpen(false);
-      setQuery("");
+      resetSmartInput();
       create({
         title: parsed.title.trim(),
         description: parsed.description,
@@ -435,17 +530,17 @@ export function SearchPalette() {
         scheduled_time: asThought ? null : parsed.scheduledTime,
       });
     },
-    [parsed, isCreating, setSearchOpen, create],
+    [parsed, isCreating, setSearchOpen, resetSmartInput, create],
   );
 
   /* ---- Navigate to a stat route ---- */
   const handleSelectStat = useCallback(
     (to: string) => {
       setSearchOpen(false);
-      setQuery("");
+      resetSmartInput();
       navigate({ to });
     },
-    [setSearchOpen, navigate],
+    [setSearchOpen, resetSmartInput, navigate],
   );
 
   /* ---- Unified select ---- */
@@ -475,6 +570,7 @@ export function SearchPalette() {
     [pushPaletteRecent],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: inputRef is a stable ref
   const handleDrilldownBack = useCallback(() => {
     setDrilldownResult(null);
     // Refocus the search input after returning
@@ -483,13 +579,16 @@ export function SearchPalette() {
 
   const handleDrilldownClose = useCallback(() => {
     setSearchOpen(false);
-    setQuery("");
+    resetSmartInput();
     setDrilldownResult(null);
-  }, [setSearchOpen]);
+  }, [setSearchOpen, resetSmartInput]);
 
   /* ---- Keyboard navigation inside palette ---- */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      // Smart input autocomplete takes priority (if active, it consumes the event)
+      if (!isCommandMode && handleAcKeyDown(e)) return;
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((prev) => Math.min(prev + 1, flatItems.length - 1));
@@ -514,7 +613,16 @@ export function SearchPalette() {
         handleSelectItem(flatItems[selectedIndex]);
       }
     },
-    [flatItems, selectedIndex, handleSelectItem, handleDrilldownEnter, showCreate, handleCreate],
+    [
+      flatItems,
+      selectedIndex,
+      handleSelectItem,
+      handleDrilldownEnter,
+      showCreate,
+      handleCreate,
+      isCommandMode,
+      handleAcKeyDown,
+    ],
   );
 
   // Scroll selected item into view
@@ -523,11 +631,12 @@ export function SearchPalette() {
     el?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
-  // Reset selection when query changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: query drives reset intentionally
+  // Reset selection and multi-select when input changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: rawInput drives reset intentionally
   useEffect(() => {
     setSelectedIndex(0);
-  }, [query]);
+    setSelectedTaskIds(new Set());
+  }, [rawInput]);
 
   /* ---- Render helpers ---- */
   let flatIndex = -1;
@@ -543,26 +652,65 @@ export function SearchPalette() {
           flatIndex++;
           const idx = flatIndex;
           const titleMatch = result.matches?.find((m) => m.key === "title");
+          const descMatch = result.matches?.find((m) => m.key === "description");
+          const displayDesc = result.subtask ? result.subtask.description : result.task.description;
+          const itemKey = result.subtask ? `sub-${result.subtask.id}` : `task-${result.task.id}`;
+          const isSelected = !result.subtask && selectedTaskIds.has(result.task.id);
           return (
             <button
               type="button"
-              key={result.task.id}
+              key={itemKey}
               data-search-index={idx}
               className={cn(
-                "w-full px-3 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 text-left",
+                "w-full px-3 py-2 text-sm cursor-pointer transition-colors text-left",
                 "hover:bg-accent/50",
                 idx === selectedIndex && "bg-accent",
+                isSelected && "ring-2 ring-inset ring-primary/50",
               )}
-              onClick={() => handleSelectTask(result)}
+              onClick={(e) => {
+                // Cmd/Ctrl+Click toggles multi-select (parent tasks only)
+                if ((e.metaKey || e.ctrlKey) && !result.subtask) {
+                  setSelectedTaskIds((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(result.task.id)) {
+                      next.delete(result.task.id);
+                    } else {
+                      next.add(result.task.id);
+                    }
+                    return next;
+                  });
+                  return;
+                }
+                handleSelectTask(result);
+              }}
               onMouseEnter={() => setSelectedIndex(idx)}
             >
-              <span className="flex-1 min-w-0 truncate">
-                <HighlightedText
-                  text={result.task.title}
-                  indices={titleMatch?.indices as [number, number][] | undefined}
-                />
+              <span className="flex items-center gap-2">
+                {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                <span className="flex-1 min-w-0 truncate">
+                  {result.subtask ? (
+                    <>
+                      <span className="text-muted-foreground">{result.parentTask?.title} ›</span>{" "}
+                      <HighlightedText
+                        text={result.subtask.title}
+                        indices={titleMatch?.indices as [number, number][] | undefined}
+                      />
+                    </>
+                  ) : (
+                    <HighlightedText
+                      text={result.task.title}
+                      indices={titleMatch?.indices as [number, number][] | undefined}
+                    />
+                  )}
+                </span>
+                {result.domain && <DomainBadge domain={result.domain} />}
               </span>
-              {result.domain && <DomainBadge domain={result.domain} />}
+              {descMatch && displayDesc && (
+                <DescriptionSnippet
+                  description={displayDesc}
+                  matchIndices={descMatch.indices as unknown as [number, number][]}
+                />
+              )}
             </button>
           );
         })}
@@ -656,7 +804,7 @@ export function SearchPalette() {
 
   /* ---- Render create section ---- */
   function renderCreateSection() {
-    if (!showCreate || !parsed) return null;
+    if (!showCreate) return null;
     const mac = navigator.platform?.includes("Mac");
     const createTaskIdx = flatItems.findIndex((i) => i.type === "create-task");
     const createThoughtIdx = flatItems.findIndex((i) => i.type === "create-thought");
@@ -721,7 +869,7 @@ export function SearchPalette() {
   /* ---- Determine empty state ---- */
   const hasCommandResults = commandResults.length > 0;
   const hasAnyResults = flatItems.length > 0;
-  const showNoResults = !!searchQuery && !hasAnyResults;
+  const showNoResults = !!searchQuery && !hasAnyResults && !isEmptyState;
 
   /* ---- Check if any task items exist in flatItems (for footer hint) ---- */
   const hasTaskItems = flatItems.some((i) => i.type === "task");
@@ -744,22 +892,55 @@ export function SearchPalette() {
           />
         ) : (
           <>
-            {/* Search input */}
-            <div className="flex items-center gap-2 px-3 border-b">
-              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Search or type > for commands..."
-                className="flex-1 h-11 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
-                autoFocus
-              />
-              <kbd className="hidden sm:inline-flex items-center justify-center h-5 px-1.5 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
-                {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}K
-              </kbd>
+            {/* Search input with smart parsing */}
+            <div className="relative border-b">
+              <div className="flex items-center gap-2 px-3">
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <input
+                  ref={inputRef}
+                  value={rawInput}
+                  onChange={handleSmartInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Search, create, or type > for commands..."
+                  className="flex-1 h-11 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+                  autoFocus
+                />
+                <kbd className="hidden sm:inline-flex items-center justify-center h-5 px-1.5 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
+                  {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}K
+                </kbd>
+              </div>
+              {/* Smart input autocomplete dropdown */}
+              {!isCommandMode && (
+                <SmartInputAutocomplete
+                  suggestions={acSuggestions}
+                  visible={acVisible}
+                  selectedIndex={acSelectedIndex}
+                  onSelect={handleAcSelect}
+                />
+              )}
             </div>
+
+            {/* Metadata pills + active filter pills */}
+            {((!isCommandMode && parsed.tokens.length > 0) || activeFilters.length > 0) && (
+              <div className="flex flex-wrap gap-1 px-3 py-1.5 border-b">
+                {!isCommandMode &&
+                  parsed.tokens.map((token) => (
+                    <MetadataPill
+                      key={token.type}
+                      token={token}
+                      onDismiss={() => handleDismissToken(token)}
+                    />
+                  ))}
+                {activeFilters.map((f) => (
+                  <span
+                    key={f.label}
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                  >
+                    {f.label}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* Results */}
             <div ref={listRef} className="max-h-[50vh] overflow-y-auto">
@@ -796,8 +977,18 @@ export function SearchPalette() {
               )}
             </div>
 
-            {/* Footer hint */}
-            {hasAnyResults && (
+            {/* Footer: batch actions or navigation hints */}
+            {selectedTaskIds.size >= 2 ? (
+              <PaletteBatchActions
+                taskIds={selectedTaskIds}
+                domains={domains}
+                onDone={() => {
+                  setSelectedTaskIds(new Set());
+                  setSearchOpen(false);
+                  resetSmartInput();
+                }}
+              />
+            ) : hasAnyResults ? (
               <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground flex items-center gap-3">
                 <span>
                   <kbd className="font-mono">&uarr;&darr;</kbd> navigate
@@ -806,9 +997,17 @@ export function SearchPalette() {
                   <kbd className="font-mono">&crarr;</kbd> {isCommandMode ? "run" : "open"}
                 </span>
                 {hasTaskItems && !isCommandMode && (
-                  <span>
-                    <kbd className="font-mono">tab</kbd> actions
-                  </span>
+                  <>
+                    <span>
+                      <kbd className="font-mono">tab</kbd> actions
+                    </span>
+                    <span>
+                      <kbd className="font-mono">
+                        {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}click
+                      </kbd>{" "}
+                      select
+                    </span>
+                  </>
                 )}
                 {showCreate && !isCommandMode && !isEmptyState && (
                   <span>
@@ -822,12 +1021,17 @@ export function SearchPalette() {
                   <kbd className="font-mono">esc</kbd> close
                 </span>
                 {!isCommandMode && (
-                  <span className="ml-auto">
-                    <kbd className="font-mono">&gt;</kbd> commands
-                  </span>
+                  <>
+                    <span>
+                      <kbd className="font-mono">@</kbd> filter
+                    </span>
+                    <span className="ml-auto">
+                      <kbd className="font-mono">&gt;</kbd> commands
+                    </span>
+                  </>
                 )}
               </div>
-            )}
+            ) : null}
           </>
         )}
       </DialogContent>

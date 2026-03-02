@@ -982,3 +982,75 @@ async def batch_update_tasks(
         failed_ids=failed_ids,
         errors=errors if errors else None,
     )
+
+
+# =============================================================================
+# Batch Actions Endpoint (for multi-select palette actions)
+# =============================================================================
+
+
+class BatchActionRequest(BaseModel):
+    """Request body for batch task actions."""
+
+    task_ids: list[int] = Field(max_length=100)
+    action: Literal["complete", "schedule", "move", "delete"]
+    scheduled_date: date | None = None
+    domain_id: int | None = None
+
+
+class BatchActionResponse(BaseModel):
+    """Response for batch task actions."""
+
+    affected_count: int
+    total_requested: int
+
+
+@router.post("/batch-action", response_model=BatchActionResponse, status_code=200)
+async def batch_action_tasks(
+    data: BatchActionRequest,
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Apply a batch action to multiple tasks.
+
+    Supports: complete, schedule, move (to domain), delete (archive).
+    Silently skips unowned or missing task IDs (multitenancy rule).
+    """
+    # Pre-fetch all requested tasks in a single query (multitenancy filter)
+    result = await db.execute(select(Task).where(Task.id.in_(data.task_ids), Task.user_id == user.id))
+    tasks = {t.id: t for t in result.scalars().all()}
+
+    affected = 0
+    for task_id in data.task_ids:
+        task = tasks.get(task_id)
+        if not task:
+            continue
+
+        if data.action == "complete":
+            if task.status != "completed":
+                task.status = "completed"
+                task.completed_at = datetime.utcnow()
+                affected += 1
+        elif data.action == "schedule":
+            if data.scheduled_date is not None:
+                task.scheduled_date = data.scheduled_date
+                affected += 1
+        elif data.action == "move":
+            task.domain_id = data.domain_id
+            affected += 1
+        elif data.action == "delete":
+            task.status = "archived"
+            affected += 1
+
+    if affected > 0:
+        await bump_data_version(db, user.id)
+        await db.commit()
+
+        # Fire-and-forget sync to Google Calendar
+        asyncio.create_task(_fire_and_forget_bulk_sync(user.id))
+
+    return BatchActionResponse(
+        affected_count=affected,
+        total_requested=len(data.task_ids),
+    )
