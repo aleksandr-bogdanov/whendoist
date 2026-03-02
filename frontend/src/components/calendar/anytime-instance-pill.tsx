@@ -9,6 +9,7 @@ import {
   useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost,
   useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
+import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
 import { announce } from "@/components/live-announcer";
 import {
   ContextMenu,
@@ -179,25 +180,31 @@ export function AnytimeInstancePill({
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
-        {parentTask && (
-          <ContextMenuItem onClick={() => onTaskClick?.(parentTask)}>
-            <Pencil className="h-3.5 w-3.5 mr-2" />
-            Edit Series
-          </ContextMenuItem>
+        {isMultiSelected ? (
+          <BatchContextMenuItems />
+        ) : (
+          <>
+            {parentTask && (
+              <ContextMenuItem onClick={() => onTaskClick?.(parentTask)}>
+                <Pencil className="h-3.5 w-3.5 mr-2" />
+                Edit Series
+              </ContextMenuItem>
+            )}
+            <ContextMenuItem onClick={handleComplete}>
+              <Check className="h-3.5 w-3.5 mr-2" />
+              {isCompleted ? "Uncomplete" : "Complete"}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={handleSkip}>
+              {isSkipped ? (
+                <Undo2 className="h-3.5 w-3.5 mr-2" />
+              ) : (
+                <SkipForward className="h-3.5 w-3.5 mr-2" />
+              )}
+              {isSkipped ? "Unskip" : "Skip"}
+            </ContextMenuItem>
+          </>
         )}
-        <ContextMenuItem onClick={handleComplete}>
-          <Check className="h-3.5 w-3.5 mr-2" />
-          {isCompleted ? "Uncomplete" : "Complete"}
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem onClick={handleSkip}>
-          {isSkipped ? (
-            <Undo2 className="h-3.5 w-3.5 mr-2" />
-          ) : (
-            <SkipForward className="h-3.5 w-3.5 mr-2" />
-          )}
-          {isSkipped ? "Unskip" : "Skip"}
-        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );

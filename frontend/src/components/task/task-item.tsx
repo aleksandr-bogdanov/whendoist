@@ -35,6 +35,7 @@ import {
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
+import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
 import { announce } from "@/components/live-announcer";
 import { ClarityPill, DurationPill, ImpactPill } from "@/components/task/attribute-pills";
 import { Badge } from "@/components/ui/badge";
@@ -908,7 +909,9 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
             </DropdownMenu>
           </div>
         </ContextMenuTrigger>
-        <ContextMenuContent className="min-w-[140px]">{contextMenuItems}</ContextMenuContent>
+        <ContextMenuContent className="min-w-[140px]">
+          {isMultiSelected ? <BatchContextMenuItems /> : contextMenuItems}
+        </ContextMenuContent>
       </ContextMenu>
 
       {/* Ghost placeholder — shows where the dragged task will land as a subtask */}

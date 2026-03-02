@@ -4,6 +4,23 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.94 — 2026-03-02
+
+### Feat: Multi-select — Phase 4 (batch context menu & reschedule)
+
+- Right-clicking a selected item shows batch context menu instead of single-item menu
+- Right-clicking an unselected item keeps the existing single-item menu (unchanged)
+- Batch menu items: Complete N items, Reopen (conditional), Reschedule..., Unschedule, Edit... (placeholder), Delete N items
+- Reschedule opens inline shadcn Calendar date picker via ContextMenuSub submenu
+- All selected items move to the picked date with times preserved (no relative offsets)
+- Item counts in labels ("Complete 3 items", "Delete 3 items")
+- All actions use `executeBatch()` with single undo toast and clear selection on completion
+- Extended shadcn context-menu UI with `ContextMenuSub`, `ContextMenuSubTrigger`, `ContextMenuSubContent` exports
+- New `batchReschedule()` batch mutation helper in `batch-mutations.ts`
+- Applied to all 4 selectable components: TaskItem, ScheduledTaskCard, AnytimeTaskPill, AnytimeInstancePill
+
+---
+
 ## v0.55.93 — 2026-03-02
 
 ### Feat: Multi-select — Phase 3 (batch drag on calendar)
