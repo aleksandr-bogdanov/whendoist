@@ -527,15 +527,22 @@ export interface FreeSlot {
   cursor: number; // current fill level
 }
 
-/** Find free time slots between occupied ranges */
+/** Find free time slots between occupied ranges within [dayStartMinutes, dayEndMinutes] */
 export function findFreeSlots(
   occupied: TimeRange[],
   dayStartMinutes: number,
   dayEndMinutes: number,
   bufferMinutes = 5,
 ): FreeSlot[] {
+  // Only consider occupied ranges that overlap with the requested window —
+  // without this filter, ranges outside the window create spurious free slots
+  // between them, extending far beyond dayEndMinutes.
+  const relevant = occupied.filter(
+    (r) => r.endMinutes > dayStartMinutes && r.startMinutes < dayEndMinutes,
+  );
+
   // Sort occupied ranges and merge overlaps
-  const sorted = [...occupied].sort((a, b) => a.startMinutes - b.startMinutes);
+  const sorted = [...relevant].sort((a, b) => a.startMinutes - b.startMinutes);
   const merged: TimeRange[] = [];
   for (const r of sorted) {
     const last = merged[merged.length - 1];
