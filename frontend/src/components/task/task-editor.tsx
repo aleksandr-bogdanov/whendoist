@@ -232,7 +232,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                     if (parentDomainId !== null && parentDomainId !== form.values.domainId) {
                       form.handlers.onDomainChange(parentDomainId);
                       setDomainFlash(true);
-                      setTimeout(() => setDomainFlash(false), 800);
+                      setTimeout(() => setDomainFlash(false), 650);
                       form.markDirty();
                     }
                   }}
@@ -526,9 +526,7 @@ function EditorFieldRow({
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium">{label}</Label>
-      <div className={cn("rounded-lg transition-all duration-300", flash && "bg-primary/20")}>
-        {children}
-      </div>
+      <div className={cn("rounded-lg", flash && "animate-field-flash")}>{children}</div>
     </div>
   );
 }

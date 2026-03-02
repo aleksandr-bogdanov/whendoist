@@ -135,12 +135,7 @@ function InspectorBody({
 
         {/* Domain */}
         <FieldRow label="Domain">
-          <div
-            className={cn(
-              "rounded-lg transition-all duration-300",
-              form.domainFlash && "bg-primary/20",
-            )}
-          >
+          <div className={cn("rounded-lg", form.domainFlash && "animate-field-flash")}>
             <DomainChipRow
               domains={domains}
               selectedId={form.parsed.domainId}

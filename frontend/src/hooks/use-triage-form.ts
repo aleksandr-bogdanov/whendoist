@@ -321,7 +321,7 @@ export function useTriageForm({
               : /#\S+/;
             tapToken("#", parentDomain.name ?? "", pattern);
             setDomainFlash(true);
-            setTimeout(() => setDomainFlash(false), 800);
+            setTimeout(() => setDomainFlash(false), 650);
           }
         }
       }

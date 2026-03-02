@@ -126,12 +126,7 @@ function DrawerBody({
         />
 
         {/* Domain */}
-        <div
-          className={cn(
-            "relative pl-16 rounded-lg transition-all duration-300",
-            form.domainFlash && "bg-primary/20",
-          )}
-        >
+        <div className={cn("relative pl-16 rounded-lg", form.domainFlash && "animate-field-flash")}>
           <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
             Domain
           </span>
