@@ -11,6 +11,7 @@
   <a href="https://whendoist.com">whendoist.com</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-features">Features</a> •
+  <a href="#-calendar-integration">Calendar</a> •
   <a href="#-documentation">Documentation</a>
 </p>
 
@@ -138,6 +139,35 @@ See the [Encryption Guide](docs/ENCRYPTION.md) for technical details.
 
 ---
 
+## 📅 Calendar Integration
+
+Whendoist doesn't just show your calendar — it **syncs back to it**. Two options depending on your setup:
+
+### Google Calendar Sync (real-time push)
+
+If you use Google Calendar, this is the best option. Whendoist pushes your scheduled tasks as real events into a dedicated "Whendoist" calendar in your Google account.
+
+- **Instant** — tasks appear in Google Calendar within seconds of scheduling
+- **Two-way visibility** — see your real calendar in Whendoist, see your tasks in Google Calendar
+- **Native events** — triggers Google Calendar notifications, shows in schedule view, works on every device signed into your Google account
+
+Enable in Settings → Google Calendar Sync. Requires a one-time Google authorization with calendar write access.
+
+### Calendar Feed (iCal subscription)
+
+For **Apple Calendar, Outlook, Fantastical**, or any app that supports iCal subscriptions. Whendoist generates a `.ics` feed URL that your calendar app polls for updates.
+
+- **Universal** — works with any calendar app that supports URL subscriptions
+- **Recurring tasks done right** — emitted as proper RRULE events, so your calendar app shows occurrences indefinitely (not limited to the 60-day materialization window)
+- **Private** — the feed URL contains a 256-bit token; no login required for your calendar app to fetch it
+- **Completed tasks** — show with a ✓ prefix, retained for 14 days, then automatically removed
+
+Enable in Settings → Calendar Feed. Copy the URL into your calendar app's "Subscribe to calendar" option.
+
+> **Using both?** If you subscribe to the feed from Google Calendar while also having GCal Sync enabled, you'll see duplicate events. The feed is designed for other calendar apps — GCal Sync already gives Google Calendar the best experience.
+
+---
+
 ## 🔧 Setup
 
 ### Prerequisites
@@ -236,6 +266,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Subtasks](docs/SUBTASKS.md) | Three-level hierarchy, container model, enforced constraints |
 | [Performance Guide](docs/PERFORMANCE.md) | Query optimization, caching, monitoring |
 | [GCal Sync](docs/GCAL-SYNC.md) | Google Calendar one-way sync architecture |
+| [Calendar Feed](docs/CALENDAR-FEED.md) | iCal subscription feed for Apple Calendar, Outlook, etc. |
 | [Smart Input](docs/SMART-INPUT.md) | Two-hook token parsing architecture — design decisions and file map |
 | [Calendar DnD](docs/CALENDAR-DND.md) | dnd-kit in nested scroll containers — bugs and working patterns |
 | [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with `data_version` change tracking |
