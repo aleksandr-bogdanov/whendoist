@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.89 — 2026-03-02
+
+### Feat: Command palette — Phase 4 (task action drilldown)
+
+- When a task is selected in search results, pressing `→` or `Tab` opens an action sub-menu replacing the results list
+- Task title shows as a breadcrumb header with `←` back navigation; Escape or `←` returns to search
+- Actions: Complete/Uncomplete (`C`), Schedule for today, Schedule for tomorrow, Move to domain... (inline fuzzy domain picker), Edit (`E`), Delete (`X`) with undo toast
+- "Move to domain..." opens a sub-flow: replaces action list with a fuzzy-searchable domain list; selecting a domain executes the move, `←` goes back to actions
+- All mutations use optimistic updates with undo toasts following existing codebase patterns
+- Footer hints update contextually to show available keyboard shortcuts for each view
+- New file: `palette-task-actions.tsx` — keeps search-palette.tsx as a thin shell
+
+---
+
 ## v0.55.88 — 2026-03-02
 
 ### Feat: Command palette — Phase 3 (empty state: recents + "Right Now")

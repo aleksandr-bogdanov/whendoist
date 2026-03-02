@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
+import { PaletteTaskActions } from "@/components/search/palette-task-actions";
 import { MetadataPill } from "@/components/task/task-quick-add";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useCrypto } from "@/hooks/use-crypto";
@@ -138,6 +139,7 @@ export function SearchPalette() {
 
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [drilldownResult, setDrilldownResult] = useState<SearchResult | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -350,6 +352,7 @@ export function SearchPalette() {
     if (searchOpen) {
       setQuery("");
       setSelectedIndex(0);
+      setDrilldownResult(null);
     }
   }, [searchOpen]);
 
@@ -463,6 +466,27 @@ export function SearchPalette() {
     [handleSelectTask, handleSelectCommand, handleCreate, handleSelectStat],
   );
 
+  /* ---- Drilldown: enter task actions ---- */
+  const handleDrilldownEnter = useCallback(
+    (result: SearchResult) => {
+      pushPaletteRecent(result.task.id);
+      setDrilldownResult(result);
+    },
+    [pushPaletteRecent],
+  );
+
+  const handleDrilldownBack = useCallback(() => {
+    setDrilldownResult(null);
+    // Refocus the search input after returning
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
+
+  const handleDrilldownClose = useCallback(() => {
+    setSearchOpen(false);
+    setQuery("");
+    setDrilldownResult(null);
+  }, [setSearchOpen]);
+
   /* ---- Keyboard navigation inside palette ---- */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -472,6 +496,15 @@ export function SearchPalette() {
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((prev) => Math.max(prev - 1, 0));
+      } else if (
+        (e.key === "ArrowRight" || e.key === "Tab") &&
+        flatItems[selectedIndex]?.type === "task"
+      ) {
+        // → or Tab on a task item = open action drilldown
+        e.preventDefault();
+        handleDrilldownEnter(
+          (flatItems[selectedIndex] as { type: "task"; result: SearchResult }).result,
+        );
       } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && showCreate) {
         // Cmd+Enter = capture thought (global shortcut within palette)
         e.preventDefault();
@@ -481,7 +514,7 @@ export function SearchPalette() {
         handleSelectItem(flatItems[selectedIndex]);
       }
     },
-    [flatItems, selectedIndex, handleSelectItem, showCreate, handleCreate],
+    [flatItems, selectedIndex, handleSelectItem, handleDrilldownEnter, showCreate, handleCreate],
   );
 
   // Scroll selected item into view
@@ -690,6 +723,9 @@ export function SearchPalette() {
   const hasAnyResults = flatItems.length > 0;
   const showNoResults = !!searchQuery && !hasAnyResults;
 
+  /* ---- Check if any task items exist in flatItems (for footer hint) ---- */
+  const hasTaskItems = flatItems.some((i) => i.type === "task");
+
   return (
     <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
       <DialogContent
@@ -697,82 +733,102 @@ export function SearchPalette() {
         className="top-[15%] translate-y-0 p-0 gap-0 sm:max-w-lg"
         aria-label="Search tasks and commands"
       >
-        {/* Search input */}
-        <div className="flex items-center gap-2 px-3 border-b">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Search or type > for commands..."
-            className="flex-1 h-11 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
-            autoFocus
+        {drilldownResult ? (
+          /* ---- Task action drilldown ---- */
+          <PaletteTaskActions
+            task={drilldownResult.task}
+            domain={drilldownResult.domain}
+            domains={domains}
+            onBack={handleDrilldownBack}
+            onClose={handleDrilldownClose}
           />
-          <kbd className="hidden sm:inline-flex items-center justify-center h-5 px-1.5 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
-            {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}K
-          </kbd>
-        </div>
-
-        {/* Results */}
-        <div ref={listRef} className="max-h-[50vh] overflow-y-auto">
-          {showNoResults ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              {isCommandMode ? "No commands found" : "No results found"}
+        ) : (
+          <>
+            {/* Search input */}
+            <div className="flex items-center gap-2 px-3 border-b">
+              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Search or type > for commands..."
+                className="flex-1 h-11 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+                autoFocus
+              />
+              <kbd className="hidden sm:inline-flex items-center justify-center h-5 px-1.5 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
+                {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}K
+              </kbd>
             </div>
-          ) : isEmptyState ? (
-            /* Empty state: recents + right now */
-            hasAnyResults ? (
-              <>
-                {renderTaskSection("Recent", recentResults)}
-                {renderStatSection("Right now", rightNowStats)}
-              </>
-            ) : (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                Type to search tasks or <kbd className="font-mono">&gt;</kbd> for commands
-              </div>
-            )
-          ) : isCommandMode ? (
-            /* Command mode: commands grouped by category */
-            renderCommandsByCategory(commandResults)
-          ) : (
-            /* Search mode: tasks + commands + create fallthrough */
-            <>
-              {renderTaskSection("Tasks", grouped.taskGroup)}
-              {renderTaskSection("Thoughts", grouped.thoughtGroup)}
-              {renderTaskSection("Completed", grouped.completedGroup)}
-              {hasCommandResults && searchQuery && renderCommandSection("Actions", commandResults)}
-              {renderCreateSection()}
-            </>
-          )}
-        </div>
 
-        {/* Footer hint */}
-        {hasAnyResults && (
-          <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground flex items-center gap-3">
-            <span>
-              <kbd className="font-mono">&uarr;&darr;</kbd> navigate
-            </span>
-            <span>
-              <kbd className="font-mono">&crarr;</kbd> {isCommandMode ? "run" : "open"}
-            </span>
-            {showCreate && !isCommandMode && !isEmptyState && (
-              <span>
-                <kbd className="font-mono">
-                  {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}↵
-                </kbd>{" "}
-                thought
-              </span>
+            {/* Results */}
+            <div ref={listRef} className="max-h-[50vh] overflow-y-auto">
+              {showNoResults ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  {isCommandMode ? "No commands found" : "No results found"}
+                </div>
+              ) : isEmptyState ? (
+                /* Empty state: recents + right now */
+                hasAnyResults ? (
+                  <>
+                    {renderTaskSection("Recent", recentResults)}
+                    {renderStatSection("Right now", rightNowStats)}
+                  </>
+                ) : (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    Type to search tasks or <kbd className="font-mono">&gt;</kbd> for commands
+                  </div>
+                )
+              ) : isCommandMode ? (
+                /* Command mode: commands grouped by category */
+                renderCommandsByCategory(commandResults)
+              ) : (
+                /* Search mode: tasks + commands + create fallthrough */
+                <>
+                  {renderTaskSection("Tasks", grouped.taskGroup)}
+                  {renderTaskSection("Thoughts", grouped.thoughtGroup)}
+                  {renderTaskSection("Completed", grouped.completedGroup)}
+                  {hasCommandResults &&
+                    searchQuery &&
+                    renderCommandSection("Actions", commandResults)}
+                  {renderCreateSection()}
+                </>
+              )}
+            </div>
+
+            {/* Footer hint */}
+            {hasAnyResults && (
+              <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground flex items-center gap-3">
+                <span>
+                  <kbd className="font-mono">&uarr;&darr;</kbd> navigate
+                </span>
+                <span>
+                  <kbd className="font-mono">&crarr;</kbd> {isCommandMode ? "run" : "open"}
+                </span>
+                {hasTaskItems && !isCommandMode && (
+                  <span>
+                    <kbd className="font-mono">tab</kbd> actions
+                  </span>
+                )}
+                {showCreate && !isCommandMode && !isEmptyState && (
+                  <span>
+                    <kbd className="font-mono">
+                      {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}↵
+                    </kbd>{" "}
+                    thought
+                  </span>
+                )}
+                <span>
+                  <kbd className="font-mono">esc</kbd> close
+                </span>
+                {!isCommandMode && (
+                  <span className="ml-auto">
+                    <kbd className="font-mono">&gt;</kbd> commands
+                  </span>
+                )}
+              </div>
             )}
-            <span>
-              <kbd className="font-mono">esc</kbd> close
-            </span>
-            {!isCommandMode && (
-              <span className="ml-auto">
-                <kbd className="font-mono">&gt;</kbd> commands
-              </span>
-            )}
-          </div>
+          </>
         )}
       </DialogContent>
     </Dialog>
