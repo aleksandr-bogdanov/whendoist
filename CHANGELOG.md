@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.12 — 2026-03-03
+
+### Fix: Visual consistency, performance, and accessibility polish (audit #9, #13, #15, #16, #17, #19, #20)
+
+- Shift+Click range selection now crosses parent/subtask boundaries — unified flat orderedIds includes expanded subtasks in display order
+- Batch drag overlay says "items" instead of "tasks" when selection contains both tasks and instances
+- Lasso selection auto-scrolls when pointer approaches top/bottom edge of the scroll container
+- Batch stack-drop warns and skips items that would overflow past 23:00 instead of silently clamping to midnight
+- Multi-select ring takes priority over the just-updated pulse animation
+- Action bar buttons have `aria-label` and `title` for screen reader accessibility on mobile
+- Lasso hit-testing caches card positions at start, throttles to rAF, and skips redundant store updates
+
+---
+
 ## v0.56.11 — 2026-03-03
 
 ### Fix: Batch operation correctness (audit #2, #4, #7, #10, #12, #22)

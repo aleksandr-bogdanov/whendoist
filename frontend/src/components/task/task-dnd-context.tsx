@@ -88,6 +88,8 @@ export interface DragState {
   isBatchDrag: boolean;
   /** Number of OTHER selected items (excluding the anchor) */
   batchCount: number;
+  /** Whether the batch selection includes instances (for label: "items" vs "tasks") */
+  batchHasInstances: boolean;
 }
 
 interface TaskDndContextProps {
@@ -197,6 +199,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     overType: null,
     isBatchDrag: false,
     batchCount: 0,
+    batchHasInstances: false,
   });
 
   // Sensors: pointer for mouse, touch with delay to avoid conflicts with swipe
@@ -281,6 +284,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       const selectedIds = useSelectionStore.getState().selectedIds;
       let isBatch = false;
       let batchCount = 0;
+      let batchHasInstances = false;
       if (selectedIds.size > 1) {
         const selKey = isInstance
           ? instanceSelectionId(Number.parseInt(activeIdStr.replace("instance-", ""), 10))
@@ -288,6 +292,15 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         if (selectedIds.has(selKey)) {
           isBatch = true;
           batchCount = selectedIds.size - 1; // exclude the anchor
+          // Check if selection mixes tasks and instances (for overlay label)
+          let hasTasks = false;
+          let hasInst = false;
+          for (const id of selectedIds) {
+            if (id.startsWith("task-")) hasTasks = true;
+            else if (id.startsWith("instance-")) hasInst = true;
+            if (hasTasks && hasInst) break;
+          }
+          batchHasInstances = hasTasks && hasInst;
         }
       }
 
@@ -299,6 +312,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         overType: null,
         isBatchDrag: isBatch,
         batchCount,
+        batchHasInstances,
       });
     },
     [findTask],
@@ -652,6 +666,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       // For stack drops, track the running time offset (5-min gaps per task duration)
       let stackMinutes = dropTime ? timeToMinutes(dropTime) : 0;
       const STACK_GAP_MINUTES = 5;
+      let stackOverflowCount = 0;
 
       for (const item of batchItems) {
         if (isAnytimeDrop) {
@@ -673,7 +688,12 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           }
         } else if (isStackDrop) {
           // Task-list-to-calendar: stack with 5-min gaps (like plan-my-day placement)
-          const stackTime = minutesToTime(Math.min(stackMinutes, 1439));
+          // Skip items that would start at or after 23:00 (1380 minutes)
+          if (stackMinutes >= 1380) {
+            stackOverflowCount++;
+            continue;
+          }
+          const stackTime = minutesToTime(stackMinutes);
           if (item.type === "task") {
             taskUpdates.push({ id: item.id, date: dropDate, time: stackTime, title: item.title });
           } else {
@@ -697,6 +717,15 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             instanceUpdates.push({ id: item.id, datetime: newDatetime, title: item.title });
           }
         }
+      }
+
+      // ── Midnight overflow warning ──
+      if (stackOverflowCount > 0) {
+        const scheduled = taskUpdates.length + instanceUpdates.length;
+        toast.warning(
+          `Only ${scheduled} of ${scheduled + stackOverflowCount} items fit before midnight — ${stackOverflowCount} left unscheduled`,
+          { id: "batch-overflow" },
+        );
       }
 
       // ── Optimistic cache updates ──
@@ -840,6 +869,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         overType: null,
         isBatchDrag: false,
         batchCount: 0,
+        batchHasInstances: false,
       });
 
       if (!over || !active) return;
@@ -1460,6 +1490,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       overType: null,
       isBatchDrag: false,
       batchCount: 0,
+      batchHasInstances: false,
     });
   }, []);
 
@@ -1549,6 +1580,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             <BatchDragOverlay
               anchorTask={dragState.activeTask}
               additionalCount={dragState.batchCount}
+              hasInstances={dragState.batchHasInstances}
             />
           </div>
         ) : dragState.isBatchDrag && dragState.activeInstance ? (
@@ -1561,6 +1593,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 } as unknown as TaskResponse
               }
               additionalCount={dragState.batchCount}
+              hasInstances={dragState.batchHasInstances}
             />
           </div>
         ) : dragState.activeTask ? (

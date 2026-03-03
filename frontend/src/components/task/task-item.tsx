@@ -634,7 +634,7 @@ export function TaskItem({
                   isMultiSelected && "ring-inset ring-2 ring-primary bg-primary/5",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
-                  isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
+                  isJustUpdated && !isMultiSelected && "ring-2 ring-primary/30 animate-pulse",
                   isReparentTarget && "bg-[#6D5EF6]/8 shadow-[-4px_0_12px_rgba(109,94,246,0.15)]",
                 )}
                 onClickCapture={(e) => {
@@ -1019,6 +1019,7 @@ export function TaskItem({
               depth={depth + 1}
               onSelect={onSelect}
               onEdit={onEdit}
+              orderedIds={orderedIds}
             />
           </motion.div>
         )}
@@ -1033,21 +1034,24 @@ interface SubtaskTreeProps {
   depth: number;
   onSelect?: (taskId: number) => void;
   onEdit?: (task: TaskResponse) => void;
+  /** Unified orderedIds from the parent list — enables cross-boundary Shift+Click */
+  orderedIds?: string[];
 }
 
-function SubtaskTree({ subtasks, parentTask, depth, onSelect, onEdit }: SubtaskTreeProps) {
+function SubtaskTree({
+  subtasks,
+  parentTask,
+  depth,
+  onSelect,
+  onEdit,
+  orderedIds,
+}: SubtaskTreeProps) {
   const { hideCompletedSubtasks } = useUIStore();
   const isHidingCompleted = hideCompletedSubtasks.has(parentTask.id);
 
   const visibleSubtasks = isHidingCompleted
     ? subtasks.filter((st) => st.status !== "completed")
     : subtasks;
-
-  // Local orderedIds for Shift+Click range selection within this subtask tree
-  const orderedIds = useMemo(
-    () => visibleSubtasks.map((st) => taskSelectionId(st.id)),
-    [visibleSubtasks],
-  );
 
   const canAdd =
     !parentTask.is_recurring && parentTask.status !== "completed" && !parentTask.completed_at;

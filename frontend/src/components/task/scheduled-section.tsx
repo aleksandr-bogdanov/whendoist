@@ -113,21 +113,28 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
     return result;
   }, [overdueGroups, recurringWithPastPending]);
 
-  // Ordered selection IDs for Shift+Click range selection (flattened across all scheduled groups)
+  // Ordered selection IDs for Shift+Click range — includes expanded subtasks in display order
+  const { expandedSubtasks, hideCompletedSubtasks } = useUIStore();
   const orderedIds = useMemo(() => {
     const ids: string[] = [];
-    for (const group of filteredOverdueGroups) {
-      for (const task of group.tasks) {
-        ids.push(taskSelectionId(task.id));
+    const addTaskWithSubtasks = (task: TaskResponse) => {
+      ids.push(taskSelectionId(task.id));
+      if (expandedSubtasks.has(task.id) && task.subtasks?.length) {
+        const hidingCompleted = hideCompletedSubtasks.has(task.id);
+        for (const st of task.subtasks) {
+          if (hidingCompleted && st.status === "completed") continue;
+          ids.push(taskSelectionId(st.id));
+        }
       }
+    };
+    for (const group of filteredOverdueGroups) {
+      for (const task of group.tasks) addTaskWithSubtasks(task);
     }
     for (const group of upcomingGroups) {
-      for (const task of group.tasks) {
-        ids.push(taskSelectionId(task.id));
-      }
+      for (const task of group.tasks) addTaskWithSubtasks(task);
     }
     return ids;
-  }, [filteredOverdueGroups, upcomingGroups]);
+  }, [filteredOverdueGroups, upcomingGroups, expandedSubtasks, hideCompletedSubtasks]);
 
   if (tasks.length === 0) return null;
 
