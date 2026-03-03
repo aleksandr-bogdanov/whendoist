@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.5 — 2026-03-03
+
+### Feat: Batch drag shows phantom shadows for all selected tasks
+
+- When batch-dragging multiple tasks on the calendar, phantom preview cards now appear for **every** selected task — not just the anchor
+- Each phantom is positioned according to its relative spacing from the anchor, so you can see exactly where all tasks will land before dropping
+- Anchor phantom keeps the existing strong styling; secondary phantoms use a subtler opacity for visual hierarchy
+- Extracted shared `applyDelta` / time math to `frontend/src/lib/batch-drag-utils.ts` — used by both the phantom preview and the drop handler (single source of truth)
+- Batch items are resolved once on drag start and cached in a ref — no re-resolution on every pointer move frame
+
+---
+
 ## v0.56.4 — 2026-03-03
 
 ### Fix: ⌘+A now selects recurring instances & click-to-deselect on empty space

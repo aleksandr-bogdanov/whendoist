@@ -14,14 +14,23 @@ import {
   useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
 import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
+import { useDndState } from "@/components/task/task-dnd-context";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+  applyDelta,
+  type BatchItem,
+  daysBetween,
+  minutesToTime,
+  timeToMinutes,
+} from "@/lib/batch-drag-utils";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import {
+  addDays,
   CURRENT_DAY_HOURS,
   calculateExtendedOverlaps,
   durationToHeight,
@@ -40,6 +49,13 @@ import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/store
 import { CalendarEventCard } from "./calendar-event";
 import { LassoRect, useLasso } from "./lasso-selection";
 import { ScheduledTaskCard } from "./scheduled-task-card";
+
+interface PhantomItem {
+  offset: number;
+  height: number;
+  timeLabel: string;
+  isAnchor: boolean;
+}
 
 interface DayColumnProps {
   centerDate: string;
@@ -72,6 +88,7 @@ export function DayColumn({
   isPlanMode = false,
   onPlanExecute,
 }: DayColumnProps) {
+  const queryClient = useQueryClient();
   const columnRef = useRef<HTMLDivElement>(null);
   const isToday = centerDate === todayString();
   const totalHeight = EXTENDED_TOTAL_HOURS * hourHeight;
@@ -224,13 +241,136 @@ export function DayColumn({
     return () => document.removeEventListener("pointermove", handler);
   }, []);
 
-  // Phantom card for drag-to-schedule preview
-  const [phantomOffset, setPhantomOffset] = useState<number | null>(null);
-  const [phantomDuration, setPhantomDuration] = useState(30);
-  const [phantomTimeLabel, setPhantomTimeLabel] = useState("");
+  // Phantom cards for drag-to-schedule preview (supports batch)
+  const [phantomItems, setPhantomItems] = useState<PhantomItem[]>([]);
   const [isCalendarOver, setIsCalendarOver] = useState(false);
 
+  // Cache resolved batch items on drag start so onDragMove doesn't re-resolve on every frame
+  const batchItemsRef = useRef<{ items: BatchItem[]; anchorId: string } | null>(null);
+  const { isBatchDrag } = useDndState();
+
+  // Prev/next dates for this column (for filtering which phantoms land here)
+  const prevDate = useMemo(() => addDays(centerDate, -1), [centerDate]);
+  const nextDate = useMemo(() => addDays(centerDate, 1), [centerDate]);
+
+  /** Convert a date + "HH:MM:SS" time to a pixel offset within this column, or null if out of range */
+  const timeToColumnOffset = useCallback(
+    (date: string, time: string): number | null => {
+      const mins = timeToMinutes(time);
+      if (date === prevDate) {
+        // Only show if in the prev section (22:00–23:59)
+        const h = Math.floor(mins / 60);
+        if (h < PREV_DAY_START_HOUR) return null;
+        const sectionMinutes = (h - PREV_DAY_START_HOUR) * 60 + (mins % 60);
+        return (sectionMinutes / 60) * hourHeight;
+      }
+      if (date === centerDate) {
+        return ((PREV_DAY_HOURS * 60 + mins) / 60) * hourHeight;
+      }
+      if (date === nextDate) {
+        const h = Math.floor(mins / 60);
+        if (h >= NEXT_DAY_END_HOUR) return null;
+        return (((PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60 + mins) / 60) * hourHeight;
+      }
+      return null; // Different day entirely
+    },
+    [centerDate, prevDate, nextDate, hourHeight],
+  );
+
+  /** Look up duration for a task or instance by ID */
+  const getDuration = useCallback(
+    (activeIdStr: string): number => {
+      if (activeIdStr.startsWith("instance-")) {
+        const instanceId = Number.parseInt(activeIdStr.replace("instance-", ""), 10);
+        return instances.find((i) => i.id === instanceId)?.duration_minutes ?? 30;
+      }
+      const numericId = activeIdStr.startsWith("anytime-task-")
+        ? Number.parseInt(activeIdStr.replace("anytime-task-", ""), 10)
+        : activeIdStr.startsWith("scheduled-task-")
+          ? Number.parseInt(activeIdStr.replace("scheduled-task-", ""), 10)
+          : Number.parseInt(activeIdStr, 10);
+      return allTasksLookup.find((t) => t.id === numericId)?.duration_minutes ?? 30;
+    },
+    [instances, allTasksLookup],
+  );
+
+  /** Look up duration for a BatchItem by cache lookup */
+  const getBatchItemDuration = useCallback(
+    (item: BatchItem): number => {
+      if (item.type === "instance") {
+        return instances.find((i) => i.id === item.id)?.duration_minutes ?? 30;
+      }
+      return allTasksLookup.find((t) => t.id === item.id)?.duration_minutes ?? 30;
+    },
+    [instances, allTasksLookup],
+  );
+
+  /** Convert absolute offset minutes to display hour:minute */
+  const absMinutesToTimeLabel = useCallback((absMinutes: number): string => {
+    let hour: number;
+    let minutes: number;
+    if (absMinutes < PREV_DAY_HOURS * 60) {
+      hour = PREV_DAY_START_HOUR + Math.floor(absMinutes / 60);
+      minutes = absMinutes % 60;
+    } else if (absMinutes < (PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60) {
+      const sectionMin = absMinutes - PREV_DAY_HOURS * 60;
+      hour = Math.floor(sectionMin / 60);
+      minutes = sectionMin % 60;
+    } else {
+      const sectionMin = absMinutes - (PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60;
+      hour = Math.floor(sectionMin / 60);
+      minutes = sectionMin % 60;
+    }
+    return formatTime(Math.min(hour, 23), minutes);
+  }, []);
+
   useDndMonitor({
+    onDragStart(event) {
+      // Resolve batch items once at drag start (selection doesn't change mid-drag)
+      if (isBatchDrag) {
+        const selectedIds = useSelectionStore.getState().selectedIds;
+        const cachedTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey()) ?? [];
+        const cachedInstances =
+          queryClient.getQueryData<InstanceResponse[]>(
+            getListInstancesApiV1InstancesGetQueryKey(),
+          ) ?? [];
+
+        const items: BatchItem[] = [];
+        for (const selId of selectedIds) {
+          if (selId.startsWith("task-")) {
+            const numId = Number.parseInt(selId.replace("task-", ""), 10);
+            const t = cachedTasks.find((x) => x.id === numId);
+            if (!t) continue;
+            items.push({
+              type: "task",
+              id: numId,
+              date: t.scheduled_date,
+              time: t.scheduled_time,
+              title: t.title,
+            });
+          } else if (selId.startsWith("instance-")) {
+            const numId = Number.parseInt(selId.replace("instance-", ""), 10);
+            const inst = cachedInstances.find((x) => x.id === numId);
+            if (!inst) continue;
+            let instTime: string | null = null;
+            if (inst.scheduled_datetime) {
+              const dt = new Date(inst.scheduled_datetime);
+              instTime = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}:00`;
+            }
+            items.push({
+              type: "instance",
+              id: numId,
+              date: inst.instance_date,
+              time: instTime,
+              title: inst.task_title,
+            });
+          }
+        }
+        batchItemsRef.current = { items, anchorId: String(event.active.id) };
+      } else {
+        batchItemsRef.current = null;
+      }
+    },
     onDragMove(event) {
       const overId = event.over?.id ? String(event.over.id) : null;
       const isOurZone = overId?.startsWith("calendar-overlay-") && isActivePanel;
@@ -241,60 +381,125 @@ export function DayColumn({
         const pointerY = lastPointerRef.current.y;
         const offsetY = pointerY - rect.top;
 
-        // Snap to 15-min grid on the extended timeline
+        // Snap anchor to 15-min grid on the extended timeline
         const totalMinutes = (offsetY / hourHeight) * 60;
         const snappedMinutes = Math.round(totalMinutes / 15) * 15;
         const snappedOffset = (snappedMinutes / 60) * hourHeight;
-        setPhantomOffset(snappedOffset);
 
-        // Determine the display time based on absolute minutes
-        const absMinutes = snappedMinutes;
-        let hour: number;
-        let minutes: number;
-        if (absMinutes < PREV_DAY_HOURS * 60) {
-          // Prev section
-          hour = PREV_DAY_START_HOUR + Math.floor(absMinutes / 60);
-          minutes = absMinutes % 60;
-        } else if (absMinutes < (PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60) {
-          // Current section
-          const sectionMin = absMinutes - PREV_DAY_HOURS * 60;
-          hour = Math.floor(sectionMin / 60);
-          minutes = sectionMin % 60;
-        } else {
-          // Next section
-          const sectionMin = absMinutes - (PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60;
-          hour = Math.floor(sectionMin / 60);
-          minutes = sectionMin % 60;
-        }
-        setPhantomTimeLabel(formatTime(Math.min(hour, 23), minutes));
-
-        // Get the dragged item's duration — parse ID to handle prefixed IDs
+        const anchorTimeLabel = absMinutesToTimeLabel(snappedMinutes);
         const activeIdStr = String(event.active.id);
-        if (activeIdStr.startsWith("instance-")) {
-          const instanceId = Number.parseInt(activeIdStr.replace("instance-", ""), 10);
-          const draggedInstance = instances.find((i) => i.id === instanceId);
-          setPhantomDuration(draggedInstance?.duration_minutes ?? 30);
+
+        // Determine the drop date based on which section the pointer is in
+        let dropDate: string;
+        let dropTimeMinutes: number;
+        if (snappedMinutes < PREV_DAY_HOURS * 60) {
+          dropDate = prevDate;
+          dropTimeMinutes = PREV_DAY_START_HOUR * 60 + snappedMinutes;
+        } else if (snappedMinutes < (PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60) {
+          dropDate = centerDate;
+          dropTimeMinutes = snappedMinutes - PREV_DAY_HOURS * 60;
         } else {
-          const numericId = activeIdStr.startsWith("anytime-task-")
-            ? Number.parseInt(activeIdStr.replace("anytime-task-", ""), 10)
-            : activeIdStr.startsWith("scheduled-task-")
-              ? Number.parseInt(activeIdStr.replace("scheduled-task-", ""), 10)
-              : Number.parseInt(activeIdStr, 10);
-          const draggedTask = allTasksLookup.find((t) => t.id === numericId);
-          setPhantomDuration(draggedTask?.duration_minutes ?? 30);
+          dropDate = nextDate;
+          dropTimeMinutes = snappedMinutes - (PREV_DAY_HOURS + CURRENT_DAY_HOURS) * 60;
+        }
+        const dropTime = minutesToTime(dropTimeMinutes);
+
+        // Batch drag: compute phantoms for all selected items
+        if (isBatchDrag && batchItemsRef.current) {
+          const { items, anchorId } = batchItemsRef.current;
+
+          // Find anchor item
+          let anchorItem: BatchItem | null = null;
+          const isAnchorInstance = anchorId.startsWith("instance-");
+          for (const item of items) {
+            if (isAnchorInstance && anchorId === `instance-${item.id}`) {
+              anchorItem = item;
+              break;
+            }
+            if (
+              !isAnchorInstance &&
+              (anchorId === `anytime-task-${item.id}` ||
+                anchorId === `scheduled-task-${item.id}` ||
+                anchorId === String(item.id))
+            ) {
+              anchorItem = item;
+              break;
+            }
+          }
+
+          if (anchorItem) {
+            const anchorDate = anchorItem.date ?? centerDate;
+            const dDays = daysBetween(anchorDate, dropDate);
+            let dMinutes = 0;
+            if (anchorItem.time) {
+              dMinutes = timeToMinutes(dropTime) - timeToMinutes(anchorItem.time);
+            }
+            const isStackDrop = !anchorItem.time; // anytime → calendar = stack mode
+
+            const newPhantoms: PhantomItem[] = [];
+            let stackMinutes = dropTimeMinutes;
+
+            for (const item of items) {
+              let itemDate: string;
+              let itemTime: string | null;
+              const isItemAnchor = item.type === anchorItem.type && item.id === anchorItem.id;
+
+              if (isStackDrop) {
+                // Stack with 5-min gaps (like plan-my-day)
+                itemDate = dropDate;
+                itemTime = minutesToTime(Math.min(stackMinutes, 1439));
+                const dur = getBatchItemDuration(item);
+                stackMinutes += dur + 5;
+              } else {
+                const result = applyDelta(item, dDays, dMinutes);
+                itemDate = result.date;
+                itemTime = result.time;
+              }
+
+              if (!itemTime) continue; // anytime items don't get phantoms
+
+              const px = timeToColumnOffset(itemDate, itemTime);
+              if (px === null) continue; // lands outside this column
+
+              const dur = getBatchItemDuration(item);
+              newPhantoms.push({
+                offset: px,
+                height: durationToHeight(dur, hourHeight),
+                timeLabel: formatTime(
+                  Math.floor(timeToMinutes(itemTime) / 60),
+                  timeToMinutes(itemTime) % 60,
+                ),
+                isAnchor: isItemAnchor,
+              });
+            }
+            setPhantomItems(newPhantoms);
+          }
+        } else {
+          // Single drag: one phantom card (original behavior)
+          const duration = getDuration(activeIdStr);
+          setPhantomItems([
+            {
+              offset: snappedOffset,
+              height: durationToHeight(duration, hourHeight),
+              timeLabel: anchorTimeLabel,
+              isAnchor: true,
+            },
+          ]);
         }
       } else if (!isOurZone) {
-        setPhantomOffset(null);
+        setPhantomItems([]);
         setIsCalendarOver(false);
       }
     },
     onDragEnd() {
-      setPhantomOffset(null);
+      setPhantomItems([]);
       setIsCalendarOver(false);
+      batchItemsRef.current = null;
     },
     onDragCancel() {
-      setPhantomOffset(null);
+      setPhantomItems([]);
       setIsCalendarOver(false);
+      batchItemsRef.current = null;
     },
   });
 
@@ -409,18 +614,23 @@ export function DayColumn({
           </div>
         )}
 
-        {/* Phantom card preview during drag-to-schedule */}
-        {phantomOffset !== null && (
+        {/* Phantom card previews during drag-to-schedule (batch-aware) */}
+        {phantomItems.map((phantom, i) => (
           <div
-            className="absolute left-0.5 right-0.5 rounded-md bg-primary/15 border border-dashed border-primary/40 pointer-events-none z-20 flex items-center px-1.5 text-[10px] text-primary font-medium"
+            key={`phantom-${i}-${phantom.offset}`}
+            className={
+              phantom.isAnchor
+                ? "absolute left-0.5 right-0.5 rounded-md bg-primary/15 border border-dashed border-primary/40 pointer-events-none z-20 flex items-center px-1.5 text-[10px] text-primary font-medium"
+                : "absolute left-0.5 right-0.5 rounded-md bg-primary/10 border border-dashed border-primary/30 pointer-events-none z-20 flex items-center px-1.5 text-[10px] text-primary/70 font-medium"
+            }
             style={{
-              top: `${phantomOffset}px`,
-              height: `${Math.max(durationToHeight(phantomDuration, hourHeight), 18)}px`,
+              top: `${phantom.offset}px`,
+              height: `${Math.max(phantom.height, 18)}px`,
             }}
           >
-            {phantomTimeLabel}
+            {phantom.timeLabel}
           </div>
-        )}
+        ))}
 
         {/* Plan mode selection overlay */}
         {isPlanMode && planSelection && (
@@ -553,6 +763,7 @@ function InstanceCard({
   const queryClient = useQueryClient();
   const selectionId = instanceSelectionId(instance.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
+  const hasAnySelection = useSelectionStore((s) => s.selectedIds.size > 0);
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
   const uncompleteInstance = useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
@@ -774,7 +985,7 @@ function InstanceCard({
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
-        {isMultiSelected ? (
+        {hasAnySelection ? (
           <BatchContextMenuItems />
         ) : (
           <>
