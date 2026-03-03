@@ -220,7 +220,7 @@ export function ScheduledTaskCard({
         <button
           ref={setNodeRef}
           type="button"
-          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-2 ring-primary z-[2]" : ""}`}
+          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-inset ring-2 ring-primary z-[2]" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${Math.max(item.height, 18)}px`,
@@ -253,7 +253,7 @@ export function ScheduledTaskCard({
           {isMultiSelected && (
             <>
               <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
-              <div className="absolute top-0.5 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
+              <div className="absolute top-1/2 -translate-y-1/2 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
                 <Check className="h-2 w-2" strokeWidth={3} />
               </div>
             </>
