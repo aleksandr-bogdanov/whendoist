@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.0 — 2026-03-03
+
+### Fix: Unified multi-select visuals across calendar and task list
+
+- Task list rows now show `ring-inset ring-2 ring-primary` when selected (matching calendar cards)
+- Selection checkbox uses filled circle (matching calendar badge and brand circle language)
+- Removed left-border-color override on selected task rows — impact color preserved in all states
+- Consistent visual signature everywhere: ring + filled circle checkbox + background tint
+
+---
+
 ## v0.55.99 — 2026-03-03
 
 ### Fix: Multi-select visual polish
