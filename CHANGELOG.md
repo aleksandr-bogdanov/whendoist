@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.7 — 2026-03-03
+
+### Fix: Increase database connection pool size to prevent cascading timeouts
+
+- Increased default `db_pool_size` from 2 to 5 and `db_max_overflow` from 3 to 10 — the previous limits allowed only 5 simultaneous connections, causing pool exhaustion under load
+- Added `db_pool_timeout` setting (default 10s) so requests fail fast on pool exhaustion instead of hanging for 30s and cascading into statement timeouts and PendingRollbackErrors
+- Closes #594, #595, #596, #597, #599, #600, #601, #602, #603, #604, #608, #609, #610, #611, #612
+
+---
+
 ## v0.56.6 — 2026-03-03
 
 ### Fix: Multi-select — Shift+Click in Scheduled/Completed sections, subtask selection, batch improvements
