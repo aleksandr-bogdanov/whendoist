@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { taskSelectionId } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskItem } from "./task-item";
 
@@ -46,6 +47,9 @@ export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedS
     cutoff.setDate(cutoff.getDate() - retentionDays);
     return sorted.filter((t) => t.completed_at && new Date(t.completed_at) >= cutoff);
   }, [tasks, retentionDays]);
+
+  // Ordered selection IDs for Shift+Click range selection
+  const orderedIds = useMemo(() => filtered.map((t) => taskSelectionId(t.id)), [filtered]);
 
   // Hide only when there are no completed tasks at all — never hide just because
   // the retention filter is narrow, otherwise the user can't change the filter back
@@ -121,7 +125,12 @@ export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedS
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                <TaskItem
+                  task={task}
+                  onSelect={onSelectTask}
+                  onEdit={onEditTask}
+                  orderedIds={orderedIds}
+                />
               </motion.div>
             ))}
           </AnimatePresence>

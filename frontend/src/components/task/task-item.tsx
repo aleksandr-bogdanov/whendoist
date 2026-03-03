@@ -17,7 +17,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useMemo, useState } from "react";
+import { type MouseEvent, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { InstanceResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 import {
@@ -111,6 +111,7 @@ export function TaskItem({
   const isSelected = selectedTaskId === task.id;
   const multiSelectionId = taskSelectionId(task.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(multiSelectionId));
+  const hasAnySelection = useSelectionStore((s) => s.selectedIds.size > 0);
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
   const isExpanded = expandedSubtasks.has(task.id);
@@ -965,7 +966,7 @@ export function TaskItem({
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="min-w-[140px]">
-          {isMultiSelected ? <BatchContextMenuItems /> : contextMenuItems}
+          {hasAnySelection ? <BatchContextMenuItems /> : contextMenuItems}
         </ContextMenuContent>
       </ContextMenu>
 
@@ -1043,6 +1044,12 @@ function SubtaskTree({ subtasks, parentTask, depth, onSelect, onEdit }: SubtaskT
     ? subtasks.filter((st) => st.status !== "completed")
     : subtasks;
 
+  // Local orderedIds for Shift+Click range selection within this subtask tree
+  const orderedIds = useMemo(
+    () => visibleSubtasks.map((st) => taskSelectionId(st.id)),
+    [visibleSubtasks],
+  );
+
   const canAdd =
     !parentTask.is_recurring && parentTask.status !== "completed" && !parentTask.completed_at;
 
@@ -1056,6 +1063,7 @@ function SubtaskTree({ subtasks, parentTask, depth, onSelect, onEdit }: SubtaskT
           depth={depth}
           onSelect={onSelect}
           onEdit={onEdit}
+          orderedIds={orderedIds}
         />
       ))}
       {canAdd && <SubtaskGhostRow parentTask={parentTask} depth={depth} />}
@@ -1069,10 +1077,14 @@ interface SubtaskItemProps {
   depth: number;
   onSelect?: (taskId: number) => void;
   onEdit?: (task: TaskResponse) => void;
+  /** Ordered selection IDs for Shift+Click range selection within this subtask tree */
+  orderedIds?: string[];
 }
 
-function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItemProps) {
+function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }: SubtaskItemProps) {
   const { selectedTaskId, selectTask } = useUIStore();
+  const multiSelectionId = taskSelectionId(subtask.id);
+  const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(multiSelectionId));
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
@@ -1224,9 +1236,28 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
                 "group flex items-center gap-[var(--col-gap)] py-1 transition-colors border-b border-border/20 cursor-grab active:cursor-grabbing",
                 "hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
                 isSelected && "bg-[rgba(109,94,246,0.08)]",
+                isMultiSelected && "ring-inset ring-2 ring-primary bg-primary/5",
                 isCompleted && "opacity-60",
                 isDragging && "opacity-50",
               )}
+              onClickCapture={(e: MouseEvent) => {
+                if (e.shiftKey) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const additive = e.metaKey || e.ctrlKey;
+                  useSelectionStore
+                    .getState()
+                    .selectRange(multiSelectionId, orderedIds ?? [], additive, "tasklist");
+                  return;
+                }
+                if (e.metaKey || e.ctrlKey) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  useSelectionStore.getState().toggle(multiSelectionId, "tasklist");
+                  return;
+                }
+                useSelectionStore.getState().clear();
+              }}
               style={{
                 marginLeft: `${depth * 24}px`,
                 paddingLeft: 8,
@@ -1234,7 +1265,9 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit }: SubtaskItem
                 borderLeftColor: impactColor,
                 borderLeftStyle: "solid",
                 borderRadius: "4px 0 0 4px",
-                backgroundColor: IMPACT_WASHES[subtask.impact] ?? IMPACT_WASHES[4],
+                backgroundColor: isMultiSelected
+                  ? undefined
+                  : (IMPACT_WASHES[subtask.impact] ?? IMPACT_WASHES[4]),
               }}
               {...listeners}
               {...attributes}

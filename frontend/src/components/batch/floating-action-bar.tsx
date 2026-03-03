@@ -1,15 +1,28 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarX2, Check, FastForward, Pencil, Trash2, Undo2, X } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarX2,
+  Check,
+  FastForward,
+  Pencil,
+  Trash2,
+  Undo2,
+  X,
+} from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { BatchEditForm } from "@/components/batch/batch-edit-popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   batchDelete,
+  batchReschedule,
+  batchRescheduleInstances,
   batchSkipInstances,
   batchToggleComplete,
   batchToggleCompleteInstances,
   batchUnschedule,
   batchUnscheduleInstances,
+  findPendingInstancesForTasks,
 } from "@/lib/batch-mutations";
 import { cn } from "@/lib/utils";
 import { resolveSelection, useSelectionStore } from "@/stores/selection-store";
@@ -64,8 +77,9 @@ export function FloatingActionBar() {
     return () => clearTimeout(timer);
   }, [count]);
 
-  /* ---- Batch edit popover state ---- */
+  /* ---- Batch edit & reschedule popover state ---- */
   const [editOpen, setEditOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
 
   // Allow context menu to open the edit popover via custom event
   useEffect(() => {
@@ -74,9 +88,12 @@ export function FloatingActionBar() {
     return () => window.removeEventListener("open-batch-edit", handler);
   }, []);
 
-  // Close popover when selection is cleared
+  // Close popovers when selection is cleared
   useEffect(() => {
-    if (count === 0) setEditOpen(false);
+    if (count === 0) {
+      setEditOpen(false);
+      setRescheduleOpen(false);
+    }
   }, [count]);
 
   /* ---- Handlers (fire-and-forget: optimistic update + toast shown instantly) ---- */
@@ -88,13 +105,22 @@ export function FloatingActionBar() {
     const instanceTargets = completing
       ? instances.filter((i) => i.status !== "completed")
       : instances;
-    batchToggleComplete(queryClient, taskTargets, completing);
-    batchToggleCompleteInstances(queryClient, instanceTargets, completing);
+    // Recurring tasks in the task list need their pending instances completed, not the parent
+    const nonRecurring = taskTargets.filter((t) => !t.is_recurring);
+    const recurring = taskTargets.filter((t) => t.is_recurring);
+    const pendingInstances = findPendingInstancesForTasks(queryClient, recurring);
+    batchToggleComplete(queryClient, nonRecurring, completing);
+    batchToggleCompleteInstances(
+      queryClient,
+      [...instanceTargets, ...pendingInstances],
+      completing,
+    );
     clear();
   }, [tasks, instances, allCompleted, queryClient, clear]);
 
   const handleUnschedule = useCallback(() => {
-    const scheduledTasks = tasks.filter((t) => t.scheduled_date != null);
+    // Recurring tasks can't be unscheduled (schedule is part of recurrence), filter them out
+    const scheduledTasks = tasks.filter((t) => t.scheduled_date != null && !t.is_recurring);
     const scheduledInstances = instances.filter((i) => i.scheduled_datetime != null);
     batchUnschedule(queryClient, scheduledTasks);
     batchUnscheduleInstances(queryClient, scheduledInstances);
@@ -105,6 +131,23 @@ export function FloatingActionBar() {
     batchDelete(queryClient, tasks);
     clear();
   }, [tasks, queryClient, clear]);
+
+  const handleReschedule = useCallback(
+    (date: Date | undefined) => {
+      if (!date) return;
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      // Recurring tasks can't be rescheduled at the parent level, filter them out
+      const nonRecurringTasks = tasks.filter((t) => !t.is_recurring);
+      batchReschedule(queryClient, nonRecurringTasks, dateStr);
+      batchRescheduleInstances(queryClient, instances, dateStr);
+      setRescheduleOpen(false);
+      clear();
+    },
+    [tasks, instances, queryClient, clear],
+  );
 
   const handleSkip = useCallback(() => {
     batchSkipInstances(queryClient, instances);
@@ -149,6 +192,22 @@ export function FloatingActionBar() {
           label={allCompleted ? "Reopen" : "Complete"}
           onClick={handleComplete}
         />
+
+        {/* Reschedule — date picker popover */}
+        {!allCompleted && (
+          <Popover open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
+            <PopoverTrigger asChild>
+              <ActionButton
+                icon={CalendarDays}
+                label="Reschedule"
+                onClick={() => setRescheduleOpen(true)}
+              />
+            </PopoverTrigger>
+            <PopoverContent side="top" avoidCollisions sideOffset={8} className="w-auto p-0">
+              <Calendar mode="single" onSelect={handleReschedule} defaultMonth={new Date()} />
+            </PopoverContent>
+          </Popover>
+        )}
 
         {/* Unschedule — hidden if all completed or none scheduled */}
         {!allCompleted && anyScheduled && (

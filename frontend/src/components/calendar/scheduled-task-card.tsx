@@ -57,6 +57,7 @@ export function ScheduledTaskCard({
 
   const selectionId = taskSelectionId(taskId);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
+  const hasAnySelection = useSelectionStore((s) => s.selectedIds.size > 0);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `scheduled-task-${taskId}`,
@@ -281,7 +282,7 @@ export function ScheduledTaskCard({
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
-        {isMultiSelected ? (
+        {hasAnySelection ? (
           <BatchContextMenuItems />
         ) : (
           <>

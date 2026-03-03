@@ -18,6 +18,7 @@ import {
   batchToggleCompleteInstances,
   batchUnschedule,
   batchUnscheduleInstances,
+  findPendingInstancesForTasks,
 } from "@/lib/batch-mutations";
 import { resolveSelection, useSelectionStore } from "@/stores/selection-store";
 
@@ -70,21 +71,32 @@ export function BatchContextMenuItems() {
     const instanceTargets = completing
       ? instances.filter((i) => i.status !== "completed")
       : instances;
-    batchToggleComplete(queryClient, taskTargets, completing);
-    batchToggleCompleteInstances(queryClient, instanceTargets, completing);
+    // Recurring tasks in the task list need their pending instances completed, not the parent
+    const nonRecurring = taskTargets.filter((t) => !t.is_recurring);
+    const recurring = taskTargets.filter((t) => t.is_recurring);
+    const pendingInstances = findPendingInstancesForTasks(queryClient, recurring);
+    batchToggleComplete(queryClient, nonRecurring, completing);
+    batchToggleCompleteInstances(
+      queryClient,
+      [...instanceTargets, ...pendingInstances],
+      completing,
+    );
     clear();
   }, [tasks, instances, allCompleted, queryClient, clear]);
 
   const handleReopen = useCallback(() => {
     const completedTasks = tasks.filter((t) => t.status === "completed" || !!t.completed_at);
     const completedInstances = instances.filter((i) => i.status === "completed");
-    batchToggleComplete(queryClient, completedTasks, false);
+    // Recurring tasks: reopen doesn't apply to parent (it was never completed), skip them
+    const nonRecurring = completedTasks.filter((t) => !t.is_recurring);
+    batchToggleComplete(queryClient, nonRecurring, false);
     batchToggleCompleteInstances(queryClient, completedInstances, false);
     clear();
   }, [tasks, instances, queryClient, clear]);
 
   const handleUnschedule = useCallback(() => {
-    const scheduledTasks = tasks.filter((t) => t.scheduled_date != null);
+    // Recurring tasks can't be unscheduled (schedule is part of recurrence), filter them out
+    const scheduledTasks = tasks.filter((t) => t.scheduled_date != null && !t.is_recurring);
     const scheduledInstances = instances.filter((i) => i.scheduled_datetime != null);
     batchUnschedule(queryClient, scheduledTasks);
     batchUnscheduleInstances(queryClient, scheduledInstances);
@@ -98,7 +110,9 @@ export function BatchContextMenuItems() {
       const mm = String(date.getMonth() + 1).padStart(2, "0");
       const dd = String(date.getDate()).padStart(2, "0");
       const dateStr = `${yyyy}-${mm}-${dd}`;
-      batchReschedule(queryClient, tasks, dateStr);
+      // Recurring tasks can't be rescheduled at the parent level, filter them out
+      const nonRecurringTasks = tasks.filter((t) => !t.is_recurring);
+      batchReschedule(queryClient, nonRecurringTasks, dateStr);
       batchRescheduleInstances(queryClient, instances, dateStr);
       clear();
       dismissContextMenu();
