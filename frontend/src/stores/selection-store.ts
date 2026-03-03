@@ -158,10 +158,18 @@ export function resolveSelection(
 }
 
 // Global Escape key listener — clears multi-selection
+// Radix overlays (popovers, dialogs, context menus) use capture-phase Escape
+// handlers that call event.preventDefault(). We check defaultPrevented so that
+// pressing Escape to close a Radix overlay doesn't also clear the selection.
 if (typeof document !== "undefined") {
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && useSelectionStore.getState().selectedIds.size > 0) {
-      useSelectionStore.getState().clear();
-    }
+    if (e.key !== "Escape") return;
+    if (useSelectionStore.getState().selectedIds.size === 0) return;
+    // Radix's DismissableLayer fires in capture phase and calls preventDefault()
+    if (e.defaultPrevented) return;
+    // Safety net: skip if any Radix-managed overlay is still open in the DOM
+    if (document.querySelector("[data-radix-popper-content-wrapper], [data-radix-menu-content]"))
+      return;
+    useSelectionStore.getState().clear();
   });
 }

@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.8 — 2026-03-03
+
+### Fix: Escape collision with Radix overlays clears multi-selection
+
+- Global Escape handler now checks `e.defaultPrevented` and open Radix overlays before clearing selection — pressing Escape to close a popover, dialog, or context menu no longer wipes the selection
+- `dismissContextMenu()` targets the Radix content element directly instead of dispatching a synthetic Escape on `document`, preventing fragile double-clear
+
+---
+
 ## v0.56.7 — 2026-03-03
 
 ### Fix: Increase database connection pool size to prevent cascading timeouts
