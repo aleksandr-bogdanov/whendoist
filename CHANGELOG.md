@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.14 — 2026-03-03
+
+### Fix: Third-pass batch operations audit (4 findings)
+
+- Deduplicate instances when completing a mix of recurring parents and their calendar instances — prevents double-toggle that cancels out the action
+- SubtaskItem context menu now shows batch actions when the subtask is part of a multi-selection (was always showing single-item menu)
+- Command palette batch delete now shows the same confirmation dialog as FAB and context menu for large deletions
+- Collapsing a domain group clears the multi-selection so hidden tasks can't be acted on blindly
+
+---
+
 ## v0.56.13 — 2026-03-03
 
 ### Fix: Second-pass batch operations audit (6 findings)

@@ -1392,7 +1392,9 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
           </DropdownMenu>
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent className="min-w-[140px]">{contextMenuItems}</ContextMenuContent>
+      <ContextMenuContent className="min-w-[140px]">
+        {isMultiSelected ? <BatchContextMenuItems /> : contextMenuItems}
+      </ContextMenuContent>
     </ContextMenu>
   );
 }

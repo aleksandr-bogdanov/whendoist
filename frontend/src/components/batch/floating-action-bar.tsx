@@ -19,6 +19,7 @@ import {
   batchSkipInstances,
   batchToggleCompleteAll,
   batchUnscheduleAll,
+  deduplicateInstances,
   findPendingInstancesForTasks,
 } from "@/lib/batch-mutations";
 import { cn } from "@/lib/utils";
@@ -106,12 +107,9 @@ export function FloatingActionBar() {
     const nonRecurring = taskTargets.filter((t) => !t.is_recurring);
     const recurring = taskTargets.filter((t) => t.is_recurring);
     const pendingInstances = findPendingInstancesForTasks(queryClient, recurring);
-    batchToggleCompleteAll(
-      queryClient,
-      nonRecurring,
-      [...instanceTargets, ...pendingInstances],
-      completing,
-    );
+    // Deduplicate: user may have selected both a recurring parent and its pending instance
+    const allInstances = deduplicateInstances([...instanceTargets, ...pendingInstances]);
+    batchToggleCompleteAll(queryClient, nonRecurring, allInstances, completing);
     clear();
   }, [tasks, instances, allCompleted, queryClient, clear]);
 

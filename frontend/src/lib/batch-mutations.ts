@@ -413,6 +413,25 @@ export function batchRescheduleInstances(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Instance deduplication helper                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Deduplicate an array of instances by ID.
+ * Needed when merging user-selected instances with auto-resolved pending
+ * instances for recurring tasks — the same instance can appear in both.
+ * Without dedup, toggle-based mutations fire twice and cancel out.
+ */
+export function deduplicateInstances(instances: InstanceResponse[]): InstanceResponse[] {
+  const seen = new Set<number>();
+  return instances.filter((i) => {
+    if (seen.has(i.id)) return false;
+    seen.add(i.id);
+    return true;
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /*  Helpers for recurring task handling in batch operations             */
 /* ------------------------------------------------------------------ */
 

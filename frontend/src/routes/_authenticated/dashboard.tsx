@@ -26,6 +26,7 @@ import { useShortcuts } from "@/hooks/use-shortcuts";
 import {
   batchDelete,
   batchToggleCompleteAll,
+  deduplicateInstances,
   findPendingInstancesForTasks,
 } from "@/lib/batch-mutations";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
@@ -125,11 +126,12 @@ function DashboardPage() {
     }
   }, [storeQuickAddOpen, setStoreQuickAddOpen]);
 
-  // Clear multi-selection when filters change (tasks may become invisible)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally fires on filter change only
+  // Clear multi-selection when filters change or domain groups collapse (tasks may become invisible)
+  const collapsedDomains = useUIStore((s) => s.collapsedDomains);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally fires on filter/visibility change only
   useEffect(() => {
     useSelectionStore.getState().clear();
-  }, [energyLevel, selectedDomainId]);
+  }, [energyLevel, selectedDomainId, collapsedDomains]);
 
   // Track whether any modal is open to suppress task shortcuts
   const isModalOpen = editorOpen || quickAddOpen || shortcutsHelpOpen;
@@ -473,12 +475,9 @@ function DashboardPage() {
             const nonRecurring = taskTargets.filter((t) => !t.is_recurring);
             const recurring = taskTargets.filter((t) => t.is_recurring);
             const pendingInstances = findPendingInstancesForTasks(queryClient, recurring);
-            batchToggleCompleteAll(
-              queryClient,
-              nonRecurring,
-              [...instanceTargets, ...pendingInstances],
-              completing,
-            );
+            // Deduplicate: user may have selected both a recurring parent and its pending instance
+            const allInstances = deduplicateInstances([...instanceTargets, ...pendingInstances]);
+            batchToggleCompleteAll(queryClient, nonRecurring, allInstances, completing);
             useSelectionStore.getState().clear();
           },
         },
