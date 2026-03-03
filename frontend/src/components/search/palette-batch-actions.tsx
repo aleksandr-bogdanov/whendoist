@@ -105,6 +105,12 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   }, [nonRecurring, pendingInstances, queryClient, onDone]);
 
   const handleDelete = useCallback(() => {
+    const subtaskCount = tasks.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
+    if (subtaskCount > 0) {
+      if (!window.confirm(`Delete ${tasks.length} tasks and ${subtaskCount} subtasks?`)) return;
+    } else if (tasks.length > 3) {
+      if (!window.confirm(`Delete ${tasks.length} tasks?`)) return;
+    }
     batchDelete(queryClient, tasks);
     onDone();
   }, [tasks, queryClient, onDone]);
