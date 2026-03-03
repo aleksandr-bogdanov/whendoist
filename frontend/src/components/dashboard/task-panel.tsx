@@ -14,6 +14,7 @@ import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { categorizeTasks, filterByEnergy, groupByDomain, sortTasks } from "@/lib/task-utils";
 import { useCryptoStore } from "@/stores/crypto-store";
+import { useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 import { EnergySelector } from "./energy-selector";
 import { PendingPastBanner } from "./pending-past-banner";
@@ -148,7 +149,18 @@ export function TaskPanel({ tasks, domains, isLoading, onNewTask, onEditTask }: 
       </div>
 
       {/* Task list */}
-      <div ref={pullRefreshRef} className="flex-1 min-h-0 flex flex-col relative">
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: passive background handler — Escape key already clears selection */}
+      <div
+        ref={pullRefreshRef}
+        className="flex-1 min-h-0 flex flex-col relative"
+        onClick={(e) => {
+          if (useSelectionStore.getState().selectedIds.size === 0) return;
+          if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+          const target = e.target as HTMLElement;
+          if (target.closest("button, a, input, textarea, select")) return;
+          useSelectionStore.getState().clear();
+        }}
+      >
         <div
           className="flex-1 min-h-0 overflow-y-auto relative sm:px-2 lg:px-4"
           data-task-scroll-area
