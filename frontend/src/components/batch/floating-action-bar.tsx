@@ -15,8 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   batchDelete,
-  batchReschedule,
-  batchRescheduleInstances,
+  batchRescheduleAll,
   batchSkipInstances,
   batchToggleCompleteAll,
   batchUnscheduleAll,
@@ -144,8 +143,7 @@ export function FloatingActionBar() {
       const dateStr = `${yyyy}-${mm}-${dd}`;
       // Recurring tasks can't be rescheduled at the parent level, filter them out
       const nonRecurringTasks = tasks.filter((t) => !t.is_recurring);
-      batchReschedule(queryClient, nonRecurringTasks, dateStr);
-      batchRescheduleInstances(queryClient, instances, dateStr);
+      batchRescheduleAll(queryClient, nonRecurringTasks, instances, dateStr);
       setRescheduleOpen(false);
       clear();
     },

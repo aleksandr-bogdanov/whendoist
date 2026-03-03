@@ -25,8 +25,7 @@ import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
 import {
   batchDelete,
-  batchToggleComplete,
-  batchToggleCompleteInstances,
+  batchToggleCompleteAll,
   findPendingInstancesForTasks,
 } from "@/lib/batch-mutations";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
@@ -474,9 +473,9 @@ function DashboardPage() {
             const nonRecurring = taskTargets.filter((t) => !t.is_recurring);
             const recurring = taskTargets.filter((t) => t.is_recurring);
             const pendingInstances = findPendingInstancesForTasks(queryClient, recurring);
-            batchToggleComplete(queryClient, nonRecurring, completing);
-            batchToggleCompleteInstances(
+            batchToggleCompleteAll(
               queryClient,
+              nonRecurring,
               [...instanceTargets, ...pendingInstances],
               completing,
             );

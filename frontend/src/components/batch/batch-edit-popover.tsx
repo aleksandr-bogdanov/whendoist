@@ -115,7 +115,15 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
     setTouched(new Set());
   }, [defaults]);
 
-  const hasChanges = touched.size > 0;
+  // Only enable Apply when at least one touched field has a meaningful (non-UNSET) value
+  const hasChanges = useMemo(() => {
+    if (touched.size === 0) return false;
+    if (touched.has("impact") && impact !== UNSET) return true;
+    if (touched.has("clarity") && clarity !== UNSET) return true;
+    if (touched.has("duration") && durationInput.trim() !== "") return true;
+    if (touched.has("domain") && domainId !== UNSET) return true;
+    return false;
+  }, [touched, impact, clarity, durationInput, domainId]);
 
   const handleApply = useCallback(() => {
     const fields: Record<string, unknown> = {};

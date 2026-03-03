@@ -16,12 +16,9 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   batchDelete,
   batchEdit,
-  batchReschedule,
-  batchRescheduleInstances,
-  batchToggleComplete,
-  batchToggleCompleteInstances,
-  batchUnschedule,
-  batchUnscheduleInstances,
+  batchRescheduleAll,
+  batchToggleCompleteAll,
+  batchUnscheduleAll,
   findPendingInstancesForTasks,
 } from "@/lib/batch-mutations";
 import { cn } from "@/lib/utils";
@@ -103,9 +100,7 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
 
   const handleComplete = useCallback(() => {
     const incomplete = nonRecurring.filter((t) => t.status !== "completed" && !t.completed_at);
-    if (incomplete.length > 0) batchToggleComplete(queryClient, incomplete, true);
-    if (pendingInstances.length > 0)
-      batchToggleCompleteInstances(queryClient, pendingInstances, true);
+    batchToggleCompleteAll(queryClient, incomplete, pendingInstances, true);
     onDone();
   }, [nonRecurring, pendingInstances, queryClient, onDone]);
 
@@ -116,9 +111,7 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
 
   const handleReschedule = useCallback(
     (dateStr: string) => {
-      if (nonRecurring.length > 0) batchReschedule(queryClient, nonRecurring, dateStr);
-      if (pendingInstances.length > 0)
-        batchRescheduleInstances(queryClient, pendingInstances, dateStr);
+      batchRescheduleAll(queryClient, nonRecurring, pendingInstances, dateStr);
       onDone();
     },
     [nonRecurring, pendingInstances, queryClient, onDone],
@@ -127,8 +120,7 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   const handleUnschedule = useCallback(() => {
     const scheduledTasks = nonRecurring.filter((t) => t.scheduled_date != null);
     const scheduledInstances = pendingInstances.filter((i) => i.scheduled_datetime != null);
-    if (scheduledTasks.length > 0) batchUnschedule(queryClient, scheduledTasks);
-    if (scheduledInstances.length > 0) batchUnscheduleInstances(queryClient, scheduledInstances);
+    batchUnscheduleAll(queryClient, scheduledTasks, scheduledInstances);
     onDone();
   }, [nonRecurring, pendingInstances, queryClient, onDone]);
 

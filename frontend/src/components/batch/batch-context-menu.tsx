@@ -11,8 +11,7 @@ import {
 } from "@/components/ui/context-menu";
 import {
   batchDelete,
-  batchReschedule,
-  batchRescheduleInstances,
+  batchRescheduleAll,
   batchSkipInstances,
   batchToggleCompleteAll,
   batchUnscheduleAll,
@@ -115,8 +114,7 @@ export function BatchContextMenuItems() {
       const dateStr = `${yyyy}-${mm}-${dd}`;
       // Recurring tasks can't be rescheduled at the parent level, filter them out
       const nonRecurringTasks = tasks.filter((t) => !t.is_recurring);
-      batchReschedule(queryClient, nonRecurringTasks, dateStr);
-      batchRescheduleInstances(queryClient, instances, dateStr);
+      batchRescheduleAll(queryClient, nonRecurringTasks, instances, dateStr);
       clear();
       dismissContextMenu();
     },

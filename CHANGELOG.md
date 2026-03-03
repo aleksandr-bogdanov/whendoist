@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.13 — 2026-03-03
+
+### Fix: Second-pass batch operations audit (6 findings)
+
+- Partial-failure toast now preserves the Undo button instead of silently dropping it when Sonner replaces the toast
+- Dashboard Cmd+Enter and command palette batch actions use composite helpers for single-toast behavior
+- Shift+Click range selection excludes tasks from collapsed domain groups (no invisible selections)
+- Lasso selection re-caches card positions after auto-scroll moves the container (no stale hit-testing)
+- Batch reschedule uses new `batchRescheduleAll` composite helper — single toast with single undo for mixed selections
+- Batch edit Apply button stays disabled when all touched fields resolve to "—" (no-op prevention)
+
+---
+
 ## v0.56.12 — 2026-03-03
 
 ### Fix: Visual consistency, performance, and accessibility polish (audit #9, #13, #15, #16, #17, #19, #20)
