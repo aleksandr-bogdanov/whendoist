@@ -17,7 +17,7 @@ import {
 import { dashboardTasksKey } from "@/lib/query-keys";
 
 /* ------------------------------------------------------------------ */
-/*  executeBatch — generic batch mutation with snapshot + undo          */
+/*  executeBatch — optimistic batch mutation with immediate toast       */
 /* ------------------------------------------------------------------ */
 
 interface ExecuteBatchOptions {
@@ -34,47 +34,34 @@ interface ExecuteBatchOptions {
   label: string;
 }
 
-export async function executeBatch({
+/**
+ * Fire-and-forget batch mutation: applies optimistic update, shows toast
+ * with undo immediately, then fires API calls in the background.
+ *
+ * Previously this was async and awaited all mutations before showing the
+ * toast — with many tasks this caused the floating action bar to hang
+ * and no feedback to appear.
+ */
+export function executeBatch({
   queryClient,
   tasks,
   applyOptimistic,
   mutateFn,
   undoFn,
   label,
-}: ExecuteBatchOptions): Promise<void> {
+}: ExecuteBatchOptions): void {
   if (tasks.length === 0) return;
 
   const cacheKey = dashboardTasksKey();
   const snapshot = queryClient.getQueryData<TaskResponse[]>(cacheKey);
 
-  // 1. Apply optimistic update
+  // 1. Apply optimistic update (instant)
   queryClient.setQueryData<TaskResponse[]>(cacheKey, (old) => (old ? applyOptimistic(old) : old));
 
-  // 2. Fire all mutations in parallel
-  const results = await Promise.allSettled(tasks.map(mutateFn));
-
-  const succeeded = results.filter((r) => r.status === "fulfilled").length;
-  const failed = results.filter((r) => r.status === "rejected").length;
-
-  // 3. All failed → full rollback
-  if (failed === tasks.length) {
-    queryClient.setQueryData(cacheKey, snapshot);
-    toast.error(`Failed to ${label.toLowerCase()} tasks`);
-    return;
-  }
-
-  // 4. Invalidate to reconcile with server
-  queryClient.invalidateQueries({ queryKey: cacheKey });
-
-  // 5. Build toast
+  // 2. Show toast with undo immediately
   const noun = tasks.length === 1 ? "task" : "tasks";
-  const message =
-    failed > 0
-      ? `${label} ${succeeded} of ${tasks.length} ${noun}. ${failed} failed.`
-      : `${label} ${succeeded} ${noun}`;
-
+  const message = `${label} ${tasks.length} ${noun}`;
   const toastId = `batch-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
-  const succeededTasks = tasks.filter((_, i) => results[i].status === "fulfilled");
 
   toast.success(message, {
     id: toastId,
@@ -83,12 +70,33 @@ export async function executeBatch({
       onClick: () => {
         // Restore snapshot optimistically
         if (snapshot) queryClient.setQueryData(cacheKey, snapshot);
-        // Fire reverse mutations for succeeded items
-        Promise.allSettled(succeededTasks.map(undoFn)).then(() => {
+        // Fire reverse mutations for all tasks
+        Promise.allSettled(tasks.map(undoFn)).then(() => {
           queryClient.invalidateQueries({ queryKey: cacheKey });
         });
       },
     },
+  });
+
+  // 3. Fire all mutations in parallel (background)
+  Promise.allSettled(tasks.map(mutateFn)).then((results) => {
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = tasks.length - succeeded;
+
+    if (failed === tasks.length) {
+      // All failed — rollback + replace toast with error
+      if (snapshot) queryClient.setQueryData(cacheKey, snapshot);
+      toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
+    } else if (failed > 0) {
+      // Partial failure — update toast
+      toast.warning(`${label} ${succeeded} of ${tasks.length} ${noun}. ${failed} failed.`, {
+        id: toastId,
+      });
+      queryClient.invalidateQueries({ queryKey: cacheKey });
+    } else {
+      // All succeeded — reconcile with server
+      queryClient.invalidateQueries({ queryKey: cacheKey });
+    }
   });
 }
 
@@ -104,7 +112,7 @@ export function batchToggleComplete(
 ) {
   const taskIds = new Set(tasks.map((t) => t.id));
 
-  return executeBatch({
+  executeBatch({
     queryClient,
     tasks,
     applyOptimistic: (cached) =>
@@ -127,7 +135,7 @@ export function batchToggleComplete(
 export function batchDelete(queryClient: QueryClient, tasks: TaskResponse[]) {
   const taskIds = new Set(tasks.map((t) => t.id));
 
-  return executeBatch({
+  executeBatch({
     queryClient,
     tasks,
     applyOptimistic: (cached) => cached.filter((t) => !taskIds.has(t.id)),
@@ -141,7 +149,7 @@ export function batchDelete(queryClient: QueryClient, tasks: TaskResponse[]) {
 export function batchUnschedule(queryClient: QueryClient, tasks: TaskResponse[]) {
   const taskIds = new Set(tasks.map((t) => t.id));
 
-  return executeBatch({
+  executeBatch({
     queryClient,
     tasks,
     applyOptimistic: (cached) =>
@@ -167,7 +175,7 @@ export function batchEdit(
 ) {
   const taskIds = new Set(tasks.map((t) => t.id));
 
-  return executeBatch({
+  executeBatch({
     queryClient,
     tasks,
     applyOptimistic: (cached) => cached.map((t) => (taskIds.has(t.id) ? { ...t, ...fields } : t)),
@@ -188,7 +196,7 @@ export function batchEdit(
 export function batchReschedule(queryClient: QueryClient, tasks: TaskResponse[], date: string) {
   const taskIds = new Set(tasks.map((t) => t.id));
 
-  return executeBatch({
+  executeBatch({
     queryClient,
     tasks,
     applyOptimistic: (cached) =>
@@ -213,48 +221,50 @@ function invalidateInstances(queryClient: QueryClient) {
 }
 
 /**
- * Execute a batch mutation on instances with toast + undo support.
- * Simpler than executeBatch since instance caches are keyed per date-range
- * and we just invalidate rather than doing fine-grained optimistic updates.
+ * Fire-and-forget batch mutation on instances with immediate toast + undo.
+ * Instance caches are keyed per date-range so we just invalidate rather
+ * than doing fine-grained optimistic updates.
  */
-async function executeInstanceBatch(
+function executeInstanceBatch(
   queryClient: QueryClient,
   instances: InstanceResponse[],
   mutateFn: (instance: InstanceResponse) => Promise<unknown>,
   undoFn: (instance: InstanceResponse) => Promise<unknown>,
   label: string,
-): Promise<void> {
+): void {
   if (instances.length === 0) return;
 
-  const results = await Promise.allSettled(instances.map(mutateFn));
-  const succeeded = results.filter((r) => r.status === "fulfilled").length;
-  const failed = results.filter((r) => r.status === "rejected").length;
-
-  if (failed === instances.length) {
-    toast.error(`Failed to ${label.toLowerCase()} instances`);
-    return;
-  }
-
-  invalidateInstances(queryClient);
-
+  // Show toast with undo immediately
   const noun = instances.length === 1 ? "instance" : "instances";
-  const message =
-    failed > 0
-      ? `${label} ${succeeded} of ${instances.length} ${noun}. ${failed} failed.`
-      : `${label} ${succeeded} ${noun}`;
-
-  const succeededInstances = instances.filter((_, i) => results[i].status === "fulfilled");
+  const message = `${label} ${instances.length} ${noun}`;
+  const toastId = `batch-instance-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
   toast.success(message, {
-    id: `batch-instance-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
+    id: toastId,
     action: {
       label: "Undo",
       onClick: () => {
-        Promise.allSettled(succeededInstances.map(undoFn)).then(() => {
+        Promise.allSettled(instances.map(undoFn)).then(() => {
           invalidateInstances(queryClient);
         });
       },
     },
+  });
+
+  // Fire mutations in background
+  Promise.allSettled(instances.map(mutateFn)).then((results) => {
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = instances.length - succeeded;
+
+    if (failed === instances.length) {
+      toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
+    } else if (failed > 0) {
+      toast.warning(`${label} ${succeeded} of ${instances.length} ${noun}. ${failed} failed.`, {
+        id: toastId,
+      });
+    }
+
+    invalidateInstances(queryClient);
   });
 }
 
@@ -264,7 +274,7 @@ export function batchToggleCompleteInstances(
   instances: InstanceResponse[],
   completing: boolean,
 ) {
-  return executeInstanceBatch(
+  executeInstanceBatch(
     queryClient,
     instances,
     (inst) => toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id),
@@ -275,7 +285,7 @@ export function batchToggleCompleteInstances(
 
 /** Batch skip instances */
 export function batchSkipInstances(queryClient: QueryClient, instances: InstanceResponse[]) {
-  return executeInstanceBatch(
+  executeInstanceBatch(
     queryClient,
     instances,
     (inst) => skipInstanceApiV1InstancesInstanceIdSkipPost(inst.id),
@@ -286,7 +296,7 @@ export function batchSkipInstances(queryClient: QueryClient, instances: Instance
 
 /** Batch unschedule instances (set scheduled_datetime to null) */
 export function batchUnscheduleInstances(queryClient: QueryClient, instances: InstanceResponse[]) {
-  return executeInstanceBatch(
+  executeInstanceBatch(
     queryClient,
     instances,
     (inst) =>
@@ -309,7 +319,7 @@ export function batchRescheduleInstances(
 ) {
   // Instances use scheduled_datetime (ISO datetime), so we append T00:00:00
   const datetime = `${dateStr}T00:00:00`;
-  return executeInstanceBatch(
+  executeInstanceBatch(
     queryClient,
     instances,
     (inst) =>

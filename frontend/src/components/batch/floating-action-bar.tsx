@@ -79,8 +79,8 @@ export function FloatingActionBar() {
     if (count === 0) setEditOpen(false);
   }, [count]);
 
-  /* ---- Handlers (dual-dispatch: tasks + instances) ---- */
-  const handleComplete = useCallback(async () => {
+  /* ---- Handlers (fire-and-forget: optimistic update + toast shown instantly) ---- */
+  const handleComplete = useCallback(() => {
     const completing = !allCompleted;
     const taskTargets = completing
       ? tasks.filter((t) => t.status !== "completed" && !t.completed_at)
@@ -88,33 +88,29 @@ export function FloatingActionBar() {
     const instanceTargets = completing
       ? instances.filter((i) => i.status !== "completed")
       : instances;
-    await Promise.all([
-      batchToggleComplete(queryClient, taskTargets, completing),
-      batchToggleCompleteInstances(queryClient, instanceTargets, completing),
-    ]);
+    batchToggleComplete(queryClient, taskTargets, completing);
+    batchToggleCompleteInstances(queryClient, instanceTargets, completing);
     clear();
   }, [tasks, instances, allCompleted, queryClient, clear]);
 
-  const handleUnschedule = useCallback(async () => {
+  const handleUnschedule = useCallback(() => {
     const scheduledTasks = tasks.filter((t) => t.scheduled_date != null);
     const scheduledInstances = instances.filter((i) => i.scheduled_datetime != null);
-    await Promise.all([
-      batchUnschedule(queryClient, scheduledTasks),
-      batchUnscheduleInstances(queryClient, scheduledInstances),
-    ]);
+    batchUnschedule(queryClient, scheduledTasks);
+    batchUnscheduleInstances(queryClient, scheduledInstances);
     clear();
   }, [tasks, instances, queryClient, clear]);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = useCallback(() => {
     if (tasks.length > 3 && !window.confirm(`Delete ${tasks.length} tasks? This can be undone.`)) {
       return;
     }
-    await batchDelete(queryClient, tasks);
+    batchDelete(queryClient, tasks);
     clear();
   }, [tasks, queryClient, clear]);
 
-  const handleSkip = useCallback(async () => {
-    await batchSkipInstances(queryClient, instances);
+  const handleSkip = useCallback(() => {
+    batchSkipInstances(queryClient, instances);
     clear();
   }, [instances, queryClient, clear]);
 
