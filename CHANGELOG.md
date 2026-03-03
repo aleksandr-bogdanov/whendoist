@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.1 — 2026-03-03
+
+### Fix: Batch drag-to-calendar — mutations never completed, no undo toast
+
+- **Root cause:** `handleBatchDrop` called `updateTask.mutate()` N times on the same `useMutation` hook instance. In TanStack Query v5, each `.mutate()` detaches the observer from the previous mutation, so only the last call's callbacks fire — the other N-1 Promises never settle, `Promise.allSettled` hangs forever, and no toast is shown.
+- **Fix:** Replaced `useMutation` hook calls with direct raw API functions (`updateTaskApiV1TasksTaskIdPut`, `scheduleInstanceApiV1InstancesInstanceIdSchedulePut`) which return proper Promises. Same fix applied to the undo handler.
+- Batch optimistic updates + undo + toast now work correctly for any number of selected tasks.
+
+---
+
 ## v0.56.0 — 2026-03-03
 
 ### Fix: Unified multi-select visuals across calendar and task list
