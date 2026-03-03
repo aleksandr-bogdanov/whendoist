@@ -422,7 +422,13 @@ function DashboardPage() {
             if (selectedIds.size === 0) return;
             const { tasks: targets } = resolveSelection(queryClient, selectedIds);
             if (targets.length === 0) return;
-            if (targets.length > 3 && !window.confirm(`Delete ${targets.length} tasks?`)) return;
+            const subtaskCount = targets.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
+            if (subtaskCount > 0) {
+              if (!window.confirm(`Delete ${targets.length} tasks and ${subtaskCount} subtasks?`))
+                return;
+            } else if (targets.length > 3) {
+              if (!window.confirm(`Delete ${targets.length} tasks?`)) return;
+            }
             batchDelete(queryClient, targets);
             useSelectionStore.getState().clear();
           },
@@ -438,7 +444,13 @@ function DashboardPage() {
             if (selectedIds.size === 0) return;
             const { tasks: targets } = resolveSelection(queryClient, selectedIds);
             if (targets.length === 0) return;
-            if (targets.length > 3 && !window.confirm(`Delete ${targets.length} tasks?`)) return;
+            const subtaskCount = targets.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
+            if (subtaskCount > 0) {
+              if (!window.confirm(`Delete ${targets.length} tasks and ${subtaskCount} subtasks?`))
+                return;
+            } else if (targets.length > 3) {
+              if (!window.confirm(`Delete ${targets.length} tasks?`)) return;
+            }
             batchDelete(queryClient, targets);
             useSelectionStore.getState().clear();
           },

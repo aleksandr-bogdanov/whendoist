@@ -19,6 +19,7 @@ import {
   batchRescheduleAll,
   batchToggleCompleteAll,
   batchUnscheduleAll,
+  deduplicateInstances,
   findPendingInstancesForTasks,
 } from "@/lib/batch-mutations";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,12 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
     [queryClient, recurring],
   );
 
+  /* ---- Completion state (mirrors FAB toggle logic) ---- */
+  const allCompleted = useMemo(
+    () => tasks.length > 0 && tasks.every((t) => t.status === "completed" || !!t.completed_at),
+    [tasks],
+  );
+
   /* ---- Date helpers ---- */
   const todayStr = new Date().toISOString().split("T")[0];
   const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -99,10 +106,17 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   /* ---- Handlers (fire-and-forget: optimistic update + undo toast shown instantly) ---- */
 
   const handleComplete = useCallback(() => {
-    const incomplete = nonRecurring.filter((t) => t.status !== "completed" && !t.completed_at);
-    batchToggleCompleteAll(queryClient, incomplete, pendingInstances, true);
+    const completing = !allCompleted;
+    const taskTargets = completing
+      ? nonRecurring.filter((t) => t.status !== "completed" && !t.completed_at)
+      : nonRecurring;
+    const instanceTargets = completing
+      ? pendingInstances.filter((i) => i.status !== "completed")
+      : pendingInstances;
+    const allInstances = deduplicateInstances(instanceTargets);
+    batchToggleCompleteAll(queryClient, taskTargets, allInstances, completing);
     onDone();
-  }, [nonRecurring, pendingInstances, queryClient, onDone]);
+  }, [nonRecurring, pendingInstances, allCompleted, queryClient, onDone]);
 
   const handleDelete = useCallback(() => {
     const subtaskCount = tasks.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
@@ -141,7 +155,9 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   const handleEdit = useCallback(() => {
     // Sync palette selection to global store so the FAB edit form resolves the right tasks
     useSelectionStore.getState().selectAll(Array.from(taskIds, (id) => taskSelectionId(id)));
-    window.dispatchEvent(new Event("open-batch-edit"));
+    // Defer: FAB mounts and registers its "open-batch-edit" listener in useEffect,
+    // which runs after paint but before setTimeout(0) macrotask callbacks.
+    setTimeout(() => window.dispatchEvent(new Event("open-batch-edit")), 0);
     onDone();
   }, [taskIds, onDone]);
 
@@ -222,7 +238,11 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   return (
     <div className="border-t px-2 py-1.5 flex items-center gap-1 text-xs flex-wrap">
       <span className="text-muted-foreground shrink-0 mr-1">{count} selected</span>
-      <BatchButton icon={CheckCheck} label="Complete" onClick={handleComplete} />
+      <BatchButton
+        icon={CheckCheck}
+        label={allCompleted ? "Reopen" : "Complete"}
+        onClick={handleComplete}
+      />
       <BatchButton icon={CalendarCheck} label="Today" onClick={() => handleReschedule(todayStr)} />
       <BatchButton
         icon={CalendarPlus}
