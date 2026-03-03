@@ -3,8 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CalendarDays, CalendarPlus, ListTodo, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { DomainResponse, TaskResponse } from "@/api/model";
+import type { DomainResponse, InstanceResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
+import { getListInstancesApiV1InstancesGetQueryKey } from "@/api/queries/instances/instances";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import {
   useDeleteTaskApiV1TasksTaskIdDelete,
@@ -24,7 +25,7 @@ import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
 import { batchDelete, batchToggleComplete } from "@/lib/batch-mutations";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
-import { taskSelectionId, useSelectionStore } from "@/stores/selection-store";
+import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 
 /** Matches Tailwind md: breakpoint for JS-level desktop checks. */
@@ -365,14 +366,28 @@ function DashboardPage() {
           excludeInputs: true,
           handler: () => {
             if (stateRef.current.isModalOpen) return;
-            // Select ALL pending tasks (both scheduled and unscheduled), not just j/k-navigable ones
+            // Select ALL pending tasks (both scheduled and unscheduled)
             const allTasks = stateRef.current.tasks;
-            const ids = allTasks
+            const taskIds = allTasks
               .filter((t) => t.parent_id === null && t.status !== "completed")
               .map((t) => taskSelectionId(t.id));
+            // Also select all visible recurring instances from the calendar cache
+            const allInstanceQueries = queryClient.getQueriesData<InstanceResponse[]>({
+              queryKey: getListInstancesApiV1InstancesGetQueryKey(),
+            });
+            const allInstances = allInstanceQueries.flatMap(([, data]) => data ?? []);
+            const instanceIds = allInstances
+              .filter((i) => i.status !== "completed" && i.status !== "skipped")
+              .map((i) => instanceSelectionId(i.id));
+            const ids = [...taskIds, ...instanceIds];
             if (ids.length > 0) {
               useSelectionStore.getState().selectAll(ids);
-              toast(`Selected ${ids.length} tasks`, { duration: 2000 });
+              const parts = [
+                taskIds.length > 0 && `${taskIds.length} task${taskIds.length !== 1 ? "s" : ""}`,
+                instanceIds.length > 0 &&
+                  `${instanceIds.length} instance${instanceIds.length !== 1 ? "s" : ""}`,
+              ].filter(Boolean);
+              toast(`Selected ${parts.join(" and ")}`, { duration: 2000 });
             }
           },
         },

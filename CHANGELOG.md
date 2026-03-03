@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.4 — 2026-03-03
+
+### Fix: ⌘+A now selects recurring instances & click-to-deselect on empty space
+
+- ⌘+A now selects both pending tasks AND visible recurring instances from the calendar cache — instances highlight in the calendar with the same ring + badge as tasks
+- Toast shows breakdown: "Selected 12 tasks and 3 instances"
+- Clicking on empty space in the task panel (between groups, below last section, padding areas) now clears the multi-selection — consistent with clicking on the calendar background
+- Interactive elements (buttons, links, inputs) within the task panel are excluded from the clear-on-click behavior
+
+---
+
 ## v0.56.3 — 2026-03-03
 
 ### Fix: Remove misleading confirm dialog from batch delete
