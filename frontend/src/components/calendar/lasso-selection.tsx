@@ -59,6 +59,8 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
   const scrollParentRef = useRef<HTMLElement | null>(null);
   const autoScrollRafRef = useRef<number | null>(null);
   const lastPointerYRef = useRef(0);
+  // Flag: auto-scroll moved the container, cached card positions are stale
+  const scrollDirtyRef = useRef(false);
 
   // Track dnd-kit drag state to disable lasso during drags
   useDndMonitor({
@@ -95,6 +97,8 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
 
     if (scrollDelta !== 0) {
       container.scrollTop += scrollDelta;
+      // Mark card cache as stale — positions shifted due to scroll
+      scrollDirtyRef.current = true;
     }
 
     autoScrollRafRef.current = requestAnimationFrame(autoScrollTick);
@@ -171,6 +175,18 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = null;
         if (!isLassoing.current) return;
+
+        // Re-cache card positions if auto-scroll moved the container
+        if (scrollDirtyRef.current) {
+          scrollDirtyRef.current = false;
+          const cards = column.querySelectorAll("[data-selection-id]");
+          const cached: CachedCard[] = [];
+          for (const card of cards) {
+            const id = card.getAttribute("data-selection-id");
+            if (id) cached.push({ id, rect: card.getBoundingClientRect() });
+          }
+          cardCacheRef.current = cached;
+        }
 
         const colRect = column.getBoundingClientRect();
         const curX = e.clientX - colRect.left;

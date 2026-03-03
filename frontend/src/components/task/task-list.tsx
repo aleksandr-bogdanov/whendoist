@@ -34,10 +34,13 @@ export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskList
   });
 
   // Ordered selection IDs for Shift+Click range — includes expanded subtasks in display order
-  const { expandedSubtasks, hideCompletedSubtasks } = useUIStore();
+  const { expandedSubtasks, hideCompletedSubtasks, collapsedDomains } = useUIStore();
   const orderedIds = useMemo(() => {
     const ids: string[] = [];
     for (const group of groups) {
+      // Skip tasks from collapsed domain groups — they're not visible
+      const domainKey = group.domain?.id ?? 0;
+      if (collapsedDomains.has(domainKey)) continue;
       for (const task of group.tasks) {
         ids.push(taskSelectionId(task.id));
         // If subtasks are expanded, include visible subtask IDs
@@ -51,7 +54,7 @@ export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskList
       }
     }
     return ids;
-  }, [groups, expandedSubtasks, hideCompletedSubtasks]);
+  }, [groups, expandedSubtasks, hideCompletedSubtasks, collapsedDomains]);
 
   if (groups.length === 0) {
     return (

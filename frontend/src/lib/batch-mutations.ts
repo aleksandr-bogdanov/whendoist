@@ -63,19 +63,18 @@ export function executeBatch({
   const message = `${label} ${tasks.length} ${noun}`;
   const toastId = `batch-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
-  toast.success(message, {
-    id: toastId,
-    action: {
-      label: "Undo",
-      onClick: () => {
-        // Fire per-task reverse mutations (don't restore full snapshot —
-        // the cache may have been invalidated/refetched since the operation)
-        Promise.allSettled(tasks.map(undoFn)).then(() => {
-          queryClient.invalidateQueries({ queryKey: cacheKey });
-        });
-      },
+  const undoAction = {
+    label: "Undo",
+    onClick: () => {
+      // Fire per-task reverse mutations (don't restore full snapshot —
+      // the cache may have been invalidated/refetched since the operation)
+      Promise.allSettled(tasks.map(undoFn)).then(() => {
+        queryClient.invalidateQueries({ queryKey: cacheKey });
+      });
     },
-  });
+  };
+
+  toast.success(message, { id: toastId, action: undoAction });
 
   // 3. Fire all mutations in parallel (background)
   Promise.allSettled(tasks.map(mutateFn)).then((results) => {
@@ -87,9 +86,10 @@ export function executeBatch({
       if (snapshot) queryClient.setQueryData(cacheKey, snapshot);
       toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
     } else if (failed > 0) {
-      // Partial failure — update toast
+      // Partial failure — update toast but preserve undo action
       toast.warning(`${label} ${succeeded} of ${tasks.length} ${noun}. ${failed} failed.`, {
         id: toastId,
+        action: undoAction,
       });
       queryClient.invalidateQueries({ queryKey: cacheKey });
     } else {
@@ -307,19 +307,18 @@ function executeInstanceBatch(
   const message = `${label} ${instances.length} ${noun}`;
   const toastId = `batch-instance-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
-  toast.success(message, {
-    id: toastId,
-    action: {
-      label: "Undo",
-      onClick: () => {
-        // Fire per-instance reverse mutations (don't restore full snapshot —
-        // the cache may have been invalidated/refetched since the operation)
-        Promise.allSettled(instances.map(undoFn)).then(() => {
-          invalidateInstances(queryClient);
-        });
-      },
+  const undoAction = {
+    label: "Undo",
+    onClick: () => {
+      // Fire per-instance reverse mutations (don't restore full snapshot —
+      // the cache may have been invalidated/refetched since the operation)
+      Promise.allSettled(instances.map(undoFn)).then(() => {
+        invalidateInstances(queryClient);
+      });
     },
-  });
+  };
+
+  toast.success(message, { id: toastId, action: undoAction });
 
   // 3. Fire mutations in background
   Promise.allSettled(instances.map(mutateFn)).then((results) => {
@@ -331,8 +330,10 @@ function executeInstanceBatch(
       if (snapshots) restoreInstanceCaches(queryClient, snapshots);
       toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
     } else if (failed > 0) {
+      // Partial failure — preserve undo action
       toast.warning(`${label} ${succeeded} of ${instances.length} ${noun}. ${failed} failed.`, {
         id: toastId,
+        action: undoAction,
       });
       invalidateInstances(queryClient);
     } else {
@@ -513,20 +514,19 @@ export function batchToggleCompleteAll(
   const instanceMutateFn = (inst: InstanceResponse) =>
     toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id);
 
-  toast.success(message, {
-    id: toastId,
-    action: {
-      label: "Undo",
-      onClick: () => {
-        // Fire per-item reverse mutations
-        const undos = [...tasks.map(taskMutateFn), ...instances.map(instanceMutateFn)];
-        Promise.allSettled(undos).then(() => {
-          queryClient.invalidateQueries({ queryKey: taskCacheKey });
-          invalidateInstances(queryClient);
-        });
-      },
+  const undoAction = {
+    label: "Undo",
+    onClick: () => {
+      // Fire per-item reverse mutations
+      const undos = [...tasks.map(taskMutateFn), ...instances.map(instanceMutateFn)];
+      Promise.allSettled(undos).then(() => {
+        queryClient.invalidateQueries({ queryKey: taskCacheKey });
+        invalidateInstances(queryClient);
+      });
     },
-  });
+  };
+
+  toast.success(message, { id: toastId, action: undoAction });
 
   // 4. Fire all mutations in parallel
   const allMutations = [...tasks.map(taskMutateFn), ...instances.map(instanceMutateFn)];
@@ -540,6 +540,7 @@ export function batchToggleCompleteAll(
       const succeeded = totalCount - failed;
       toast.warning(`${label} ${succeeded} of ${totalCount} ${noun}. ${failed} failed.`, {
         id: toastId,
+        action: undoAction,
       });
       queryClient.invalidateQueries({ queryKey: taskCacheKey });
       invalidateInstances(queryClient);
@@ -590,31 +591,30 @@ export function batchUnscheduleAll(
   const message = `Unscheduled ${totalCount} ${noun}`;
   const toastId = `batch-unschedule-all-${Date.now()}`;
 
-  toast.success(message, {
-    id: toastId,
-    action: {
-      label: "Undo",
-      onClick: () => {
-        const undos = [
-          ...tasks.map((task) =>
-            updateTaskApiV1TasksTaskIdPut(task.id, {
-              scheduled_date: task.scheduled_date,
-              scheduled_time: task.scheduled_time,
-            }),
-          ),
-          ...instances.map((inst) =>
-            scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
-              scheduled_datetime: inst.scheduled_datetime,
-            }),
-          ),
-        ];
-        Promise.allSettled(undos).then(() => {
-          queryClient.invalidateQueries({ queryKey: taskCacheKey });
-          invalidateInstances(queryClient);
-        });
-      },
+  const undoAction = {
+    label: "Undo",
+    onClick: () => {
+      const undos = [
+        ...tasks.map((task) =>
+          updateTaskApiV1TasksTaskIdPut(task.id, {
+            scheduled_date: task.scheduled_date,
+            scheduled_time: task.scheduled_time,
+          }),
+        ),
+        ...instances.map((inst) =>
+          scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+            scheduled_datetime: inst.scheduled_datetime,
+          }),
+        ),
+      ];
+      Promise.allSettled(undos).then(() => {
+        queryClient.invalidateQueries({ queryKey: taskCacheKey });
+        invalidateInstances(queryClient);
+      });
     },
-  });
+  };
+
+  toast.success(message, { id: toastId, action: undoAction });
 
   // 4. Fire all mutations in parallel
   const allMutations = [
@@ -640,6 +640,104 @@ export function batchUnscheduleAll(
       const succeeded = totalCount - failed;
       toast.warning(`Unscheduled ${succeeded} of ${totalCount} ${noun}. ${failed} failed.`, {
         id: toastId,
+        action: undoAction,
+      });
+      queryClient.invalidateQueries({ queryKey: taskCacheKey });
+      invalidateInstances(queryClient);
+    } else {
+      queryClient.invalidateQueries({ queryKey: taskCacheKey });
+      invalidateInstances(queryClient);
+    }
+  });
+}
+
+/**
+ * Batch reschedule for a mixed selection of tasks and instances.
+ * Produces a single toast with a single Undo that reverses everything.
+ */
+export function batchRescheduleAll(
+  queryClient: QueryClient,
+  tasks: TaskResponse[],
+  instances: InstanceResponse[],
+  date: string,
+) {
+  if (tasks.length === 0 && instances.length === 0) return;
+
+  const taskIds = new Set(tasks.map((t) => t.id));
+  const instanceIds = new Set(instances.map((i) => i.id));
+  const totalCount = tasks.length + instances.length;
+
+  // Instances use scheduled_datetime (ISO datetime), so we append T00:00:00
+  const datetime = `${date}T00:00:00`;
+
+  // 1. Take snapshots for error rollback
+  const taskCacheKey = dashboardTasksKey();
+  const taskSnapshot = queryClient.getQueryData<TaskResponse[]>(taskCacheKey);
+  const instanceSnapshots = instances.length > 0 ? snapshotInstanceCaches(queryClient) : undefined;
+
+  // 2. Apply optimistic updates
+  if (tasks.length > 0) {
+    queryClient.setQueryData<TaskResponse[]>(taskCacheKey, (old) =>
+      old?.map((t) => (taskIds.has(t.id) ? { ...t, scheduled_date: date } : t)),
+    );
+  }
+  if (instances.length > 0) {
+    applyOptimisticToInstances(queryClient, instanceIds, (inst) => ({
+      ...inst,
+      scheduled_datetime: datetime,
+    }));
+  }
+
+  // 3. Single toast with single undo
+  const noun = totalCount === 1 ? "item" : "items";
+  const message = `Rescheduled ${totalCount} ${noun}`;
+  const toastId = `batch-reschedule-all-${Date.now()}`;
+
+  const undoAction = {
+    label: "Undo",
+    onClick: () => {
+      const undos = [
+        ...tasks.map((task) =>
+          updateTaskApiV1TasksTaskIdPut(task.id, {
+            scheduled_date: task.scheduled_date,
+            scheduled_time: task.scheduled_time,
+          }),
+        ),
+        ...instances.map((inst) =>
+          scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+            scheduled_datetime: inst.scheduled_datetime,
+          }),
+        ),
+      ];
+      Promise.allSettled(undos).then(() => {
+        queryClient.invalidateQueries({ queryKey: taskCacheKey });
+        invalidateInstances(queryClient);
+      });
+    },
+  };
+
+  toast.success(message, { id: toastId, action: undoAction });
+
+  // 4. Fire all mutations in parallel
+  const allMutations = [
+    ...tasks.map((task) => updateTaskApiV1TasksTaskIdPut(task.id, { scheduled_date: date })),
+    ...instances.map((inst) =>
+      scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+        scheduled_datetime: datetime,
+      }),
+    ),
+  ];
+  Promise.allSettled(allMutations).then((results) => {
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed === totalCount) {
+      if (taskSnapshot) queryClient.setQueryData(taskCacheKey, taskSnapshot);
+      if (instanceSnapshots) restoreInstanceCaches(queryClient, instanceSnapshots);
+      toast.error("Failed to reschedule items", { id: toastId });
+    } else if (failed > 0) {
+      const succeeded = totalCount - failed;
+      toast.warning(`Rescheduled ${succeeded} of ${totalCount} ${noun}. ${failed} failed.`, {
+        id: toastId,
+        action: undoAction,
       });
       queryClient.invalidateQueries({ queryKey: taskCacheKey });
       invalidateInstances(queryClient);
