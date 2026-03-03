@@ -22,9 +22,16 @@ import {
 } from "@/lib/batch-mutations";
 import { resolveSelection, useSelectionStore } from "@/stores/selection-store";
 
-/** Dismiss the Radix ContextMenu by dispatching Escape (used after date picker selection) */
+/** Dismiss the Radix ContextMenu programmatically (used after date picker selection).
+ *  Targets the Radix content element directly so the Escape event is processed by
+ *  Radix's capture-phase handler (which calls preventDefault), preventing the global
+ *  selection-clear listener from firing. */
 function dismissContextMenu() {
-  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  const content = document.querySelector<HTMLElement>("[data-slot='context-menu-content']");
+  const target = content ?? document;
+  target.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+  );
 }
 
 /**
