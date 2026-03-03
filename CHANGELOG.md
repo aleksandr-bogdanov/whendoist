@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.16 — 2026-03-03
+
+### Fix: Fifth-pass batch operations audit (1 finding)
+
+- Context menu Complete/Reopen label now uses resolved count instead of raw `selectedIds.size`, matching the FAB fix from audit #1
+
+---
+
 ## v0.56.15 — 2026-03-03
 
 ### Fix: Fourth-pass batch operations audit (3 findings)

@@ -49,7 +49,7 @@ export function BatchContextMenuItems() {
     [selectedIds, queryClient],
   );
 
-  const count = selectedIds.size;
+  const count = tasks.length + instances.length;
   const noun = count === 1 ? "item" : "items";
   const hasInstances = instances.length > 0;
   const hasTasks = tasks.length > 0;
