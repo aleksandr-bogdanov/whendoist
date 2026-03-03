@@ -112,15 +112,9 @@ export function BatchContextMenuItems() {
   }, [instances, queryClient, clear]);
 
   const handleDelete = useCallback(() => {
-    if (
-      tasks.length > 3 &&
-      !window.confirm(`Delete ${tasks.length} ${noun}? This can be undone.`)
-    ) {
-      return;
-    }
     batchDelete(queryClient, tasks);
     clear();
-  }, [tasks, noun, queryClient, clear]);
+  }, [tasks, queryClient, clear]);
 
   if (count === 0) return null;
 

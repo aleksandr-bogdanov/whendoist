@@ -102,9 +102,6 @@ export function FloatingActionBar() {
   }, [tasks, instances, queryClient, clear]);
 
   const handleDelete = useCallback(() => {
-    if (tasks.length > 3 && !window.confirm(`Delete ${tasks.length} tasks? This can be undone.`)) {
-      return;
-    }
     batchDelete(queryClient, tasks);
     clear();
   }, [tasks, queryClient, clear]);

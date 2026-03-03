@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.3 — 2026-03-03
+
+### Fix: Remove misleading confirm dialog from batch delete
+
+- Removed `window.confirm()` from batch delete in both FloatingActionBar and BatchContextMenu
+- Delete is a soft-delete (archive) with working undo via the toast — the confirm dialog was contradictory ("This can be undone" in a scary modal)
+- Now consistent with every other batch action: instant delete + undo toast
+
+---
+
 ## v0.56.2 — 2026-03-03
 
 ### Fix: All batch actions — instant toast + undo for every mass operation
