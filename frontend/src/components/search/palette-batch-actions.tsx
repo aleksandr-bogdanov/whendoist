@@ -11,11 +11,21 @@ import {
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import type { DomainResponse } from "@/api/model";
 import { Calendar } from "@/components/ui/calendar";
-import { dashboardTasksKey } from "@/lib/query-keys";
+import {
+  batchDelete,
+  batchEdit,
+  batchReschedule,
+  batchRescheduleInstances,
+  batchToggleComplete,
+  batchToggleCompleteInstances,
+  batchUnschedule,
+  batchUnscheduleInstances,
+  findPendingInstancesForTasks,
+} from "@/lib/batch-mutations";
 import { cn } from "@/lib/utils";
+import { resolveSelection, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -52,7 +62,6 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   const queryClient = useQueryClient();
   const [subView, setSubView] = useState<SubView>("actions");
   const [domainQuery, setDomainQuery] = useState("");
-  const [isPending, setIsPending] = useState(false);
   const domainInputRef = useRef<HTMLInputElement>(null);
 
   // Focus domain input when picker opens
@@ -62,8 +71,15 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
     }
   }, [subView]);
 
+  /* ---- Resolve task IDs → TaskResponse[] from TQ cache ---- */
+  const { tasks } = useMemo(() => {
+    const stringIds = new Set(Array.from(taskIds, (id) => taskSelectionId(id)));
+    return resolveSelection(queryClient, stringIds);
+  }, [queryClient, taskIds]);
+
   const count = taskIds.size;
 
+  /* ---- Domain fuzzy search ---- */
   const activeDomains = useMemo(() => domains.filter((d) => !d.is_archived), [domains]);
   const domainFuse = useMemo(() => new Fuse(activeDomains, domainFuseOptions), [activeDomains]);
   const filteredDomains = useMemo(() => {
@@ -71,36 +87,65 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
     return domainFuse.search(domainQuery.trim(), { limit: 10 }).map((r) => r.item);
   }, [domainQuery, activeDomains, domainFuse]);
 
-  const runBatchAction = useCallback(
-    async (action: string, extra?: Record<string, unknown>) => {
-      if (isPending) return;
-      setIsPending(true);
-      try {
-        const res = await fetch("/api/v1/tasks/batch-action", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            task_ids: [...taskIds],
-            action,
-            ...extra,
-          }),
-        });
-        if (!res.ok) throw new Error("Failed");
-        const data = await res.json();
-        queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-        toast.success(`${data.affected_count} task${data.affected_count === 1 ? "" : "s"} updated`);
-        onDone();
-      } catch {
-        toast.error("Batch action failed");
-      } finally {
-        setIsPending(false);
-      }
-    },
-    [taskIds, isPending, queryClient, onDone],
+  /* ---- Split recurring / non-recurring for proper batch handling ---- */
+  const nonRecurring = useMemo(() => tasks.filter((t) => !t.is_recurring), [tasks]);
+  const recurring = useMemo(() => tasks.filter((t) => t.is_recurring), [tasks]);
+  const pendingInstances = useMemo(
+    () => findPendingInstancesForTasks(queryClient, recurring),
+    [queryClient, recurring],
   );
 
+  /* ---- Date helpers ---- */
   const todayStr = new Date().toISOString().split("T")[0];
   const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+
+  /* ---- Handlers (fire-and-forget: optimistic update + undo toast shown instantly) ---- */
+
+  const handleComplete = useCallback(() => {
+    const incomplete = nonRecurring.filter((t) => t.status !== "completed" && !t.completed_at);
+    if (incomplete.length > 0) batchToggleComplete(queryClient, incomplete, true);
+    if (pendingInstances.length > 0)
+      batchToggleCompleteInstances(queryClient, pendingInstances, true);
+    onDone();
+  }, [nonRecurring, pendingInstances, queryClient, onDone]);
+
+  const handleDelete = useCallback(() => {
+    batchDelete(queryClient, tasks);
+    onDone();
+  }, [tasks, queryClient, onDone]);
+
+  const handleReschedule = useCallback(
+    (dateStr: string) => {
+      if (nonRecurring.length > 0) batchReschedule(queryClient, nonRecurring, dateStr);
+      if (pendingInstances.length > 0)
+        batchRescheduleInstances(queryClient, pendingInstances, dateStr);
+      onDone();
+    },
+    [nonRecurring, pendingInstances, queryClient, onDone],
+  );
+
+  const handleUnschedule = useCallback(() => {
+    const scheduledTasks = nonRecurring.filter((t) => t.scheduled_date != null);
+    const scheduledInstances = pendingInstances.filter((i) => i.scheduled_datetime != null);
+    if (scheduledTasks.length > 0) batchUnschedule(queryClient, scheduledTasks);
+    if (scheduledInstances.length > 0) batchUnscheduleInstances(queryClient, scheduledInstances);
+    onDone();
+  }, [nonRecurring, pendingInstances, queryClient, onDone]);
+
+  const handleMoveDomain = useCallback(
+    (domainId: number) => {
+      batchEdit(queryClient, tasks, { domain_id: domainId });
+      onDone();
+    },
+    [tasks, queryClient, onDone],
+  );
+
+  const handleEdit = useCallback(() => {
+    // Sync palette selection to global store so the FAB edit form resolves the right tasks
+    useSelectionStore.getState().selectAll(Array.from(taskIds, (id) => taskSelectionId(id)));
+    window.dispatchEvent(new Event("open-batch-edit"));
+    onDone();
+  }, [taskIds, onDone]);
 
   /* ---- Domain picker sub-view ---- */
   if (subView === "domain-picker") {
@@ -128,7 +173,7 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
               type="button"
               key={d.id}
               className="w-full flex items-center gap-2 px-2 py-1 text-xs hover:bg-accent/50 rounded text-left"
-              onClick={() => runBatchAction("move", { domain_id: d.id })}
+              onClick={() => handleMoveDomain(d.id)}
             >
               {d.icon ? (
                 <span className="text-xs">{d.icon}</span>
@@ -167,7 +212,7 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
             const yyyy = date.getFullYear();
             const mm = String(date.getMonth() + 1).padStart(2, "0");
             const dd = String(date.getDate()).padStart(2, "0");
-            runBatchAction("schedule", { scheduled_date: `${yyyy}-${mm}-${dd}` });
+            handleReschedule(`${yyyy}-${mm}-${dd}`);
           }}
           defaultMonth={new Date()}
         />
@@ -179,45 +224,20 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   return (
     <div className="border-t px-2 py-1.5 flex items-center gap-1 text-xs flex-wrap">
       <span className="text-muted-foreground shrink-0 mr-1">{count} selected</span>
-      <BatchButton
-        icon={CheckCheck}
-        label="Complete"
-        onClick={() => runBatchAction("complete")}
-        disabled={isPending}
-      />
-      <BatchButton
-        icon={CalendarCheck}
-        label="Today"
-        onClick={() => runBatchAction("schedule", { scheduled_date: todayStr })}
-        disabled={isPending}
-      />
+      <BatchButton icon={CheckCheck} label="Complete" onClick={handleComplete} />
+      <BatchButton icon={CalendarCheck} label="Today" onClick={() => handleReschedule(todayStr)} />
       <BatchButton
         icon={CalendarPlus}
         label="Tomorrow"
-        onClick={() => runBatchAction("schedule", { scheduled_date: tomorrowStr })}
-        disabled={isPending}
+        onClick={() => handleReschedule(tomorrowStr)}
       />
       <BatchButton
         icon={CalendarDays}
         label="Reschedule"
         onClick={() => setSubView("date-picker")}
-        disabled={isPending}
       />
-      <BatchButton
-        icon={CalendarX2}
-        label="Unschedule"
-        onClick={() => runBatchAction("unschedule")}
-        disabled={isPending}
-      />
-      <BatchButton
-        icon={Pencil}
-        label="Edit"
-        onClick={() => {
-          window.dispatchEvent(new Event("open-batch-edit"));
-          onDone();
-        }}
-        disabled={isPending}
-      />
+      <BatchButton icon={CalendarX2} label="Unschedule" onClick={handleUnschedule} />
+      <BatchButton icon={Pencil} label="Edit" onClick={handleEdit} />
       <BatchButton
         icon={FolderInput}
         label="Move"
@@ -225,15 +245,8 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
           setSubView("domain-picker");
           setDomainQuery("");
         }}
-        disabled={isPending}
       />
-      <BatchButton
-        icon={Trash2}
-        label="Delete"
-        onClick={() => runBatchAction("delete")}
-        disabled={isPending}
-        destructive
-      />
+      <BatchButton icon={Trash2} label="Delete" onClick={handleDelete} destructive />
     </div>
   );
 }
@@ -246,23 +259,20 @@ function BatchButton({
   icon: Icon,
   label,
   onClick,
-  disabled,
   destructive,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   onClick: () => void;
-  disabled?: boolean;
   destructive?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
       className={cn(
         "inline-flex items-center gap-1 px-2 py-1 rounded transition-colors",
-        "hover:bg-accent/50 disabled:opacity-50",
+        "hover:bg-accent/50",
         destructive && "text-destructive hover:bg-destructive/10",
       )}
     >
