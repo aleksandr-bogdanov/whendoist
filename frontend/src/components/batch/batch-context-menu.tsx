@@ -62,7 +62,7 @@ export function BatchContextMenuItems() {
     tasks.some((t) => t.scheduled_date != null) ||
     instances.some((i) => i.scheduled_datetime != null);
 
-  const handleComplete = useCallback(async () => {
+  const handleComplete = useCallback(() => {
     const completing = !allCompleted;
     const taskTargets = completing
       ? tasks.filter((t) => t.status !== "completed" && !t.completed_at)
@@ -70,63 +70,55 @@ export function BatchContextMenuItems() {
     const instanceTargets = completing
       ? instances.filter((i) => i.status !== "completed")
       : instances;
-    await Promise.all([
-      batchToggleComplete(queryClient, taskTargets, completing),
-      batchToggleCompleteInstances(queryClient, instanceTargets, completing),
-    ]);
+    batchToggleComplete(queryClient, taskTargets, completing);
+    batchToggleCompleteInstances(queryClient, instanceTargets, completing);
     clear();
   }, [tasks, instances, allCompleted, queryClient, clear]);
 
-  const handleReopen = useCallback(async () => {
+  const handleReopen = useCallback(() => {
     const completedTasks = tasks.filter((t) => t.status === "completed" || !!t.completed_at);
     const completedInstances = instances.filter((i) => i.status === "completed");
-    await Promise.all([
-      batchToggleComplete(queryClient, completedTasks, false),
-      batchToggleCompleteInstances(queryClient, completedInstances, false),
-    ]);
+    batchToggleComplete(queryClient, completedTasks, false);
+    batchToggleCompleteInstances(queryClient, completedInstances, false);
     clear();
   }, [tasks, instances, queryClient, clear]);
 
-  const handleUnschedule = useCallback(async () => {
+  const handleUnschedule = useCallback(() => {
     const scheduledTasks = tasks.filter((t) => t.scheduled_date != null);
     const scheduledInstances = instances.filter((i) => i.scheduled_datetime != null);
-    await Promise.all([
-      batchUnschedule(queryClient, scheduledTasks),
-      batchUnscheduleInstances(queryClient, scheduledInstances),
-    ]);
+    batchUnschedule(queryClient, scheduledTasks);
+    batchUnscheduleInstances(queryClient, scheduledInstances);
     clear();
   }, [tasks, instances, queryClient, clear]);
 
   const handleReschedule = useCallback(
-    async (date: Date | undefined) => {
+    (date: Date | undefined) => {
       if (!date) return;
       const yyyy = date.getFullYear();
       const mm = String(date.getMonth() + 1).padStart(2, "0");
       const dd = String(date.getDate()).padStart(2, "0");
       const dateStr = `${yyyy}-${mm}-${dd}`;
-      await Promise.all([
-        batchReschedule(queryClient, tasks, dateStr),
-        batchRescheduleInstances(queryClient, instances, dateStr),
-      ]);
+      batchReschedule(queryClient, tasks, dateStr);
+      batchRescheduleInstances(queryClient, instances, dateStr);
       clear();
       dismissContextMenu();
     },
     [tasks, instances, queryClient, clear],
   );
 
-  const handleSkip = useCallback(async () => {
-    await batchSkipInstances(queryClient, instances);
+  const handleSkip = useCallback(() => {
+    batchSkipInstances(queryClient, instances);
     clear();
   }, [instances, queryClient, clear]);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = useCallback(() => {
     if (
       tasks.length > 3 &&
       !window.confirm(`Delete ${tasks.length} ${noun}? This can be undone.`)
     ) {
       return;
     }
-    await batchDelete(queryClient, tasks);
+    batchDelete(queryClient, tasks);
     clear();
   }, [tasks, noun, queryClient, clear]);
 

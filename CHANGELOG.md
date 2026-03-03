@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.2 — 2026-03-03
+
+### Fix: All batch actions — instant toast + undo for every mass operation
+
+- **Root cause:** `executeBatch` and `executeInstanceBatch` were `async` — they `await`ed `Promise.allSettled()` across all N mutations before showing any toast. With many tasks, the browser queues requests (max ~6 concurrent per domain), so the floating action bar stayed stuck and no feedback appeared.
+- **Fix:** Restructured both functions to fire-and-forget: optimistic cache update + toast with undo shown immediately, mutations fire in the background. If any fail, the toast is updated in-place (warning for partial, error + rollback for total failure).
+- All callers (FloatingActionBar, BatchContextMenu, BatchEditForm) are now synchronous — `clear()` runs instantly, bar disappears, toast appears.
+- Covers: Complete, Reopen, Delete, Unschedule, Edit, Reschedule, Skip — every batch action.
+
+---
+
 ## v0.56.1 — 2026-03-03
 
 ### Fix: Batch drag-to-calendar — mutations never completed, no undo toast

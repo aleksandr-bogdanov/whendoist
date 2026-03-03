@@ -110,7 +110,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
   const hasChanges =
     impact !== UNSET || clarity !== UNSET || durationInput.trim() !== "" || domainId !== UNSET;
 
-  const handleApply = useCallback(async () => {
+  const handleApply = useCallback(() => {
     const fields: Record<string, unknown> = {};
 
     if (impact !== UNSET) fields.impact = Number(impact);
@@ -123,7 +123,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
 
     if (Object.keys(fields).length === 0) return;
 
-    await batchEdit(queryClient, tasks, fields);
+    batchEdit(queryClient, tasks, fields);
     onDone();
   }, [impact, clarity, durationInput, domainId, tasks, queryClient, onDone]);
 
