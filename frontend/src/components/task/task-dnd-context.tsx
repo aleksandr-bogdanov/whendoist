@@ -30,9 +30,13 @@ import { toast } from "sonner";
 import type { InstanceResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 import {
   getListInstancesApiV1InstancesGetQueryKey,
+  scheduleInstanceApiV1InstancesInstanceIdSchedulePut,
   useScheduleInstanceApiV1InstancesInstanceIdSchedulePut,
 } from "@/api/queries/instances/instances";
-import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
+import {
+  updateTaskApiV1TasksTaskIdPut,
+  useUpdateTaskApiV1TasksTaskIdPut,
+} from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
 import { addDays, offsetToTime, PREV_DAY_START_HOUR, toDateString } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
@@ -783,21 +787,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
       for (const u of taskUpdates) {
         mutations.push(
-          new Promise((resolve, reject) => {
-            updateTask.mutate(
-              { taskId: u.id, data: { scheduled_date: u.date, scheduled_time: u.time } },
-              { onSuccess: resolve, onError: reject },
-            );
+          updateTaskApiV1TasksTaskIdPut(u.id, {
+            scheduled_date: u.date,
+            scheduled_time: u.time,
           }),
         );
       }
       for (const u of instanceUpdates) {
         mutations.push(
-          new Promise((resolve, reject) => {
-            scheduleInstance.mutate(
-              { instanceId: u.id, data: { scheduled_datetime: u.datetime } },
-              { onSuccess: resolve, onError: reject },
-            );
+          scheduleInstanceApiV1InstancesInstanceIdSchedulePut(u.id, {
+            scheduled_datetime: u.datetime,
           }),
         );
       }
@@ -818,42 +817,42 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               action: {
                 label: "Undo",
                 onClick: () => {
-                  // Restore full snapshots
+                  // Restore full snapshots immediately for instant UI feedback
                   if (previousTasks) queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                   if (previousInstances)
                     queryClient.setQueryData(
                       getListInstancesApiV1InstancesGetQueryKey(),
                       previousInstances,
                     );
-                  // Fire reverse mutations
+                  // Fire reverse mutations via raw API calls (not useMutation hooks)
+                  const undoMutations: Promise<unknown>[] = [];
                   for (const item of batchItems) {
                     if (item.type === "task") {
-                      updateTask.mutate(
-                        {
-                          taskId: item.id,
-                          data: { scheduled_date: item.date, scheduled_time: item.time },
-                        },
-                        {
-                          onSuccess: () =>
-                            queryClient.invalidateQueries({ queryKey: dashboardTasksKey() }),
-                          onError: () => toast.error("Undo partially failed"),
-                        },
+                      undoMutations.push(
+                        updateTaskApiV1TasksTaskIdPut(item.id, {
+                          scheduled_date: item.date,
+                          scheduled_time: item.time,
+                        }),
                       );
                     } else {
                       const origDatetime =
                         item.time && item.date ? `${item.date}T${item.time}` : null;
-                      scheduleInstance.mutate(
-                        { instanceId: item.id, data: { scheduled_datetime: origDatetime } },
-                        {
-                          onSuccess: () =>
-                            queryClient.invalidateQueries({
-                              queryKey: getListInstancesApiV1InstancesGetQueryKey(),
-                            }),
-                          onError: () => toast.error("Undo partially failed"),
-                        },
+                      undoMutations.push(
+                        scheduleInstanceApiV1InstancesInstanceIdSchedulePut(item.id, {
+                          scheduled_datetime: origDatetime,
+                        }),
                       );
                     }
                   }
+                  Promise.allSettled(undoMutations).then((results) => {
+                    queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
+                    queryClient.invalidateQueries({
+                      queryKey: getListInstancesApiV1InstancesGetQueryKey(),
+                    });
+                    if (results.some((r) => r.status === "rejected")) {
+                      toast.error("Undo partially failed");
+                    }
+                  });
                 },
               },
             },
@@ -879,7 +878,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         useSelectionStore.getState().clear();
       });
     },
-    [queryClient, updateTask, scheduleInstance, calendarHourHeight],
+    [queryClient, calendarHourHeight],
   );
 
   const handleDragEnd = useCallback(
