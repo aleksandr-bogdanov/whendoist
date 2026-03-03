@@ -54,9 +54,10 @@ export function applyDelta(
     newMinutes -= 1440;
     extraDays++;
   }
-  // Clamp negative time: < 0 → 00:00 (don't go to previous day)
-  if (newMinutes < 0) {
-    newMinutes = 0;
+  // Wrap past midnight backward: < 0 → previous day
+  while (newMinutes < 0) {
+    newMinutes += 1440;
+    extraDays--;
   }
   return {
     date: addDays(baseDate, daysDelta + extraDays),
