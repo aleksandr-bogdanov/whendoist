@@ -14,10 +14,8 @@ import {
   batchReschedule,
   batchRescheduleInstances,
   batchSkipInstances,
-  batchToggleComplete,
-  batchToggleCompleteInstances,
-  batchUnschedule,
-  batchUnscheduleInstances,
+  batchToggleCompleteAll,
+  batchUnscheduleAll,
   findPendingInstancesForTasks,
 } from "@/lib/batch-mutations";
 import { resolveSelection, useSelectionStore } from "@/stores/selection-store";
@@ -82,9 +80,9 @@ export function BatchContextMenuItems() {
     const nonRecurring = taskTargets.filter((t) => !t.is_recurring);
     const recurring = taskTargets.filter((t) => t.is_recurring);
     const pendingInstances = findPendingInstancesForTasks(queryClient, recurring);
-    batchToggleComplete(queryClient, nonRecurring, completing);
-    batchToggleCompleteInstances(
+    batchToggleCompleteAll(
       queryClient,
+      nonRecurring,
       [...instanceTargets, ...pendingInstances],
       completing,
     );
@@ -96,8 +94,7 @@ export function BatchContextMenuItems() {
     const completedInstances = instances.filter((i) => i.status === "completed");
     // Recurring tasks: reopen doesn't apply to parent (it was never completed), skip them
     const nonRecurring = completedTasks.filter((t) => !t.is_recurring);
-    batchToggleComplete(queryClient, nonRecurring, false);
-    batchToggleCompleteInstances(queryClient, completedInstances, false);
+    batchToggleCompleteAll(queryClient, nonRecurring, completedInstances, false);
     clear();
   }, [tasks, instances, queryClient, clear]);
 
@@ -105,8 +102,7 @@ export function BatchContextMenuItems() {
     // Recurring tasks can't be unscheduled (schedule is part of recurrence), filter them out
     const scheduledTasks = tasks.filter((t) => t.scheduled_date != null && !t.is_recurring);
     const scheduledInstances = instances.filter((i) => i.scheduled_datetime != null);
-    batchUnschedule(queryClient, scheduledTasks);
-    batchUnscheduleInstances(queryClient, scheduledInstances);
+    batchUnscheduleAll(queryClient, scheduledTasks, scheduledInstances);
     clear();
   }, [tasks, instances, queryClient, clear]);
 
@@ -133,6 +129,12 @@ export function BatchContextMenuItems() {
   }, [instances, queryClient, clear]);
 
   const handleDelete = useCallback(() => {
+    const subtaskCount = tasks.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
+    if (subtaskCount > 0) {
+      if (!window.confirm(`Delete ${tasks.length} tasks and ${subtaskCount} subtasks?`)) return;
+    } else if (tasks.length > 3) {
+      if (!window.confirm(`Delete ${tasks.length} tasks?`)) return;
+    }
     batchDelete(queryClient, tasks);
     clear();
   }, [tasks, queryClient, clear]);

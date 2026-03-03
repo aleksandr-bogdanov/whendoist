@@ -95,6 +95,13 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
   const { data: domains = [] } = useListDomainsApiV1DomainsGet({});
   const activeDomains = domains.filter((d: DomainResponse) => !d.is_archived);
 
+  // Track which fields the user has explicitly interacted with
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const markTouched = useCallback(
+    (field: string) => setTouched((prev) => (prev.has(field) ? prev : new Set(prev).add(field))),
+    [],
+  );
+
   // Reset form when selection changes — pre-fill from intersection
   useEffect(() => {
     setImpact(defaults.impact !== MIXED ? defaults.impact : UNSET);
@@ -105,27 +112,27 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
         : "",
     );
     setDomainId(defaults.domain !== MIXED ? defaults.domain : UNSET);
+    setTouched(new Set());
   }, [defaults]);
 
-  const hasChanges =
-    impact !== UNSET || clarity !== UNSET || durationInput.trim() !== "" || domainId !== UNSET;
+  const hasChanges = touched.size > 0;
 
   const handleApply = useCallback(() => {
     const fields: Record<string, unknown> = {};
 
-    if (impact !== UNSET) fields.impact = Number(impact);
-    if (clarity !== UNSET) fields.clarity = clarity;
-    if (durationInput.trim()) {
+    if (touched.has("impact") && impact !== UNSET) fields.impact = Number(impact);
+    if (touched.has("clarity") && clarity !== UNSET) fields.clarity = clarity;
+    if (touched.has("duration") && durationInput.trim()) {
       const parsed = parseDuration(durationInput);
       if (parsed !== null) fields.duration_minutes = parsed;
     }
-    if (domainId !== UNSET) fields.domain_id = Number(domainId);
+    if (touched.has("domain") && domainId !== UNSET) fields.domain_id = Number(domainId);
 
     if (Object.keys(fields).length === 0) return;
 
     batchEdit(queryClient, tasks, fields);
     onDone();
-  }, [impact, clarity, durationInput, domainId, tasks, queryClient, onDone]);
+  }, [impact, clarity, durationInput, domainId, touched, tasks, queryClient, onDone]);
 
   // Instance-only selection: fields can't be edited
   if (instanceOnly) {
@@ -169,7 +176,13 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
 
       {/* Impact (Priority) */}
       <FieldRow label="Impact">
-        <Select value={impact} onValueChange={setImpact}>
+        <Select
+          value={impact}
+          onValueChange={(v) => {
+            markTouched("impact");
+            setImpact(v);
+          }}
+        >
           <SelectTrigger size="sm" className="w-full">
             <SelectValue placeholder={defaults.impact === MIXED ? "Mixed" : "\u2014"} />
           </SelectTrigger>
@@ -186,7 +199,13 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
 
       {/* Clarity */}
       <FieldRow label="Clarity">
-        <Select value={clarity} onValueChange={setClarity}>
+        <Select
+          value={clarity}
+          onValueChange={(v) => {
+            markTouched("clarity");
+            setClarity(v);
+          }}
+        >
           <SelectTrigger size="sm" className="w-full">
             <SelectValue placeholder={defaults.clarity === MIXED ? "Mixed" : "\u2014"} />
           </SelectTrigger>
@@ -206,7 +225,10 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
         <input
           type="text"
           value={durationInput}
-          onChange={(e) => setDurationInput(e.target.value)}
+          onChange={(e) => {
+            markTouched("duration");
+            setDurationInput(e.target.value);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && hasChanges) {
               e.preventDefault();
@@ -220,7 +242,13 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
 
       {/* Domain */}
       <FieldRow label="Domain">
-        <Select value={domainId} onValueChange={setDomainId}>
+        <Select
+          value={domainId}
+          onValueChange={(v) => {
+            markTouched("domain");
+            setDomainId(v);
+          }}
+        >
           <SelectTrigger size="sm" className="w-full">
             <SelectValue placeholder={defaults.domain === MIXED ? "Mixed" : "\u2014"} />
           </SelectTrigger>

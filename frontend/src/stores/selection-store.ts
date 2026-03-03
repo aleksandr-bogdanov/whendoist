@@ -132,7 +132,12 @@ export function resolveSelection(
               parent_id: parent.id,
               is_recurring: false,
               recurrence_rule: null,
-              completed_at: subtask.status === "completed" ? new Date().toISOString() : null,
+              completed_at:
+                subtask.status === "completed"
+                  ? (subtask as unknown as Record<string, unknown>).completed_at
+                    ? String((subtask as unknown as Record<string, unknown>).completed_at)
+                    : parent.completed_at
+                  : null,
               subtasks: [],
             } as TaskResponse;
             break;

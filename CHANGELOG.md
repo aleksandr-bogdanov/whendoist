@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.11 — 2026-03-03
+
+### Fix: Batch operation correctness (audit #2, #4, #7, #10, #12, #22)
+
+- Mixed task+instance batch operations (complete, unschedule) now produce a single toast with a single Undo button that reverses everything
+- Batch edit no longer fires no-op mutations on pre-filled fields — only explicitly touched fields are included
+- Batch delete warns about subtask cascade: shows total subtask count in confirmation dialog
+- Backward time wrap during batch drag correctly wraps to the previous day instead of clamping to 00:00
+- Undo fires per-task reverse mutations instead of restoring a stale full cache snapshot
+- Subtask resolution uses actual `completed_at` from cache instead of synthesizing `new Date().toISOString()`
+
+---
+
 ## v0.56.10 — 2026-03-03
 
 ### Fix: Multi-select state consistency (audit #5, #6, #8, #11, #14)

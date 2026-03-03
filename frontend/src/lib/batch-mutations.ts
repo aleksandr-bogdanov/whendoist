@@ -68,9 +68,8 @@ export function executeBatch({
     action: {
       label: "Undo",
       onClick: () => {
-        // Restore snapshot optimistically
-        if (snapshot) queryClient.setQueryData(cacheKey, snapshot);
-        // Fire reverse mutations for all tasks
+        // Fire per-task reverse mutations (don't restore full snapshot —
+        // the cache may have been invalidated/refetched since the operation)
         Promise.allSettled(tasks.map(undoFn)).then(() => {
           queryClient.invalidateQueries({ queryKey: cacheKey });
         });
@@ -313,8 +312,8 @@ function executeInstanceBatch(
     action: {
       label: "Undo",
       onClick: () => {
-        // Restore snapshots optimistically
-        if (snapshots) restoreInstanceCaches(queryClient, snapshots);
+        // Fire per-instance reverse mutations (don't restore full snapshot —
+        // the cache may have been invalidated/refetched since the operation)
         Promise.allSettled(instances.map(undoFn)).then(() => {
           invalidateInstances(queryClient);
         });
@@ -444,4 +443,209 @@ export function findPendingInstancesForTasks(
   }
 
   return Array.from(map.values());
+}
+
+/* ------------------------------------------------------------------ */
+/*  Composite batch operations (tasks + instances → single toast)      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Batch toggle complete for a mixed selection of tasks and instances.
+ * Produces a single toast with a single Undo that reverses everything.
+ */
+export function batchToggleCompleteAll(
+  queryClient: QueryClient,
+  tasks: TaskResponse[],
+  instances: InstanceResponse[],
+  completing: boolean,
+) {
+  if (tasks.length === 0 && instances.length === 0) return;
+
+  const taskIds = new Set(tasks.map((t) => t.id));
+  const instanceIds = new Set(instances.map((i) => i.id));
+  const totalCount = tasks.length + instances.length;
+
+  // 1. Take snapshots for error rollback
+  const taskCacheKey = dashboardTasksKey();
+  const taskSnapshot = queryClient.getQueryData<TaskResponse[]>(taskCacheKey);
+  const instanceSnapshots = instances.length > 0 ? snapshotInstanceCaches(queryClient) : undefined;
+
+  // 2. Apply optimistic updates
+  if (tasks.length > 0) {
+    queryClient.setQueryData<TaskResponse[]>(taskCacheKey, (old) =>
+      old?.map((t) => {
+        if (taskIds.has(t.id)) {
+          return {
+            ...t,
+            status: completing ? ("completed" as const) : ("pending" as const),
+            completed_at: completing ? new Date().toISOString() : null,
+          };
+        }
+        if (t.subtasks?.some((st) => taskIds.has(st.id))) {
+          return {
+            ...t,
+            subtasks: t.subtasks.map((st) =>
+              taskIds.has(st.id)
+                ? { ...st, status: completing ? ("completed" as const) : ("pending" as const) }
+                : st,
+            ),
+          };
+        }
+        return t;
+      }),
+    );
+  }
+  if (instances.length > 0) {
+    applyOptimisticToInstances(queryClient, instanceIds, (inst) => ({
+      ...inst,
+      status: completing ? ("completed" as const) : ("pending" as const),
+    }));
+  }
+
+  // 3. Single toast with single undo
+  const label = completing ? "Completed" : "Reopened";
+  const noun = totalCount === 1 ? "item" : "items";
+  const message = `${label} ${totalCount} ${noun}`;
+  const toastId = `batch-${label.toLowerCase()}-all-${Date.now()}`;
+
+  const taskMutateFn = (task: TaskResponse) =>
+    toggleTaskCompleteApiV1TasksTaskIdToggleCompletePost(task.id, null);
+  const instanceMutateFn = (inst: InstanceResponse) =>
+    toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id);
+
+  toast.success(message, {
+    id: toastId,
+    action: {
+      label: "Undo",
+      onClick: () => {
+        // Fire per-item reverse mutations
+        const undos = [...tasks.map(taskMutateFn), ...instances.map(instanceMutateFn)];
+        Promise.allSettled(undos).then(() => {
+          queryClient.invalidateQueries({ queryKey: taskCacheKey });
+          invalidateInstances(queryClient);
+        });
+      },
+    },
+  });
+
+  // 4. Fire all mutations in parallel
+  const allMutations = [...tasks.map(taskMutateFn), ...instances.map(instanceMutateFn)];
+  Promise.allSettled(allMutations).then((results) => {
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed === totalCount) {
+      if (taskSnapshot) queryClient.setQueryData(taskCacheKey, taskSnapshot);
+      if (instanceSnapshots) restoreInstanceCaches(queryClient, instanceSnapshots);
+      toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
+    } else if (failed > 0) {
+      const succeeded = totalCount - failed;
+      toast.warning(`${label} ${succeeded} of ${totalCount} ${noun}. ${failed} failed.`, {
+        id: toastId,
+      });
+      queryClient.invalidateQueries({ queryKey: taskCacheKey });
+      invalidateInstances(queryClient);
+    } else {
+      queryClient.invalidateQueries({ queryKey: taskCacheKey });
+      invalidateInstances(queryClient);
+    }
+  });
+}
+
+/**
+ * Batch unschedule for a mixed selection of tasks and instances.
+ * Produces a single toast with a single Undo that reverses everything.
+ */
+export function batchUnscheduleAll(
+  queryClient: QueryClient,
+  tasks: TaskResponse[],
+  instances: InstanceResponse[],
+) {
+  if (tasks.length === 0 && instances.length === 0) return;
+
+  const taskIds = new Set(tasks.map((t) => t.id));
+  const instanceIds = new Set(instances.map((i) => i.id));
+  const totalCount = tasks.length + instances.length;
+
+  // 1. Take snapshots for error rollback
+  const taskCacheKey = dashboardTasksKey();
+  const taskSnapshot = queryClient.getQueryData<TaskResponse[]>(taskCacheKey);
+  const instanceSnapshots = instances.length > 0 ? snapshotInstanceCaches(queryClient) : undefined;
+
+  // 2. Apply optimistic updates
+  if (tasks.length > 0) {
+    queryClient.setQueryData<TaskResponse[]>(taskCacheKey, (old) =>
+      old?.map((t) =>
+        taskIds.has(t.id) ? { ...t, scheduled_date: null, scheduled_time: null } : t,
+      ),
+    );
+  }
+  if (instances.length > 0) {
+    applyOptimisticToInstances(queryClient, instanceIds, (inst) => ({
+      ...inst,
+      scheduled_datetime: null,
+    }));
+  }
+
+  // 3. Single toast with single undo
+  const noun = totalCount === 1 ? "item" : "items";
+  const message = `Unscheduled ${totalCount} ${noun}`;
+  const toastId = `batch-unschedule-all-${Date.now()}`;
+
+  toast.success(message, {
+    id: toastId,
+    action: {
+      label: "Undo",
+      onClick: () => {
+        const undos = [
+          ...tasks.map((task) =>
+            updateTaskApiV1TasksTaskIdPut(task.id, {
+              scheduled_date: task.scheduled_date,
+              scheduled_time: task.scheduled_time,
+            }),
+          ),
+          ...instances.map((inst) =>
+            scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+              scheduled_datetime: inst.scheduled_datetime,
+            }),
+          ),
+        ];
+        Promise.allSettled(undos).then(() => {
+          queryClient.invalidateQueries({ queryKey: taskCacheKey });
+          invalidateInstances(queryClient);
+        });
+      },
+    },
+  });
+
+  // 4. Fire all mutations in parallel
+  const allMutations = [
+    ...tasks.map((task) =>
+      updateTaskApiV1TasksTaskIdPut(task.id, {
+        scheduled_date: null,
+        scheduled_time: null,
+      }),
+    ),
+    ...instances.map((inst) =>
+      scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
+        scheduled_datetime: null,
+      }),
+    ),
+  ];
+  Promise.allSettled(allMutations).then((results) => {
+    const failed = results.filter((r) => r.status === "rejected").length;
+    if (failed === totalCount) {
+      if (taskSnapshot) queryClient.setQueryData(taskCacheKey, taskSnapshot);
+      if (instanceSnapshots) restoreInstanceCaches(queryClient, instanceSnapshots);
+      toast.error("Failed to unschedule items", { id: toastId });
+    } else if (failed > 0) {
+      const succeeded = totalCount - failed;
+      toast.warning(`Unscheduled ${succeeded} of ${totalCount} ${noun}. ${failed} failed.`, {
+        id: toastId,
+      });
+      queryClient.invalidateQueries({ queryKey: taskCacheKey });
+      invalidateInstances(queryClient);
+    } else {
+      queryClient.invalidateQueries({ queryKey: taskCacheKey });
+      invalidateInstances(queryClient);
+    }
+  });
 }
