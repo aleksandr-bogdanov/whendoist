@@ -763,7 +763,7 @@ function InstanceCard({
   const queryClient = useQueryClient();
   const selectionId = instanceSelectionId(instance.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
-  const hasAnySelection = useSelectionStore((s) => s.selectedIds.size > 0);
+
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
   const uncompleteInstance = useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
@@ -985,7 +985,7 @@ function InstanceCard({
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
-        {hasAnySelection ? (
+        {isMultiSelected ? (
           <BatchContextMenuItems />
         ) : (
           <>

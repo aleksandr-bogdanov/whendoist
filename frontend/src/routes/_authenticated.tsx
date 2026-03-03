@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useLocation } from "@tanstack/react-router";
 import { Loader2, RefreshCw } from "lucide-react";
-import { Component, type ErrorInfo, type ReactNode, useEffect, useState } from "react";
+import { Component, type ErrorInfo, type ReactNode, useEffect, useRef, useState } from "react";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 import { useGetEncryptionStatusApiV1PreferencesEncryptionGet } from "@/api/queries/preferences/preferences";
 import { useGetWizardStatusApiV1WizardStatusGet } from "@/api/queries/wizard/wizard";
@@ -9,6 +9,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { OnboardingWizard } from "@/components/wizard/onboarding-wizard";
 import { useNetworkStatus } from "@/hooks/use-network-status";
 import { useCryptoStore } from "@/stores/crypto-store";
+import { useSelectionStore } from "@/stores/selection-store";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -21,6 +22,16 @@ function AuthenticatedLayout() {
   const [wizardDismissed, setWizardDismissed] = useState(false);
 
   useNetworkStatus();
+
+  // Clear multi-selection when navigating between routes
+  const { pathname } = useLocation();
+  const prevPathname = useRef(pathname);
+  useEffect(() => {
+    if (prevPathname.current !== pathname) {
+      useSelectionStore.getState().clear();
+      prevPathname.current = pathname;
+    }
+  }, [pathname]);
 
   const isUnlocked = useCryptoStore((s) => s.isUnlocked);
   const setEnabled = useCryptoStore((s) => s.setEnabled);

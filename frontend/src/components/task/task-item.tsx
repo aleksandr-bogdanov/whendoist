@@ -111,7 +111,6 @@ export function TaskItem({
   const isSelected = selectedTaskId === task.id;
   const multiSelectionId = taskSelectionId(task.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(multiSelectionId));
-  const hasAnySelection = useSelectionStore((s) => s.selectedIds.size > 0);
   const isCompleted = task.status === "completed" || !!task.completed_at;
   const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
   const isExpanded = expandedSubtasks.has(task.id);
@@ -966,7 +965,7 @@ export function TaskItem({
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="min-w-[140px]">
-          {hasAnySelection ? <BatchContextMenuItems /> : contextMenuItems}
+          {isMultiSelected ? <BatchContextMenuItems /> : contextMenuItems}
         </ContextMenuContent>
       </ContextMenu>
 

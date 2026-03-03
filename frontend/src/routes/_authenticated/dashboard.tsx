@@ -23,9 +23,19 @@ import { TaskQuickAdd } from "@/components/task/task-quick-add";
 import { Button } from "@/components/ui/button";
 import { useCrypto } from "@/hooks/use-crypto";
 import { useShortcuts } from "@/hooks/use-shortcuts";
-import { batchDelete, batchToggleComplete } from "@/lib/batch-mutations";
+import {
+  batchDelete,
+  batchToggleComplete,
+  batchToggleCompleteInstances,
+  findPendingInstancesForTasks,
+} from "@/lib/batch-mutations";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
-import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
+import {
+  instanceSelectionId,
+  resolveSelection,
+  taskSelectionId,
+  useSelectionStore,
+} from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 
 /** Matches Tailwind md: breakpoint for JS-level desktop checks. */
@@ -104,6 +114,8 @@ function DashboardPage() {
     pushPaletteRecent,
     quickAddOpen: storeQuickAddOpen,
     setQuickAddOpen: setStoreQuickAddOpen,
+    energyLevel,
+    selectedDomainId,
   } = useUIStore();
 
   // Sync quick-add open state from store (triggered by mobile nav FAB)
@@ -113,6 +125,12 @@ function DashboardPage() {
       setStoreQuickAddOpen(false);
     }
   }, [storeQuickAddOpen, setStoreQuickAddOpen]);
+
+  // Clear multi-selection when filters change (tasks may become invisible)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally fires on filter change only
+  useEffect(() => {
+    useSelectionStore.getState().clear();
+  }, [energyLevel, selectedDomainId]);
 
   // Track whether any modal is open to suppress task shortcuts
   const isModalOpen = editorOpen || quickAddOpen || shortcutsHelpOpen;
@@ -401,8 +419,7 @@ function DashboardPage() {
             if (stateRef.current.isModalOpen) return;
             const selectedIds = useSelectionStore.getState().selectedIds;
             if (selectedIds.size === 0) return;
-            const allTasks = stateRef.current.tasks;
-            const targets = allTasks.filter((t) => selectedIds.has(taskSelectionId(t.id)));
+            const { tasks: targets } = resolveSelection(queryClient, selectedIds);
             if (targets.length === 0) return;
             if (targets.length > 3 && !window.confirm(`Delete ${targets.length} tasks?`)) return;
             batchDelete(queryClient, targets);
@@ -418,8 +435,7 @@ function DashboardPage() {
             if (stateRef.current.isModalOpen) return;
             const selectedIds = useSelectionStore.getState().selectedIds;
             if (selectedIds.size === 0) return;
-            const allTasks = stateRef.current.tasks;
-            const targets = allTasks.filter((t) => selectedIds.has(taskSelectionId(t.id)));
+            const { tasks: targets } = resolveSelection(queryClient, selectedIds);
             if (targets.length === 0) return;
             if (targets.length > 3 && !window.confirm(`Delete ${targets.length} tasks?`)) return;
             batchDelete(queryClient, targets);
@@ -437,12 +453,33 @@ function DashboardPage() {
             if (stateRef.current.isModalOpen) return;
             const selectedIds = useSelectionStore.getState().selectedIds;
             if (selectedIds.size === 0) return;
-            const allTasks = stateRef.current.tasks;
-            const targets = allTasks.filter((t) => selectedIds.has(taskSelectionId(t.id)));
-            if (targets.length === 0) return;
-            const pending = targets.filter((t) => t.status !== "completed");
-            const completing = pending.length > 0;
-            batchToggleComplete(queryClient, completing ? pending : targets, completing);
+            const { tasks, instances } = resolveSelection(queryClient, selectedIds);
+            if (tasks.length === 0 && instances.length === 0) return;
+            const allTasksCompleted =
+              tasks.length > 0 && tasks.every((t) => t.status === "completed" || !!t.completed_at);
+            const allInstancesCompleted =
+              instances.length > 0 && instances.every((i) => i.status === "completed");
+            const allCompleted =
+              (tasks.length > 0 || instances.length > 0) &&
+              (tasks.length === 0 || allTasksCompleted) &&
+              (instances.length === 0 || allInstancesCompleted);
+            const completing = !allCompleted;
+            // Mirror the FAB's handleComplete logic: separate recurring from non-recurring
+            const taskTargets = completing
+              ? tasks.filter((t) => t.status !== "completed" && !t.completed_at)
+              : tasks;
+            const instanceTargets = completing
+              ? instances.filter((i) => i.status !== "completed")
+              : instances;
+            const nonRecurring = taskTargets.filter((t) => !t.is_recurring);
+            const recurring = taskTargets.filter((t) => t.is_recurring);
+            const pendingInstances = findPendingInstancesForTasks(queryClient, recurring);
+            batchToggleComplete(queryClient, nonRecurring, completing);
+            batchToggleCompleteInstances(
+              queryClient,
+              [...instanceTargets, ...pendingInstances],
+              completing,
+            );
             useSelectionStore.getState().clear();
           },
         },

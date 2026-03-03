@@ -37,7 +37,7 @@ export function AnytimeInstancePill({
 }: AnytimeInstancePillProps) {
   const selectionId = instanceSelectionId(instance.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
-  const hasAnySelection = useSelectionStore((s) => s.selectedIds.size > 0);
+
   const isCompleted = instance.status === "completed";
   const isSkipped = instance.status === "skipped";
   const isDone = isCompleted || isSkipped;
@@ -193,7 +193,7 @@ export function AnytimeInstancePill({
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
-        {hasAnySelection ? (
+        {isMultiSelected ? (
           <BatchContextMenuItems />
         ) : (
           <>
