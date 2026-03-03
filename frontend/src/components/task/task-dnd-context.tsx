@@ -38,6 +38,13 @@ import {
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
+import {
+  applyDelta,
+  type BatchItem,
+  daysBetween,
+  minutesToTime,
+  timeToMinutes,
+} from "@/lib/batch-drag-utils";
 import { addDays, offsetToTime, PREV_DAY_START_HOUR, toDateString } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { formatScheduleTarget } from "@/lib/task-utils";
@@ -49,11 +56,14 @@ import { BatchDragOverlay, TaskDragOverlay } from "./task-drag-overlay";
 interface DndStateContextValue {
   activeId: UniqueIdentifier | null;
   activeTask: TaskResponse | null;
+  /** True when dragging a task that belongs to the multi-selection set */
+  isBatchDrag: boolean;
 }
 
 const DndStateCtx = createContext<DndStateContextValue>({
   activeId: null,
   activeTask: null,
+  isBatchDrag: false,
 });
 
 export function useDndState() {
@@ -122,70 +132,6 @@ function parseTaskId(id: UniqueIdentifier): number {
     return Number.parseInt(s.replace("task-drop-", ""), 10);
   }
   return typeof id === "string" ? Number.parseInt(id, 10) : Number(id);
-}
-
-/** Convert "HH:MM:SS" time string to total minutes since midnight */
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
-}
-
-/** Convert total minutes since midnight to "HH:MM:SS" time string */
-function minutesToTime(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
-}
-
-/** Compute day difference between two YYYY-MM-DD date strings */
-function daysBetween(from: string, to: string): number {
-  const a = new Date(`${from}T00:00:00`);
-  const b = new Date(`${to}T00:00:00`);
-  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
-}
-
-/**
- * Describes a selected item participating in a batch drag — enough info
- * to compute the delta and fire the correct mutation.
- */
-interface BatchItem {
-  type: "task" | "instance";
-  id: number;
-  date: string | null;
-  /** "HH:MM:SS" or null for anytime tasks */
-  time: string | null;
-  title: string;
-}
-
-/**
- * Apply a (daysDelta, minutesDelta) to a single BatchItem.
- * Returns the new { date, time } — handles wrap-past-midnight and clamp-negative-time.
- */
-function applyDelta(
-  item: BatchItem,
-  daysDelta: number,
-  minutesDelta: number,
-): { date: string; time: string | null } {
-  const baseDate = item.date ?? toDateString(new Date());
-  // Anytime tasks: only shift days, stay anytime
-  if (!item.time) {
-    return { date: addDays(baseDate, daysDelta), time: null };
-  }
-  let newMinutes = timeToMinutes(item.time) + minutesDelta;
-  let extraDays = 0;
-  // Wrap past midnight: ≥1440 → next day
-  while (newMinutes >= 1440) {
-    newMinutes -= 1440;
-    extraDays++;
-  }
-  // Clamp negative time: < 0 → 00:00 (don't go to previous day)
-  if (newMinutes < 0) {
-    newMinutes = 0;
-  }
-  return {
-    date: addDays(baseDate, daysDelta + extraDays),
-    time: minutesToTime(newMinutes),
-  };
 }
 
 /**
@@ -1581,8 +1527,9 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
     () => ({
       activeId: dragState.activeId,
       activeTask: dragState.activeTask,
+      isBatchDrag: dragState.isBatchDrag,
     }),
-    [dragState.activeId, dragState.activeTask],
+    [dragState.activeId, dragState.activeTask, dragState.isBatchDrag],
   );
 
   return (
