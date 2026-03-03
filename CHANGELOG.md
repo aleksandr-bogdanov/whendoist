@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.9 — 2026-03-03
+
+### Fix: Command palette batch actions use shared mutation helpers
+
+- Refactored palette batch actions to use `batch-mutations.ts` helpers instead of raw `fetch()` to `/api/v1/tasks/batch-action`
+- All palette actions now get optimistic updates, undo toasts, and proper cache invalidation for free
+- Recurring tasks are handled correctly: Complete/Reschedule/Unschedule operate on pending instances
+- "Edit…" syncs palette selection to global selection store before opening the FAB edit popover
+- Removed `isPending` loading state (batch helpers are fire-and-forget, palette closes immediately)
+
+---
+
 ## v0.56.8 — 2026-03-03
 
 ### Fix: Escape collision with Radix overlays clears multi-selection
