@@ -268,6 +268,8 @@ const ActionButton = React.forwardRef<
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-label={label}
+      title={label}
       className={cn(
         "inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
         "hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed",

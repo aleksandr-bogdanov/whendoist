@@ -48,8 +48,22 @@ export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedS
     return sorted.filter((t) => t.completed_at && new Date(t.completed_at) >= cutoff);
   }, [tasks, retentionDays]);
 
-  // Ordered selection IDs for Shift+Click range selection
-  const orderedIds = useMemo(() => filtered.map((t) => taskSelectionId(t.id)), [filtered]);
+  // Ordered selection IDs for Shift+Click range — includes expanded subtasks in display order
+  const { expandedSubtasks, hideCompletedSubtasks } = useUIStore();
+  const orderedIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const task of filtered) {
+      ids.push(taskSelectionId(task.id));
+      if (expandedSubtasks.has(task.id) && task.subtasks?.length) {
+        const hidingCompleted = hideCompletedSubtasks.has(task.id);
+        for (const st of task.subtasks) {
+          if (hidingCompleted && st.status === "completed") continue;
+          ids.push(taskSelectionId(st.id));
+        }
+      }
+    }
+    return ids;
+  }, [filtered, expandedSubtasks, hideCompletedSubtasks]);
 
   // Hide only when there are no completed tasks at all — never hide just because
   // the retention filter is narrow, otherwise the user can't change the filter back

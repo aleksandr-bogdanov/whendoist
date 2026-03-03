@@ -44,9 +44,15 @@ export function TaskDragOverlay({ task, isReparenting }: TaskDragOverlayProps) {
 interface BatchDragOverlayProps {
   anchorTask: TaskResponse;
   additionalCount: number;
+  /** When true, uses "items" instead of "tasks" to reflect mixed selection */
+  hasInstances?: boolean;
 }
 
-export function BatchDragOverlay({ anchorTask, additionalCount }: BatchDragOverlayProps) {
+export function BatchDragOverlay({
+  anchorTask,
+  additionalCount,
+  hasInstances,
+}: BatchDragOverlayProps) {
   return (
     <div className="relative">
       {/* Stacked card shadows behind the main pill */}
@@ -78,7 +84,14 @@ export function BatchDragOverlay({ anchorTask, additionalCount }: BatchDragOverl
         <div className="flex items-center gap-1.5 border-t border-dashed px-3 py-1.5 text-xs text-muted-foreground">
           <Copy className="h-3 w-3" />
           <span>
-            + {additionalCount} more {additionalCount === 1 ? "task" : "tasks"}
+            + {additionalCount} more{" "}
+            {hasInstances
+              ? additionalCount === 1
+                ? "item"
+                : "items"
+              : additionalCount === 1
+                ? "task"
+                : "tasks"}
           </span>
         </div>
       </div>

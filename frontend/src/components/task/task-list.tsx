@@ -6,6 +6,7 @@ import type { DomainResponse, TaskResponse } from "@/api/model";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { DomainGroup as DomainGroupType } from "@/lib/task-utils";
 import { taskSelectionId } from "@/stores/selection-store";
+import { useUIStore } from "@/stores/ui-store";
 import { DomainGroup } from "./domain-group";
 import { useDndState } from "./task-dnd-context";
 
@@ -32,16 +33,25 @@ export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskList
     disabled: !isDraggingSubtask,
   });
 
-  // Ordered selection IDs for Shift+Click range selection (flattened across all groups)
+  // Ordered selection IDs for Shift+Click range — includes expanded subtasks in display order
+  const { expandedSubtasks, hideCompletedSubtasks } = useUIStore();
   const orderedIds = useMemo(() => {
     const ids: string[] = [];
     for (const group of groups) {
       for (const task of group.tasks) {
         ids.push(taskSelectionId(task.id));
+        // If subtasks are expanded, include visible subtask IDs
+        if (expandedSubtasks.has(task.id) && task.subtasks?.length) {
+          const hidingCompleted = hideCompletedSubtasks.has(task.id);
+          for (const st of task.subtasks) {
+            if (hidingCompleted && st.status === "completed") continue;
+            ids.push(taskSelectionId(st.id));
+          }
+        }
       }
     }
     return ids;
-  }, [groups]);
+  }, [groups, expandedSubtasks, hideCompletedSubtasks]);
 
   if (groups.length === 0) {
     return (

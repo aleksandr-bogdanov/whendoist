@@ -9,9 +9,31 @@ interface LassoRect {
   y2: number;
 }
 
+/** Cached card position for hit-testing (avoids per-frame layout reflow) */
+interface CachedCard {
+  id: string;
+  rect: DOMRect;
+}
+
 function rectsIntersect(ax1: number, ay1: number, ax2: number, ay2: number, b: DOMRect): boolean {
   return ax1 < b.right && ax2 > b.left && ay1 < b.bottom && ay2 > b.top;
 }
+
+/** Find the nearest scrollable ancestor of an element */
+function findScrollParent(el: HTMLElement): HTMLElement | null {
+  let node: HTMLElement | null = el.parentElement;
+  while (node) {
+    const style = getComputedStyle(node);
+    if (style.overflowY === "auto" || style.overflowY === "scroll") return node;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+/** Edge distance (px) that triggers auto-scroll */
+const AUTO_SCROLL_EDGE = 40;
+/** Maximum auto-scroll speed (px per frame) */
+const AUTO_SCROLL_MAX_SPEED = 12;
 
 /**
  * Hook providing lasso (drag-select) functionality for a calendar day column.
@@ -26,6 +48,18 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
   const baselineRef = useRef<Set<string>>(new Set());
   const isDndActive = useRef(false);
 
+  // #20: Cached card positions — populated once at lasso start
+  const cardCacheRef = useRef<CachedCard[]>([]);
+  // #20: rAF guard — at most one hit-test per animation frame
+  const rafRef = useRef<number | null>(null);
+  // #20: Previous hit set — skip selectAll if unchanged
+  const prevHitRef = useRef<string>("");
+
+  // #15: Auto-scroll refs
+  const scrollParentRef = useRef<HTMLElement | null>(null);
+  const autoScrollRafRef = useRef<number | null>(null);
+  const lastPointerYRef = useRef(0);
+
   // Track dnd-kit drag state to disable lasso during drags
   useDndMonitor({
     onDragStart: () => {
@@ -38,6 +72,33 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
       isDndActive.current = false;
     },
   });
+
+  // #15: Auto-scroll loop — runs via rAF while lassoing near edges
+  const autoScrollTick = useCallback(() => {
+    if (!isLassoing.current) return;
+    const container = scrollParentRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const pointerY = lastPointerYRef.current;
+    const distFromTop = pointerY - containerRect.top;
+    const distFromBottom = containerRect.bottom - pointerY;
+
+    let scrollDelta = 0;
+    if (distFromTop < AUTO_SCROLL_EDGE && distFromTop >= 0) {
+      // Scroll up — faster closer to edge
+      scrollDelta = -AUTO_SCROLL_MAX_SPEED * (1 - distFromTop / AUTO_SCROLL_EDGE);
+    } else if (distFromBottom < AUTO_SCROLL_EDGE && distFromBottom >= 0) {
+      // Scroll down — faster closer to edge
+      scrollDelta = AUTO_SCROLL_MAX_SPEED * (1 - distFromBottom / AUTO_SCROLL_EDGE);
+    }
+
+    if (scrollDelta !== 0) {
+      container.scrollTop += scrollDelta;
+    }
+
+    autoScrollRafRef.current = requestAnimationFrame(autoScrollTick);
+  }, []);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -63,13 +124,30 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
         baselineRef.current = new Set(useSelectionStore.getState().selectedIds);
       }
 
+      // #20: Cache all card positions at lasso start (single layout reflow)
+      const cards = column.querySelectorAll("[data-selection-id]");
+      const cached: CachedCard[] = [];
+      for (const card of cards) {
+        const id = card.getAttribute("data-selection-id");
+        if (id) cached.push({ id, rect: card.getBoundingClientRect() });
+      }
+      cardCacheRef.current = cached;
+      prevHitRef.current = "";
+
+      // #15: Find scrollable parent for auto-scroll
+      scrollParentRef.current = findScrollParent(column);
+      lastPointerYRef.current = e.clientY;
+
       e.preventDefault();
       column.setPointerCapture(e.pointerId);
       isLassoing.current = true;
       startRef.current = { x, y };
       setLassoRect({ x1: x, y1: y, x2: x, y2: y });
+
+      // #15: Start auto-scroll loop
+      autoScrollRafRef.current = requestAnimationFrame(autoScrollTick);
     },
-    [disabled, columnRef],
+    [disabled, columnRef, autoScrollTick],
   );
 
   const onPointerMove = useCallback(
@@ -78,6 +156,9 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
       const column = columnRef.current;
       if (!column) return;
 
+      // #15: Track pointer Y for auto-scroll
+      lastPointerYRef.current = e.clientY;
+
       const rect = column.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -85,22 +166,37 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
       const { x: sx, y: sy } = startRef.current;
       setLassoRect({ x1: sx, y1: sy, x2: x, y2: y });
 
-      // Hit-test all cards in the column
-      const cards = column.querySelectorAll("[data-selection-id]");
-      const minX = Math.min(sx, x) + rect.left;
-      const minY = Math.min(sy, y) + rect.top;
-      const maxX = Math.max(sx, x) + rect.left;
-      const maxY = Math.max(sy, y) + rect.top;
+      // #20: Throttle hit-testing to one per animation frame
+      if (rafRef.current !== null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        if (!isLassoing.current) return;
 
-      const hitIds = new Set(baselineRef.current);
-      for (const card of cards) {
-        const cardRect = card.getBoundingClientRect();
-        const id = card.getAttribute("data-selection-id");
-        if (id && rectsIntersect(minX, minY, maxX, maxY, cardRect)) {
-          hitIds.add(id);
+        const colRect = column.getBoundingClientRect();
+        const curX = e.clientX - colRect.left;
+        const curY = e.clientY - colRect.top;
+        const { x: startX, y: startY } = startRef.current;
+
+        const minX = Math.min(startX, curX) + colRect.left;
+        const minY = Math.min(startY, curY) + colRect.top;
+        const maxX = Math.max(startX, curX) + colRect.left;
+        const maxY = Math.max(startY, curY) + colRect.top;
+
+        // #20: Use cached card positions — no querySelectorAll or getBoundingClientRect
+        const hitIds = new Set(baselineRef.current);
+        for (const { id, rect: cardRect } of cardCacheRef.current) {
+          if (rectsIntersect(minX, minY, maxX, maxY, cardRect)) {
+            hitIds.add(id);
+          }
         }
-      }
-      useSelectionStore.getState().selectAll([...hitIds]);
+
+        // #20: Only update store if hit set actually changed
+        const hitKey = [...hitIds].sort().join(",");
+        if (hitKey !== prevHitRef.current) {
+          prevHitRef.current = hitKey;
+          useSelectionStore.getState().selectAll([...hitIds]);
+        }
+      });
     },
     [columnRef],
   );
@@ -111,6 +207,17 @@ export function useLasso(columnRef: React.RefObject<HTMLDivElement | null>, disa
       isLassoing.current = false;
       columnRef.current?.releasePointerCapture(e.pointerId);
       setLassoRect(null);
+
+      // Clean up rAF handles
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      if (autoScrollRafRef.current !== null) {
+        cancelAnimationFrame(autoScrollRafRef.current);
+        autoScrollRafRef.current = null;
+      }
+      cardCacheRef.current = [];
     },
     [columnRef],
   );
