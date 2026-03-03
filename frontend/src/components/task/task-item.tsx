@@ -75,9 +75,18 @@ interface TaskItemProps {
   onEdit?: (task: TaskResponse) => void;
   /** Overdue pending instance for recurring tasks — enables "Skip this one" menu item */
   pendingInstance?: InstanceResponse;
+  /** Ordered selection IDs for Shift+Click range selection */
+  orderedIds?: string[];
 }
 
-export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }: TaskItemProps) {
+export function TaskItem({
+  task,
+  depth = 0,
+  onSelect,
+  onEdit,
+  pendingInstance,
+  orderedIds,
+}: TaskItemProps) {
   const {
     selectedTaskId,
     selectTask,
@@ -629,10 +638,19 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   isReparentTarget && "bg-[#6D5EF6]/8 shadow-[-4px_0_12px_rgba(109,94,246,0.15)]",
                 )}
                 onClickCapture={(e) => {
+                  if (e.shiftKey) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const additive = e.metaKey || e.ctrlKey;
+                    useSelectionStore
+                      .getState()
+                      .selectRange(multiSelectionId, orderedIds ?? [], additive, "tasklist");
+                    return;
+                  }
                   if (e.metaKey || e.ctrlKey) {
                     e.stopPropagation();
                     e.preventDefault();
-                    useSelectionStore.getState().toggle(multiSelectionId);
+                    useSelectionStore.getState().toggle(multiSelectionId, "tasklist");
                     return;
                   }
                   useSelectionStore.getState().clear();
@@ -661,11 +679,21 @@ export function TaskItem({ task, depth = 0, onSelect, onEdit, pendingInstance }:
                   type="button"
                   className="flex-shrink-0 cursor-pointer relative z-10 [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-[-8px] [@media(pointer:coarse)]:before:content-['']"
                   onClick={(e) => {
+                    // Shift+Click on checkbox also does range selection
+                    if (e.shiftKey) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      const additive = e.metaKey || e.ctrlKey;
+                      useSelectionStore
+                        .getState()
+                        .selectRange(multiSelectionId, orderedIds ?? [], additive, "tasklist");
+                      return;
+                    }
                     // ⌘+Click on checkbox toggles selection, NOT completion (§7)
                     if (e.metaKey || e.ctrlKey) {
                       e.stopPropagation();
                       e.preventDefault();
-                      useSelectionStore.getState().toggle(multiSelectionId);
+                      useSelectionStore.getState().toggle(multiSelectionId, "tasklist");
                       return;
                     }
                     handleToggleComplete(e);

@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.98 — 2026-03-03
+
+### Feat: Multi-select — Shift+Click range selection & calendar lasso
+
+- Shift+Click range selection: click item A, then Shift+Click item B to select everything between them (standard desktop convention)
+- ⌘+Shift+Click adds range to existing selection without clearing
+- Cross-view range blocked (calendar vs task list) — falls back to single toggle
+- Calendar lasso: click+drag on empty calendar space to draw a selection rectangle; all intersecting task cards get selected
+- ⌘+lasso adds to existing selection; lasso disabled during Plan My Day and active dnd-kit drags
+- InstanceCard in time grid now supports multi-selection (⌘+Click, Shift+Click, batch context menu)
+- `data-selection-id` attributes on all selectable cards for lasso hit-testing
+
+---
+
 ## v0.55.97 — 2026-03-02
 
 ### Feat: Multi-select — Instance support, polish & command palette

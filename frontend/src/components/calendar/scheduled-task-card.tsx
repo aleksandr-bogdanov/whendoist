@@ -33,6 +33,8 @@ interface ScheduledTaskCardProps {
   timeLabel: string;
   onClick?: () => void;
   dimmed?: boolean;
+  /** Ordered selection IDs for Shift+Click range selection */
+  orderedIds?: string[];
 }
 
 export function ScheduledTaskCard({
@@ -45,6 +47,7 @@ export function ScheduledTaskCard({
   timeLabel,
   onClick,
   dimmed,
+  orderedIds,
 }: ScheduledTaskCardProps) {
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
@@ -227,10 +230,19 @@ export function ScheduledTaskCard({
             backgroundColor: `${impactColor}2A`,
           }}
           title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
+          data-selection-id={selectionId}
           onClick={(e) => {
+            if (e.shiftKey) {
+              e.stopPropagation();
+              const additive = e.metaKey || e.ctrlKey;
+              useSelectionStore
+                .getState()
+                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+              return;
+            }
             if (e.metaKey || e.ctrlKey) {
               e.stopPropagation();
-              useSelectionStore.getState().toggle(selectionId);
+              useSelectionStore.getState().toggle(selectionId, "calendar");
               return;
             }
             useSelectionStore.getState().clear();

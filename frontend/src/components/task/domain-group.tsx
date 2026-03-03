@@ -52,6 +52,8 @@ interface DomainGroupProps {
   allDomains: DomainResponse[];
   onSelectTask?: (taskId: number) => void;
   onEditTask?: (task: TaskResponse) => void;
+  /** Ordered selection IDs for Shift+Click range selection */
+  orderedIds?: string[];
 }
 
 export function DomainGroup({
@@ -60,6 +62,7 @@ export function DomainGroup({
   allDomains,
   onSelectTask,
   onEditTask,
+  orderedIds,
 }: DomainGroupProps) {
   const { collapsedDomains, toggleCollapsedDomain, setMobileTab, selectTask, requestSubtaskAdd } =
     useUIStore();
@@ -285,11 +288,21 @@ export function DomainGroup({
                         onSwipeLeft={() => handleSwipeSchedule(task)}
                         onLongPress={() => handleLongPress(task)}
                       >
-                        <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                        <TaskItem
+                          task={task}
+                          onSelect={onSelectTask}
+                          onEdit={onEditTask}
+                          orderedIds={orderedIds}
+                        />
                       </TaskSwipeRow>
                     </div>
                   ) : (
-                    <TaskItem task={task} onSelect={onSelectTask} onEdit={onEditTask} />
+                    <TaskItem
+                      task={task}
+                      onSelect={onSelectTask}
+                      onEdit={onEditTask}
+                      orderedIds={orderedIds}
+                    />
                   )}
                 </motion.div>
                 <TaskInsertionZone

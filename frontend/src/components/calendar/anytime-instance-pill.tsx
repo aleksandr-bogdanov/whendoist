@@ -25,12 +25,15 @@ interface AnytimeInstancePillProps {
   instance: InstanceResponse;
   parentTask?: TaskResponse;
   onTaskClick?: (task: TaskResponse) => void;
+  /** Ordered selection IDs for Shift+Click range selection */
+  orderedIds?: string[];
 }
 
 export function AnytimeInstancePill({
   instance,
   parentTask,
   onTaskClick,
+  orderedIds,
 }: AnytimeInstancePillProps) {
   const selectionId = instanceSelectionId(instance.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
@@ -162,10 +165,19 @@ export function AnytimeInstancePill({
             borderLeft: `3px solid ${impactColor}`,
             backgroundColor: `${impactColor}1A`,
           }}
+          data-selection-id={selectionId}
           onClick={(e) => {
+            if (e.shiftKey) {
+              e.stopPropagation();
+              const additive = e.metaKey || e.ctrlKey;
+              useSelectionStore
+                .getState()
+                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+              return;
+            }
             if (e.metaKey || e.ctrlKey) {
               e.stopPropagation();
-              useSelectionStore.getState().toggle(selectionId);
+              useSelectionStore.getState().toggle(selectionId, "calendar");
               return;
             }
             useSelectionStore.getState().clear();
