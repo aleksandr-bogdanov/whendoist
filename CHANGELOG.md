@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.15 — 2026-03-03
+
+### Fix: Fourth-pass batch operations audit (3 findings)
+
+- Keyboard Delete/Backspace now warn about subtask cascade before deleting parent tasks (was silently deleting without confirmation)
+- Command palette "Edit..." now reliably opens the batch edit popover even when no prior multi-selection existed (was a race condition with FAB mount timing)
+- Command palette Complete button now toggles to "Reopen" when all selected tasks are completed (was silently no-oping)
+
+---
+
 ## v0.56.14 — 2026-03-03
 
 ### Fix: Third-pass batch operations audit (4 findings)
