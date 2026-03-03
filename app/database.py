@@ -27,6 +27,7 @@ engine = create_async_engine(
     pool_size=_settings.db_pool_size,
     max_overflow=_settings.db_max_overflow,
     pool_recycle=_settings.db_pool_recycle,
+    pool_timeout=_settings.db_pool_timeout,
     connect_args={
         "server_settings": {"statement_timeout": "30000"},  # 30 seconds
     },
