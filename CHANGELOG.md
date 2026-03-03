@@ -4,6 +4,21 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.6 — 2026-03-03
+
+### Fix: Multi-select — Shift+Click in Scheduled/Completed sections, subtask selection, batch improvements
+
+- Shift+Click range selection now works in Scheduled and Completed task sections (was silently falling back to toggle due to missing `orderedIds` prop)
+- Subtasks can now be multi-selected with Cmd+Click (toggle) and Shift+Click (range within parent)
+- Batch operations (complete, delete, edit) apply optimistically to nested subtasks
+- `resolveSelection` finds subtasks in nested cache arrays for correct batch resolution
+- Batch context menu and floating action bar correctly handle recurring tasks (complete instances, skip reparent-level reschedule/unschedule)
+- Added Reschedule date picker to floating action bar
+- Context menu shows batch actions when any selection exists (not just when clicked item is selected)
+- Instance batch operations now apply optimistic updates across all cache entries with snapshot-based undo
+
+---
+
 ## v0.56.5 — 2026-03-03
 
 ### Feat: Batch drag shows phantom shadows for all selected tasks

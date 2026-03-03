@@ -8,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { todayString } from "@/lib/calendar-utils";
 import { groupScheduledByDate } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
+import { taskSelectionId } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 import { TaskItem } from "./task-item";
 
@@ -112,6 +113,22 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
     return result;
   }, [overdueGroups, recurringWithPastPending]);
 
+  // Ordered selection IDs for Shift+Click range selection (flattened across all scheduled groups)
+  const orderedIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const group of filteredOverdueGroups) {
+      for (const task of group.tasks) {
+        ids.push(taskSelectionId(task.id));
+      }
+    }
+    for (const group of upcomingGroups) {
+      for (const task of group.tasks) {
+        ids.push(taskSelectionId(task.id));
+      }
+    }
+    return ids;
+  }, [filteredOverdueGroups, upcomingGroups]);
+
   if (tasks.length === 0) return null;
 
   const overdueCount = filteredOverdueGroups.reduce((sum, g) => sum + g.tasks.length, 0);
@@ -171,6 +188,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
                           onSelect={onSelectTask}
                           onEdit={onEditTask}
                           pendingInstance={pendingInstanceMap.get(task.id)}
+                          orderedIds={orderedIds}
                         />
                       </motion.div>
                     ))}
@@ -205,6 +223,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
                         onSelect={onSelectTask}
                         onEdit={onEditTask}
                         pendingInstance={pendingInstanceMap.get(task.id)}
+                        orderedIds={orderedIds}
                       />
                     </motion.div>
                   ))}

@@ -118,7 +118,27 @@ export function resolveSelection(
         taskCache = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey()) ?? [];
       }
       const taskId = Number(id.slice(5));
-      const task = taskCache.find((t) => t.id === taskId);
+      // Search top-level tasks first
+      let task = taskCache.find((t) => t.id === taskId);
+      // If not found, search nested subtasks (subtasks are real tasks with parent_id)
+      if (!task) {
+        for (const parent of taskCache) {
+          const subtask = parent.subtasks?.find((st) => st.id === taskId);
+          if (subtask) {
+            // Coerce SubtaskResponse into TaskResponse with defaults for missing fields
+            task = {
+              ...subtask,
+              domain_id: parent.domain_id,
+              parent_id: parent.id,
+              is_recurring: false,
+              recurrence_rule: null,
+              completed_at: subtask.status === "completed" ? new Date().toISOString() : null,
+              subtasks: [],
+            } as TaskResponse;
+            break;
+          }
+        }
+      }
       if (task) tasks.push(task);
     } else if (id.startsWith("instance-")) {
       if (!instanceCache) {

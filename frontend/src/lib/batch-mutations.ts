@@ -116,15 +116,27 @@ export function batchToggleComplete(
     queryClient,
     tasks,
     applyOptimistic: (cached) =>
-      cached.map((t) =>
-        taskIds.has(t.id)
-          ? {
-              ...t,
-              status: completing ? ("completed" as const) : ("pending" as const),
-              completed_at: completing ? new Date().toISOString() : null,
-            }
-          : t,
-      ),
+      cached.map((t) => {
+        if (taskIds.has(t.id)) {
+          return {
+            ...t,
+            status: completing ? ("completed" as const) : ("pending" as const),
+            completed_at: completing ? new Date().toISOString() : null,
+          };
+        }
+        // Also update nested subtasks
+        if (t.subtasks?.some((st) => taskIds.has(st.id))) {
+          return {
+            ...t,
+            subtasks: t.subtasks.map((st) =>
+              taskIds.has(st.id)
+                ? { ...st, status: completing ? ("completed" as const) : ("pending" as const) }
+                : st,
+            ),
+          };
+        }
+        return t;
+      }),
     mutateFn: (task) => toggleTaskCompleteApiV1TasksTaskIdToggleCompletePost(task.id, null),
     undoFn: (task) => toggleTaskCompleteApiV1TasksTaskIdToggleCompletePost(task.id, null),
     label: completing ? "Completed" : "Reopened",
@@ -138,7 +150,14 @@ export function batchDelete(queryClient: QueryClient, tasks: TaskResponse[]) {
   executeBatch({
     queryClient,
     tasks,
-    applyOptimistic: (cached) => cached.filter((t) => !taskIds.has(t.id)),
+    applyOptimistic: (cached) =>
+      cached
+        .filter((t) => !taskIds.has(t.id))
+        .map((t) =>
+          t.subtasks?.some((st) => taskIds.has(st.id))
+            ? { ...t, subtasks: t.subtasks.filter((st) => !taskIds.has(st.id)) }
+            : t,
+        ),
     mutateFn: (task) => deleteTaskApiV1TasksTaskIdDelete(task.id),
     undoFn: (task) => restoreTaskApiV1TasksTaskIdRestorePost(task.id),
     label: "Deleted",
@@ -178,7 +197,17 @@ export function batchEdit(
   executeBatch({
     queryClient,
     tasks,
-    applyOptimistic: (cached) => cached.map((t) => (taskIds.has(t.id) ? { ...t, ...fields } : t)),
+    applyOptimistic: (cached) =>
+      cached.map((t) => {
+        if (taskIds.has(t.id)) return { ...t, ...fields };
+        if (t.subtasks?.some((st) => taskIds.has(st.id))) {
+          return {
+            ...t,
+            subtasks: t.subtasks.map((st) => (taskIds.has(st.id) ? { ...st, ...fields } : st)),
+          };
+        }
+        return t;
+      }),
     mutateFn: (task) => updateTaskApiV1TasksTaskIdPut(task.id, fields),
     undoFn: (task) => {
       // Restore each task's original values for the changed fields
@@ -220,10 +249,41 @@ function invalidateInstances(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
 }
 
+/** Save snapshots of all instance query caches for undo */
+function snapshotInstanceCaches(queryClient: QueryClient) {
+  return queryClient.getQueriesData<InstanceResponse[]>({
+    queryKey: getListInstancesApiV1InstancesGetQueryKey(),
+  });
+}
+
+/** Restore all instance query caches from snapshot */
+function restoreInstanceCaches(
+  queryClient: QueryClient,
+  snapshots: [readonly unknown[], InstanceResponse[] | undefined][],
+) {
+  for (const [key, data] of snapshots) {
+    queryClient.setQueryData(key, data);
+  }
+}
+
+/**
+ * Apply an optimistic update to ALL instance query caches.
+ * Instance caches are keyed per date-range, so we update all matching queries.
+ */
+function applyOptimisticToInstances(
+  queryClient: QueryClient,
+  instanceIds: Set<number>,
+  updater: (instance: InstanceResponse) => InstanceResponse,
+) {
+  const baseKey = getListInstancesApiV1InstancesGetQueryKey();
+  queryClient.setQueriesData<InstanceResponse[]>({ queryKey: baseKey }, (old) =>
+    old?.map((i) => (instanceIds.has(i.id) ? updater(i) : i)),
+  );
+}
+
 /**
  * Fire-and-forget batch mutation on instances with immediate toast + undo.
- * Instance caches are keyed per date-range so we just invalidate rather
- * than doing fine-grained optimistic updates.
+ * Applies optimistic updates across all instance query caches for instant feedback.
  */
 function executeInstanceBatch(
   queryClient: QueryClient,
@@ -231,10 +291,19 @@ function executeInstanceBatch(
   mutateFn: (instance: InstanceResponse) => Promise<unknown>,
   undoFn: (instance: InstanceResponse) => Promise<unknown>,
   label: string,
+  optimisticUpdater?: (instance: InstanceResponse) => InstanceResponse,
 ): void {
   if (instances.length === 0) return;
 
-  // Show toast with undo immediately
+  const instanceIds = new Set(instances.map((i) => i.id));
+
+  // 1. Apply optimistic update (instant)
+  const snapshots = optimisticUpdater ? snapshotInstanceCaches(queryClient) : undefined;
+  if (optimisticUpdater) {
+    applyOptimisticToInstances(queryClient, instanceIds, optimisticUpdater);
+  }
+
+  // 2. Show toast with undo immediately
   const noun = instances.length === 1 ? "instance" : "instances";
   const message = `${label} ${instances.length} ${noun}`;
   const toastId = `batch-instance-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
@@ -244,6 +313,8 @@ function executeInstanceBatch(
     action: {
       label: "Undo",
       onClick: () => {
+        // Restore snapshots optimistically
+        if (snapshots) restoreInstanceCaches(queryClient, snapshots);
         Promise.allSettled(instances.map(undoFn)).then(() => {
           invalidateInstances(queryClient);
         });
@@ -251,20 +322,23 @@ function executeInstanceBatch(
     },
   });
 
-  // Fire mutations in background
+  // 3. Fire mutations in background
   Promise.allSettled(instances.map(mutateFn)).then((results) => {
     const succeeded = results.filter((r) => r.status === "fulfilled").length;
     const failed = instances.length - succeeded;
 
     if (failed === instances.length) {
+      // All failed — rollback
+      if (snapshots) restoreInstanceCaches(queryClient, snapshots);
       toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
     } else if (failed > 0) {
       toast.warning(`${label} ${succeeded} of ${instances.length} ${noun}. ${failed} failed.`, {
         id: toastId,
       });
+      invalidateInstances(queryClient);
+    } else {
+      invalidateInstances(queryClient);
     }
-
-    invalidateInstances(queryClient);
   });
 }
 
@@ -280,6 +354,7 @@ export function batchToggleCompleteInstances(
     (inst) => toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id),
     (inst) => toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id),
     completing ? "Completed" : "Reopened",
+    (inst) => ({ ...inst, status: completing ? ("completed" as const) : ("pending" as const) }),
   );
 }
 
@@ -291,6 +366,7 @@ export function batchSkipInstances(queryClient: QueryClient, instances: Instance
     (inst) => skipInstanceApiV1InstancesInstanceIdSkipPost(inst.id),
     (inst) => unskipInstanceApiV1InstancesInstanceIdUnskipPost(inst.id),
     "Skipped",
+    (inst) => ({ ...inst, status: "skipped" as const }),
   );
 }
 
@@ -308,6 +384,7 @@ export function batchUnscheduleInstances(queryClient: QueryClient, instances: In
         scheduled_datetime: inst.scheduled_datetime,
       }),
     "Unscheduled",
+    (inst) => ({ ...inst, scheduled_datetime: null }),
   );
 }
 
@@ -331,5 +408,40 @@ export function batchRescheduleInstances(
         scheduled_datetime: inst.scheduled_datetime,
       }),
     "Rescheduled",
+    (inst) => ({ ...inst, scheduled_datetime: datetime }),
   );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Helpers for recurring task handling in batch operations             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Find the earliest pending instance for each recurring task.
+ * Mirrors the logic in scheduled-section.tsx's pendingInstanceMap.
+ */
+export function findPendingInstancesForTasks(
+  queryClient: QueryClient,
+  recurringTasks: TaskResponse[],
+): InstanceResponse[] {
+  if (recurringTasks.length === 0) return [];
+
+  const taskIds = new Set(recurringTasks.map((t) => t.id));
+  const allInstanceQueries = queryClient.getQueriesData<InstanceResponse[]>({
+    queryKey: getListInstancesApiV1InstancesGetQueryKey(),
+  });
+  const allInstances = allInstanceQueries.flatMap(([, data]) => data ?? []);
+
+  // Map task_id → earliest pending instance
+  const map = new Map<number, InstanceResponse>();
+  for (const inst of allInstances) {
+    if (inst.status === "pending" && taskIds.has(inst.task_id)) {
+      const existing = map.get(inst.task_id);
+      if (!existing || inst.instance_date < existing.instance_date) {
+        map.set(inst.task_id, inst);
+      }
+    }
+  }
+
+  return Array.from(map.values());
 }
