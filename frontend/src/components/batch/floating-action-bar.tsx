@@ -165,7 +165,7 @@ export function FloatingActionBar() {
         {/* Edit… — opens batch edit popover */}
         <Popover open={editOpen} onOpenChange={setEditOpen}>
           <PopoverTrigger asChild>
-            <ActionButton icon={Pencil} label="Edit\u2026" onClick={() => setEditOpen(true)} />
+            <ActionButton icon={Pencil} label="Edit…" onClick={() => setEditOpen(true)} />
           </PopoverTrigger>
           <PopoverContent side="top" avoidCollisions sideOffset={8} className="w-72">
             <BatchEditForm

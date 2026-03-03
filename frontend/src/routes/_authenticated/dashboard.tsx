@@ -365,7 +365,11 @@ function DashboardPage() {
           excludeInputs: true,
           handler: () => {
             if (stateRef.current.isModalOpen) return;
-            const ids = stateRef.current.visibleTaskIds.map((id) => taskSelectionId(id));
+            // Select ALL pending tasks (both scheduled and unscheduled), not just j/k-navigable ones
+            const allTasks = stateRef.current.tasks;
+            const ids = allTasks
+              .filter((t) => t.parent_id === null && t.status !== "completed")
+              .map((t) => taskSelectionId(t.id));
             if (ids.length > 0) {
               useSelectionStore.getState().selectAll(ids);
               toast(`Selected ${ids.length} tasks`, { duration: 2000 });

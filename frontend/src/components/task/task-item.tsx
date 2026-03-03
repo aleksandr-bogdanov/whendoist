@@ -705,14 +705,37 @@ export function TaskItem({
                   <svg
                     viewBox="0 0 24 24"
                     role="img"
-                    aria-label={isCompleted ? "Completed" : "Not completed"}
+                    aria-label={
+                      isMultiSelected ? "Selected" : isCompleted ? "Completed" : "Not completed"
+                    }
                     className={cn(
                       "h-[18px] w-[18px] transition-colors",
-                      isCompleted && "animate-[completion-pulse_0.35s_ease-out]",
-                      !isCompleted && "group/cb",
+                      isCompleted &&
+                        !isMultiSelected &&
+                        "animate-[completion-pulse_0.35s_ease-out]",
+                      !isCompleted && !isMultiSelected && "group/cb",
                     )}
                   >
-                    {isCompleted ? (
+                    {isMultiSelected ? (
+                      <>
+                        <rect
+                          x="2"
+                          y="2"
+                          width="20"
+                          height="20"
+                          rx="5"
+                          fill="hsl(var(--primary))"
+                        />
+                        <polyline
+                          points="8 12 10.5 14.5 16 9"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </>
+                    ) : isCompleted ? (
                       <>
                         <circle cx="12" cy="12" r="10" fill="#6D5EF6" />
                         <polyline

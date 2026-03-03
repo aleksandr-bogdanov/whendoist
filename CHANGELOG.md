@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.55.99 — 2026-03-03
+
+### Fix: Multi-select visual polish
+
+- Selection ring uses `ring-inset` on calendar cards — no more clipped edges at column boundaries
+- Selection checkmark badge vertically centered on calendar task cards and instance cards
+- Task list selection now shows a filled rounded-square checkbox (distinct from the completion circle)
+- ⌘+A selects all pending tasks (previously missed scheduled tasks due to j/k navigation filter)
+- Fixed "Edit\u2026" literal text in floating action bar (JSX attribute strings don't process Unicode escapes)
+
+---
+
 ## v0.55.98 — 2026-03-03
 
 ### Feat: Multi-select — Shift+Click range selection & calendar lasso
