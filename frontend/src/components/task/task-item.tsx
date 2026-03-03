@@ -631,7 +631,7 @@ export function TaskItem({
                 className={cn(
                   "group relative flex items-center gap-[var(--col-gap)] py-1.5 sm:py-2 transition-all duration-150 border-b border-border/40 cursor-grab active:cursor-grabbing hover:bg-[rgba(109,94,246,0.04)] hover:shadow-[inset_0_0_0_1px_rgba(109,94,246,0.12)]",
                   isSelected && "bg-[rgba(109,94,246,0.08)]",
-                  isMultiSelected && "bg-primary/5",
+                  isMultiSelected && "ring-inset ring-2 ring-primary bg-primary/5",
                   isCompleted && "opacity-60",
                   isDragging && "opacity-30",
                   isJustUpdated && "ring-2 ring-primary/30 animate-pulse",
@@ -657,14 +657,10 @@ export function TaskItem({
                 }}
                 style={{
                   paddingLeft: `${depth * 24 + 8}px`,
-                  borderLeftWidth: isMultiSelected ? 2 : 3,
-                  borderLeftColor: isMultiSelected
-                    ? "hsl(var(--primary))"
-                    : isParent
-                      ? "var(--border)"
-                      : impactColor,
+                  borderLeftWidth: 3,
+                  borderLeftColor: isParent ? "var(--border)" : impactColor,
                   borderLeftStyle: "solid",
-                  borderRadius: isParent && !isMultiSelected ? undefined : "4px 0 0 4px",
+                  borderRadius: isParent ? undefined : "4px 0 0 4px",
                   backgroundColor: isMultiSelected
                     ? undefined
                     : isParent
@@ -718,14 +714,7 @@ export function TaskItem({
                   >
                     {isMultiSelected ? (
                       <>
-                        <rect
-                          x="2"
-                          y="2"
-                          width="20"
-                          height="20"
-                          rx="5"
-                          fill="hsl(var(--primary))"
-                        />
+                        <circle cx="12" cy="12" r="10" fill="hsl(var(--primary))" />
                         <polyline
                           points="8 12 10.5 14.5 16 9"
                           fill="none"
