@@ -13,6 +13,7 @@ import {
   useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost,
   useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
+import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -35,7 +36,9 @@ import {
 } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
+import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { CalendarEventCard } from "./calendar-event";
+import { LassoRect, useLasso } from "./lasso-selection";
 import { ScheduledTaskCard } from "./scheduled-task-card";
 
 interface DayColumnProps {
@@ -147,6 +150,21 @@ export function DayColumn({
     () => calculateExtendedOverlaps(events, tasks, instances, centerDate, hourHeight),
     [events, tasks, instances, centerDate, hourHeight],
   );
+
+  // Ordered selection IDs for Shift+Click range selection (sorted by visual position)
+  const orderedIds = useMemo(() => {
+    const sorted = [...positioned].sort((a, b) => a.top - b.top);
+    return sorted.map((item) => {
+      if (item.type === "instance") {
+        const instId = Number(item.id.replace("inst-", ""));
+        return instanceSelectionId(instId);
+      }
+      return taskSelectionId(Number(item.id));
+    });
+  }, [positioned]);
+
+  // Lasso drag-select
+  const lasso = useLasso(columnRef, isPlanMode);
 
   // Current time indicator — update every 60s
   const [now, setNow] = useState(() => new Date());
@@ -318,11 +336,11 @@ export function DayColumn({
       {/* Time grid — single 44-hour column */}
       <div
         ref={columnRef}
-        className={`relative flex-1 ${isPlanMode ? "cursor-crosshair" : ""}`}
+        className={`relative flex-1 ${isPlanMode ? "cursor-crosshair" : "cursor-crosshair"}`}
         style={{ height: `${totalHeight}px`, touchAction: isPlanMode ? "none" : undefined }}
-        onPointerDown={isPlanMode ? handlePlanPointerDown : undefined}
-        onPointerMove={isPlanMode ? handlePlanPointerMove : undefined}
-        onPointerUp={isPlanMode ? handlePlanPointerUp : undefined}
+        onPointerDown={isPlanMode ? handlePlanPointerDown : lasso.onPointerDown}
+        onPointerMove={isPlanMode ? handlePlanPointerMove : lasso.onPointerMove}
+        onPointerUp={isPlanMode ? handlePlanPointerUp : lasso.onPointerUp}
       >
         {/* Background regions — graduated dimming (prev: 0.7, today: 1.0, next: 0.85) */}
         {/* Prev evening — stronger dim */}
@@ -434,6 +452,9 @@ export function DayColumn({
           </div>
         )}
 
+        {/* Lasso selection rectangle */}
+        {lasso.lassoRect && <LassoRect rect={lasso.lassoRect} />}
+
         {/* Rendered items */}
         <div
           className={`absolute inset-y-0 left-px right-0 pr-0.5 z-[1] ${isPlanMode ? "pointer-events-none" : ""}`}
@@ -467,6 +488,7 @@ export function DayColumn({
                   timeLabel={timeLabel}
                   dimmed={isDimmed}
                   onEditSeries={() => handleEditSeries(inst.task_id)}
+                  orderedIds={orderedIds}
                 />
               );
             }
@@ -484,6 +506,7 @@ export function DayColumn({
                 timeLabel={timeLabel}
                 onClick={() => onTaskClick?.(task)}
                 dimmed={isDimmed}
+                orderedIds={orderedIds}
               />
             );
           })}
@@ -518,14 +541,18 @@ function InstanceCard({
   timeLabel,
   dimmed,
   onEditSeries,
+  orderedIds,
 }: {
   item: PositionedItem;
   instance: InstanceResponse;
   timeLabel: string;
   dimmed?: boolean;
   onEditSeries?: () => void;
+  orderedIds?: string[];
 }) {
   const queryClient = useQueryClient();
+  const selectionId = instanceSelectionId(instance.id);
+  const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
   const uncompleteInstance = useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost();
   const skipInstance = useSkipInstanceApiV1InstancesInstanceIdSkipPost();
@@ -687,9 +714,10 @@ function InstanceCard({
         <button
           ref={setNodeRef}
           type="button"
+          data-selection-id={selectionId}
           className={`absolute rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${
             isSkipped || isCompleted ? "opacity-50" : ""
-          } ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""}`}
+          } ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-2 ring-primary z-[2]" : ""}`}
           style={{
             top: `${item.top}px`,
             height: `${item.height}px`,
@@ -699,8 +727,33 @@ function InstanceCard({
             borderLeft: `3px solid ${impactColor}`,
           }}
           title={`${instance.task_title} (recurring)`}
-          onClick={() => onEditSeries?.()}
+          onClick={(e) => {
+            if (e.shiftKey) {
+              e.stopPropagation();
+              const additive = e.metaKey || e.ctrlKey;
+              useSelectionStore
+                .getState()
+                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+              return;
+            }
+            if (e.metaKey || e.ctrlKey) {
+              e.stopPropagation();
+              useSelectionStore.getState().toggle(selectionId, "calendar");
+              return;
+            }
+            useSelectionStore.getState().clear();
+            onEditSeries?.();
+          }}
         >
+          {/* Selection overlay + badge */}
+          {isMultiSelected && (
+            <>
+              <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+              <div className="absolute top-0.5 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
+                <Check className="h-2 w-2" strokeWidth={3} />
+              </div>
+            </>
+          )}
           {/* Drag handle — covers entire card */}
           <div className="absolute inset-0" {...listeners} {...attributes} />
           {/* Content — pointer-events-none so clicks/drags pass through */}
@@ -721,24 +774,30 @@ function InstanceCard({
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
-        {hasScheduledTime && (
-          <ContextMenuItem onClick={handleUnschedule} disabled={!isPending}>
-            <CalendarOff className="h-3.5 w-3.5 mr-2" />
-            Unschedule
-          </ContextMenuItem>
+        {isMultiSelected ? (
+          <BatchContextMenuItems />
+        ) : (
+          <>
+            {hasScheduledTime && (
+              <ContextMenuItem onClick={handleUnschedule} disabled={!isPending}>
+                <CalendarOff className="h-3.5 w-3.5 mr-2" />
+                Unschedule
+              </ContextMenuItem>
+            )}
+            <ContextMenuItem onClick={handleSkip} disabled={!isPending}>
+              <SkipForward className="h-3.5 w-3.5 mr-2" />
+              Skip
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleComplete} disabled={!isPending}>
+              <Check className="h-3.5 w-3.5 mr-2" />
+              Complete
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => onEditSeries?.()}>
+              <Pencil className="h-3.5 w-3.5 mr-2" />
+              Edit series
+            </ContextMenuItem>
+          </>
         )}
-        <ContextMenuItem onClick={handleSkip} disabled={!isPending}>
-          <SkipForward className="h-3.5 w-3.5 mr-2" />
-          Skip
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleComplete} disabled={!isPending}>
-          <Check className="h-3.5 w-3.5 mr-2" />
-          Complete
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onEditSeries?.()}>
-          <Pencil className="h-3.5 w-3.5 mr-2" />
-          Edit series
-        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );

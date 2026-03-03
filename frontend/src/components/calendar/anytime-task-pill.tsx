@@ -25,9 +25,11 @@ import { taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 interface AnytimeTaskPillProps {
   task: TaskResponse;
   onClick?: () => void;
+  /** Ordered selection IDs for Shift+Click range selection */
+  orderedIds?: string[];
 }
 
-export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
+export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillProps) {
   const selectionId = taskSelectionId(task.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
   const isCompleted = task.status === "completed";
@@ -179,10 +181,19 @@ export function AnytimeTaskPill({ task, onClick }: AnytimeTaskPillProps) {
             borderLeft: `3px solid ${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}`,
             backgroundColor: `${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}1A`,
           }}
+          data-selection-id={selectionId}
           onClick={(e) => {
+            if (e.shiftKey) {
+              e.stopPropagation();
+              const additive = e.metaKey || e.ctrlKey;
+              useSelectionStore
+                .getState()
+                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+              return;
+            }
             if (e.metaKey || e.ctrlKey) {
               e.stopPropagation();
-              useSelectionStore.getState().toggle(selectionId);
+              useSelectionStore.getState().toggle(selectionId, "calendar");
               return;
             }
             useSelectionStore.getState().clear();

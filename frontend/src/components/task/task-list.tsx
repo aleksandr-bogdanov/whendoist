@@ -1,9 +1,11 @@
 import { useDroppable } from "@dnd-kit/core";
 import { ArrowUpFromDot } from "lucide-react";
 import { motion } from "motion/react";
+import { useMemo } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { DomainGroup as DomainGroupType } from "@/lib/task-utils";
+import { taskSelectionId } from "@/stores/selection-store";
 import { DomainGroup } from "./domain-group";
 import { useDndState } from "./task-dnd-context";
 
@@ -29,6 +31,17 @@ export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskList
     data: { type: "task-list" },
     disabled: !isDraggingSubtask,
   });
+
+  // Ordered selection IDs for Shift+Click range selection (flattened across all groups)
+  const orderedIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const group of groups) {
+      for (const task of group.tasks) {
+        ids.push(taskSelectionId(task.id));
+      }
+    }
+    return ids;
+  }, [groups]);
 
   if (groups.length === 0) {
     return (
@@ -65,6 +78,7 @@ export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskList
             allDomains={domains}
             onSelectTask={onSelectTask}
             onEditTask={onEditTask}
+            orderedIds={orderedIds}
           />
         </motion.div>
       ))}

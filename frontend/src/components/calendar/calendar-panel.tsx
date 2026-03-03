@@ -34,7 +34,7 @@ import {
 } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { filterByEnergy } from "@/lib/task-utils";
-import { useSelectionStore } from "@/stores/selection-store";
+import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnytimeInstancePill } from "./anytime-instance-pill";
 import { AnytimeTaskPill } from "./anytime-task-pill";
@@ -182,6 +182,15 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
           inst.status !== "skipped",
       ),
     [safeInstances, displayDate],
+  );
+
+  // Ordered selection IDs for anytime section (Shift+Click range selection)
+  const anytimeOrderedIds = useMemo(
+    () => [
+      ...anytimeTasks.map((t) => taskSelectionId(t.id)),
+      ...anytimeInstances.map((i) => instanceSelectionId(i.id)),
+    ],
+    [anytimeTasks, anytimeInstances],
   );
 
   const isNotToday = displayDate !== todayString();
@@ -641,6 +650,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         anytimeInstances={anytimeInstances}
         allTasks={allTasksWithSubtasks}
         onTaskClick={onTaskClick}
+        orderedIds={anytimeOrderedIds}
       />
 
       {/* Calendar body — wrapper for scroll + drop overlay */}
@@ -759,12 +769,14 @@ function AnytimeSection({
   anytimeInstances,
   allTasks,
   onTaskClick,
+  orderedIds,
 }: {
   displayDate: string;
   anytimeTasks: TaskResponse[];
   anytimeInstances: InstanceResponse[];
   allTasks: TaskResponse[];
   onTaskClick?: (task: TaskResponse) => void;
+  orderedIds?: string[];
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `anytime-drop-${displayDate}`,
@@ -794,7 +806,12 @@ function AnytimeSection({
         {hasItems ? (
           <>
             {anytimeTasks.map((t) => (
-              <AnytimeTaskPill key={t.id} task={t} onClick={() => onTaskClick?.(t)} />
+              <AnytimeTaskPill
+                key={t.id}
+                task={t}
+                onClick={() => onTaskClick?.(t)}
+                orderedIds={orderedIds}
+              />
             ))}
             {anytimeInstances.map((inst) => (
               <AnytimeInstancePill
@@ -802,6 +819,7 @@ function AnytimeSection({
                 instance={inst}
                 parentTask={taskMap.get(inst.task_id)}
                 onTaskClick={onTaskClick}
+                orderedIds={orderedIds}
               />
             ))}
           </>

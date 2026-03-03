@@ -4,20 +4,28 @@ import type { InstanceResponse, TaskResponse } from "@/api/model";
 import { getListInstancesApiV1InstancesGetQueryKey } from "@/api/queries/instances/instances";
 import { dashboardTasksKey } from "@/lib/query-keys";
 
+type SelectionView = "calendar" | "tasklist";
+
 interface SelectionState {
   selectedIds: Set<string>;
+  lastClickedId: string | null;
+  lastClickedView: SelectionView | null;
 }
 
 interface SelectionActions {
-  toggle: (id: string) => void;
+  toggle: (id: string, view?: SelectionView) => void;
   clear: () => void;
   selectAll: (ids: string[]) => void;
+  /** Shift+Click range selection — selects all IDs between lastClickedId and toId in orderedIds */
+  selectRange: (toId: string, orderedIds: string[], additive: boolean, view: SelectionView) => void;
 }
 
 export const useSelectionStore = create<SelectionState & SelectionActions>()((set, get) => ({
   selectedIds: new Set<string>(),
+  lastClickedId: null,
+  lastClickedView: null,
 
-  toggle: (id) =>
+  toggle: (id, view) =>
     set((state) => {
       const next = new Set(state.selectedIds);
       if (next.has(id)) {
@@ -25,15 +33,51 @@ export const useSelectionStore = create<SelectionState & SelectionActions>()((se
       } else {
         next.add(id);
       }
-      return { selectedIds: next };
+      return {
+        selectedIds: next,
+        lastClickedId: id,
+        lastClickedView: view ?? state.lastClickedView,
+      };
     }),
 
   clear: () => {
-    if (get().selectedIds.size === 0) return;
-    set({ selectedIds: new Set() });
+    if (get().selectedIds.size === 0 && get().lastClickedId === null) return;
+    set({ selectedIds: new Set(), lastClickedId: null, lastClickedView: null });
   },
 
   selectAll: (ids) => set({ selectedIds: new Set(ids) }),
+
+  selectRange: (toId, orderedIds, additive, view) => {
+    const { lastClickedId, lastClickedView, selectedIds } = get();
+
+    // Cross-view or no anchor — fall back to toggle
+    if (!lastClickedId || lastClickedView !== view) {
+      const next = new Set(selectedIds);
+      if (next.has(toId)) next.delete(toId);
+      else next.add(toId);
+      return set({ selectedIds: next, lastClickedId: toId, lastClickedView: view });
+    }
+
+    const fromIdx = orderedIds.indexOf(lastClickedId);
+    const toIdx = orderedIds.indexOf(toId);
+
+    // If either ID not in the ordered list, fall back to toggle
+    if (fromIdx === -1 || toIdx === -1) {
+      const next = new Set(selectedIds);
+      if (next.has(toId)) next.delete(toId);
+      else next.add(toId);
+      return set({ selectedIds: next, lastClickedId: toId, lastClickedView: view });
+    }
+
+    const lo = Math.min(fromIdx, toIdx);
+    const hi = Math.max(fromIdx, toIdx);
+    const rangeIds = orderedIds.slice(lo, hi + 1);
+
+    const next = additive ? new Set(selectedIds) : new Set<string>();
+    for (const id of rangeIds) next.add(id);
+
+    set({ selectedIds: next, lastClickedId: toId, lastClickedView: view });
+  },
 }));
 
 /** Stable key for a task in the selection set */
