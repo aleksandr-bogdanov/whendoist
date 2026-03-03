@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.10 — 2026-03-03
+
+### Fix: Multi-select state consistency (audit #5, #6, #8, #11, #14)
+
+- Keyboard shortcuts (Delete/Backspace/⌘+Enter) now resolve instances via `resolveSelection()` — previously only tasks were handled
+- Selection clears when energy filter or domain filter changes, preventing batch operations on invisible tasks
+- Right-click on an unselected task shows single-item context menu (was incorrectly showing batch menu when any selection existed)
+- Floating action bar count uses resolved count instead of raw `selectedIds.size`, staying accurate when tasks disappear from cache
+- Selection clears on route navigation via `useLocation()` in the authenticated layout
+
+---
+
 ## v0.56.9 — 2026-03-03
 
 ### Fix: Command palette batch actions use shared mutation helpers

@@ -32,7 +32,7 @@ interface AnytimeTaskPillProps {
 export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillProps) {
   const selectionId = taskSelectionId(task.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
-  const hasAnySelection = useSelectionStore((s) => s.selectedIds.size > 0);
+
   const isCompleted = task.status === "completed";
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
@@ -211,7 +211,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
-        {hasAnySelection ? (
+        {isMultiSelected ? (
           <BatchContextMenuItems />
         ) : (
           <>

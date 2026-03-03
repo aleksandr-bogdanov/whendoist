@@ -179,9 +179,9 @@ export function FloatingActionBar() {
           <X className="h-4 w-4" />
         </button>
 
-        {/* Count label */}
+        {/* Count label — use resolved count so stale/deleted IDs don't inflate the number */}
         <span className="px-1.5 text-muted-foreground font-medium tabular-nums whitespace-nowrap">
-          {count} selected
+          {tasks.length + instances.length} selected
         </span>
 
         <Divider />
