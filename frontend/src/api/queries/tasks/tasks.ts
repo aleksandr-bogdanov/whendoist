@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.55.82
+ * OpenAPI spec version: 0.56.17
  */
 import {
   useMutation,
@@ -26,6 +26,8 @@ import type {
 
 import type {
   AllDataResponse,
+  BatchActionRequest,
+  BatchActionResponse,
   BatchUpdateTasksRequest,
   BatchUpdateTasksResponse,
   HTTPValidationError,
@@ -841,5 +843,72 @@ export const useBatchUpdateTasksApiV1TasksBatchUpdatePost = <TError = HTTPValida
         TContext
       > => {
       return useMutation(getBatchUpdateTasksApiV1TasksBatchUpdatePostMutationOptions(options), queryClient);
+    }
+    /**
+ * Apply a batch action to multiple tasks.
+
+Supports: complete, schedule, move (to domain), delete (archive).
+Silently skips unowned or missing task IDs (multitenancy rule).
+ * @summary Batch Action Tasks
+ */
+export const batchActionTasksApiV1TasksBatchActionPost = (
+    batchActionRequest: BatchActionRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return apiClient<BatchActionResponse>(
+      {url: `/api/v1/tasks/batch-action`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: batchActionRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getBatchActionTasksApiV1TasksBatchActionPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof batchActionTasksApiV1TasksBatchActionPost>>, TError,{data: BatchActionRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof batchActionTasksApiV1TasksBatchActionPost>>, TError,{data: BatchActionRequest}, TContext> => {
+
+const mutationKey = ['batchActionTasksApiV1TasksBatchActionPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof batchActionTasksApiV1TasksBatchActionPost>>, {data: BatchActionRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  batchActionTasksApiV1TasksBatchActionPost(data,)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BatchActionTasksApiV1TasksBatchActionPostMutationResult = NonNullable<Awaited<ReturnType<typeof batchActionTasksApiV1TasksBatchActionPost>>>
+    export type BatchActionTasksApiV1TasksBatchActionPostMutationBody = BatchActionRequest
+    export type BatchActionTasksApiV1TasksBatchActionPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Batch Action Tasks
+ */
+export const useBatchActionTasksApiV1TasksBatchActionPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof batchActionTasksApiV1TasksBatchActionPost>>, TError,{data: BatchActionRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof batchActionTasksApiV1TasksBatchActionPost>>,
+        TError,
+        {data: BatchActionRequest},
+        TContext
+      > => {
+      return useMutation(getBatchActionTasksApiV1TasksBatchActionPostMutationOptions(options), queryClient);
     }
     

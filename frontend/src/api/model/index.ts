@@ -3,9 +3,11 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.55.82
+ * OpenAPI spec version: 0.56.17
  */
 
+export * from './activityLogEntry';
+export * from './activityLogResponse';
 export * from './agingBuckets';
 export * from './agingStatsResponse';
 export * from './allDataResponse';
@@ -21,6 +23,9 @@ export * from './authenticationVerifyRequestCredential';
 export * from './authenticationVerifyResponse';
 export * from './batchAction';
 export * from './batchActionAction';
+export * from './batchActionRequest';
+export * from './batchActionRequestAction';
+export * from './batchActionResponse';
 export * from './batchCompleteRequest';
 export * from './batchCompleteResponse';
 export * from './batchPastResponse';
@@ -53,6 +58,8 @@ export * from './feedStatusResponse';
 export * from './getAnalyticsApiV1AnalyticsGetParams';
 export * from './getEventsApiV1EventsGetParams';
 export * from './getRecentCompletionsApiV1AnalyticsRecentCompletionsGetParams';
+export * from './getTaskActivityApiV1ActivityTaskTaskIdGetParams';
+export * from './getUserActivityApiV1ActivityGetParams';
 export * from './googleCallbackAuthGoogleCallbackGetParams';
 export * from './googleLoginAuthGoogleGetParams';
 export * from './heatmapItem';

@@ -15,6 +15,7 @@
 import { CheckCircle, Loader2, MousePointerClick, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
+import { TaskActivityPanel } from "@/components/activity/activity-list";
 import { TaskFieldsBody } from "@/components/task/task-fields-body";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTaskForm } from "@/hooks/use-task-form";
 
 interface TaskDetailPanelProps {
@@ -119,59 +121,75 @@ function DetailBody({
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-5">
-          <TaskFieldsBody
-            values={form.values}
-            handlers={form.handlers}
-            domains={domains}
-            task={task}
-            parentTasks={parentTasks}
-            onDirty={form.markDirty}
-          />
-
-          {/* Batch complete past instances (edit mode, recurring only) */}
-          {form.isEdit && task?.is_recurring && form.pendingPastCount > 0 && (
-            <div className="pt-3 mt-3 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs w-full"
-                disabled={form.isBatchCompleting}
-                onClick={form.handleBatchComplete}
-              >
-                {form.isBatchCompleting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                Complete {form.pendingPastCount} past instance(s)
-              </Button>
-            </div>
-          )}
-
-          {/* Metadata timestamps (edit mode only) */}
-          {form.isEdit && task && (
-            <div className="text-[11px] text-muted-foreground pt-3 mt-3 border-t">
-              {task.created_at && (
-                <span>
-                  Created{" "}
-                  {new Date(task.created_at).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
+        {/* Body — tabbed in edit mode, plain in create mode */}
+        {form.isEdit && task ? (
+          <Tabs defaultValue="details" className="flex-1 min-h-0 gap-0">
+            <TabsList variant="line" className="shrink-0 px-5 border-b">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="flex-1 overflow-y-auto p-5">
+              <TaskFieldsBody
+                values={form.values}
+                handlers={form.handlers}
+                domains={domains}
+                task={task}
+                parentTasks={parentTasks}
+                onDirty={form.markDirty}
+              />
+              {task.is_recurring && form.pendingPastCount > 0 && (
+                <div className="pt-3 mt-3 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs w-full"
+                    disabled={form.isBatchCompleting}
+                    onClick={form.handleBatchComplete}
+                  >
+                    {form.isBatchCompleting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                    Complete {form.pendingPastCount} past instance(s)
+                  </Button>
+                </div>
               )}
-              {task.completed_at && (
-                <span>
-                  {" · "}Completed{" "}
-                  {new Date(task.completed_at).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+              <div className="text-[11px] text-muted-foreground pt-3 mt-3 border-t">
+                {task.created_at && (
+                  <span>
+                    Created{" "}
+                    {new Date(task.created_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                )}
+                {task.completed_at && (
+                  <span>
+                    {" · "}Completed{" "}
+                    {new Date(task.completed_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="activity" className="flex-1 overflow-y-auto px-5 py-3">
+              <TaskActivityPanel taskId={task.id} />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-5">
+            <TaskFieldsBody
+              values={form.values}
+              handlers={form.handlers}
+              domains={domains}
+              task={task}
+              parentTasks={parentTasks}
+              onDirty={form.markDirty}
+            />
+          </div>
+        )}
 
         {/* Footer — action buttons */}
         <div className="border-t bg-background px-5 py-3 flex items-center gap-2">

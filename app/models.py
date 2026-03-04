@@ -534,3 +534,41 @@ class ExportSnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (Index("ix_snapshot_user_created", "user_id", "created_at"),)
+
+
+# =============================================================================
+# Activity Log Models
+# =============================================================================
+
+
+class ActivityLog(Base):
+    """
+    Activity log entry for user and task audit trail.
+
+    Stores events (creates, completions, field changes, etc.) with optional
+    field diffs for non-encrypted fields. Encrypted fields (title, description,
+    domain name) log event-only entries without old/new values.
+
+    Two views from one table:
+    - Per-task: WHERE user_id = ? AND task_id = ? ORDER BY created_at DESC
+    - Per-user: WHERE user_id = ? ORDER BY created_at DESC
+    """
+
+    __tablename__ = "activity_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    task_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True)
+    instance_id: Mapped[int | None] = mapped_column(ForeignKey("task_instances.id", ondelete="SET NULL"), nullable=True)
+    domain_id: Mapped[int | None] = mapped_column(ForeignKey("domains.id", ondelete="SET NULL"), nullable=True)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    field_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    old_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    new_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    batch_id: Mapped[str | None] = mapped_column(String(36), nullable=True)  # UUID as string for SQLite compat
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_activity_log_user_task", "user_id", "task_id", "created_at"),
+        Index("ix_activity_log_user_created", "user_id", "created_at"),
+    )

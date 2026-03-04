@@ -17,6 +17,7 @@ from sqlalchemy.orm import selectinload
 
 from app.constants import get_user_today
 from app.models import Task, TaskInstance
+from app.services.activity_log import log_activity
 from app.services.data_version import bump_data_version
 
 logger = logging.getLogger("whendoist.recurrence")
@@ -274,6 +275,13 @@ class RecurrenceService:
             instance.status = "completed"
             instance.completed_at = datetime.now(UTC)
             await self.db.flush()
+            await log_activity(
+                self.db,
+                user_id=self.user_id,
+                event_type="instance_completed",
+                task_id=instance.task_id,
+                instance_id=instance.id,
+            )
             await bump_data_version(self.db, self.user_id)
 
         return instance
@@ -294,6 +302,13 @@ class RecurrenceService:
             instance.status = "pending"
             instance.completed_at = None
             await self.db.flush()
+            await log_activity(
+                self.db,
+                user_id=self.user_id,
+                event_type="instance_uncompleted",
+                task_id=instance.task_id,
+                instance_id=instance.id,
+            )
             await bump_data_version(self.db, self.user_id)
 
         return instance
@@ -333,6 +348,13 @@ class RecurrenceService:
         if instance:
             instance.status = "skipped"
             await self.db.flush()
+            await log_activity(
+                self.db,
+                user_id=self.user_id,
+                event_type="instance_skipped",
+                task_id=instance.task_id,
+                instance_id=instance.id,
+            )
             await bump_data_version(self.db, self.user_id)
 
         return instance
@@ -355,8 +377,20 @@ class RecurrenceService:
         instance = result.scalar_one_or_none()
 
         if instance:
+            old_dt = str(instance.scheduled_datetime) if instance.scheduled_datetime else None
             instance.scheduled_datetime = scheduled_datetime
             await self.db.flush()
+            new_dt = str(instance.scheduled_datetime) if instance.scheduled_datetime else None
+            await log_activity(
+                self.db,
+                user_id=self.user_id,
+                event_type="instance_rescheduled",
+                task_id=instance.task_id,
+                instance_id=instance.id,
+                field_name="scheduled_datetime",
+                old_value=old_dt,
+                new_value=new_dt,
+            )
             await bump_data_version(self.db, self.user_id)
 
         return instance
@@ -378,6 +412,13 @@ class RecurrenceService:
             inst.completed_at = now
         await self.db.flush()
         if instances:
+            await log_activity(
+                self.db,
+                user_id=self.user_id,
+                event_type="instance_batch_completed",
+                task_id=task_id,
+                new_value=str(len(instances)),
+            )
             await bump_data_version(self.db, self.user_id)
         return len(instances)
 
@@ -410,6 +451,12 @@ class RecurrenceService:
             inst.completed_at = now
         await self.db.flush()
         if instances:
+            await log_activity(
+                self.db,
+                user_id=self.user_id,
+                event_type="instance_batch_completed",
+                new_value=str(len(instances)),
+            )
             await bump_data_version(self.db, self.user_id)
         return len(instances)
 
@@ -428,6 +475,12 @@ class RecurrenceService:
             inst.status = "skipped"
         await self.db.flush()
         if instances:
+            await log_activity(
+                self.db,
+                user_id=self.user_id,
+                event_type="instance_batch_skipped",
+                new_value=str(len(instances)),
+            )
             await bump_data_version(self.db, self.user_id)
         return len(instances)
 
@@ -605,6 +658,13 @@ class RecurrenceService:
         if instance:
             instance.status = "pending"
             await self.db.flush()
+            await log_activity(
+                self.db,
+                user_id=self.user_id,
+                event_type="instance_unskipped",
+                task_id=instance.task_id,
+                instance_id=instance.id,
+            )
             await bump_data_version(self.db, self.user_id)
 
         return instance

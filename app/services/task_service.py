@@ -12,6 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Domain, Task
+from app.services.activity_log import (
+    DOMAIN_DIFF_FIELDS,
+    ENCRYPTED_FIELDS,
+    TASK_DIFF_FIELDS,
+    log_activity,
+    log_field_changes,
+)
 from app.services.data_version import bump_data_version
 
 
@@ -64,6 +71,7 @@ class TaskService:
                 existing.color = color
             await self.db.flush()
             await bump_data_version(self.db, self.user_id)
+            # Note: not logging domain_created for idempotent return of existing domain
             return existing
 
         # Get max position for ordering
@@ -81,6 +89,7 @@ class TaskService:
         )
         self.db.add(domain)
         await self.db.flush()
+        await log_activity(self.db, user_id=self.user_id, event_type="domain_created", domain_id=domain.id)
         await bump_data_version(self.db, self.user_id)
         return domain
 
@@ -97,6 +106,12 @@ class TaskService:
         if not domain:
             return None
 
+        # Capture old values for activity logging
+        provided = {
+            k: v for k, v in {"name": name, "color": color, "icon": icon, "position": position}.items() if v is not None
+        }
+        old_values = {k: getattr(domain, k) for k in provided}
+
         if name is not None:
             domain.name = name
         if color is not None:
@@ -107,6 +122,16 @@ class TaskService:
             domain.position = position
 
         await self.db.flush()
+        new_values = {k: getattr(domain, k) for k in provided}
+        await log_field_changes(
+            self.db,
+            user_id=self.user_id,
+            event_type="domain_updated",
+            old_values=old_values,
+            new_values=new_values,
+            diff_fields=DOMAIN_DIFF_FIELDS,
+            domain_id=domain.id,
+        )
         await bump_data_version(self.db, self.user_id)
         return domain
 
@@ -118,6 +143,7 @@ class TaskService:
 
         domain.is_archived = True
         await self.db.flush()
+        await log_activity(self.db, user_id=self.user_id, event_type="domain_archived", domain_id=domain.id)
         await bump_data_version(self.db, self.user_id)
         return domain
 
@@ -361,6 +387,7 @@ class TaskService:
         )
         self.db.add(task)
         await self.db.flush()
+        await log_activity(self.db, user_id=self.user_id, event_type="task_created", task_id=task.id)
         await bump_data_version(self.db, self.user_id)
         return task
 
@@ -422,6 +449,10 @@ class TaskService:
             if child_count_result.scalar_one() > 0:
                 raise ValueError("Tasks with subtasks cannot be recurring")
 
+        # Capture old values for activity logging before any mutations
+        _log_fields = (TASK_DIFF_FIELDS | ENCRYPTED_FIELDS) & (set(kwargs.keys()) | {"parent_id"})
+        _old_vals: dict[str, object] = {f: getattr(task, f) for f in _log_fields if hasattr(task, f)}
+
         # Handle parent_id change (reparent/promote) before generic loop
         if "parent_id" in kwargs:
             new_parent_id = kwargs.pop("parent_id")
@@ -467,6 +498,16 @@ class TaskService:
                 setattr(task, field, value)
 
         await self.db.flush()
+        _new_vals: dict[str, object] = {f: getattr(task, f) for f in _log_fields if hasattr(task, f)}
+        await log_field_changes(
+            self.db,
+            user_id=self.user_id,
+            event_type="task_field_changed",
+            old_values=_old_vals,
+            new_values=_new_vals,
+            diff_fields=TASK_DIFF_FIELDS,
+            task_id=task.id,
+        )
         await bump_data_version(self.db, self.user_id)
         return task
 
@@ -500,6 +541,9 @@ class TaskService:
             subtask.completed_at = now
 
         await self.db.flush()
+        await log_activity(self.db, user_id=self.user_id, event_type="task_completed", task_id=task.id)
+        for subtask in pending_subtasks:
+            await log_activity(self.db, user_id=self.user_id, event_type="task_completed", task_id=subtask.id)
         await bump_data_version(self.db, self.user_id)
         return task
 
@@ -512,6 +556,7 @@ class TaskService:
         task.status = "pending"
         task.completed_at = None
         await self.db.flush()
+        await log_activity(self.db, user_id=self.user_id, event_type="task_uncompleted", task_id=task.id)
         await bump_data_version(self.db, self.user_id)
         return task
 
@@ -537,6 +582,7 @@ class TaskService:
 
         task.status = "archived"
         await self.db.flush()
+        await log_activity(self.db, user_id=self.user_id, event_type="task_archived", task_id=task.id)
         await bump_data_version(self.db, self.user_id)
         return task
 
@@ -561,6 +607,7 @@ class TaskService:
             # Recursively archive children first
             await self._archive_subtasks(subtask.id, _visited)
             subtask.status = "archived"
+            await log_activity(self.db, user_id=self.user_id, event_type="task_archived", task_id=subtask.id)
 
     async def restore_task(self, task_id: int) -> Task | None:
         """Restore an archived task back to pending status."""
@@ -574,6 +621,7 @@ class TaskService:
         task.status = "pending"
         task.completed_at = None
         await self.db.flush()
+        await log_activity(self.db, user_id=self.user_id, event_type="task_restored", task_id=task.id)
         await bump_data_version(self.db, self.user_id)
         return task
 
@@ -599,6 +647,7 @@ class TaskService:
             await self._restore_subtasks(subtask.id, _visited)
             subtask.status = "pending"
             subtask.completed_at = None
+            await log_activity(self.db, user_id=self.user_id, event_type="task_restored", task_id=subtask.id)
 
     async def get_archived_tasks(self) -> list[Task]:
         """Get all archived tasks for the user."""
@@ -610,6 +659,10 @@ class TaskService:
         if not task:
             return False
 
+        # Log before delete — flush separately so the INSERT hits the DB
+        # while the task FK still exists (avoids unit-of-work ordering issues)
+        await log_activity(self.db, user_id=self.user_id, event_type="task_deleted", task_id=task.id)
+        await self.db.flush()
         await self.db.delete(task)
         await self.db.flush()
         await bump_data_version(self.db, self.user_id)

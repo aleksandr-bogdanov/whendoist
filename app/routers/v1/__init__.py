@@ -10,6 +10,7 @@ v0.16.0: Removed legacy /api/* routes (pre-1.0, no backwards compatibility neede
 from fastapi import APIRouter
 
 from app.routers import (
+    activity,
     analytics,
     backup,
     build_info,
@@ -45,3 +46,4 @@ router.include_router(analytics.router)
 router.include_router(csrf.router)
 router.include_router(url_utils.router)
 router.include_router(calendar_feed.router)
+router.include_router(activity.router)

@@ -6,7 +6,16 @@
  */
 
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, ChevronRight, Loader2, RotateCcw, Search, Trash2, X } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronRight,
+  History,
+  Loader2,
+  RotateCcw,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Drawer } from "vaul";
@@ -15,6 +24,7 @@ import {
   useListTasksApiV1TasksGet,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
+import { TaskActivityPanel } from "@/components/activity/activity-list";
 import { announce } from "@/components/live-announcer";
 import {
   ClarityChipRow,
@@ -153,6 +163,7 @@ function DrawerBody({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [parentPickerOpen, setParentPickerOpen] = useState(false);
   const [parentSearch, setParentSearch] = useState("");
+  const [activityOpen, setActivityOpen] = useState(false);
 
   // Recurrence preset state (maps task's rule to closest preset)
   const [recurrence, setRecurrence] = useState<RecurrencePresetValue | null>(() =>
@@ -540,6 +551,19 @@ function DrawerBody({
             </Button>
           </div>
         )}
+
+        {/* View activity (edit mode only) */}
+        {form.isEdit && task && (
+          <button
+            type="button"
+            className="flex items-center gap-2 w-full pt-2 border-t border-border/30 text-xs text-muted-foreground active:text-foreground transition-colors"
+            onClick={() => setActivityOpen(true)}
+          >
+            <History className="h-3.5 w-3.5" />
+            <span>View activity</span>
+            <ChevronRight className="h-3 w-3 ml-auto opacity-50" />
+          </button>
+        )}
       </div>
 
       {/* Sticky footer */}
@@ -648,6 +672,28 @@ function DrawerBody({
             }
           }}
         />
+      )}
+
+      {/* Nested activity drawer (edit mode only) */}
+      {form.isEdit && task && (
+        <Drawer.NestedRoot open={activityOpen} onOpenChange={setActivityOpen}>
+          <Drawer.Portal>
+            <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
+            <Drawer.Content
+              className={cn(
+                "fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl",
+                "bg-background border-t border-border",
+                "max-w-lg mx-auto max-h-[80vh] flex flex-col",
+              )}
+            >
+              <div className="mx-auto mt-3 mb-2 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
+              <Drawer.Title className="px-4 text-sm font-semibold mb-2">Activity</Drawer.Title>
+              <div className="overflow-y-auto px-4 pb-8">
+                {activityOpen && <TaskActivityPanel taskId={task.id} />}
+              </div>
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.NestedRoot>
       )}
 
       {/* Delete confirmation dialog */}
