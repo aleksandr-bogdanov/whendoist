@@ -57,6 +57,7 @@ def _strip_control_chars(value: str) -> str:
 
 
 VALID_DAYS_OF_WEEK = {"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
+VALID_REMINDER_MINUTES = {0, 5, 15, 30, 60, 1440}
 
 
 class RecurrenceRuleSchema(BaseModel):
@@ -97,6 +98,7 @@ class TaskCreate(BaseModel):
     recurrence_rule: RecurrenceRuleSchema | None = None
     recurrence_start: date | None = None
     recurrence_end: date | None = None
+    reminder_minutes_before: int | None = None
 
     @field_validator("title")
     @classmethod
@@ -125,6 +127,13 @@ class TaskCreate(BaseModel):
             raise ValueError("Clarity must be autopilot, normal, or brainstorm")
         return v
 
+    @field_validator("reminder_minutes_before")
+    @classmethod
+    def validate_reminder(cls, v: int | None) -> int | None:
+        if v is not None and v not in VALID_REMINDER_MINUTES:
+            raise ValueError(f"reminder_minutes_before must be one of {sorted(VALID_REMINDER_MINUTES)}")
+        return v
+
     @model_validator(mode="after")
     def ensure_duration_with_time(self) -> "TaskCreate":
         """If scheduled_time is set, ensure duration_minutes has a value."""
@@ -150,6 +159,7 @@ class TaskUpdate(BaseModel):
     recurrence_start: date | None = None
     recurrence_end: date | None = None
     position: int | None = None
+    reminder_minutes_before: int | None = None
 
     @field_validator("title")
     @classmethod
@@ -178,6 +188,13 @@ class TaskUpdate(BaseModel):
     def validate_clarity(cls, v: str | None) -> str | None:
         if v is not None and v not in ("autopilot", "normal", "brainstorm"):
             raise ValueError("Clarity must be autopilot, normal, or brainstorm")
+        return v
+
+    @field_validator("reminder_minutes_before")
+    @classmethod
+    def validate_reminder(cls, v: int | None) -> int | None:
+        if v is not None and v not in VALID_REMINDER_MINUTES:
+            raise ValueError(f"reminder_minutes_before must be one of {sorted(VALID_REMINDER_MINUTES)}")
         return v
 
     # NOTE: No ensure_duration_with_time validator here (unlike TaskCreate).
@@ -222,6 +239,7 @@ class TaskResponse(BaseModel):
     recurrence_rule: dict | None
     recurrence_start: date | None = None
     recurrence_end: date | None = None
+    reminder_minutes_before: int | None = None
     status: str
     position: int
     created_at: datetime | None = None
@@ -263,6 +281,7 @@ def _task_to_response(task: Task, user_today: date | None = None) -> TaskRespons
         recurrence_rule=task.recurrence_rule,
         recurrence_start=task.recurrence_start,
         recurrence_end=task.recurrence_end,
+        reminder_minutes_before=task.reminder_minutes_before,
         status=task.status,
         position=task.position,
         created_at=task.created_at,
@@ -429,6 +448,21 @@ async def get_all_content(
     return AllDataResponse(tasks=task_data, domains=domain_data)
 
 
+@router.get("/reminders", response_model=list[TaskResponse])
+async def list_reminders(
+    user: User = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get tasks with active reminders (scheduled, pending, has reminder set)."""
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    user_today = get_user_today(timezone)
+
+    service = TaskService(db, user.id)
+    tasks = await service.get_tasks_with_reminders()
+    return [_task_to_response(t, user_today) for t in tasks]
+
+
 @router.get("/{task_id}", response_model=TaskResponse)
 async def get_task(
     task_id: int,
@@ -483,6 +517,7 @@ async def create_task(
             recurrence_rule=data.recurrence_rule.model_dump() if data.recurrence_rule else None,
             recurrence_start=data.recurrence_start,
             recurrence_end=data.recurrence_end,
+            reminder_minutes_before=data.reminder_minutes_before,
         )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from None

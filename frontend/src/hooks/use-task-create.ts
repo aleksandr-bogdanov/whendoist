@@ -35,6 +35,7 @@ export interface CreateTaskInput {
   recurrence_rule?: TaskCreate["recurrence_rule"];
   recurrence_start?: string | null;
   recurrence_end?: string | null;
+  reminder_minutes_before?: number | null;
 }
 
 /** Per-call options to customise toast / post-creation behavior. */
@@ -83,6 +84,7 @@ export function useTaskCreate(): {
         recurrence_rule: input.recurrence_rule,
         recurrence_start: input.recurrence_start,
         recurrence_end: input.recurrence_end,
+        reminder_minutes_before: input.reminder_minutes_before,
       };
 
       createMutation.mutate(

@@ -4,6 +4,23 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.59.0 — 2026-03-04
+
+### Feat: Tauri v2 Mobile — Phase 1 Local Notifications / Reminders
+
+- **Backend**: `reminder_minutes_before` nullable integer column on Task model (0 = at time, 5/15/30/60/1440 = minutes before)
+- **Alembic migration** for the new column
+- **Schemas**: `TaskCreate`, `TaskUpdate`, `TaskResponse` updated with `reminder_minutes_before` field + validation
+- **New endpoint**: `GET /api/v1/tasks/reminders` — returns tasks with active reminders (scheduled, pending, has reminder set), filtered by user_id
+- **Rust**: `tauri-plugin-notification` v2 added; `notifications.rs` commands: `schedule_reminder`, `cancel_reminder`, `cancel_all_reminders` with managed `ReminderStore` state
+- **Frontend**: `tauri-notifications.ts` TypeScript wrapper for Rust notification commands
+- **Frontend**: `use-reminders.ts` hook — syncs reminders on launch, reschedules on task changes, cancels on unmount
+- **Frontend**: `ReminderPickerRow` component in `field-pickers.tsx` — "None", "At time", "5 min", "15 min", "30 min", "1 hour", "1 day" selector
+- **Frontend**: Wired into `TaskFieldsBody`, `useTaskForm`, `useTaskCreate` — reminder selector appears when Tauri + scheduled date set
+- Activity log tracks `reminder_minutes_before` field changes
+
+---
+
 ## v0.58.1 — 2026-03-04
 
 ### Feat: Voice Input for Task Creation (Phase 5)

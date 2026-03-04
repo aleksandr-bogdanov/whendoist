@@ -333,6 +333,7 @@ class TaskService:
         recurrence_rule: dict | None = None,
         recurrence_start: date | None = None,
         recurrence_end: date | None = None,
+        reminder_minutes_before: int | None = None,
     ) -> Task:
         """Create a new task."""
         # If parent_id is provided, inherit domain from parent
@@ -383,6 +384,7 @@ class TaskService:
             recurrence_rule=recurrence_rule,
             recurrence_start=recurrence_start or (scheduled_date if is_recurring else None),
             recurrence_end=recurrence_end,
+            reminder_minutes_before=reminder_minutes_before,
             position=max_pos + 1,
         )
         self.db.add(task)
@@ -428,6 +430,7 @@ class TaskService:
             "recurrence_rule",
             "recurrence_start",
             "recurrence_end",
+            "reminder_minutes_before",
             "position",
             "status",
         }
@@ -691,6 +694,21 @@ class TaskService:
             grouped[domain_id].append(task)
 
         return grouped
+
+    async def get_tasks_with_reminders(self) -> list[Task]:
+        """Get tasks with active reminders: scheduled, not completed/archived, has reminder set."""
+        result = await self.db.execute(
+            select(Task)
+            .where(
+                Task.user_id == self.user_id,
+                Task.reminder_minutes_before.isnot(None),
+                Task.status == "pending",
+                Task.scheduled_date.isnot(None),
+            )
+            .options(selectinload(Task.domain))
+            .order_by(Task.scheduled_date, Task.scheduled_time)
+        )
+        return list(result.scalars().all())
 
     async def get_scheduled_tasks_for_range(
         self,

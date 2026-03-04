@@ -37,6 +37,7 @@ TASK_DIFF_FIELDS = frozenset(
         "recurrence_rule",
         "recurrence_start",
         "recurrence_end",
+        "reminder_minutes_before",
     }
 )
 

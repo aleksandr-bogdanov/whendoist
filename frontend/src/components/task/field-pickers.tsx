@@ -615,3 +615,48 @@ export function ParentTaskSelect({
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  ReminderPickerRow                                                  */
+/* ------------------------------------------------------------------ */
+
+const REMINDER_OPTIONS: { value: number | null; label: string }[] = [
+  { value: null, label: "None" },
+  { value: 0, label: "At time" },
+  { value: 5, label: "5 min" },
+  { value: 15, label: "15 min" },
+  { value: 30, label: "30 min" },
+  { value: 60, label: "1 hour" },
+  { value: 1440, label: "1 day" },
+];
+
+interface ReminderPickerRowProps {
+  value: number | null;
+  onChange: (minutes: number | null) => void;
+}
+
+export function ReminderPickerRow({ value, onChange }: ReminderPickerRowProps) {
+  return (
+    <div className="flex gap-1.5 flex-wrap md:gap-1">
+      {REMINDER_OPTIONS.map((opt) => {
+        const isActive = value === opt.value;
+        return (
+          <button
+            key={opt.label}
+            type="button"
+            className={cn(
+              "rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+              "md:rounded-md md:px-2 md:py-1",
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+            )}
+            onClick={() => onChange(isActive && opt.value !== null ? null : opt.value)}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

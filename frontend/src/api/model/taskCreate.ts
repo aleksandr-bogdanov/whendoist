@@ -28,4 +28,5 @@ export interface TaskCreate {
   recurrence_rule?: RecurrenceRuleSchema | null;
   recurrence_start?: string | null;
   recurrence_end?: string | null;
+  reminder_minutes_before?: number | null;
 }
