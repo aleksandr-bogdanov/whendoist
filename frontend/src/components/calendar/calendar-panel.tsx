@@ -645,15 +645,18 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             </Button>
           )}
           {secondaryTz && (
-            <Button
-              variant={showSecondaryTimezone ? "default" : "ghost"}
-              size="icon"
-              className="h-7 w-7"
+            <button
+              type="button"
+              className={`inline-flex items-center justify-center rounded w-6 h-6 border transition-colors duration-150 cursor-pointer ${
+                showSecondaryTimezone
+                  ? "border-[rgba(109,94,246,0.35)] bg-[rgba(109,94,246,0.08)] text-[#6D5EF6]"
+                  : "border-border bg-background text-muted-foreground hover:border-[rgba(109,94,246,0.35)] hover:bg-[rgba(109,94,246,0.06)] hover:text-[#6D5EF6]"
+              }`}
               onClick={() => setShowSecondaryTimezone(!showSecondaryTimezone)}
               title={`Secondary timezone: ${secondaryTz.replace(/_/g, " ")}`}
             >
-              <Globe className="h-3.5 w-3.5" />
-            </Button>
+              <Globe className="h-3 w-3" />
+            </button>
           )}
           <Button
             variant={isPlanMode ? "outline" : "cta"}
