@@ -24,6 +24,7 @@ pub fn run() {
             commands::biometric::check_biometric_availability,
             commands::biometric::store_encryption_key,
             commands::biometric::retrieve_encryption_key,
+            commands::biometric::has_stored_key,
             commands::biometric::clear_encryption_key,
         ])
         .run(tauri::generate_context!())

@@ -4,6 +4,7 @@ import {
   type BiometricAvailability,
   checkBiometricAvailability,
   clearEncryptionKey,
+  hasStoredKey as hasStoredBiometricKey,
   retrieveEncryptionKey,
   storeEncryptionKey,
 } from "@/lib/tauri-biometric";
@@ -96,9 +97,13 @@ export const useCryptoStore = create<CryptoState & CryptoActions>((set, get) => 
 
   checkBiometric: async () => {
     const result = await checkBiometricAvailability();
+    // Probe whether a key is already enrolled (persisted in store).
+    // This survives app restarts — no biometric prompt triggered.
+    const enrolled = await hasStoredBiometricKey();
     set({
       biometricAvailable: result.available,
       biometryType: result.biometryType,
+      biometricEnabled: enrolled,
     });
     return result;
   },
