@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.59.1 — 2026-03-04
+
+### Fix: Wire up useReminders() hook at authenticated root
+
+- `useReminders()` was defined but never called — reminders were never scheduled in Tauri
+- Call added to `_authenticated.tsx` alongside `useNetworkStatus()` (same background-hook pattern)
+
+---
+
 ## v0.59.0 — 2026-03-04
 
 ### Feat: Tauri v2 Mobile — Phase 1 Local Notifications / Reminders
