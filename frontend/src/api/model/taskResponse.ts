@@ -27,6 +27,7 @@ export interface TaskResponse {
   recurrence_rule: TaskResponseRecurrenceRule;
   recurrence_start?: string | null;
   recurrence_end?: string | null;
+  reminder_minutes_before?: number | null;
   status: string;
   position: number;
   created_at?: string | null;

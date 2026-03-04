@@ -347,6 +347,10 @@ class Task(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
+    # Reminders — "remind me N minutes before scheduled time"
+    # None = no reminder, 0 = at time, 5/15/30/60/1440 = minutes before
+    reminder_minutes_before: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     # For import tracking (Todoist, Things, etc.)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     external_source: Mapped[str | None] = mapped_column(String(50), nullable=True)

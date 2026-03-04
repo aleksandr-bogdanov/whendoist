@@ -25,4 +25,5 @@ export interface TaskUpdate {
   recurrence_start?: string | null;
   recurrence_end?: string | null;
   position?: number | null;
+  reminder_minutes_before?: number | null;
 }

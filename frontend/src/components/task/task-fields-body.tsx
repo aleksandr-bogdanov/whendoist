@@ -21,6 +21,7 @@ import {
   DomainChipRow,
   DurationPickerRow,
   ImpactButtonRow,
+  ReminderPickerRow,
   ScheduleButtonRow,
   TimePickerField,
 } from "@/components/task/field-pickers";
@@ -29,6 +30,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RichText } from "@/components/ui/rich-text";
+import { isTauri } from "@/hooks/use-device";
 import { usePasteUrl } from "@/hooks/use-paste-url";
 import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
 import { hasLinks } from "@/lib/rich-text-parser";
@@ -49,6 +51,7 @@ export interface TaskFieldValues {
   recurrenceRule: RecurrenceRule | null;
   recurrenceStart: string | null;
   recurrenceEnd: string | null;
+  reminderMinutesBefore: number | null;
 }
 
 export interface TaskFieldHandlers {
@@ -64,6 +67,7 @@ export interface TaskFieldHandlers {
   onRecurrenceRuleChange: (rule: RecurrenceRule | null) => void;
   onRecurrenceStartChange: (start: string | null) => void;
   onRecurrenceEndChange: (end: string | null) => void;
+  onReminderChange: (minutes: number | null) => void;
 }
 
 interface TaskFieldsBodyProps {
@@ -323,6 +327,19 @@ export function TaskFieldsBody({
           }}
         />
       </FieldRow>
+
+      {/* Reminder — only in Tauri, only when date is set */}
+      {isTauri && !!values.scheduledDate && (
+        <FieldRow label="Reminder">
+          <ReminderPickerRow
+            value={values.reminderMinutesBefore}
+            onChange={(m) => {
+              handlers.onReminderChange(m);
+              markDirty();
+            }}
+          />
+        </FieldRow>
+      )}
 
       {/* Recurrence */}
       <div className="space-y-1.5">

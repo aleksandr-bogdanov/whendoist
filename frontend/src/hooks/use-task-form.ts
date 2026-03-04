@@ -103,6 +103,9 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
     task?.recurrence_start ?? null,
   );
   const [recurrenceEnd, setRecurrenceEnd] = useState<string | null>(task?.recurrence_end ?? null);
+  const [reminderMinutesBefore, setReminderMinutesBefore] = useState<number | null>(
+    task?.reminder_minutes_before ?? null,
+  );
   const [dirty, setDirty] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -125,6 +128,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
       );
       setRecurrenceStart(task.recurrence_start ?? null);
       setRecurrenceEnd(task.recurrence_end ?? null);
+      setReminderMinutesBefore(task.reminder_minutes_before ?? null);
     } else {
       setTitle("");
       setDescription("");
@@ -138,6 +142,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
       setRecurrenceRule(null);
       setRecurrenceStart(null);
       setRecurrenceEnd(null);
+      setReminderMinutesBefore(null);
     }
     setDirty(false);
     setShowDeleteConfirm(false);
@@ -191,6 +196,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
         recurrence_rule: recurrenceRule as TaskUpdate["recurrence_rule"],
         recurrence_start: recurrenceStart,
         recurrence_end: recurrenceEnd,
+        reminder_minutes_before: reminderMinutesBefore,
       };
 
       updateMutation.mutate(
@@ -224,6 +230,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
         recurrence_rule: recurrenceRule as TaskCreate["recurrence_rule"],
         recurrence_start: recurrenceStart,
         recurrence_end: recurrenceEnd,
+        reminder_minutes_before: reminderMinutesBefore,
       };
 
       createMutation.mutate(
@@ -253,6 +260,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
     recurrenceRule,
     recurrenceStart,
     recurrenceEnd,
+    reminderMinutesBefore,
     isEdit,
     task,
     encryptTaskFields,
@@ -360,6 +368,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
     recurrenceRule,
     recurrenceStart,
     recurrenceEnd,
+    reminderMinutesBefore,
   };
 
   // Memoized so consumers can depend on stable reference
@@ -378,6 +387,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
       onRecurrenceRuleChange: setRecurrenceRule,
       onRecurrenceStartChange: setRecurrenceStart,
       onRecurrenceEndChange: setRecurrenceEnd,
+      onReminderChange: setReminderMinutesBefore,
     }),
     [],
   );
