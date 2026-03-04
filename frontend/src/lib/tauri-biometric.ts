@@ -54,6 +54,20 @@ export async function retrieveEncryptionKey(): Promise<string> {
 }
 
 /**
+ * Check if a biometric encryption key has been enrolled (without biometric prompt).
+ * Used on app startup to derive biometricEnabled state.
+ */
+export async function hasStoredKey(): Promise<boolean> {
+  if (!isTauri) return false;
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    return await invoke<boolean>("has_stored_key");
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Clear the stored encryption key (when disabling biometric unlock).
  */
 export async function clearEncryptionKey(): Promise<void> {

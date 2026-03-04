@@ -5,6 +5,19 @@
 //!
 //! The stored key is the base64-encoded AES-256-GCM derived key from Web Crypto.
 //! Rust never performs encryption — it only stores/retrieves the key blob.
+//!
+//! ## Security note
+//!
+//! `tauri-plugin-store` writes a JSON file in the app's private data directory.
+//! This is NOT hardware-backed (unlike iOS Keychain / Android Keystore). The file
+//! is protected by the mobile OS sandbox and biometric gating in our Rust commands,
+//! but is theoretically accessible on rooted/jailbroken devices or via ADB.
+//!
+//! The ideal solution is `tauri-plugin-keystore` (by impierce), which uses iOS
+//! Keychain / Android Keystore with hardware-backed biometric protection. However,
+//! its Rust API only exposes `ping()` — store/retrieve/remove only work via JS
+//! bindings, which can't be called from Rust commands. A future upgrade could
+//! either use the JS bindings directly or contribute Rust API methods upstream.
 
 use serde::Serialize;
 
@@ -34,10 +47,16 @@ pub fn check_biometric_availability(
 
         match app.biometric().status() {
             Ok(status) => {
-                let biometry_type = format!("{:?}", status.biometry_type);
+                // Explicit mapping — Debug format is fragile across versions.
+                // Frontend expects exactly "FaceID", "TouchID", or "None".
+                let biometry_type = match status.biometry_type {
+                    tauri_plugin_biometric::BiometryType::FaceID => "FaceID",
+                    tauri_plugin_biometric::BiometryType::TouchID => "TouchID",
+                    _ => "None",
+                };
                 Ok(BiometricAvailability {
                     available: status.is_available,
-                    biometry_type,
+                    biometry_type: biometry_type.to_string(),
                 })
             }
             Err(e) => {
@@ -133,6 +152,24 @@ pub fn retrieve_encryption_key(app: tauri::AppHandle) -> Result<String, String> 
         Some(_) => Err("Stored encryption key has unexpected type".to_string()),
         None => Err("No encryption key stored — enroll biometric first".to_string()),
     }
+}
+
+/// Check if a biometric encryption key has been enrolled (without biometric prompt).
+///
+/// Used on app startup to determine whether to show the biometric unlock button.
+/// Does NOT trigger biometric authentication — just checks if a key exists.
+#[tauri::command]
+pub fn has_stored_key(app: tauri::AppHandle) -> Result<bool, String> {
+    use tauri_plugin_store::StoreExt;
+
+    let store = app
+        .store(BIOMETRIC_STORE_FILE)
+        .map_err(|e| format!("Store error: {e}"))?;
+
+    Ok(matches!(
+        store.get(BIOMETRIC_KEY_ENTRY),
+        Some(serde_json::Value::String(_))
+    ))
 }
 
 /// Clear the stored encryption key (e.g. when disabling biometric unlock).

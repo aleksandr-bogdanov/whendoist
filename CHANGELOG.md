@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.60.1 — 2026-03-04
+
+### Fix: Biometric auth — persistence, type labels, security docs
+
+- **BUG 1 (Critical)**: `biometricEnabled` was not persisted across app restarts — biometric button never appeared after relaunch. Added `has_stored_key` Rust command that probes the store without triggering biometric. `checkBiometric()` now calls it on startup to derive `biometricEnabled` from actual stored state.
+- **BUG 2**: `biometryType` string mismatch — Rust `Debug` format produced "FaceId"/"TouchId" but TypeScript expected "FaceID"/"TouchID". Replaced fragile `format!("{:?}")` with explicit `match` mapping to exact strings.
+- **Security doc**: Added module-level documentation in `biometric.rs` explaining the `tauri-plugin-store` vs `tauri-plugin-keystore` tradeoff (JSON file vs hardware-backed keychain) and why the current approach was chosen.
+
+---
+
 ## v0.60.0 — 2026-03-04
 
 ### Feat: Tauri v2 Mobile — Phase 4 Biometric Auth
