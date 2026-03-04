@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.57.5 — 2026-03-04
+
+### Fix: Fire-and-forget bulk sync acquires per-user lock
+
+- `_fire_and_forget_bulk_sync` in `tasks.py` and `instances.py` now acquires the same per-user `asyncio.Lock` used by `gcal_sync.py`, preventing concurrent bulk syncs from creating duplicate/orphaned Google Calendar events
+- Extracted all fire-and-forget GCal helpers into shared `app/routers/_gcal_helpers.py` (DRY — was copy-pasted in two files)
+- Lock dict is now single source of truth in `_gcal_helpers.py`, imported by all three routers
+
+---
+
 ## v0.57.4 — 2026-03-04
 
 ### Fix: Move secondary timezone toggle to Settings

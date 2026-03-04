@@ -18,6 +18,7 @@ from app.constants import GCAL_SYNC_CALENDAR_NAME
 from app.database import async_session_factory, get_db
 from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import GoogleCalendarEventSync, GoogleToken, User
+from app.routers._gcal_helpers import bulk_sync_locks as _bulk_sync_locks
 from app.routers.auth import require_user
 from app.services.gcal import GoogleCalendarClient
 from app.services.gcal_sync import GCalSyncService
@@ -73,9 +74,6 @@ class BulkSyncResponse(BaseModel):
 # =============================================================================
 # Background Tasks
 # =============================================================================
-
-# Per-user lock to prevent concurrent bulk syncs
-_bulk_sync_locks: dict[int, asyncio.Lock] = {}
 
 # In-memory progress tracking (visible to status endpoint while sync runs)
 _bulk_sync_progress: dict[int, dict] = {}
