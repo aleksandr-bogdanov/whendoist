@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.58.1 — 2026-03-04
+
+### Feat: Voice Input for Task Creation (Phase 5)
+
+- **`use-voice-input.ts`** hook wrapping the Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`) — runtime availability check, interim results for real-time feedback, prefix-append pattern for mixing typed + spoken text
+- **Mic button** in Quick Add dialog and Search Palette — shown only when `isSupported`, red pulse animation while listening, auto-stops when dialog closes
+- Transcribed text feeds directly into `useSmartInput.setInput()` so spoken phrases like "Buy groceries #personal !high tomorrow 30m" are parsed identically to typed input
+- User-facing error toasts for permission denied, no microphone, and network failures
+- Full TypeScript type declarations for the Web Speech API (not yet in TS DOM lib)
+- Graceful fallback: mic button hidden when API unavailable (Firefox, some WebViews)
+
+---
+
 ## v0.58.0 — 2026-03-04
 
 ### Feat: Tauri v2 Mobile — Phase 0 Scaffold
