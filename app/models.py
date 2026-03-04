@@ -229,6 +229,8 @@ class UserPreferences(Base):
 
     # Timezone preference (IANA format: "America/New_York", "Europe/London", etc.)
     timezone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # Secondary timezone for dual display on calendar ruler
+    secondary_timezone: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Calendar hour height in pixels (zoom level)
     calendar_hour_height: Mapped[int] = mapped_column(Integer, default=60)

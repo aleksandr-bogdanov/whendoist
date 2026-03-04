@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.56.17
+ * OpenAPI spec version: 0.57.1
  */
 
 /**
@@ -16,5 +16,6 @@ export interface PreferencesUpdate {
   hide_recurring_after_completion?: boolean | null;
   show_scheduled_in_list?: boolean | null;
   timezone?: string | null;
+  secondary_timezone?: string | null;
   calendar_hour_height?: number | null;
 }

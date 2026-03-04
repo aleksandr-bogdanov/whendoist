@@ -4,7 +4,12 @@
  */
 
 import type { EventResponse, InstanceResponse, TaskResponse } from "@/api/model";
-import { getHoursInTimezone, getMinutesInTimezone, toDateStringInTimezone } from "@/lib/timezone";
+import {
+  getHoursInTimezone,
+  getMinutesInTimezone,
+  getTimezoneOffsetHours,
+  toDateStringInTimezone,
+} from "@/lib/timezone";
 
 // ─── Date Helpers ────────────────────────────────────────────────────────────
 
@@ -175,10 +180,45 @@ export interface ExtendedHourLabel {
   offset: number;
   label: string;
   isAdjacentDay: boolean;
+  /** Secondary timezone label (e.g., "2AM" or "1:30AM" for half-hour offsets) */
+  secondaryLabel?: string;
 }
 
-/** Get hour labels for all hours of the extended timeline */
-export function getExtendedHourLabels(hourHeight: number): ExtendedHourLabel[] {
+/**
+ * Get hour labels for all hours of the extended timeline.
+ * When secondaryTz + primaryTz are provided, computes secondary labels showing
+ * what time each primary-hour slot corresponds to in the secondary timezone.
+ */
+export function getExtendedHourLabels(
+  hourHeight: number,
+  secondaryTz?: string,
+  primaryTz?: string,
+  referenceDate?: Date,
+): ExtendedHourLabel[] {
+  // Compute offset once using the center date as reference. This is accurate for
+  // the current day's 24 hours. The 2 prev-evening and 5 next-morning hours may be
+  // off by 1h on the ~2 days/year when a DST transition falls between those hours
+  // and the center day — acceptable for dimmed adjacent-day labels.
+  let offsetMinutes: number | undefined;
+  if (secondaryTz && primaryTz) {
+    const offsetHours = getTimezoneOffsetHours(primaryTz, secondaryTz, referenceDate);
+    offsetMinutes = Math.round(offsetHours * 60);
+  }
+
+  function secondaryLabel(primaryHour: number): string | undefined {
+    if (offsetMinutes === undefined) return undefined;
+    const totalMinutes = primaryHour * 60 + offsetMinutes;
+    // Wrap to 0–1439 range (minutes in a day)
+    const wrapped = ((totalMinutes % 1440) + 1440) % 1440;
+    const h = Math.floor(wrapped / 60);
+    const m = wrapped % 60;
+    if (m === 0) return formatHourLabel(h);
+    // Half-hour offsets: show "1:30AM"
+    const h12 = h % 12 || 12;
+    const ampm = h < 12 ? "AM" : "PM";
+    return `${h12}:${String(m).padStart(2, "0")}${ampm}`;
+  }
+
   const labels: ExtendedHourLabel[] = [];
 
   // Prev day: hours 22-23
@@ -189,6 +229,7 @@ export function getExtendedHourLabels(hourHeight: number): ExtendedHourLabel[] {
       offset: (h - PREV_DAY_START_HOUR) * hourHeight,
       label: formatHourLabel(h),
       isAdjacentDay: true,
+      secondaryLabel: secondaryLabel(h),
     });
   }
 
@@ -200,6 +241,7 @@ export function getExtendedHourLabels(hourHeight: number): ExtendedHourLabel[] {
       offset: (PREV_DAY_HOURS + h) * hourHeight,
       label: formatHourLabel(h),
       isAdjacentDay: false,
+      secondaryLabel: secondaryLabel(h),
     });
   }
 
@@ -211,6 +253,7 @@ export function getExtendedHourLabels(hourHeight: number): ExtendedHourLabel[] {
       offset: (PREV_DAY_HOURS + CURRENT_DAY_HOURS + h) * hourHeight,
       label: formatHourLabel(h),
       isAdjacentDay: true,
+      secondaryLabel: secondaryLabel(h),
     });
   }
 

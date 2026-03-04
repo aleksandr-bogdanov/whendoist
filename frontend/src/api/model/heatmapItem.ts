@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.56.17
+ * OpenAPI spec version: 0.57.1
  */
 
 export interface HeatmapItem {

@@ -220,6 +220,7 @@ function TimezoneSection() {
   const queryClient = useQueryClient();
 
   const currentTz = prefsQuery.data?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const secondaryTz = prefsQuery.data?.secondary_timezone ?? null;
 
   return (
     <SettingsCard title="Timezone" icon={<Calendar className="h-4 w-4" />}>
@@ -241,6 +242,30 @@ function TimezoneSection() {
           );
         }}
       />
+      <div className="pt-2 border-t">
+        <p className="text-xs text-muted-foreground mb-2">
+          Show a second timezone on the calendar time ruler.
+        </p>
+        <TimezonePicker
+          value={secondaryTz}
+          onChange={(tz) => {
+            updatePrefs.mutate(
+              { data: { secondary_timezone: tz ?? "" } },
+              {
+                onSuccess: () => {
+                  queryClient.invalidateQueries({
+                    queryKey: getGetPreferencesApiV1PreferencesGetQueryKey(),
+                  });
+                  toast.success(tz ? "Secondary timezone updated" : "Secondary timezone cleared");
+                },
+                onError: () => toast.error("Failed to update secondary timezone"),
+              },
+            );
+          }}
+          allowClear
+          placeholder="Secondary timezone (optional)"
+        />
+      </div>
     </SettingsCard>
   );
 }

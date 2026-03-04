@@ -4,6 +4,25 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.57.2 — 2026-03-04
+
+### Feat: Secondary timezone display (Phase 2)
+
+**Backend:**
+- `secondary_timezone` nullable column on UserPreferences with Alembic migration
+- Validation reuses ZoneInfo pattern from primary timezone (empty string clears)
+- Exposed in preferences API request/response schemas
+
+**Frontend:**
+- Secondary timezone picker in Settings (reuses TimezonePicker with allowClear)
+- Dual hour labels on calendar time ruler — secondary label shown smaller/muted below primary
+- Globe icon toggle in calendar header (only visible when secondary tz is configured)
+- Toggle state persisted in Zustand store (survives navigation)
+- Half-hour offset support (e.g., Asia/Kolkata +5:30 shows "1:30PM")
+- Labels hidden at compact zoom levels (< 50px hour height)
+
+---
+
 ## v0.57.1 — 2026-03-04
 
 ### Feat: Multi-timezone support (Phase 1)

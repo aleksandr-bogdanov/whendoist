@@ -245,6 +245,49 @@ class TestPreferencesTimezone:
         assert result.timezone is None
 
 
+class TestPreferencesSecondaryTimezone:
+    """Tests for secondary timezone preference."""
+
+    async def test_secondary_timezone_default_is_none(self, db_session: AsyncSession, test_user: User):
+        """New preferences have no secondary timezone set."""
+        service = PreferencesService(db_session, test_user.id)
+        prefs = await service.get_preferences()
+        assert prefs.secondary_timezone is None
+
+    async def test_update_secondary_timezone_valid(self, db_session: AsyncSession, test_user: User):
+        """Can set a valid secondary timezone."""
+        service = PreferencesService(db_session, test_user.id)
+        result = await service.update_preferences(secondary_timezone="Asia/Kolkata")
+        assert result.secondary_timezone == "Asia/Kolkata"
+
+    async def test_update_secondary_timezone_invalid_raises(self, db_session: AsyncSession, test_user: User):
+        """Invalid secondary timezone raises ValueError."""
+        service = PreferencesService(db_session, test_user.id)
+        with pytest.raises(ValueError, match="Invalid timezone"):
+            await service.update_preferences(secondary_timezone="Fake/Zone")
+
+    async def test_update_secondary_timezone_empty_clears(self, db_session: AsyncSession, test_user: User):
+        """Empty string clears secondary timezone."""
+        service = PreferencesService(db_session, test_user.id)
+        await service.update_preferences(secondary_timezone="Europe/London")
+        result = await service.update_preferences(secondary_timezone="")
+        assert result.secondary_timezone is None
+
+    async def test_secondary_timezone_independent_of_primary(self, db_session: AsyncSession, test_user: User):
+        """Primary and secondary timezones are independent fields."""
+        service = PreferencesService(db_session, test_user.id)
+        await service.update_preferences(timezone="America/New_York", secondary_timezone="Asia/Tokyo")
+        prefs = await service.get_preferences()
+        assert prefs.timezone == "America/New_York"
+        assert prefs.secondary_timezone == "Asia/Tokyo"
+
+        # Clearing one doesn't affect the other
+        await service.update_preferences(secondary_timezone="")
+        prefs = await service.get_preferences()
+        assert prefs.timezone == "America/New_York"
+        assert prefs.secondary_timezone is None
+
+
 class TestPreferencesDefaults:
     """Tests for verifying correct default values."""
 
@@ -273,3 +316,4 @@ class TestPreferencesDefaults:
 
         # Timezone
         assert prefs.timezone is None
+        assert prefs.secondary_timezone is None
