@@ -1,6 +1,6 @@
 import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Globe, Minus, Plus, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { InstanceResponse, TaskResponse } from "@/api/model";
@@ -9,6 +9,7 @@ import {
   useGetEventsApiV1EventsGet,
 } from "@/api/queries/api/api";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
+import { useGetPreferencesApiV1PreferencesGet } from "@/api/queries/preferences/preferences";
 import {
   getListTasksApiV1TasksGetQueryKey,
   useListTasksApiV1TasksGet,
@@ -58,9 +59,13 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     setCalendarCenterDate,
     energyLevel,
     planStrategy: strategyId,
+    showSecondaryTimezone,
+    setShowSecondaryTimezone,
   } = useUIStore();
   useSyncCalendarHourHeight();
   const timezone = useTimezone();
+  const { data: prefs } = useGetPreferencesApiV1PreferencesGet();
+  const secondaryTz = prefs?.secondary_timezone ?? null;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -563,8 +568,19 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     },
   });
 
-  // Hour labels for the time ruler
-  const hourLabels = useMemo(() => getExtendedHourLabels(calendarHourHeight), [calendarHourHeight]);
+  // Hour labels for the time ruler (with optional secondary timezone labels)
+  const showSecondary = showSecondaryTimezone && !!secondaryTz && calendarHourHeight >= 50;
+  const referenceDate = useMemo(() => parseDate(calendarCenterDate), [calendarCenterDate]);
+  const hourLabels = useMemo(
+    () =>
+      getExtendedHourLabels(
+        calendarHourHeight,
+        showSecondary ? (secondaryTz ?? undefined) : undefined,
+        showSecondary ? timezone : undefined,
+        referenceDate,
+      ),
+    [calendarHourHeight, showSecondary, secondaryTz, timezone, referenceDate],
+  );
   const totalHeight = EXTENDED_TOTAL_HOURS * calendarHourHeight;
 
   // Drop overlay for calendar body — sits OUTSIDE scroll containers so dnd-kit
@@ -628,6 +644,17 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
               Today
             </Button>
           )}
+          {secondaryTz && (
+            <Button
+              variant={showSecondaryTimezone ? "default" : "ghost"}
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setShowSecondaryTimezone(!showSecondaryTimezone)}
+              title={`Secondary timezone: ${secondaryTz.replace(/_/g, " ")}`}
+            >
+              <Globe className="h-3.5 w-3.5" />
+            </Button>
+          )}
           <Button
             variant={isPlanMode ? "outline" : "cta"}
             size="sm"
@@ -679,12 +706,17 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                 {hourLabels.map((hl) => (
                   <div
                     key={`${hl.section}-${hl.hour}`}
-                    className={`absolute w-full text-right pr-1.5 text-[10px] -translate-y-1/2 ${
+                    className={`absolute w-full text-right pr-1.5 -translate-y-1/2 ${
                       hl.isAdjacentDay ? "text-muted-foreground/70 italic" : "text-muted-foreground"
                     }`}
                     style={{ top: `${hl.offset}px` }}
                   >
-                    {hl.label}
+                    <div className="text-[10px] leading-tight">{hl.label}</div>
+                    {hl.secondaryLabel && (
+                      <div className="text-[8px] leading-tight text-muted-foreground/50">
+                        {hl.secondaryLabel}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

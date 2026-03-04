@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Whendoist
  * WHEN do I do my tasks?
- * OpenAPI spec version: 0.56.17
+ * OpenAPI spec version: 0.57.1
  */
 
 /**
@@ -20,6 +20,7 @@ export interface PreferencesResponse {
   scheduled_move_to_bottom: boolean;
   scheduled_sort_by_date: boolean;
   timezone?: string | null;
+  secondary_timezone?: string | null;
   calendar_hour_height?: number;
   gcal_sync_enabled?: boolean;
 }

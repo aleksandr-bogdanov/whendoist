@@ -29,6 +29,7 @@ interface UIState {
   paletteRecents: number[];
   planStrategy: string;
   shortcutsHelpOpen: boolean;
+  showSecondaryTimezone: boolean;
 }
 
 interface UIActions {
@@ -55,6 +56,7 @@ interface UIActions {
   pushPaletteRecent: (taskId: number) => void;
   setPlanStrategy: (id: string) => void;
   setShortcutsHelpOpen: (open: boolean) => void;
+  setShowSecondaryTimezone: (show: boolean) => void;
 }
 
 let flashScrollTimer: ReturnType<typeof setTimeout>;
@@ -84,6 +86,7 @@ export const useUIStore = create<UIState & UIActions>()(
       paletteRecents: [],
       planStrategy: "compact",
       shortcutsHelpOpen: false,
+      showSecondaryTimezone: false,
       calendarCenterDate: (() => {
         const now = new Date();
         if (now.getHours() >= 20) {
@@ -187,6 +190,7 @@ export const useUIStore = create<UIState & UIActions>()(
         })),
       setPlanStrategy: (id) => set({ planStrategy: id }),
       setShortcutsHelpOpen: (open) => set({ shortcutsHelpOpen: open }),
+      setShowSecondaryTimezone: (show) => set({ showSecondaryTimezone: show }),
       flashUpdatedTask: (taskId) => {
         clearTimeout(flashScrollTimer);
         clearTimeout(flashClearTimer);
@@ -214,6 +218,7 @@ export const useUIStore = create<UIState & UIActions>()(
         hideCompletedSubtasks: [...state.hideCompletedSubtasks],
         mobileTab: state.mobileTab,
         planStrategy: state.planStrategy,
+        showSecondaryTimezone: state.showSecondaryTimezone,
       }),
       storage: {
         getItem: (name) => {

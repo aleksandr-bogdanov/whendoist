@@ -33,6 +33,7 @@ class PreferencesUpdate(BaseModel):
     hide_recurring_after_completion: bool | None = None
     show_scheduled_in_list: bool | None = None
     timezone: str | None = Field(None, max_length=50)  # IANA timezone (e.g., "America/New_York")
+    secondary_timezone: str | None = Field(None, max_length=50)
     calendar_hour_height: int | None = Field(None, ge=30, le=100)
 
 
@@ -51,6 +52,7 @@ class PreferencesResponse(BaseModel):
     scheduled_move_to_bottom: bool
     scheduled_sort_by_date: bool
     timezone: str | None = None  # IANA timezone (e.g., "America/New_York")
+    secondary_timezone: str | None = None
     calendar_hour_height: int = 60
     gcal_sync_enabled: bool = False
 
@@ -111,6 +113,7 @@ async def update_preferences(
             hide_recurring_after_completion=data.hide_recurring_after_completion,
             show_scheduled_in_list=data.show_scheduled_in_list,
             timezone=data.timezone,
+            secondary_timezone=data.secondary_timezone,
             calendar_hour_height=data.calendar_hour_height,
         )
     except ValueError as e:

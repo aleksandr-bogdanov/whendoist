@@ -63,6 +63,7 @@ class PreferencesService:
         hide_recurring_after_completion: bool | None = None,
         show_scheduled_in_list: bool | None = None,
         timezone: str | None = None,
+        secondary_timezone: str | None = None,
         calendar_hour_height: int | None = None,
     ) -> UserPreferences:
         """
@@ -104,6 +105,18 @@ class PreferencesService:
                     prefs.timezone = timezone
                 except (KeyError, TypeError) as err:
                     raise ValueError(f"Invalid timezone: {timezone}") from err
+
+        if secondary_timezone is not None:
+            if secondary_timezone == "":
+                prefs.secondary_timezone = None
+            else:
+                from zoneinfo import ZoneInfo
+
+                try:
+                    ZoneInfo(secondary_timezone)
+                    prefs.secondary_timezone = secondary_timezone
+                except (KeyError, TypeError) as err:
+                    raise ValueError(f"Invalid timezone: {secondary_timezone}") from err
 
         if calendar_hour_height is not None:
             # Clamp to valid zoom range
