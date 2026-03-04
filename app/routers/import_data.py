@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import (
+    ActivityLog,
     Domain,
     GoogleCalendarEventSync,
     GoogleToken,
@@ -25,6 +26,7 @@ from app.models import (
     UserPreferences,
 )
 from app.routers.auth import require_user
+from app.services.activity_log import log_activity
 from app.services.data_version import bump_data_version
 from app.services.gcal import GoogleCalendarClient
 from app.services.todoist import TodoistClient
@@ -132,6 +134,14 @@ async def wipe_user_data(
     domain_result = await db.execute(delete(Domain).where(Domain.user_id == user.id))
     domains_deleted: int = domain_result.rowcount  # type: ignore[assignment]
 
+    # Clear activity log (wipe means full reset), then log the wipe event itself
+    await db.execute(delete(ActivityLog).where(ActivityLog.user_id == user.id))
+    await log_activity(
+        db,
+        user_id=user.id,
+        event_type="data_wiped",
+        new_value=f"tasks={tasks_deleted},domains={domains_deleted}",
+    )
     await bump_data_version(db, user.id)
     await db.commit()
 
@@ -243,6 +253,15 @@ async def import_from_todoist(
         include_completed=options.include_completed,
         completed_limit=options.completed_limit,
     )
+
+    # Log import event (import_all commits internally, so add+commit separately)
+    await log_activity(
+        db,
+        user_id=user.id,
+        event_type="data_imported",
+        new_value=f"tasks={result.tasks_created},domains={result.domains_created}",
+    )
+    await db.commit()
 
     logger.info(
         f"User {user.id} imported from Todoist: {result.domains_created} domains, "

@@ -33,6 +33,7 @@ Everything below has been implemented and verified in the codebase.
 - **Offline mutation guards** — Axios request interceptor checks `navigator.onLine` on all requests + persistent offline toast via `useNetworkStatus`
 - **Analytics aging stats bounded** — `_get_aging_stats()` now has both date (`AGING_STATS_HISTORY_DAYS=730`) and count (`AGING_STATS_LIMIT=5000`) bounds
 - **Instance cleanup audit trail** — `cleanup_old_instances` logs per-user/per-status breakdown before bulk delete
+- **Task activity log** — Per-task + per-user event history with hybrid encrypted/plaintext field diffs — [plan](plans/2026-03-04-activity-log.md)
 
 ---
 
@@ -40,7 +41,7 @@ Everything below has been implemented and verified in the codebase.
 
 ### Product
 
-- **Task activity log** — Per-task event history (created, completed, rescheduled, etc.) — [investigation](plans/2026-03-02-activity-log-investigation.md)
+- ~~**Task activity log**~~ — Shipped — [plan](plans/2026-03-04-activity-log.md)
 - **Offline write queue** — IndexedDB mutation queue with sync-on-reconnect
 - **Encryption passphrase change** — Re-encrypt without disable/re-enable cycle
 - **Scheduled export automation** — Automated periodic backups beyond manual snapshots

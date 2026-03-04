@@ -4,6 +4,36 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.57.0 — 2026-03-04
+
+### Feat: Task activity log
+
+Full activity log system with hybrid encrypted/plaintext field diffs.
+
+**Backend:**
+- `ActivityLog` model with composite indexes, Alembic migration
+- `log_activity()` / `log_field_changes()` helpers with encrypted-field and skip-field awareness
+- Instrumented 11 TaskService methods, 7 RecurrenceService methods, batch ops, import/wipe
+- Two API endpoints: per-task (`GET /activity/task/{id}`) and per-user (`GET /activity`) with pagination
+- Deterministic ordering (created_at + id tiebreaker), multitenancy isolation
+- 18 unit tests covering events, field diffs, encryption, cascades, batches, and isolation
+
+**Frontend:**
+- Desktop: Tabs (Details / Activity) in TaskDetailPanel for edit mode
+- Mobile: "View activity" row → nested vaul drawer in TaskEditDrawer (lazy-loaded)
+- Settings: Activity Log section with Sheet side panel, "Load more" pagination
+- Shared components: `ActivityList`, `TaskActivityPanel`, `describeActivity()`, `formatTimeAgo()`
+- Error state handling, event icons for 21 event types
+
+**Audit fixes (2 rounds):**
+- Batch schedule/move capture old_value for proper "A → B" display
+- Batch move validates domain ownership (multitenancy)
+- `datetime.utcnow()` → `datetime.now(UTC)` (deprecated fix)
+- "Load more" button hides at limit cap
+- `domain_updated` shows old→new values for non-encrypted fields
+
+---
+
 ## v0.56.17 — 2026-03-04
 
 ### Fix: Security backlog — aging stats date bound, instance cleanup audit trail

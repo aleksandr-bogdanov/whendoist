@@ -7,7 +7,7 @@ Provides REST endpoints for managing native tasks.
 import asyncio
 import logging
 import re
-from datetime import date, datetime, time
+from datetime import UTC, date, datetime, time
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -24,8 +24,9 @@ from app.constants import (
 )
 from app.database import async_session_factory, get_db
 from app.middleware.rate_limit import TASK_CREATE_LIMIT, limiter
-from app.models import Task, User
+from app.models import Domain, Task, User, UserPreferences
 from app.routers.auth import require_user
+from app.services.activity_log import log_activity, new_batch_id
 from app.services.data_version import bump_data_version
 from app.services.preferences_service import PreferencesService
 from app.services.recurrence_service import RecurrenceService
@@ -968,6 +969,11 @@ async def batch_update_tasks(
 
     # Final commit for remaining items
     if updated_count > 0:
+        # Log a single encryption toggle event (not per-item)
+        prefs_result = await db.execute(select(UserPreferences).where(UserPreferences.user_id == user.id))
+        prefs = prefs_result.scalar_one_or_none()
+        enc_event = "encryption_enabled" if (prefs and prefs.encryption_enabled) else "encryption_disabled"
+        await log_activity(db, user_id=user.id, event_type=enc_event, new_value=str(updated_count))
         await bump_data_version(db, user.id)
     await db.commit()
 
@@ -1021,6 +1027,7 @@ async def batch_action_tasks(
     result = await db.execute(select(Task).where(Task.id.in_(data.task_ids), Task.user_id == user.id))
     tasks = {t.id: t for t in result.scalars().all()}
 
+    batch = new_batch_id()
     affected = 0
     for task_id in data.task_ids:
         task = tasks.get(task_id)
@@ -1030,17 +1037,46 @@ async def batch_action_tasks(
         if data.action == "complete":
             if task.status != "completed":
                 task.status = "completed"
-                task.completed_at = datetime.utcnow()
+                task.completed_at = datetime.now(UTC)
+                await log_activity(db, user_id=user.id, event_type="task_completed", task_id=task_id, batch_id=batch)
                 affected += 1
         elif data.action == "schedule":
             if data.scheduled_date is not None:
+                await log_activity(
+                    db,
+                    user_id=user.id,
+                    event_type="task_field_changed",
+                    task_id=task_id,
+                    field_name="scheduled_date",
+                    old_value=str(task.scheduled_date) if task.scheduled_date else None,
+                    new_value=str(data.scheduled_date),
+                    batch_id=batch,
+                )
                 task.scheduled_date = data.scheduled_date
                 affected += 1
         elif data.action == "move":
+            if data.domain_id is not None:
+                # Verify domain belongs to user
+                domain = (await db.execute(
+                    select(Domain).where(Domain.id == data.domain_id, Domain.user_id == user.id)
+                )).scalar_one_or_none()
+                if not domain:
+                    continue
+            await log_activity(
+                db,
+                user_id=user.id,
+                event_type="task_field_changed",
+                task_id=task_id,
+                field_name="domain_id",
+                old_value=str(task.domain_id) if task.domain_id else None,
+                new_value=str(data.domain_id) if data.domain_id else None,
+                batch_id=batch,
+            )
             task.domain_id = data.domain_id
             affected += 1
         elif data.action == "delete":
             task.status = "archived"
+            await log_activity(db, user_id=user.id, event_type="task_archived", task_id=task_id, batch_id=batch)
             affected += 1
 
     if affected > 0:

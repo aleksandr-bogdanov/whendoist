@@ -177,6 +177,14 @@ DEMO_EMAIL_SUFFIX = "@whendoist.local"
 DEMO_VALID_PROFILES = {"demo", "encrypted", "blank"}
 
 
+# =============================================================================
+# Activity Log Constants
+# =============================================================================
+
+ACTIVITY_LOG_DEFAULT_LIMIT = 50
+ACTIVITY_LOG_MAX_LIMIT = 200
+
+
 def get_user_today(timezone: str | None) -> date:
     """
     Get today's date in the user's timezone.

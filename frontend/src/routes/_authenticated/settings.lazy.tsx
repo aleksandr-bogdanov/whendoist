@@ -9,6 +9,7 @@ import {
   Copy,
   Database,
   Download,
+  History,
   Info,
   Key,
   Keyboard,
@@ -29,6 +30,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { CalendarResponse, DomainResponse, PasskeyInfo, SnapshotInfo } from "@/api/model";
+import { useGetUserActivityApiV1ActivityGet } from "@/api/queries/activity/activity";
 import {
   getGetCalendarsApiV1CalendarsGetQueryKey,
   useGetCalendarsApiV1CalendarsGet,
@@ -95,6 +97,7 @@ import {
   getGetWizardStatusApiV1WizardStatusGetQueryKey,
   useResetWizardApiV1WizardResetPost,
 } from "@/api/queries/wizard/wizard";
+import { ActivityList } from "@/components/activity/activity-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -117,6 +120,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { useCrypto } from "@/hooks/use-crypto";
 import {
@@ -160,6 +170,8 @@ function SettingsPage() {
         <DomainsSection />
         <Separator />
         <DataSection />
+        <Separator />
+        <ActivitySection />
         <Separator />
         <ShortcutsSection />
         <Separator />
@@ -1513,6 +1525,52 @@ function DataSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </SettingsCard>
+  );
+}
+
+// ============================================================================
+// Activity Section
+// ============================================================================
+
+function ActivitySection() {
+  const [open, setOpen] = useState(false);
+  const [limit, setLimit] = useState(50);
+  const { data, isLoading, isError } = useGetUserActivityApiV1ActivityGet(
+    { limit, offset: 0 },
+    { query: { enabled: open } },
+  );
+
+  return (
+    <SettingsCard title="Activity Log" icon={<History className="h-4 w-4" />}>
+      <p className="text-sm text-muted-foreground">
+        Chronological log of all changes to your tasks and domains.
+      </p>
+      <Button variant="outline" size="sm" className="text-xs" onClick={() => setOpen(true)}>
+        View activity log
+      </Button>
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Activity Log</SheetTitle>
+            <SheetDescription>All changes to your tasks and domains.</SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <ActivityList entries={data?.entries ?? []} isLoading={isLoading} isError={isError} />
+            {data && data.entries.length < data.total && limit < 200 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs mt-2"
+                onClick={() => setLimit((prev) => Math.min(prev + 50, 200))}
+              >
+                Load more ({data.total - data.entries.length} remaining)
+              </Button>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </SettingsCard>
   );
 }
