@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.57.3 — 2026-03-04
+
+### Fix: Timezone picker UX — optimistic updates & brand-aligned toggle
+
+- Timezone pickers in Settings now update instantly via optimistic cache writes (eliminates ~10s perceived delay)
+- Globe toggle icon redesigned: 24×24 brand icon button with purple tint active state (was oversized filled button)
+
+---
+
 ## v0.57.2 — 2026-03-04
 
 ### Feat: Secondary timezone display (Phase 2)

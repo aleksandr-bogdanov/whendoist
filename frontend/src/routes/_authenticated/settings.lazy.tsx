@@ -29,7 +29,13 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { CalendarResponse, DomainResponse, PasskeyInfo, SnapshotInfo } from "@/api/model";
+import type {
+  CalendarResponse,
+  DomainResponse,
+  PasskeyInfo,
+  PreferencesResponse,
+  SnapshotInfo,
+} from "@/api/model";
 import { useGetUserActivityApiV1ActivityGet } from "@/api/queries/activity/activity";
 import {
   getGetCalendarsApiV1CalendarsGetQueryKey,
@@ -228,15 +234,19 @@ function TimezoneSection() {
         value={currentTz}
         onChange={(tz) => {
           if (!tz) return;
+          queryClient.setQueryData<PreferencesResponse>(
+            getGetPreferencesApiV1PreferencesGetQueryKey(),
+            (old) => (old ? { ...old, timezone: tz } : old),
+          );
           updatePrefs.mutate(
             { data: { timezone: tz } },
             {
-              onSuccess: () => {
+              onSettled: () => {
                 queryClient.invalidateQueries({
                   queryKey: getGetPreferencesApiV1PreferencesGetQueryKey(),
                 });
-                toast.success("Timezone updated");
               },
+              onSuccess: () => toast.success("Timezone updated"),
               onError: () => toast.error("Failed to update timezone"),
             },
           );
@@ -249,15 +259,20 @@ function TimezoneSection() {
         <TimezonePicker
           value={secondaryTz}
           onChange={(tz) => {
+            queryClient.setQueryData<PreferencesResponse>(
+              getGetPreferencesApiV1PreferencesGetQueryKey(),
+              (old) => (old ? { ...old, secondary_timezone: tz ?? null } : old),
+            );
             updatePrefs.mutate(
               { data: { secondary_timezone: tz ?? "" } },
               {
-                onSuccess: () => {
+                onSettled: () => {
                   queryClient.invalidateQueries({
                     queryKey: getGetPreferencesApiV1PreferencesGetQueryKey(),
                   });
-                  toast.success(tz ? "Secondary timezone updated" : "Secondary timezone cleared");
                 },
+                onSuccess: () =>
+                  toast.success(tz ? "Secondary timezone updated" : "Secondary timezone cleared"),
                 onError: () => toast.error("Failed to update secondary timezone"),
               },
             );
