@@ -79,6 +79,34 @@ backups:
     @ls -lh .backups/*.sql 2>/dev/null || echo "   (none)"
 
 # ============================================================================
+# Tauri (Mobile)
+# ============================================================================
+
+# Start Tauri Android dev (runs backend separately with `just dev-backend`)
+tauri-android:
+    cd frontend && npx tauri android dev
+
+# Start Tauri iOS dev
+tauri-ios:
+    cd frontend && npx tauri ios dev
+
+# Build Android APK/AAB (release)
+tauri-build-android:
+    cd frontend && npx tauri android build
+
+# Build iOS app (release)
+tauri-build-ios:
+    cd frontend && npx tauri ios build
+
+# Initialize Tauri Android project (run once after scaffold)
+tauri-android-init:
+    cd frontend && npx tauri android init
+
+# Initialize Tauri iOS project (run once after scaffold)
+tauri-ios-init:
+    cd frontend && npx tauri ios init
+
+# ============================================================================
 # Database Migrations (Alembic)
 # ============================================================================
 

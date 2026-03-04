@@ -8,7 +8,8 @@
 #   1. lint      - Code style checks (ruff)          ┐
 #   2. typecheck - Static type analysis (pyright)     │
 #   3. test      - Unit + integration tests (pytest)  ├ run in parallel
-#   4. frontend  - TypeScript check, Biome lint        ┘
+#   4. frontend  - TypeScript check, Biome lint       │
+#   5. tauri     - Rust cargo check (compile verify)  ┘
 #
 # All jobs must pass for PRs to be mergeable.
 # Railway "Wait for CI" pauses deploys until this workflow succeeds.
@@ -154,3 +155,28 @@ jobs:
 
       - name: Biome lint + format check
         run: cd frontend && npx biome check .
+
+  # ---------------------------------------------------------------------------
+  # Tauri: Rust cargo check (catches compile errors without full build)
+  # ---------------------------------------------------------------------------
+  tauri:
+    name: Tauri Rust Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/src-tauri
+
+      - name: Cargo check
+        run: cd frontend/src-tauri && cargo check

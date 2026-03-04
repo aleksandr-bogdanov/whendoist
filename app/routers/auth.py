@@ -37,7 +37,23 @@ def _verify_state(signed: str, max_age: int = 600) -> str | None:
 
 
 def get_user_id(request: Request) -> int | None:
-    """Get user_id from signed session cookie."""
+    """Get user_id from bearer token (Tauri) or session cookie (web).
+
+    Bearer tokens take priority — if present, we don't touch the session.
+    This avoids CSRF concerns entirely (bearer auth is immune to CSRF).
+    """
+    # Check bearer token first (Tauri native app)
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        from app.routers.device_auth import verify_access_token
+
+        user_id = verify_access_token(auth_header[7:])
+        if user_id:
+            return user_id
+        # Invalid/expired bearer token — don't fall through to session
+        return None
+
+    # Fall back to session cookie (web browser)
     user_id = request.session.get("user_id")
     return int(user_id) if user_id else None
 
