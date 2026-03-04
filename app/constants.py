@@ -137,6 +137,7 @@ VELOCITY_DAYS = 30  # Number of days for velocity chart
 RECURRING_STATS_LIMIT = 10  # Max recurring tasks to show in stats
 TITLE_TRUNCATE_LENGTH = 40  # Max chars for truncated task titles in stats
 AGING_STATS_LIMIT = 5000  # Max completed tasks to analyze for resolution time
+AGING_STATS_HISTORY_DAYS = 730  # Date cutoff for aging stats (2 years, defense-in-depth with limit)
 STREAK_HISTORY_DAYS = 730  # Look back 2 years for streak calculations
 RECENT_COMPLETIONS_LOOKBACK_DAYS = 365  # Date cutoff for recent completions query
 

@@ -18,6 +18,7 @@ from sqlalchemy import Date, cast, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import (
+    AGING_STATS_HISTORY_DAYS,
     AGING_STATS_LIMIT,
     HEATMAP_WEEKS,
     IMPACT_COLORS,
@@ -562,8 +563,10 @@ class AnalyticsService:
         Uses external_created_at (Todoist creation date) if available,
         otherwise falls back to created_at (database creation date).
 
-        Bounded to AGING_STATS_LIMIT most recent completions to cap memory/CPU.
+        Bounded by both date (AGING_STATS_HISTORY_DAYS) and count (AGING_STATS_LIMIT)
+        for defense-in-depth against unbounded scans.
         """
+        aging_cutoff = datetime.now() - timedelta(days=AGING_STATS_HISTORY_DAYS)
         completed_query = (
             select(
                 Task.created_at,
@@ -574,6 +577,7 @@ class AnalyticsService:
                 Task.user_id == self.user_id,
                 Task.status == "completed",
                 Task.completed_at.isnot(None),
+                Task.completed_at >= aging_cutoff,
             )
             .order_by(Task.completed_at.desc())
             .limit(AGING_STATS_LIMIT)

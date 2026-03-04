@@ -18,7 +18,7 @@ import logging
 from datetime import date, timedelta
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 
 from app.constants import INSTANCE_RETENTION_DAYS, MATERIALIZATION_TIMEOUT_SECONDS
 from app.database import async_session_factory
@@ -111,11 +111,43 @@ async def cleanup_old_instances() -> dict[str, Any]:
     This prevents table bloat from accumulating historical instances.
     Completed and skipped instances beyond retention period are removed.
 
-    Returns dict with stats: {deleted_count}
+    Logs a per-user/per-status audit trail before deleting so that
+    deletions are traceable in structured logs.
+
+    Returns dict with stats: {deleted_count, audit}
     """
     cutoff_date = date.today() - timedelta(days=INSTANCE_RETENTION_DAYS)
 
     async with async_session_factory() as db:
+        # Audit: query per-user, per-status breakdown BEFORE deleting
+        audit_query = (
+            select(
+                TaskInstance.user_id,
+                TaskInstance.status,
+                func.count().label("count"),
+            )
+            .where(
+                TaskInstance.instance_date < cutoff_date,
+                TaskInstance.status.in_(["completed", "skipped"]),
+            )
+            .group_by(TaskInstance.user_id, TaskInstance.status)
+        )
+        audit_rows = (await db.execute(audit_query)).all()
+
+        # Log audit trail per user before deletion
+        audit: list[dict[str, Any]] = []
+        for row in audit_rows:
+            entry = {"user_id": row.user_id, "status": row.status, "count": row.count}
+            audit.append(entry)
+            logger.info(
+                "Instance cleanup audit: user_id=%d status=%s count=%d cutoff=%s reason=RETENTION_POLICY_%dD",
+                row.user_id,
+                row.status,
+                row.count,
+                cutoff_date,
+                INSTANCE_RETENTION_DAYS,
+            )
+
         # Delete old instances that are completed or skipped
         # Keep pending instances even if old (user may still want to complete them)
         result = await db.execute(
@@ -128,9 +160,16 @@ async def cleanup_old_instances() -> dict[str, Any]:
         await db.commit()
 
     if deleted_count > 0:
-        logger.info(f"Cleaned up {deleted_count} old task instances (before {cutoff_date})")
+        logger.info(
+            "Instance cleanup complete: deleted=%d cutoff=%s users_affected=%d",
+            deleted_count,
+            cutoff_date,
+            len({e["user_id"] for e in audit}),
+        )
+    else:
+        logger.debug("Instance cleanup: nothing to delete (cutoff=%s)", cutoff_date)
 
-    return {"deleted_count": deleted_count}
+    return {"deleted_count": deleted_count, "audit": audit}
 
 
 async def run_materialization_loop() -> None:
