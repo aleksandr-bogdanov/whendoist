@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useCarousel } from "@/hooks/use-carousel";
 import { useSyncCalendarHourHeight } from "@/hooks/use-sync-preferences";
+import { useTimezone } from "@/hooks/use-timezone";
 import {
   addDays,
   COMPACT_STRATEGY,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { filterByEnergy } from "@/lib/task-utils";
+import { getCurrentTimeInTimezone } from "@/lib/timezone";
 import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 import { AnytimeInstancePill } from "./anytime-instance-pill";
@@ -58,6 +60,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     planStrategy: strategyId,
   } = useUIStore();
   useSyncCalendarHourHeight();
+  const timezone = useTimezone();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -193,7 +196,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     [anytimeTasks, anytimeInstances],
   );
 
-  const isNotToday = displayDate !== todayString();
+  const isNotToday = displayDate !== todayString(timezone);
 
   // Save scroll position before navigating
   const saveScroll = useCallback(() => {
@@ -214,8 +217,8 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   }, [calendarCenterDate, setCalendarCenterDate, saveScroll]);
 
   const goToToday = useCallback(() => {
-    setCalendarCenterDate(todayString());
-  }, [setCalendarCenterDate]);
+    setCalendarCenterDate(todayString(timezone));
+  }, [setCalendarCenterDate, timezone]);
 
   // Zoom controls
   const zoomIn = useCallback(() => {
@@ -285,10 +288,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
 
   // Scroll to current time on first render
   const initialHourHeight = useRef(calendarHourHeight);
+  const initialTimezone = useRef(timezone);
   useEffect(() => {
     if (scrollRef.current) {
-      const now = new Date();
-      const targetOffset = (PREV_DAY_HOURS + now.getHours() - 1) * initialHourHeight.current;
+      const { hours } = getCurrentTimeInTimezone(initialTimezone.current);
+      const targetOffset = (PREV_DAY_HOURS + hours - 1) * initialHourHeight.current;
       scrollRef.current.scrollTop = Math.max(0, targetOffset);
     }
   }, []);
@@ -384,6 +388,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
         safeAllStatusTasks,
         safeInstances,
         strategy,
+        timezone,
       );
 
       if (planned.length === 0) {
@@ -436,6 +441,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       updateTask,
       invalidateTaskQueries,
       strategyId,
+      timezone,
     ],
   );
 
@@ -719,6 +725,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
                       isActivePanel={i === CENTER_INDEX}
                       isPlanMode={isPlanMode && i === CENTER_INDEX}
                       onPlanExecute={handlePlanExecute}
+                      timezone={timezone}
                     />
                   </div>
                 ))}

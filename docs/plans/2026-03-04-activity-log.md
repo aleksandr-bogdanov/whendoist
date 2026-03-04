@@ -1,5 +1,6 @@
 ---
 version: v0.57.0
+pr: 626
 created: 2026-03-04
 type: implementation
 ---

@@ -28,6 +28,7 @@ from app.constants import (
     STREAK_HISTORY_DAYS,
     TITLE_TRUNCATE_LENGTH,
     VELOCITY_DAYS,
+    get_user_today,
 )
 from app.models import Domain, Task, TaskInstance
 from app.utils.timing import log_timing
@@ -36,9 +37,10 @@ from app.utils.timing import log_timing
 class AnalyticsService:
     """Async service for analytics queries."""
 
-    def __init__(self, db: AsyncSession, user_id: int):
+    def __init__(self, db: AsyncSession, user_id: int, timezone: str | None = None):
         self.db = db
         self.user_id = user_id
+        self.timezone = timezone
 
     @log_timing("analytics.comprehensive_stats")
     async def get_comprehensive_stats(
@@ -53,7 +55,7 @@ class AnalyticsService:
 
         Optimized to use ~10 queries instead of 26+.
         """
-        today = date.today()
+        today = get_user_today(self.timezone)
         range_start = datetime.combine(start_date, datetime.min.time())
         range_end = datetime.combine(end_date + timedelta(days=1), datetime.min.time())
 
@@ -566,7 +568,10 @@ class AnalyticsService:
         Bounded by both date (AGING_STATS_HISTORY_DAYS) and count (AGING_STATS_LIMIT)
         for defense-in-depth against unbounded scans.
         """
-        aging_cutoff = datetime.now() - timedelta(days=AGING_STATS_HISTORY_DAYS)
+        aging_cutoff = datetime.combine(
+            get_user_today(self.timezone) - timedelta(days=AGING_STATS_HISTORY_DAYS),
+            datetime.min.time(),
+        )
         completed_query = (
             select(
                 Task.created_at,
@@ -633,7 +638,7 @@ class AnalyticsService:
         domains_map = await self._get_domains_map()
 
         lookback_cutoff = datetime.combine(
-            date.today() - timedelta(days=RECENT_COMPLETIONS_LOOKBACK_DAYS),
+            get_user_today(self.timezone) - timedelta(days=RECENT_COMPLETIONS_LOOKBACK_DAYS),
             datetime.min.time(),
         )
 

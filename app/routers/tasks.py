@@ -738,7 +738,10 @@ async def restore_task(
     if task.scheduled_date:
         asyncio.create_task(_fire_and_forget_sync_task(task_id, user.id))
 
-    return _task_to_response(task)
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    user_today = get_user_today(timezone)
+    return _task_to_response(task, user_today)
 
 
 class TaskCompleteResponse(BaseModel):
@@ -1057,9 +1060,9 @@ async def batch_action_tasks(
         elif data.action == "move":
             if data.domain_id is not None:
                 # Verify domain belongs to user
-                domain = (await db.execute(
-                    select(Domain).where(Domain.id == data.domain_id, Domain.user_id == user.id)
-                )).scalar_one_or_none()
+                domain = (
+                    await db.execute(select(Domain).where(Domain.id == data.domain_id, Domain.user_id == user.id))
+                ).scalar_one_or_none()
                 if not domain:
                     continue
             await log_activity(

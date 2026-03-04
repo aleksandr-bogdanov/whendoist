@@ -103,15 +103,18 @@ async def update_preferences(
 ):
     """Update current user's preferences."""
     service = PreferencesService(db, user.id)
-    prefs = await service.update_preferences(
-        show_completed_in_planner=data.show_completed_in_planner,
-        completed_retention_days=data.completed_retention_days,
-        show_completed_in_list=data.show_completed_in_list,
-        hide_recurring_after_completion=data.hide_recurring_after_completion,
-        show_scheduled_in_list=data.show_scheduled_in_list,
-        timezone=data.timezone,
-        calendar_hour_height=data.calendar_hour_height,
-    )
+    try:
+        prefs = await service.update_preferences(
+            show_completed_in_planner=data.show_completed_in_planner,
+            completed_retention_days=data.completed_retention_days,
+            show_completed_in_list=data.show_completed_in_list,
+            hide_recurring_after_completion=data.hide_recurring_after_completion,
+            show_scheduled_in_list=data.show_scheduled_in_list,
+            timezone=data.timezone,
+            calendar_hour_height=data.calendar_hour_height,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     await db.commit()
     return prefs
 

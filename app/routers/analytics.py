@@ -4,16 +4,18 @@ Analytics API endpoints.
 Provides JSON API for completion statistics, trends, patterns, and insights.
 """
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import get_user_today
 from app.database import get_db
 from app.models import User
 from app.routers.auth import require_user
 from app.services.analytics_service import AnalyticsService
+from app.services.preferences_service import PreferencesService
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -136,10 +138,12 @@ async def get_analytics(
     db: AsyncSession = Depends(get_db),
 ):
     """Return comprehensive analytics data for the specified time range."""
-    end_date = date.today()
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    end_date = get_user_today(timezone)
     start_date = end_date - timedelta(days=days)
 
-    service = AnalyticsService(db, user.id)
+    service = AnalyticsService(db, user.id, timezone=timezone)
     stats = await service.get_comprehensive_stats(start_date, end_date)
     return stats
 
@@ -151,5 +155,7 @@ async def get_recent_completions(
     db: AsyncSession = Depends(get_db),
 ):
     """Return most recently completed tasks."""
-    service = AnalyticsService(db, user.id)
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    service = AnalyticsService(db, user.id, timezone=timezone)
     return await service.get_recent_completions(limit=limit)

@@ -38,6 +38,7 @@ import {
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
 import { announce } from "@/components/live-announcer";
+import { useTimezone } from "@/hooks/use-timezone";
 import {
   applyDelta,
   type BatchItem,
@@ -48,6 +49,7 @@ import {
 import { addDays, offsetToTime, PREV_DAY_START_HOUR, toDateString } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { formatScheduleTarget } from "@/lib/task-utils";
+import { getHoursInTimezone, getMinutesInTimezone } from "@/lib/timezone";
 import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { useUIStore } from "@/stores/ui-store";
 import { BatchDragOverlay, TaskDragOverlay } from "./task-drag-overlay";
@@ -180,6 +182,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const scheduleInstance = useScheduleInstanceApiV1InstancesInstanceIdSchedulePut();
   const { calendarHourHeight } = useUIStore();
+  const timezone = useTimezone();
 
   // Track real pointer position for accurate calendar drops (bypasses dnd-kit delta drift)
   const lastPointerRef = useRef({ x: 0, y: 0 });
@@ -562,7 +565,9 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           let instTime: string | null = null;
           if (inst.scheduled_datetime) {
             const dt = new Date(inst.scheduled_datetime);
-            instTime = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}:00`;
+            const h = timezone ? getHoursInTimezone(dt, timezone) : dt.getHours();
+            const m = timezone ? getMinutesInTimezone(dt, timezone) : dt.getMinutes();
+            instTime = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
           }
           const item: BatchItem = {
             type: "instance",
@@ -853,7 +858,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         useSelectionStore.getState().clear();
       });
     },
-    [queryClient, calendarHourHeight],
+    [queryClient, calendarHourHeight, timezone],
   );
 
   const handleDragEnd = useCallback(

@@ -261,7 +261,9 @@ async def schedule_instance(
     db: AsyncSession = Depends(get_db),
 ):
     """Reschedule a specific instance."""
-    service = RecurrenceService(db, user.id)
+    prefs_service = PreferencesService(db, user.id)
+    timezone = await prefs_service.get_timezone()
+    service = RecurrenceService(db, user.id, timezone=timezone)
     instance = await service.schedule_instance(instance_id, data.scheduled_datetime)
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")

@@ -227,16 +227,14 @@ class TestPreferencesTimezone:
         result = await service.update_preferences(timezone="Asia/Tokyo")
         assert result.timezone == "Asia/Tokyo"
 
-    async def test_update_timezone_invalid_ignored(self, db_session: AsyncSession, test_user: User):
-        """Invalid timezone strings are silently ignored."""
+    async def test_update_timezone_invalid_raises(self, db_session: AsyncSession, test_user: User):
+        """Invalid timezone strings raise ValueError."""
         service = PreferencesService(db_session, test_user.id)
         await service.update_preferences(timezone="America/New_York")
 
-        # Try to set invalid timezone
-        result = await service.update_preferences(timezone="Invalid/Timezone")
-
-        # Should keep the old value
-        assert result.timezone == "America/New_York"
+        # Try to set invalid timezone — should raise
+        with pytest.raises(ValueError, match="Invalid timezone"):
+            await service.update_preferences(timezone="Invalid/Timezone")
 
     async def test_update_timezone_empty_string_clears(self, db_session: AsyncSession, test_user: User):
         """Empty string clears the timezone."""

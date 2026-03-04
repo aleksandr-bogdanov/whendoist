@@ -4,6 +4,7 @@
  */
 
 import type { EventResponse, InstanceResponse, TaskResponse } from "@/api/model";
+import { getHoursInTimezone, getMinutesInTimezone, toDateStringInTimezone } from "@/lib/timezone";
 
 // ─── Date Helpers ────────────────────────────────────────────────────────────
 
@@ -15,8 +16,9 @@ export function toDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-/** Get today's date string */
-export function todayString(): string {
+/** Get today's date string (in user timezone if provided, otherwise browser local) */
+export function todayString(tz?: string): string {
+  if (tz) return toDateStringInTimezone(new Date(), tz);
   return toDateString(new Date());
 }
 
@@ -73,10 +75,12 @@ export function timeToOffset(hour: number, minutes: number, hourHeight: number):
   return (hour - DAY_START_HOUR + minutes / 60) * hourHeight;
 }
 
-/** Convert ISO datetime string to pixel offset */
-export function datetimeToOffset(datetimeStr: string, hourHeight: number): number {
+/** Convert ISO datetime string to pixel offset (timezone-aware for UTC-stored datetimes) */
+export function datetimeToOffset(datetimeStr: string, hourHeight: number, tz?: string): number {
   const date = new Date(datetimeStr);
-  return timeToOffset(date.getHours(), date.getMinutes(), hourHeight);
+  const h = tz ? getHoursInTimezone(date, tz) : date.getHours();
+  const m = tz ? getMinutesInTimezone(date, tz) : date.getMinutes();
+  return timeToOffset(h, m, hourHeight);
 }
 
 /** Convert pixel offset to hours and minutes (snapped to 15-minute grid) */
@@ -225,12 +229,20 @@ function toMinutesSinceMidnight(hour: number, minutes: number): number {
   return hour * 60 + minutes;
 }
 
-function eventToTimeRange(event: EventResponse): TimeRange {
-  const start = new Date(event.start);
-  const end = new Date(event.end);
+/** Extract hours and minutes from a UTC datetime, converted to the given timezone */
+function datetimeHoursMinutes(dt: Date, tz?: string): { h: number; m: number } {
   return {
-    startMinutes: toMinutesSinceMidnight(start.getHours(), start.getMinutes()),
-    endMinutes: toMinutesSinceMidnight(end.getHours(), end.getMinutes()),
+    h: tz ? getHoursInTimezone(dt, tz) : dt.getHours(),
+    m: tz ? getMinutesInTimezone(dt, tz) : dt.getMinutes(),
+  };
+}
+
+function eventToTimeRange(event: EventResponse, tz?: string): TimeRange {
+  const start = datetimeHoursMinutes(new Date(event.start), tz);
+  const end = datetimeHoursMinutes(new Date(event.end), tz);
+  return {
+    startMinutes: toMinutesSinceMidnight(start.h, start.m),
+    endMinutes: toMinutesSinceMidnight(end.h, end.m),
   };
 }
 
@@ -269,6 +281,7 @@ export function calculateOverlaps(
   dateStr: string,
   hourHeight: number,
   instances?: InstanceResponse[],
+  tz?: string,
 ): PositionedItem[] {
   const items: {
     id: string;
@@ -280,12 +293,20 @@ export function calculateOverlaps(
   // Add events for this date
   for (const event of events) {
     if (event.all_day) continue;
-    const eventDate = new Date(event.start).toISOString().split("T")[0];
+    const eventStart = new Date(event.start);
+    const eventDate = tz
+      ? toDateStringInTimezone(eventStart, tz)
+      : eventStart.toISOString().split("T")[0];
     if (eventDate !== dateStr) continue;
-    items.push({ id: event.id, type: "event", range: eventToTimeRange(event), original: event });
+    items.push({
+      id: event.id,
+      type: "event",
+      range: eventToTimeRange(event, tz),
+      original: event,
+    });
   }
 
-  // Add scheduled tasks for this date
+  // Add scheduled tasks for this date (naive HH:MM — no tz conversion needed)
   for (const task of tasks) {
     if (task.scheduled_date !== dateStr || !task.scheduled_time) continue;
     const range = taskToTimeRange(task);
@@ -298,9 +319,7 @@ export function calculateOverlaps(
     for (const inst of instances) {
       if (inst.instance_date !== dateStr) continue;
       if (!inst.scheduled_datetime) continue; // Time-less → anytime section
-      const dt = new Date(inst.scheduled_datetime);
-      const h = dt.getHours();
-      const m = dt.getMinutes();
+      const { h, m } = datetimeHoursMinutes(new Date(inst.scheduled_datetime), tz);
       const duration = inst.duration_minutes ?? 30;
       const range: TimeRange = {
         startMinutes: toMinutesSinceMidnight(h, m),
@@ -396,6 +415,7 @@ export function calculateExtendedOverlaps(
   instances: InstanceResponse[],
   centerDate: string,
   hourHeight: number,
+  tz?: string,
 ): PositionedItem[] {
   const prevDate = addDays(centerDate, -1);
   const nextDate = addDays(centerDate, 1);
@@ -406,9 +426,12 @@ export function calculateExtendedOverlaps(
     // Events
     for (const event of events) {
       if (event.all_day) continue;
-      const eventDate = new Date(event.start).toISOString().split("T")[0];
+      const eventStart = new Date(event.start);
+      const eventDate = tz
+        ? toDateStringInTimezone(eventStart, tz)
+        : eventStart.toISOString().split("T")[0];
       if (eventDate !== dateStr) continue;
-      const range = eventToTimeRange(event);
+      const range = eventToTimeRange(event, tz);
       const startHour = Math.floor(range.startMinutes / 60);
       if (startHour < minHour || startHour >= maxHour) continue;
       rangeItems.push({
@@ -422,7 +445,7 @@ export function calculateExtendedOverlaps(
       });
     }
 
-    // Tasks
+    // Tasks (naive HH:MM — no tz conversion needed)
     for (const task of tasks) {
       if (task.scheduled_date !== dateStr || !task.scheduled_time) continue;
       const range = taskToTimeRange(task);
@@ -444,9 +467,7 @@ export function calculateExtendedOverlaps(
     for (const inst of instances) {
       if (inst.instance_date !== dateStr) continue;
       if (!inst.scheduled_datetime) continue;
-      const dt = new Date(inst.scheduled_datetime);
-      const h = dt.getHours();
-      const m = dt.getMinutes();
+      const { h, m } = datetimeHoursMinutes(new Date(inst.scheduled_datetime), tz);
       const duration = inst.duration_minutes ?? 30;
       const range: TimeRange = {
         startMinutes: toMinutesSinceMidnight(h, m),
@@ -647,15 +668,19 @@ export function planTasks(
   scheduledTasks: TaskResponse[] = [],
   instances: InstanceResponse[] = [],
   strategy: PlanStrategy = COMPACT_STRATEGY,
+  tz?: string,
 ): PlannedTask[] {
   // Collect occupied time ranges from events, scheduled tasks, and instances
   const occupied: TimeRange[] = [];
 
   for (const event of events) {
     if (event.all_day) continue;
-    const eventDate = new Date(event.start).toISOString().split("T")[0];
+    const eventStart = new Date(event.start);
+    const eventDate = tz
+      ? toDateStringInTimezone(eventStart, tz)
+      : eventStart.toISOString().split("T")[0];
     if (eventDate !== dateStr) continue;
-    occupied.push(eventToTimeRange(event));
+    occupied.push(eventToTimeRange(event, tz));
   }
 
   for (const task of scheduledTasks) {
@@ -666,8 +691,8 @@ export function planTasks(
 
   for (const inst of instances) {
     if (inst.instance_date !== dateStr || !inst.scheduled_datetime) continue;
-    const dt = new Date(inst.scheduled_datetime);
-    const startMin = dt.getHours() * 60 + dt.getMinutes();
+    const { h, m } = datetimeHoursMinutes(new Date(inst.scheduled_datetime), tz);
+    const startMin = h * 60 + m;
     const duration = inst.duration_minutes ?? 30;
     occupied.push({ startMinutes: startMin, endMinutes: startMin + duration });
   }

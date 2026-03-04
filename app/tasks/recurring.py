@@ -116,6 +116,9 @@ async def cleanup_old_instances() -> dict[str, Any]:
 
     Returns dict with stats: {deleted_count, audit}
     """
+    # Intentionally uses UTC date.today(): this is a batch cleanup across all users,
+    # and per-user timezone resolution would require N preference queries. With 90-day
+    # retention, the ±1 day UTC discrepancy is negligible.
     cutoff_date = date.today() - timedelta(days=INSTANCE_RETENTION_DAYS)
 
     async with async_session_factory() as db:
