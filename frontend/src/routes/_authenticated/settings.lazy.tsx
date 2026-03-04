@@ -220,6 +220,17 @@ function ThemeSection() {
 // Timezone Section
 // ============================================================================
 
+function SecondaryTimezoneToggle() {
+  const show = useUIStore((s) => s.showSecondaryTimezone);
+  const setShow = useUIStore((s) => s.setShowSecondaryTimezone);
+  return (
+    <div className="flex items-center justify-between">
+      <p className="text-xs text-muted-foreground">Show on calendar</p>
+      <Switch size="sm" checked={show} onCheckedChange={setShow} />
+    </div>
+  );
+}
+
 function TimezoneSection() {
   const prefsQuery = useGetPreferencesApiV1PreferencesGet();
   const updatePrefs = useUpdatePreferencesApiV1PreferencesPut();
@@ -252,8 +263,8 @@ function TimezoneSection() {
           );
         }}
       />
-      <div className="pt-2 border-t">
-        <p className="text-xs text-muted-foreground mb-2">
+      <div className="pt-2 border-t space-y-2">
+        <p className="text-xs text-muted-foreground">
           Show a second timezone on the calendar time ruler.
         </p>
         <TimezonePicker
@@ -280,6 +291,7 @@ function TimezoneSection() {
           allowClear
           placeholder="Secondary timezone (optional)"
         />
+        {secondaryTz && <SecondaryTimezoneToggle />}
       </div>
     </SettingsCard>
   );

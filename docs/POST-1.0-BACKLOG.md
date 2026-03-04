@@ -54,7 +54,7 @@ Everything below has been implemented and verified in the codebase.
 
 ### GCal Sync
 
-- **Fire-and-forget skips lock** — `_fire_and_forget_bulk_sync` in tasks.py and instances.py doesn't acquire per-user lock
+- **Fire-and-forget skips lock** — `_fire_and_forget_bulk_sync` in tasks.py and instances.py doesn't acquire per-user lock — [investigation](plans/2026-03-04-fire-and-forget-lock-investigation.md)
 
 ### Infrastructure (Trigger-Based)
 

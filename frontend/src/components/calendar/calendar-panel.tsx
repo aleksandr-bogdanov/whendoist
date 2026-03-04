@@ -1,6 +1,6 @@
 import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Globe, Minus, Plus, Sparkles, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { InstanceResponse, TaskResponse } from "@/api/model";
@@ -60,7 +60,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
     energyLevel,
     planStrategy: strategyId,
     showSecondaryTimezone,
-    setShowSecondaryTimezone,
   } = useUIStore();
   useSyncCalendarHourHeight();
   const timezone = useTimezone();
@@ -643,20 +642,6 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             >
               Today
             </Button>
-          )}
-          {secondaryTz && (
-            <button
-              type="button"
-              className={`inline-flex items-center justify-center rounded w-6 h-6 border transition-colors duration-150 cursor-pointer ${
-                showSecondaryTimezone
-                  ? "border-[rgba(109,94,246,0.35)] bg-[rgba(109,94,246,0.08)] text-[#6D5EF6]"
-                  : "border-border bg-background text-muted-foreground hover:border-[rgba(109,94,246,0.35)] hover:bg-[rgba(109,94,246,0.06)] hover:text-[#6D5EF6]"
-              }`}
-              onClick={() => setShowSecondaryTimezone(!showSecondaryTimezone)}
-              title={`Secondary timezone: ${secondaryTz.replace(/_/g, " ")}`}
-            >
-              <Globe className="h-3 w-3" />
-            </button>
           )}
           <Button
             variant={isPlanMode ? "outline" : "cta"}

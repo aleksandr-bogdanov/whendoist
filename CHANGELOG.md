@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.57.4 — 2026-03-04
+
+### Fix: Move secondary timezone toggle to Settings
+
+- Removed Globe toggle from calendar header — too prominent for a set-and-forget option
+- Added "Show on calendar" switch in Settings > Timezone (visible when secondary tz is configured)
+
+---
+
 ## v0.57.3 — 2026-03-04
 
 ### Fix: Timezone picker UX — optimistic updates & brand-aligned toggle
