@@ -8,6 +8,7 @@ import { EncryptionUnlock } from "@/components/encryption-unlock";
 import { AppShell } from "@/components/layout/app-shell";
 import { OnboardingWizard } from "@/components/wizard/onboarding-wizard";
 import { useNetworkStatus } from "@/hooks/use-network-status";
+import { useReminders } from "@/hooks/use-reminders";
 import { useCryptoStore } from "@/stores/crypto-store";
 import { useSelectionStore } from "@/stores/selection-store";
 
@@ -22,6 +23,7 @@ function AuthenticatedLayout() {
   const [wizardDismissed, setWizardDismissed] = useState(false);
 
   useNetworkStatus();
+  useReminders();
 
   // Clear multi-selection when navigating between routes
   const { pathname } = useLocation();
