@@ -26,6 +26,10 @@ CSRF_EXEMPT_PATHS = {
     "/health",
     "/ready",
     "/metrics",
+    # Device auth: token exchange uses session cookie (one-time after OAuth),
+    # refresh uses refresh_token in body (no session)
+    "/api/v1/device/token",
+    "/api/v1/device/refresh",
 }
 
 # Methods that require CSRF validation
@@ -77,6 +81,13 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
         # Skip validation for exempt paths
         if request.url.path in CSRF_EXEMPT_PATHS:
+            return await call_next(request)
+
+        # Skip validation for bearer-authenticated requests (Tauri native app).
+        # CSRF is a cookie-only vulnerability — bearer tokens are explicitly
+        # attached by JS and immune to cross-origin request forgery.
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
             return await call_next(request)
 
         # Skip validation for unauthenticated requests (no session = no CSRF risk)

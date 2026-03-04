@@ -16,6 +16,7 @@ from app.routers import (
     build_info,
     calendar_feed,
     csrf,
+    device_auth,
     domains,
     gcal_sync,
     import_data,
@@ -47,3 +48,4 @@ router.include_router(csrf.router)
 router.include_router(url_utils.router)
 router.include_router(calendar_feed.router)
 router.include_router(activity.router)
+router.include_router(device_auth.router)

@@ -4,6 +4,21 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.58.0 — 2026-03-04
+
+### Feat: Tauri v2 Mobile — Phase 0 Scaffold
+
+- **Tauri v2 project** scaffolded at `frontend/src-tauri/` — Rust entry points (`lib.rs`, `main.rs`), app config (`tauri.conf.json`), capabilities, and smoke-test IPC command
+- **Conditional VitePWA**: PWA plugin excluded when building for Tauri (`TAURI_ENV_PLATFORM` detection in `vite.config.ts`)
+- **Device token auth**: New `POST /api/v1/device/token` (session → signed token exchange), `POST /api/v1/device/refresh`, `DELETE /api/v1/device/token` for cross-origin WebView authentication
+- **Bearer auth middleware**: `get_user_id()` now accepts `Authorization: Bearer` tokens alongside session cookies; CSRF validation skipped for bearer-authenticated requests (CSRF is cookie-only)
+- **Frontend Tauri detection**: `isTauri` flag in `use-device.ts` via `__TAURI_INTERNALS__` check; `api-client.ts` switches to absolute baseURL + bearer auth when running in Tauri
+- **Token store**: `tauri-token-store.ts` manages JWT persistence via `tauri-plugin-store` with auto-refresh on expiry
+- **Justfile**: Added `tauri-android`, `tauri-ios`, `tauri-build-android`, `tauri-build-ios`, and init commands
+- Added `@tauri-apps/api`, `@tauri-apps/plugin-store`, `@tauri-apps/cli` to frontend dependencies
+
+---
+
 ## v0.57.5 — 2026-03-04
 
 ### Fix: Fire-and-forget bulk sync acquires per-user lock

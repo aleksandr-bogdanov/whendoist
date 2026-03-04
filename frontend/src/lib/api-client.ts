@@ -1,6 +1,7 @@
 import type { AxiosRequestConfig } from "axios";
 import Axios from "axios";
 import { toast } from "sonner";
+import { isTauri } from "@/hooks/use-device";
 import {
   AuthError,
   CSRFError,
@@ -11,9 +12,10 @@ import {
   ValidationError,
 } from "./errors";
 
+// Tauri WebView can't send cookies cross-origin — use absolute URL + bearer auth
 export const axios = Axios.create({
-  baseURL: "",
-  withCredentials: true,
+  baseURL: isTauri ? "https://whendoist.com" : "",
+  withCredentials: !isTauri, // Cookies for web, bearer for Tauri
 });
 
 // CSRF token cache — fetched once per session, sent on every mutation
@@ -51,12 +53,41 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
-// Inject X-CSRF-Token header on state-changing requests
+// Tauri: attach Authorization: Bearer header on every request
+// Web: inject X-CSRF-Token header on state-changing requests
+// CSRF is a cookie-only vulnerability — bearer tokens don't need CSRF protection
 axios.interceptors.request.use(async (config) => {
-  const method = (config.method ?? "GET").toUpperCase();
-  if (CSRF_METHODS.has(method)) {
-    const token = await getCsrfToken();
-    config.headers.set("X-CSRF-Token", token);
+  if (isTauri) {
+    const { getAccessToken, loadDeviceToken, isTokenExpired, saveDeviceToken } = await import(
+      "./tauri-token-store"
+    );
+    let accessToken = await getAccessToken();
+
+    // Try refresh if expired
+    if (!accessToken) {
+      const tokenData = await loadDeviceToken();
+      if (tokenData?.refresh_token && isTokenExpired(tokenData)) {
+        try {
+          const refreshResp = await Axios.post(`${config.baseURL || ""}/api/v1/device/refresh`, {
+            refresh_token: tokenData.refresh_token,
+          });
+          await saveDeviceToken(refreshResp.data);
+          accessToken = refreshResp.data.access_token;
+        } catch {
+          // Refresh failed — will get 401, handled by response interceptor
+        }
+      }
+    }
+
+    if (accessToken) {
+      config.headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+  } else {
+    const method = (config.method ?? "GET").toUpperCase();
+    if (CSRF_METHODS.has(method)) {
+      const token = await getCsrfToken();
+      config.headers.set("X-CSRF-Token", token);
+    }
   }
   return config;
 });
@@ -102,6 +133,9 @@ axios.interceptors.response.use(
 
     if (status === 401 && !isRedirecting) {
       isRedirecting = true;
+      if (isTauri) {
+        import("./tauri-token-store").then(({ clearDeviceToken }) => clearDeviceToken());
+      }
       window.location.href = "/login";
       return Promise.reject(new AuthError("Session expired"));
     }

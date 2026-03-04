@@ -10,8 +10,16 @@ interface DeviceCapabilities {
   isIOS: boolean;
   isAndroid: boolean;
   isPWA: boolean;
+  isTauri: boolean;
   prefersReducedMotion: boolean;
 }
+
+/**
+ * Detect if running inside a Tauri WebView.
+ * Tauri v2 injects `__TAURI_INTERNALS__` when `withGlobalTauri: true` in tauri.conf.json.
+ * This is a static check — Tauri presence doesn't change at runtime.
+ */
+export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 function getCapabilities(): DeviceCapabilities {
   if (typeof window === "undefined") {
@@ -25,6 +33,7 @@ function getCapabilities(): DeviceCapabilities {
       isIOS: false,
       isAndroid: false,
       isPWA: false,
+      isTauri: false,
       prefersReducedMotion: false,
     };
   }
@@ -47,6 +56,7 @@ function getCapabilities(): DeviceCapabilities {
     isPWA:
       window.matchMedia("(display-mode: standalone)").matches ||
       (navigator as unknown as { standalone?: boolean }).standalone === true,
+    isTauri,
     prefersReducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   };
 }
@@ -107,6 +117,7 @@ export function useDevice(): DeviceCapabilities {
     body.classList.toggle("pwa-mode", capabilities.isPWA);
     body.classList.toggle("ios-device", capabilities.isIOS);
     body.classList.toggle("android-device", capabilities.isAndroid);
+    body.classList.toggle("tauri-app", capabilities.isTauri);
     body.classList.toggle("reduced-motion", capabilities.prefersReducedMotion);
   }, [capabilities]);
 

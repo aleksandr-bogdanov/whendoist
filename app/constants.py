@@ -185,6 +185,14 @@ ACTIVITY_LOG_DEFAULT_LIMIT = 50
 ACTIVITY_LOG_MAX_LIMIT = 200
 
 
+# =============================================================================
+# Device Auth Constants (Tauri native app)
+# =============================================================================
+
+DEVICE_TOKEN_MAX_AGE_SECONDS = 60 * 60  # Access token: 1 hour
+DEVICE_REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 30  # Refresh token: 30 days
+
+
 def get_user_today(timezone: str | None) -> date:
     """
     Get today's date in the user's timezone.
