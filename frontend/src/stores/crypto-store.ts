@@ -1,5 +1,12 @@
 import { create } from "zustand";
-import { clearStoredKey, getStoredKey, storeKey } from "@/lib/crypto";
+import { clearStoredKey, exportKey, getStoredKey, importKey, storeKey } from "@/lib/crypto";
+import {
+  type BiometricAvailability,
+  checkBiometricAvailability,
+  clearEncryptionKey,
+  retrieveEncryptionKey,
+  storeEncryptionKey,
+} from "@/lib/tauri-biometric";
 
 interface CryptoState {
   /** Whether the user has encryption enabled */
@@ -14,6 +21,12 @@ interface CryptoState {
   testValue: string | null;
   /** Count of fields that failed decryption since last unlock */
   decryptionFailures: number;
+  /** Whether biometric unlock is enrolled for this device */
+  biometricEnabled: boolean;
+  /** Whether the device supports biometric authentication */
+  biometricAvailable: boolean;
+  /** The type of biometric available (FaceID, TouchID, None) */
+  biometryType: string;
 }
 
 interface CryptoActions {
@@ -29,15 +42,28 @@ interface CryptoActions {
   incrementDecryptionFailures: () => void;
   /** Reset decryption failure counter */
   resetDecryptionFailures: () => void;
+  /** Check biometric availability and update state */
+  checkBiometric: () => Promise<BiometricAvailability>;
+  /** Enroll biometric unlock — exports current key and stores via biometric */
+  enrollBiometric: () => Promise<void>;
+  /** Unlock encryption using biometric — retrieves key from secure store */
+  unlockWithBiometric: () => Promise<boolean>;
+  /** Disable biometric unlock — clears stored key */
+  disableBiometric: () => Promise<void>;
+  /** Update biometricEnabled state (e.g. from persisted preference) */
+  setBiometricEnabled: (enabled: boolean) => void;
 }
 
-export const useCryptoStore = create<CryptoState & CryptoActions>((set) => ({
+export const useCryptoStore = create<CryptoState & CryptoActions>((set, get) => ({
   encryptionEnabled: false,
   derivedKey: null,
   isUnlocked: false,
   salt: null,
   testValue: null,
   decryptionFailures: 0,
+  biometricEnabled: false,
+  biometricAvailable: false,
+  biometryType: "None",
 
   setKey: async (key) => {
     await storeKey(key);
@@ -66,5 +92,56 @@ export const useCryptoStore = create<CryptoState & CryptoActions>((set) => ({
     if (key) {
       set({ derivedKey: key, isUnlocked: true, decryptionFailures: 0 });
     }
+  },
+
+  checkBiometric: async () => {
+    const result = await checkBiometricAvailability();
+    set({
+      biometricAvailable: result.available,
+      biometryType: result.biometryType,
+    });
+    return result;
+  },
+
+  enrollBiometric: async () => {
+    const { derivedKey } = get();
+    if (!derivedKey) {
+      throw new Error("Encryption must be unlocked before enrolling biometric");
+    }
+
+    // Export the CryptoKey to base64 for storage
+    const keyData = await exportKey(derivedKey);
+
+    // Store in secure store (triggers biometric prompt on mobile)
+    await storeEncryptionKey(keyData);
+
+    set({ biometricEnabled: true });
+  },
+
+  unlockWithBiometric: async () => {
+    try {
+      // Retrieve key from secure store (triggers biometric prompt)
+      const keyData = await retrieveEncryptionKey();
+
+      // Import back to CryptoKey
+      const key = await importKey(keyData);
+
+      // Store in session and update state
+      await storeKey(key);
+      set({ derivedKey: key, isUnlocked: true, decryptionFailures: 0 });
+      return true;
+    } catch (e) {
+      console.error("Biometric unlock failed:", e);
+      return false;
+    }
+  },
+
+  disableBiometric: async () => {
+    await clearEncryptionKey();
+    set({ biometricEnabled: false });
+  },
+
+  setBiometricEnabled: (enabled) => {
+    set({ biometricEnabled: enabled });
   },
 }));

@@ -9,6 +9,7 @@ import {
   Copy,
   Database,
   Download,
+  Fingerprint,
   History,
   Info,
   Key,
@@ -21,6 +22,7 @@ import {
   RefreshCw,
   RotateCcw,
   Rss,
+  ScanFace,
   Settings2,
   Shield,
   Sun,
@@ -129,6 +131,7 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { useCrypto } from "@/hooks/use-crypto";
+import { isTauri } from "@/hooks/use-device";
 import {
   type DomainContentData,
   decryptAllData,
@@ -137,6 +140,7 @@ import {
   type TaskContentData,
 } from "@/lib/crypto";
 import { isSupported as isPasskeySupported, registerPasskey } from "@/lib/passkey";
+import { biometryLabel } from "@/lib/tauri-biometric";
 import { useCryptoStore } from "@/stores/crypto-store";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -763,6 +767,13 @@ function EncryptionSection() {
   const queryClient = useQueryClient();
   const setKey = useCryptoStore((s) => s.setKey);
   const clearKey = useCryptoStore((s) => s.clearKey);
+  const biometricEnabled = useCryptoStore((s) => s.biometricEnabled);
+  const biometricAvailable = useCryptoStore((s) => s.biometricAvailable);
+  const biometryType = useCryptoStore((s) => s.biometryType);
+  const isUnlocked = useCryptoStore((s) => s.isUnlocked);
+  const checkBiometric = useCryptoStore((s) => s.checkBiometric);
+  const enrollBiometric = useCryptoStore((s) => s.enrollBiometric);
+  const disableBiometric = useCryptoStore((s) => s.disableBiometric);
   const [passphrase, setPassphrase] = useState("");
   const [confirmPassphrase, setConfirmPassphrase] = useState("");
   const [passkeyName, setPasskeyName] = useState("");
@@ -771,9 +782,39 @@ function EncryptionSection() {
   const [enabling, setEnabling] = useState(false);
   const [disabling, setDisabling] = useState(false);
   const [registeringPasskey, setRegisteringPasskey] = useState(false);
+  const [togglingBiometric, setTogglingBiometric] = useState(false);
+
+  // Check biometric availability on mount (Tauri only)
+  useEffect(() => {
+    if (isTauri) {
+      checkBiometric();
+    }
+  }, [checkBiometric]);
 
   const encryptionEnabled = encryptionQuery.data?.enabled ?? false;
   const passkeys = (passkeysQuery.data as { passkeys?: PasskeyInfo[] } | undefined)?.passkeys ?? [];
+
+  const handleToggleBiometric = async () => {
+    setTogglingBiometric(true);
+    try {
+      if (biometricEnabled) {
+        await disableBiometric();
+        toast.success("Biometric unlock disabled");
+      } else {
+        if (!isUnlocked) {
+          toast.error("Unlock encryption first before enabling biometric");
+          return;
+        }
+        await enrollBiometric();
+        toast.success(`${biometryLabel(biometryType)} unlock enabled`);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      toast.error(`Failed to ${biometricEnabled ? "disable" : "enable"} biometric: ${msg}`);
+    } finally {
+      setTogglingBiometric(false);
+    }
+  };
 
   const handleEnable = async () => {
     if (passphrase.length < 8) {
@@ -1004,6 +1045,38 @@ function EncryptionSection() {
               </div>
             )}
           </div>
+
+          {/* Biometric Unlock (Tauri mobile only) */}
+          {isTauri && biometricAvailable && (
+            <>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {biometryType === "FaceID" ? (
+                    <ScanFace className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">Unlock with {biometryLabel(biometryType)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Skip entering your passphrase on this device
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={biometricEnabled}
+                  onCheckedChange={handleToggleBiometric}
+                  disabled={togglingBiometric || (!biometricEnabled && !isUnlocked)}
+                />
+              </div>
+              {!isUnlocked && !biometricEnabled && (
+                <p className="text-xs text-muted-foreground">
+                  Unlock encryption first to enable biometric
+                </p>
+              )}
+            </>
+          )}
         </div>
       )}
 

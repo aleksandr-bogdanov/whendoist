@@ -1,5 +1,5 @@
-import { Eye, EyeOff, Fingerprint, KeyRound, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Eye, EyeOff, Fingerprint, KeyRound, Loader2, ScanFace } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { isTauri } from "@/hooks/use-device";
 import { unlockEncryption } from "@/lib/crypto";
 import { isSupported as isWebAuthnSupported, unlockWithPasskey } from "@/lib/passkey";
+import { biometryLabel } from "@/lib/tauri-biometric";
 import { useCryptoStore } from "@/stores/crypto-store";
 
 interface EncryptionUnlockProps {
@@ -27,6 +29,18 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const restoreKey = useCryptoStore((s) => s.restoreKey);
+  const biometricEnabled = useCryptoStore((s) => s.biometricEnabled);
+  const biometricAvailable = useCryptoStore((s) => s.biometricAvailable);
+  const biometryType = useCryptoStore((s) => s.biometryType);
+  const unlockWithBiometric = useCryptoStore((s) => s.unlockWithBiometric);
+  const checkBiometric = useCryptoStore((s) => s.checkBiometric);
+
+  // Check biometric availability when the dialog opens on Tauri
+  useEffect(() => {
+    if (open && isTauri) {
+      checkBiometric();
+    }
+  }, [open, checkBiometric]);
 
   const handlePassphraseUnlock = async () => {
     if (!passphrase.trim()) return;
@@ -73,6 +87,29 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
     }
   };
 
+  const handleBiometricUnlock = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const success = await unlockWithBiometric();
+      if (success) {
+        setPassphrase("");
+        toast.success(`Encryption unlocked with ${biometryLabel(biometryType)}`);
+      } else {
+        setError(`${biometryLabel(biometryType)} failed. Try your passphrase instead.`);
+      }
+    } catch {
+      setError(`${biometryLabel(biometryType)} failed. Try your passphrase instead.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showBiometric = isTauri && biometricEnabled && biometricAvailable;
+  const biometricLabel = biometryLabel(biometryType);
+  const BiometricIcon = biometryType === "FaceID" ? ScanFace : Fingerprint;
+
   return (
     <Dialog open={open}>
       <DialogContent
@@ -105,7 +142,7 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
                 onChange={(e) => setPassphrase(e.target.value)}
                 placeholder="Enter your encryption passphrase"
                 disabled={loading}
-                autoFocus
+                autoFocus={!showBiometric}
               />
               <Button
                 type="button"
@@ -126,13 +163,28 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex flex-col gap-2">
-            <Button type="submit" disabled={loading || !passphrase.trim()}>
+            {showBiometric && (
+              <Button type="button" onClick={handleBiometricUnlock} disabled={loading}>
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <BiometricIcon className="mr-2 h-4 w-4" />
+                )}
+                Unlock with {biometricLabel}
+              </Button>
+            )}
+
+            <Button
+              type="submit"
+              variant={showBiometric ? "outline" : "default"}
+              disabled={loading || !passphrase.trim()}
+            >
               {loading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <KeyRound className="mr-2 h-4 w-4" />
               )}
-              Unlock
+              Unlock with Passphrase
             </Button>
 
             {isWebAuthnSupported() && (

@@ -4,6 +4,23 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.60.0 — 2026-03-04
+
+### Feat: Tauri v2 Mobile — Phase 4 Biometric Auth
+
+- **Rust**: `biometric.rs` — 4 commands: `check_biometric_availability`, `store_encryption_key`, `retrieve_encryption_key`, `clear_encryption_key`
+- **Rust**: `tauri-plugin-biometric` v2 (official, mobile-only) for Face ID / Touch ID / fingerprint authentication
+- **Rust**: Biometric gates access to encryption key stored in `tauri-plugin-store`; Rust never performs encryption — only stores/retrieves the key blob
+- **Capabilities**: Separate `mobile.json` with `biometric:default` permission (desktop builds skip it)
+- **iOS**: `Info.ios.plist` with `NSFaceIDUsageDescription` for Face ID permission dialog
+- **Frontend**: `tauri-biometric.ts` TypeScript wrappers for all 4 Rust commands + `biometryLabel()` helper
+- **Frontend**: `crypto-store.ts` — added `biometricEnabled`, `biometricAvailable`, `biometryType`, `checkBiometric()`, `enrollBiometric()`, `unlockWithBiometric()`, `disableBiometric()`
+- **Frontend**: `encryption-unlock.tsx` — biometric unlock button (primary when available, adapts icon for Face ID vs Touch ID)
+- **Frontend**: Settings encryption section — biometric toggle visible when Tauri + encryption enabled + device supports biometric
+- **Frontend**: `biome.json` — excluded `src-tauri/` from Biome scanning (Rust build artifacts)
+
+---
+
 ## v0.59.1 — 2026-03-04
 
 ### Fix: Wire up useReminders() hook at authenticated root
