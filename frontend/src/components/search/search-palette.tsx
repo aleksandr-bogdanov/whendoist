@@ -1,6 +1,15 @@
 import { useNavigate } from "@tanstack/react-router";
 import Fuse, { type FuseResultMatch, type IFuseOptions } from "fuse.js";
-import { AlertTriangle, CalendarCheck, Check, Lightbulb, Plus, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarCheck,
+  Check,
+  Lightbulb,
+  Mic,
+  MicOff,
+  Plus,
+  Search,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
@@ -15,6 +24,7 @@ import { useShortcuts } from "@/hooks/use-shortcuts";
 import { useSmartInput } from "@/hooks/use-smart-input";
 import { useTaskCreate } from "@/hooks/use-task-create";
 import { type SearchResult, useTaskSearch } from "@/hooks/use-task-search";
+import { useVoiceInput } from "@/hooks/use-voice-input";
 import {
   COMMAND_CATEGORIES,
   type PaletteCommand,
@@ -239,6 +249,16 @@ export function SearchPalette() {
     reset: resetSmartInput,
   } = smartInput;
 
+  /* ---- Voice input ---- */
+  const {
+    isSupported: voiceSupported,
+    isListening,
+    startListening,
+    stopListening,
+  } = useVoiceInput({
+    onTranscript: smartInput.setInput,
+  });
+
   /* ---- Detect command mode ---- */
   const isCommandMode = rawInput.startsWith(">");
   const searchQuery = isCommandMode ? rawInput.slice(1).trimStart() : rawInput.trim();
@@ -434,6 +454,8 @@ export function SearchPalette() {
       setSelectedIndex(0);
       setDrilldownResult(null);
       setSelectedTaskIds(new Set());
+    } else {
+      stopListening();
     }
   }, [searchOpen]);
 
@@ -905,6 +927,22 @@ export function SearchPalette() {
                   className="flex-1 h-11 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
                   autoFocus
                 />
+                {voiceSupported && (
+                  <button
+                    type="button"
+                    className={`shrink-0 p-1 rounded-md transition-colors ${isListening ? "text-red-500 animate-pulse" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => {
+                      if (isListening) {
+                        stopListening();
+                      } else {
+                        startListening(rawInput);
+                      }
+                    }}
+                    aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                  >
+                    {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </button>
+                )}
                 <kbd className="hidden sm:inline-flex items-center justify-center h-5 px-1.5 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
                   {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}K
                 </kbd>

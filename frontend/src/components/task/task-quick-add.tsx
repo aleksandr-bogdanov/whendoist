@@ -1,4 +1,4 @@
-import { Loader2, X } from "lucide-react";
+import { Loader2, Mic, MicOff, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import type { DomainResponse } from "@/api/model";
 import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomplete";
@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useSmartInput } from "@/hooks/use-smart-input";
 import { useTaskCreate } from "@/hooks/use-task-create";
+import { useVoiceInput } from "@/hooks/use-voice-input";
 import type { ParsedToken } from "@/lib/task-parser";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -60,7 +61,17 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
     handleDismissToken,
     handleKeyDown: handleAcKeyDown,
     reset: resetForm,
+    setInput,
   } = useSmartInput({ domains });
+
+  const {
+    isSupported: voiceSupported,
+    isListening,
+    startListening,
+    stopListening,
+  } = useVoiceInput({
+    onTranscript: setInput,
+  });
 
   // Preferences (persisted to localStorage)
   const [keepOpen, setKeepOpen] = useState(() => localStorage.getItem("qa-keep-open") === "1");
@@ -117,7 +128,10 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!v) resetForm();
+        if (!v) {
+          stopListening();
+          resetForm();
+        }
         onOpenChange(v);
       }}
     >
@@ -130,16 +144,37 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
         </DialogHeader>
 
         <div className="space-y-2.5">
-          {/* Input with autocomplete */}
+          {/* Input with autocomplete + voice */}
           <div className="relative">
-            <Input
-              ref={inputRef}
-              value={rawInput}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="e.g. Fix login #Work !high 30m tomorrow"
-              autoFocus
-            />
+            <div className="flex items-center gap-1.5">
+              <Input
+                ref={inputRef}
+                value={rawInput}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g. Fix login #Work !high 30m tomorrow"
+                className="flex-1"
+                autoFocus
+              />
+              {voiceSupported && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={`shrink-0 h-9 w-9 ${isListening ? "text-red-500 animate-pulse" : "text-muted-foreground"}`}
+                  onClick={() => {
+                    if (isListening) {
+                      stopListening();
+                    } else {
+                      startListening(rawInput);
+                    }
+                  }}
+                  aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                >
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+              )}
+            </div>
             <SmartInputAutocomplete
               suggestions={acSuggestions}
               visible={acVisible}
