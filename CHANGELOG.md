@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.56.17 — 2026-03-04
+
+### Fix: Security backlog — aging stats date bound, instance cleanup audit trail
+
+- `_get_aging_stats()` now bounded by both date (`AGING_STATS_HISTORY_DAYS=730`) and count (`AGING_STATS_LIMIT=5000`) for defense-in-depth
+- `cleanup_old_instances()` logs per-user/per-status audit trail before bulk delete, and confirms job execution even on zero deletions
+- Offline mutation guards confirmed already resolved by global axios interceptor
+- Backlog updated: all three Security items moved to Shipped
+
+---
+
 ## v0.56.16 — 2026-03-03
 
 ### Fix: Fifth-pass batch operations audit (1 finding)
