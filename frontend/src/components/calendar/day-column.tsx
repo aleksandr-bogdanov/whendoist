@@ -45,6 +45,7 @@ import {
 } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
+import { getCurrentTimeInTimezone, getHoursInTimezone, getMinutesInTimezone } from "@/lib/timezone";
 import { instanceSelectionId, taskSelectionId, useSelectionStore } from "@/stores/selection-store";
 import { CalendarEventCard } from "./calendar-event";
 import { LassoRect, useLasso } from "./lasso-selection";
@@ -73,6 +74,8 @@ interface DayColumnProps {
   isPlanMode?: boolean;
   /** Called when user clicks "Plan Tasks" after selecting a time range */
   onPlanExecute?: (startMinutes: number, endMinutes: number) => void;
+  /** User's effective timezone (IANA string) for timezone-aware rendering */
+  timezone?: string;
 }
 
 export function DayColumn({
@@ -87,10 +90,11 @@ export function DayColumn({
   isActivePanel = false,
   isPlanMode = false,
   onPlanExecute,
+  timezone,
 }: DayColumnProps) {
   const queryClient = useQueryClient();
   const columnRef = useRef<HTMLDivElement>(null);
-  const isToday = centerDate === todayString();
+  const isToday = centerDate === todayString(timezone);
   const totalHeight = EXTENDED_TOTAL_HOURS * hourHeight;
   const boundaries = useMemo(() => getSectionBoundaries(hourHeight), [hourHeight]);
 
@@ -164,8 +168,8 @@ export function DayColumn({
 
   // Positioned items across all 3 days
   const positioned = useMemo(
-    () => calculateExtendedOverlaps(events, tasks, instances, centerDate, hourHeight),
-    [events, tasks, instances, centerDate, hourHeight],
+    () => calculateExtendedOverlaps(events, tasks, instances, centerDate, hourHeight, timezone),
+    [events, tasks, instances, centerDate, hourHeight, timezone],
   );
 
   // Ordered selection IDs for Shift+Click range selection (sorted by visual position)
@@ -183,16 +187,32 @@ export function DayColumn({
   // Lasso drag-select
   const lasso = useLasso(columnRef, isPlanMode);
 
-  // Current time indicator — update every 60s
-  const [now, setNow] = useState(() => new Date());
+  // Current time indicator — update every 60s (timezone-aware)
+  const [nowTime, setNowTime] = useState(() =>
+    timezone
+      ? getCurrentTimeInTimezone(timezone)
+      : { hours: new Date().getHours(), minutes: new Date().getMinutes() },
+  );
   useEffect(() => {
     if (!isToday) return;
-    const id = setInterval(() => setNow(new Date()), 60_000);
+    // Immediate update so timezone changes reflect instantly (not after 60s)
+    setNowTime(
+      timezone
+        ? getCurrentTimeInTimezone(timezone)
+        : { hours: new Date().getHours(), minutes: new Date().getMinutes() },
+    );
+    const id = setInterval(() => {
+      setNowTime(
+        timezone
+          ? getCurrentTimeInTimezone(timezone)
+          : { hours: new Date().getHours(), minutes: new Date().getMinutes() },
+      );
+    }, 60_000);
     return () => clearInterval(id);
-  }, [isToday]);
+  }, [isToday, timezone]);
 
   const currentTimeOffset = isToday
-    ? extendedTimeToOffset(now.getHours(), now.getMinutes(), "current", hourHeight)
+    ? extendedTimeToOffset(nowTime.hours, nowTime.minutes, "current", hourHeight)
     : -1;
 
   const getTimeLabel = useCallback((startMinutes: number, endMinutes: number) => {
@@ -355,7 +375,9 @@ export function DayColumn({
             let instTime: string | null = null;
             if (inst.scheduled_datetime) {
               const dt = new Date(inst.scheduled_datetime);
-              instTime = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}:00`;
+              const h = timezone ? getHoursInTimezone(dt, timezone) : dt.getHours();
+              const m = timezone ? getMinutesInTimezone(dt, timezone) : dt.getMinutes();
+              instTime = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
             }
             items.push({
               type: "instance",

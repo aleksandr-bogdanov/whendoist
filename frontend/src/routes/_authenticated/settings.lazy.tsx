@@ -98,6 +98,7 @@ import {
   useResetWizardApiV1WizardResetPost,
 } from "@/api/queries/wizard/wizard";
 import { ActivityList } from "@/components/activity/activity-list";
+import { TimezonePicker } from "@/components/timezone-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -112,13 +113,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
@@ -220,27 +214,6 @@ function ThemeSection() {
 // Timezone Section
 // ============================================================================
 
-const COMMON_TIMEZONES = [
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Anchorage",
-  "Pacific/Honolulu",
-  "America/Toronto",
-  "America/Vancouver",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Europe/Moscow",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "Asia/Kolkata",
-  "Asia/Dubai",
-  "Australia/Sydney",
-  "Pacific/Auckland",
-];
-
 function TimezoneSection() {
   const prefsQuery = useGetPreferencesApiV1PreferencesGet();
   const updatePrefs = useUpdatePreferencesApiV1PreferencesPut();
@@ -250,11 +223,12 @@ function TimezoneSection() {
 
   return (
     <SettingsCard title="Timezone" icon={<Calendar className="h-4 w-4" />}>
-      <Select
+      <TimezonePicker
         value={currentTz}
-        onValueChange={(value) => {
+        onChange={(tz) => {
+          if (!tz) return;
           updatePrefs.mutate(
-            { data: { timezone: value } },
+            { data: { timezone: tz } },
             {
               onSuccess: () => {
                 queryClient.invalidateQueries({
@@ -266,18 +240,7 @@ function TimezoneSection() {
             },
           );
         }}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {COMMON_TIMEZONES.map((tz) => (
-            <SelectItem key={tz} value={tz}>
-              {tz.replace(/_/g, " ")}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      />
     </SettingsCard>
   );
 }

@@ -102,8 +102,8 @@ class PreferencesService:
                 try:
                     ZoneInfo(timezone)  # Raises if invalid
                     prefs.timezone = timezone
-                except (KeyError, TypeError):
-                    pass  # Silently ignore invalid timezones
+                except (KeyError, TypeError) as err:
+                    raise ValueError(f"Invalid timezone: {timezone}") from err
 
         if calendar_hour_height is not None:
             # Clamp to valid zoom range

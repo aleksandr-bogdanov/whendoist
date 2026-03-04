@@ -4,6 +4,30 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.57.1 — 2026-03-04
+
+### Feat: Multi-timezone support (Phase 1)
+
+Full timezone awareness across frontend and backend — all time rendering, calculations, and storage now respect the user's configured timezone.
+
+**Frontend:**
+- `timezone.ts` — core timezone utility module with cached `Intl.DateTimeFormat` instances, zero new dependencies
+- `useTimezone()` hook — single source of truth for effective timezone (reads from TanStack Query prefs cache)
+- `TimezonePicker` — searchable timezone picker with Fuse.js fuzzy search, replaces raw `<Select>` in Settings
+- Calendar panel, day column, scheduled section, and drag-and-drop all use timezone-aware time extraction
+- `calendar-utils.ts` — all time calculations (`datetimeToOffset`, `calculateOverlaps`, `planTasks`, etc.) accept optional `tz` parameter
+
+**Backend:**
+- Fixed `date.today()` → `get_user_today(timezone)` in analytics service, analytics router, and task restore
+- `_ensure_utc()` in RecurrenceService — converts naive user-local datetimes to UTC before DB storage
+- Invalid timezone preference now returns 422 error (was silently ignored)
+
+**Audit fixes:**
+- Instance schedule endpoint fetches user timezone before storing (naive datetime bug)
+- Current-time indicator updates immediately on timezone change (was stale for up to 60s)
+
+---
+
 ## v0.57.0 — 2026-03-04
 
 ### Feat: Task activity log

@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import type { InstanceResponse, TaskResponse } from "@/api/model";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useTimezone } from "@/hooks/use-timezone";
 import { todayString } from "@/lib/calendar-utils";
 import { groupScheduledByDate } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
@@ -20,8 +21,9 @@ interface ScheduledSectionProps {
 
 export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledSectionProps) {
   const { showScheduled, toggleShowScheduled } = useUIStore();
+  const timezone = useTimezone();
 
-  const today = todayString();
+  const today = todayString(timezone);
 
   // Fetch instances for ALL recurring tasks (single query, not N+1)
   // Range: min(oldest scheduled date, today) → 30 days out, so we cover overdue + upcoming

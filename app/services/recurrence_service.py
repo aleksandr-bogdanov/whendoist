@@ -359,6 +359,21 @@ class RecurrenceService:
 
         return instance
 
+    def _ensure_utc(self, dt: datetime | None) -> datetime | None:
+        """Ensure a datetime is UTC-aware.
+
+        The frontend sends naive datetimes representing user-local time.
+        PostgreSQL's TIMESTAMP WITH TIME ZONE interprets naive values as UTC,
+        so we must convert from user-local → UTC before storing.
+        """
+        if dt is None:
+            return None
+        if dt.tzinfo is not None:
+            # Already timezone-aware — convert to UTC
+            return dt.astimezone(UTC).replace(tzinfo=UTC)
+        # Naive datetime: interpret as user-local and convert to UTC
+        return self._to_utc_datetime(dt.date(), dt.time())
+
     async def schedule_instance(
         self,
         instance_id: int,
@@ -378,7 +393,7 @@ class RecurrenceService:
 
         if instance:
             old_dt = str(instance.scheduled_datetime) if instance.scheduled_datetime else None
-            instance.scheduled_datetime = scheduled_datetime
+            instance.scheduled_datetime = self._ensure_utc(scheduled_datetime)
             await self.db.flush()
             new_dt = str(instance.scheduled_datetime) if instance.scheduled_datetime else None
             await log_activity(
