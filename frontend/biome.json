@@ -45,7 +45,8 @@
       "!**/dist",
       "!**/src/components/ui",
       "!**/src/routeTree.gen.ts",
-      "!**/src/api"
+      "!**/src/api",
+      "!**/src-tauri"
     ]
   }
 }
