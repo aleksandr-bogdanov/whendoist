@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.61.2 — 2026-03-05
+
+### Fix: Tauri demo login — device token endpoint for native app
+
+- **Backend**: Add `POST /api/v1/device/demo-token` — returns device tokens directly for demo login in Tauri, bypassing session-based flow that doesn't work in native WebViews
+- **Frontend**: In Tauri mode, demo button calls the new API endpoint, stores tokens via `tauri-plugin-store`, and navigates via SPA router (instead of broken `<a href="/auth/demo">` navigation)
+
+---
+
 ## v0.61.1 — 2026-03-05
 
 ### Fix: Tauri iOS launch crash + CORS for native app API calls
