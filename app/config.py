@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     passkey_rp_id: str = ""
     passkey_rp_name: str = "Whendoist"
 
+    # Push notifications (FCM + APNs) — all default empty = not configured
+    fcm_project_id: str = ""
+    fcm_service_account_json: str = ""  # JSON string or path to .json file
+    apns_key_id: str = ""
+    apns_team_id: str = ""
+    apns_key_path: str = ""  # Path to .p8 file
+    apns_bundle_id: str = "com.whendoist.app"
+    apns_use_sandbox: bool = True
+
     @model_validator(mode="after")
     def validate_secret_key(self) -> "Settings":
         """Fail-safe: refuse to start with default secret_key in production."""

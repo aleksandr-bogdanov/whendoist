@@ -584,6 +584,15 @@ async def update_task(
     ):
         update_data["duration_minutes"] = GCAL_SYNC_DEFAULT_DURATION_MINUTES
 
+    # Reset reminder_sent_at if scheduling fields change (allows push to re-fire)
+    _REMINDER_RESET_FIELDS = {"scheduled_date", "scheduled_time", "reminder_minutes_before"}
+    if update_data.keys() & _REMINDER_RESET_FIELDS:
+        needs_reset = any(
+            field in update_data and update_data[field] != getattr(current, field) for field in _REMINDER_RESET_FIELDS
+        )
+        if needs_reset:
+            update_data["reminder_sent_at"] = None
+
     # Keep scheduled_date and recurrence_start in sync for recurring tasks
     is_recurring = update_data.get("is_recurring", current.is_recurring)
     if is_recurring:

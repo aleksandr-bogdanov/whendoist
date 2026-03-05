@@ -1,6 +1,6 @@
 [project]
 name = "whendoist"
-version = "0.60.1"
+version = "0.61.0"
 description = "Task scheduling app - WHEN do I do my tasks?"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -14,7 +14,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "pydantic-settings>=2.6.0",
     "python-multipart>=0.0.12",
-    "httpx>=0.28.0",
+    "httpx[http2]>=0.28.0",
     "itsdangerous>=2.2.0",
     "cryptography>=44.0.0",
     "python-dateutil>=2.9.0",

@@ -107,6 +107,11 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
 
+    # Push notification device tokens (mobile)
+    device_tokens: Mapped[list["DeviceToken"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", passive_deletes=True
+    )
+
 
 class TodoistToken(Base):
     """
@@ -350,6 +355,8 @@ class Task(Base):
     # Reminders — "remind me N minutes before scheduled time"
     # None = no reminder, 0 = at time, 5/15/30/60/1440 = minutes before
     reminder_minutes_before: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Push notification tracking — set when a push reminder is sent, reset on schedule changes
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # For import tracking (Todoist, Things, etc.)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -578,3 +585,33 @@ class ActivityLog(Base):
         Index("ix_activity_log_user_task", "user_id", "task_id", "created_at"),
         Index("ix_activity_log_user_created", "user_id", "created_at"),
     )
+
+
+# =============================================================================
+# Push Notification Models
+# =============================================================================
+
+
+class DeviceToken(Base):
+    """
+    Push notification device token for mobile apps.
+
+    Stores FCM (Android) and APNs (iOS) tokens for server-initiated push.
+    Each user can have multiple devices; tokens are cleaned up when push
+    services report them as invalid (uninstall, token rotation).
+    """
+
+    __tablename__ = "device_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token: Mapped[str] = mapped_column(String(255), nullable=False)
+    platform: Mapped[str] = mapped_column(String(20), nullable=False)  # "ios" | "android"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped["User"] = relationship(back_populates="device_tokens")
+
+    __table_args__ = (UniqueConstraint("user_id", "token", name="uq_device_token_user_token"),)

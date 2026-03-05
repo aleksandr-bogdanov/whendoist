@@ -4,6 +4,28 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.61.0 — 2026-03-05
+
+### Feat: Tauri v2 Mobile — Phase 2 Push Notifications / Remote Reminders
+
+Server-side push delivery so task reminders fire even when the app is closed/backgrounded.
+Architecture: backend cron finds due reminders → sends silent push via FCM/APNs → device wakes → Rust creates local notification.
+
+- **Backend**: `DeviceToken` model + `reminder_sent_at` field on `Task` for push delivery tracking
+- **Backend**: `PushService` — FCM v1 HTTP API (OAuth2 JWT) + APNs HTTP/2 (ES256 JWT) delivery via raw `httpx[http2]`
+- **Backend**: `POST/DELETE /api/v1/push/token` — register/unregister device push tokens with per-user cap (10 devices)
+- **Backend**: Background reminder loop (60s) — PostgreSQL interval query finds due reminders, sends silent push, marks `reminder_sent_at`
+- **Backend**: `reminder_sent_at` auto-resets when scheduling fields change (scheduled_date, scheduled_time, reminder_minutes_before)
+- **Rust**: Replaced `tauri-plugin-notification` with `tauri-plugin-notifications` v0.4 (community plugin with push support)
+- **Rust**: Push token registration on mobile startup via `register_for_push_notifications()`, emits `push-token-received` event
+- **Rust**: `get_push_token` command + `PushTokenState` managed state for frontend access
+- **Frontend**: `tauri-push.ts` — push token registration/unregistration with backend + local persistence via `LazyStore`
+- **Frontend**: `usePushNotifications()` hook — listens for push token events, registers with backend, unregisters on logout
+- **Config**: FCM/APNs credentials via env vars (backend starts fine without them — push loop simply doesn't start)
+- **Tests**: 23 new tests — DeviceToken CRUD, multitenancy, reminder_sent_at reset, PushService FCM/APNs payloads + error handling
+
+---
+
 ## v0.60.1 — 2026-03-04
 
 ### Fix: Biometric auth — persistence, type labels, security docs

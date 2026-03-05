@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default capabilities for Whendoist",
   "windows": ["main"],
-  "permissions": ["core:default", "store:default", "shell:allow-open", "notification:default"]
+  "permissions": ["core:default", "store:default", "shell:allow-open", "notifications:default"]
 }

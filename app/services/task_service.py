@@ -431,6 +431,7 @@ class TaskService:
             "recurrence_start",
             "recurrence_end",
             "reminder_minutes_before",
+            "reminder_sent_at",
             "position",
             "status",
         }

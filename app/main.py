@@ -74,6 +74,10 @@ async def lifespan(app: FastAPI):
 
         from app.database import async_session_factory
         from app.services.challenge_service import ChallengeService
+        from app.tasks.push_notifications import (
+            start_push_reminder_background,
+            stop_push_reminder_background,
+        )
         from app.tasks.recurring import (
             start_materialization_background,
             stop_materialization_background,
@@ -106,6 +110,10 @@ async def lifespan(app: FastAPI):
         # Start background snapshot loop (first run after 30-min sleep)
         start_snapshot_background()
 
+        # Start background push reminder loop (no-op when FCM/APNs not configured)
+        if settings.fcm_project_id or settings.apns_key_id:
+            start_push_reminder_background()
+
         logger.info(f"Startup complete ({time.monotonic() - boot_start:.1f}s)")
 
     except RuntimeError as e:
@@ -121,9 +129,11 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down Whendoist...")
     try:
+        from app.tasks.push_notifications import stop_push_reminder_background
         from app.tasks.recurring import stop_materialization_background
         from app.tasks.snapshots import stop_snapshot_background
 
+        await stop_push_reminder_background()
         stop_snapshot_background()
         stop_materialization_background()
     except Exception as e:

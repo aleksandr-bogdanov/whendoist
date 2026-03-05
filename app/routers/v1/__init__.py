@@ -24,6 +24,7 @@ from app.routers import (
     me,
     passkeys,
     preferences,
+    push_notifications,
     tasks,
     url_utils,
     wizard,
@@ -49,3 +50,4 @@ router.include_router(url_utils.router)
 router.include_router(calendar_feed.router)
 router.include_router(activity.router)
 router.include_router(device_auth.router)
+router.include_router(push_notifications.router)
