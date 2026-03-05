@@ -194,10 +194,10 @@ app.add_middleware(CSRFMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "tauri://localhost",        # macOS / iOS production
+        "tauri://localhost",  # macOS / iOS production
         "https://tauri.localhost",  # Windows production
-        "http://localhost:5173",    # dev mode (Vite)
-        "http://localhost:1420",    # Tauri default dev port
+        "http://localhost:5173",  # dev mode (Vite)
+        "http://localhost:1420",  # Tauri default dev port
     ],
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["Authorization", "Content-Type"],
