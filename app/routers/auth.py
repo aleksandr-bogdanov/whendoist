@@ -282,8 +282,10 @@ async def google_callback(
 
     request.session.clear()
     request.session["user_id"] = str(user.id)
-    # Redirect to settings if returning from write scope upgrade
-    redirect_url = "/settings" if has_write_scope else "/dashboard"
+    # Redirect to settings if returning from write scope upgrade.
+    # Add gcal_auto_enable param so the frontend auto-triggers sync enable
+    # (without this, the user would have to toggle sync ON a second time).
+    redirect_url = "/settings?gcal_auto_enable=true" if has_write_scope else "/dashboard"
     if oauth_return_to_wizard:
         redirect_url = "/dashboard"
     response = RedirectResponse(url=redirect_url, status_code=303)

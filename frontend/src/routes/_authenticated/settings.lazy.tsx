@@ -29,7 +29,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type {
   CalendarResponse,
@@ -401,8 +401,32 @@ function GCalSyncSection() {
   const disableSync = useDisableSyncApiV1GcalSyncDisablePost();
   const fullSync = useFullSyncApiV1GcalSyncFullSyncPost();
   const queryClient = useQueryClient();
+  const autoEnableTriggered = useRef(false);
 
   const syncStatus = syncQuery.data;
+
+  // Auto-enable sync after returning from Google OAuth write scope upgrade.
+  // The OAuth callback redirects here with ?gcal_auto_enable=true.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once on mount after OAuth redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("gcal_auto_enable") === "true" && !autoEnableTriggered.current) {
+      autoEnableTriggered.current = true;
+      // Clean URL without triggering navigation
+      window.history.replaceState({}, "", window.location.pathname);
+      enableSync.mutate(undefined, {
+        onSuccess: (data) => {
+          if (!data.reauth_url) {
+            queryClient.invalidateQueries({
+              queryKey: getGetSyncStatusApiV1GcalSyncStatusGetQueryKey(),
+            });
+            toast.success("Calendar sync enabled");
+          }
+        },
+        onError: () => toast.error("Failed to enable sync"),
+      });
+    }
+  }, []);
 
   const handleToggle = (checked: boolean) => {
     if (checked) {
