@@ -377,6 +377,26 @@ export function TaskItem({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
+          announce(isCompleted ? "Task reopened" : "Task completed");
+          toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
+            id: `complete-${task.id}`,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                toggleComplete.mutate(
+                  { taskId: task.id, data: null },
+                  {
+                    onSuccess: () => {
+                      queryClient.invalidateQueries({
+                        queryKey: dashboardTasksKey(),
+                      });
+                    },
+                    onError: () => toast.error("Undo failed"),
+                  },
+                );
+              },
+            },
+          });
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
@@ -569,41 +589,41 @@ export function TaskItem({
 
   const contextMenuItems = (
     <>
-      <ContextMenuItem onClick={handleMenuEdit}>
+      <ContextMenuItem onSelect={handleMenuEdit}>
         <Pencil className="h-3.5 w-3.5 mr-2" />
         Edit
       </ContextMenuItem>
-      <ContextMenuItem onClick={handleMenuComplete}>
+      <ContextMenuItem onSelect={handleMenuComplete}>
         <Check className="h-3.5 w-3.5 mr-2" />
         {pendingInstance ? "Complete this one" : isCompleted ? "Reopen" : "Complete"}
       </ContextMenuItem>
       {pendingInstance && (
-        <ContextMenuItem onClick={handleMenuSkip}>
+        <ContextMenuItem onSelect={handleMenuSkip}>
           <SkipForward className="h-3.5 w-3.5 mr-2" />
           Skip this one
         </ContextMenuItem>
       )}
       {!task.scheduled_date && (
-        <ContextMenuItem onClick={handleMenuSchedule}>
+        <ContextMenuItem onSelect={handleMenuSchedule}>
           <CalendarPlus className="h-3.5 w-3.5 mr-2" />
           Schedule
         </ContextMenuItem>
       )}
       {task.scheduled_date && !task.is_recurring && (
-        <ContextMenuItem onClick={handleMenuUnschedule}>
+        <ContextMenuItem onSelect={handleMenuUnschedule}>
           <CalendarOff className="h-3.5 w-3.5 mr-2" />
           Unschedule
         </ContextMenuItem>
       )}
       {canHaveSubtasks && (
-        <ContextMenuItem onClick={() => requestSubtaskAdd(task.id)}>
+        <ContextMenuItem onSelect={() => requestSubtaskAdd(task.id)}>
           <Plus className="h-3.5 w-3.5 mr-2" />
           Add subtask
         </ContextMenuItem>
       )}
       <ContextMenuSeparator />
       <ContextMenuItem
-        onClick={handleMenuDelete}
+        onSelect={handleMenuDelete}
         className="text-destructive focus:text-destructive"
       >
         <Trash2 className="h-3.5 w-3.5 mr-2" />
@@ -915,35 +935,35 @@ export function TaskItem({
                 </DropdownMenuTrigger>
               </div>
               <DropdownMenuContent align="start" className="min-w-[140px]">
-                <DropdownMenuItem onClick={handleMenuEdit}>
+                <DropdownMenuItem onSelect={handleMenuEdit}>
                   <Pencil className="h-3.5 w-3.5 mr-2" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleMenuComplete}>
+                <DropdownMenuItem onSelect={handleMenuComplete}>
                   <Check className="h-3.5 w-3.5 mr-2" />
                   {pendingInstance ? "Complete this one" : isCompleted ? "Reopen" : "Complete"}
                 </DropdownMenuItem>
                 {pendingInstance && (
-                  <DropdownMenuItem onClick={handleMenuSkip}>
+                  <DropdownMenuItem onSelect={handleMenuSkip}>
                     <SkipForward className="h-3.5 w-3.5 mr-2" />
                     Skip this one
                   </DropdownMenuItem>
                 )}
                 {!task.scheduled_date && (
-                  <DropdownMenuItem onClick={handleMenuSchedule}>
+                  <DropdownMenuItem onSelect={handleMenuSchedule}>
                     <CalendarPlus className="h-3.5 w-3.5 mr-2" />
                     Schedule
                   </DropdownMenuItem>
                 )}
                 {task.scheduled_date && !task.is_recurring && (
-                  <DropdownMenuItem onClick={handleMenuUnschedule}>
+                  <DropdownMenuItem onSelect={handleMenuUnschedule}>
                     <CalendarOff className="h-3.5 w-3.5 mr-2" />
                     Unschedule
                   </DropdownMenuItem>
                 )}
                 {canHaveSubtasks && (
                   <DropdownMenuItem
-                    onClick={() => {
+                    onSelect={() => {
                       requestSubtaskAdd(task.id);
                       setMenuOpen(false);
                     }}
@@ -954,7 +974,7 @@ export function TaskItem({
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={handleMenuDelete}
+                  onSelect={handleMenuDelete}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-2" />
@@ -1209,17 +1229,17 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
 
   const contextMenuItems = (
     <>
-      <ContextMenuItem onClick={handleMenuEdit}>
+      <ContextMenuItem onSelect={handleMenuEdit}>
         <Pencil className="h-3.5 w-3.5 mr-2" />
         Edit
       </ContextMenuItem>
-      <ContextMenuItem onClick={handleMenuComplete}>
+      <ContextMenuItem onSelect={handleMenuComplete}>
         <Check className="h-3.5 w-3.5 mr-2" />
         {isCompleted ? "Reopen" : "Complete"}
       </ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuItem
-        onClick={handleMenuDelete}
+        onSelect={handleMenuDelete}
         className="text-destructive focus:text-destructive"
       >
         <Trash2 className="h-3.5 w-3.5 mr-2" />
@@ -1372,17 +1392,17 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
               </DropdownMenuTrigger>
             </div>
             <DropdownMenuContent align="start" className="min-w-[140px]">
-              <DropdownMenuItem onClick={handleMenuEdit}>
+              <DropdownMenuItem onSelect={handleMenuEdit}>
                 <Pencil className="h-3.5 w-3.5 mr-2" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleMenuComplete}>
+              <DropdownMenuItem onSelect={handleMenuComplete}>
                 <Check className="h-3.5 w-3.5 mr-2" />
                 {isCompleted ? "Reopen" : "Complete"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={handleMenuDelete}
+                onSelect={handleMenuDelete}
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5 mr-2" />

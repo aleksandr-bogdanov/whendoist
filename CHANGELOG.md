@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.63.1 — 2026-03-05
+
+### Fix: Context menu actions, missing toast, and data_version lock contention
+
+- **Context menus**: Switch all `ContextMenuItem`/`DropdownMenuItem` from `onClick` to `onSelect` (Radix UI's semantic handler) across 5 files — fixes calendar RMB buttons not firing
+- **Task view RMB toast**: Add missing `toast.success()` with undo action + `announce()` to `handleMenuComplete` for non-recurring tasks — previously completed silently with no feedback
+- **data_version contention**: Wrap `bump_data_version` in a savepoint with 2s `SET LOCAL statement_timeout` on PostgreSQL — if the row lock is contended, the savepoint rolls back gracefully instead of blocking the entire mutation for 30s (which caused Sentry `QueryCanceledError` 500s and slow task creation)
+
+---
+
 ## v0.63.0 — 2026-03-05
 
 ### Feat: Home Screen Widgets (iOS + Android) — Phase 6
