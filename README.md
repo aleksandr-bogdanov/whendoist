@@ -271,6 +271,7 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Calendar DnD](docs/CALENDAR-DND.md) | dnd-kit in nested scroll containers — bugs and working patterns |
 | [Snapshots](docs/SNAPSHOTS.md) | Automated daily backups with `data_version` change tracking |
 | [PWA Viewport Fix](docs/PWA-VIEWPORT-FIX.md) | iOS viewport shrinking bug — diagnosis and workaround |
+| [Widgets](docs/WIDGETS.md) | Native home screen widgets (iOS WidgetKit + Android AppWidgetProvider) |
 | [Command Palette Research](docs/COMMAND-PALETTE-RESEARCH.md) | Competitive analysis of 13 apps, 20 ranked enhancement proposals |
 | **Brand & Design** | |
 | [Brand Guidelines](BRAND.md) | Colors, typography, design principles |

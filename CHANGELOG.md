@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.63.0 — 2026-03-05
+
+### Feat: Home Screen Widgets (iOS + Android) — Phase 6
+
+Native home screen widgets showing today's tasks and overdue count on both iOS and Android.
+
+- **Rust**: `commands/widgets.rs` — bridge to push task summary data to native widgets; iOS writes to App Group `NSUserDefaults` via `objc2` + reloads WidgetKit timelines; Android writes `widget-data.json` to app data dir
+- **iOS**: SwiftUI WidgetKit extension — small (count display) and medium (task list) sizes, reads from shared `NSUserDefaults`; App Group entitlement on both main app and extension; XcodeGen target in `project.yml`
+- **Android**: `TodayTasksWidgetProvider` (Kotlin) — `AppWidgetProvider` with `RemoteViews`, reads JSON file; 5 inlined task rows, 30-min system refresh
+- **Frontend**: `tauri-widgets.ts` — filters today's tasks + overdue, computes summary, calls Rust via `invoke`; triggered on task cache persistence, app backgrounding, and cleared on logout
+- **Encryption**: When enabled, widgets show task counts only (no titles) — decryption keys aren't available outside the WebView
+
+---
+
 ## v0.62.0 — 2026-03-05
 
 ### Feat: Tauri v2 Mobile — Phase 3 Offline SQLite Cache

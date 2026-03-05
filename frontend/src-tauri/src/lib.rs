@@ -29,6 +29,8 @@ pub fn run() {
             commands::biometric::retrieve_encryption_key,
             commands::biometric::has_stored_key,
             commands::biometric::clear_encryption_key,
+            commands::widgets::update_widget_data,
+            commands::widgets::clear_widget_data,
         ])
         .setup(|app| {
             // On mobile, register for push notifications and listen for token
