@@ -19,6 +19,7 @@ from app.database import async_session_factory, get_db
 from app.middleware.rate_limit import BACKUP_LIMIT, get_user_or_ip, limiter
 from app.models import GoogleCalendarEventSync, GoogleToken, User
 from app.routers._gcal_helpers import bulk_sync_locks as _bulk_sync_locks
+from app.routers._gcal_helpers import clear_sync_circuit_breaker
 from app.routers.auth import require_user
 from app.services.gcal import GoogleCalendarClient
 from app.services.gcal_sync import GCalSyncService
@@ -274,6 +275,9 @@ async def enable_sync(
     prefs.gcal_sync_calendar_id = calendar_id
     await db.commit()
 
+    # Clear circuit breaker so fire-and-forget calls resume for this user.
+    clear_sync_circuit_breaker(user.id)
+
     # Run bulk sync in background so enable returns instantly.
     # If reusing a calendar, clear stale events first.
     asyncio.create_task(_background_bulk_sync(user.id, clear_calendar=clear_stale))
@@ -363,6 +367,7 @@ async def full_sync(
     )
     await db.commit()
 
+    clear_sync_circuit_breaker(user.id)
     asyncio.create_task(_background_bulk_sync(user.id, clear_calendar=True))
 
     return BulkSyncResponse(success=True)

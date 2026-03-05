@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.63.2 — 2026-03-05
+
+### Fix: GCal sync auto-disable never persisted + circuit breaker
+
+- **Bug fix**: `_disable_sync_on_error()` changes were rolled back because `CalendarGoneError` propagated past `db.commit()` in fire-and-forget functions — sync was "disabled" on every mutation but never actually persisted, causing 16+ redundant 403 calls per session
+- **Circuit breaker**: In-memory `_sync_disabled_users` set prevents fire-and-forget from even attempting Google API calls after sync is disabled for a user; cleared on re-enable/full-sync
+- **`_persist_sync_disable()`**: Dedicated fresh-session helper commits the disable reliably, independent of the caller's rolled-back session
+
+---
+
 ## v0.63.1 — 2026-03-05
 
 ### Fix: Context menu actions, missing toast, and data_version lock contention
