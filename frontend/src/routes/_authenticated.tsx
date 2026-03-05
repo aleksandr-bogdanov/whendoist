@@ -8,6 +8,7 @@ import { EncryptionUnlock } from "@/components/encryption-unlock";
 import { AppShell } from "@/components/layout/app-shell";
 import { OnboardingWizard } from "@/components/wizard/onboarding-wizard";
 import { useNetworkStatus } from "@/hooks/use-network-status";
+import { useOfflineSync } from "@/hooks/use-offline-sync";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useReminders } from "@/hooks/use-reminders";
 import { useCryptoStore } from "@/stores/crypto-store";
@@ -24,6 +25,7 @@ function AuthenticatedLayout() {
   const [wizardDismissed, setWizardDismissed] = useState(false);
 
   useNetworkStatus();
+  useOfflineSync();
   useReminders();
   usePushNotifications();
 

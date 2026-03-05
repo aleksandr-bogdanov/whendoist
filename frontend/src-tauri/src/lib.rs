@@ -8,6 +8,7 @@ use std::sync::Mutex;
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_notifications::init());
 
     // Biometric plugin is mobile-only (Face ID / Touch ID / fingerprint)

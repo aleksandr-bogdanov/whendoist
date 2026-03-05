@@ -7,6 +7,7 @@ import {
   CSRFError,
   NetworkError,
   NotFoundError,
+  OfflineQueuedError,
   RateLimitError,
   ServerError,
   ValidationError,
@@ -42,9 +43,20 @@ async function getCsrfToken(): Promise<string> {
   return csrfFetchPromise;
 }
 
-// Reject requests immediately when offline
-axios.interceptors.request.use((config) => {
+const WRITE_METHODS = new Set(["post", "put", "delete", "patch"]);
+
+// Reject requests immediately when offline (Tauri: queue write mutations instead)
+axios.interceptors.request.use(async (config) => {
   if (!navigator.onLine) {
+    // Tauri: queue offline mutations for later replay
+    if (isTauri && WRITE_METHODS.has((config.method ?? "").toLowerCase())) {
+      const { addToWriteQueue } = await import("./tauri-cache");
+      await addToWriteQueue(config.method!, config.url!, config.data);
+      toast.info("Saved offline — will sync when connected.", {
+        id: "offline-queued",
+      });
+      throw new OfflineQueuedError("Mutation queued offline");
+    }
     toast.error("No internet connection. Changes will fail while offline.", {
       id: "offline-guard",
     });
@@ -123,6 +135,11 @@ function showRateLimitCountdown(seconds: number) {
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Offline queued mutations — already handled, pass through silently
+    if (error instanceof OfflineQueuedError) {
+      return Promise.reject(error);
+    }
+
     // Network errors (no response received)
     if (!error.response) {
       const networkError = new NetworkError(error.message || "Network request failed");

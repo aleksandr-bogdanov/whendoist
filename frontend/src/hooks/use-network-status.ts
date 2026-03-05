@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { isTauri } from "@/hooks/use-device";
 
 /**
  * Hook that monitors network connectivity and shows persistent toasts
@@ -14,14 +15,16 @@ export function useNetworkStatus() {
       toast.error("No internet connection", {
         id: "network-status",
         duration: Number.POSITIVE_INFINITY,
-        description: "No internet connection. Please reconnect to make changes.",
+        description: isTauri
+          ? "Viewing cached data. Changes will sync when reconnected."
+          : "No internet connection. Please reconnect to make changes.",
       });
     };
 
     const handleOnline = () => {
       if (wasOfflineRef.current) {
         wasOfflineRef.current = false;
-        toast.success("Back online", {
+        toast.success(isTauri ? "Back online — syncing..." : "Back online", {
           id: "network-status",
         });
       }
