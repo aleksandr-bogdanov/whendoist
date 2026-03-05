@@ -25,6 +25,7 @@ class MeResponse(BaseModel):
     is_demo_user: bool
     encryption_enabled: bool
     calendar_connected: bool
+    data_version: int
 
 
 @router.get("", response_model=MeResponse)
@@ -42,4 +43,5 @@ async def get_me(
         is_demo_user=DemoService.is_demo_user(user.email),
         encryption_enabled=prefs.encryption_enabled,
         calendar_connected=token is not None,
+        data_version=user.data_version,
     )

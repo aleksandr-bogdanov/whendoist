@@ -1,5 +1,6 @@
 pub mod biometric;
 pub mod notifications;
+pub mod widgets;
 
 /// Smoke-test command — verifies Rust ↔ WebView IPC works.
 /// Remove once real commands are added.

@@ -4,6 +4,36 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.63.0 — 2026-03-05
+
+### Feat: Home Screen Widgets (iOS + Android) — Phase 6
+
+Native home screen widgets showing today's tasks and overdue count on both iOS and Android.
+
+- **Rust**: `commands/widgets.rs` — bridge to push task summary data to native widgets; iOS writes to App Group `NSUserDefaults` via `objc2` + reloads WidgetKit timelines; Android writes `widget-data.json` to app data dir
+- **iOS**: SwiftUI WidgetKit extension — small (count display) and medium (task list) sizes, reads from shared `NSUserDefaults`; App Group entitlement on both main app and extension; XcodeGen target in `project.yml`
+- **Android**: `TodayTasksWidgetProvider` (Kotlin) — `AppWidgetProvider` with `RemoteViews`, reads JSON file; 5 inlined task rows, 30-min system refresh
+- **Frontend**: `tauri-widgets.ts` — filters today's tasks + overdue, computes summary, calls Rust via `invoke`; triggered on task cache persistence, app backgrounding, and cleared on logout
+- **Encryption**: When enabled, widgets show task counts only (no titles) — decryption keys aren't available outside the WebView
+
+---
+
+## v0.62.0 — 2026-03-05
+
+### Feat: Tauri v2 Mobile — Phase 3 Offline SQLite Cache
+
+Local SQLite cache so the Tauri app works offline. Tasks and domains are cached on fetch, hydrated from cache on cold start, and mutations queue locally for replay on reconnect.
+
+- **Backend**: Add `data_version` to `/api/v1/me` response — enables change detection for sync
+- **Rust**: Register `tauri-plugin-sql` with SQLite feature for local database
+- **Frontend**: `tauri-cache.ts` — SQLite wrapper with `cache_entries` (JSON blob per entity type) and `write_queue` tables
+- **Frontend**: `use-offline-sync.ts` — sync orchestrator: cold start hydration from SQLite, cache persistence via TanStack Query subscription, periodic `data_version` check (2min), write queue drain on reconnect
+- **Frontend**: `api-client.ts` — offline mutations queue to SQLite instead of failing (Tauri only), shows "Saved offline" toast
+- **Frontend**: `use-network-status.ts` — Tauri-aware offline/online toasts ("Viewing cached data" / "Back online — syncing...")
+- **Capabilities**: Add `sql:default` permission to Tauri default capabilities
+
+---
+
 ## v0.61.2 — 2026-03-05
 
 ### Fix: Tauri demo login — device token endpoint for native app

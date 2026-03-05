@@ -50,3 +50,9 @@ export class ServerError extends AppError {
   readonly userMessage = "Something went wrong. Please try again.";
   readonly recoverable = false;
 }
+
+/** Thrown when an offline mutation is queued for later replay (Tauri only). */
+export class OfflineQueuedError extends AppError {
+  readonly userMessage = "Saved offline — will sync when connected.";
+  readonly recoverable = true;
+}
