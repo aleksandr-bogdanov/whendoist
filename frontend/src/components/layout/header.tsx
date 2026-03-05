@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LogOut, Monitor, Moon, Search, Sun } from "lucide-react";
 import { useRef } from "react";
 import { DemoPill } from "@/components/demo-pill";
+import { isTauri } from "@/hooks/use-device";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -162,7 +163,12 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
           </button>
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
+              if (isTauri) {
+                const { clearAllCache } = await import("@/lib/tauri-cache");
+                const { clearDeviceToken } = await import("@/lib/tauri-token-store");
+                await Promise.all([clearAllCache(), clearDeviceToken()]);
+              }
               window.location.href = "/auth/logout";
             }}
             className="p-3 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors"

@@ -153,4 +153,12 @@ export async function clearWriteQueue(): Promise<void> {
   await database.execute("DELETE FROM write_queue");
 }
 
+/** Clear all cached data and write queue (e.g. on logout). */
+export async function clearAllCache(): Promise<void> {
+  if (!isTauri) return;
+  const database = await getDb();
+  await database.execute("DELETE FROM cache_entries");
+  await database.execute("DELETE FROM write_queue");
+}
+
 export type { WriteQueueEntry };
