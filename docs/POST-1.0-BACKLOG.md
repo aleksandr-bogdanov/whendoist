@@ -34,6 +34,8 @@ Everything below has been implemented and verified in the codebase.
 - **Analytics aging stats bounded** — `_get_aging_stats()` now has both date (`AGING_STATS_HISTORY_DAYS=730`) and count (`AGING_STATS_LIMIT=5000`) bounds
 - **Instance cleanup audit trail** — `cleanup_old_instances` logs per-user/per-status breakdown before bulk delete
 - **Task activity log** — Per-task + per-user event history with hybrid encrypted/plaintext field diffs — [plan](plans/2026-03-04-activity-log.md)
+- **Multi-timezone calendar** — Primary + secondary timezone on time grid, timezone-aware scheduling throughout — [investigation](plans/2026-03-02-multi-timezone-investigation.md)
+- **Fire-and-forget bulk sync lock** — Shared per-user `asyncio.Lock` in extracted `_gcal_helpers.py` — [investigation](plans/2026-03-04-fire-and-forget-lock-investigation.md)
 
 ---
 
@@ -41,20 +43,19 @@ Everything below has been implemented and verified in the codebase.
 
 ### Product
 
-- ~~**Task activity log**~~ — Shipped — [plan](plans/2026-03-04-activity-log.md)
-- **Offline write queue** — IndexedDB mutation queue with sync-on-reconnect
+- **Offline write queue** — IndexedDB mutation queue with sync-on-reconnect — [investigation](plans/2026-03-04-offline-write-queue-investigation.md)
 - **Encryption passphrase change** — Re-encrypt without disable/re-enable cycle
 - **Scheduled export automation** — Automated periodic backups beyond manual snapshots
-- **Multi-timezone calendar** — Secondary timezone labels on the time grid for remote workers — [investigation](plans/2026-03-02-multi-timezone-investigation.md)
+- **Reminders & push notifications** — Time-based nudges via browser/PWA push (P0 competitive gap — every competitor has this)
+- **Due date vs scheduled date** — Separate "deadline" from "when I'll work on it" (Todoist, Things 3 both distinguish these)
+- **Labels / tags** — Cross-cutting organization axes (`@phone`, `@waiting-for`, `@email`) beyond domains
+- **Saved filters / smart lists** — User-defined filter views (energy filter is the only dynamic view today)
+- **Week and month calendar views** — Only 5-day day-view carousel exists; week/month needed for planning
 
 ### Recurring Tasks
 
 - **Monthly 31st skips short months** — Needs UI warning for months with <31 days
 - **Skip → toggle gives completed** — Backend `toggle_instance_completion` sends skipped→completed (frontend works around it via dedicated `unskip` endpoint)
-
-### GCal Sync
-
-- **Fire-and-forget skips lock** — `_fire_and_forget_bulk_sync` in tasks.py and instances.py doesn't acquire per-user lock — [investigation](plans/2026-03-04-fire-and-forget-lock-investigation.md)
 
 ### Infrastructure (Trigger-Based)
 
@@ -71,9 +72,16 @@ Everything below has been implemented and verified in the codebase.
 - **Webhooks** — Event-driven notifications on task mutations (requires API keys first)
 - **Zapier/Make.com integration** — Triggers (task completed) and actions (create task)
 - **Todoist live sync** — Bidirectional sync (currently one-time import only)
+- **Browser extension** — Clip webpages as tasks from Chrome/Firefox
+- **Email-to-task** — Forward emails to create tasks (knowledge worker capture pathway)
 - **Pattern learning** — Suggest scheduling from usage history
 - **Smart scheduling** — AI-assisted, user-controlled (not auto-scheduling)
 - **Advanced analytics** — Time tracking, estimation accuracy (actual vs estimated)
+- **Focus timer / Pomodoro** — Execution timer on top of `duration_minutes` with actual vs estimated tracking
+- **File attachments** — Images and documents on tasks (description is text-only today)
+- **Voice input** — Speak a brain dump → AI parses into structured tasks (à la Todoist Ramble)
+- **Kanban / board view** — Drag-and-drop column view as visual alternative to list
+- **Task templates** — Reusable task structures (e.g., "Weekly Review" with N subtasks)
 
 ---
 
@@ -87,8 +95,12 @@ Everything below has been implemented and verified in the codebase.
 
 ## Not in Scope
 
-- Native iOS/Android apps
-- Recurring task templates library
+- Native iOS/Android apps (PWA is the mobile strategy)
+- Home screen widgets (requires native apps)
+- Location-based reminders (requires native apps)
+- Habit tracking (different product — recurring tasks partially cover this)
+- Gamification / karma system
+- Timeline / Gantt view (project management scope creep)
 - Premium/paid tiers
 
 ---

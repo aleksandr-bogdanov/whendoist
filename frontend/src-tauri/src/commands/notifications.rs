@@ -2,6 +2,9 @@
 //!
 //! The WebView decrypts task titles before passing them here.
 //! Rust never touches encrypted data.
+//!
+//! Uses `tauri-plugin-notifications` (community plugin with push support)
+//! instead of `tauri-plugin-notification` (official, local-only).
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -9,11 +12,15 @@ use std::sync::Mutex;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_notifications::NotificationsExt;
 
 /// In-memory store of scheduled reminder metadata.
 /// Maps task_id → scheduled fire time so we can cancel/reschedule.
 pub struct ReminderStore(pub Mutex<HashMap<i64, ScheduledReminder>>);
+
+/// Managed state for the push notification token.
+/// Set by lib.rs setup when push registration succeeds on mobile.
+pub struct PushTokenState(pub Mutex<Option<String>>);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScheduledReminder {
@@ -61,7 +68,7 @@ pub fn schedule_reminder(
     // For local notifications, we send immediately — the frontend handles
     // scheduling by only calling this when it's time (or close to time).
     // Future enhancement: use the plugin's schedule API for deferred delivery.
-    app.notification()
+    app.notifications()
         .builder()
         .title(&title)
         .body(&body)
@@ -100,4 +107,17 @@ pub fn cancel_all_reminders(
     store.clear();
     log::info!("Cancelled all {count} reminders");
     Ok(())
+}
+
+/// Get the push notification token (set during app setup on mobile).
+/// Returns None on desktop or if push registration hasn't completed yet.
+#[tauri::command]
+pub fn get_push_token(
+    push_token: State<'_, PushTokenState>,
+) -> Result<Option<String>, String> {
+    let token = push_token
+        .0
+        .lock()
+        .map_err(|e| format!("Lock error: {e}"))?;
+    Ok(token.clone())
 }

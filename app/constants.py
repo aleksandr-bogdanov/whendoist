@@ -193,6 +193,22 @@ DEVICE_TOKEN_MAX_AGE_SECONDS = 60 * 60  # Access token: 1 hour
 DEVICE_REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 30  # Refresh token: 30 days
 
 
+# =============================================================================
+# Push Notification Constants
+# =============================================================================
+
+PUSH_REMINDER_LOOP_INTERVAL_SECONDS = 60  # Check every 60s for due reminders
+PUSH_REMINDER_LOOP_TIMEOUT_SECONDS = 55  # Must finish before next cycle
+PUSH_REMINDER_FIRE_WINDOW_SECONDS = 120  # 2-min window for clock drift
+PUSH_MAX_TOKENS_PER_USER = 10  # Max registered devices per user
+PUSH_ENCRYPTED_TITLE = "Task reminder"  # Fallback title for encrypted users
+FCM_SEND_URL = "https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
+FCM_TOKEN_URL = "https://oauth2.googleapis.com/token"
+FCM_OAUTH_SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
+APNS_PROD_HOST = "https://api.push.apple.com"
+APNS_SANDBOX_HOST = "https://api.sandbox.push.apple.com"
+
+
 def get_user_today(timezone: str | None) -> date:
     """
     Get today's date in the user's timezone.
