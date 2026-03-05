@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.61.1 — 2026-03-05
+
+### Fix: Tauri iOS launch crash + CORS for native app API calls
+
+- **Fix**: Remove `"store": {}` from `tauri.conf.json` — `tauri-plugin-store` v2 expects no config (unit type), empty object caused deserialization panic on iOS launch
+- **Fix**: Add CORS middleware for Tauri origins (`tauri://localhost`, `https://tauri.localhost`, dev ports) — native app API calls to production were silently blocked by same-origin policy, breaking build-info fetch (demo button hidden) and all authenticated requests
+- **Rust**: Fix `schedule_reminder` — make async + add `.await` on `.show()` (required by `tauri-plugin-notifications` v0.4)
+- **Rust**: Fix push registration — move `.notifications()` call inside spawned task to avoid borrow issues
+- **Tauri**: Split `shell:allow-open` into `desktop.json` capability (not available on mobile)
+- **Vite**: Bind to `0.0.0.0` when running under Tauri so physical devices can reach the dev server
+- **Justfile**: Add `tauri-ios-sim` target for simulator development
+
+---
+
 ## v0.61.0 — 2026-03-05
 
 ### Feat: Tauri v2 Mobile — Phase 2 Push Notifications / Remote Reminders

@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
@@ -186,6 +187,23 @@ app.add_middleware(
 
 # CSRF protection middleware (must be after SessionMiddleware)
 app.add_middleware(CSRFMiddleware)
+
+# CORS for Tauri native app (desktop + mobile).
+# Web frontend is same-origin and doesn't need CORS.
+# Must be outside CSRF so OPTIONS preflight is handled before CSRF validation.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "tauri://localhost",        # macOS / iOS production
+        "https://tauri.localhost",  # Windows production
+        "http://localhost:5173",    # dev mode (Vite)
+        "http://localhost:1420",    # Tauri default dev port
+    ],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Authorization", "Content-Type"],
+    allow_credentials=False,  # Tauri uses bearer tokens, not cookies
+    max_age=86400,  # Cache preflight responses for 24h
+)
 
 # Proxy headers middleware (trust X-Forwarded-Proto from Railway)
 # Must be last so it runs first on request, making url_for() use https://

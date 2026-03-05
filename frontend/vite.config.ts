@@ -13,6 +13,8 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    // Bind to all interfaces when running under Tauri so physical devices can reach the dev server
+    host: isTauri ? "0.0.0.0" : undefined,
     proxy: isTauri
       ? undefined
       : {

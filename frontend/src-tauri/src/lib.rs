@@ -34,16 +34,18 @@ pub fn run() {
             #[cfg(mobile)]
             {
                 use tauri_plugin_notifications::NotificationsExt;
-                use tauri::Emitter;
+                use tauri::{Emitter, Manager};
 
                 let handle = app.handle().clone();
 
                 // Register for push notifications — this triggers the OS push
                 // registration flow. The resulting token is sent to the frontend
                 // via a Tauri event so it can register with our backend.
-                let notifications = handle.notifications();
                 tauri::async_runtime::spawn(async move {
-                    match notifications.register_for_push_notifications().await {
+                    let result = handle.notifications()
+                        .register_for_push_notifications()
+                        .await;
+                    match result {
                         Ok(token) => {
                             log::info!("Push token received ({} chars)", token.len());
                             // Store in managed state for get_push_token command
