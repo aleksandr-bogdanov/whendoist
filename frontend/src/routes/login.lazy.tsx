@@ -1,5 +1,8 @@
 import { createLazyFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useGetBuildInfoApiV1BuildInfoGet } from "@/api/queries/build/build";
+import { isTauri } from "@/hooks/use-device";
+import { axios } from "@/lib/api-client";
 import "@/styles/login.css";
 
 export const Route = createLazyFileRoute("/login")({
@@ -10,6 +13,20 @@ function LoginPage() {
   const buildInfo = useGetBuildInfoApiV1BuildInfoGet();
   const info = buildInfo.data as { demo_login_enabled?: boolean } | undefined;
   const demoEnabled = info?.demo_login_enabled ?? false;
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  /** Tauri: call demo-token API, store device tokens, navigate */
+  const handleTauriDemoLogin = async () => {
+    setDemoLoading(true);
+    try {
+      const { data } = await axios.post("/api/v1/device/demo-token", { profile: "demo" });
+      const { saveDeviceToken } = await import("@/lib/tauri-token-store");
+      await saveDeviceToken(data);
+      window.location.href = "/thoughts";
+    } catch {
+      setDemoLoading(false);
+    }
+  };
 
   return (
     <div className="login-page">
@@ -153,10 +170,22 @@ function LoginPage() {
                 or
               </span>
             </div>
-            <a href="/auth/demo" className="login-demo-btn">
-              <span className="text-base leading-none">🧪</span>
-              <span>Try Demo Account</span>
-            </a>
+            {isTauri ? (
+              <button
+                type="button"
+                onClick={handleTauriDemoLogin}
+                disabled={demoLoading}
+                className="login-demo-btn"
+              >
+                <span className="text-base leading-none">🧪</span>
+                <span>{demoLoading ? "Signing in..." : "Try Demo Account"}</span>
+              </button>
+            ) : (
+              <a href="/auth/demo" className="login-demo-btn">
+                <span className="text-base leading-none">🧪</span>
+                <span>Try Demo Account</span>
+              </a>
+            )}
           </div>
         )}
 

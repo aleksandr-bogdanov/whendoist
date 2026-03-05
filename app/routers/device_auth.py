@@ -28,13 +28,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.constants import (
+    DEMO_VALID_PROFILES,
     DEVICE_REFRESH_TOKEN_MAX_AGE_SECONDS,
     DEVICE_TOKEN_MAX_AGE_SECONDS,
 )
 from app.database import get_db
-from app.middleware.rate_limit import AUTH_LIMIT, limiter
+from app.middleware.rate_limit import AUTH_LIMIT, DEMO_LIMIT, limiter
 from app.models import User
 from app.routers.auth import get_user_id
+from app.services.demo_service import DemoService
 
 logger = logging.getLogger("whendoist.device_auth")
 
@@ -86,6 +88,10 @@ class TokenResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class DemoTokenRequest(BaseModel):
+    profile: str = "demo"
 
 
 @router.post("/token", response_model=TokenResponse)
@@ -174,3 +180,40 @@ async def revoke_device_token(request: Request) -> dict:
             logger.info(f"Device token revoked for user {user_id}")
 
     return {"success": True}
+
+
+@router.post("/demo-token", response_model=TokenResponse)
+@limiter.limit(DEMO_LIMIT)
+async def demo_device_token(
+    request: Request,
+    body: DemoTokenRequest,
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    """Demo login for Tauri native app — returns device tokens directly.
+
+    Combines demo user creation with device token issuance in one step,
+    bypassing the session-based flow that doesn't work in Tauri WebViews.
+    """
+    if not _settings.demo_login_enabled:
+        raise HTTPException(status_code=404)
+
+    if body.profile not in DEMO_VALID_PROFILES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid profile. Valid: {', '.join(sorted(DEMO_VALID_PROFILES))}",
+        )
+
+    demo_service = DemoService(db)
+    user = await demo_service.get_or_create_demo_user(body.profile)
+
+    access_token = _create_access_token(user.id)
+    refresh_token = _create_refresh_token(user.id)
+    expires_at = int(time.time()) + DEVICE_TOKEN_MAX_AGE_SECONDS
+
+    logger.info(f"Demo device token issued for user {user.id} (profile={body.profile})")
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_at=expires_at,
+    )
