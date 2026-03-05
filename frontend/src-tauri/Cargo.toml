@@ -25,3 +25,11 @@ tauri-plugin-biometric = "2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-shell = "2"
+
+# Optimize dependencies even in dev builds (your code stays unoptimized for fast recompiles)
+[profile.dev.package."*"]
+opt-level = 1
+
+# Faster release builds — thin LTO instead of fat (2-3x faster linking)
+[profile.release]
+lto = "thin"
