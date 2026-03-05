@@ -196,6 +196,30 @@ export function useOfflineSync() {
     }
   }, []);
 
+  // --- Widget refresh on app backgrounding ---
+  useEffect(() => {
+    if (!isTauri) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== "hidden") return;
+      try {
+        const { updateWidgetData } = await import("@/lib/tauri-widgets");
+        const { useCryptoStore } = await import("@/stores/crypto-store");
+        const tasks = queryClient.getQueryData<TaskResponse[]>(
+          getListTasksApiV1TasksGetQueryKey(DASHBOARD_TASKS_PARAMS),
+        );
+        if (!tasks) return;
+        const encryptionEnabled = useCryptoStore.getState().encryptionEnabled;
+        await updateWidgetData(tasks, encryptionEnabled);
+      } catch {
+        // Non-fatal
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   // --- 4. Write queue drain on reconnect ---
   useEffect(() => {
     if (!isTauri) return;
@@ -228,6 +252,15 @@ async function persistToCache(queryKey: readonly unknown[], data: unknown) {
 
     if (keyStr === TASKS_KEY_PREFIX) {
       await setCachedData("tasks", data);
+      // Push updated task data to native home screen widgets
+      try {
+        const { updateWidgetData } = await import("@/lib/tauri-widgets");
+        const { useCryptoStore } = await import("@/stores/crypto-store");
+        const encryptionEnabled = useCryptoStore.getState().encryptionEnabled;
+        await updateWidgetData(data as TaskResponse[], encryptionEnabled);
+      } catch {
+        // Widget update failure is non-fatal
+      }
     } else if (keyStr === DOMAINS_KEY_PREFIX) {
       await setCachedData("domains", data);
     } else if (keyStr === ME_KEY_PREFIX) {

@@ -167,7 +167,8 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
               if (isTauri) {
                 const { clearAllCache } = await import("@/lib/tauri-cache");
                 const { clearDeviceToken } = await import("@/lib/tauri-token-store");
-                await Promise.all([clearAllCache(), clearDeviceToken()]);
+                const { clearWidgetData } = await import("@/lib/tauri-widgets");
+                await Promise.all([clearAllCache(), clearDeviceToken(), clearWidgetData()]);
               }
               window.location.href = "/auth/logout";
             }}
