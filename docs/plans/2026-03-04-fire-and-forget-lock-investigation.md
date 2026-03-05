@@ -1,6 +1,8 @@
 # Fire-and-Forget Skips Per-User Lock — Investigation
 
 ---
+version: v0.57.5
+pr: 631
 created: 2026-03-04
 ---
 
