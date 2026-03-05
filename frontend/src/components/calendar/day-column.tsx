@@ -1012,20 +1012,20 @@ function InstanceCard({
         ) : (
           <>
             {hasScheduledTime && (
-              <ContextMenuItem onClick={handleUnschedule} disabled={!isPending}>
+              <ContextMenuItem onSelect={handleUnschedule} disabled={!isPending}>
                 <CalendarOff className="h-3.5 w-3.5 mr-2" />
                 Unschedule
               </ContextMenuItem>
             )}
-            <ContextMenuItem onClick={handleSkip} disabled={!isPending}>
+            <ContextMenuItem onSelect={handleSkip} disabled={!isPending}>
               <SkipForward className="h-3.5 w-3.5 mr-2" />
               Skip
             </ContextMenuItem>
-            <ContextMenuItem onClick={handleComplete} disabled={!isPending}>
+            <ContextMenuItem onSelect={handleComplete} disabled={!isPending}>
               <Check className="h-3.5 w-3.5 mr-2" />
               Complete
             </ContextMenuItem>
-            <ContextMenuItem onClick={() => onEditSeries?.()}>
+            <ContextMenuItem onSelect={() => onEditSeries?.()}>
               <Pencil className="h-3.5 w-3.5 mr-2" />
               Edit series
             </ContextMenuItem>

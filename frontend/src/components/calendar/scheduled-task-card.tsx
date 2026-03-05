@@ -285,21 +285,21 @@ export function ScheduledTaskCard({
           <BatchContextMenuItems />
         ) : (
           <>
-            <ContextMenuItem onClick={() => onClick?.()}>
+            <ContextMenuItem onSelect={() => onClick?.()}>
               <Pencil className="h-3.5 w-3.5 mr-2" />
               Edit
             </ContextMenuItem>
-            <ContextMenuItem onClick={handleUnschedule}>
+            <ContextMenuItem onSelect={handleUnschedule}>
               <CalendarOff className="h-3.5 w-3.5 mr-2" />
               Unschedule
             </ContextMenuItem>
-            <ContextMenuItem onClick={handleComplete}>
+            <ContextMenuItem onSelect={handleComplete}>
               <Check className="h-3.5 w-3.5 mr-2" />
               {isCompleted ? "Reopen" : "Complete"}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
-              onClick={handleDelete}
+              onSelect={handleDelete}
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5 mr-2" />

@@ -198,17 +198,17 @@ export function AnytimeInstancePill({
         ) : (
           <>
             {parentTask && (
-              <ContextMenuItem onClick={() => onTaskClick?.(parentTask)}>
+              <ContextMenuItem onSelect={() => onTaskClick?.(parentTask)}>
                 <Pencil className="h-3.5 w-3.5 mr-2" />
                 Edit Series
               </ContextMenuItem>
             )}
-            <ContextMenuItem onClick={handleComplete}>
+            <ContextMenuItem onSelect={handleComplete}>
               <Check className="h-3.5 w-3.5 mr-2" />
               {isCompleted ? "Uncomplete" : "Complete"}
             </ContextMenuItem>
             <ContextMenuSeparator />
-            <ContextMenuItem onClick={handleSkip}>
+            <ContextMenuItem onSelect={handleSkip}>
               {isSkipped ? (
                 <Undo2 className="h-3.5 w-3.5 mr-2" />
               ) : (
