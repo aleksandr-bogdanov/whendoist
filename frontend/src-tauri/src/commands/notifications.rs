@@ -35,7 +35,7 @@ pub struct ScheduledReminder {
 /// On mobile platforms, this uses the notification plugin's schedule API.
 /// On desktop, we store the reminder and fire immediately if overdue.
 #[tauri::command]
-pub fn schedule_reminder(
+pub async fn schedule_reminder(
     app: tauri::AppHandle,
     reminder_store: State<'_, ReminderStore>,
     task_id: i64,
@@ -73,6 +73,7 @@ pub fn schedule_reminder(
         .title(&title)
         .body(&body)
         .show()
+        .await
         .map_err(|e| format!("Notification error: {e}"))?;
 
     log::info!("Scheduled reminder for task {task_id} at {fire_at}");

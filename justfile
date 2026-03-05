@@ -86,9 +86,13 @@ backups:
 tauri-android:
     cd frontend && npx tauri android dev
 
-# Start Tauri iOS dev
+# Start Tauri iOS dev (physical device)
 tauri-ios:
     cd frontend && npx tauri ios dev
+
+# Start Tauri iOS dev on simulator
+tauri-ios-sim device="iPhone 17 Pro":
+    cd frontend && npx tauri ios dev "{{device}}"
 
 # Build Android APK/AAB (release)
 tauri-build-android:
