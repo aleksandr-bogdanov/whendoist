@@ -5,6 +5,7 @@ Uses SQLite in-memory DB via the db_session fixture from conftest.py.
 """
 
 from datetime import UTC, date, datetime, time
+from unittest.mock import patch
 
 import pytest
 
@@ -68,13 +69,18 @@ async def test_timezone_utc_fallback(db_session, user, recurring_task):
 @pytest.mark.asyncio
 async def test_materialize_uses_timezone(db_session, user, recurring_task):
     """Materialized instances should have timezone-adjusted scheduled_datetime."""
-    service = RecurrenceService(db_session, user.id, timezone="America/New_York")
-    instances = await service.materialize_instances(recurring_task, horizon_days=3)
+    # Pin "today" to Feb 22 so all instances fall within EST (no DST until Mar 8)
+    with patch(
+        "app.services.recurrence_service.get_user_today",
+        return_value=date(2026, 2, 22),
+    ):
+        service = RecurrenceService(db_session, user.id, timezone="America/New_York")
+        instances = await service.materialize_instances(recurring_task, horizon_days=3)
 
     assert len(instances) > 0
     for inst in instances:
         if inst.scheduled_datetime:
-            # 9 AM ET = 14:00 UTC (EST, no DST in Feb)
+            # 9 AM EST = 14:00 UTC (no DST in Feb)
             assert inst.scheduled_datetime.hour == 14
 
 
