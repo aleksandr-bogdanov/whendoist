@@ -75,11 +75,11 @@
   --col-gap: 8px;
   --rail-w: 4px;
 
-  /* Floating pill nav dimensions */
+  /* Floating glass tab bar (iOS liquid glass style) */
   --nav-pill-height: 3.5rem;
-  --nav-pill-mx: 0.75rem;
-  --nav-pill-mb: 0.5rem;
-  --nav-pill-radius: 1.5rem;
+  --nav-pill-mx: 1rem;
+  --nav-pill-mb: 0.25rem;
+  --nav-pill-radius: 1.75rem;
 
   /* Brand shadow system */
   --shadow-card: 0 2px 8px rgba(15, 23, 42, 0.04), 0 4px 24px rgba(15, 23, 42, 0.06);
@@ -174,23 +174,34 @@
   }
 }
 
-/* Safe area padding for bottom nav on iOS */
+/* Safe area padding for bottom nav on iOS.
+   Double-declaration: first env() for browsers/PWA, then var() for
+   tauri-plugin-edge-to-edge which injects --safe-area-inset-* from native. */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0));
 }
 
 @utility pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
 }
 
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
 }
 
-/* pb-nav-safe = safe-area + pill bottom margin + pill height + gap above pill */
+/* pb-nav-safe = safe-area + pill margin + pill height + gap above pill */
 @utility pb-nav-safe {
   padding-bottom: calc(
     env(safe-area-inset-bottom, 0px) +
+    var(--nav-pill-mb) +
+    var(--nav-pill-height) +
+    0.25rem
+  );
+  padding-bottom: calc(
+    var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) +
     var(--nav-pill-mb) +
     var(--nav-pill-height) +
     0.25rem
@@ -379,6 +390,55 @@ body.reduced-motion * {
     transform: translateX(4px);
     opacity: 0.7;
   }
+}
+
+/* Native UITabBar overrides — webview extends edge-to-edge under the translucent
+   native tab bar. The tab bar height is measured in Swift and sent to JS, which sets
+   --native-tabbar-height and --native-safe-area-bottom on :root. We override the
+   nav pill vars so pb-nav-safe computes the right bottom padding (tab bar + gap).
+   The .native-tabbar class is added by tauri-native-tabbar.ts on readiness. */
+body.native-tabbar {
+  --safe-area-inset-bottom: var(--native-safe-area-bottom, 0px);
+  --nav-pill-height: var(--native-tabbar-height, 49px);
+  --nav-pill-mb: 0px;
+}
+
+/* Keyboard avoidance — push sticky inputs above keyboard when visible.
+   --keyboard-height is set by tauri-keyboard.ts from Swift keyboard notifications.
+   --keyboard-anim-duration provides smooth animation matching iOS keyboard timing.
+   When keyboard is visible, the native tab bar is hidden, so we replace the
+   nav pill offset with the keyboard height. */
+body.keyboard-visible .keyboard-avoid-bottom {
+  bottom: calc(var(--keyboard-height, 0px) + 0.5rem) !important;
+  transition: bottom var(--keyboard-anim-duration, 0.25s) ease-out;
+}
+.keyboard-avoid-bottom {
+  transition: bottom var(--keyboard-anim-duration, 0.25s) ease-out;
+}
+
+body.keyboard-visible .keyboard-avoid-clearance {
+  height: calc(var(--keyboard-height, 0px) + 1rem) !important;
+  transition: height var(--keyboard-anim-duration, 0.25s) ease-out;
+}
+
+body.keyboard-visible .drawer-keyboard-aware {
+  bottom: var(--keyboard-height, 0px) !important;
+  max-height: calc(90vh - var(--keyboard-height, 0px)) !important;
+  transition:
+    bottom var(--keyboard-anim-duration, 0.25s) ease-out,
+    max-height var(--keyboard-anim-duration, 0.25s) ease-out;
+}
+
+/* Extra scroll clearance so bottom fields (notes) can scroll above the footer */
+body.keyboard-visible .drawer-scroll-keyboard {
+  padding-bottom: 6rem !important;
+}
+
+/* Remove safe-area bottom padding from drawer footers when keyboard is up —
+   the keyboard covers the home indicator, so safe-area padding creates a gap
+   between the buttons and the iOS keyboard toolbar. */
+body.keyboard-visible .drawer-footer-keyboard {
+  padding-bottom: 0.25rem !important;
 }
 
 /* PWA standalone viewport fix */

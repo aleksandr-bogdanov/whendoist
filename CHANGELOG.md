@@ -4,6 +4,18 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.63.3 — 2026-03-06
+
+### Fix: iOS keyboard avoidance for Tauri WKWebView
+
+- **Keyboard height bridge**: Swift `NativeTabBarPlugin` now sends keyboard height and animation duration to JS via `evaluateJavaScript`, mirroring the existing tab bar height bridge pattern
+- **`tauri-keyboard.ts`**: New JS bridge sets `--keyboard-height`, `--keyboard-anim-duration` CSS vars and `body.keyboard-visible` class — components reposition via pure CSS
+- **Thoughts sticky input**: Moves above keyboard with smooth animation matching iOS keyboard timing
+- **Task edit drawer**: Entire drawer lifts above keyboard (`bottom: var(--keyboard-height)`), footer safe-area padding removed when keyboard is up (eliminates gap above iOS keyboard toolbar), extra scroll clearance ensures notes textarea is fully accessible
+- **Toasts**: Fixed notch overlap — offset now uses `var(--safe-area-inset-top)` (Tauri edge-to-edge CSS var) instead of `env()` which returns 0 in WKWebView
+
+---
+
 ## v0.63.2 — 2026-03-05
 
 ### Fix: GCal sync auto-disable never persisted + circuit breaker

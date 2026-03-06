@@ -58,7 +58,7 @@ export function ThoughtTriageDrawer({
           className={cn(
             "fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl",
             "bg-background border-t border-border",
-            "max-h-[85vh] max-w-lg mx-auto",
+            "max-h-[85vh] max-w-lg mx-auto drawer-keyboard-aware",
           )}
         >
           <div className="mx-auto mt-3 mb-1 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
@@ -275,7 +275,7 @@ function DrawerBody({
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-background px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] flex items-center gap-3">
+      <div className="drawer-footer-keyboard border-t bg-background px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] flex items-center gap-3">
         <Button
           variant="ghost"
           size="sm"
