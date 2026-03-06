@@ -11,6 +11,7 @@ import { useNetworkStatus } from "@/hooks/use-network-status";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useReminders } from "@/hooks/use-reminders";
+import i18n from "@/lib/i18n";
 import { hideNativeTabBar, showNativeTabBar } from "@/lib/tauri-native-tabbar";
 import { useCryptoStore } from "@/stores/crypto-store";
 import { useSelectionStore } from "@/stores/selection-store";
@@ -145,9 +146,9 @@ class AppErrorBoundary extends Component<
               aria-hidden="true"
               className="mx-auto h-20 w-20"
             />
-            <h2 className="text-lg font-semibold">Something went wrong</h2>
+            <h2 className="text-lg font-semibold">{i18n.t("error.title")}</h2>
             <p className="text-sm text-muted-foreground">
-              {this.state.error?.message || "An unexpected error occurred."}
+              {this.state.error?.message || i18n.t("error.fallbackMessage")}
             </p>
             <button
               type="button"
@@ -155,7 +156,7 @@ class AppErrorBoundary extends Component<
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               <RefreshCw className="h-4 w-4" />
-              Reload
+              {i18n.t("error.reload")}
             </button>
           </div>
         </div>

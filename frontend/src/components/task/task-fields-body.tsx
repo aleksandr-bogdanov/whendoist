@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
   ClarityChipRow,
@@ -89,6 +90,7 @@ export function TaskFieldsBody({
   parentTasks,
   onDirty,
 }: TaskFieldsBodyProps) {
+  const { t } = useTranslation();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [descriptionFocused, setDescriptionFocused] = useState(false);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -185,7 +187,7 @@ export function TaskFieldsBody({
       {/* Title — smart input (Approach A) */}
       <div className="space-y-1.5">
         <Label htmlFor="task-title" className="text-xs font-medium">
-          Title
+          {t("task.field.title")}
         </Label>
         <div className="relative">
           <textarea
@@ -194,7 +196,7 @@ export function TaskFieldsBody({
             value={values.title}
             onChange={handleTitleChange}
             onKeyDown={handleTitleKeyDown}
-            placeholder="What needs to be done? (try #domain !high 30m)"
+            placeholder={t("task.field.titlePlaceholder")}
             className="w-full text-sm bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-2 px-3 resize-none overflow-hidden rounded-md border border-input focus:ring-1 focus:ring-ring transition-colors"
             rows={1}
           />
@@ -212,7 +214,7 @@ export function TaskFieldsBody({
       </div>
 
       {/* Domain */}
-      <FieldRow label="Domain" flash={flashTarget === "domain" || domainFlash}>
+      <FieldRow label={t("task.field.domain")} flash={flashTarget === "domain" || domainFlash}>
         <DomainChipRow
           domains={domains}
           selectedId={values.domainId}
@@ -225,7 +227,7 @@ export function TaskFieldsBody({
 
       {/* Parent task (edit mode only) */}
       {task && parentTasks && parentTasks.length > 0 && (
-        <FieldRow label="Parent">
+        <FieldRow label={t("task.field.parent")}>
           <ParentTaskPicker
             task={task}
             parentTasks={parentTasks}
@@ -243,7 +245,7 @@ export function TaskFieldsBody({
       )}
 
       {/* Impact */}
-      <FieldRow label="Impact" flash={flashTarget === "impact"}>
+      <FieldRow label={t("task.field.impact")} flash={flashTarget === "impact"}>
         <ImpactButtonRow
           value={values.impact}
           onChange={(v) => {
@@ -254,7 +256,7 @@ export function TaskFieldsBody({
       </FieldRow>
 
       {/* Clarity */}
-      <FieldRow label="Clarity" flash={flashTarget === "clarity"}>
+      <FieldRow label={t("task.field.clarity")} flash={flashTarget === "clarity"}>
         <ClarityChipRow
           value={values.clarity}
           onChange={(v) => {
@@ -265,7 +267,7 @@ export function TaskFieldsBody({
       </FieldRow>
 
       {/* Duration */}
-      <FieldRow label="Duration" flash={flashTarget === "duration"}>
+      <FieldRow label={t("task.field.duration")} flash={flashTarget === "duration"}>
         <DurationPickerRow
           value={values.durationMinutes}
           showCustom
@@ -277,7 +279,7 @@ export function TaskFieldsBody({
       </FieldRow>
 
       {/* Schedule */}
-      <FieldRow label="When" flash={flashTarget === "schedule"}>
+      <FieldRow label={t("task.field.when")} flash={flashTarget === "schedule"}>
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
             <div>
@@ -320,7 +322,7 @@ export function TaskFieldsBody({
       </FieldRow>
 
       {/* Time — progressive disclosure */}
-      <FieldRow label="Time">
+      <FieldRow label={t("task.field.time")}>
         <TimePickerField
           value={values.scheduledTime}
           visible={!!values.scheduledDate}
@@ -333,7 +335,7 @@ export function TaskFieldsBody({
 
       {/* Reminder — only in Tauri, only when date is set */}
       {isTauri && !!values.scheduledDate && (
-        <FieldRow label="Reminder">
+        <FieldRow label={t("task.field.reminder")}>
           <ReminderPickerRow
             value={values.reminderMinutesBefore}
             onChange={(m) => {
@@ -347,7 +349,7 @@ export function TaskFieldsBody({
       {/* Recurrence */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-2">
-          <Label className="text-xs font-medium">Repeat</Label>
+          <Label className="text-xs font-medium">{t("task.field.repeat")}</Label>
           <button
             type="button"
             className={cn(
@@ -369,7 +371,7 @@ export function TaskFieldsBody({
               markDirty();
             }}
           >
-            {values.isRecurring ? "On" : "Off"}
+            {values.isRecurring ? t("task.field.on") : t("task.field.off")}
           </button>
         </div>
         {values.isRecurring && (
@@ -389,7 +391,7 @@ export function TaskFieldsBody({
       </div>
 
       {/* Notes / Description */}
-      <FieldRow label="Notes" flash={flashTarget === "description"}>
+      <FieldRow label={t("task.field.notes")} flash={flashTarget === "description"}>
         {!descriptionFocused && values.description && hasLinks(values.description) ? (
           <button
             type="button"
@@ -412,7 +414,7 @@ export function TaskFieldsBody({
             onPaste={handleDescriptionPaste}
             onFocus={() => setDescriptionFocused(true)}
             onBlur={() => setDescriptionFocused(false)}
-            placeholder="Add notes..."
+            placeholder={t("task.field.notesPlaceholder")}
             rows={descriptionFocused || values.description ? 3 : 1}
             className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
           />

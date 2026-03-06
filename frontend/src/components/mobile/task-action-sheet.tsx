@@ -18,6 +18,7 @@ import {
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
 } from "@/api/queries/tasks/tasks";
 import { useHaptics } from "@/hooks/use-haptics";
+import i18n from "@/lib/i18n";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { BottomSheet } from "./bottom-sheet";
@@ -114,7 +115,7 @@ export function TaskActionSheet({
             invalidateAll();
             const dateHint = new Date(
               `${pendingInstance.instance_date}T00:00:00`,
-            ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            ).toLocaleDateString(i18n.resolvedLanguage ?? "en", { month: "short", day: "numeric" });
             toast.success(t("toast.instanceCompleted", { title: task.title, date: dateHint }), {
               id: `complete-inst-${pendingInstance.id}`,
               action: {
@@ -300,7 +301,10 @@ export function TaskActionSheet({
                     invalidateAll();
                     const dateHint = new Date(
                       `${pendingInstance.instance_date}T00:00:00`,
-                    ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    ).toLocaleDateString(i18n.resolvedLanguage ?? "en", {
+                      month: "short",
+                      day: "numeric",
+                    });
                     toast.success(
                       t("toast.instanceSkipped", { title: task.title, date: dateHint }),
                       {

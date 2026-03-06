@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse } from "@/api/model";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -57,6 +58,7 @@ type SubView = "actions" | "domain-picker" | "date-picker";
 /* ------------------------------------------------------------------ */
 
 export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchActionsProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [subView, setSubView] = useState<SubView>("actions");
   const [domainQuery, setDomainQuery] = useState("");
@@ -121,13 +123,18 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   const handleDelete = useCallback(() => {
     const subtaskCount = tasks.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
     if (subtaskCount > 0) {
-      if (!window.confirm(`Delete ${tasks.length} tasks and ${subtaskCount} subtasks?`)) return;
+      if (
+        !window.confirm(
+          t("batch.deleteConfirmWithSubtasks", { taskCount: tasks.length, subtaskCount }),
+        )
+      )
+        return;
     } else if (tasks.length > 3) {
-      if (!window.confirm(`Delete ${tasks.length} tasks?`)) return;
+      if (!window.confirm(t("batch.deleteConfirm", { count: tasks.length }))) return;
     }
     batchDelete(queryClient, tasks);
     onDone();
-  }, [tasks, queryClient, onDone]);
+  }, [tasks, queryClient, onDone, t]);
 
   const handleReschedule = useCallback(
     (dateStr: string) => {
@@ -171,13 +178,13 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
             onClick={() => setSubView("actions")}
             className="text-xs text-muted-foreground hover:text-foreground px-1"
           >
-            ← Back
+            {t("common.back")}
           </button>
           <input
             ref={domainInputRef}
             value={domainQuery}
             onChange={(e) => setDomainQuery(e.target.value)}
-            placeholder="Search domains..."
+            placeholder={t("batch.searchDomains")}
             className="flex-1 h-7 bg-transparent outline-none text-xs placeholder:text-muted-foreground"
           />
         </div>
@@ -215,9 +222,11 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
             onClick={() => setSubView("actions")}
             className="text-xs text-muted-foreground hover:text-foreground px-1"
           >
-            ← Back
+            {t("common.back")}
           </button>
-          <span className="text-xs text-muted-foreground">Reschedule {count} tasks</span>
+          <span className="text-xs text-muted-foreground">
+            {t("batch.rescheduleCount", { count })}
+          </span>
         </div>
         <Calendar
           mode="single"
@@ -237,34 +246,40 @@ export function PaletteBatchActions({ taskIds, domains, onDone }: PaletteBatchAc
   /* ---- Main actions ---- */
   return (
     <div className="border-t px-2 py-1.5 flex items-center gap-1 text-xs flex-wrap">
-      <span className="text-muted-foreground shrink-0 mr-1">{count} selected</span>
+      <span className="text-muted-foreground shrink-0 mr-1">
+        {t("batch.selectedCount", { count })}
+      </span>
       <BatchButton
         icon={CheckCheck}
-        label={allCompleted ? "Reopen" : "Complete"}
+        label={allCompleted ? t("task.action.reopen") : t("task.action.complete")}
         onClick={handleComplete}
       />
-      <BatchButton icon={CalendarCheck} label="Today" onClick={() => handleReschedule(todayStr)} />
+      <BatchButton
+        icon={CalendarCheck}
+        label={t("date.today")}
+        onClick={() => handleReschedule(todayStr)}
+      />
       <BatchButton
         icon={CalendarPlus}
-        label="Tomorrow"
+        label={t("date.tomorrow")}
         onClick={() => handleReschedule(tomorrowStr)}
       />
       <BatchButton
         icon={CalendarDays}
-        label="Reschedule"
+        label={t("batch.reschedule")}
         onClick={() => setSubView("date-picker")}
       />
-      <BatchButton icon={CalendarX2} label="Unschedule" onClick={handleUnschedule} />
-      <BatchButton icon={Pencil} label="Edit" onClick={handleEdit} />
+      <BatchButton icon={CalendarX2} label={t("batch.unschedule")} onClick={handleUnschedule} />
+      <BatchButton icon={Pencil} label={t("common.edit")} onClick={handleEdit} />
       <BatchButton
         icon={FolderInput}
-        label="Move"
+        label={t("batch.move")}
         onClick={() => {
           setSubView("domain-picker");
           setDomainQuery("");
         }}
       />
-      <BatchButton icon={Trash2} label="Delete" onClick={handleDelete} destructive />
+      <BatchButton icon={Trash2} label={t("common.delete")} onClick={handleDelete} destructive />
     </div>
   );
 }

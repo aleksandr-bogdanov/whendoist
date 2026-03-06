@@ -4,6 +4,22 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.1 — 2026-03-06
+
+### Fix: i18n audit — 120 missing translations, locale-aware date formatting
+
+- Added ~120 new translation keys across all 7 locales (713 → 833 keys)
+- Translated 9 analytics chart components (titles, tooltips, axis labels, locale-aware date/hour formatting)
+- Translated 4 core task editing components (task-detail-panel, task-inspector, task-fields-body, field-pickers)
+- Translated 7 misc components (activity-list, subtask-ghost-row, task-list, palette-batch-actions, timezone-picker, calendar-event, _authenticated route)
+- Replaced hardcoded `"en-US"` locale in 8 files with `i18n.resolvedLanguage` for date formatting
+- Converted onboarding wizard constants (ENERGY_MODES, DOMAIN_SUGGESTIONS) to use translation keys
+- Fixed `attribute-pills.tsx` to use `getImpactLabel()`/`getClarityLabel()` instead of deprecated static exports
+- Deduplicated `formatTimeAgo` in thoughts.lazy.tsx (now imports shared version from activity-utils)
+- Added settings.language.description (CRITICAL missing key from initial implementation)
+
+---
+
 ## v0.65.0 — 2026-03-06
 
 ### Feat: Internationalization — 7-language support (EN, DE, FR, ES, IT, PT, RU)

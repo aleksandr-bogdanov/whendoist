@@ -23,6 +23,7 @@ import {
   Upload,
 } from "lucide-react";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { ActivityLogEntry } from "@/api/model";
 import { useGetTaskActivityApiV1ActivityTaskTaskIdGet } from "@/api/queries/activity/activity";
 import { describeActivity, formatTimeAgo } from "./activity-utils";
@@ -78,6 +79,8 @@ export function ActivityList({
   isLoading?: boolean;
   isError?: boolean;
 }) {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -88,12 +91,12 @@ export function ActivityList({
 
   if (isError) {
     return (
-      <p className="text-center text-sm text-muted-foreground py-8">Failed to load activity</p>
+      <p className="text-center text-sm text-muted-foreground py-8">{t("activity.failedToLoad")}</p>
     );
   }
 
   if (entries.length === 0) {
-    return <p className="text-center text-sm text-muted-foreground py-8">No activity yet</p>;
+    return <p className="text-center text-sm text-muted-foreground py-8">{t("activity.empty")}</p>;
   }
 
   return (

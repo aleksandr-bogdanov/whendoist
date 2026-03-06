@@ -14,6 +14,7 @@
 
 import { CheckCircle, Loader2, MousePointerClick, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { TaskActivityPanel } from "@/components/activity/activity-list";
 import { TaskFieldsBody } from "@/components/task/task-fields-body";
@@ -46,12 +47,14 @@ export function TaskDetailPanel({
   mode,
   onClose,
 }: TaskDetailPanelProps) {
+  const { t } = useTranslation();
+
   if (mode === "idle") {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center space-y-2">
           <MousePointerClick className="h-8 w-8 text-muted-foreground/30 mx-auto" />
-          <p className="text-sm text-muted-foreground">Select a task to view details</p>
+          <p className="text-sm text-muted-foreground">{t("task.detail.emptyTitle")}</p>
           <p className="text-xs text-muted-foreground/60">
             <kbd className="px-1 py-0.5 rounded border border-border text-[10px]">j</kbd>{" "}
             <kbd className="px-1 py-0.5 rounded border border-border text-[10px]">k</kbd> to
@@ -89,6 +92,7 @@ function DetailBody({
   parentTasks: TaskResponse[];
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const form = useTaskForm({ task, onDone: onClose });
 
   // Focus title on mount for create mode
@@ -107,15 +111,17 @@ function DetailBody({
       <div className="flex flex-col h-full">
         {/* Header with title and close button */}
         <div className="flex items-center justify-between px-5 py-3 border-b">
-          <h2 className="text-sm font-semibold">{form.isEdit ? "Edit Task" : "New Task"}</h2>
+          <h2 className="text-sm font-semibold">
+            {form.isEdit ? t("task.detail.editTitle") : t("task.detail.newTitle")}
+          </h2>
           <button
             type="button"
             onClick={() => {
-              if (form.dirty && !window.confirm("You have unsaved changes. Discard?")) return;
+              if (form.dirty && !window.confirm(t("task.detail.unsavedConfirm"))) return;
               onClose();
             }}
             className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-            title="Close (Esc)"
+            title={t("task.detail.closeTooltip")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -125,8 +131,8 @@ function DetailBody({
         {form.isEdit && task ? (
           <Tabs defaultValue="details" className="flex-1 min-h-0 gap-0">
             <TabsList variant="line" className="shrink-0 px-5 border-b">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="details">{t("task.detail.tabDetails")}</TabsTrigger>
+              <TabsTrigger value="activity">{t("task.detail.tabActivity")}</TabsTrigger>
             </TabsList>
             <TabsContent value="details" className="flex-1 overflow-y-auto p-5">
               <TaskFieldsBody
@@ -147,28 +153,31 @@ function DetailBody({
                     onClick={form.handleBatchComplete}
                   >
                     {form.isBatchCompleting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                    Complete {form.pendingPastCount} past instance(s)
+                    {t("task.detail.completePastInstances", { count: form.pendingPastCount })}
                   </Button>
                 </div>
               )}
               <div className="text-[11px] text-muted-foreground pt-3 mt-3 border-t">
                 {task.created_at && (
                   <span>
-                    Created{" "}
-                    {new Date(task.created_at).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
+                    {t("task.detail.createdAt", {
+                      date: new Date(task.created_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }),
                     })}
                   </span>
                 )}
                 {task.completed_at && (
                   <span>
-                    {" · "}Completed{" "}
-                    {new Date(task.completed_at).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
+                    {" · "}
+                    {t("task.detail.completedAt", {
+                      date: new Date(task.completed_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }),
                     })}
                   </span>
                 )}
@@ -205,12 +214,12 @@ function DetailBody({
                 {task.status === "completed" || task.completed_at ? (
                   <>
                     <RotateCcw className="h-3.5 w-3.5" />
-                    Reopen
+                    {t("task.action.reopen")}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="h-3.5 w-3.5" />
-                    Complete
+                    {t("task.action.complete")}
                   </>
                 )}
               </Button>
@@ -220,7 +229,7 @@ function DetailBody({
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => form.setShowDeleteConfirm(true)}
-                title="Delete task"
+                title={t("task.action.deleteTooltip")}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -235,11 +244,11 @@ function DetailBody({
           >
             {form.isSaving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             {form.isEdit ? (
-              "Save"
+              t("task.action.save")
             ) : (
               <>
                 <Plus className="h-3.5 w-3.5" />
-                Create Task
+                {t("task.action.createTask")}
               </>
             )}
           </Button>
@@ -251,20 +260,23 @@ function DetailBody({
         <Dialog open={form.showDeleteConfirm} onOpenChange={form.setShowDeleteConfirm}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Delete Task</DialogTitle>
+              <DialogTitle>{t("task.deleteDialog.title")}</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete &ldquo;{task.title}&rdquo;?
-                {(task.subtasks?.length ?? 0) > 0 &&
-                  ` This will also delete ${task.subtasks!.length} subtask(s).`}
+                {(task.subtasks?.length ?? 0) > 0
+                  ? t("task.deleteDialog.messageWithSubtasks", {
+                      title: task.title,
+                      count: task.subtasks!.length,
+                    })
+                  : t("task.deleteDialog.message", { title: task.title })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => form.setShowDeleteConfirm(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button variant="destructive" onClick={form.handleDelete} disabled={form.isDeleting}>
                 {form.isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Delete
+                {t("common.delete")}
               </Button>
             </DialogFooter>
           </DialogContent>

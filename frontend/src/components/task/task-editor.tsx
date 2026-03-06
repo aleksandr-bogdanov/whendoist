@@ -480,7 +480,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                   variant="destructive"
                   size="icon"
                   onClick={() => form.setShowDeleteConfirm(true)}
-                  title="Delete task"
+                  title={t("task.action.deleteTooltip")}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

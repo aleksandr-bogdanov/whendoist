@@ -1,6 +1,7 @@
 import Fuse from "fuse.js";
 import { ChevronsUpDown, Search, X } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -79,8 +80,10 @@ export function TimezonePicker({
   value,
   onChange,
   allowClear = false,
-  placeholder = "Select timezone...",
+  placeholder,
 }: TimezonePickerProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("timezone.selectPlaceholder");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,7 +124,7 @@ export function TimezonePicker({
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full justify-between font-normal text-sm h-9">
           <span className={displayValue ? "" : "text-muted-foreground"}>
-            {displayValue ?? placeholder}
+            {displayValue ?? resolvedPlaceholder}
           </span>
           <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 flex-shrink-0" />
         </Button>
@@ -133,7 +136,7 @@ export function TimezonePicker({
             ref={inputRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search timezones..."
+            placeholder={t("timezone.searchPlaceholder")}
             className="h-7 border-0 p-0 focus-visible:ring-0 text-sm"
           />
           {search && (
@@ -154,12 +157,12 @@ export function TimezonePicker({
                 className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent text-muted-foreground italic"
                 onClick={() => handleSelect(null)}
               >
-                None
+                {t("common.none")}
               </button>
             )}
             {filtered.length === 0 && (
               <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                No timezones found
+                {t("timezone.notFound")}
               </div>
             )}
             {filtered.map((item) => (

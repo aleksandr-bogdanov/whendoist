@@ -34,9 +34,14 @@ const STEP_IDS = [
 const OPTIONAL_STEPS = new Set([2, 4]);
 
 const ENERGY_MODES = [
-  { key: "zombie", emoji: "\u{1F9DF}", label: "ZOMBIE", desc: "Simple next actions" },
-  { key: "normal", emoji: "\u2615", label: "NORMAL", desc: "Routine work" },
-  { key: "focus", emoji: "\u{1F9E0}", label: "BRAINSTORM", desc: "Deep work / research" },
+  { key: "zombie", emoji: "\u{1F9DF}", labelKey: "energy.zombie", descKey: "energy.zombieDesc" },
+  { key: "normal", emoji: "\u2615", labelKey: "energy.normal", descKey: "energy.normalDesc" },
+  {
+    key: "focus",
+    emoji: "\u{1F9E0}",
+    labelKey: "energy.brainstorm",
+    descKey: "energy.brainstormDesc",
+  },
 ] as const;
 
 const PREVIEW_TASKS = [
@@ -59,12 +64,12 @@ const CLARITY_COLORS: Record<string, string> = {
 };
 
 const DOMAIN_SUGGESTIONS = [
-  { emoji: "\u{1F4BC}", name: "Work" },
-  { emoji: "\u{1F3E0}", name: "Personal" },
-  { emoji: "\u{1F3C3}", name: "Health" },
-  { emoji: "\u{1F4DA}", name: "Learning" },
-  { emoji: "\u{1F4B0}", name: "Finance" },
-  { emoji: "\u{1F3A8}", name: "Creative" },
+  { emoji: "\u{1F4BC}", nameKey: "wizard.domain.work" },
+  { emoji: "\u{1F3E0}", nameKey: "wizard.domain.personal" },
+  { emoji: "\u{1F3C3}", nameKey: "wizard.domain.health" },
+  { emoji: "\u{1F4DA}", nameKey: "wizard.domain.learning" },
+  { emoji: "\u{1F4B0}", nameKey: "wizard.domain.finance" },
+  { emoji: "\u{1F3A8}", nameKey: "wizard.domain.creative" },
 ] as const;
 
 const DOMAIN_EMOJIS = [
@@ -710,10 +715,10 @@ function EnergyStep({
             >
               <span className="text-[1.75rem] mb-2">{mode.emoji}</span>
               <span className="text-[0.6rem] font-bold uppercase tracking-[0.12em] mb-1.5">
-                {mode.label}
+                {t(mode.labelKey)}
               </span>
               <span className="text-[0.7rem] text-muted-foreground leading-tight line-clamp-2">
-                {mode.desc}
+                {t(mode.descKey)}
               </span>
             </button>
           ))}
@@ -951,23 +956,26 @@ function DomainsStep({
 
       <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[14px] p-4 shadow-[var(--shadow-card)]">
         <div className="grid grid-cols-3 gap-2.5">
-          {DOMAIN_SUGGESTIONS.map((d) => (
-            <button
-              key={d.name}
-              type="button"
-              onClick={() => toggleSuggestion(d.name, d.emoji)}
-              className={cn(
-                "flex flex-col items-center gap-1.5 py-4 px-2.5 rounded-[14px] border-2 transition-all duration-200 cursor-pointer",
-                "bg-card/80 backdrop-blur-lg",
-                selectedSuggestions.has(d.name)
-                  ? "border-[var(--color-brand)] bg-[rgba(109,94,246,0.06)] shadow-[0_0_8px_rgba(109,94,246,0.15)]"
-                  : "border-border/50 hover:border-border hover:-translate-y-0.5",
-              )}
-            >
-              <span className="text-xl sm:text-2xl">{d.emoji}</span>
-              <span className="text-xs font-semibold truncate max-w-full">{d.name}</span>
-            </button>
-          ))}
+          {DOMAIN_SUGGESTIONS.map((d) => {
+            const name = t(d.nameKey);
+            return (
+              <button
+                key={d.nameKey}
+                type="button"
+                onClick={() => toggleSuggestion(name, d.emoji)}
+                className={cn(
+                  "flex flex-col items-center gap-1.5 py-4 px-2.5 rounded-[14px] border-2 transition-all duration-200 cursor-pointer",
+                  "bg-card/80 backdrop-blur-lg",
+                  selectedSuggestions.has(name)
+                    ? "border-[var(--color-brand)] bg-[rgba(109,94,246,0.06)] shadow-[0_0_8px_rgba(109,94,246,0.15)]"
+                    : "border-border/50 hover:border-border hover:-translate-y-0.5",
+                )}
+              >
+                <span className="text-xl sm:text-2xl">{d.emoji}</span>
+                <span className="text-xs font-semibold truncate max-w-full">{name}</span>
+              </button>
+            );
+          })}
 
           {/* Custom domains */}
           {customDomains.map((d) => (

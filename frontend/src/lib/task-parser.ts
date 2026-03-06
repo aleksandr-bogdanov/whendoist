@@ -13,6 +13,7 @@
 import * as chrono from "chrono-node";
 import type { DomainResponse } from "@/api/model";
 import { toDateString } from "@/lib/calendar-utils";
+import i18n from "@/lib/i18n";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -602,18 +603,18 @@ function formatDateLabel(date: string, time: string | null): string {
 
   let label: string;
   if (dateD.getTime() === today.getTime()) {
-    label = "Today";
+    label = i18n.t("date.today");
   } else if (dateD.getTime() === tomorrow.getTime()) {
-    label = "Tomorrow";
+    label = i18n.t("date.tomorrow");
   } else {
-    label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    label = d.toLocaleDateString(i18n.resolvedLanguage ?? "en", { month: "short", day: "numeric" });
   }
 
   if (time) {
     const [h, m] = time.split(":");
     const hour = Number.parseInt(h, 10);
     const minute = m;
-    const ampm = hour >= 12 ? "PM" : "AM";
+    const ampm = hour >= 12 ? i18n.t("date.pm") : i18n.t("date.am");
     const h12 = hour % 12 || 12;
     label += ` ${h12}:${minute} ${ampm}`;
   }

@@ -1,7 +1,9 @@
 import { CalendarDays, ChevronDown, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
+import i18n from "@/lib/i18n";
 import {
   CLARITY_COLORS,
   CLARITY_OPTIONS,
@@ -105,6 +107,7 @@ export function ScheduleButtonRow({
   onClear,
   onCalendarOpen,
 }: ScheduleButtonRowProps) {
+  const { t } = useTranslation();
   const todayStr = new Date().toISOString().split("T")[0];
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -125,7 +128,7 @@ export function ScheduleButtonRow({
         )}
         onClick={() => onSelectDate(todayStr)}
       >
-        Today
+        {t("date.today")}
       </button>
       <button
         type="button"
@@ -138,7 +141,7 @@ export function ScheduleButtonRow({
         )}
         onClick={() => onSelectDate(tomorrowStr)}
       >
-        Tomorrow
+        {t("date.tomorrow")}
       </button>
       <button
         type="button"
@@ -160,7 +163,7 @@ export function ScheduleButtonRow({
           className="rounded-lg px-2 py-2 text-[13px] text-muted-foreground active:text-foreground md:py-1 md:hover:text-foreground"
           onClick={onClear}
         >
-          Clear
+          {t("common.clear")}
         </button>
       )}
     </div>
@@ -169,7 +172,7 @@ export function ScheduleButtonRow({
 
 function formatShortDate(iso: string): string {
   const d = new Date(`${iso}T00:00:00`);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return d.toLocaleDateString(i18n.resolvedLanguage ?? "en", { month: "short", day: "numeric" });
 }
 
 /* ------------------------------------------------------------------ */
@@ -230,6 +233,7 @@ interface DurationPickerRowProps {
 }
 
 export function DurationPickerRow({ value, onChange, showCustom }: DurationPickerRowProps) {
+  const { t } = useTranslation();
   const [customInput, setCustomInput] = useState(
     value && !DURATION_PRESETS.includes(value as (typeof DURATION_PRESETS)[number])
       ? String(value)
@@ -275,7 +279,7 @@ export function DurationPickerRow({ value, onChange, showCustom }: DurationPicke
           max={1440}
           value={customInput}
           onChange={(e) => handleCustom(e.target.value)}
-          placeholder="min"
+          placeholder={t("task.field.minPlaceholder")}
           className="h-11 w-14 rounded-md border border-input bg-transparent px-2 text-[13px] outline-none focus:ring-1 focus:ring-ring md:h-7 md:w-12 md:text-xs"
         />
       )}
@@ -316,13 +320,19 @@ export interface RecurrencePresetValue {
   rule: { freq: string; interval: number; days_of_week?: string[] } | null;
 }
 
-const RECURRENCE_PRESETS: { key: string; label: string }[] = [
-  { key: "none", label: "None" },
-  { key: "daily", label: "Daily" },
-  { key: "weekdays", label: "Weekdays" },
-  { key: "weekly", label: "Weekly" },
-  { key: "monthly", label: "Monthly" },
-];
+function useRecurrencePresets() {
+  const { t } = useTranslation();
+  return useMemo(
+    () => [
+      { key: "none", label: t("recurrence.none") },
+      { key: "daily", label: t("recurrence.daily") },
+      { key: "weekdays", label: t("recurrence.weekdays") },
+      { key: "weekly", label: t("recurrence.weekly") },
+      { key: "monthly", label: t("recurrence.monthly") },
+    ],
+    [t],
+  );
+}
 
 const WEEKDAY_KEYS = ["MO", "TU", "WE", "TH", "FR"];
 
@@ -347,11 +357,12 @@ interface RecurrencePresetRowProps {
 }
 
 export function RecurrencePresetRow({ value, onChange }: RecurrencePresetRowProps) {
+  const recurrencePresets = useRecurrencePresets();
   const activePreset = value?.preset ?? "none";
 
   return (
     <div className="flex gap-1.5 flex-wrap md:gap-1">
-      {RECURRENCE_PRESETS.map((p) => {
+      {recurrencePresets.map((p) => {
         const isActive = activePreset === p.key;
         return (
           <button
@@ -402,6 +413,7 @@ export function ParentTaskSelect({
   onSelect,
   portalContainer,
 }: ParentTaskSelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -506,7 +518,7 @@ export function ParentTaskSelect({
               <span className="truncate">{selectedParent.title}</span>
             </>
           ) : (
-            <span>None</span>
+            <span>{t("common.none")}</span>
           )}
         </span>
         <ChevronDown
@@ -535,7 +547,7 @@ export function ParentTaskSelect({
                 ref={searchRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search tasks..."
+                placeholder={t("task.field.searchTasks")}
                 className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
               />
               {search && (
@@ -566,7 +578,7 @@ export function ParentTaskSelect({
                 )}
                 onClick={() => handleSelect(null)}
               >
-                None (top-level)
+                {t("task.field.noneTopLevel")}
               </button>
 
               {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
@@ -606,7 +618,9 @@ export function ParentTaskSelect({
               ))}
 
               {totalFiltered === 0 && search && (
-                <div className="px-3 py-2 text-sm text-muted-foreground">No matching tasks</div>
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  {t("task.field.noMatchingTasks")}
+                </div>
               )}
             </div>
           </div>,
@@ -620,15 +634,21 @@ export function ParentTaskSelect({
 /*  ReminderPickerRow                                                  */
 /* ------------------------------------------------------------------ */
 
-const REMINDER_OPTIONS: { value: number | null; label: string }[] = [
-  { value: null, label: "None" },
-  { value: 0, label: "At time" },
-  { value: 5, label: "5 min" },
-  { value: 15, label: "15 min" },
-  { value: 30, label: "30 min" },
-  { value: 60, label: "1 hour" },
-  { value: 1440, label: "1 day" },
-];
+function useReminderOptions() {
+  const { t } = useTranslation();
+  return useMemo(
+    () => [
+      { value: null as number | null, label: t("reminder.none") },
+      { value: 0, label: t("reminder.atTime") },
+      { value: 5, label: t("reminder.fiveMin") },
+      { value: 15, label: t("reminder.fifteenMin") },
+      { value: 30, label: t("reminder.thirtyMin") },
+      { value: 60, label: t("reminder.oneHour") },
+      { value: 1440, label: t("reminder.oneDay") },
+    ],
+    [t],
+  );
+}
 
 interface ReminderPickerRowProps {
   value: number | null;
@@ -636,9 +656,10 @@ interface ReminderPickerRowProps {
 }
 
 export function ReminderPickerRow({ value, onChange }: ReminderPickerRowProps) {
+  const reminderOptions = useReminderOptions();
   return (
     <div className="flex gap-1.5 flex-wrap md:gap-1">
-      {REMINDER_OPTIONS.map((opt) => {
+      {reminderOptions.map((opt) => {
         const isActive = value === opt.value;
         return (
           <button

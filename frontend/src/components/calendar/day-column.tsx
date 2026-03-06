@@ -44,6 +44,7 @@ import {
   PREV_DAY_START_HOUR,
   todayString,
 } from "@/lib/calendar-utils";
+import i18n from "@/lib/i18n";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 import { getCurrentTimeInTimezone, getHoursInTimezone, getMinutesInTimezone } from "@/lib/timezone";
@@ -165,7 +166,7 @@ export function DayColumn({
   // Day name for separators (e.g., "FRIDAY")
   const centerDayName = useMemo(() => {
     const d = new Date(`${centerDate}T00:00:00`);
-    return d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+    return d.toLocaleDateString(i18n.resolvedLanguage ?? "en", { weekday: "long" }).toUpperCase();
   }, [centerDate]);
 
   // Positioned items across all 3 days
@@ -882,7 +883,7 @@ function InstanceCard({
         onSuccess: () => {
           invalidateAll();
           const dateHint = new Date(`${instance.instance_date}T00:00:00`).toLocaleDateString(
-            "en-US",
+            i18n.resolvedLanguage ?? "en",
             { month: "short", day: "numeric" },
           );
           toast.success(
@@ -928,7 +929,7 @@ function InstanceCard({
         onSuccess: () => {
           invalidateAll();
           const dateHint = new Date(`${instance.instance_date}T00:00:00`).toLocaleDateString(
-            "en-US",
+            i18n.resolvedLanguage ?? "en",
             { month: "short", day: "numeric" },
           );
           toast.success(

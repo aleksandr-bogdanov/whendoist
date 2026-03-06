@@ -1030,7 +1030,7 @@ function EncryptionSection() {
         toast.success(t("settings.encryption.passkeyRegistered"));
         setPasskeyName("");
       } else {
-        toast.error(result.error ?? "Registration failed");
+        toast.error(result.error ?? t("settings.encryption.registrationFailed"));
       }
     } finally {
       setRegisteringPasskey(false);
@@ -1577,7 +1577,7 @@ function DataSection() {
                     variant="ghost"
                     size="sm"
                     className="h-6 px-1"
-                    title="Download"
+                    title={t("settings.data.download")}
                     onClick={() => {
                       window.open(`/api/v1/backup/snapshots/${snap.id}/download`, "_blank");
                     }}
@@ -1588,7 +1588,7 @@ function DataSection() {
                     variant="ghost"
                     size="sm"
                     className="h-6 px-1"
-                    title="Restore"
+                    title={t("settings.data.restore")}
                     onClick={() => setShowRestoreDialog(snap.id)}
                   >
                     <RotateCcw className="h-3 w-3" />
@@ -1597,7 +1597,7 @@ function DataSection() {
                     variant="ghost"
                     size="sm"
                     className="h-6 px-1"
-                    title="Delete"
+                    title={t("common.delete")}
                     onClick={() => {
                       deleteSnapshot.mutate(
                         { snapshotId: snap.id },
@@ -1654,7 +1654,7 @@ function DataSection() {
               disabled={wipeMutation.isPending}
             >
               {wipeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Wipe Everything
+              {t("settings.data.wipeButton")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1733,7 +1733,7 @@ function ActivitySection() {
                 className="w-full text-xs mt-2"
                 onClick={() => setLimit((prev) => Math.min(prev + 50, 200))}
               >
-                Load more ({data.total - data.entries.length} remaining)
+                {t("settings.activity.loadMore", { remaining: data.total - data.entries.length })}
               </Button>
             )}
           </div>
@@ -1830,16 +1830,17 @@ function AboutSection() {
         </p>
         {buildInfo?.commit && (
           <p>
-            <span className="text-muted-foreground">Commit:</span> {buildInfo.commit.short}
+            <span className="text-muted-foreground">{t("settings.about.commit")}</span>{" "}
+            {buildInfo.commit.short}
           </p>
         )}
       </div>
       <div className="flex gap-2 text-xs flex-wrap">
         <RouterLink to="/privacy" className="text-muted-foreground hover:underline">
-          Privacy Policy
+          {t("settings.about.privacyPolicy")}
         </RouterLink>
         <RouterLink to="/terms" className="text-muted-foreground hover:underline">
-          Terms of Service
+          {t("settings.about.termsOfService")}
         </RouterLink>
         <a
           href="https://github.com/aleksandr-bogdanov/whendoist"
@@ -1847,7 +1848,7 @@ function AboutSection() {
           rel="noopener noreferrer"
           className="text-muted-foreground hover:underline"
         >
-          GitHub
+          {t("settings.about.github")}
         </a>
         <a
           href="/static/debug-pwa.html"
@@ -1855,7 +1856,7 @@ function AboutSection() {
           rel="noopener noreferrer"
           className="text-muted-foreground hover:underline"
         >
-          PWA Debug
+          {t("settings.about.pwaDebug")}
         </a>
       </div>
     </SettingsCard>

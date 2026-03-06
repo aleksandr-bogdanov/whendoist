@@ -340,7 +340,14 @@ function DashboardPage() {
             if (!task) return;
 
             if (task.subtasks?.length) {
-              if (!window.confirm(`Delete "${task.title}" and ${task.subtasks.length} subtask(s)?`))
+              if (
+                !window.confirm(
+                  t("task.deleteDialog.messageWithSubtasks", {
+                    title: task.title,
+                    count: task.subtasks.length,
+                  }),
+                )
+              )
                 return;
             }
 
@@ -432,10 +439,14 @@ function DashboardPage() {
             if (targets.length === 0) return;
             const subtaskCount = targets.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
             if (subtaskCount > 0) {
-              if (!window.confirm(`Delete ${targets.length} tasks and ${subtaskCount} subtasks?`))
+              if (
+                !window.confirm(
+                  t("batch.deleteConfirmWithSubtasks", { count: targets.length, subtaskCount }),
+                )
+              )
                 return;
             } else if (targets.length > 3) {
-              if (!window.confirm(`Delete ${targets.length} tasks?`)) return;
+              if (!window.confirm(t("batch.deleteConfirm", { count: targets.length }))) return;
             }
             batchDelete(queryClient, targets);
             useSelectionStore.getState().clear();
@@ -454,10 +465,14 @@ function DashboardPage() {
             if (targets.length === 0) return;
             const subtaskCount = targets.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
             if (subtaskCount > 0) {
-              if (!window.confirm(`Delete ${targets.length} tasks and ${subtaskCount} subtasks?`))
+              if (
+                !window.confirm(
+                  t("batch.deleteConfirmWithSubtasks", { count: targets.length, subtaskCount }),
+                )
+              )
                 return;
             } else if (targets.length > 3) {
-              if (!window.confirm(`Delete ${targets.length} tasks?`)) return;
+              if (!window.confirm(t("batch.deleteConfirm", { count: targets.length }))) return;
             }
             batchDelete(queryClient, targets);
             useSelectionStore.getState().clear();
@@ -645,7 +660,7 @@ function DashboardPage() {
                       type="button"
                       onClick={dismissGcalBanner}
                       className="p-0.5 rounded hover:bg-accent"
-                      title="Dismiss"
+                      title={t("common.dismiss")}
                     >
                       <X className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>

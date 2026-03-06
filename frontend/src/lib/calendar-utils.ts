@@ -4,6 +4,7 @@
  */
 
 import type { EventResponse, InstanceResponse, TaskResponse } from "@/api/model";
+import i18n from "@/lib/i18n";
 import {
   getHoursInTimezone,
   getMinutesInTimezone,
@@ -64,13 +65,14 @@ export function formatDayHeader(
   const yesterdayDate = new Date(todayDate);
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
 
+  const locale = i18n.resolvedLanguage ?? "en";
   let dayName: string;
-  if (date.getTime() === todayDate.getTime()) dayName = "Today";
-  else if (date.getTime() === tomorrowDate.getTime()) dayName = "Tomorrow";
-  else if (date.getTime() === yesterdayDate.getTime()) dayName = "Yesterday";
-  else dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+  if (date.getTime() === todayDate.getTime()) dayName = i18n.t("date.today");
+  else if (date.getTime() === tomorrowDate.getTime()) dayName = i18n.t("date.tomorrow");
+  else if (date.getTime() === yesterdayDate.getTime()) dayName = i18n.t("date.yesterday");
+  else dayName = date.toLocaleDateString(locale, { weekday: "short" });
 
-  const dateLabel = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const dateLabel = date.toLocaleDateString(locale, { month: "short", day: "numeric" });
   return { dayName, dateLabel };
 }
 
@@ -115,7 +117,7 @@ export function durationToHeight(durationMinutes: number, hourHeight: number): n
 /** Format time as HH:MM AM/PM */
 export function formatTime(hour: number, minutes: number): string {
   const h = hour % 12 || 12;
-  const ampm = hour < 12 ? "AM" : "PM";
+  const ampm = hour < 12 ? i18n.t("date.am") : i18n.t("date.pm");
   const m = minutes.toString().padStart(2, "0");
   return `${h}:${m} ${ampm}`;
 }
@@ -123,7 +125,7 @@ export function formatTime(hour: number, minutes: number): string {
 /** Format hour as compact label (e.g., "9PM", "12AM") */
 export function formatHourLabel(hour: number): string {
   const h = hour % 12 || 12;
-  const ampm = hour < 12 ? "AM" : "PM";
+  const ampm = hour < 12 ? i18n.t("date.am") : i18n.t("date.pm");
   return `${h}${ampm}`;
 }
 
@@ -221,7 +223,7 @@ export function getExtendedHourLabels(
     if (m === 0) return formatHourLabel(h);
     // Half-hour offsets: show "1:30AM"
     const h12 = h % 12 || 12;
-    const ampm = h < 12 ? "AM" : "PM";
+    const ampm = h < 12 ? i18n.t("date.am") : i18n.t("date.pm");
     return `${h12}:${String(m).padStart(2, "0")}${ampm}`;
   }
 
