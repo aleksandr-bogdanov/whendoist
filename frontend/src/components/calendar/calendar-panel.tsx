@@ -2,6 +2,7 @@ import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Minus, Plus, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { InstanceResponse, TaskResponse } from "@/api/model";
 import {
@@ -52,6 +53,7 @@ interface CalendarPanelProps {
 }
 
 export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
+  const { t } = useTranslation();
   const {
     calendarHourHeight,
     calendarCenterDate,
@@ -377,7 +379,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       const filtered = filterByEnergy(eligible, energyLevel);
 
       if (filtered.length === 0) {
-        toast.info("No unscheduled tasks to schedule");
+        toast.info(t("toast.noUnscheduledTasks"));
         setIsPlanMode(false);
         return;
       }
@@ -396,7 +398,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       );
 
       if (planned.length === 0) {
-        toast.info("No free slots in the selected range");
+        toast.info(t("toast.noFreeSlots"));
         setIsPlanMode(false);
         return;
       }
@@ -417,11 +419,11 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       const successCount = results.filter((r) => r.status === "fulfilled").length;
       await invalidateTaskQueries();
 
-      const taskWord = successCount === 1 ? "task" : "tasks";
-      toast.success(`Scheduled ${successCount} ${taskWord}`, {
+      const taskWord = successCount === 1 ? t("common.task") : t("common.tasks");
+      toast.success(t("toast.scheduledCount", { count: successCount, noun: taskWord }), {
         id: "plan-my-day",
         action: {
-          label: "Undo",
+          label: t("toast.undo"),
           onClick: () => {
             Promise.allSettled(
               planned.map((p) =>
@@ -446,6 +448,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       invalidateTaskQueries,
       strategyId,
       timezone,
+      t,
     ],
   );
 
@@ -640,7 +643,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
               className="h-6 text-[10px] font-semibold"
               onClick={goToToday}
             >
-              Today
+              {t("calendar.today")}
             </Button>
           )}
           <Button
@@ -652,12 +655,12 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
             {isPlanMode ? (
               <>
                 <X className="h-3.5 w-3.5" />
-                Cancel
+                {t("calendar.cancelPlan")}
               </>
             ) : (
               <>
                 <Sparkles className="h-3.5 w-3.5" />
-                Plan My Day
+                {t("calendar.planMyDay")}
               </>
             )}
           </Button>
@@ -781,7 +784,7 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
       {/* Plan mode hint */}
       {isPlanMode && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full bg-primary/90 text-primary-foreground text-xs font-medium shadow-md pointer-events-none animate-in fade-in duration-200">
-          Drag on the calendar to select a time range
+          {t("calendar.dragHint")}
         </div>
       )}
     </div>
@@ -805,6 +808,7 @@ function AnytimeSection({
   onTaskClick?: (task: TaskResponse) => void;
   orderedIds?: string[];
 }) {
+  const { t } = useTranslation();
   const { setNodeRef, isOver } = useDroppable({
     id: `anytime-drop-${displayDate}`,
     data: { type: "anytime", dateStr: displayDate },
@@ -827,7 +831,7 @@ function AnytimeSection({
       }`}
     >
       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em] leading-[22px] flex-shrink-0">
-        ANYTIME
+        {t("calendar.anytime")}
       </span>
       <div className="flex flex-wrap gap-1 min-h-[22px] items-center flex-1 min-w-0">
         {hasItems ? (
@@ -852,7 +856,7 @@ function AnytimeSection({
           </>
         ) : (
           <span className="text-[10px] text-muted-foreground/50">
-            {isOver ? "Drop here for anytime" : "No tasks"}
+            {isOver ? t("calendar.dropForAnytime") : t("calendar.noTasks")}
           </span>
         )}
       </div>

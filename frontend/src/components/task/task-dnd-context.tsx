@@ -26,6 +26,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { InstanceResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 import {
@@ -178,6 +179,7 @@ const customCollisionDetection: CollisionDetection = (args) => {
 };
 
 export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const scheduleInstance = useScheduleInstanceApiV1InstancesInstanceIdSchedulePut();
@@ -369,36 +371,39 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               invalidateInstances();
-              announce("Instance unscheduled");
-              toast.success(`Unscheduled "${instance?.task_title ?? "Instance"}"`, {
-                id: `unschedule-inst-${instanceId}`,
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    queryClient.setQueryData(
-                      getListInstancesApiV1InstancesGetQueryKey(),
-                      (old: InstanceResponse[] | undefined) =>
-                        old?.map((i) =>
-                          i.id === instanceId ? { ...i, scheduled_datetime: prevDatetime } : i,
-                        ),
-                    );
-                    scheduleInstance.mutate(
-                      { instanceId, data: { scheduled_datetime: prevDatetime } },
-                      {
-                        onSuccess: () => invalidateInstances(),
-                        onError: () => toast.error("Undo failed"),
-                      },
-                    );
+              announce(t("announce.instanceUnscheduled"));
+              toast.success(
+                t("toast.taskUnscheduled", { title: instance?.task_title ?? "Instance" }),
+                {
+                  id: `unschedule-inst-${instanceId}`,
+                  action: {
+                    label: t("toast.undo"),
+                    onClick: () => {
+                      queryClient.setQueryData(
+                        getListInstancesApiV1InstancesGetQueryKey(),
+                        (old: InstanceResponse[] | undefined) =>
+                          old?.map((i) =>
+                            i.id === instanceId ? { ...i, scheduled_datetime: prevDatetime } : i,
+                          ),
+                      );
+                      scheduleInstance.mutate(
+                        { instanceId, data: { scheduled_datetime: prevDatetime } },
+                        {
+                          onSuccess: () => invalidateInstances(),
+                          onError: () => toast.error(t("toast.undoFailed")),
+                        },
+                      );
+                    },
                   },
                 },
-              });
+              );
             },
             onError: () => {
               queryClient.setQueryData(
                 getListInstancesApiV1InstancesGetQueryKey(),
                 previousInstances,
               );
-              toast.error("Failed to unschedule instance", {
+              toast.error(t("toast.failedToUnscheduleInstance"), {
                 id: `unschedule-inst-err-${instanceId}`,
               });
             },
@@ -470,13 +475,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               invalidateInstances();
-              announce("Instance rescheduled");
+              announce(t("announce.instanceRescheduled"));
               toast.success(
-                `Rescheduled "${instance?.task_title ?? "Instance"}" to ${formatScheduleTarget(dateStr, scheduledTime)}`,
+                t("toast.taskRescheduled", {
+                  title: instance?.task_title ?? "Instance",
+                  target: formatScheduleTarget(dateStr, scheduledTime),
+                }),
                 {
                   id: `reschedule-inst-${instanceId}`,
                   action: {
-                    label: "Undo",
+                    label: t("toast.undo"),
                     onClick: () => {
                       queryClient.setQueryData(
                         getListInstancesApiV1InstancesGetQueryKey(),
@@ -489,7 +497,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                         { instanceId, data: { scheduled_datetime: prevDatetime } },
                         {
                           onSuccess: () => invalidateInstances(),
-                          onError: () => toast.error("Undo failed"),
+                          onError: () => toast.error(t("toast.undoFailed")),
                         },
                       );
                     },
@@ -502,7 +510,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                 getListInstancesApiV1InstancesGetQueryKey(),
                 previousInstances,
               );
-              toast.error("Failed to reschedule instance", {
+              toast.error(t("toast.failedToRescheduleInstance"), {
                 id: `reschedule-inst-err-${instanceId}`,
               });
             },
@@ -513,7 +521,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
 
       return false; // Instance dropped on unsupported zone
     },
-    [queryClient, scheduleInstance, calendarHourHeight],
+    [queryClient, scheduleInstance, calendarHourHeight, t],
   );
 
   // ── Batch drag handler ─────────────────────────────────────────────────
@@ -637,7 +645,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         isDateGroupDrop = true;
       } else if (overId.startsWith("task-drop-")) {
         // Batch reparenting is blocked — only single-task reparent allowed (§7)
-        toast.error("Batch reparenting is not supported — drop one task at a time");
+        toast.error(t("toast.batchReparentUnsupported"));
         return;
       } else {
         // Unsupported drop zone for batch drag — do nothing
@@ -728,7 +736,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       if (stackOverflowCount > 0) {
         const scheduled = taskUpdates.length + instanceUpdates.length;
         toast.warning(
-          `Only ${scheduled} of ${scheduled + stackOverflowCount} items fit before midnight — ${stackOverflowCount} left unscheduled`,
+          t("calendar.midnightOverflow", {
+            scheduled,
+            total: scheduled + stackOverflowCount,
+            overflow: stackOverflowCount,
+          }),
           { id: "batch-overflow" },
         );
       }
@@ -789,13 +801,21 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         queryClient.invalidateQueries({ queryKey: getListInstancesApiV1InstancesGetQueryKey() });
 
         if (failed === 0) {
-          announce(`Moved ${totalCount} ${totalCount === 1 ? "task" : "tasks"}`);
+          announce(
+            t("announce.movedTasks", {
+              count: totalCount,
+              noun: totalCount === 1 ? t("common.task") : t("common.tasks"),
+            }),
+          );
           toast.success(
-            `Moved ${totalCount} ${totalCount === 1 ? "task" : "tasks"} to ${formatScheduleTarget(dropDate, dropTime)}`,
+            t("toast.taskScheduled", {
+              title: `${totalCount} ${totalCount === 1 ? t("common.task") : t("common.tasks")}`,
+              target: formatScheduleTarget(dropDate, dropTime),
+            }),
             {
               id: `batch-move-${Date.now()}`,
               action: {
-                label: "Undo",
+                label: t("toast.undo"),
                 onClick: () => {
                   // Restore full snapshots immediately for instant UI feedback
                   if (previousTasks) queryClient.setQueryData(dashboardTasksKey(), previousTasks);
@@ -830,7 +850,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                       queryKey: getListInstancesApiV1InstancesGetQueryKey(),
                     });
                     if (results.some((r) => r.status === "rejected")) {
-                      toast.error("Undo partially failed");
+                      toast.error(t("toast.undoPartiallyFailed"));
                     }
                   });
                 },
@@ -838,7 +858,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             },
           );
         } else if (succeeded > 0) {
-          toast.warning(`Moved ${succeeded} of ${totalCount} tasks. ${failed} failed.`, {
+          toast.warning(t("toast.movedTasks", { succeeded, total: totalCount, failed }), {
             id: `batch-move-partial-${Date.now()}`,
           });
         } else {
@@ -849,7 +869,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               getListInstancesApiV1InstancesGetQueryKey(),
               previousInstances,
             );
-          toast.error(`Failed to move ${totalCount} tasks`, {
+          toast.error(t("toast.failedToMoveTasks", { count: totalCount }), {
             id: `batch-move-err-${Date.now()}`,
           });
         }
@@ -858,7 +878,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         useSelectionStore.getState().clear();
       });
     },
-    [queryClient, calendarHourHeight, timezone],
+    [queryClient, calendarHourHeight, timezone, t],
   );
 
   const handleDragEnd = useCallback(
@@ -921,37 +941,43 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
               const taskTitle = task?.title ?? "Task";
-              announce("Task scheduled");
-              toast.success(`Scheduled "${taskTitle}" for ${formatScheduleTarget(dateStr)}`, {
-                id: `anytime-${activeId}`,
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    updateTask.mutate(
-                      {
-                        taskId: activeId,
-                        data: { scheduled_date: prevDate, scheduled_time: prevTime },
-                      },
-                      {
-                        onSuccess: () =>
-                          queryClient.invalidateQueries({
-                            queryKey: dashboardTasksKey(),
-                          }),
-                        onError: () => {
-                          queryClient.invalidateQueries({
-                            queryKey: dashboardTasksKey(),
-                          });
-                          toast.error("Undo failed");
+              announce(t("announce.taskScheduled"));
+              toast.success(
+                t("toast.taskScheduled", {
+                  title: taskTitle,
+                  target: formatScheduleTarget(dateStr),
+                }),
+                {
+                  id: `anytime-${activeId}`,
+                  action: {
+                    label: t("toast.undo"),
+                    onClick: () => {
+                      updateTask.mutate(
+                        {
+                          taskId: activeId,
+                          data: { scheduled_date: prevDate, scheduled_time: prevTime },
                         },
-                      },
-                    );
+                        {
+                          onSuccess: () =>
+                            queryClient.invalidateQueries({
+                              queryKey: dashboardTasksKey(),
+                            }),
+                          onError: () => {
+                            queryClient.invalidateQueries({
+                              queryKey: dashboardTasksKey(),
+                            });
+                            toast.error(t("toast.undoFailed"));
+                          },
+                        },
+                      );
+                    },
                   },
                 },
-              });
+              );
             },
             onError: () => {
               queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-              toast.error("Failed to schedule task", { id: `anytime-err-${activeId}` });
+              toast.error(t("toast.failedToScheduleTask"), { id: `anytime-err-${activeId}` });
             },
           },
         );
@@ -982,44 +1008,50 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-              announce("Task rescheduled");
-              toast.success(`Rescheduled "${taskTitle}" to ${formatScheduleTarget(dateStr)}`, {
-                id: `reschedule-${activeId}`,
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
-                      old?.map((t) =>
-                        t.id === activeId
-                          ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
-                          : t,
-                      ),
-                    );
-                    updateTask.mutate(
-                      {
-                        taskId: activeId,
-                        data: { scheduled_date: prevDate, scheduled_time: prevTime },
-                      },
-                      {
-                        onSuccess: () =>
-                          queryClient.invalidateQueries({
-                            queryKey: dashboardTasksKey(),
-                          }),
-                        onError: () => {
-                          queryClient.invalidateQueries({
-                            queryKey: dashboardTasksKey(),
-                          });
-                          toast.error("Undo failed");
+              announce(t("announce.taskRescheduled"));
+              toast.success(
+                t("toast.taskRescheduled", {
+                  title: taskTitle,
+                  target: formatScheduleTarget(dateStr),
+                }),
+                {
+                  id: `reschedule-${activeId}`,
+                  action: {
+                    label: t("toast.undo"),
+                    onClick: () => {
+                      queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
+                        old?.map((t) =>
+                          t.id === activeId
+                            ? { ...t, scheduled_date: prevDate, scheduled_time: prevTime }
+                            : t,
+                        ),
+                      );
+                      updateTask.mutate(
+                        {
+                          taskId: activeId,
+                          data: { scheduled_date: prevDate, scheduled_time: prevTime },
                         },
-                      },
-                    );
+                        {
+                          onSuccess: () =>
+                            queryClient.invalidateQueries({
+                              queryKey: dashboardTasksKey(),
+                            }),
+                          onError: () => {
+                            queryClient.invalidateQueries({
+                              queryKey: dashboardTasksKey(),
+                            });
+                            toast.error(t("toast.undoFailed"));
+                          },
+                        },
+                      );
+                    },
                   },
                 },
-              });
+              );
             },
             onError: () => {
               queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-              toast.error("Failed to reschedule task", { id: `reschedule-err-${activeId}` });
+              toast.error(t("toast.failedToRescheduleTask"), { id: `reschedule-err-${activeId}` });
             },
           },
         );
@@ -1100,13 +1132,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
               const taskTitle = task?.title ?? "Task";
               if (isReschedule) {
-                announce("Task rescheduled");
+                announce(t("announce.taskRescheduled"));
                 toast.success(
-                  `Rescheduled "${taskTitle}" to ${formatScheduleTarget(dateStr, scheduledTime)}`,
+                  t("toast.taskRescheduled", {
+                    title: taskTitle,
+                    target: formatScheduleTarget(dateStr, scheduledTime),
+                  }),
                   {
                     id: `reschedule-${activeId}`,
                     action: {
-                      label: "Undo",
+                      label: t("toast.undo"),
                       onClick: () => {
                         updateTask.mutate(
                           {
@@ -1122,7 +1157,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                               queryClient.invalidateQueries({
                                 queryKey: dashboardTasksKey(),
                               });
-                              toast.error("Undo failed");
+                              toast.error(t("toast.undoFailed"));
                             },
                           },
                         );
@@ -1131,13 +1166,16 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                   },
                 );
               } else {
-                announce("Task scheduled");
+                announce(t("announce.taskScheduled"));
                 toast.success(
-                  `Scheduled "${taskTitle}" for ${formatScheduleTarget(dateStr, scheduledTime)}`,
+                  t("toast.taskScheduled", {
+                    title: taskTitle,
+                    target: formatScheduleTarget(dateStr, scheduledTime),
+                  }),
                   {
                     id: `schedule-${activeId}`,
                     action: {
-                      label: "Undo",
+                      label: t("toast.undo"),
                       onClick: () => {
                         updateTask.mutate(
                           {
@@ -1153,7 +1191,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                               queryClient.invalidateQueries({
                                 queryKey: dashboardTasksKey(),
                               });
-                              toast.error("Undo failed");
+                              toast.error(t("toast.undoFailed"));
                             },
                           },
                         );
@@ -1165,7 +1203,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             },
             onError: () => {
               queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-              toast.error("Failed to schedule task", { id: `schedule-err-${activeId}` });
+              toast.error(t("toast.failedToScheduleTask"), { id: `schedule-err-${activeId}` });
             },
           },
         );
@@ -1204,11 +1242,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             {
               onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-                announce("Subtask promoted to task");
-                toast.success(`Promoted "${task.title}" to standalone task`, {
+                announce(t("announce.subtaskPromotedToTask"));
+                toast.success(t("toast.promotedToStandalone", { title: task.title }), {
                   id: `promote-${activeId}`,
                   action: {
-                    label: "Undo",
+                    label: t("toast.undo"),
                     onClick: () => {
                       queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                       updateTask.mutate(
@@ -1222,7 +1260,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                             queryClient.invalidateQueries({
                               queryKey: dashboardTasksKey(),
                             });
-                            toast.error("Undo failed");
+                            toast.error(t("toast.undoFailed"));
                           },
                         },
                       );
@@ -1232,7 +1270,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               },
               onError: () => {
                 queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-                toast.error("Failed to promote task", { id: `promote-err-${activeId}` });
+                toast.error(t("toast.failedToPromoteTask"), { id: `promote-err-${activeId}` });
               },
             },
           );
@@ -1262,11 +1300,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
                 const taskTitle = task?.title ?? "Task";
-                announce("Task unscheduled");
-                toast.success(`Unscheduled "${taskTitle}"`, {
+                announce(t("announce.taskUnscheduled"));
+                toast.success(t("toast.taskUnscheduled", { title: taskTitle }), {
                   id: `unschedule-${activeId}`,
                   action: {
-                    label: "Undo",
+                    label: t("toast.undo"),
                     onClick: () => {
                       updateTask.mutate(
                         {
@@ -1282,7 +1320,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                             queryClient.invalidateQueries({
                               queryKey: dashboardTasksKey(),
                             });
-                            toast.error("Undo failed");
+                            toast.error(t("toast.undoFailed"));
                           },
                         },
                       );
@@ -1292,7 +1330,9 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
               },
               onError: () => {
                 queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-                toast.error("Failed to unschedule task", { id: `unschedule-err-${activeId}` });
+                toast.error(t("toast.failedToUnscheduleTask"), {
+                  id: `unschedule-err-${activeId}`,
+                });
               },
             },
           );
@@ -1331,11 +1371,11 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-              announce("Subtask promoted to task");
-              toast.success(`Promoted "${task.title}" to standalone task`, {
+              announce(t("announce.subtaskPromotedToTask"));
+              toast.success(t("toast.promotedToStandalone", { title: task.title }), {
                 id: `promote-${activeId}`,
                 action: {
-                  label: "Undo",
+                  label: t("toast.undo"),
                   onClick: () => {
                     queryClient.setQueryData(dashboardTasksKey(), previousTasks);
                     updateTask.mutate(
@@ -1349,7 +1389,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
                           queryClient.invalidateQueries({
                             queryKey: dashboardTasksKey(),
                           });
-                          toast.error("Undo failed");
+                          toast.error(t("toast.undoFailed"));
                         },
                       },
                     );
@@ -1359,7 +1399,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
             },
             onError: () => {
               queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-              toast.error("Failed to promote task", { id: `promote-err-${activeId}` });
+              toast.error(t("toast.failedToPromoteTask"), { id: `promote-err-${activeId}` });
             },
           },
         );
@@ -1382,14 +1422,14 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
         if (overTask.parent_id != null) return;
         if (overTask.is_recurring) return;
         if ((activeTask.subtasks?.length ?? 0) > 0) {
-          toast.error("A task with subtasks cannot become a subtask");
+          toast.error(t("toast.cannotNestParentAsSubtask"));
           return;
         }
 
         // Prevent circular: don't drop parent onto its own child
         const isChildOfActive = activeTask.subtasks?.some((st) => st.id === overTaskId);
         if (isChildOfActive) {
-          toast.error("Cannot make a parent into its own subtask");
+          toast.error(t("toast.cannotMakeParentOwnSubtask"));
           return;
         }
 
@@ -1441,35 +1481,38 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-              announce("Task nested as subtask");
-              toast.success(`Made "${activeTask.title}" a subtask of "${overTask.title}"`, {
-                id: `reparent-${activeId}`,
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-                    updateTask.mutate(
-                      { taskId: activeId, data: { parent_id: prevParentId } },
-                      {
-                        onSuccess: () =>
-                          queryClient.invalidateQueries({
-                            queryKey: dashboardTasksKey(),
-                          }),
-                        onError: () => {
-                          queryClient.invalidateQueries({
-                            queryKey: dashboardTasksKey(),
-                          });
-                          toast.error("Undo failed");
+              announce(t("announce.taskNestedAsSubtask"));
+              toast.success(
+                t("toast.madeSubtaskOf", { title: activeTask.title, parent: overTask.title }),
+                {
+                  id: `reparent-${activeId}`,
+                  action: {
+                    label: t("toast.undo"),
+                    onClick: () => {
+                      queryClient.setQueryData(dashboardTasksKey(), previousTasks);
+                      updateTask.mutate(
+                        { taskId: activeId, data: { parent_id: prevParentId } },
+                        {
+                          onSuccess: () =>
+                            queryClient.invalidateQueries({
+                              queryKey: dashboardTasksKey(),
+                            }),
+                          onError: () => {
+                            queryClient.invalidateQueries({
+                              queryKey: dashboardTasksKey(),
+                            });
+                            toast.error(t("toast.undoFailed"));
+                          },
                         },
-                      },
-                    );
+                      );
+                    },
                   },
                 },
-              });
+              );
             },
             onError: () => {
               queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-              toast.error("Failed to reparent task", { id: `reparent-err-${activeId}` });
+              toast.error(t("toast.failedToReparentTask"), { id: `reparent-err-${activeId}` });
             },
           },
         );
@@ -1483,6 +1526,7 @@ export function TaskDndContext({ tasks, children }: TaskDndContextProps) {
       handleInstanceDrop,
       handleBatchDrop,
       dragState.isBatchDrag,
+      t,
     ],
   );
 

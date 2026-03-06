@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Lock } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getListDomainsApiV1DomainsGetQueryKey,
   useCreateDomainApiV1DomainsPost,
@@ -291,13 +292,14 @@ function WizardNav({
   secondaryLabel?: string;
   secondaryAction?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <ProgressDots current={step} total={TOTAL_STEPS} />
       <div className="flex justify-between items-center pt-2">
         {onBack ? (
           <Button variant="outline" className="h-11 sm:h-10 px-5 rounded-xl" onClick={onBack}>
-            Back
+            {t("common.back")}
           </Button>
         ) : (
           <div />
@@ -623,6 +625,7 @@ function WelcomeStep({
   step: number;
   onGetStarted: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center text-center">
       <div className="mb-3">
@@ -631,23 +634,19 @@ function WelcomeStep({
 
       {firstName && (
         <p className="text-[1.05rem] font-medium text-muted-foreground mb-8 tracking-wide">
-          Welcome, {firstName}
+          {t("wizard.welcome", { name: firstName })}
         </p>
       )}
 
       <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl px-7 py-5 max-w-[380px] shadow-[var(--shadow-card)]">
         <p className="text-[0.88rem] text-muted-foreground leading-relaxed mb-1">
-          Calendar shows when you're busy.
+          {t("wizard.calendarBusy")}
         </p>
         <p className="text-[0.88rem] text-muted-foreground leading-relaxed mb-1">
-          Tasks show what to do.
+          {t("wizard.tasksShow")}
         </p>
         <p className="text-[0.88rem] text-foreground font-semibold leading-relaxed">
-          Whendoist shows{" "}
-          <span className="text-[var(--color-brand)] underline underline-offset-2 decoration-[var(--color-brand)]">
-            when
-          </span>{" "}
-          to do it.
+          {t("wizard.whenToDoIt")}
         </p>
       </div>
 
@@ -660,7 +659,7 @@ function WelcomeStep({
           className="h-12 sm:h-11 px-8 rounded-xl text-base"
           onClick={onGetStarted}
         >
-          Get Started
+          {t("wizard.getStarted")}
         </Button>
       </div>
     </div>
@@ -680,14 +679,17 @@ function EnergyStep({
   onBack: () => void;
   onContinue: () => void;
 }) {
+  const { t } = useTranslation();
   const [selectedMode, setSelectedMode] = useState("normal");
   const visibleClarities = CLARITY_VISIBILITY[selectedMode] ?? [];
 
   return (
     <div className="flex flex-col">
-      <h1 className="text-2xl font-bold text-center tracking-tight mb-2">Work with your energy</h1>
+      <h1 className="text-2xl font-bold text-center tracking-tight mb-2">
+        {t("wizard.energyTitle")}
+      </h1>
       <p className="text-sm font-medium text-muted-foreground text-center mb-6">
-        Filter tasks by how much focus they need
+        {t("wizard.energySubtitle")}
       </p>
 
       <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[14px] p-5 shadow-[var(--shadow-card)]">
@@ -720,7 +722,7 @@ function EnergyStep({
         {/* Preview */}
         <div className="h-px bg-border/50 my-5" />
         <p className="text-[0.7rem] font-bold uppercase tracking-[0.06em] text-muted-foreground mb-3">
-          Preview
+          {t("wizard.preview")}
         </p>
         <div>
           {PREVIEW_TASKS.map((task) => {
@@ -750,7 +752,7 @@ function EnergyStep({
         <WizardNav
           step={step}
           onBack={onBack}
-          primaryLabel="Got it, continue"
+          primaryLabel={t("wizard.gotItContinue")}
           primaryAction={onContinue}
         />
       </div>
@@ -771,13 +773,14 @@ function CalendarConnectStep({
   onBack: () => void;
   onSkip: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col">
       <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">
-        Connect your calendar
+        {t("wizard.calendarTitle")}
       </h1>
       <p className="text-sm font-medium text-muted-foreground text-center mb-5">
-        Plan tasks around your commitments
+        {t("wizard.calendarSubtitle")}
       </p>
 
       <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-5 shadow-[var(--shadow-card)]">
@@ -789,7 +792,7 @@ function CalendarConnectStep({
             <div className="text-[0.95rem] font-semibold">Google Calendar</div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-              Not connected
+              {t("common.notConnected")}
             </div>
           </div>
         </div>
@@ -801,16 +804,21 @@ function CalendarConnectStep({
             window.location.href = "/auth/google?write_scope=true";
           }}
         >
-          Connect Google Calendar
+          {t("wizard.connectGcal")}
         </Button>
       </div>
 
       <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mt-4">
         <Lock className="w-3 h-3 opacity-60" />
-        Reads your calendar to find free time. Never edits events.
+        {t("wizard.calendarTrustStatement")}
       </p>
 
-      <WizardNav step={step} onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
+      <WizardNav
+        step={step}
+        onBack={onBack}
+        secondaryLabel={t("common.skip")}
+        secondaryAction={onSkip}
+      />
     </div>
   );
 }
@@ -828,21 +836,22 @@ function TodoistStep({
   onBack: () => void;
   onSkip: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col">
-      <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">Already have tasks?</h1>
+      <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">
+        {t("wizard.todoistTitle")}
+      </h1>
       <p className="text-sm font-medium text-muted-foreground text-center mb-5">
-        Import from Todoist to start faster
+        {t("wizard.todoistSubtitle")}
       </p>
 
       <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl px-6 py-7 text-center shadow-[var(--shadow-card)]">
         <div className="flex justify-center mb-3">
           <TodoistLogo />
         </div>
-        <div className="text-base font-semibold mb-1">Import from Todoist</div>
-        <div className="text-sm text-muted-foreground mb-5">
-          Bring your projects, tasks, and labels
-        </div>
+        <div className="text-base font-semibold mb-1">{t("wizard.todoistCard")}</div>
+        <div className="text-sm text-muted-foreground mb-5">{t("wizard.todoistCardDesc")}</div>
         <Button
           variant="cta"
           className="h-12 sm:h-11 px-8 rounded-xl"
@@ -850,11 +859,16 @@ function TodoistStep({
             window.location.href = "/auth/todoist";
           }}
         >
-          Connect Todoist
+          {t("wizard.connectTodoist")}
         </Button>
       </div>
 
-      <WizardNav step={step} onBack={onBack} secondaryLabel="Skip" secondaryAction={onSkip} />
+      <WizardNav
+        step={step}
+        onBack={onBack}
+        secondaryLabel={t("common.skip")}
+        secondaryAction={onSkip}
+      />
     </div>
   );
 }
@@ -874,6 +888,7 @@ function DomainsStep({
   onSkip: () => void;
   onContinue: () => void;
 }) {
+  const { t } = useTranslation();
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<string>>(new Set());
   const [customDomains, setCustomDomains] = useState<Array<{ name: string; icon: string }>>([]);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -927,9 +942,11 @@ function DomainsStep({
 
   return (
     <div className="flex flex-col">
-      <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">Organize your life</h1>
+      <h1 className="text-2xl font-bold text-center tracking-tight mb-1.5">
+        {t("wizard.domainsTitle")}
+      </h1>
       <p className="text-sm font-medium text-muted-foreground text-center mb-5">
-        Domains are big areas of your life
+        {t("wizard.domainsSubtitle")}
       </p>
 
       <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[14px] p-4 shadow-[var(--shadow-card)]">
@@ -973,7 +990,7 @@ function DomainsStep({
               +
             </span>
             <span className="text-xs font-semibold text-muted-foreground group-hover:text-[var(--color-brand)]">
-              Add your own
+              {t("wizard.addYourOwn")}
             </span>
           </button>
         </div>
@@ -986,7 +1003,7 @@ function DomainsStep({
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 className="flex-1"
-                placeholder="Domain name..."
+                placeholder={t("wizard.domainPlaceholder")}
                 maxLength={20}
                 autoFocus
                 onKeyDown={(e) => {
@@ -1001,10 +1018,10 @@ function DomainsStep({
                 className="h-9 px-4 rounded-lg"
                 onClick={() => setIsAddingCustom(false)}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button variant="cta" className="h-9 px-4 rounded-lg" onClick={addCustomDomain}>
-                Add
+                {t("common.add")}
               </Button>
             </div>
           </div>
@@ -1014,9 +1031,9 @@ function DomainsStep({
       <WizardNav
         step={step}
         onBack={onBack}
-        primaryLabel={hasDomains ? "Continue" : undefined}
+        primaryLabel={hasDomains ? t("common.continue") : undefined}
         primaryAction={hasDomains ? onContinue : undefined}
-        secondaryLabel={hasDomains ? undefined : "Skip"}
+        secondaryLabel={hasDomains ? undefined : t("common.skip")}
         secondaryAction={hasDomains ? undefined : onSkip}
       />
     </div>
@@ -1028,24 +1045,21 @@ function DomainsStep({
 // ============================================================================
 
 function CompletionStep({ onFinish, isPending }: { onFinish: () => void; isPending: boolean }) {
+  const { t } = useTranslation();
+  const shortcut =
+    typeof navigator !== "undefined" && navigator.platform?.includes("Mac") ? "⌘K" : "Ctrl+K";
   return (
     <div className="flex flex-col items-center justify-center text-center min-h-[380px]">
       <div className="mb-6">
         <RocketIllustration />
       </div>
 
-      <h1 className="text-2xl font-bold tracking-tight mb-2">You're all set</h1>
-      <p className="text-sm font-medium text-muted-foreground mb-2">Your day awaits</p>
-
-      <p className="text-xs text-muted-foreground/70 mb-8">
-        Pro tip: press{" "}
-        <kbd className="text-[10px] font-medium bg-muted/60 border border-border/50 rounded px-1 py-0.5">
-          {typeof navigator !== "undefined" && navigator.platform?.includes("Mac")
-            ? "⌘K"
-            : "Ctrl+K"}
-        </kbd>{" "}
-        anytime to search, create tasks, or run commands
+      <h1 className="text-2xl font-bold tracking-tight mb-2">{t("wizard.completionTitle")}</h1>
+      <p className="text-sm font-medium text-muted-foreground mb-2">
+        {t("wizard.completionSubtitle")}
       </p>
+
+      <p className="text-xs text-muted-foreground/70 mb-8">{t("wizard.proTip", { shortcut })}</p>
 
       <Button
         variant="cta"
@@ -1054,7 +1068,7 @@ function CompletionStep({ onFinish, isPending }: { onFinish: () => void; isPendi
         disabled={isPending}
       >
         {isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-        Open Tasks
+        {t("wizard.openTasks")}
         <svg
           width="18"
           height="18"

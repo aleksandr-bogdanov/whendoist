@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { isTauri } from "@/hooks/use-device";
+import i18n from "@/lib/i18n";
 
 /**
  * Hook that monitors network connectivity and shows persistent toasts
@@ -12,21 +13,24 @@ export function useNetworkStatus() {
   useEffect(() => {
     const handleOffline = () => {
       wasOfflineRef.current = true;
-      toast.error("No internet connection", {
+      toast.error(i18n.t("network.offline"), {
         id: "network-status",
         duration: Number.POSITIVE_INFINITY,
         description: isTauri
-          ? "Viewing cached data. Changes will sync when reconnected."
-          : "No internet connection. Please reconnect to make changes.",
+          ? i18n.t("network.offlineTauriDesc")
+          : i18n.t("network.offlineWebDesc"),
       });
     };
 
     const handleOnline = () => {
       if (wasOfflineRef.current) {
         wasOfflineRef.current = false;
-        toast.success(isTauri ? "Back online — syncing..." : "Back online", {
-          id: "network-status",
-        });
+        toast.success(
+          isTauri ? i18n.t("network.backOnlineSyncing") : i18n.t("network.backOnline"),
+          {
+            id: "network-status",
+          },
+        );
       }
     };
 

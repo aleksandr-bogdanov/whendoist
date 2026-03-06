@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CalendarX2, Check, FastForward, Pencil, Trash2, Undo2 } from "lucide-react";
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Calendar } from "@/components/ui/calendar";
 import {
   ContextMenuItem,
@@ -40,6 +41,7 @@ function dismissContextMenu() {
  * The Reschedule date picker uses dismissContextMenu() since it's not a ContextMenuItem.
  */
 export function BatchContextMenuItems() {
+  const { t } = useTranslation();
   const selectedIds = useSelectionStore((s) => s.selectedIds);
   const clear = useSelectionStore((s) => s.clear);
   const queryClient = useQueryClient();
@@ -50,7 +52,7 @@ export function BatchContextMenuItems() {
   );
 
   const count = tasks.length + instances.length;
-  const noun = count === 1 ? "item" : "items";
+  const noun = count === 1 ? t("common.item") : t("common.items");
   const hasInstances = instances.length > 0;
   const hasTasks = tasks.length > 0;
   const allTasksCompleted =
@@ -127,13 +129,18 @@ export function BatchContextMenuItems() {
   const handleDelete = useCallback(() => {
     const subtaskCount = tasks.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
     if (subtaskCount > 0) {
-      if (!window.confirm(`Delete ${tasks.length} tasks and ${subtaskCount} subtasks?`)) return;
+      if (
+        !window.confirm(
+          t("task.deleteDialog.batchMessage", { taskCount: tasks.length, subtaskCount }),
+        )
+      )
+        return;
     } else if (tasks.length > 3) {
-      if (!window.confirm(`Delete ${tasks.length} tasks?`)) return;
+      if (!window.confirm(t("task.deleteDialog.batchSimple", { count: tasks.length }))) return;
     }
     batchDelete(queryClient, tasks);
     clear();
-  }, [tasks, queryClient, clear]);
+  }, [tasks, queryClient, clear, t]);
 
   if (count === 0) return null;
 
@@ -142,12 +149,12 @@ export function BatchContextMenuItems() {
       {/* Complete / Reopen */}
       <ContextMenuItem onSelect={handleComplete}>
         <Check className="h-3.5 w-3.5 mr-2" />
-        {allCompleted ? "Reopen" : "Complete"} {count} {noun}
+        {allCompleted ? t("batch.reopen") : t("batch.complete")} {count} {noun}
       </ContextMenuItem>
       {anyCompleted && !allCompleted && (
         <ContextMenuItem onSelect={handleReopen}>
           <Undo2 className="h-3.5 w-3.5 mr-2" />
-          Reopen completed
+          {t("batch.reopenCompleted")}
         </ContextMenuItem>
       )}
 
@@ -157,7 +164,8 @@ export function BatchContextMenuItems() {
       <ContextMenuSub>
         <ContextMenuSubTrigger>
           <CalendarDays className="h-3.5 w-3.5 mr-2" />
-          Reschedule{"\u2026"}
+          {t("batch.reschedule")}
+          {"\u2026"}
         </ContextMenuSubTrigger>
         <ContextMenuSubContent className="p-0 min-w-0">
           <Calendar mode="single" onSelect={handleReschedule} defaultMonth={new Date()} />
@@ -168,7 +176,7 @@ export function BatchContextMenuItems() {
       {anyScheduled && (
         <ContextMenuItem onSelect={handleUnschedule}>
           <CalendarX2 className="h-3.5 w-3.5 mr-2" />
-          Unschedule
+          {t("batch.unschedule")}
         </ContextMenuItem>
       )}
 
@@ -181,7 +189,7 @@ export function BatchContextMenuItems() {
         }}
       >
         <Pencil className="h-3.5 w-3.5 mr-2" />
-        Edit{"\u2026"}
+        {t("batch.editMore")}
       </ContextMenuItem>
 
       <ContextMenuSeparator />
@@ -190,7 +198,8 @@ export function BatchContextMenuItems() {
       {hasInstances && (
         <ContextMenuItem onSelect={handleSkip}>
           <FastForward className="h-3.5 w-3.5 mr-2" />
-          Skip {instances.length} {instances.length === 1 ? "instance" : "instances"}
+          {t("batch.skipInstances")} {instances.length}{" "}
+          {instances.length === 1 ? t("common.instance") : t("common.instances")}
         </ContextMenuItem>
       )}
 
@@ -201,7 +210,8 @@ export function BatchContextMenuItems() {
           className="text-destructive focus:text-destructive"
         >
           <Trash2 className="h-3.5 w-3.5 mr-2" />
-          Delete {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+          {t("batch.delete")} {tasks.length}{" "}
+          {tasks.length === 1 ? t("common.task") : t("common.tasks")}
         </ContextMenuItem>
       )}
     </>

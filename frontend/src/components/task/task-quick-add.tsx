@@ -1,5 +1,6 @@
 import { Loader2, Mic, MicOff, X } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse } from "@/api/model";
 import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomplete";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ export const PILL_ICONS: Record<string, string> = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps) {
+  const { t } = useTranslation();
   const {
     inputRef,
     rawInput,
@@ -137,10 +139,8 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
     >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Quick Add Task</DialogTitle>
-          <DialogDescription>
-            Type naturally — metadata is detected automatically.
-          </DialogDescription>
+          <DialogTitle>{t("task.quickAdd.title")}</DialogTitle>
+          <DialogDescription>{t("task.quickAdd.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2.5">
@@ -152,7 +152,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
                 value={rawInput}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g. Fix login #Work !high 30m tomorrow"
+                placeholder={t("task.quickAdd.placeholder")}
                 className="flex-1"
                 autoFocus
               />
@@ -169,7 +169,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
                       startListening(rawInput);
                     }
                   }}
-                  aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                  aria-label={isListening ? t("voice.stopInput") : t("voice.startInput")}
                 >
                   {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
@@ -201,17 +201,18 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
             <div className="flex items-start gap-1.5">
               <div className="flex-1 text-[11px] text-muted-foreground leading-relaxed space-y-0.5">
                 <p>
-                  <Kbd>#</Kbd> domain <Kbd>!</Kbd> impact <Kbd>?</Kbd> clarity
+                  <Kbd>#</Kbd> {t("task.quickAdd.hintDomain")} <Kbd>!</Kbd>{" "}
+                  {t("task.quickAdd.hintImpact")} <Kbd>?</Kbd> {t("task.quickAdd.hintClarity")}
                 </p>
                 <p>
-                  <Kbd>30m</Kbd> / <Kbd>1h</Kbd> duration
+                  <Kbd>30m</Kbd> / <Kbd>1h</Kbd> {t("task.quickAdd.hintDuration")}
                 </p>
                 <p>
-                  <Kbd>tomorrow</Kbd> / <Kbd>jan 15</Kbd> / <Kbd>feb 13 at 3</Kbd> scheduled
-                  datetime
+                  <Kbd>tomorrow</Kbd> / <Kbd>jan 15</Kbd> / <Kbd>feb 13 at 3</Kbd>{" "}
+                  {t("task.quickAdd.hintSchedule")}
                 </p>
                 <p>
-                  <Kbd>{"//"}</Kbd> description
+                  <Kbd>{"//"}</Kbd> {t("task.quickAdd.hintNotes")}
                 </p>
               </div>
               <button
@@ -242,12 +243,12 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
                 localStorage.setItem("qa-keep-open", val ? "1" : "0");
               }}
             />
-            Keep open
+            {t("task.quickAdd.keepOpen")}
           </label>
 
           <Button onClick={handleSave} disabled={isPending || !parsed.title.trim()}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create
+            {t("task.quickAdd.create")}
           </Button>
         </DialogFooter>
       </DialogContent>

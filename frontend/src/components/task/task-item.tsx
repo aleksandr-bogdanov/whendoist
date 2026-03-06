@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { type MouseEvent, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { InstanceResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 import {
@@ -87,6 +88,7 @@ export function TaskItem({
   pendingInstance,
   orderedIds,
 }: TaskItemProps) {
+  const { t } = useTranslation();
   const {
     selectedTaskId,
     selectTask,
@@ -209,20 +211,20 @@ export function TaskItem({
         {
           onSuccess: () => {
             invalidateAll();
-            announce("Instance completed");
+            announce(t("announce.instanceCompleted"));
             const dateHint = new Date(
               `${pendingInstance.instance_date}T00:00:00`,
             ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-            toast.success(`Completed "${task.title}" · ${dateHint}`, {
+            toast.success(t("toast.instanceCompleted", { title: task.title, date: dateHint }), {
               id: `complete-inst-${pendingInstance.id}`,
               action: {
-                label: "Undo",
+                label: t("toast.undo"),
                 onClick: () => {
                   uncompleteInstance.mutate(
                     { instanceId: pendingInstance.id },
                     {
                       onSuccess: () => invalidateAll(),
-                      onError: () => toast.error("Undo failed"),
+                      onError: () => toast.error(t("toast.undoFailed")),
                     },
                   );
                 },
@@ -234,7 +236,7 @@ export function TaskItem({
               getListInstancesApiV1InstancesGetQueryKey(),
               previousInstances,
             );
-            toast.error("Failed to complete instance", {
+            toast.error(t("toast.failedToCompleteInstance"), {
               id: `complete-inst-err-${pendingInstance.id}`,
             });
           },
@@ -269,30 +271,35 @@ export function TaskItem({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-          announce(isCompleted ? "Task reopened" : "Task completed");
-          toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
-            id: `complete-${task.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                toggleComplete.mutate(
-                  { taskId: task.id, data: null },
-                  {
-                    onSuccess: () => {
-                      queryClient.invalidateQueries({
-                        queryKey: dashboardTasksKey(),
-                      });
+          announce(isCompleted ? t("announce.taskReopened") : t("announce.taskCompleted"));
+          toast.success(
+            isCompleted
+              ? t("toast.taskReopened", { title: task.title })
+              : t("toast.taskCompleted", { title: task.title }),
+            {
+              id: `complete-${task.id}`,
+              action: {
+                label: t("toast.undo"),
+                onClick: () => {
+                  toggleComplete.mutate(
+                    { taskId: task.id, data: null },
+                    {
+                      onSuccess: () => {
+                        queryClient.invalidateQueries({
+                          queryKey: dashboardTasksKey(),
+                        });
+                      },
+                      onError: () => toast.error(t("toast.undoFailed")),
                     },
-                    onError: () => toast.error("Undo failed"),
-                  },
-                );
+                  );
+                },
               },
             },
-          });
+          );
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to update task", { id: `complete-err-${task.id}` });
+          toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${task.id}` });
         },
       },
     );
@@ -325,16 +332,16 @@ export function TaskItem({
             const dateHint = new Date(
               `${pendingInstance.instance_date}T00:00:00`,
             ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-            toast.success(`Completed "${task.title}" · ${dateHint}`, {
+            toast.success(t("toast.instanceCompleted", { title: task.title, date: dateHint }), {
               id: `complete-inst-${pendingInstance.id}`,
               action: {
-                label: "Undo",
+                label: t("toast.undo"),
                 onClick: () => {
                   uncompleteInstance.mutate(
                     { instanceId: pendingInstance.id },
                     {
                       onSuccess: () => invalidateAll(),
-                      onError: () => toast.error("Undo failed"),
+                      onError: () => toast.error(t("toast.undoFailed")),
                     },
                   );
                 },
@@ -346,7 +353,7 @@ export function TaskItem({
               getListInstancesApiV1InstancesGetQueryKey(),
               previousInstances,
             );
-            toast.error("Failed to complete instance", {
+            toast.error(t("toast.failedToCompleteInstance"), {
               id: `complete-inst-err-${pendingInstance.id}`,
             });
           },
@@ -377,30 +384,35 @@ export function TaskItem({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-          announce(isCompleted ? "Task reopened" : "Task completed");
-          toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
-            id: `complete-${task.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                toggleComplete.mutate(
-                  { taskId: task.id, data: null },
-                  {
-                    onSuccess: () => {
-                      queryClient.invalidateQueries({
-                        queryKey: dashboardTasksKey(),
-                      });
+          announce(isCompleted ? t("announce.taskReopened") : t("announce.taskCompleted"));
+          toast.success(
+            isCompleted
+              ? t("toast.taskReopened", { title: task.title })
+              : t("toast.taskCompleted", { title: task.title }),
+            {
+              id: `complete-${task.id}`,
+              action: {
+                label: t("toast.undo"),
+                onClick: () => {
+                  toggleComplete.mutate(
+                    { taskId: task.id, data: null },
+                    {
+                      onSuccess: () => {
+                        queryClient.invalidateQueries({
+                          queryKey: dashboardTasksKey(),
+                        });
+                      },
+                      onError: () => toast.error(t("toast.undoFailed")),
                     },
-                    onError: () => toast.error("Undo failed"),
-                  },
-                );
+                  );
+                },
               },
             },
-          });
+          );
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to update task", { id: `complete-err-${task.id}` });
+          toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${task.id}` });
         },
       },
     );
@@ -415,6 +427,7 @@ export function TaskItem({
     completeInstance,
     uncompleteInstance,
     invalidateAll,
+    t,
   ]);
 
   const handleMenuSchedule = useCallback(() => {
@@ -438,11 +451,11 @@ export function TaskItem({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-          announce("Task unscheduled");
-          toast.success(`Unscheduled "${task.title}"`, {
+          announce(t("announce.taskUnscheduled"));
+          toast.success(t("toast.taskUnscheduled", { title: task.title }), {
             id: `unschedule-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
                   old?.map((t) =>
@@ -466,12 +479,12 @@ export function TaskItem({
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to unschedule task", { id: `unschedule-err-${task.id}` });
+          toast.error(t("toast.failedToUnscheduleTask"), { id: `unschedule-err-${task.id}` });
         },
       },
     );
     setMenuOpen(false);
-  }, [task, updateTask, queryClient]);
+  }, [task, updateTask, queryClient, t]);
 
   const handleMenuSkip = useCallback(() => {
     if (!pendingInstance) return;
@@ -490,15 +503,15 @@ export function TaskItem({
           queryClient.invalidateQueries({
             queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
           });
-          announce("Instance skipped");
+          announce(t("announce.instanceSkipped"));
           const dateHint = new Date(`${pendingInstance.instance_date}T00:00:00`).toLocaleDateString(
             "en-US",
             { month: "short", day: "numeric" },
           );
-          toast.success(`Skipped "${task.title}" · ${dateHint}`, {
+          toast.success(t("toast.instanceSkipped", { title: task.title, date: dateHint }), {
             id: `skip-inst-${pendingInstance.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 unskipInstance.mutate(
                   { instanceId: pendingInstance.id },
@@ -514,7 +527,7 @@ export function TaskItem({
                         queryKey: getPendingPastCountApiV1InstancesPendingPastCountGetQueryKey(),
                       });
                     },
-                    onError: () => toast.error("Undo failed"),
+                    onError: () => toast.error(t("toast.undoFailed")),
                   },
                 );
               },
@@ -523,12 +536,14 @@ export function TaskItem({
         },
         onError: () => {
           queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
-          toast.error("Failed to skip instance", { id: `skip-inst-err-${pendingInstance.id}` });
+          toast.error(t("toast.failedToSkipInstance"), {
+            id: `skip-inst-err-${pendingInstance.id}`,
+          });
         },
       },
     );
     setMenuOpen(false);
-  }, [task, pendingInstance, skipInstance, unskipInstance, queryClient]);
+  }, [task, pendingInstance, skipInstance, unskipInstance, queryClient, t]);
 
   const handleMenuDelete = useCallback(() => {
     deleteTask.mutate(
@@ -536,11 +551,11 @@ export function TaskItem({
       {
         onSuccess: () => {
           invalidateAll();
-          announce("Task deleted");
-          toast.success(`Deleted "${task.title}"`, {
+          announce(t("announce.taskDeleted"));
+          toast.success(t("toast.taskDeleted", { title: task.title }), {
             id: `delete-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 restoreTask.mutate(
                   { taskId: task.id },
@@ -548,7 +563,7 @@ export function TaskItem({
                     onSuccess: () => invalidateAll(),
                     onError: () => {
                       invalidateAll();
-                      toast.error("Undo failed");
+                      toast.error(t("toast.undoFailed"));
                     },
                   },
                 );
@@ -556,11 +571,11 @@ export function TaskItem({
             },
           });
         },
-        onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),
+        onError: () => toast.error(t("toast.failedToDeleteTask"), { id: `delete-err-${task.id}` }),
       },
     );
     setMenuOpen(false);
-  }, [task, deleteTask, restoreTask, invalidateAll]);
+  }, [task, deleteTask, restoreTask, invalidateAll, t]);
 
   const scheduledDate = task.scheduled_date;
   // For recurring tasks with a pending instance, use instance date for overdue display
@@ -591,34 +606,38 @@ export function TaskItem({
     <>
       <ContextMenuItem onSelect={handleMenuEdit}>
         <Pencil className="h-3.5 w-3.5 mr-2" />
-        Edit
+        {t("task.action.edit")}
       </ContextMenuItem>
       <ContextMenuItem onSelect={handleMenuComplete}>
         <Check className="h-3.5 w-3.5 mr-2" />
-        {pendingInstance ? "Complete this one" : isCompleted ? "Reopen" : "Complete"}
+        {pendingInstance
+          ? t("task.action.completeThisOne")
+          : isCompleted
+            ? t("task.action.reopen")
+            : t("task.action.complete")}
       </ContextMenuItem>
       {pendingInstance && (
         <ContextMenuItem onSelect={handleMenuSkip}>
           <SkipForward className="h-3.5 w-3.5 mr-2" />
-          Skip this one
+          {t("task.action.skipThisOne")}
         </ContextMenuItem>
       )}
       {!task.scheduled_date && (
         <ContextMenuItem onSelect={handleMenuSchedule}>
           <CalendarPlus className="h-3.5 w-3.5 mr-2" />
-          Schedule
+          {t("task.action.schedule")}
         </ContextMenuItem>
       )}
       {task.scheduled_date && !task.is_recurring && (
         <ContextMenuItem onSelect={handleMenuUnschedule}>
           <CalendarOff className="h-3.5 w-3.5 mr-2" />
-          Unschedule
+          {t("task.action.unschedule")}
         </ContextMenuItem>
       )}
       {canHaveSubtasks && (
         <ContextMenuItem onSelect={() => requestSubtaskAdd(task.id)}>
           <Plus className="h-3.5 w-3.5 mr-2" />
-          Add subtask
+          {t("task.action.addSubtask")}
         </ContextMenuItem>
       )}
       <ContextMenuSeparator />
@@ -627,7 +646,7 @@ export function TaskItem({
         className="text-destructive focus:text-destructive"
       >
         <Trash2 className="h-3.5 w-3.5 mr-2" />
-        Delete
+        {t("task.action.delete")}
       </ContextMenuItem>
     </>
   );
@@ -639,7 +658,9 @@ export function TaskItem({
         <div className="relative z-20 flex justify-center pointer-events-none">
           <span className="absolute -bottom-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#6D5EF6] text-white text-[10px] font-semibold shadow-lg whitespace-nowrap">
             <CornerDownRight className="h-3 w-3" />
-            {dndState.activeTask?.parent_id != null ? "Change parent task" : "Make a subtask"}
+            {dndState.activeTask?.parent_id != null
+              ? t("task.changeParent")
+              : t("task.makeSubtask")}
           </span>
         </div>
       )}
@@ -716,13 +737,17 @@ export function TaskItem({
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
                   disabled={isCompletePending}
-                  title={isCompleted ? "Mark as pending" : "Mark as complete"}
+                  title={isCompleted ? t("task.action.markPending") : t("task.action.markComplete")}
                 >
                   <svg
                     viewBox="0 0 24 24"
                     role="img"
                     aria-label={
-                      isMultiSelected ? "Selected" : isCompleted ? "Completed" : "Not completed"
+                      isMultiSelected
+                        ? t("task.aria.selected")
+                        : isCompleted
+                          ? t("task.aria.completed")
+                          : t("task.aria.notCompleted")
                     }
                     className={cn(
                       "h-[18px] w-[18px] transition-colors",
@@ -826,8 +851,8 @@ export function TaskItem({
                     className="relative z-10 inline-flex items-center"
                     title={
                       hideCompletedSubtasks.has(task.id)
-                        ? "Show completed subtasks"
-                        : "Hide completed subtasks"
+                        ? t("task.showCompletedSubtasks")
+                        : t("task.hideCompletedSubtasks")
                     }
                   >
                     <Badge
@@ -854,7 +879,7 @@ export function TaskItem({
                       "hidden sm:flex",
                       !hasSubtasks && "group-hover:opacity-50 hover:!opacity-100",
                     )}
-                    title="Add subtask"
+                    title={t("task.action.addSubtask")}
                   >
                     <Plus className="h-3 w-3 text-muted-foreground" />
                   </button>
@@ -926,7 +951,7 @@ export function TaskItem({
                   <button
                     type="button"
                     className="hidden sm:flex flex-shrink-0 p-0.5 rounded hover:bg-[rgba(109,94,246,0.06)] relative z-10 opacity-0 group-hover:opacity-100 transition-opacity w-[var(--col-actions)] justify-center"
-                    title="Task actions"
+                    title={t("task.taskActions")}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                   >
@@ -937,28 +962,32 @@ export function TaskItem({
               <DropdownMenuContent align="start" className="min-w-[140px]">
                 <DropdownMenuItem onSelect={handleMenuEdit}>
                   <Pencil className="h-3.5 w-3.5 mr-2" />
-                  Edit
+                  {t("task.action.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={handleMenuComplete}>
                   <Check className="h-3.5 w-3.5 mr-2" />
-                  {pendingInstance ? "Complete this one" : isCompleted ? "Reopen" : "Complete"}
+                  {pendingInstance
+                    ? t("task.action.completeThisOne")
+                    : isCompleted
+                      ? t("task.action.reopen")
+                      : t("task.action.complete")}
                 </DropdownMenuItem>
                 {pendingInstance && (
                   <DropdownMenuItem onSelect={handleMenuSkip}>
                     <SkipForward className="h-3.5 w-3.5 mr-2" />
-                    Skip this one
+                    {t("task.action.skipThisOne")}
                   </DropdownMenuItem>
                 )}
                 {!task.scheduled_date && (
                   <DropdownMenuItem onSelect={handleMenuSchedule}>
                     <CalendarPlus className="h-3.5 w-3.5 mr-2" />
-                    Schedule
+                    {t("task.action.schedule")}
                   </DropdownMenuItem>
                 )}
                 {task.scheduled_date && !task.is_recurring && (
                   <DropdownMenuItem onSelect={handleMenuUnschedule}>
                     <CalendarOff className="h-3.5 w-3.5 mr-2" />
-                    Unschedule
+                    {t("task.action.unschedule")}
                   </DropdownMenuItem>
                 )}
                 {canHaveSubtasks && (
@@ -969,7 +998,7 @@ export function TaskItem({
                     }}
                   >
                     <Plus className="h-3.5 w-3.5 mr-2" />
-                    Add subtask
+                    {t("task.action.addSubtask")}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -978,7 +1007,7 @@ export function TaskItem({
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-2" />
-                  Delete
+                  {t("task.action.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -998,7 +1027,7 @@ export function TaskItem({
           <svg
             viewBox="0 0 24 24"
             role="img"
-            aria-label="Placeholder"
+            aria-label={t("task.aria.placeholder")}
             className="h-[15px] w-[15px] flex-shrink-0"
           >
             <circle
@@ -1105,6 +1134,7 @@ interface SubtaskItemProps {
 }
 
 function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }: SubtaskItemProps) {
+  const { t } = useTranslation();
   const { selectedTaskId, selectTask } = useUIStore();
   const multiSelectionId = taskSelectionId(subtask.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(multiSelectionId));
@@ -1155,11 +1185,11 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to update task", { id: `complete-err-${subtask.id}` });
+          toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${subtask.id}` });
         },
       },
     );
-  }, [subtask.id, isCompleted, queryClient, toggleComplete]);
+  }, [subtask.id, isCompleted, queryClient, toggleComplete, t]);
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1199,11 +1229,11 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-          announce("Subtask deleted");
-          toast.success(`Deleted "${subtask.title}"`, {
+          announce(t("announce.taskDeleted"));
+          toast.success(t("toast.taskDeleted", { title: subtask.title }), {
             id: `delete-${subtask.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 restoreTask.mutate(
                   { taskId: subtask.id },
@@ -1212,7 +1242,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
                       queryClient.invalidateQueries({
                         queryKey: dashboardTasksKey(),
                       }),
-                    onError: () => toast.error("Undo failed"),
+                    onError: () => toast.error(t("toast.undoFailed")),
                   },
                 );
               },
@@ -1221,21 +1251,21 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to delete subtask", { id: `delete-err-${subtask.id}` });
+          toast.error(t("toast.failedToDeleteTask"), { id: `delete-err-${subtask.id}` });
         },
       },
     );
-  }, [subtask, parentId, deleteTask, restoreTask, queryClient]);
+  }, [subtask, parentId, deleteTask, restoreTask, queryClient, t]);
 
   const contextMenuItems = (
     <>
       <ContextMenuItem onSelect={handleMenuEdit}>
         <Pencil className="h-3.5 w-3.5 mr-2" />
-        Edit
+        {t("task.action.edit")}
       </ContextMenuItem>
       <ContextMenuItem onSelect={handleMenuComplete}>
         <Check className="h-3.5 w-3.5 mr-2" />
-        {isCompleted ? "Reopen" : "Complete"}
+        {isCompleted ? t("task.action.reopen") : t("task.action.complete")}
       </ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuItem
@@ -1243,7 +1273,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
         className="text-destructive focus:text-destructive"
       >
         <Trash2 className="h-3.5 w-3.5 mr-2" />
-        Delete
+        {t("task.action.delete")}
       </ContextMenuItem>
     </>
   );
@@ -1300,12 +1330,12 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
                 className="flex-shrink-0 cursor-pointer group/cb"
                 onClick={handleToggleComplete}
                 onPointerDown={(e) => e.stopPropagation()}
-                title={isCompleted ? "Mark as pending" : "Mark as complete"}
+                title={isCompleted ? t("task.action.markPending") : t("task.action.markComplete")}
               >
                 <svg
                   viewBox="0 0 24 24"
                   role="img"
-                  aria-label={isCompleted ? "Completed" : "Not completed"}
+                  aria-label={isCompleted ? t("task.aria.completed") : t("task.aria.notCompleted")}
                   className="h-[15px] w-[15px] transition-colors"
                 >
                   {isCompleted ? (
@@ -1394,11 +1424,11 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
             <DropdownMenuContent align="start" className="min-w-[140px]">
               <DropdownMenuItem onSelect={handleMenuEdit}>
                 <Pencil className="h-3.5 w-3.5 mr-2" />
-                Edit
+                {t("task.action.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={handleMenuComplete}>
                 <Check className="h-3.5 w-3.5 mr-2" />
-                {isCompleted ? "Reopen" : "Complete"}
+                {isCompleted ? t("task.action.reopen") : t("task.action.complete")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -1406,7 +1436,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5 mr-2" />
-                Delete
+                {t("task.action.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

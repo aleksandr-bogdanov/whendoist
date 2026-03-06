@@ -4,6 +4,7 @@ import type React from "react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { isTauri } from "@/hooks/use-device";
+import i18n from "@/lib/i18n";
 import { queryClient } from "@/lib/query-client";
 import { routeTree } from "./routeTree.gen";
 import "@/styles/fonts.css";
@@ -34,19 +35,19 @@ function DefaultErrorComponent({ error }: { error: Error }) {
     <div className="flex h-[var(--app-height,100vh)] items-center justify-center p-8">
       <div className="text-center space-y-4 max-w-sm">
         <h1 className="text-lg font-semibold">
-          {isChunkError ? "New version available" : "Something went wrong"}
+          {isChunkError ? i18n.t("app.newVersionAvailable") : i18n.t("app.somethingWentWrong")}
         </h1>
         <p className="text-sm text-muted-foreground">
           {isChunkError
-            ? "A newer version of Whendoist is available."
-            : error.message || "An unexpected error occurred."}
+            ? i18n.t("app.newerVersionMessage")
+            : error.message || i18n.t("app.unexpectedError")}
         </p>
         <button
           type="button"
           onClick={() => window.location.reload()}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
-          {isChunkError ? "Update" : "Reload"}
+          {isChunkError ? i18n.t("app.update") : i18n.t("app.reload")}
         </button>
       </div>
     </div>

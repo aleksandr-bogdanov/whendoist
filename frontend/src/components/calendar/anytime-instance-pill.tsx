@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Pencil, SkipForward, Undo2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { InstanceResponse, TaskResponse } from "@/api/model";
 import {
@@ -35,6 +36,7 @@ export function AnytimeInstancePill({
   onTaskClick,
   orderedIds,
 }: AnytimeInstancePillProps) {
+  const { t } = useTranslation();
   const selectionId = instanceSelectionId(instance.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
 
@@ -67,7 +69,7 @@ export function AnytimeInstancePill({
           onSuccess: () => {
             invalidate();
             announce("Instance reopened");
-            toast.success(`Reopened "${instance.task_title}"`, {
+            toast.success(t("toast.instanceReopened", { title: instance.task_title }), {
               id: `inst-uncomplete-${instance.id}`,
             });
           },
@@ -76,7 +78,7 @@ export function AnytimeInstancePill({
               getListInstancesApiV1InstancesGetQueryKey(),
               previousInstances,
             );
-            toast.error("Failed to reopen instance");
+            toast.error(t("toast.failedToReopenInstance"));
           },
         },
       );
@@ -87,7 +89,7 @@ export function AnytimeInstancePill({
           onSuccess: () => {
             invalidate();
             announce("Instance completed");
-            toast.success(`Completed "${instance.task_title}"`, {
+            toast.success(t("toast.taskCompleted", { title: instance.task_title }), {
               id: `inst-complete-${instance.id}`,
             });
           },
@@ -96,7 +98,7 @@ export function AnytimeInstancePill({
               getListInstancesApiV1InstancesGetQueryKey(),
               previousInstances,
             );
-            toast.error("Failed to complete instance");
+            toast.error(t("toast.failedToCompleteInstance"));
           },
         },
       );
@@ -120,7 +122,7 @@ export function AnytimeInstancePill({
           onSuccess: () => {
             invalidate();
             announce("Instance unskipped");
-            toast.success(`Unskipped "${instance.task_title}"`, {
+            toast.success(t("toast.instanceUnskipped", { title: instance.task_title }), {
               id: `inst-unskip-${instance.id}`,
             });
           },
@@ -129,7 +131,7 @@ export function AnytimeInstancePill({
               getListInstancesApiV1InstancesGetQueryKey(),
               previousInstances,
             );
-            toast.error("Failed to unskip instance");
+            toast.error(t("toast.failedToUnskipInstance"));
           },
         },
       );
@@ -139,15 +141,17 @@ export function AnytimeInstancePill({
         {
           onSuccess: () => {
             invalidate();
-            announce("Instance skipped");
-            toast.success(`Skipped "${instance.task_title}"`, { id: `inst-skip-${instance.id}` });
+            announce(t("announce.instanceSkipped"));
+            toast.success(t("toast.instanceSkippedShort", { title: instance.task_title }), {
+              id: `inst-skip-${instance.id}`,
+            });
           },
           onError: () => {
             queryClient.setQueryData(
               getListInstancesApiV1InstancesGetQueryKey(),
               previousInstances,
             );
-            toast.error("Failed to skip instance");
+            toast.error(t("toast.failedToSkipInstance"));
           },
         },
       );
@@ -200,12 +204,12 @@ export function AnytimeInstancePill({
             {parentTask && (
               <ContextMenuItem onSelect={() => onTaskClick?.(parentTask)}>
                 <Pencil className="h-3.5 w-3.5 mr-2" />
-                Edit Series
+                {t("task.action.editSeries")}
               </ContextMenuItem>
             )}
             <ContextMenuItem onSelect={handleComplete}>
               <Check className="h-3.5 w-3.5 mr-2" />
-              {isCompleted ? "Uncomplete" : "Complete"}
+              {isCompleted ? t("task.action.uncomplete") : t("task.action.complete")}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem onSelect={handleSkip}>
@@ -214,7 +218,7 @@ export function AnytimeInstancePill({
               ) : (
                 <SkipForward className="h-3.5 w-3.5 mr-2" />
               )}
-              {isSkipped ? "Unskip" : "Skip"}
+              {isSkipped ? t("common.unskip") : t("common.skip")}
             </ContextMenuItem>
           </>
         )}

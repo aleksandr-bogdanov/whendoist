@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { AlertTriangle, CalendarClock, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { InstanceResponse, TaskResponse } from "@/api/model";
 import { useListInstancesApiV1InstancesGet } from "@/api/queries/instances/instances";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -20,6 +21,7 @@ interface ScheduledSectionProps {
 }
 
 export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledSectionProps) {
+  const { t } = useTranslation();
   const { showScheduled, toggleShowScheduled } = useUIStore();
   const timezone = useTimezone();
 
@@ -154,7 +156,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
           )}
         >
           <CalendarClock className="h-4 w-4 text-muted-foreground" />
-          <span className="flex-1 text-left">Scheduled</span>
+          <span className="flex-1 text-left">{t("task.section.scheduled")}</span>
           <span className="text-xs text-muted-foreground tabular-nums">{tasks.length}</span>
           <ChevronDown
             className={cn(
@@ -172,7 +174,7 @@ export function ScheduledSection({ tasks, onSelectTask, onEditTask }: ScheduledS
             <div className="rounded-md bg-destructive/5 border border-destructive/15 py-1">
               <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-destructive">
                 <AlertTriangle className="h-3 w-3" />
-                Overdue
+                {t("task.section.overdue")}
                 <span className="text-destructive/60 font-normal tabular-nums">{overdueCount}</span>
               </div>
               {filteredOverdueGroups.map((group) => (

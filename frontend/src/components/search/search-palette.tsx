@@ -11,6 +11,7 @@ import {
   Search,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
@@ -179,6 +180,7 @@ function ShortcutBadge({ shortcut }: { shortcut: string }) {
 /* ------------------------------------------------------------------ */
 
 export function SearchPalette() {
+  const { t } = useTranslation();
   const searchOpen = useUIStore((s) => s.searchOpen);
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
   const selectTask = useUIStore((s) => s.selectTask);
@@ -358,7 +360,7 @@ export function SearchPalette() {
     if (todayCount > 0)
       stats.push({
         type: "stat",
-        label: `${todayCount} task${todayCount === 1 ? "" : "s"} today`,
+        label: t("search.statsToday", { count: todayCount }),
         count: todayCount,
         to: "/dashboard",
         icon: CalendarCheck,
@@ -366,7 +368,7 @@ export function SearchPalette() {
     if (overdueCount > 0)
       stats.push({
         type: "stat",
-        label: `${overdueCount} overdue`,
+        label: t("search.statsOverdue", { count: overdueCount }),
         count: overdueCount,
         to: "/dashboard",
         icon: AlertTriangle,
@@ -374,13 +376,13 @@ export function SearchPalette() {
     if (thoughtCount > 0)
       stats.push({
         type: "stat",
-        label: `${thoughtCount} thought${thoughtCount === 1 ? "" : "s"}`,
+        label: t("search.statsThoughts", { count: thoughtCount }),
         count: thoughtCount,
         to: "/thoughts",
         icon: Lightbulb,
       });
     return stats;
-  }, [searchQuery, isCommandMode, tasks]);
+  }, [searchQuery, isCommandMode, tasks, t]);
 
   // Group task results: Tasks (pending/scheduled), Thoughts, Completed
   const grouped = useMemo(() => {
@@ -833,7 +835,7 @@ export function SearchPalette() {
     return (
       <div>
         <div className="px-3 pt-3 pb-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-          Create
+          {t("search.sectionCreate")}
         </div>
         {/* Create task */}
         <button
@@ -850,7 +852,7 @@ export function SearchPalette() {
           <div className="flex items-center gap-2">
             <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="flex-1 min-w-0 truncate">
-              Create task &ldquo;{parsed.title.trim()}&rdquo;
+              {t("search.createTask", { title: parsed.title.trim() })}
             </span>
             <kbd className="ml-auto shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
               &crarr;
@@ -878,7 +880,7 @@ export function SearchPalette() {
         >
           <Lightbulb className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 min-w-0 truncate">
-            Capture thought &ldquo;{parsed.title.trim()}&rdquo;
+            {t("search.captureThought", { title: parsed.title.trim() })}
           </span>
           <kbd className="ml-auto shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded border border-border bg-muted text-[10px] font-mono text-muted-foreground">
             {mac ? "\u2318" : "Ctrl+"}↵
@@ -901,7 +903,7 @@ export function SearchPalette() {
       <DialogContent
         showCloseButton={false}
         className="top-[15%] translate-y-0 p-0 gap-0 sm:max-w-lg"
-        aria-label="Search tasks and commands"
+        aria-label={t("search.title")}
       >
         {drilldownResult ? (
           /* ---- Task action drilldown ---- */
@@ -923,7 +925,7 @@ export function SearchPalette() {
                   value={rawInput}
                   onChange={handleSmartInputChange}
                   onKeyDown={handleKeyDown}
-                  placeholder="Search, create, or type > for commands..."
+                  placeholder={t("search.placeholder")}
                   className="flex-1 h-11 bg-transparent outline-none text-base sm:text-sm placeholder:text-muted-foreground"
                   autoFocus
                 />
@@ -938,7 +940,7 @@ export function SearchPalette() {
                         startListening(rawInput);
                       }
                     }}
-                    aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                    aria-label={isListening ? t("voice.stopInput") : t("voice.startInput")}
                   >
                     {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                   </button>
@@ -984,18 +986,18 @@ export function SearchPalette() {
             <div ref={listRef} className="max-h-[50vh] overflow-y-auto">
               {showNoResults ? (
                 <div className="py-8 text-center text-sm text-muted-foreground">
-                  {isCommandMode ? "No commands found" : "No results found"}
+                  {isCommandMode ? t("search.noCommandsFound") : t("search.noResultsFound")}
                 </div>
               ) : isEmptyState ? (
                 /* Empty state: recents + right now */
                 hasAnyResults ? (
                   <>
-                    {renderTaskSection("Recent", recentResults)}
-                    {renderStatSection("Right now", rightNowStats)}
+                    {renderTaskSection(t("search.sectionRecent"), recentResults)}
+                    {renderStatSection(t("search.sectionRightNow"), rightNowStats)}
                   </>
                 ) : (
                   <div className="py-8 text-center text-sm text-muted-foreground">
-                    Type to search tasks or <kbd className="font-mono">&gt;</kbd> for commands
+                    {t("search.typeToSearch")}
                   </div>
                 )
               ) : isCommandMode ? (
@@ -1004,12 +1006,12 @@ export function SearchPalette() {
               ) : (
                 /* Search mode: tasks + commands + create fallthrough */
                 <>
-                  {renderTaskSection("Tasks", grouped.taskGroup)}
-                  {renderTaskSection("Thoughts", grouped.thoughtGroup)}
-                  {renderTaskSection("Completed", grouped.completedGroup)}
+                  {renderTaskSection(t("search.sectionTasks"), grouped.taskGroup)}
+                  {renderTaskSection(t("search.sectionThoughts"), grouped.thoughtGroup)}
+                  {renderTaskSection(t("search.sectionCompleted"), grouped.completedGroup)}
                   {hasCommandResults &&
                     searchQuery &&
-                    renderCommandSection("Actions", commandResults)}
+                    renderCommandSection(t("search.sectionActions"), commandResults)}
                   {renderCreateSection()}
                 </>
               )}
@@ -1029,21 +1031,22 @@ export function SearchPalette() {
             ) : hasAnyResults ? (
               <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground flex items-center gap-3">
                 <span>
-                  <kbd className="font-mono">&uarr;&darr;</kbd> navigate
+                  <kbd className="font-mono">&uarr;&darr;</kbd> {t("search.hint.navigate")}
                 </span>
                 <span>
-                  <kbd className="font-mono">&crarr;</kbd> {isCommandMode ? "run" : "open"}
+                  <kbd className="font-mono">&crarr;</kbd>{" "}
+                  {isCommandMode ? t("search.hint.run") : t("search.hint.open")}
                 </span>
                 {hasTaskItems && !isCommandMode && (
                   <>
                     <span>
-                      <kbd className="font-mono">tab</kbd> actions
+                      <kbd className="font-mono">tab</kbd> {t("search.hint.actions")}
                     </span>
                     <span>
                       <kbd className="font-mono">
                         {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}click
                       </kbd>{" "}
-                      select
+                      {t("search.hint.select")}
                     </span>
                   </>
                 )}
@@ -1052,19 +1055,19 @@ export function SearchPalette() {
                     <kbd className="font-mono">
                       {navigator.platform?.includes("Mac") ? "\u2318" : "Ctrl+"}↵
                     </kbd>{" "}
-                    thought
+                    {t("search.hint.thought")}
                   </span>
                 )}
                 <span>
-                  <kbd className="font-mono">esc</kbd> close
+                  <kbd className="font-mono">esc</kbd> {t("search.hint.close")}
                 </span>
                 {!isCommandMode && (
                   <>
                     <span>
-                      <kbd className="font-mono">@</kbd> filter
+                      <kbd className="font-mono">@</kbd> {t("search.hint.filter")}
                     </span>
                     <span className="ml-auto">
-                      <kbd className="font-mono">&gt;</kbd> commands
+                      <kbd className="font-mono">&gt;</kbd> {t("search.hint.commands")}
                     </span>
                   </>
                 )}

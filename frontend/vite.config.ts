@@ -189,6 +189,8 @@ export default defineConfig({
       "motion/react",
       "zod",
       "recharts",
+      "i18next",
+      "react-i18next",
     ],
   },
   build: {

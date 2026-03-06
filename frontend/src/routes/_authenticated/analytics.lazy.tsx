@@ -3,6 +3,7 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { Activity, Clock, Flame, Loader2, Percent, Trophy } from "lucide-react";
 import { animate } from "motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Line, LineChart } from "recharts";
 import type { DomainBreakdownItem, RecentCompletionItem, RecurringStatItem } from "@/api/model";
 import {
@@ -28,11 +29,7 @@ export const Route = createLazyFileRoute("/_authenticated/analytics")({
   component: AnalyticsPage,
 });
 
-const RANGE_OPTIONS = [
-  { label: "7d", value: 7 },
-  { label: "30d", value: 30 },
-  { label: "90d", value: 90 },
-] as const;
+const RANGE_VALUES = [7, 30, 90] as const;
 
 const PANEL_HOVER =
   "transition-all duration-200 hover:-translate-y-0.5 hover:[box-shadow:var(--shadow-raised)]";
@@ -68,6 +65,7 @@ function downsample<T>(arr: T[], maxPoints: number): T[] {
 }
 
 function AnalyticsPage() {
+  const { t } = useTranslation();
   const [days, setDays] = useState(30);
   const { data, isLoading, isFetching } = useGetAnalyticsApiV1AnalyticsGet(
     { days },
@@ -151,8 +149,8 @@ function AnalyticsPage() {
       <EmptyState
         className="flex-1 p-8"
         illustration="/illustrations/empty-analytics.svg"
-        title="Failed to load analytics"
-        description="Try refreshing the page"
+        title={t("analytics.failedToLoad")}
+        description={t("analytics.tryRefreshing")}
       />
     );
   }
@@ -167,21 +165,21 @@ function AnalyticsPage() {
         <div className="mx-auto max-w-5xl flex items-center justify-between px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-2xl font-semibold">Analytics</h1>
+              <h1 className="text-2xl font-semibold">{t("analytics.title")}</h1>
               <p className="text-xs text-muted-foreground">{formatDateRange(days)}</p>
             </div>
             {isFetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
           <div className="flex gap-1 rounded-lg border p-0.5">
-            {RANGE_OPTIONS.map((opt) => (
+            {RANGE_VALUES.map((value) => (
               <Button
-                key={opt.value}
-                variant={days === opt.value ? "default" : "ghost"}
+                key={value}
+                variant={days === value ? "default" : "ghost"}
                 size="sm"
                 className="h-7 px-3 text-xs"
-                onClick={() => setDays(opt.value)}
+                onClick={() => setDays(value)}
               >
-                {opt.label}
+                {t(`analytics.range.${value}d`)}
               </Button>
             ))}
           </div>
@@ -190,7 +188,7 @@ function AnalyticsPage() {
 
       <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 pb-nav-safe md:pb-6">
         {/* ── OVERVIEW ── */}
-        <SectionLabel>Overview</SectionLabel>
+        <SectionLabel>{t("analytics.overview")}</SectionLabel>
 
         {/* Hero card */}
         <HeroCard
@@ -201,26 +199,30 @@ function AnalyticsPage() {
 
         {/* Supporting stat cards */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <StatCard title="Completion Rate" value={`${data.completion_rate}%`} icon={Percent} />
           <StatCard
-            title="Current Streak"
+            title={t("analytics.completionRate")}
+            value={`${data.completion_rate}%`}
+            icon={Percent}
+          />
+          <StatCard
+            title={t("analytics.currentStreak")}
             value={`${data.streaks.current}d`}
-            subtitle={`Longest: ${data.streaks.longest}d`}
+            subtitle={t("analytics.longestStreak", { days: data.streaks.longest })}
             icon={Flame}
           />
           <StatCard
-            title="This Week"
+            title={t("analytics.thisWeek")}
             value={data.week_comparison.this_week}
             icon={data.week_comparison.change_pct >= 0 ? Trophy : Activity}
             trend={{
               value: data.week_comparison.change_pct,
-              label: "vs last week",
+              label: t("analytics.vsLastWeek"),
             }}
           />
         </div>
 
         {/* ── PATTERNS ── */}
-        <SectionLabel>Patterns</SectionLabel>
+        <SectionLabel>{t("analytics.patterns")}</SectionLabel>
 
         {/* Daily + Domain */}
         <div className="grid gap-6 sm:grid-cols-[1.4fr_1fr]">
@@ -249,7 +251,7 @@ function AnalyticsPage() {
         </div>
 
         {/* ── DETAILS ── */}
-        <SectionLabel>Details</SectionLabel>
+        <SectionLabel>{t("analytics.details")}</SectionLabel>
 
         {/* Velocity + Recent */}
         <div className="grid gap-6 sm:grid-cols-[1.4fr_1fr]">
@@ -273,6 +275,7 @@ function HeroCard({
   pending: number;
   sparkData: { count: number }[];
 }) {
+  const { t } = useTranslation();
   const valueRef = useRef<HTMLSpanElement>(null);
   const hasAnimated = useRef(false);
 
@@ -303,12 +306,14 @@ function HeroCard({
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-[11px] font-medium text-white/70 uppercase tracking-wide">
-            Tasks Completed
+            {t("analytics.tasksCompleted")}
           </p>
           <span ref={valueRef} className="text-4xl font-bold tabular-nums leading-tight">
             {completed}
           </span>
-          <p className="text-sm text-white/70">{pending} pending</p>
+          <p className="text-sm text-white/70">
+            {pending} {t("analytics.pending")}
+          </p>
         </div>
         {sparkData.length > 1 && (
           <div style={{ width: 120, height: 48 }}>
@@ -329,6 +334,7 @@ function HeroCard({
 }
 
 function RecentCompletions() {
+  const { t } = useTranslation();
   const { data, isLoading } = useGetRecentCompletionsApiV1AnalyticsRecentCompletionsGet({
     limit: 20,
   });
@@ -379,14 +385,14 @@ function RecentCompletions() {
     <div className={`rounded-xl border bg-card p-6 shadow-sm space-y-3 ${PANEL_HOVER}`}>
       <h3 className="font-semibold flex items-center gap-2">
         <Clock className="h-4 w-4 text-muted-foreground" />
-        Recent Completions
+        {t("analytics.recentCompletions")}
       </h3>
       {isLoading ? (
         <div className="flex justify-center py-4">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No recent completions</p>
+        <p className="text-sm text-muted-foreground">{t("analytics.noRecentCompletions")}</p>
       ) : (
         <div className="space-y-1 max-h-64 overflow-y-auto">
           {items.map((item) => (

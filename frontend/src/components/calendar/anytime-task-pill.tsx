@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarOff, Check, Pencil, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
 import {
@@ -30,6 +31,7 @@ interface AnytimeTaskPillProps {
 }
 
 export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillProps) {
+  const { t } = useTranslation();
   const selectionId = taskSelectionId(task.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
 
@@ -58,10 +60,10 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task unscheduled");
-          toast.success(`Unscheduled "${task.title}"`, {
+          toast.success(t("toast.taskUnscheduled", { title: task.title }), {
             id: `unschedule-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 updateTask.mutate(
                   { taskId: task.id, data: { scheduled_date: prevDate, scheduled_time: null } },
@@ -78,7 +80,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
         },
         onError: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-          toast.error("Failed to unschedule task", { id: `unschedule-err-${task.id}` });
+          toast.error(t("toast.failedToUnscheduleTask"), { id: `unschedule-err-${task.id}` });
         },
       },
     );
@@ -103,38 +105,43 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce(isCompleted ? "Task reopened" : "Task completed");
-          toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
-            id: `complete-${task.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
-                  old?.map((t) =>
-                    t.id === task.id
-                      ? {
-                          ...t,
-                          status: isCompleted ? ("completed" as const) : ("pending" as const),
-                          completed_at: isCompleted ? new Date().toISOString() : null,
-                        }
-                      : t,
-                  ),
-                );
-                toggleComplete.mutate(
-                  { taskId: task.id, data: null },
-                  {
-                    onSuccess: () =>
-                      queryClient.invalidateQueries({
-                        queryKey: dashboardTasksKey(),
-                      }),
-                  },
-                );
+          toast.success(
+            isCompleted
+              ? t("toast.taskReopened", { title: task.title })
+              : t("toast.taskCompleted", { title: task.title }),
+            {
+              id: `complete-${task.id}`,
+              action: {
+                label: t("toast.undo"),
+                onClick: () => {
+                  queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
+                    old?.map((t) =>
+                      t.id === task.id
+                        ? {
+                            ...t,
+                            status: isCompleted ? ("completed" as const) : ("pending" as const),
+                            completed_at: isCompleted ? new Date().toISOString() : null,
+                          }
+                        : t,
+                    ),
+                  );
+                  toggleComplete.mutate(
+                    { taskId: task.id, data: null },
+                    {
+                      onSuccess: () =>
+                        queryClient.invalidateQueries({
+                          queryKey: dashboardTasksKey(),
+                        }),
+                    },
+                  );
+                },
               },
             },
-          });
+          );
         },
         onError: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-          toast.error("Failed to complete task", { id: `complete-err-${task.id}` });
+          toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${task.id}` });
         },
       },
     );
@@ -147,10 +154,10 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task deleted");
-          toast.success(`Deleted "${task.title}"`, {
+          toast.success(t("toast.taskDeleted", { title: task.title }), {
             id: `delete-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 restoreTask.mutate(
                   { taskId: task.id },
@@ -159,14 +166,14 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
                       queryClient.invalidateQueries({
                         queryKey: dashboardTasksKey(),
                       }),
-                    onError: () => toast.error("Undo failed"),
+                    onError: () => toast.error(t("toast.undoFailed")),
                   },
                 );
               },
             },
           });
         },
-        onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),
+        onError: () => toast.error(t("toast.failedToDeleteTask"), { id: `delete-err-${task.id}` }),
       },
     );
   };
@@ -217,15 +224,15 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
           <>
             <ContextMenuItem onSelect={() => onClick?.()}>
               <Pencil className="h-3.5 w-3.5 mr-2" />
-              Edit
+              {t("task.action.edit")}
             </ContextMenuItem>
             <ContextMenuItem onSelect={handleUnschedule}>
               <CalendarOff className="h-3.5 w-3.5 mr-2" />
-              Unschedule
+              {t("task.action.unschedule")}
             </ContextMenuItem>
             <ContextMenuItem onSelect={handleComplete}>
               <Check className="h-3.5 w-3.5 mr-2" />
-              {isCompleted ? "Reopen" : "Complete"}
+              {isCompleted ? t("task.action.reopen") : t("task.action.complete")}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
@@ -233,7 +240,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5 mr-2" />
-              Delete
+              {t("task.action.delete")}
             </ContextMenuItem>
           </>
         )}

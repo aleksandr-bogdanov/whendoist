@@ -1,16 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { BarChart3, LayoutDashboard, Lightbulb, Plus, Search, Settings } from "lucide-react";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { isNativeTabBarAvailable } from "@/lib/tauri-native-tabbar";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
-
-const navItems = [
-  { to: "/thoughts", label: "Thoughts", icon: Lightbulb },
-  { to: "/dashboard", label: "Tasks", icon: LayoutDashboard },
-  // Plus button rendered separately in center
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/settings", label: "Settings", icon: Settings },
-] as const;
 
 /** Shared glass material — blur + tint + border. -webkit- prefix for WKWebView. */
 const glass = cn(
@@ -21,9 +15,20 @@ const glass = cn(
 );
 
 export function MobileNav() {
+  const { t } = useTranslation();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
+
+  const navItems = useMemo(
+    () => [
+      { to: "/thoughts" as const, label: t("nav.thoughts"), icon: Lightbulb },
+      { to: "/dashboard" as const, label: t("nav.tasks"), icon: LayoutDashboard },
+      { to: "/analytics" as const, label: t("nav.analytics"), icon: BarChart3 },
+      { to: "/settings" as const, label: t("nav.settings"), icon: Settings },
+    ],
+    [t],
+  );
 
   // Native UITabBar replaces this component on iOS Tauri
   if (isNativeTabBarAvailable()) return null;
@@ -83,7 +88,13 @@ export function MobileNav() {
   );
 }
 
-function NavLink({ item, currentPath }: { item: (typeof navItems)[number]; currentPath: string }) {
+function NavLink({
+  item,
+  currentPath,
+}: {
+  item: { to: string; label: string; icon: typeof Lightbulb };
+  currentPath: string;
+}) {
   const isActive = currentPath.startsWith(item.to);
   return (
     <Link

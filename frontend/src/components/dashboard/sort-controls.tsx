@@ -1,14 +1,15 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { announce } from "@/components/live-announcer";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
-const SORT_OPTIONS = [
-  { field: "clarity" as const, label: "Clarity", colVar: "--col-clarity" },
-  { field: "duration" as const, label: "Duration", colVar: "--col-duration" },
-  { field: "impact" as const, label: "Impact", colVar: "--col-impact" },
-];
+const SORT_COL_VARS = {
+  clarity: "--col-clarity",
+  duration: "--col-duration",
+  impact: "--col-impact",
+} as const;
 
 interface StickyDomainInfo {
   icon: string;
@@ -18,7 +19,17 @@ interface StickyDomainInfo {
 }
 
 export function ColumnHeaders() {
+  const { t } = useTranslation();
   const { sortField, sortDirection, toggleSort } = useUIStore();
+
+  const SORT_OPTIONS = useMemo(
+    () => [
+      { field: "clarity" as const, label: t("sort.clarity"), colVar: SORT_COL_VARS.clarity },
+      { field: "duration" as const, label: t("sort.duration"), colVar: SORT_COL_VARS.duration },
+      { field: "impact" as const, label: t("sort.impact"), colVar: SORT_COL_VARS.impact },
+    ],
+    [t],
+  );
   const headerRef = useRef<HTMLDivElement>(null);
   const [domainInfo, setDomainInfo] = useState<StickyDomainInfo | null>(null);
   const [domainOpacity, setDomainOpacity] = useState(0);

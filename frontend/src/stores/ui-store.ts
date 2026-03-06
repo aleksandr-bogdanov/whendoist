@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import i18n from "@/lib/i18n";
 
 type Theme = "light" | "dark" | "system";
 type EnergyLevel = 1 | 2 | 3;
@@ -30,6 +31,7 @@ interface UIState {
   planStrategy: string;
   shortcutsHelpOpen: boolean;
   showSecondaryTimezone: boolean;
+  locale: string;
 }
 
 interface UIActions {
@@ -57,6 +59,7 @@ interface UIActions {
   setPlanStrategy: (id: string) => void;
   setShortcutsHelpOpen: (open: boolean) => void;
   setShowSecondaryTimezone: (show: boolean) => void;
+  setLocale: (locale: string) => void;
 }
 
 let flashScrollTimer: ReturnType<typeof setTimeout>;
@@ -87,6 +90,7 @@ export const useUIStore = create<UIState & UIActions>()(
       planStrategy: "compact",
       shortcutsHelpOpen: false,
       showSecondaryTimezone: false,
+      locale: i18n.resolvedLanguage ?? "en",
       calendarCenterDate: (() => {
         const now = new Date();
         if (now.getHours() >= 20) {
@@ -191,6 +195,12 @@ export const useUIStore = create<UIState & UIActions>()(
       setPlanStrategy: (id) => set({ planStrategy: id }),
       setShortcutsHelpOpen: (open) => set({ shortcutsHelpOpen: open }),
       setShowSecondaryTimezone: (show) => set({ showSecondaryTimezone: show }),
+      setLocale: (locale) => {
+        set({ locale });
+        i18n.changeLanguage(locale);
+        localStorage.setItem("whendoist-locale", locale);
+        document.documentElement.lang = locale;
+      },
       flashUpdatedTask: (taskId) => {
         clearTimeout(flashScrollTimer);
         clearTimeout(flashClearTimer);
@@ -220,6 +230,7 @@ export const useUIStore = create<UIState & UIActions>()(
         mobileTab: state.mobileTab,
         planStrategy: state.planStrategy,
         showSecondaryTimezone: state.showSecondaryTimezone,
+        locale: state.locale,
       }),
       storage: {
         getItem: (name) => {

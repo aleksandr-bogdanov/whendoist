@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -8,12 +9,13 @@ const ENERGY_LEVELS = [
 ] as const;
 
 export function EnergySelector() {
+  const { t } = useTranslation();
   const { energyLevel, setEnergyLevel } = useUIStore();
 
   return (
     <div className="flex items-center gap-2">
       <span className="text-[0.5625rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
-        ENERGY
+        {t("energy.label")}
       </span>
       <div className="flex items-center gap-0.5 rounded-md border bg-card px-1 py-0.5">
         {ENERGY_LEVELS.map(({ level, emoji, color }) => {

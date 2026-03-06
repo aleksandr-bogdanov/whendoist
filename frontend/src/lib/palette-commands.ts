@@ -19,7 +19,9 @@ import {
   Zap,
 } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import i18n from "@/lib/i18n";
 import { useUIStore } from "@/stores/ui-store";
 
 export interface PaletteCommand {
@@ -32,17 +34,21 @@ export interface PaletteCommand {
   handler: () => void;
 }
 
-/** Category display order */
-export const COMMAND_CATEGORIES = [
-  "Navigation",
-  "Tasks",
-  "Appearance",
-  "Filters",
-  "Data",
-  "Help",
+/** Category display order — values are i18n keys */
+export const COMMAND_CATEGORY_KEYS = [
+  "palette.category.navigation",
+  "palette.category.tasks",
+  "palette.category.appearance",
+  "palette.category.filters",
+  "palette.category.data",
+  "palette.category.help",
 ] as const;
 
+/** Translated category names in display order. */
+export const COMMAND_CATEGORIES = COMMAND_CATEGORY_KEYS.map((k) => i18n.t(k));
+
 export function usePaletteCommands(): PaletteCommand[] {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setTheme = useUIStore((s) => s.setTheme);
   const setEnergyLevel = useUIStore((s) => s.setEnergyLevel);
@@ -58,33 +64,33 @@ export function usePaletteCommands(): PaletteCommand[] {
       // ── Navigation ──
       {
         id: "nav-dashboard",
-        label: "Go to Dashboard",
+        label: t("palette.goToDashboard"),
         keywords: ["tasks", "home", "main"],
-        category: "Navigation",
+        category: t("palette.category.navigation"),
         icon: LayoutDashboard,
         handler: () => navigate({ to: "/dashboard" }),
       },
       {
         id: "nav-thoughts",
-        label: "Go to Thoughts",
+        label: t("palette.goToThoughts"),
         keywords: ["ideas", "brainstorm", "capture"],
-        category: "Navigation",
+        category: t("palette.category.navigation"),
         icon: Lightbulb,
         handler: () => navigate({ to: "/thoughts" }),
       },
       {
         id: "nav-analytics",
-        label: "Go to Analytics",
+        label: t("palette.goToAnalytics"),
         keywords: ["stats", "statistics", "chart", "progress"],
-        category: "Navigation",
+        category: t("palette.category.navigation"),
         icon: BarChart3,
         handler: () => navigate({ to: "/analytics" }),
       },
       {
         id: "nav-settings",
-        label: "Go to Settings",
+        label: t("palette.goToSettings"),
         keywords: ["preferences", "config", "account"],
-        category: "Navigation",
+        category: t("palette.category.navigation"),
         icon: Settings,
         handler: () => navigate({ to: "/settings" }),
       },
@@ -92,9 +98,9 @@ export function usePaletteCommands(): PaletteCommand[] {
       // ── Tasks ──
       {
         id: "task-new",
-        label: "New task",
+        label: t("palette.newTask"),
         keywords: ["create task", "add task", "quick add"],
-        category: "Tasks",
+        category: t("palette.category.tasks"),
         icon: Plus,
         shortcut: "Q",
         handler: () => {
@@ -104,9 +110,9 @@ export function usePaletteCommands(): PaletteCommand[] {
       },
       {
         id: "task-thought",
-        label: "New thought",
+        label: t("palette.newThought"),
         keywords: ["capture thought", "idea", "brainstorm"],
-        category: "Tasks",
+        category: t("palette.category.tasks"),
         icon: Lightbulb,
         handler: () => {
           setSearchOpen(false);
@@ -115,39 +121,39 @@ export function usePaletteCommands(): PaletteCommand[] {
       },
       {
         id: "task-plan",
-        label: "Plan My Day",
+        label: t("palette.planMyDay"),
         keywords: ["schedule", "auto schedule", "plan day", "auto plan"],
-        category: "Tasks",
+        category: t("palette.category.tasks"),
         icon: CalendarDays,
         handler: () => {
           setSearchOpen(false);
           navigate({ to: "/dashboard" });
-          toast.info("Tap the Plan My Day button on the calendar to start");
+          toast.info(t("calendar.dragHint"));
         },
       },
 
       // ── Appearance ──
       {
         id: "theme-light",
-        label: "Switch to light theme",
+        label: t("palette.lightTheme"),
         keywords: ["light mode", "bright", "white"],
-        category: "Appearance",
+        category: t("palette.category.appearance"),
         icon: Sun,
         handler: () => setTheme("light"),
       },
       {
         id: "theme-dark",
-        label: "Switch to dark theme",
+        label: t("palette.darkTheme"),
         keywords: ["dark mode", "night", "black"],
-        category: "Appearance",
+        category: t("palette.category.appearance"),
         icon: Moon,
         handler: () => setTheme("dark"),
       },
       {
         id: "theme-system",
-        label: "Switch to system theme",
+        label: t("palette.systemTheme"),
         keywords: ["auto theme", "os theme", "default theme"],
-        category: "Appearance",
+        category: t("palette.category.appearance"),
         icon: Monitor,
         handler: () => setTheme("system"),
       },
@@ -155,65 +161,65 @@ export function usePaletteCommands(): PaletteCommand[] {
       // ── Filters ──
       {
         id: "energy-high",
-        label: "Set energy to High",
+        label: t("palette.energyHigh"),
         keywords: ["energy 3", "high energy", "max energy", "full energy"],
-        category: "Filters",
+        category: t("palette.category.filters"),
         icon: Zap,
         handler: () => setEnergyLevel(3),
       },
       {
         id: "energy-medium",
-        label: "Set energy to Medium",
+        label: t("palette.energyMedium"),
         keywords: ["energy 2", "medium energy", "mid energy"],
-        category: "Filters",
+        category: t("palette.category.filters"),
         icon: Zap,
         handler: () => setEnergyLevel(2),
       },
       {
         id: "energy-low",
-        label: "Set energy to Low",
+        label: t("palette.energyLow"),
         keywords: ["energy 1", "low energy", "min energy", "tired"],
-        category: "Filters",
+        category: t("palette.category.filters"),
         icon: Zap,
         handler: () => setEnergyLevel(1),
       },
       {
         id: "filter-scheduled",
-        label: "Toggle show scheduled",
+        label: t("palette.toggleScheduled"),
         keywords: ["show scheduled", "hide scheduled", "scheduled filter"],
-        category: "Filters",
+        category: t("palette.category.filters"),
         icon: Calendar,
         handler: () => toggleShowScheduled(),
       },
       {
         id: "filter-completed",
-        label: "Toggle show completed",
+        label: t("palette.toggleCompleted"),
         keywords: ["show completed", "hide completed", "done filter"],
-        category: "Filters",
+        category: t("palette.category.filters"),
         icon: CheckCircle,
         handler: () => toggleShowCompleted(),
       },
       {
         id: "sort-impact",
-        label: "Sort by impact",
+        label: t("palette.sortByImpact"),
         keywords: ["sort impact", "order impact", "priority sort"],
-        category: "Filters",
+        category: t("palette.category.filters"),
         icon: ArrowUpDown,
         handler: () => toggleSort("impact"),
       },
       {
         id: "sort-duration",
-        label: "Sort by duration",
+        label: t("palette.sortByDuration"),
         keywords: ["sort duration", "order time", "time sort"],
-        category: "Filters",
+        category: t("palette.category.filters"),
         icon: ArrowUpDown,
         handler: () => toggleSort("duration"),
       },
       {
         id: "sort-clarity",
-        label: "Sort by clarity",
+        label: t("palette.sortByClarity"),
         keywords: ["sort clarity", "order clarity", "clarity sort"],
-        category: "Filters",
+        category: t("palette.category.filters"),
         icon: ArrowUpDown,
         handler: () => toggleSort("clarity"),
       },
@@ -221,9 +227,9 @@ export function usePaletteCommands(): PaletteCommand[] {
       // ── Data ──
       {
         id: "data-export",
-        label: "Export backup",
+        label: t("palette.exportBackup"),
         keywords: ["download backup", "export data", "save backup", "json"],
-        category: "Data",
+        category: t("palette.category.data"),
         icon: Download,
         handler: () => {
           window.open("/api/v1/backup/export", "_blank");
@@ -231,9 +237,9 @@ export function usePaletteCommands(): PaletteCommand[] {
       },
       {
         id: "data-snapshot",
-        label: "Create snapshot",
+        label: t("palette.createSnapshot"),
         keywords: ["manual snapshot", "backup snapshot", "save snapshot"],
-        category: "Data",
+        category: t("palette.category.data"),
         icon: HardDrive,
         handler: async () => {
           try {
@@ -241,17 +247,17 @@ export function usePaletteCommands(): PaletteCommand[] {
               "@/api/queries/backup/backup"
             );
             await createManualSnapshotApiV1BackupSnapshotsPost();
-            toast.success("Snapshot created");
+            toast.success(t("settings.data.snapshotCreated"));
           } catch {
-            toast.error("Failed to create snapshot");
+            toast.error(t("settings.data.failedToCreateSnapshot"));
           }
         },
       },
       {
         id: "data-sync-gcal",
-        label: "Sync Google Calendar",
+        label: t("palette.syncGcal"),
         keywords: ["google calendar", "gcal sync", "calendar sync", "refresh calendar"],
-        category: "Data",
+        category: t("palette.category.data"),
         icon: RefreshCw,
         handler: async () => {
           try {
@@ -259,9 +265,9 @@ export function usePaletteCommands(): PaletteCommand[] {
               "@/api/queries/gcal-sync/gcal-sync"
             );
             await fullSyncApiV1GcalSyncFullSyncPost();
-            toast.success("Google Calendar synced");
+            toast.success(t("settings.gcalSync.fullSyncStarted"));
           } catch {
-            toast.error("Failed to sync — is Google Calendar connected?");
+            toast.error(t("settings.gcalSync.failedToStartSync"));
           }
         },
       },
@@ -269,9 +275,9 @@ export function usePaletteCommands(): PaletteCommand[] {
       // ── Help ──
       {
         id: "help-shortcuts",
-        label: "Keyboard shortcuts",
+        label: t("palette.keyboardShortcuts"),
         keywords: ["hotkeys", "keybindings", "keys", "help"],
-        category: "Help",
+        category: t("palette.category.help"),
         icon: Keyboard,
         shortcut: "?",
         handler: () => {
@@ -281,6 +287,7 @@ export function usePaletteCommands(): PaletteCommand[] {
       },
     ],
     [
+      t,
       navigate,
       setTheme,
       setEnergyLevel,

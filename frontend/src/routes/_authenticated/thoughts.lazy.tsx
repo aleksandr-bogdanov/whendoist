@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { Loader2, Send, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
@@ -59,6 +60,7 @@ const MD_QUERY = "(min-width: 768px)";
 /* ------------------------------------------------------------------ */
 
 function ThoughtsPage() {
+  const { t } = useTranslation();
   const tasksQuery = useListTasksApiV1TasksGet();
   const createTask = useCreateTaskApiV1TasksPost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
@@ -199,7 +201,7 @@ function ThoughtsPage() {
           });
         },
         onError: () => {
-          toast.error("Failed to save thought");
+          toast.error(t("thoughts.failedToSave"));
           setInput(trimmed);
         },
       },
@@ -222,9 +224,9 @@ function ThoughtsPage() {
             queryClient.invalidateQueries({
               queryKey: getListTasksApiV1TasksGetQueryKey(),
             });
-            toast.success(`Deleted "${thought.title}"`, {
+            toast.success(t("thoughts.deleted", { title: thought.title }), {
               action: {
-                label: "Undo",
+                label: t("toast.undo"),
                 onClick: () => {
                   restoreTask.mutate(
                     { taskId: thought.id },
@@ -240,11 +242,11 @@ function ThoughtsPage() {
               },
             });
           },
-          onError: () => toast.error("Failed to delete thought"),
+          onError: () => toast.error(t("thoughts.failedToDelete")),
         },
       );
     },
-    [deleteTask, restoreTask, queryClient, visibleIds],
+    [deleteTask, restoreTask, queryClient, visibleIds, t],
   );
 
   const handleConvert = useCallback(
@@ -284,9 +286,9 @@ function ThoughtsPage() {
             });
             setSelectedId(nextId);
             setDrawerThought(null);
-            toast.success(`Moved to ${domainName}`, {
+            toast.success(t("thoughts.movedToDomain", { domain: domainName }), {
               action: {
-                label: "Undo",
+                label: t("toast.undo"),
                 onClick: () => {
                   updateTask.mutate(
                     {
@@ -305,11 +307,11 @@ function ThoughtsPage() {
               },
             });
           },
-          onError: () => toast.error("Failed to convert thought"),
+          onError: () => toast.error(t("thoughts.failedToConvert")),
         },
       );
     },
-    [updateTask, queryClient, domains, encryptTaskFields, visibleIds],
+    [updateTask, queryClient, domains, encryptTaskFields, visibleIds, t],
   );
 
   /* ---------------------------------------------------------------- */
@@ -326,7 +328,7 @@ function ThoughtsPage() {
       () => [
         {
           key: "j",
-          description: "Next thought",
+          description: t("thoughts.shortcut.next"),
           category: "Navigation",
           excludeInputs: true,
           handler: () => {
@@ -342,7 +344,7 @@ function ThoughtsPage() {
         },
         {
           key: "k",
-          description: "Previous thought",
+          description: t("thoughts.shortcut.prev"),
           category: "Navigation",
           excludeInputs: true,
           handler: () => {
@@ -358,14 +360,14 @@ function ThoughtsPage() {
         },
         {
           key: "Escape",
-          description: "Deselect",
+          description: t("thoughts.shortcut.deselect"),
           category: "Navigation",
           excludeInputs: false,
           handler: () => setSelectedId(null),
         },
         {
           key: "d",
-          description: "Delete thought",
+          description: t("thoughts.shortcut.delete"),
           category: "Actions",
           excludeInputs: true,
           handler: () => {
@@ -377,7 +379,7 @@ function ThoughtsPage() {
         },
         {
           key: "Backspace",
-          description: "Delete thought",
+          description: t("thoughts.shortcut.delete"),
           category: "Actions",
           excludeInputs: true,
           showInHelp: false,
@@ -389,7 +391,7 @@ function ThoughtsPage() {
           },
         },
       ],
-      [handleDelete],
+      [handleDelete, t],
     ),
   );
 
@@ -432,16 +434,16 @@ function ThoughtsPage() {
             <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 flex flex-col">
               {/* Mobile: Glassy sticky header */}
               <div className="sticky top-0 z-20 px-4 py-3 backdrop-blur-3xl backdrop-saturate-200 bg-white/25 dark:bg-[rgba(30,41,59,0.20)] border-b border-white/15 dark:border-white/[0.06] md:hidden">
-                <h1 className="text-xl font-bold">Thoughts</h1>
-                <p className="text-xs text-muted-foreground">
-                  Capture ideas, then triage them into tasks
-                </p>
+                <h1 className="text-xl font-bold">{t("thoughts.title")}</h1>
+                <p className="text-xs text-muted-foreground">{t("thoughts.subtitle")}</p>
               </div>
 
               {/* Desktop: Simple heading */}
               <div className="hidden md:block px-5 pt-4 pb-2">
-                <h1 className="text-lg font-semibold">Thoughts</h1>
-                <p className="text-xs text-muted-foreground mt-0.5">Capture now, organize later</p>
+                <h1 className="text-lg font-semibold">{t("thoughts.title")}</h1>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("thoughts.subtitleDesktop")}
+                </p>
               </div>
 
               {/* List wrapper */}
@@ -455,8 +457,8 @@ function ThoughtsPage() {
                     illustration="/illustrations/empty-thoughts.svg"
                     illustrationClassName="h-28 w-28 animate-[emptyStateEntrance_0.4s_ease-out,thoughtsGlow_3s_ease-in-out_0.4s_infinite]"
                     className="py-16"
-                    title="No thoughts yet"
-                    description="Type below to capture your first thought"
+                    title={t("thoughts.noThoughts")}
+                    description={t("thoughts.noThoughtsDesc")}
                   />
                 ) : (
                   sortedThoughts.map((thought) => (
@@ -485,7 +487,7 @@ function ThoughtsPage() {
                   <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="What's on your mind?"
+                    placeholder={t("thoughts.placeholder")}
                     className="border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:border-0 h-10 text-[15px]"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
@@ -563,6 +565,7 @@ function ThoughtCard({
   onTap: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const timeAgo = thought.created_at ? formatTimeAgo(thought.created_at) : "";
 
   return (
@@ -602,7 +605,7 @@ function ThoughtCard({
           <button
             type="button"
             className="p-1 rounded-md hover:bg-destructive/10 text-destructive/60 hover:text-destructive transition-colors"
-            title="Delete"
+            title={t("common.delete")}
             onClick={(e) => {
               e.stopPropagation();
               onDelete();

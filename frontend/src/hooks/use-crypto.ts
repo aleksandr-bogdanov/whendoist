@@ -12,6 +12,7 @@
 import { toast } from "sonner";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { decrypt, encrypt, looksEncrypted } from "@/lib/crypto";
+import i18n from "@/lib/i18n";
 import { useCryptoStore } from "@/stores/crypto-store";
 
 /**
@@ -99,7 +100,7 @@ export function useCrypto() {
       incrementDecryptionFailures();
       // Show toast only on the first failure batch (not per field)
       if (decryptionFailures === 0) {
-        toast.warning("Some data couldn't be decrypted. Try re-entering your passphrase.");
+        toast.warning(i18n.t("crypto.decryptFailed"));
       }
     }
   };

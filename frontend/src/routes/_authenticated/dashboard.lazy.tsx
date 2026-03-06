@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { CalendarDays, CalendarPlus, ListTodo, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { DomainResponse, InstanceResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
@@ -47,6 +48,7 @@ export const Route = createLazyFileRoute("/_authenticated/dashboard")({
 });
 
 function DashboardPage() {
+  const { t } = useTranslation();
   const isNativeTabBar = isNativeTabBarAvailable();
   const { data: tasks, isLoading: tasksLoading } =
     useListTasksApiV1TasksGet(DASHBOARD_TASKS_PARAMS);
@@ -193,14 +195,14 @@ function DashboardPage() {
       () => [
         {
           key: "?",
-          description: "Show keyboard shortcuts",
+          description: t("shortcuts.showShortcuts"),
           category: "Help",
           excludeInputs: true,
           handler: () => setShortcutsHelpOpen(true),
         },
         {
           key: "q",
-          description: "Quick add task",
+          description: t("shortcuts.quickAdd"),
           category: "Tasks",
           excludeInputs: true,
           handler: () => {
@@ -209,7 +211,7 @@ function DashboardPage() {
         },
         {
           key: "n",
-          description: "New task",
+          description: t("shortcuts.newTask"),
           category: "Tasks",
           excludeInputs: true,
           handler: () => {
@@ -225,7 +227,7 @@ function DashboardPage() {
         },
         {
           key: "j",
-          description: "Next task",
+          description: t("shortcuts.nextTask"),
           category: "Navigation",
           excludeInputs: true,
           handler: () => {
@@ -242,7 +244,7 @@ function DashboardPage() {
         },
         {
           key: "k",
-          description: "Previous task",
+          description: t("shortcuts.prevTask"),
           category: "Navigation",
           excludeInputs: true,
           handler: () => {
@@ -259,32 +261,33 @@ function DashboardPage() {
         },
         {
           key: "c",
-          description: "Complete selected task",
+          description: t("shortcuts.completeSelected"),
           category: "Actions",
           excludeInputs: true,
           handler: () => {
             const { selectedTaskId: sel, isModalOpen: modal, tasks: allTasks } = stateRef.current;
             if (modal || sel === null) return;
-            const t = allTasks?.find((t) => t.id === sel);
+            const task = allTasks?.find((tk) => tk.id === sel);
             toggleComplete.mutate(
               { taskId: sel, data: null },
               {
                 onSuccess: () => {
                   queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
                   const label =
-                    t?.status === "completed"
-                      ? `Reopened "${t.title}"`
-                      : `Completed "${t?.title ?? "Task"}"`;
+                    task?.status === "completed"
+                      ? t("toast.taskReopened", { title: task.title })
+                      : t("toast.taskCompleted", { title: task?.title ?? "Task" });
                   toast.success(label, { id: `complete-${sel}` });
                 },
-                onError: () => toast.error("Failed to update task", { id: `complete-err-${sel}` }),
+                onError: () =>
+                  toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${sel}` }),
               },
             );
           },
         },
         {
           key: "e",
-          description: "Edit selected task",
+          description: t("shortcuts.editSelected"),
           category: "Actions",
           excludeInputs: true,
           handler: () => {
@@ -303,7 +306,7 @@ function DashboardPage() {
         },
         {
           key: "Enter",
-          description: "Edit selected task",
+          description: t("shortcuts.editSelected"),
           category: "Actions",
           excludeInputs: true,
           showInHelp: false,
@@ -322,7 +325,7 @@ function DashboardPage() {
         },
         {
           key: "x",
-          description: "Delete selected task",
+          description: t("shortcuts.deleteSelected"),
           category: "Actions",
           excludeInputs: true,
           handler: () => {
@@ -333,7 +336,7 @@ function DashboardPage() {
               isModalOpen: modal,
             } = stateRef.current;
             if (modal || sel === null || !all) return;
-            const task = all.find((t) => t.id === sel);
+            const task = all.find((tk) => tk.id === sel);
             if (!task) return;
 
             if (task.subtasks?.length) {
@@ -351,11 +354,13 @@ function DashboardPage() {
               {
                 onSuccess: () => {
                   queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-                  toast.success(`Deleted "${task.title}"`, { id: `delete-${sel}` });
+                  toast.success(t("toast.taskDeleted", { title: task.title }), {
+                    id: `delete-${sel}`,
+                  });
                 },
                 onError: () => {
                   selectTask(sel);
-                  toast.error("Failed to delete task", { id: `delete-err-${sel}` });
+                  toast.error(t("toast.failedToDeleteTask"), { id: `delete-err-${sel}` });
                 },
               },
             );
@@ -363,7 +368,7 @@ function DashboardPage() {
         },
         {
           key: "Escape",
-          description: "Close panel / clear selection",
+          description: t("shortcuts.closePanelClear"),
           category: "Navigation",
           preventDefault: false,
           handler: () => {
@@ -380,7 +385,7 @@ function DashboardPage() {
         // ── Multi-select shortcuts (§7 / §8) ─────────────────────────
         {
           key: "a",
-          description: "Select all visible tasks",
+          description: t("shortcuts.selectAll"),
           category: "Selection",
           meta: true,
           displayKey: "⌘A",
@@ -404,17 +409,18 @@ function DashboardPage() {
             if (ids.length > 0) {
               useSelectionStore.getState().selectAll(ids);
               const parts = [
-                taskIds.length > 0 && `${taskIds.length} task${taskIds.length !== 1 ? "s" : ""}`,
+                taskIds.length > 0 &&
+                  `${taskIds.length} ${taskIds.length !== 1 ? t("common.tasks") : t("common.task")}`,
                 instanceIds.length > 0 &&
-                  `${instanceIds.length} instance${instanceIds.length !== 1 ? "s" : ""}`,
+                  `${instanceIds.length} ${instanceIds.length !== 1 ? t("common.instances") : t("common.instance")}`,
               ].filter(Boolean);
-              toast(`Selected ${parts.join(" and ")}`);
+              toast(t("dashboard.selectedCount", { parts: parts.join(" and ") }));
             }
           },
         },
         {
           key: "Delete",
-          description: "Delete selected tasks",
+          description: t("shortcuts.deleteSelectedTasks"),
           category: "Selection",
           excludeInputs: true,
           showInHelp: false,
@@ -437,7 +443,7 @@ function DashboardPage() {
         },
         {
           key: "Backspace",
-          description: "Delete selected tasks",
+          description: t("shortcuts.deleteSelectedTasks"),
           category: "Selection",
           excludeInputs: true,
           handler: () => {
@@ -459,7 +465,7 @@ function DashboardPage() {
         },
         {
           key: "Enter",
-          description: "Complete selected tasks",
+          description: t("shortcuts.completeSelectedTasks"),
           category: "Selection",
           meta: true,
           displayKey: "⌘↵",
@@ -496,7 +502,7 @@ function DashboardPage() {
           },
         },
       ],
-      [selectTask, queryClient, toggleComplete, deleteTask, setShortcutsHelpOpen],
+      [selectTask, queryClient, toggleComplete, deleteTask, setShortcutsHelpOpen, t],
     ),
   );
 
@@ -507,16 +513,16 @@ function DashboardPage() {
     const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
     if (isMobile) return;
     const timer = setTimeout(() => {
-      toast.info("Press ? to view keyboard shortcuts", {
+      toast.info(t("shortcuts.shortcutsHint"), {
         action: {
-          label: "Show",
+          label: t("shortcuts.show"),
           onClick: () => setShortcutsHelpOpen(true),
         },
       });
       localStorage.setItem("shortcuts-toast-shown", "1");
     }, 2000);
     return () => clearTimeout(timer);
-  }, [setShortcutsHelpOpen]);
+  }, [setShortcutsHelpOpen, t]);
 
   // Scroll selected task into view
   useEffect(() => {
@@ -574,7 +580,7 @@ function DashboardPage() {
             onClick={() => setMobileTab("tasks")}
           >
             <ListTodo className="h-3.5 w-3.5" />
-            Tasks
+            {t("nav.tasks")}
           </Button>
           <Button
             variant="ghost"
@@ -586,7 +592,7 @@ function DashboardPage() {
             onClick={() => setMobileTab("calendar")}
           >
             <CalendarDays className="h-3.5 w-3.5" />
-            Calendar
+            {t("nav.calendar")}
           </Button>
         </div>
 
@@ -628,14 +634,12 @@ function DashboardPage() {
                 {showGcalBanner && (
                   <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border-b text-sm">
                     <CalendarPlus className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span className="flex-1">
-                      Connect Google Calendar to see your events alongside tasks.
-                    </span>
+                    <span className="flex-1">{t("banner.connectGcal")}</span>
                     <a
                       href="/auth/google"
                       className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                     >
-                      Connect
+                      {t("banner.connect")}
                     </a>
                     <button
                       type="button"

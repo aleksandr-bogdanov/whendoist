@@ -8,6 +8,7 @@
 
 import { CheckCircle, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListTasksApiV1TasksGet } from "@/api/queries/tasks/tasks";
 import {
@@ -54,6 +55,7 @@ interface TaskEditorProps {
 }
 
 export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: TaskEditorProps) {
+  const { t } = useTranslation();
   const form = useTaskForm({ task: task ?? null, onDone: () => onOpenChange(false) });
 
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -141,7 +143,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
 
   const handleClose = () => {
     if (form.dirty) {
-      if (!window.confirm("You have unsaved changes. Discard?")) return;
+      if (!window.confirm(t("task.unsavedChanges"))) return;
     }
     onOpenChange(false);
   };
@@ -170,11 +172,9 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto" showCloseButton>
           <SheetHeader>
-            <SheetTitle>{form.isEdit ? "Edit Task" : "New Task"}</SheetTitle>
+            <SheetTitle>{form.isEdit ? t("task.editTask") : t("task.newTask")}</SheetTitle>
             <SheetDescription>
-              {form.isEdit
-                ? "Update the task details below."
-                : "Fill in the details to create a new task."}
+              {form.isEdit ? t("task.updateDetails") : t("task.createDetails")}
             </SheetDescription>
           </SheetHeader>
 
@@ -182,7 +182,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Title — smart input (Approach A: tokens consumed) */}
             <div className="space-y-1.5">
               <Label htmlFor="task-title" className="text-xs font-medium">
-                Title
+                {t("task.field.title")}
               </Label>
               <div className="relative">
                 <textarea
@@ -191,7 +191,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                   value={form.values.title}
                   onChange={handleTitleChange}
                   onKeyDown={handleTitleKeyDown}
-                  placeholder="What needs to be done? (try #domain !high 30m)"
+                  placeholder={t("task.field.titlePlaceholder")}
                   className="w-full text-sm bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-2 px-3 resize-none overflow-hidden rounded-md border border-input focus:ring-1 focus:ring-ring transition-colors"
                   rows={1}
                 />
@@ -209,7 +209,10 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             </div>
 
             {/* Domain */}
-            <EditorFieldRow label="Domain" flash={flashTarget === "domain" || domainFlash}>
+            <EditorFieldRow
+              label={t("task.field.domain")}
+              flash={flashTarget === "domain" || domainFlash}
+            >
               <DomainChipRow
                 domains={domains}
                 selectedId={form.values.domainId}
@@ -222,7 +225,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
 
             {/* Parent task (edit mode only — immediate apply with undo) */}
             {form.isEdit && task && parentTasks && parentTasks.length > 0 && (
-              <EditorFieldRow label="Parent">
+              <EditorFieldRow label={t("task.field.parent")}>
                 <ParentTaskPicker
                   task={task}
                   parentTasks={parentTasks}
@@ -241,7 +244,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             )}
 
             {/* Impact */}
-            <EditorFieldRow label="Impact" flash={flashTarget === "impact"}>
+            <EditorFieldRow label={t("task.field.impact")} flash={flashTarget === "impact"}>
               <ImpactButtonRow
                 value={form.values.impact}
                 onChange={(v) => {
@@ -252,7 +255,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             </EditorFieldRow>
 
             {/* Clarity */}
-            <EditorFieldRow label="Clarity" flash={flashTarget === "clarity"}>
+            <EditorFieldRow label={t("task.field.clarity")} flash={flashTarget === "clarity"}>
               <ClarityChipRow
                 value={form.values.clarity}
                 onChange={(v) => {
@@ -263,7 +266,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             </EditorFieldRow>
 
             {/* Duration */}
-            <EditorFieldRow label="Duration" flash={flashTarget === "duration"}>
+            <EditorFieldRow label={t("task.field.duration")} flash={flashTarget === "duration"}>
               <DurationPickerRow
                 value={form.values.durationMinutes}
                 showCustom
@@ -275,7 +278,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             </EditorFieldRow>
 
             {/* Schedule */}
-            <EditorFieldRow label="When" flash={flashTarget === "schedule"}>
+            <EditorFieldRow label={t("task.field.when")} flash={flashTarget === "schedule"}>
               <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                 <PopoverTrigger asChild>
                   <div>
@@ -324,7 +327,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             </EditorFieldRow>
 
             {/* Time — progressive disclosure: only when date is set */}
-            <EditorFieldRow label="Time">
+            <EditorFieldRow label={t("task.field.time")}>
               <TimePickerField
                 value={form.values.scheduledTime}
                 visible={!!form.values.scheduledDate}
@@ -338,7 +341,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             {/* Recurrence */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium">Repeat</Label>
+                <Label className="text-xs font-medium">{t("task.field.repeat")}</Label>
                 <Button
                   type="button"
                   variant={form.values.isRecurring ? "default" : "outline"}
@@ -357,7 +360,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                     form.markDirty();
                   }}
                 >
-                  {form.values.isRecurring ? "On" : "Off"}
+                  {form.values.isRecurring ? t("task.field.on") : t("task.field.off")}
                 </Button>
               </div>
               {form.values.isRecurring && (
@@ -377,7 +380,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
             </div>
 
             {/* Notes / Description */}
-            <EditorFieldRow label="Notes" flash={flashTarget === "description"}>
+            <EditorFieldRow label={t("task.field.notes")} flash={flashTarget === "description"}>
               <textarea
                 value={form.values.description}
                 onChange={(e) => {
@@ -386,7 +389,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                 }}
                 onFocus={() => setDescriptionFocused(true)}
                 onBlur={() => setDescriptionFocused(false)}
-                placeholder="Add notes..."
+                placeholder={t("task.field.notesPlaceholder")}
                 rows={descriptionFocused || form.values.description ? 3 : 1}
                 className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
               />
@@ -403,7 +406,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                   onClick={form.handleBatchComplete}
                 >
                   {form.isBatchCompleting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                  Complete {form.pendingPastCount} past instance(s)
+                  {t("task.completePastInstances", { count: form.pendingPastCount })}
                 </Button>
               </div>
             )}
@@ -421,12 +424,12 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                   {task.status === "completed" || task.completed_at ? (
                     <>
                       <RotateCcw className="h-3.5 w-3.5" />
-                      Reopen
+                      {t("task.action.reopen")}
                     </>
                   ) : (
                     <>
                       <CheckCircle className="h-3.5 w-3.5" />
-                      Complete
+                      {t("task.action.complete")}
                     </>
                   )}
                 </Button>
@@ -438,21 +441,24 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
               <div className="text-[11px] text-muted-foreground pt-2 border-t">
                 {task.created_at && (
                   <span>
-                    Created{" "}
-                    {new Date(task.created_at).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
+                    {t("task.createdDate", {
+                      date: new Date(task.created_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }),
                     })}
                   </span>
                 )}
                 {task.completed_at && (
                   <span>
-                    {" · "}Completed{" "}
-                    {new Date(task.completed_at).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
+                    {" · "}
+                    {t("task.completedDate", {
+                      date: new Date(task.completed_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }),
                     })}
                   </span>
                 )}
@@ -467,7 +473,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
                 className="flex-1"
               >
                 {form.isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {form.isEdit ? "Save Changes" : "Create Task"}
+                {form.isEdit ? t("task.action.save") : t("task.action.createTask")}
               </Button>
               {form.isEdit && (
                 <Button
@@ -488,20 +494,20 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
       <Dialog open={form.showDeleteConfirm} onOpenChange={form.setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
+            <DialogTitle>{t("task.deleteDialog.title")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &ldquo;{task?.title}&rdquo;?
+              {t("task.deleteDialog.message", { title: task?.title })}
               {(task?.subtasks?.length ?? 0) > 0 &&
-                ` This will also delete ${task!.subtasks!.length} subtask(s).`}
+                ` ${t("task.deleteDialog.subtaskWarning", { count: task!.subtasks!.length })}`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => form.setShowDeleteConfirm(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={form.handleDelete} disabled={form.isDeleting}>
               {form.isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

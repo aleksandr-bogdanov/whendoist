@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarOff, Check, CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
 import {
@@ -49,6 +50,7 @@ export function ScheduledTaskCard({
   dimmed,
   orderedIds,
 }: ScheduledTaskCardProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
@@ -85,10 +87,10 @@ export function ScheduledTaskCard({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task unscheduled");
-          toast.success(`Unscheduled "${title}"`, {
+          toast.success(t("toast.taskUnscheduled", { title }), {
             id: `unschedule-${taskId}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 // Optimistic undo — immediately restore on calendar
                 queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
@@ -106,7 +108,7 @@ export function ScheduledTaskCard({
                         queryKey: dashboardTasksKey(),
                       }),
                     onError: () => {
-                      toast.error("Failed to undo — please refresh");
+                      toast.error(t("toast.failedToUndoRefresh"));
                       queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
                     },
                   },
@@ -117,7 +119,7 @@ export function ScheduledTaskCard({
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to unschedule task", { id: `unschedule-err-${taskId}` });
+          toast.error(t("toast.failedToUnscheduleTask"), { id: `unschedule-err-${taskId}` });
         },
       },
     );
@@ -145,38 +147,41 @@ export function ScheduledTaskCard({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce(isCompleted ? "Task reopened" : "Task completed");
-          toast.success(isCompleted ? `Reopened "${title}"` : `Completed "${title}"`, {
-            id: `complete-${taskId}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
-                  old?.map((t) =>
-                    t.id === taskId
-                      ? {
-                          ...t,
-                          status: isCompleted ? ("completed" as const) : ("pending" as const),
-                          completed_at: isCompleted ? new Date().toISOString() : null,
-                        }
-                      : t,
-                  ),
-                );
-                toggleComplete.mutate(
-                  { taskId, data: null },
-                  {
-                    onSuccess: () =>
-                      queryClient.invalidateQueries({
-                        queryKey: dashboardTasksKey(),
-                      }),
-                  },
-                );
+          toast.success(
+            isCompleted ? t("toast.taskReopened", { title }) : t("toast.taskCompleted", { title }),
+            {
+              id: `complete-${taskId}`,
+              action: {
+                label: t("toast.undo"),
+                onClick: () => {
+                  queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
+                    old?.map((t) =>
+                      t.id === taskId
+                        ? {
+                            ...t,
+                            status: isCompleted ? ("completed" as const) : ("pending" as const),
+                            completed_at: isCompleted ? new Date().toISOString() : null,
+                          }
+                        : t,
+                    ),
+                  );
+                  toggleComplete.mutate(
+                    { taskId, data: null },
+                    {
+                      onSuccess: () =>
+                        queryClient.invalidateQueries({
+                          queryKey: dashboardTasksKey(),
+                        }),
+                    },
+                  );
+                },
               },
             },
-          });
+          );
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to complete task", { id: `complete-err-${taskId}` });
+          toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${taskId}` });
         },
       },
     );
@@ -189,10 +194,10 @@ export function ScheduledTaskCard({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           announce("Task deleted");
-          toast.success(`Deleted "${title}"`, {
+          toast.success(t("toast.taskDeleted", { title }), {
             id: `delete-${taskId}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 restoreTask.mutate(
                   { taskId },
@@ -205,7 +210,7 @@ export function ScheduledTaskCard({
                       queryClient.invalidateQueries({
                         queryKey: dashboardTasksKey(),
                       });
-                      toast.error("Undo failed");
+                      toast.error(t("toast.undoFailed"));
                     },
                   },
                 );
@@ -213,7 +218,7 @@ export function ScheduledTaskCard({
             },
           });
         },
-        onError: () => toast.error("Failed to delete task", { id: `delete-err-${taskId}` }),
+        onError: () => toast.error(t("toast.failedToDeleteTask"), { id: `delete-err-${taskId}` }),
       },
     );
   };
@@ -291,15 +296,15 @@ export function ScheduledTaskCard({
           <>
             <ContextMenuItem onSelect={() => onClick?.()}>
               <Pencil className="h-3.5 w-3.5 mr-2" />
-              Edit
+              {t("task.action.edit")}
             </ContextMenuItem>
             <ContextMenuItem onSelect={handleUnschedule}>
               <CalendarOff className="h-3.5 w-3.5 mr-2" />
-              Unschedule
+              {t("task.action.unschedule")}
             </ContextMenuItem>
             <ContextMenuItem onSelect={handleComplete}>
               <Check className="h-3.5 w-3.5 mr-2" />
-              {isCompleted ? "Reopen" : "Complete"}
+              {isCompleted ? t("task.action.reopen") : t("task.action.complete")}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
@@ -307,7 +312,7 @@ export function ScheduledTaskCard({
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5 mr-2" />
-              Delete
+              {t("task.action.delete")}
             </ContextMenuItem>
           </>
         )}

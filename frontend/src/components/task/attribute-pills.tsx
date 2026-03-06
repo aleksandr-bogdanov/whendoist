@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
 import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
@@ -37,6 +38,7 @@ function formatFieldValue(
 }
 
 function useAttributeUpdate() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
 
@@ -91,34 +93,40 @@ function useAttributeUpdate() {
             queryClient.invalidateQueries({
               queryKey: dashboardTasksKey(),
             });
-            toast.success(`${FIELD_LABELS[field]} → ${formatFieldValue(field, value)}`, {
-              id: `attr-${field}-${taskId}`,
-              action: {
-                label: "Undo",
-                onClick: () => {
-                  applyOptimistic(taskId, field, previousValue);
-                  updateTask.mutate(
-                    { taskId, data: { [field]: previousValue } },
-                    {
-                      onSuccess: () =>
-                        queryClient.invalidateQueries({
-                          queryKey: dashboardTasksKey(),
-                        }),
-                      onError: () => toast.error("Undo failed"),
-                    },
-                  );
+            toast.success(
+              t("toast.fieldUpdated", {
+                field: FIELD_LABELS[field],
+                value: formatFieldValue(field, value),
+              }),
+              {
+                id: `attr-${field}-${taskId}`,
+                action: {
+                  label: t("toast.undo"),
+                  onClick: () => {
+                    applyOptimistic(taskId, field, previousValue);
+                    updateTask.mutate(
+                      { taskId, data: { [field]: previousValue } },
+                      {
+                        onSuccess: () =>
+                          queryClient.invalidateQueries({
+                            queryKey: dashboardTasksKey(),
+                          }),
+                        onError: () => toast.error(t("toast.undoFailed")),
+                      },
+                    );
+                  },
                 },
               },
-            });
+            );
           },
           onError: () => {
             queryClient.setQueryData(dashboardTasksKey(), previous);
-            toast.error("Failed to update task", { id: `attr-err-${taskId}` });
+            toast.error(t("toast.failedToUpdateTask"), { id: `attr-err-${taskId}` });
           },
         },
       );
     },
-    [queryClient, updateTask, applyOptimistic, findCurrentValue],
+    [queryClient, updateTask, applyOptimistic, findCurrentValue, t],
   );
 }
 

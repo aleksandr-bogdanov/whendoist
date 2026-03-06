@@ -1,5 +1,6 @@
 import { Eye, EyeOff, Fingerprint, KeyRound, Loader2, ScanFace } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ interface EncryptionUnlockProps {
 }
 
 export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProps) {
+  const { t } = useTranslation();
   const [passphrase, setPassphrase] = useState("");
   const [showPassphrase, setShowPassphrase] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,14 +54,14 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
       if (success) {
         setPassphrase("");
         await restoreKey();
-        toast.success("Encryption unlocked");
+        toast.success(t("encryption.unlocked"));
       } else {
         setPassphrase("");
-        setError("Incorrect passphrase. Please try again.");
+        setError(t("encryption.incorrectPassphrase"));
       }
     } catch {
       setPassphrase("");
-      setError("Failed to unlock encryption. Please try again.");
+      setError(t("encryption.unlockFailed"));
     } finally {
       setLoading(false);
     }
@@ -74,14 +76,14 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
       if (result.success) {
         setPassphrase("");
         await restoreKey();
-        toast.success("Encryption unlocked with passkey");
+        toast.success(t("encryption.unlockedWithPasskey"));
       } else {
         setPassphrase("");
-        setError(result.error ?? "Passkey authentication failed");
+        setError(result.error ?? t("encryption.passkeyFailed"));
       }
     } catch {
       setPassphrase("");
-      setError("Passkey unlock failed. Try your passphrase instead.");
+      setError(t("encryption.passkeyFailedFallback"));
     } finally {
       setLoading(false);
     }
@@ -95,12 +97,12 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
       const success = await unlockWithBiometric();
       if (success) {
         setPassphrase("");
-        toast.success(`Encryption unlocked with ${biometryLabel(biometryType)}`);
+        toast.success(t("encryption.unlockedWithBiometric", { type: biometryLabel(biometryType) }));
       } else {
-        setError(`${biometryLabel(biometryType)} failed. Try your passphrase instead.`);
+        setError(t("encryption.biometricFailed", { type: biometryLabel(biometryType) }));
       }
     } catch {
-      setError(`${biometryLabel(biometryType)} failed. Try your passphrase instead.`);
+      setError(t("encryption.biometricFailed", { type: biometryLabel(biometryType) }));
     } finally {
       setLoading(false);
     }
@@ -120,9 +122,9 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="h-5 w-5" />
-            Unlock Encryption
+            {t("encryption.unlockTitle")}
           </DialogTitle>
-          <DialogDescription>Enter your passphrase to decrypt your data.</DialogDescription>
+          <DialogDescription>{t("encryption.unlockDescription")}</DialogDescription>
         </DialogHeader>
 
         <form
@@ -133,14 +135,14 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
           }}
         >
           <div className="space-y-2">
-            <Label htmlFor="passphrase">Passphrase</Label>
+            <Label htmlFor="passphrase">{t("encryption.passphrase")}</Label>
             <div className="relative">
               <Input
                 id="passphrase"
                 type={showPassphrase ? "text" : "password"}
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="Enter your encryption passphrase"
+                placeholder={t("encryption.passphrasePlaceholder")}
                 disabled={loading}
                 autoFocus={!showBiometric}
               />
@@ -170,7 +172,7 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
                 ) : (
                   <BiometricIcon className="mr-2 h-4 w-4" />
                 )}
-                Unlock with {biometricLabel}
+                {t("encryption.unlockWithBiometric", { type: biometricLabel })}
               </Button>
             )}
 
@@ -184,7 +186,7 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
               ) : (
                 <KeyRound className="mr-2 h-4 w-4" />
               )}
-              Unlock with Passphrase
+              {t("encryption.unlockWithPassphrase")}
             </Button>
 
             {isWebAuthnSupported() && (
@@ -199,7 +201,7 @@ export function EncryptionUnlock({ open, salt, testValue }: EncryptionUnlockProp
                 ) : (
                   <Fingerprint className="mr-2 h-4 w-4" />
                 )}
-                Unlock with Passkey
+                {t("encryption.unlockWithPasskey")}
               </Button>
             )}
           </div>

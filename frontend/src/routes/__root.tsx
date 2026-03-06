@@ -1,10 +1,12 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { useDevice } from "@/hooks/use-device";
 import { useGlobalKeyHandler } from "@/hooks/use-shortcuts";
 import { useViewport } from "@/hooks/use-viewport";
+import i18n from "@/lib/i18n";
 import { isNativeTabBarAvailable } from "@/lib/tauri-native-tabbar";
 import { TOAST_DURATION } from "@/lib/toast";
 
@@ -12,10 +14,20 @@ export const Route = createRootRoute({
   component: RootLayout,
 });
 
+/** Sync document.documentElement.lang with the current i18n language. */
+function useDocumentLang() {
+  const { i18n: i18nInstance } = useTranslation();
+  const lang = i18nInstance.resolvedLanguage ?? "en";
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = lang;
+  }
+}
+
 function RootLayout() {
   // Apply device CSS classes and manage viewport height globally
   const { isMobileViewport } = useDevice();
   useViewport();
+  useDocumentLang();
 
   // Global keyboard shortcut dispatcher
   useGlobalKeyHandler();
@@ -69,16 +81,16 @@ class RootErrorBoundary extends Component<
               aria-hidden="true"
               className="mx-auto h-20 w-20"
             />
-            <h1 className="text-lg font-semibold">Something went wrong</h1>
+            <h1 className="text-lg font-semibold">{i18n.t("app.somethingWentWrong")}</h1>
             <p className="text-sm text-muted-foreground">
-              {this.state.error?.message || "An unexpected error occurred."}
+              {this.state.error?.message || i18n.t("app.unexpectedError")}
             </p>
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              Reload
+              {i18n.t("app.reload")}
             </button>
           </div>
         </div>

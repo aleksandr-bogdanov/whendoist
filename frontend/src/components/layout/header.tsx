@@ -1,17 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogOut, Monitor, Moon, Search, Sun } from "lucide-react";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { DemoPill } from "@/components/demo-pill";
 import { isTauri } from "@/hooks/use-device";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
-
-const navTabs = [
-  { to: "/thoughts", label: "THOUGHTS" },
-  { to: "/dashboard", label: "TASKS" },
-  { to: "/analytics", label: "ANALYTICS" },
-  { to: "/settings", label: "SETTINGS" },
-] as const;
 
 const themeIcons = {
   light: Sun,
@@ -58,11 +52,22 @@ interface HeaderProps {
 }
 
 export function Header({ userName: _userName, userEmail: _userEmail, onDebugToggle }: HeaderProps) {
+  const { t } = useTranslation();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const navTabs = useMemo(
+    () => [
+      { to: "/thoughts", label: t("nav.thoughts").toUpperCase() },
+      { to: "/dashboard", label: t("nav.tasks").toUpperCase() },
+      { to: "/analytics", label: t("nav.analytics").toUpperCase() },
+      { to: "/settings", label: t("nav.settings").toUpperCase() },
+    ],
+    [t],
+  );
 
   const ThemeIcon = themeIcons[theme];
 
@@ -94,7 +99,7 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
         <Link
           to="/dashboard"
           className="flex items-center"
-          aria-label="Home"
+          aria-label={t("nav.home")}
           onTouchStart={handleLogoPress}
           onTouchEnd={handleLogoRelease}
           onMouseDown={handleLogoPress}
@@ -148,7 +153,7 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
             className="hidden md:flex items-center gap-2 h-8 pl-2.5 pr-2 rounded-lg border border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:border-border transition-colors cursor-pointer w-[180px] lg:w-[220px]"
           >
             <Search className="h-3.5 w-3.5 shrink-0 opacity-60" />
-            <span className="text-xs flex-1 text-left">Search...</span>
+            <span className="text-xs flex-1 text-left">{t("nav.searchPlaceholder")}</span>
             <kbd className="text-[10px] font-medium bg-background/80 border border-border/50 rounded px-1.5 py-0.5 leading-none">
               {navigator.platform?.includes("Mac") ? "⌘K" : "Ctrl+K"}
             </kbd>
@@ -173,7 +178,7 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
               window.location.href = "/auth/logout";
             }}
             className="p-3 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors"
-            title="Logout"
+            title={t("nav.logout")}
           >
             <LogOut className="h-5 w-5 md:h-3.5 md:w-3.5" />
           </button>

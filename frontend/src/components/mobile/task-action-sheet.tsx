@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Check, Pencil, Plus, SkipForward, Trash2, Undo2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { InstanceResponse, TaskResponse } from "@/api/model";
 import {
@@ -45,6 +46,7 @@ export function TaskActionSheet({
   onAddSubtask,
   pendingInstance: pendingInstanceProp,
 }: TaskActionSheetProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const completeInstance = useCompleteInstanceApiV1InstancesInstanceIdCompletePost();
@@ -113,16 +115,16 @@ export function TaskActionSheet({
             const dateHint = new Date(
               `${pendingInstance.instance_date}T00:00:00`,
             ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-            toast.success(`Completed "${task.title}" · ${dateHint}`, {
+            toast.success(t("toast.instanceCompleted", { title: task.title, date: dateHint }), {
               id: `complete-inst-${pendingInstance.id}`,
               action: {
-                label: "Undo",
+                label: t("toast.undo"),
                 onClick: () => {
                   uncompleteInstance.mutate(
                     { instanceId: pendingInstance.id },
                     {
                       onSuccess: () => invalidateAll(),
-                      onError: () => toast.error("Undo failed"),
+                      onError: () => toast.error(t("toast.undoFailed")),
                     },
                   );
                 },
@@ -134,7 +136,7 @@ export function TaskActionSheet({
               getListInstancesApiV1InstancesGetQueryKey(),
               previousInstances,
             );
-            toast.error("Failed to complete instance", {
+            toast.error(t("toast.failedToCompleteInstance"), {
               id: `complete-inst-err-${pendingInstance.id}`,
             });
           },
@@ -169,27 +171,32 @@ export function TaskActionSheet({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-          toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
-            id: `complete-${task.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                toggleComplete.mutate(
-                  { taskId: task.id, data: null },
-                  {
-                    onSuccess: () =>
-                      queryClient.invalidateQueries({
-                        queryKey: dashboardTasksKey(),
-                      }),
-                  },
-                );
+          toast.success(
+            isCompleted
+              ? t("toast.taskReopened", { title: task.title })
+              : t("toast.taskCompleted", { title: task.title }),
+            {
+              id: `complete-${task.id}`,
+              action: {
+                label: t("toast.undo"),
+                onClick: () => {
+                  toggleComplete.mutate(
+                    { taskId: task.id, data: null },
+                    {
+                      onSuccess: () =>
+                        queryClient.invalidateQueries({
+                          queryKey: dashboardTasksKey(),
+                        }),
+                    },
+                  );
+                },
               },
             },
-          });
+          );
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to update task", { id: `complete-err-${task.id}` });
+          toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${task.id}` });
         },
       },
     );
@@ -203,11 +210,7 @@ export function TaskActionSheet({
   const handleDelete = () => {
     if (hasSubtasks) {
       const count = task.subtasks!.length;
-      if (
-        !window.confirm(
-          `This task has ${count} subtask${count > 1 ? "s" : ""}. Deleting it will also delete all subtasks. Continue?`,
-        )
-      ) {
+      if (!window.confirm(t("toast.deleteConfirmSubtasks", { count }))) {
         return;
       }
     }
@@ -220,10 +223,10 @@ export function TaskActionSheet({
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-          toast.success(`Deleted "${task.title}"`, {
+          toast.success(t("toast.taskDeleted", { title: task.title }), {
             id: `delete-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 restoreTask.mutate(
                   { taskId: task.id },
@@ -232,10 +235,10 @@ export function TaskActionSheet({
                       queryClient.invalidateQueries({
                         queryKey: dashboardTasksKey(),
                       });
-                      toast.success("Task restored", { id: `restore-${task.id}` });
+                      toast.success(t("toast.taskRestored"), { id: `restore-${task.id}` });
                     },
                     onError: () =>
-                      toast.error("Failed to restore task", { id: `restore-err-${task.id}` }),
+                      toast.error(t("toast.failedToRestoreTask"), { id: `restore-err-${task.id}` }),
                   },
                 );
               },
@@ -243,7 +246,7 @@ export function TaskActionSheet({
           });
         },
         onError: () => {
-          toast.error("Failed to delete task", { id: `delete-err-${task.id}` });
+          toast.error(t("toast.failedToDeleteTask"), { id: `delete-err-${task.id}` });
         },
       },
     );
@@ -252,21 +255,31 @@ export function TaskActionSheet({
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange} title={task.title}>
       <div className="flex flex-col gap-0.5 pb-4">
-        <ActionButton icon={<Pencil className="h-5 w-5" />} label="Edit" onClick={handleEdit} />
+        <ActionButton
+          icon={<Pencil className="h-5 w-5" />}
+          label={t("task.action.edit")}
+          onClick={handleEdit}
+        />
         <ActionButton
           icon={isCompleted ? <Undo2 className="h-5 w-5" /> : <Check className="h-5 w-5" />}
-          label={pendingInstance ? "Complete this one" : isCompleted ? "Uncomplete" : "Complete"}
+          label={
+            pendingInstance
+              ? t("task.action.completeThisOne")
+              : isCompleted
+                ? t("task.action.uncomplete")
+                : t("task.action.complete")
+          }
           onClick={handleToggleComplete}
         />
         <ActionButton
           icon={<Calendar className="h-5 w-5" />}
-          label="Schedule"
+          label={t("task.action.schedule")}
           onClick={handleSchedule}
         />
         {!task.is_recurring && !isCompleted && task.parent_id == null && (
           <ActionButton
             icon={<Plus className="h-5 w-5" />}
-            label="Add subtask"
+            label={t("task.action.addSubtask")}
             onClick={() => {
               close();
               onAddSubtask?.(task);
@@ -276,7 +289,7 @@ export function TaskActionSheet({
         {task.is_recurring && pendingInstance && (
           <ActionButton
             icon={<SkipForward className="h-5 w-5" />}
-            label="Skip instance"
+            label={t("task.action.skipInstance")}
             onClick={() => {
               close();
               haptic("light");
@@ -288,24 +301,27 @@ export function TaskActionSheet({
                     const dateHint = new Date(
                       `${pendingInstance.instance_date}T00:00:00`,
                     ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                    toast.success(`Skipped "${task.title}" · ${dateHint}`, {
-                      id: `skip-inst-${pendingInstance.id}`,
-                      action: {
-                        label: "Undo",
-                        onClick: () => {
-                          unskipInstance.mutate(
-                            { instanceId: pendingInstance.id },
-                            {
-                              onSuccess: () => invalidateAll(),
-                              onError: () => toast.error("Undo failed"),
-                            },
-                          );
+                    toast.success(
+                      t("toast.instanceSkipped", { title: task.title, date: dateHint }),
+                      {
+                        id: `skip-inst-${pendingInstance.id}`,
+                        action: {
+                          label: t("toast.undo"),
+                          onClick: () => {
+                            unskipInstance.mutate(
+                              { instanceId: pendingInstance.id },
+                              {
+                                onSuccess: () => invalidateAll(),
+                                onError: () => toast.error(t("toast.undoFailed")),
+                              },
+                            );
+                          },
                         },
                       },
-                    });
+                    );
                   },
                   onError: () =>
-                    toast.error("Failed to skip instance", {
+                    toast.error(t("toast.failedToSkipInstance"), {
                       id: `skip-inst-err-${pendingInstance.id}`,
                     }),
                 },
@@ -315,7 +331,7 @@ export function TaskActionSheet({
         )}
         <ActionButton
           icon={<Trash2 className="h-5 w-5" />}
-          label="Delete"
+          label={t("task.action.delete")}
           onClick={handleDelete}
           destructive
         />
@@ -325,7 +341,7 @@ export function TaskActionSheet({
           onClick={close}
           className="mt-2 w-full rounded-lg py-3 text-sm font-medium text-muted-foreground hover:bg-accent transition-colors"
         >
-          Cancel
+          {t("common.cancel")}
         </button>
       </div>
     </BottomSheet>

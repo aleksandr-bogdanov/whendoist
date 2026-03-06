@@ -10,6 +10,7 @@ import {
   Database,
   Download,
   Fingerprint,
+  Globe,
   History,
   Info,
   Key,
@@ -30,6 +31,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type {
   CalendarResponse,
@@ -139,6 +141,7 @@ import {
   setupEncryption,
   type TaskContentData,
 } from "@/lib/crypto";
+import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import { isSupported as isPasskeySupported, registerPasskey } from "@/lib/passkey";
 import { biometryLabel } from "@/lib/tauri-biometric";
 import { useCryptoStore } from "@/stores/crypto-store";
@@ -153,11 +156,14 @@ export const Route = createLazyFileRoute("/_authenticated/settings")({
 // ============================================================================
 
 function SettingsPage() {
+  const { t } = useTranslation();
   return (
     <ScrollArea className="h-full">
       <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8 pb-nav-safe md:pb-8">
-        <h1 className="text-2xl font-semibold">Settings</h1>
+        <h1 className="text-2xl font-semibold">{t("settings.title")}</h1>
         <ThemeSection />
+        <Separator />
+        <LanguageSection />
         <Separator />
         <TimezoneSection />
         <Separator />
@@ -192,17 +198,30 @@ function SettingsPage() {
 // ============================================================================
 
 function ThemeSection() {
+  const { t } = useTranslation();
   const theme = useUIStore((s) => s.theme);
   const setTheme = useUIStore((s) => s.setTheme);
 
   return (
-    <SettingsCard title="Display" icon={<Sun className="h-4 w-4" />}>
-      <Label className="text-sm text-muted-foreground">Theme</Label>
+    <SettingsCard title={t("settings.display.title")} icon={<Sun className="h-4 w-4" />}>
+      <Label className="text-sm text-muted-foreground">{t("settings.display.theme")}</Label>
       <div className="flex gap-2">
         {[
-          { value: "light" as const, label: "Light", icon: <Sun className="h-4 w-4" /> },
-          { value: "dark" as const, label: "Dark", icon: <Moon className="h-4 w-4" /> },
-          { value: "system" as const, label: "System", icon: <Monitor className="h-4 w-4" /> },
+          {
+            value: "light" as const,
+            label: t("settings.display.light"),
+            icon: <Sun className="h-4 w-4" />,
+          },
+          {
+            value: "dark" as const,
+            label: t("settings.display.dark"),
+            icon: <Moon className="h-4 w-4" />,
+          },
+          {
+            value: "system" as const,
+            label: t("settings.display.system"),
+            icon: <Monitor className="h-4 w-4" />,
+          },
         ].map((opt) => (
           <Button
             key={opt.value}
@@ -221,21 +240,51 @@ function ThemeSection() {
 }
 
 // ============================================================================
+// Language Section
+// ============================================================================
+
+function LanguageSection() {
+  const { t } = useTranslation();
+  const locale = useUIStore((s) => s.locale);
+
+  return (
+    <SettingsCard title={t("settings.language.title")} icon={<Globe className="h-4 w-4" />}>
+      <p className="text-sm text-muted-foreground">{t("settings.language.description")}</p>
+      <div className="grid grid-cols-2 gap-2">
+        {SUPPORTED_LANGUAGES.map((lang) => (
+          <Button
+            key={lang.code}
+            variant={locale === lang.code ? "default" : "outline"}
+            size="sm"
+            className="justify-start"
+            onClick={() => useUIStore.getState().setLocale(lang.code)}
+          >
+            {lang.nativeName} ({lang.name})
+          </Button>
+        ))}
+      </div>
+    </SettingsCard>
+  );
+}
+
+// ============================================================================
 // Timezone Section
 // ============================================================================
 
 function SecondaryTimezoneToggle() {
+  const { t } = useTranslation();
   const show = useUIStore((s) => s.showSecondaryTimezone);
   const setShow = useUIStore((s) => s.setShowSecondaryTimezone);
   return (
     <div className="flex items-center justify-between">
-      <p className="text-xs text-muted-foreground">Show on calendar</p>
+      <p className="text-xs text-muted-foreground">{t("settings.timezone.showOnCalendar")}</p>
       <Switch size="sm" checked={show} onCheckedChange={setShow} />
     </div>
   );
 }
 
 function TimezoneSection() {
+  const { t } = useTranslation();
   const prefsQuery = useGetPreferencesApiV1PreferencesGet();
   const updatePrefs = useUpdatePreferencesApiV1PreferencesPut();
   const queryClient = useQueryClient();
@@ -244,7 +293,7 @@ function TimezoneSection() {
   const secondaryTz = prefsQuery.data?.secondary_timezone ?? null;
 
   return (
-    <SettingsCard title="Timezone" icon={<Calendar className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.timezone.title")} icon={<Calendar className="h-4 w-4" />}>
       <TimezonePicker
         value={currentTz}
         onChange={(tz) => {
@@ -261,16 +310,14 @@ function TimezoneSection() {
                   queryKey: getGetPreferencesApiV1PreferencesGetQueryKey(),
                 });
               },
-              onSuccess: () => toast.success("Timezone updated"),
-              onError: () => toast.error("Failed to update timezone"),
+              onSuccess: () => toast.success(t("settings.timezone.updated")),
+              onError: () => toast.error(t("settings.timezone.failedToUpdate")),
             },
           );
         }}
       />
       <div className="pt-2 border-t space-y-2">
-        <p className="text-xs text-muted-foreground">
-          Show a second timezone on the calendar time ruler.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("settings.timezone.secondaryHint")}</p>
         <TimezonePicker
           value={secondaryTz}
           onChange={(tz) => {
@@ -287,13 +334,17 @@ function TimezoneSection() {
                   });
                 },
                 onSuccess: () =>
-                  toast.success(tz ? "Secondary timezone updated" : "Secondary timezone cleared"),
-                onError: () => toast.error("Failed to update secondary timezone"),
+                  toast.success(
+                    tz
+                      ? t("settings.timezone.secondaryUpdated")
+                      : t("settings.timezone.secondaryCleared"),
+                  ),
+                onError: () => toast.error(t("settings.timezone.failedToUpdateSecondary")),
               },
             );
           }}
           allowClear
-          placeholder="Secondary timezone (optional)"
+          placeholder={t("settings.timezone.secondaryPlaceholder")}
         />
         {secondaryTz && <SecondaryTimezoneToggle />}
       </div>
@@ -306,6 +357,7 @@ function TimezoneSection() {
 // ============================================================================
 
 function GoogleCalendarSection() {
+  const { t } = useTranslation();
   const calendarsQuery = useGetCalendarsApiV1CalendarsGet();
   const saveSelections = useSetCalendarSelectionsApiV1CalendarsSelectionsPost();
   const queryClient = useQueryClient();
@@ -324,19 +376,19 @@ function GoogleCalendarSection() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetCalendarsApiV1CalendarsGetQueryKey() });
-          toast.success("Calendar updated");
+          toast.success(t("settings.gcal.calendarUpdated"));
         },
-        onError: () => toast.error("Failed to update calendar"),
+        onError: () => toast.error(t("settings.gcal.failedToUpdateCalendar")),
       },
     );
   };
 
   return (
-    <SettingsCard title="Google Calendar" icon={<Calendar className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.gcal.title")} icon={<Calendar className="h-4 w-4" />}>
       {isConnected ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Badge variant="secondary">Connected</Badge>
+            <Badge variant="secondary">{t("common.connected")}</Badge>
             <Button
               variant="outline"
               size="sm"
@@ -344,7 +396,7 @@ function GoogleCalendarSection() {
                 window.location.href = "/auth/google";
               }}
             >
-              Reconnect
+              {t("settings.gcal.reconnect")}
             </Button>
           </div>
           <div className="space-y-2">
@@ -361,7 +413,7 @@ function GoogleCalendarSection() {
                   <span className="text-sm">{cal.summary}</span>
                   {cal.primary && (
                     <Badge variant="outline" className="text-xs">
-                      Primary
+                      {t("common.primary")}
                     </Badge>
                   )}
                 </div>
@@ -375,16 +427,14 @@ function GoogleCalendarSection() {
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Connect Google Calendar to see your events alongside tasks.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("settings.gcal.connectDescription")}</p>
           <Button
             onClick={() => {
               window.location.href = "/auth/google";
             }}
           >
             <Link className="mr-2 h-4 w-4" />
-            Connect Google Calendar
+            {t("settings.gcal.connectButton")}
           </Button>
         </div>
       )}
@@ -397,6 +447,7 @@ function GoogleCalendarSection() {
 // ============================================================================
 
 function GCalSyncSection() {
+  const { t } = useTranslation();
   const syncQuery = useGetSyncStatusApiV1GcalSyncStatusGet();
   const enableSync = useEnableSyncApiV1GcalSyncEnablePost();
   const disableSync = useDisableSyncApiV1GcalSyncDisablePost();
@@ -421,10 +472,10 @@ function GCalSyncSection() {
             queryClient.invalidateQueries({
               queryKey: getGetSyncStatusApiV1GcalSyncStatusGetQueryKey(),
             });
-            toast.success("Calendar sync enabled");
+            toast.success(t("settings.gcalSync.enabled"));
           }
         },
-        onError: () => toast.error("Failed to enable sync"),
+        onError: () => toast.error(t("settings.gcalSync.failedToEnable")),
       });
     }
   }, []);
@@ -439,10 +490,10 @@ function GCalSyncSection() {
             queryClient.invalidateQueries({
               queryKey: getGetSyncStatusApiV1GcalSyncStatusGetQueryKey(),
             });
-            toast.success("Calendar sync enabled");
+            toast.success(t("settings.gcalSync.enabled"));
           }
         },
-        onError: () => toast.error("Failed to enable sync"),
+        onError: () => toast.error(t("settings.gcalSync.failedToEnable")),
       });
     } else {
       disableSync.mutate(
@@ -452,22 +503,20 @@ function GCalSyncSection() {
             queryClient.invalidateQueries({
               queryKey: getGetSyncStatusApiV1GcalSyncStatusGetQueryKey(),
             });
-            toast.success("Calendar sync disabled");
+            toast.success(t("settings.gcalSync.disabled"));
           },
-          onError: () => toast.error("Failed to disable sync"),
+          onError: () => toast.error(t("settings.gcalSync.failedToDisable")),
         },
       );
     }
   };
 
   return (
-    <SettingsCard title="Google Calendar Sync" icon={<RotateCcw className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.gcalSync.title")} icon={<RotateCcw className="h-4 w-4" />}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">One-way sync to Google Calendar</p>
-          <p className="text-xs text-muted-foreground">
-            Scheduled tasks appear on your Google Calendar
-          </p>
+          <p className="text-sm font-medium">{t("settings.gcalSync.oneWay")}</p>
+          <p className="text-xs text-muted-foreground">{t("settings.gcalSync.description")}</p>
         </div>
         <Switch
           checked={syncStatus?.enabled ?? false}
@@ -478,7 +527,8 @@ function GCalSyncSection() {
       {syncStatus?.enabled && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            {syncStatus.synced_count != null && <>{syncStatus.synced_count} tasks synced</>}
+            {syncStatus.synced_count != null &&
+              t("settings.gcalSync.tasksSynced", { count: syncStatus.synced_count })}
             {syncStatus.sync_error && (
               <span className="text-destructive ml-2">{syncStatus.sync_error}</span>
             )}
@@ -493,9 +543,9 @@ function GCalSyncSection() {
                   queryClient.invalidateQueries({
                     queryKey: getGetSyncStatusApiV1GcalSyncStatusGetQueryKey(),
                   });
-                  toast.success("Full sync started");
+                  toast.success(t("settings.gcalSync.fullSyncStarted"));
                 },
-                onError: () => toast.error("Failed to start sync"),
+                onError: () => toast.error(t("settings.gcalSync.failedToStartSync")),
               });
             }}
             disabled={fullSync.isPending}
@@ -505,7 +555,7 @@ function GCalSyncSection() {
             ) : (
               <RotateCcw className="h-3 w-3" />
             )}
-            Re-sync
+            {t("settings.gcalSync.resync")}
           </Button>
         </div>
       )}
@@ -518,6 +568,7 @@ function GCalSyncSection() {
 // ============================================================================
 
 function CalendarFeedSection() {
+  const { t } = useTranslation();
   const feedQuery = useGetFeedStatusApiV1CalendarFeedStatusGet();
   const enableFeed = useEnableFeedApiV1CalendarFeedEnablePost();
   const disableFeed = useDisableFeedApiV1CalendarFeedDisablePost();
@@ -540,17 +591,17 @@ function CalendarFeedSection() {
       enableFeed.mutate(undefined, {
         onSuccess: () => {
           invalidateFeedStatus();
-          toast.success("Calendar feed enabled");
+          toast.success(t("settings.calendarFeed.enabled"));
         },
-        onError: () => toast.error("Failed to enable calendar feed"),
+        onError: () => toast.error(t("settings.calendarFeed.failedToEnable")),
       });
     } else {
       disableFeed.mutate(undefined, {
         onSuccess: () => {
           invalidateFeedStatus();
-          toast.success("Calendar feed disabled");
+          toast.success(t("settings.calendarFeed.disabled"));
         },
-        onError: () => toast.error("Failed to disable calendar feed"),
+        onError: () => toast.error(t("settings.calendarFeed.failedToDisable")),
       });
     }
   };
@@ -560,10 +611,10 @@ function CalendarFeedSection() {
     try {
       await navigator.clipboard.writeText(feedStatus.feed_url);
       setCopied(true);
-      toast.success("Feed URL copied to clipboard");
+      toast.success(t("settings.calendarFeed.urlCopied"));
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Failed to copy URL");
+      toast.error(t("settings.calendarFeed.failedToCopy"));
     }
   };
 
@@ -572,20 +623,18 @@ function CalendarFeedSection() {
       onSuccess: () => {
         invalidateFeedStatus();
         setShowRegenConfirm(false);
-        toast.success("Feed URL regenerated");
+        toast.success(t("settings.calendarFeed.urlRegenerated"));
       },
-      onError: () => toast.error("Failed to regenerate feed URL"),
+      onError: () => toast.error(t("settings.calendarFeed.failedToRegenerate")),
     });
   };
 
   return (
-    <SettingsCard title="Calendar Feed" icon={<Rss className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.calendarFeed.title")} icon={<Rss className="h-4 w-4" />}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">iCal subscription feed</p>
-          <p className="text-xs text-muted-foreground">
-            Subscribe from Apple Calendar, Google Calendar, or Outlook
-          </p>
+          <p className="text-sm font-medium">{t("settings.calendarFeed.icalFeed")}</p>
+          <p className="text-xs text-muted-foreground">{t("settings.calendarFeed.description")}</p>
         </div>
         <Switch
           checked={feedStatus?.enabled ?? false}
@@ -596,7 +645,7 @@ function CalendarFeedSection() {
 
       {isBlocked && (
         <p className="text-xs text-muted-foreground">
-          Calendar feed is unavailable when E2E encryption is enabled.
+          {t("settings.calendarFeed.encryptionBlocked")}
         </p>
       )}
 
@@ -604,7 +653,9 @@ function CalendarFeedSection() {
         <div className="space-y-3">
           {/* Feed URL */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Feed URL</Label>
+            <Label className="text-xs text-muted-foreground">
+              {t("settings.calendarFeed.feedUrl")}
+            </Label>
             <div className="flex gap-2">
               <Input
                 readOnly
@@ -621,9 +672,7 @@ function CalendarFeedSection() {
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Paste this URL into your calendar app's "Subscribe to calendar" option.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("settings.calendarFeed.pasteHint")}</p>
           </div>
 
           {/* GCal sync overlap warning */}
@@ -631,8 +680,7 @@ function CalendarFeedSection() {
             <div className="flex items-start gap-2 rounded-md bg-amber-500/10 p-2.5">
               <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-700 dark:text-amber-400">
-                You have Google Calendar sync enabled. Using both in Google Calendar will create
-                duplicate events. The calendar feed is for other apps (Apple Calendar, Outlook).
+                {t("settings.calendarFeed.gcalSyncWarning")}
               </p>
             </div>
           )}
@@ -640,7 +688,7 @@ function CalendarFeedSection() {
           {/* Regenerate */}
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              Regenerating creates a new URL and invalidates the old one.
+              {t("settings.calendarFeed.regenerateHint")}
             </p>
             <Button
               variant="outline"
@@ -649,7 +697,7 @@ function CalendarFeedSection() {
               onClick={() => setShowRegenConfirm(true)}
             >
               <RefreshCw className="h-3 w-3" />
-              Regenerate URL
+              {t("settings.calendarFeed.regenerateUrl")}
             </Button>
           </div>
         </div>
@@ -659,22 +707,20 @@ function CalendarFeedSection() {
       <Dialog open={showRegenConfirm} onOpenChange={setShowRegenConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Regenerate Feed URL?</DialogTitle>
+            <DialogTitle>{t("settings.calendarFeed.regenerateTitle")}</DialogTitle>
             <DialogDescription>
-              This will create a new URL and immediately invalidate the old one. Any calendar apps
-              using the current URL will stop receiving updates until you re-subscribe with the new
-              URL.
+              {t("settings.calendarFeed.regenerateDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRegenConfirm(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleRegenerate} disabled={regenerateFeed.isPending}>
               {regenerateFeed.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Regenerate"
+                t("settings.calendarFeed.regenerate")
               )}
             </Button>
           </DialogFooter>
@@ -689,6 +735,7 @@ function CalendarFeedSection() {
 // ============================================================================
 
 function TodoistSection() {
+  const { t } = useTranslation();
   const [showPreview, setShowPreview] = useState(false);
   const previewQuery = usePreviewTodoistImportApiV1ImportTodoistPreviewGet({
     query: { enabled: showPreview },
@@ -698,8 +745,8 @@ function TodoistSection() {
   const queryClient = useQueryClient();
 
   return (
-    <SettingsCard title="Todoist Import" icon={<Download className="h-4 w-4" />}>
-      <p className="text-sm text-muted-foreground">Import tasks and projects from Todoist.</p>
+    <SettingsCard title={t("settings.todoist.title")} icon={<Download className="h-4 w-4" />}>
+      <p className="text-sm text-muted-foreground">{t("settings.todoist.description")}</p>
       <div className="flex gap-2 flex-wrap">
         <Button
           variant="outline"
@@ -708,34 +755,34 @@ function TodoistSection() {
           }}
         >
           <Link className="mr-2 h-4 w-4" />
-          Connect Todoist
+          {t("settings.todoist.connectButton")}
         </Button>
         <Button variant="outline" onClick={() => setShowPreview(true)}>
-          Preview Import
+          {t("settings.todoist.previewImport")}
         </Button>
         <Button
           variant="outline"
           size="sm"
           onClick={() => {
             disconnectTodoist.mutate(undefined, {
-              onSuccess: () => toast.success("Todoist disconnected"),
-              onError: () => toast.error("Failed to disconnect Todoist"),
+              onSuccess: () => toast.success(t("settings.todoist.disconnected")),
+              onError: () => toast.error(t("settings.todoist.failedToDisconnect")),
             });
           }}
           disabled={disconnectTodoist.isPending}
         >
           {disconnectTodoist.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
-          Disconnect
+          {t("settings.todoist.disconnect")}
         </Button>
       </div>
 
       {showPreview && previewQuery.data && (
         <div className="rounded-md border p-3 space-y-2">
-          <p className="text-sm font-medium">Import Preview</p>
+          <p className="text-sm font-medium">{t("settings.todoist.importPreview")}</p>
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>{previewQuery.data.projects_count} projects</p>
-            <p>{previewQuery.data.tasks_count} tasks</p>
-            <p>{previewQuery.data.subtasks_count} subtasks</p>
+            <p>{t("settings.todoist.projects", { count: previewQuery.data.projects_count })}</p>
+            <p>{t("settings.todoist.tasks", { count: previewQuery.data.tasks_count })}</p>
+            <p>{t("settings.todoist.subtasks", { count: previewQuery.data.subtasks_count })}</p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -751,20 +798,22 @@ function TodoistSection() {
                       queryClient.invalidateQueries({
                         queryKey: getListDomainsApiV1DomainsGetQueryKey(),
                       });
-                      toast.success(`Imported ${data.tasks_created} tasks`);
+                      toast.success(
+                        t("settings.todoist.importedTasks", { count: data.tasks_created }),
+                      );
                       setShowPreview(false);
                     },
-                    onError: () => toast.error("Import failed"),
+                    onError: () => toast.error(t("settings.todoist.importFailed")),
                   },
                 );
               }}
               disabled={importMutation.isPending}
             >
               {importMutation.isPending && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-              Import All
+              {t("settings.todoist.importAll")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setShowPreview(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
@@ -778,6 +827,7 @@ function TodoistSection() {
 // ============================================================================
 
 function EncryptionSection() {
+  const { t } = useTranslation();
   const encryptionQuery = useGetEncryptionStatusApiV1PreferencesEncryptionGet();
   const setupMutation = useSetupEncryptionApiV1PreferencesEncryptionSetupPost();
   const disableMutation = useDisableEncryptionApiV1PreferencesEncryptionDisablePost();
@@ -824,18 +874,25 @@ function EncryptionSection() {
     try {
       if (biometricEnabled) {
         await disableBiometric();
-        toast.success("Biometric unlock disabled");
+        toast.success(t("settings.encryption.biometricDisabled"));
       } else {
         if (!isUnlocked) {
-          toast.error("Unlock encryption first before enabling biometric");
+          toast.error(t("settings.encryption.unlockFirst"));
           return;
         }
         await enrollBiometric();
-        toast.success(`${biometryLabel(biometryType)} unlock enabled`);
+        toast.success(
+          t("settings.encryption.biometricEnabled", { type: biometryLabel(biometryType) }),
+        );
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
-      toast.error(`Failed to ${biometricEnabled ? "disable" : "enable"} biometric: ${msg}`);
+      toast.error(
+        t("settings.encryption.biometricFailed", {
+          action: biometricEnabled ? "disable" : "enable",
+          message: msg,
+        }),
+      );
     } finally {
       setTogglingBiometric(false);
     }
@@ -843,11 +900,11 @@ function EncryptionSection() {
 
   const handleEnable = async () => {
     if (passphrase.length < 8) {
-      toast.error("Passphrase must be at least 8 characters");
+      toast.error(t("settings.encryption.passphraseTooShort"));
       return;
     }
     if (passphrase !== confirmPassphrase) {
-      toast.error("Passphrases do not match");
+      toast.error(t("settings.encryption.passphraseMismatch"));
       return;
     }
 
@@ -896,15 +953,13 @@ function EncryptionSection() {
       queryClient.invalidateQueries({
         queryKey: getGetAllContentApiV1TasksAllContentGetQueryKey(),
       });
-      toast.success("Encryption enabled — all tasks and domains encrypted");
+      toast.success(t("settings.encryption.enabled"));
       setShowEnableDialog(false);
       setPassphrase("");
       setConfirmPassphrase("");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
-      toast.error(
-        `Failed to enable encryption: ${msg}. Encryption is marked as enabled — you can retry by toggling off and on.`,
-      );
+      toast.error(t("settings.encryption.failedToEnable", { message: msg }));
       console.error(err);
     } finally {
       setEnabling(false);
@@ -951,13 +1006,11 @@ function EncryptionSection() {
       queryClient.invalidateQueries({
         queryKey: getGetAllContentApiV1TasksAllContentGetQueryKey(),
       });
-      toast.success("Encryption disabled — all tasks and domains decrypted");
+      toast.success(t("settings.encryption.disabled"));
       setShowDisableDialog(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
-      toast.error(
-        `Failed to disable encryption: ${msg}. You can retry — already-decrypted data won't be affected.`,
-      );
+      toast.error(t("settings.encryption.failedToDisable", { message: msg }));
       console.error(err);
     } finally {
       setDisabling(false);
@@ -966,7 +1019,7 @@ function EncryptionSection() {
 
   const handleRegisterPasskey = async () => {
     if (!passkeyName.trim()) {
-      toast.error("Enter a name for the passkey");
+      toast.error(t("settings.encryption.passkeyNameRequired"));
       return;
     }
     setRegisteringPasskey(true);
@@ -974,7 +1027,7 @@ function EncryptionSection() {
       const result = await registerPasskey(passkeyName.trim());
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: getListPasskeysApiV1PasskeysGetQueryKey() });
-        toast.success("Passkey registered");
+        toast.success(t("settings.encryption.passkeyRegistered"));
         setPasskeyName("");
       } else {
         toast.error(result.error ?? "Registration failed");
@@ -985,21 +1038,19 @@ function EncryptionSection() {
   };
 
   return (
-    <SettingsCard title="Encryption" icon={<Shield className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.encryption.title")} icon={<Shield className="h-4 w-4" />}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium">End-to-end encryption</p>
-          <p className="text-xs text-muted-foreground">
-            Encrypt task titles, descriptions, and domain names
-          </p>
+          <p className="text-sm font-medium">{t("settings.encryption.e2e")}</p>
+          <p className="text-xs text-muted-foreground">{t("settings.encryption.description")}</p>
         </div>
         {encryptionEnabled ? (
           <Button variant="destructive" size="sm" onClick={() => setShowDisableDialog(true)}>
-            Disable
+            {t("settings.encryption.disable")}
           </Button>
         ) : (
           <Button size="sm" onClick={() => setShowEnableDialog(true)}>
-            Enable
+            {t("settings.encryption.enable")}
           </Button>
         )}
       </div>
@@ -1008,9 +1059,9 @@ function EncryptionSection() {
         <div className="space-y-3 pt-2">
           <Separator />
           <div>
-            <p className="text-sm font-medium mb-2">Passkeys</p>
+            <p className="text-sm font-medium mb-2">{t("settings.encryption.passkeys")}</p>
             {passkeys.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No passkeys registered</p>
+              <p className="text-xs text-muted-foreground">{t("settings.encryption.noPasskeys")}</p>
             ) : (
               <div className="space-y-1">
                 {passkeys.map((pk) => (
@@ -1028,7 +1079,11 @@ function EncryptionSection() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        if (!window.confirm(`Delete passkey "${pk.name}"? This cannot be undone.`))
+                        if (
+                          !window.confirm(
+                            t("settings.encryption.deletePasskeyConfirm", { name: pk.name }),
+                          )
+                        )
                           return;
                         deletePasskeyMutation.mutate(
                           { passkeyId: pk.id },
@@ -1037,9 +1092,10 @@ function EncryptionSection() {
                               queryClient.invalidateQueries({
                                 queryKey: getListPasskeysApiV1PasskeysGetQueryKey(),
                               });
-                              toast.success("Passkey deleted");
+                              toast.success(t("settings.encryption.passkeyDeleted"));
                             },
-                            onError: () => toast.error("Failed to delete passkey"),
+                            onError: () =>
+                              toast.error(t("settings.encryption.failedToDeletePasskey")),
                           },
                         );
                       }}
@@ -1053,7 +1109,7 @@ function EncryptionSection() {
             {isPasskeySupported() && (
               <div className="flex gap-2 mt-2">
                 <Input
-                  placeholder="Passkey name"
+                  placeholder={t("settings.encryption.passkeyName")}
                   value={passkeyName}
                   onChange={(e) => setPasskeyName(e.target.value)}
                   className="flex-1"
@@ -1063,7 +1119,7 @@ function EncryptionSection() {
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <>
-                      <Key className="mr-1 h-3 w-3" /> Add Passkey
+                      <Key className="mr-1 h-3 w-3" /> {t("settings.encryption.addPasskey")}
                     </>
                   )}
                 </Button>
@@ -1083,9 +1139,13 @@ function EncryptionSection() {
                     <Fingerprint className="h-4 w-4 text-muted-foreground" />
                   )}
                   <div>
-                    <p className="text-sm font-medium">Unlock with {biometryLabel(biometryType)}</p>
+                    <p className="text-sm font-medium">
+                      {t("settings.encryption.biometricUnlock", {
+                        type: biometryLabel(biometryType),
+                      })}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      Skip entering your passphrase on this device
+                      {t("settings.encryption.biometricDescription")}
                     </p>
                   </div>
                 </div>
@@ -1097,7 +1157,7 @@ function EncryptionSection() {
               </div>
               {!isUnlocked && !biometricEnabled && (
                 <p className="text-xs text-muted-foreground">
-                  Unlock encryption first to enable biometric
+                  {t("settings.encryption.unlockFirstShort")}
                 </p>
               )}
             </>
@@ -1109,39 +1169,36 @@ function EncryptionSection() {
       <Dialog open={showEnableDialog} onOpenChange={setShowEnableDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Enable Encryption</DialogTitle>
-            <DialogDescription>
-              Enter a passphrase to encrypt your data. You will need this passphrase to access your
-              data on new devices.
-            </DialogDescription>
+            <DialogTitle>{t("settings.encryption.enableTitle")}</DialogTitle>
+            <DialogDescription>{t("settings.encryption.enableDescription")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>Passphrase</Label>
+              <Label>{t("settings.encryption.passphrase")}</Label>
               <Input
                 type="password"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="At least 8 characters"
+                placeholder={t("settings.encryption.passphrasePlaceholder")}
               />
             </div>
             <div>
-              <Label>Confirm passphrase</Label>
+              <Label>{t("settings.encryption.confirmPassphrase")}</Label>
               <Input
                 type="password"
                 value={confirmPassphrase}
                 onChange={(e) => setConfirmPassphrase(e.target.value)}
-                placeholder="Repeat passphrase"
+                placeholder={t("settings.encryption.confirmPlaceholder")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowEnableDialog(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleEnable} disabled={enabling}>
               {enabling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Enable Encryption
+              {t("settings.encryption.enableButton")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1151,18 +1208,16 @@ function EncryptionSection() {
       <Dialog open={showDisableDialog} onOpenChange={setShowDisableDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Disable Encryption</DialogTitle>
-            <DialogDescription>
-              This will decrypt all your data. Make sure you are unlocked before proceeding.
-            </DialogDescription>
+            <DialogTitle>{t("settings.encryption.disableTitle")}</DialogTitle>
+            <DialogDescription>{t("settings.encryption.disableDescription")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowDisableDialog(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={handleDisable} disabled={disabling}>
               {disabling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Disable Encryption
+              {t("settings.encryption.disableButton")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1176,6 +1231,7 @@ function EncryptionSection() {
 // ============================================================================
 
 function DomainsSection() {
+  const { t } = useTranslation();
   const domainsQuery = useListDomainsApiV1DomainsGet();
   const createDomain = useCreateDomainApiV1DomainsPost();
   const updateDomain = useUpdateDomainApiV1DomainsDomainIdPut();
@@ -1224,11 +1280,11 @@ function DomainsSection() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListDomainsApiV1DomainsGetQueryKey() });
-          toast.success("Domain created");
+          toast.success(t("settings.domains.created"));
           setNewName("");
           setNewIcon("");
         },
-        onError: () => toast.error("Failed to create domain"),
+        onError: () => toast.error(t("settings.domains.failedToCreate")),
       },
     );
   };
@@ -1240,10 +1296,10 @@ function DomainsSection() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListDomainsApiV1DomainsGetQueryKey() });
-          toast.success("Domain updated");
+          toast.success(t("settings.domains.updated"));
           setEditingId(null);
         },
-        onError: () => toast.error("Failed to update domain"),
+        onError: () => toast.error(t("settings.domains.failedToUpdate")),
       },
     );
   };
@@ -1274,7 +1330,7 @@ function DomainsSection() {
             queryKey: getListDomainsApiV1DomainsGetQueryKey(),
           });
         },
-        onError: () => toast.error("Failed to reorder domains"),
+        onError: () => toast.error(t("settings.domains.failedToReorder")),
       },
     );
   };
@@ -1287,7 +1343,7 @@ function DomainsSection() {
   };
 
   return (
-    <SettingsCard title="Domains" icon={<Database className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.domains.title")} icon={<Database className="h-4 w-4" />}>
       <div className="space-y-2">
         {domains.map((d) => (
           <div key={d.id} className="flex items-center gap-2 rounded-md border px-3 py-2">
@@ -1297,7 +1353,7 @@ function DomainsSection() {
                   value={editIcon}
                   onChange={(e) => setEditIcon(e.target.value)}
                   className="w-12 text-center"
-                  placeholder="Icon"
+                  placeholder={t("settings.domains.iconPlaceholder")}
                 />
                 <Input
                   value={editName}
@@ -1311,10 +1367,10 @@ function DomainsSection() {
                   className="h-8 w-8 cursor-pointer rounded border-0"
                 />
                 <Button size="sm" onClick={() => handleSave(d.id)}>
-                  Save
+                  {t("common.save")}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </>
             ) : (
@@ -1346,7 +1402,7 @@ function DomainsSection() {
                 />
                 <span className="flex-1 text-sm">{decryptedNameMap.get(d.id) ?? d.name}</span>
                 <Button size="sm" variant="ghost" onClick={() => startEditing(d)}>
-                  Edit
+                  {t("common.edit")}
                 </Button>
                 <Button
                   size="sm"
@@ -1359,9 +1415,9 @@ function DomainsSection() {
                           queryClient.invalidateQueries({
                             queryKey: getListDomainsApiV1DomainsGetQueryKey(),
                           });
-                          toast.success("Domain archived");
+                          toast.success(t("settings.domains.archived"));
                         },
-                        onError: () => toast.error("Failed to archive domain"),
+                        onError: () => toast.error(t("settings.domains.failedToArchive")),
                       },
                     );
                   }}
@@ -1384,7 +1440,7 @@ function DomainsSection() {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           className="flex-1"
-          placeholder="New domain name"
+          placeholder={t("settings.domains.newDomainPlaceholder")}
           onKeyDown={(e) => {
             if (e.key === "Enter") handleCreate();
           }}
@@ -1408,6 +1464,7 @@ function DomainsSection() {
 // ============================================================================
 
 function DataSection() {
+  const { t } = useTranslation();
   const snapshotsQuery = useListSnapshotsApiV1BackupSnapshotsGet();
   const createSnapshot = useCreateManualSnapshotApiV1BackupSnapshotsPost();
   const toggleSnapshots = useToggleSnapshotsApiV1BackupSnapshotsEnabledPut();
@@ -1440,22 +1497,22 @@ function DataSection() {
       try {
         await importBackupApiV1BackupImportPost({ file });
         queryClient.invalidateQueries();
-        toast.success("Backup imported");
+        toast.success(t("settings.data.backupImported"));
       } catch {
-        toast.error("Import failed");
+        toast.error(t("settings.data.importFailed"));
       }
     };
     input.click();
   };
 
   return (
-    <SettingsCard title="Data" icon={<Database className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.data.title")} icon={<Database className="h-4 w-4" />}>
       <div className="flex gap-2 flex-wrap">
         <Button variant="outline" size="sm" onClick={handleExport}>
-          <Download className="mr-1 h-3 w-3" /> Export Backup
+          <Download className="mr-1 h-3 w-3" /> {t("settings.data.exportBackup")}
         </Button>
         <Button variant="outline" size="sm" onClick={handleImport}>
-          <Upload className="mr-1 h-3 w-3" /> Import Backup
+          <Upload className="mr-1 h-3 w-3" /> {t("settings.data.importBackup")}
         </Button>
       </div>
 
@@ -1463,7 +1520,7 @@ function DataSection() {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Automatic Snapshots</p>
+          <p className="text-sm font-medium">{t("settings.data.automaticSnapshots")}</p>
           <Switch
             checked={snapshotsEnabled}
             onCheckedChange={() => {
@@ -1472,9 +1529,9 @@ function DataSection() {
                   queryClient.invalidateQueries({
                     queryKey: getListSnapshotsApiV1BackupSnapshotsGetQueryKey(),
                   });
-                  toast.success("Snapshot setting updated");
+                  toast.success(t("settings.data.snapshotSettingUpdated"));
                 },
-                onError: () => toast.error("Failed to update snapshot setting"),
+                onError: () => toast.error(t("settings.data.failedToUpdateSnapshotSetting")),
               });
             }}
           />
@@ -1488,15 +1545,15 @@ function DataSection() {
                 queryClient.invalidateQueries({
                   queryKey: getListSnapshotsApiV1BackupSnapshotsGetQueryKey(),
                 });
-                toast.success("Snapshot created");
+                toast.success(t("settings.data.snapshotCreated"));
               },
-              onError: () => toast.error("Failed to create snapshot"),
+              onError: () => toast.error(t("settings.data.failedToCreateSnapshot")),
             });
           }}
           disabled={createSnapshot.isPending}
         >
           {createSnapshot.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
-          Create Snapshot Now
+          {t("settings.data.createSnapshotNow")}
         </Button>
 
         {snapshots.length > 0 && (
@@ -1511,7 +1568,7 @@ function DataSection() {
                   {(snap.size_bytes / 1024).toFixed(1)} KB
                   {snap.is_manual && (
                     <Badge variant="outline" className="ml-1 text-[10px]">
-                      Manual
+                      {t("common.manual")}
                     </Badge>
                   )}
                 </span>
@@ -1567,7 +1624,7 @@ function DataSection() {
 
       <div>
         <Button variant="destructive" size="sm" onClick={() => setShowWipeDialog(true)}>
-          <Trash2 className="mr-1 h-3 w-3" /> Wipe All Data
+          <Trash2 className="mr-1 h-3 w-3" /> {t("settings.data.wipeAllData")}
         </Button>
       </div>
 
@@ -1575,14 +1632,12 @@ function DataSection() {
       <Dialog open={showWipeDialog} onOpenChange={setShowWipeDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Wipe All Data</DialogTitle>
-            <DialogDescription>
-              This will permanently delete all your tasks and domains. This cannot be undone.
-            </DialogDescription>
+            <DialogTitle>{t("settings.data.wipeTitle")}</DialogTitle>
+            <DialogDescription>{t("settings.data.wipeDescription")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowWipeDialog(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -1590,10 +1645,10 @@ function DataSection() {
                 wipeMutation.mutate(undefined, {
                   onSuccess: () => {
                     queryClient.invalidateQueries();
-                    toast.success("All data wiped");
+                    toast.success(t("settings.data.allDataWiped"));
                     setShowWipeDialog(false);
                   },
-                  onError: () => toast.error("Wipe failed"),
+                  onError: () => toast.error(t("settings.data.wipeFailed")),
                 });
               }}
               disabled={wipeMutation.isPending}
@@ -1609,14 +1664,12 @@ function DataSection() {
       <Dialog open={showRestoreDialog !== null} onOpenChange={() => setShowRestoreDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Restore Snapshot</DialogTitle>
-            <DialogDescription>
-              This will replace all your current data with the snapshot. Continue?
-            </DialogDescription>
+            <DialogTitle>{t("settings.data.restoreTitle")}</DialogTitle>
+            <DialogDescription>{t("settings.data.restoreDescription")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowRestoreDialog(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={() => {
@@ -1626,17 +1679,17 @@ function DataSection() {
                   {
                     onSuccess: () => {
                       queryClient.invalidateQueries();
-                      toast.success("Snapshot restored");
+                      toast.success(t("settings.data.restored"));
                       setShowRestoreDialog(null);
                     },
-                    onError: () => toast.error("Restore failed"),
+                    onError: () => toast.error(t("settings.data.failedToRestore")),
                   },
                 );
               }}
               disabled={restoreSnapshot.isPending}
             >
               {restoreSnapshot.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Restore
+              {t("settings.data.restoreButton")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1650,6 +1703,7 @@ function DataSection() {
 // ============================================================================
 
 function ActivitySection() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [limit, setLimit] = useState(50);
   const { data, isLoading, isError } = useGetUserActivityApiV1ActivityGet(
@@ -1658,19 +1712,17 @@ function ActivitySection() {
   );
 
   return (
-    <SettingsCard title="Activity Log" icon={<History className="h-4 w-4" />}>
-      <p className="text-sm text-muted-foreground">
-        Chronological log of all changes to your tasks and domains.
-      </p>
+    <SettingsCard title={t("settings.activity.title")} icon={<History className="h-4 w-4" />}>
+      <p className="text-sm text-muted-foreground">{t("settings.activity.recentActivity")}</p>
       <Button variant="outline" size="sm" className="text-xs" onClick={() => setOpen(true)}>
-        View activity log
+        {t("settings.activity.title")}
       </Button>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Activity Log</SheetTitle>
-            <SheetDescription>All changes to your tasks and domains.</SheetDescription>
+            <SheetTitle>{t("settings.activity.title")}</SheetTitle>
+            <SheetDescription>{t("settings.activity.recentActivity")}</SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto px-4 pb-4">
             <ActivityList entries={data?.entries ?? []} isLoading={isLoading} isError={isError} />
@@ -1696,19 +1748,20 @@ function ActivitySection() {
 // ============================================================================
 
 function ShortcutsSection() {
+  const { t } = useTranslation();
   const shortcuts = [
-    { key: "?", desc: "Show keyboard shortcuts" },
-    { key: "q", desc: "Quick add task" },
-    { key: "n", desc: "New task (full editor)" },
-    { key: "j / k", desc: "Navigate tasks" },
-    { key: "c", desc: "Toggle complete" },
-    { key: "e / Enter", desc: "Edit selected task" },
-    { key: "x", desc: "Delete selected task" },
-    { key: "Esc", desc: "Close dialog/sheet" },
+    { key: "?", desc: t("shortcuts.showShortcuts") },
+    { key: "q", desc: t("shortcuts.quickAdd") },
+    { key: "n", desc: t("shortcuts.newTask") },
+    { key: "j / k", desc: t("shortcuts.nextTask") },
+    { key: "c", desc: t("shortcuts.completeSelected") },
+    { key: "e / Enter", desc: t("shortcuts.editSelected") },
+    { key: "x", desc: t("shortcuts.deleteSelected") },
+    { key: "Esc", desc: t("shortcuts.closePanelClear") },
   ];
 
   return (
-    <SettingsCard title="Keyboard Shortcuts" icon={<Keyboard className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.shortcuts.title")} icon={<Keyboard className="h-4 w-4" />}>
       <div className="grid grid-cols-2 gap-1">
         {shortcuts.map((s) => (
           <div key={s.key} className="flex items-center gap-2 text-sm">
@@ -1726,15 +1779,14 @@ function ShortcutsSection() {
 // ============================================================================
 
 function SetupSection() {
+  const { t } = useTranslation();
   const resetWizard = useResetWizardApiV1WizardResetPost();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   return (
-    <SettingsCard title="Setup" icon={<Settings2 className="h-4 w-4" />}>
-      <p className="text-sm text-muted-foreground">
-        Re-run the onboarding wizard to reconfigure domains, calendar, or imports.
-      </p>
+    <SettingsCard title={t("settings.setup.title")} icon={<Settings2 className="h-4 w-4" />}>
+      <p className="text-sm text-muted-foreground">{t("settings.setup.rerunWizard")}</p>
       <Button
         variant="outline"
         size="sm"
@@ -1746,13 +1798,13 @@ function SetupSection() {
               });
               navigate({ to: "/" });
             },
-            onError: () => toast.error("Failed to reset wizard"),
+            onError: () => toast.error(t("settings.setup.failedToReset")),
           });
         }}
         disabled={resetWizard.isPending}
       >
         {resetWizard.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
-        Re-run Setup Wizard
+        {t("settings.setup.rerunWizard")}
       </Button>
     </SettingsCard>
   );
@@ -1763,16 +1815,18 @@ function SetupSection() {
 // ============================================================================
 
 function AboutSection() {
+  const { t } = useTranslation();
   const buildQuery = useGetBuildInfoApiV1BuildInfoGet();
   const buildInfo = buildQuery.data as
     | { version?: string; commit?: { sha: string; short: string } }
     | undefined;
 
   return (
-    <SettingsCard title="About" icon={<Info className="h-4 w-4" />}>
+    <SettingsCard title={t("settings.about.title")} icon={<Info className="h-4 w-4" />}>
       <div className="space-y-1 text-sm">
         <p>
-          <span className="text-muted-foreground">Version:</span> {buildInfo?.version ?? "..."}
+          <span className="text-muted-foreground">{t("settings.about.version")}:</span>{" "}
+          {buildInfo?.version ?? "..."}
         </p>
         {buildInfo?.commit && (
           <p>

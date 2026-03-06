@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { StickyDomainHeader } from "@/components/mobile/sticky-domain";
 import { CompletedSection } from "@/components/task/completed-section";
@@ -29,6 +30,7 @@ interface TaskPanelProps {
 }
 
 export function TaskPanel({ tasks, domains, isLoading, onNewTask, onEditTask }: TaskPanelProps) {
+  const { t } = useTranslation();
   const { sortField, sortDirection, energyLevel } = useUIStore();
   const { derivedKey, encryptionEnabled, isUnlocked } = useCryptoStore();
   const queryClient = useQueryClient();
@@ -143,7 +145,7 @@ export function TaskPanel({ tasks, domains, isLoading, onNewTask, onEditTask }: 
         {onNewTask && (
           <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNewTask}>
             <Plus className="h-3.5 w-3.5" />
-            New Task
+            {t("task.newTask")}
           </Button>
         )}
       </div>
