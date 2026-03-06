@@ -924,7 +924,7 @@ export function SearchPalette() {
                   onChange={handleSmartInputChange}
                   onKeyDown={handleKeyDown}
                   placeholder="Search, create, or type > for commands..."
-                  className="flex-1 h-11 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+                  className="flex-1 h-11 bg-transparent outline-none text-base sm:text-sm placeholder:text-muted-foreground"
                   autoFocus
                 />
                 {voiceSupported && (

@@ -4,6 +4,39 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.64.0 — 2026-03-06
+
+### Feat: Tauri iOS — native UITabBar, STT, IPC hardening, lazy routes
+
+**Native UITabBar:**
+- Swift `NativeTabBarPlugin` replaces CSS bottom nav with real UITabBar (iOS 26+ Liquid Glass ready)
+- Tab bar auto-hides on login routes via URL observation (KVO), hides on keyboard show
+- JS ↔ Swift bridge via `evaluateJavaScript` + `WKScriptMessageHandler` (avoids unreliable Tauri IPC)
+- `tauri-native-tabbar.ts` manages tab bar visibility and CSS vars (`--native-tabbar-height`, `--native-safe-area-bottom`)
+- `mobile-nav.tsx` returns `null` when native tab bar is active, renders glass-morphism fallback otherwise
+
+**Native Speech-to-Text:**
+- `tauri-plugin-stt` (Rust) + `tauri-plugin-stt-api` (JS) for on-device STT on iOS
+- `tauri-stt.ts` wrapper with permission handling and session lifecycle
+- `use-voice-input.ts` refactored: detects native vs Web Speech API, async session with cleanup and timeout guards
+
+**IPC Hardening (all Tauri plugin wrappers):**
+- 1.5s timeout on all IPC calls (`tauri-cache.ts`, `tauri-token-store.ts`, `tauri-notifications.ts`, `tauri-widgets.ts`)
+- Circuit breaker in token store: marks store unavailable after repeated timeouts, falls back to in-memory cache
+- Concurrent call deduplication for `getDb()` and store initialization
+- All wrappers return safe defaults on failure — app never hangs
+
+**Build & Dev:**
+- Self-hosted fonts (Nunito + Quicksand WOFF2) — eliminated Google Fonts CDN dependency
+- Dashboard route lazy-loaded (`dashboard.lazy.tsx`) for code splitting
+- Vite config: HMR WebSocket via `TAURI_DEV_HOST`, POST body restoration for WKWebView, pre-bundled heavy deps
+- Justfile: `tauri-ios` (fast preview build) and `tauri-ios-hmr` (HMR for frontend iteration)
+- StrictMode disabled in Tauri dev to avoid double-render lag over WiFi
+- `tauri-plugin-edge-to-edge` for safe-area CSS vars on mobile
+- Login/auth redirects use TanStack Router `navigate()` instead of `window.location.href`
+
+---
+
 ## v0.63.3 — 2026-03-06
 
 ### Fix: iOS keyboard avoidance for Tauri WKWebView

@@ -98,7 +98,7 @@ pub fn clear_widget_data(app: tauri::AppHandle) -> Result<(), String> {
 mod ios {
     use objc2::rc::Retained;
     use objc2::runtime::{AnyClass, AnyObject};
-    use objc2::{msg_send, msg_send_id};
+    use objc2::{msg_send, msg_send_id, ClassType};
     use objc2_foundation::{NSString, NSUserDefaults};
 
     /// Must match the App Group configured in both the main app and widget

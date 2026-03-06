@@ -13,10 +13,13 @@ import {
   ValidationError,
 } from "./errors";
 
-// Tauri WebView can't send cookies cross-origin — use absolute URL + bearer auth
+// Tauri production: absolute URL + bearer auth (direct to server)
+// Tauri dev: relative URL (Vite proxy forwards to server — iOS WKWebView can't reach external HTTPS)
+// Web: relative URL (Vite proxy or same-origin in production)
 export const axios = Axios.create({
-  baseURL: isTauri ? "https://whendoist.com" : "",
+  baseURL: isTauri && !import.meta.env.DEV ? "https://whendoist.com" : "",
   withCredentials: !isTauri, // Cookies for web, bearer for Tauri
+  timeout: 15_000, // 15s — prevents hanging forever when server is unreachable
 });
 
 // CSRF token cache — fetched once per session, sent on every mutation
@@ -44,6 +47,18 @@ async function getCsrfToken(): Promise<string> {
 }
 
 const WRITE_METHODS = new Set(["post", "put", "delete", "patch"]);
+
+// Tauri iOS dev: WKWebView strips POST/PUT/PATCH bodies. Encode the body in a
+// custom header so the Vite proxy middleware can restore it before forwarding.
+if (isTauri && import.meta.env.DEV) {
+  axios.interceptors.request.use((config) => {
+    if (config.data !== undefined && config.data !== null) {
+      const json = typeof config.data === "string" ? config.data : JSON.stringify(config.data);
+      config.headers.set("X-Tauri-Body", btoa(json));
+    }
+    return config;
+  });
+}
 
 // Reject requests immediately when offline (Tauri: queue write mutations instead)
 axios.interceptors.request.use(async (config) => {

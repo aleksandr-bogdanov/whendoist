@@ -4,6 +4,12 @@ use commands::notifications::{PushTokenState, ReminderStore};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+// Declare the Swift FFI binding for the native tab bar plugin.
+// This expands to an extern "C" function declaration that calls
+// the @_cdecl("init_plugin_native_tabbar") export from NativeTabBarPlugin.swift.
+#[cfg(target_os = "ios")]
+tauri::ios_plugin_binding!(init_plugin_native_tabbar);
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -14,6 +20,29 @@ pub fn run() {
     // Biometric plugin is mobile-only (Face ID / Touch ID / fingerprint)
     #[cfg(mobile)]
     let builder = builder.plugin(tauri_plugin_biometric::init());
+
+    // STT plugin is mobile-only (native SFSpeechRecognizer / SpeechRecognizer)
+    // Desktop uses Web Speech API via the Chromium-based WebView
+    #[cfg(mobile)]
+    let builder = builder.plugin(tauri_plugin_stt::init());
+
+    // Edge-to-edge: extend WebView under status bar and home indicator on mobile.
+    // Injects --safe-area-inset-* CSS custom properties from native APIs.
+    #[cfg(mobile)]
+    let builder = builder.plugin(tauri_plugin_edge_to_edge::init());
+
+    // Native UITabBar — replaces the CSS bottom nav with a real UITabBar on iOS.
+    // On iOS 26+, UITabBar gets Liquid Glass styling automatically.
+    // The Rust side is a minimal shell; all logic lives in NativeTabBarPlugin.swift.
+    #[cfg(target_os = "ios")]
+    let builder = builder.plugin(
+        tauri::plugin::Builder::<tauri::Wry, ()>::new("native_tabbar")
+            .setup(|_app, api| {
+                api.register_ios_plugin(init_plugin_native_tabbar)?;
+                Ok(())
+            })
+            .build(),
+    );
 
     builder
         .manage(ReminderStore(Mutex::new(HashMap::new())))

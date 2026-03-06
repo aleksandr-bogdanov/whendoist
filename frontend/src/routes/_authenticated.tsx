@@ -1,4 +1,4 @@
-import { createFileRoute, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useLocation } from "@tanstack/react-router";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Component, type ErrorInfo, type ReactNode, useEffect, useRef, useState } from "react";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
@@ -11,6 +11,7 @@ import { useNetworkStatus } from "@/hooks/use-network-status";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useReminders } from "@/hooks/use-reminders";
+import { hideNativeTabBar, showNativeTabBar } from "@/lib/tauri-native-tabbar";
 import { useCryptoStore } from "@/stores/crypto-store";
 import { useSelectionStore } from "@/stores/selection-store";
 
@@ -60,6 +61,18 @@ function AuthenticatedLayout() {
     }
   }, [encryptionStatus, setEnabled]);
 
+  const needsUnlock = encryptionStatus?.enabled && !isUnlocked;
+  const showWizard = wizardQuery.data?.completed === false && !wizardDismissed;
+
+  // Hide native tab bar during wizard/unlock overlays
+  useEffect(() => {
+    if (showWizard || needsUnlock) {
+      hideNativeTabBar();
+    } else {
+      showNativeTabBar();
+    }
+  }, [showWizard, needsUnlock]);
+
   // Loading state — wait for both auth and encryption status
   // to avoid rendering child routes that would show ciphertext
   if (meQuery.isLoading || encryptionQuery.isLoading) {
@@ -70,16 +83,13 @@ function AuthenticatedLayout() {
     );
   }
 
-  // Auth failed — redirect to login
+  // Auth failed — redirect to login (client-side to avoid full page reload,
+  // which causes blank screens on iOS WKWebView in Tauri dev mode)
   if (meQuery.isError) {
-    window.location.href = "/login";
-    return null;
+    return <Navigate to="/login" />;
   }
 
   const me = meQuery.data;
-
-  const needsUnlock = encryptionStatus?.enabled && !isUnlocked;
-  const showWizard = wizardQuery.data?.completed === false && !wizardDismissed;
 
   return (
     <AppErrorBoundary>
