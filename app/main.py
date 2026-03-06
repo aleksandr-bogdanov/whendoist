@@ -364,6 +364,11 @@ else:
         if _spa_illustrations.exists():
             app.mount("/illustrations", StaticFiles(directory=str(_spa_illustrations)), name="spa-illustrations")
 
+        # Serve self-hosted fonts from frontend/dist/fonts/
+        _spa_fonts = _spa_dist / "fonts"
+        if _spa_fonts.exists():
+            app.mount("/fonts", StaticFiles(directory=str(_spa_fonts)), name="spa-fonts")
+
         # Serve additional root-level SPA files (manifest, registerSW.js, workbox, etc.)
         @app.get("/manifest.webmanifest", include_in_schema=False)
         async def spa_manifest():
