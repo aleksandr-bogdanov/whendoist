@@ -6,6 +6,7 @@
 
 import { ArrowRight, ChevronRight, MousePointerClick, Search, Trash2, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
   ClarityChipRow,
@@ -48,12 +49,14 @@ export function TaskInspector({
   onDelete,
   onClose,
 }: TaskInspectorProps) {
+  const { t } = useTranslation();
+
   if (!thought) {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center space-y-2">
           <MousePointerClick className="h-8 w-8 text-muted-foreground/30 mx-auto" />
-          <p className="text-sm text-muted-foreground">Select a thought to triage</p>
+          <p className="text-sm text-muted-foreground">{t("thought.inspector.emptyTitle")}</p>
           <p className="text-xs text-muted-foreground/60">
             <kbd className="px-1 py-0.5 rounded border border-border text-[10px]">j</kbd>{" "}
             <kbd className="px-1 py-0.5 rounded border border-border text-[10px]">k</kbd> to
@@ -96,6 +99,7 @@ function InspectorBody({
   onDelete: (thought: TaskResponse) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const form = useTriageForm({ thought, domains, parentTasks, onConvert });
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
@@ -109,12 +113,12 @@ function InspectorBody({
     <div className="flex flex-col h-full">
       {/* Header with close button */}
       <div className="flex items-center justify-between px-5 py-3 border-b">
-        <h2 className="text-sm font-semibold">Triage Thought</h2>
+        <h2 className="text-sm font-semibold">{t("thought.inspector.title")}</h2>
         <button
           type="button"
           onClick={onClose}
           className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-          title="Close (Esc)"
+          title={t("thought.inspector.closeTooltip")}
         >
           <X className="h-4 w-4" />
         </button>
@@ -128,13 +132,13 @@ function InspectorBody({
           value={form.displayTitle}
           onChange={form.handleTitleEdit}
           onKeyDown={form.handleKeyDown}
-          placeholder="What's the task?"
+          placeholder={t("thought.inspector.titlePlaceholder")}
           className="w-full text-base font-medium bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden border-b border-border/40 focus:border-primary transition-colors"
           rows={1}
         />
 
         {/* Domain */}
-        <FieldRow label="Domain">
+        <FieldRow label={t("task.field.domain")}>
           <div className={cn("rounded-lg", form.domainFlash && "animate-field-flash")}>
             <DomainChipRow
               domains={domains}
@@ -146,7 +150,7 @@ function InspectorBody({
 
         {/* Parent */}
         {parentTasks.length > 0 && (
-          <FieldRow label="Parent">
+          <FieldRow label={t("task.field.parent")}>
             <ParentPickerPopover
               parentTasks={parentTasks}
               domains={domains}
@@ -160,12 +164,12 @@ function InspectorBody({
         )}
 
         {/* Impact */}
-        <FieldRow label="Impact">
+        <FieldRow label={t("task.field.impact")}>
           <ImpactButtonRow value={form.parsed.impact} onChange={form.handleImpactChange} />
         </FieldRow>
 
         {/* When */}
-        <FieldRow label="When">
+        <FieldRow label={t("task.field.when")}>
           <Popover open={form.calendarOpen} onOpenChange={form.setCalendarOpen}>
             <PopoverTrigger asChild>
               <div>
@@ -204,7 +208,7 @@ function InspectorBody({
         </FieldRow>
 
         {/* Duration */}
-        <FieldRow label="Duration">
+        <FieldRow label={t("task.field.duration")}>
           <DurationPickerRow
             value={form.parsed.durationMinutes}
             showCustom
@@ -213,7 +217,7 @@ function InspectorBody({
         </FieldRow>
 
         {/* Time */}
-        <FieldRow label="Time">
+        <FieldRow label={t("task.field.time")}>
           <TimePickerField
             value={form.parsed.scheduledTime ?? ""}
             visible={!!form.parsed.scheduledDate}
@@ -222,17 +226,17 @@ function InspectorBody({
         </FieldRow>
 
         {/* Recurrence */}
-        <FieldRow label="Repeat">
+        <FieldRow label={t("task.field.repeat")}>
           <RecurrencePresetRow value={form.recurrence} onChange={form.setRecurrence} />
         </FieldRow>
 
         {/* Clarity */}
-        <FieldRow label="Clarity">
+        <FieldRow label={t("task.field.clarity")}>
           <ClarityChipRow value={form.parsed.clarity} onChange={form.handleClarityChange} />
         </FieldRow>
 
         {/* Notes */}
-        <FieldRow label="Notes">
+        <FieldRow label={t("task.field.notes")}>
           {!form.descriptionFocused && form.description && hasLinks(form.description) ? (
             <button
               type="button"
@@ -252,7 +256,7 @@ function InspectorBody({
               onPaste={handleDescriptionPaste}
               onFocus={() => form.setDescriptionFocused(true)}
               onBlur={() => form.setDescriptionFocused(false)}
-              placeholder="Add notes..."
+              placeholder={t("task.field.notesPlaceholder")}
               rows={form.descriptionFocused || form.description ? 3 : 1}
               className="w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
             />
@@ -269,7 +273,7 @@ function InspectorBody({
           onClick={() => onDelete(thought)}
         >
           <Trash2 className="h-3.5 w-3.5 mr-1" />
-          Delete
+          {t("common.delete")}
         </Button>
 
         <Button
@@ -279,12 +283,12 @@ function InspectorBody({
         >
           {form.parsed.domainId === null ? (
             <>
-              Pick a domain
+              {t("thought.inspector.pickDomain")}
               <ChevronRight className="h-3.5 w-3.5 ml-1 -rotate-90" />
             </>
           ) : (
             <>
-              Convert to Task
+              {t("thought.inspector.convertToTask")}
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </>
           )}
@@ -324,6 +328,7 @@ function ParentPickerPopover({
   currentDomainId: number | null;
   onSelect: (id: number | null) => void;
 }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
 
   const selectedParent = useMemo(
@@ -364,7 +369,7 @@ function ParentPickerPopover({
                 <span className="truncate">{selectedParent.title}</span>
               </>
             ) : (
-              <span>None</span>
+              <span>{t("common.none")}</span>
             )}
           </span>
           <ChevronRight className="h-3 w-3 opacity-50 shrink-0 ml-1.5" />
@@ -377,7 +382,7 @@ function ParentPickerPopover({
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tasks..."
+              placeholder={t("task.field.searchTasks")}
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
             {search && (
@@ -401,7 +406,7 @@ function ParentPickerPopover({
             )}
             onClick={() => onSelect(null)}
           >
-            None (top-level)
+            {t("task.field.noneTopLevel")}
           </button>
 
           {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
@@ -441,7 +446,9 @@ function ParentPickerPopover({
           ))}
 
           {totalFiltered === 0 && search && (
-            <div className="px-3 py-2 text-sm text-muted-foreground">No matching tasks</div>
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              {t("task.field.noMatchingTasks")}
+            </div>
           )}
         </div>
       </PopoverContent>

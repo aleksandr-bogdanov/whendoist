@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Cell, Label, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { DomainBreakdownItem } from "@/api/model";
 import { TOOLTIP_STYLE } from "@/components/analytics/tooltip-style";
@@ -21,14 +22,18 @@ const COLORS = [
 ];
 
 export function DomainBreakdown({ data, className }: DomainBreakdownProps) {
+  const { t } = useTranslation();
+
   if (data.length === 0) {
     return (
       <Card className={cn(className)}>
         <CardHeader>
-          <CardTitle>By Domain</CardTitle>
+          <CardTitle>{t("analytics.domain.title")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-8">No domain data yet</p>
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {t("analytics.domain.empty")}
+          </p>
         </CardContent>
       </Card>
     );
@@ -39,9 +44,9 @@ export function DomainBreakdown({ data, className }: DomainBreakdownProps) {
   return (
     <Card className={cn(className)}>
       <CardHeader>
-        <CardTitle>By Domain</CardTitle>
+        <CardTitle>{t("analytics.domain.title")}</CardTitle>
         <p className="text-xs text-muted-foreground">
-          {total} tasks across {data.length} domains
+          {t("analytics.domain.summary", { total, count: data.length })}
         </p>
       </CardHeader>
       <CardContent>

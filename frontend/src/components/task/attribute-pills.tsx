@@ -5,34 +5,38 @@ import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
 import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import i18n from "@/lib/i18n";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import {
   CLARITY_COLORS,
-  CLARITY_LABELS,
   CLARITY_OPTIONS,
   DURATION_PRESETS,
   formatDuration,
   formatDurationLabel,
+  getClarityLabel,
+  getImpactLabel,
   IMPACT_COLORS,
-  IMPACT_LABELS,
   IMPACT_OPTIONS,
 } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 
 // ── Shared optimistic mutation hook ──────────────────────────────
 
-const FIELD_LABELS: Record<string, string> = {
-  impact: "Impact",
-  clarity: "Clarity",
-  duration_minutes: "Duration",
-};
+function getFieldLabel(field: string): string {
+  const key: Record<string, string> = {
+    impact: "task.field.impact",
+    clarity: "task.field.clarity",
+    duration_minutes: "task.field.duration",
+  };
+  return key[field] ? i18n.t(key[field]) : field;
+}
 
 function formatFieldValue(
   field: "impact" | "clarity" | "duration_minutes",
   value: number | string | null,
 ): string {
-  if (field === "impact") return IMPACT_LABELS[value as number] ?? "Min";
-  if (field === "clarity") return CLARITY_LABELS[value as string] ?? "Normal";
+  if (field === "impact") return getImpactLabel(value as number);
+  if (field === "clarity") return getClarityLabel(value as string);
   if (field === "duration_minutes") return value ? formatDuration(value as number) : "none";
   return String(value);
 }
@@ -95,7 +99,7 @@ function useAttributeUpdate() {
             });
             toast.success(
               t("toast.fieldUpdated", {
-                field: FIELD_LABELS[field],
+                field: getFieldLabel(field),
                 value: formatFieldValue(field, value),
               }),
               {
@@ -178,7 +182,7 @@ export function ImpactPill({ taskId, value, disabled }: PillProps) {
         className="inline-flex items-center justify-center text-[0.65rem] font-semibold"
         style={{ color }}
       >
-        {IMPACT_LABELS[impact] ?? "Min"}
+        {getImpactLabel(impact)}
       </span>
     );
   }
@@ -191,9 +195,9 @@ export function ImpactPill({ taskId, value, disabled }: PillProps) {
           className={cn(pillTriggerClass, pillHoverClass, open && pillOpenClass)}
           style={{ color }}
           onPointerDown={(e) => e.stopPropagation()}
-          aria-label={`Impact: ${IMPACT_LABELS[impact] ?? "Min"}`}
+          aria-label={`${i18n.t("task.field.impact")}: ${getImpactLabel(impact)}`}
         >
-          {IMPACT_LABELS[impact] ?? "Min"}
+          {getImpactLabel(impact)}
         </button>
       </PopoverTrigger>
       <PopoverContent {...popoverContentProps} align="center" side="bottom">
@@ -245,7 +249,7 @@ export function ClarityPill({ taskId, value, disabled }: PillProps) {
           backgroundColor: `var(--${clarity}-tint)`,
         }}
       >
-        {CLARITY_LABELS[clarity] ?? clarity}
+        {getClarityLabel(clarity)}
       </span>
     );
   }
@@ -263,9 +267,9 @@ export function ClarityPill({ taskId, value, disabled }: PillProps) {
           )}
           style={isNormal ? undefined : { color, backgroundColor: `var(--${clarity}-tint)` }}
           onPointerDown={(e) => e.stopPropagation()}
-          aria-label={`Clarity: ${CLARITY_LABELS[clarity] ?? clarity}`}
+          aria-label={`${i18n.t("task.field.clarity")}: ${getClarityLabel(clarity)}`}
         >
-          {isNormal ? "\u2014" : (CLARITY_LABELS[clarity] ?? clarity)}
+          {isNormal ? "\u2014" : getClarityLabel(clarity)}
         </button>
       </PopoverTrigger>
       <PopoverContent {...popoverContentProps} align="center" side="bottom">
@@ -352,7 +356,7 @@ export function DurationPill({ taskId, value, disabled }: PillProps) {
             open && pillOpenClass,
           )}
           onPointerDown={(e) => e.stopPropagation()}
-          aria-label={`Duration: ${duration ? formatDuration(duration) : "none"}`}
+          aria-label={`${i18n.t("task.field.duration")}: ${duration ? formatDuration(duration) : i18n.t("common.none")}`}
         >
           {duration ? formatDuration(duration) : "\u2014"}
         </button>

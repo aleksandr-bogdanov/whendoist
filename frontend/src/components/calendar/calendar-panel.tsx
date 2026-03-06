@@ -35,6 +35,7 @@ import {
   todayString,
   ZOOM_STEPS,
 } from "@/lib/calendar-utils";
+import i18n from "@/lib/i18n";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { filterByEnergy } from "@/lib/task-utils";
 import { getCurrentTimeInTimezone } from "@/lib/timezone";
@@ -88,8 +89,9 @@ export function CalendarPanel({ tasks, onTaskClick }: CalendarPanelProps) {
   // Header label based on currently visible panel
   const displayDateLabel = useMemo(() => {
     const d = parseDate(displayDate);
-    const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
-    const month = d.toLocaleDateString("en-US", { month: "short" });
+    const locale = i18n.resolvedLanguage ?? "en";
+    const weekday = d.toLocaleDateString(locale, { weekday: "long" });
+    const month = d.toLocaleDateString(locale, { month: "short" });
     const day = d.getDate();
     return `${weekday}, ${month} ${day}`.toUpperCase();
   }, [displayDate]);

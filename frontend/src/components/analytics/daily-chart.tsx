@@ -1,3 +1,5 @@
+import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { DailyCompletionItem } from "@/api/model";
 import { TOOLTIP_STYLE } from "@/components/analytics/tooltip-style";
@@ -10,21 +12,31 @@ interface DailyChartProps {
 }
 
 export function DailyChart({ data, className }: DailyChartProps) {
+  const { t, i18n } = useTranslation();
+
   const total = data.reduce((sum, d) => sum + d.count, 0);
   const formatted = data.map((d) => ({
     ...d,
-    label: new Date(`${d.date}T12:00:00`).toLocaleDateString(undefined, {
+    label: new Date(`${d.date}T12:00:00`).toLocaleDateString(i18n.language, {
       month: "short",
       day: "numeric",
     }),
   }));
 
+  const tooltipFormatter = useCallback(
+    (value: number | string | undefined) => [
+      t("analytics.tooltip.tasksCount", { value }),
+      t("analytics.tooltip.completed"),
+    ],
+    [t],
+  );
+
   return (
     <Card className={cn(className)}>
       <CardHeader>
-        <CardTitle>Daily Completions</CardTitle>
+        <CardTitle>{t("analytics.daily.title")}</CardTitle>
         <p className="text-xs text-muted-foreground">
-          {total} tasks over {data.length} days
+          {t("analytics.daily.summary", { total, days: data.length })}
         </p>
       </CardHeader>
       <CardContent>
@@ -48,7 +60,7 @@ export function DailyChart({ data, className }: DailyChartProps) {
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
               labelStyle={{ color: "var(--foreground)" }}
-              formatter={(value) => [`${value} tasks`, "Completed"]}
+              formatter={tooltipFormatter}
             />
             <Bar dataKey="count" fill="var(--color-brand)" radius={[3, 3, 0, 0]} />
           </BarChart>

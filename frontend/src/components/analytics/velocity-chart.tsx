@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   CartesianGrid,
   Legend,
@@ -19,9 +20,11 @@ interface VelocityChartProps {
 }
 
 export function VelocityChart({ data, className }: VelocityChartProps) {
+  const { t, i18n } = useTranslation();
+
   const formatted = data.map((d) => ({
     ...d,
-    label: new Date(`${d.date}T12:00:00`).toLocaleDateString(undefined, {
+    label: new Date(`${d.date}T12:00:00`).toLocaleDateString(i18n.language, {
       month: "short",
       day: "numeric",
     }),
@@ -30,10 +33,8 @@ export function VelocityChart({ data, className }: VelocityChartProps) {
   return (
     <Card className={cn(className)}>
       <CardHeader>
-        <CardTitle>Velocity Trend</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Daily completions with 7-day rolling average
-        </p>
+        <CardTitle>{t("analytics.velocity.title")}</CardTitle>
+        <p className="text-xs text-muted-foreground">{t("analytics.velocity.description")}</p>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={240}>
@@ -62,7 +63,7 @@ export function VelocityChart({ data, className }: VelocityChartProps) {
               strokeWidth={1.5}
               strokeOpacity={0.5}
               dot={false}
-              name="Daily"
+              name={t("analytics.velocity.daily")}
             />
             <Line
               type="monotone"
@@ -70,7 +71,7 @@ export function VelocityChart({ data, className }: VelocityChartProps) {
               stroke="var(--color-brand)"
               strokeWidth={2}
               dot={false}
-              name="7-day avg"
+              name={t("analytics.velocity.sevenDayAvg")}
             />
           </LineChart>
         </ResponsiveContainer>

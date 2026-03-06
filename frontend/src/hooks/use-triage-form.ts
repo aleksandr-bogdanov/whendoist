@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import type { RecurrencePresetValue } from "@/components/task/field-pickers";
 import { useSmartInput } from "@/hooks/use-smart-input";
+import i18n from "@/lib/i18n";
 import {
   CLARITY_TOKEN_PATTERN,
   DURATION_TOKEN_PATTERN,
@@ -226,7 +227,10 @@ export function useTriageForm({
       let label: string;
       if (d.getTime() === today.getTime()) label = "today";
       else if (d.getTime() === tmr.getTime()) label = "tomorrow";
-      else label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toLowerCase();
+      else
+        label = d
+          .toLocaleDateString(i18n.resolvedLanguage ?? "en", { month: "short", day: "numeric" })
+          .toLowerCase();
       const dateToken = parsed.tokens.find((t) => t.type === "date");
       const datePattern = dateToken
         ? new RegExp(dateToken.raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")

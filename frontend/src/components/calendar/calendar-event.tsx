@@ -1,4 +1,5 @@
 import { Calendar, ExternalLink } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { PositionedItem } from "@/lib/calendar-utils";
 
 interface CalendarEventProps {
@@ -18,6 +19,7 @@ export function CalendarEventCard({
   backgroundColor,
   dimmed,
 }: CalendarEventProps) {
+  const { t } = useTranslation();
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const calColor = backgroundColor ?? "#6B7385";
@@ -41,7 +43,7 @@ export function CalendarEventCard({
         borderLeft: `3px solid color-mix(in srgb, ${calColor} 40%, #cbd5e1)`,
         backgroundColor: `color-mix(in srgb, var(--card) 99%, ${calColor})`,
       }}
-      title={`${summary}\n${timeLabel}\nClick to open in Google Calendar`}
+      title={`${summary}\n${timeLabel}\n${t("calendar.event.openInGcal")}`}
     >
       <div className="flex items-center gap-1 truncate">
         <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />

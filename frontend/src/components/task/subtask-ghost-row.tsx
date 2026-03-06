@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { TaskResponse } from "@/api/model";
 import { useSmartInput } from "@/hooks/use-smart-input";
 import { useTaskCreate } from "@/hooks/use-task-create";
@@ -18,6 +19,7 @@ interface SubtaskGhostRowProps {
 const EMPTY_DOMAINS: never[] = [];
 
 export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const {
     inputRef,
@@ -71,11 +73,11 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
         scheduled_time: parsed.scheduledTime,
       },
       {
-        toastMessage: `Created subtask "${parsed.title.trim()}"`,
-        errorMessage: "Failed to create subtask",
+        toastMessage: t("toast.subtaskCreated", { title: parsed.title.trim() }),
+        errorMessage: t("toast.failedToCreateSubtask"),
       },
     );
-  }, [parsed, parentTask.id, parentTask.domain_id, create, resetSmartInput]);
+  }, [parsed, parentTask.id, parentTask.domain_id, create, resetSmartInput, t]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
@@ -118,7 +120,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
                   handleCancel();
                 }
               }}
-              placeholder="Subtask title... (!high 30m tomorrow)"
+              placeholder={t("task.subtask.placeholder")}
               className="w-full h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
               disabled={isPending}
             />
@@ -152,7 +154,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
           style={{ marginLeft: `${depth * 24}px`, paddingLeft: 12 }}
         >
           <Plus className="h-3 w-3" />
-          Add subtask
+          {t("task.action.addSubtask")}
         </button>
       )}
     </motion.div>

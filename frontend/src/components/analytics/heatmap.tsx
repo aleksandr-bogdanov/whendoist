@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { HeatmapItem } from "@/api/model";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -19,6 +20,8 @@ function getIntensity(count: number, max: number): string {
 }
 
 export function Heatmap({ data, className }: HeatmapProps) {
+  const { t, i18n } = useTranslation();
+
   const { weeks, max } = useMemo(() => {
     const max = Math.max(...data.map((d) => d.y), 1);
     // Group into weeks (7 days each)
@@ -29,12 +32,16 @@ export function Heatmap({ data, className }: HeatmapProps) {
     return { weeks, max };
   }, [data]);
 
-  const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const dayLabels = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(i18n.language, { weekday: "short" });
+    // Generate Mon–Sun labels using a known Monday (2024-01-01 is a Monday)
+    return Array.from({ length: 7 }, (_, i) => formatter.format(new Date(2024, 0, 1 + i)));
+  }, [i18n.language]);
 
   return (
     <Card className={cn(className)}>
       <CardHeader>
-        <CardTitle>Activity</CardTitle>
+        <CardTitle>{t("analytics.heatmap.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto sm:overflow-visible">
@@ -62,10 +69,12 @@ export function Heatmap({ data, className }: HeatmapProps) {
                         />
                       </TooltipTrigger>
                       <TooltipContent side="top" className="text-xs">
-                        {day.y} completions on{" "}
-                        {new Date(`${day.x}T12:00:00`).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
+                        {t("analytics.heatmap.tooltip", {
+                          count: day.y,
+                          date: new Date(`${day.x}T12:00:00`).toLocaleDateString(i18n.language, {
+                            month: "short",
+                            day: "numeric",
+                          }),
                         })}
                       </TooltipContent>
                     </Tooltip>
@@ -77,13 +86,13 @@ export function Heatmap({ data, className }: HeatmapProps) {
         </div>
         {/* Legend */}
         <div className="flex items-center gap-1 mt-3 text-[10px] text-muted-foreground">
-          <span>Less</span>
+          <span>{t("analytics.heatmap.less")}</span>
           <div className="h-2.5 w-2.5 rounded-[2px] bg-muted" />
           <div className="h-2.5 w-2.5 rounded-[2px] bg-brand/20" />
           <div className="h-2.5 w-2.5 rounded-[2px] bg-brand/40" />
           <div className="h-2.5 w-2.5 rounded-[2px] bg-brand/60" />
           <div className="h-2.5 w-2.5 rounded-[2px] bg-brand" />
-          <span>More</span>
+          <span>{t("analytics.heatmap.more")}</span>
         </div>
       </CardContent>
     </Card>

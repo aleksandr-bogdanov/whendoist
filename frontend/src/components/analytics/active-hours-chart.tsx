@@ -1,3 +1,5 @@
+import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { HourOfDayItem } from "@/api/model";
 import { TOOLTIP_STYLE } from "@/components/analytics/tooltip-style";
@@ -9,21 +11,35 @@ interface ActiveHoursChartProps {
   className?: string;
 }
 
-function formatHour(hour: number): string {
-  if (hour === 0) return "12am";
-  if (hour === 12) return "12pm";
-  return hour < 12 ? `${hour}am` : `${hour - 12}pm`;
-}
-
 export function ActiveHoursChart({ data, className }: ActiveHoursChartProps) {
+  const { t, i18n } = useTranslation();
+
+  const formatHour = useCallback(
+    (hour: number): string => {
+      const date = new Date(2024, 0, 1, hour);
+      return new Intl.DateTimeFormat(i18n.language, { hour: "numeric" }).format(date);
+    },
+    [i18n.language],
+  );
+
+  const tooltipFormatter = useCallback(
+    (value: number | string | undefined) => [
+      t("analytics.tooltip.tasksCount", { value }),
+      t("analytics.tooltip.completed"),
+    ],
+    [t],
+  );
+
   if (data.length === 0) {
     return (
       <Card className={cn(className)}>
         <CardHeader>
-          <CardTitle>Active Hours</CardTitle>
+          <CardTitle>{t("analytics.activeHours.title")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-8">No hourly data yet</p>
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {t("analytics.activeHours.empty")}
+          </p>
         </CardContent>
       </Card>
     );
@@ -39,9 +55,9 @@ export function ActiveHoursChart({ data, className }: ActiveHoursChartProps) {
   return (
     <Card className={cn(className)}>
       <CardHeader>
-        <CardTitle>Active Hours</CardTitle>
+        <CardTitle>{t("analytics.activeHours.title")}</CardTitle>
         <p className="text-xs text-muted-foreground">
-          Based on task completion times. Peak: {formatHour(peak.hour)}
+          {t("analytics.activeHours.peakDescription", { peak: formatHour(peak.hour) })}
         </p>
       </CardHeader>
       <CardContent>
@@ -70,7 +86,7 @@ export function ActiveHoursChart({ data, className }: ActiveHoursChartProps) {
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
               labelStyle={{ color: "var(--foreground)" }}
-              formatter={(value) => [`${value} tasks`, "Completed"]}
+              formatter={tooltipFormatter}
             />
             <Area
               type="monotone"

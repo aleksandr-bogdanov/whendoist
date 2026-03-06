@@ -75,7 +75,9 @@ export function DeletedSection() {
           <span className="flex-1 text-left">{t("task.section.deleted")}</span>
           {isOpen && totalCount > 0 && (
             <span className="text-xs text-muted-foreground tabular-nums">
-              {hasMore ? `${tasks.length} of ${totalCount}` : totalCount}
+              {hasMore
+                ? t("task.section.deletedCount", { shown: tasks.length, total: totalCount })
+                : totalCount}
             </span>
           )}
           <ChevronDown

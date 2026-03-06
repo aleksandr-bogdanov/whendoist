@@ -60,7 +60,8 @@ function formatFieldValue(fieldName: string, value: string | null): string | nul
     if (mins >= 60) return `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ""}`;
     return `${mins}m`;
   }
-  if (fieldName === "is_recurring") return value === "True" ? "Yes" : "No";
+  if (fieldName === "is_recurring")
+    return value === "True" ? i18n.t("common.yes") : i18n.t("common.no");
   return value;
 }
 

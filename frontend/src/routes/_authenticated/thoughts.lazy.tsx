@@ -14,6 +14,7 @@ import {
   useRestoreTaskApiV1TasksTaskIdRestorePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
+import { formatTimeAgo } from "@/components/activity/activity-utils";
 import { TaskInspector } from "@/components/task/task-inspector";
 import { TaskSwipeRow } from "@/components/task/task-swipe-row";
 import { ThoughtTriageDrawer } from "@/components/task/thought-triage-drawer";
@@ -33,24 +34,6 @@ export const Route = createLazyFileRoute("/_authenticated/thoughts")({
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
-
-function formatTimeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return new Date(dateStr).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}
 
 /** Matches Tailwind md: breakpoint for JS-level desktop checks. */
 const MD_QUERY = "(min-width: 768px)";

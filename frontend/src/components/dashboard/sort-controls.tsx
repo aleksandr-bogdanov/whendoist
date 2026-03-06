@@ -171,10 +171,10 @@ export function ColumnHeaders() {
                 const dir =
                   sortField === opt.field
                     ? sortDirection === "asc"
-                      ? "descending"
-                      : "ascending"
-                    : "ascending";
-                announce(`Sorted by ${opt.label.toLowerCase()} ${dir}`);
+                      ? t("sort.descending")
+                      : t("sort.ascending")
+                    : t("sort.ascending");
+                announce(t("sort.announce", { field: opt.label.toLowerCase(), direction: dir }));
               }}
             >
               {opt.label}

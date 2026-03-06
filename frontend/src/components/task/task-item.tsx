@@ -55,6 +55,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RichText } from "@/components/ui/rich-text";
+import i18n from "@/lib/i18n";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import {
   formatDate,
@@ -214,7 +215,7 @@ export function TaskItem({
             announce(t("announce.instanceCompleted"));
             const dateHint = new Date(
               `${pendingInstance.instance_date}T00:00:00`,
-            ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            ).toLocaleDateString(i18n.resolvedLanguage ?? "en", { month: "short", day: "numeric" });
             toast.success(t("toast.instanceCompleted", { title: task.title, date: dateHint }), {
               id: `complete-inst-${pendingInstance.id}`,
               action: {
@@ -331,7 +332,7 @@ export function TaskItem({
             invalidateAll();
             const dateHint = new Date(
               `${pendingInstance.instance_date}T00:00:00`,
-            ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            ).toLocaleDateString(i18n.resolvedLanguage ?? "en", { month: "short", day: "numeric" });
             toast.success(t("toast.instanceCompleted", { title: task.title, date: dateHint }), {
               id: `complete-inst-${pendingInstance.id}`,
               action: {
@@ -505,7 +506,7 @@ export function TaskItem({
           });
           announce(t("announce.instanceSkipped"));
           const dateHint = new Date(`${pendingInstance.instance_date}T00:00:00`).toLocaleDateString(
-            "en-US",
+            i18n.resolvedLanguage ?? "en",
             { month: "short", day: "numeric" },
           );
           toast.success(t("toast.instanceSkipped", { title: task.title, date: dateHint }), {
@@ -1413,7 +1414,7 @@ function SubtaskItem({ subtask, parentId, depth, onSelect, onEdit, orderedIds }:
                 <button
                   type="button"
                   className="hidden sm:flex flex-shrink-0 p-0.5 rounded hover:bg-[rgba(109,94,246,0.06)] relative z-10 opacity-0 group-hover:opacity-100 transition-opacity w-[var(--col-actions)] justify-center"
-                  title="Subtask actions"
+                  title={t("task.action.subtaskActionsTooltip")}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                 >

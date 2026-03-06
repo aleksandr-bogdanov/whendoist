@@ -142,7 +142,9 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
             type="button"
             onClick={() => useUIStore.getState().setSearchOpen(true)}
             className="p-3 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors md:hidden"
-            title="Search (⌘K)"
+            title={t("nav.searchTooltip", {
+              shortcut: navigator.platform?.includes("Mac") ? "⌘K" : "Ctrl+K",
+            })}
           >
             <Search className="h-5 w-5" />
           </button>
@@ -162,7 +164,7 @@ export function Header({ userName: _userName, userEmail: _userEmail, onDebugTogg
             type="button"
             onClick={() => setTheme(themeCycle[theme])}
             className="p-3 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground active:text-foreground transition-colors"
-            title={`Theme: ${theme}`}
+            title={t("nav.themeTooltip", { theme })}
           >
             <ThemeIcon className="h-5 w-5 md:h-3.5 md:w-3.5" />
           </button>

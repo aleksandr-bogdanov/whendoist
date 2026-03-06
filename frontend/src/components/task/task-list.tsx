@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { ArrowUpFromDot } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { DomainGroup as DomainGroupType } from "@/lib/task-utils";
@@ -18,6 +19,8 @@ interface TaskListProps {
 }
 
 export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskListProps) {
+  const { t } = useTranslation();
+
   // Make the entire task list a drop zone for unscheduling / promoting subtasks
   const { setNodeRef, isOver } = useDroppable({
     id: "task-list-drop",
@@ -62,8 +65,8 @@ export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskList
         ref={setNodeRef}
         illustration="/illustrations/empty-tasks.svg"
         illustrationClassName="animate-[emptyStateEntrance_0.6s_ease-out]"
-        title="No tasks to show"
-        description="Tasks matching your filters will appear here"
+        title={t("task.list.emptyTitle")}
+        description={t("task.list.emptyDescription")}
       />
     );
   }
@@ -80,7 +83,7 @@ export function TaskList({ groups, domains, onSelectTask, onEditTask }: TaskList
           }`}
         >
           <ArrowUpFromDot className="h-3.5 w-3.5" />
-          Drop to make standalone
+          {t("task.dnd.makeStandalone")}
         </div>
       )}
       {groups.map((group) => (
