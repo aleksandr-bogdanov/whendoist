@@ -382,7 +382,28 @@ export function calculateOverlaps(
 
   function flushGroup() {
     if (group.length === 0) return;
-    const totalColumns = Math.min(group.length, MAX_OVERLAP_COLUMNS);
+    // Greedy first-fit: assign each item to the leftmost column whose
+    // previous occupant has ended. This avoids inflating totalColumns
+    // when items form a transitive overlap chain (A→B→C) but never
+    // all overlap simultaneously.
+    const columnEnds: number[] = []; // columnEnds[c] = endMinutes of last item in column c
+    const assignments: { column: number }[] = [];
+    for (const item of group) {
+      let placed = false;
+      for (let c = 0; c < columnEnds.length; c++) {
+        if (columnEnds[c] <= item.range.startMinutes) {
+          assignments.push({ column: c });
+          columnEnds[c] = item.range.endMinutes;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        assignments.push({ column: columnEnds.length });
+        columnEnds.push(item.range.endMinutes);
+      }
+    }
+    const totalColumns = Math.min(columnEnds.length, MAX_OVERLAP_COLUMNS);
     for (let i = 0; i < group.length; i++) {
       const item = group[i];
       const top = timeToOffset(
@@ -399,7 +420,7 @@ export function calculateOverlaps(
         height,
         startMinutes: item.range.startMinutes,
         endMinutes: item.range.endMinutes,
-        column: i % totalColumns,
+        column: assignments[i].column % totalColumns,
         totalColumns,
       });
     }
@@ -547,7 +568,25 @@ export function calculateExtendedOverlaps(
 
   function flushGroup() {
     if (group.length === 0) return;
-    const totalColumns = Math.min(group.length, MAX_OVERLAP_COLUMNS);
+    // Greedy first-fit column assignment (same logic as calculateOverlaps)
+    const columnEnds: number[] = [];
+    const assignments: { column: number }[] = [];
+    for (const item of group) {
+      let placed = false;
+      for (let c = 0; c < columnEnds.length; c++) {
+        if (columnEnds[c] <= item.absStart) {
+          assignments.push({ column: c });
+          columnEnds[c] = item.absEnd;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        assignments.push({ column: columnEnds.length });
+        columnEnds.push(item.absEnd);
+      }
+    }
+    const totalColumns = Math.min(columnEnds.length, MAX_OVERLAP_COLUMNS);
     for (let i = 0; i < group.length; i++) {
       const item = group[i];
       // Convert absolute minutes to pixel offset
@@ -561,7 +600,7 @@ export function calculateExtendedOverlaps(
         height,
         startMinutes: item.startMinutes,
         endMinutes: item.endMinutes,
-        column: i % totalColumns,
+        column: assignments[i].column % totalColumns,
         totalColumns,
         daySection: item.section,
       });
