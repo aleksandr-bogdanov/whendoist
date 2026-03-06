@@ -79,7 +79,7 @@ class NativeTabBarPlugin: Plugin, UITabBarDelegate, WKScriptMessageHandler {
                 self.overlayHidden = false
                 // Only restore if we're on an authenticated route
                 if let path = self.webView?.url?.path,
-                   self.authenticatedPrefixes.contains(where: { path.hasPrefix($0) }) {
+                   self.authenticatedPrefixes.contains(where: { path == $0 || path.hasPrefix($0 + "/") }) {
                     self.tabBar?.isHidden = false
                 }
             default:
@@ -162,7 +162,7 @@ class NativeTabBarPlugin: Plugin, UITabBarDelegate, WKScriptMessageHandler {
             if self.overlayHidden { return }
 
             let path = webview.url?.path ?? "/"
-            let shouldShow = self.authenticatedPrefixes.contains(where: { path.hasPrefix($0) })
+            let shouldShow = self.authenticatedPrefixes.contains(where: { path == $0 || path.hasPrefix($0 + "/") })
             if tabBar.isHidden == shouldShow {
                 tabBar.isHidden = !shouldShow
                 // Send ready event when tab bar becomes visible
@@ -200,7 +200,11 @@ class NativeTabBarPlugin: Plugin, UITabBarDelegate, WKScriptMessageHandler {
         window.__nativeTabBarEvent && window.__nativeTabBarEvent('ready', \
         {tabBarHeight: \(Int(tabBarHeight)), safeAreaBottom: \(Int(safeBottom))})
         """
-        webView?.evaluateJavaScript(js, completionHandler: nil)
+        webView?.evaluateJavaScript(js) { _, error in
+            if let error = error {
+                NSLog("[NativeTabBar] sendReadyEvent JS error: %@", error.localizedDescription)
+            }
+        }
     }
 
     // MARK: - UITabBarDelegate
@@ -214,7 +218,11 @@ class NativeTabBarPlugin: Plugin, UITabBarDelegate, WKScriptMessageHandler {
         window.__nativeTabBarEvent && window.__nativeTabBarEvent('navigate', \
         {route: '\(route)', index: \(index)})
         """
-        webView?.evaluateJavaScript(js, completionHandler: nil)
+        webView?.evaluateJavaScript(js) { _, error in
+            if let error = error {
+                NSLog("[NativeTabBar] tabBar navigate JS error: %@", error.localizedDescription)
+            }
+        }
     }
 
     // MARK: - Commands (kept for future use if Rust routing is fixed)
@@ -247,7 +255,7 @@ class NativeTabBarPlugin: Plugin, UITabBarDelegate, WKScriptMessageHandler {
         if overlayHidden { return }
         // Only restore if we're on an authenticated route
         if let path = webView?.url?.path,
-           authenticatedPrefixes.contains(where: { path.hasPrefix($0) }) {
+           authenticatedPrefixes.contains(where: { path == $0 || path.hasPrefix($0 + "/") }) {
             UIView.animate(withDuration: 0.25) {
                 tabBar.isHidden = false
             }
@@ -266,7 +274,11 @@ class NativeTabBarPlugin: Plugin, UITabBarDelegate, WKScriptMessageHandler {
         window.__keyboardEvent && window.__keyboardEvent(\(visible ? "true" : "false"), \
         {height: \(height), animationDuration: \(animDuration)})
         """
-        webView?.evaluateJavaScript(js, completionHandler: nil)
+        webView?.evaluateJavaScript(js) { _, error in
+            if let error = error {
+                NSLog("[NativeTabBar] keyboard event JS error: %@", error.localizedDescription)
+            }
+        }
     }
 
     deinit {

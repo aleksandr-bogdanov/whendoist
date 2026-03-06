@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/push", tags=["push-notifications"])
 
 
 class RegisterTokenRequest(BaseModel):
-    token: str
+    token: str = Field(max_length=500)
     platform: Literal["ios", "android"]
 
 

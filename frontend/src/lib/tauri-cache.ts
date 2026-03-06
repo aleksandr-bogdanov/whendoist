@@ -12,6 +12,11 @@
  */
 
 import { isTauri } from "@/hooks/use-device";
+import {
+  TAURI_CACHE_TTL_MS,
+  TAURI_CIRCUIT_BREAKER_COOLDOWN_MS,
+  TAURI_IPC_TIMEOUT_MS,
+} from "@/lib/tauri-constants";
 
 interface WriteQueueEntry {
   id: number;
@@ -29,11 +34,9 @@ type Database = {
 // Lazy singleton — avoids importing @tauri-apps/plugin-sql on web
 let db: Database | null = null;
 
-/** Timeout for Tauri IPC SQL operations — prevents app freeze if IPC hangs (e.g. iOS dev mode) */
-const SQL_TIMEOUT_MS = 1_500;
-
-// Track if SQL plugin is known-broken to avoid repeated hanging IPC calls
+// Circuit breaker: track if SQL plugin is known-broken, with cooldown for retry
 let sqlAvailable = true;
+let sqlBrokeAt = 0;
 
 // Deduplicate concurrent getDb() calls — prevents multiple Database.load() IPC requests
 let dbLoadPromise: Promise<Database | null> | null = null;
@@ -48,7 +51,11 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
 
 async function getDb(): Promise<Database | null> {
   if (db) return db;
-  if (!sqlAvailable) return null;
+  if (!sqlAvailable) {
+    // Half-open: retry after cooldown
+    if (Date.now() - sqlBrokeAt < TAURI_CIRCUIT_BREAKER_COOLDOWN_MS) return null;
+    sqlAvailable = true;
+  }
   if (dbLoadPromise) return dbLoadPromise;
   dbLoadPromise = loadDb();
   return dbLoadPromise;
@@ -59,18 +66,20 @@ async function loadDb(): Promise<Database | null> {
     const { default: Database } = await import("@tauri-apps/plugin-sql");
     const loaded = await withTimeout(
       Database.load("sqlite:whendoist-cache.db"),
-      SQL_TIMEOUT_MS,
+      TAURI_IPC_TIMEOUT_MS,
       null as Database | null,
     );
     if (!loaded) {
       sqlAvailable = false;
+      sqlBrokeAt = Date.now();
       return null;
     }
-    await withTimeout(migrate(loaded), SQL_TIMEOUT_MS, undefined);
+    await withTimeout(migrate(loaded), TAURI_IPC_TIMEOUT_MS, undefined);
     db = loaded;
     return db;
   } catch {
     sqlAvailable = false;
+    sqlBrokeAt = Date.now();
     return null;
   } finally {
     dbLoadPromise = null;
@@ -107,16 +116,19 @@ export async function initCache(): Promise<void> {
   await getDb();
 }
 
-/** Read a cached API response by key. */
+/** Read a cached API response by key. Discards entries older than TAURI_CACHE_TTL_MS. */
 export async function getCachedData<T>(key: string): Promise<T | null> {
   if (!isTauri) return null;
   const database = await getDb();
   if (!database) return null;
-  const rows = await database.select<{ data: string }>(
-    "SELECT data FROM cache_entries WHERE key = $1",
+  const rows = await database.select<{ data: string; updated_at: number }>(
+    "SELECT data, updated_at FROM cache_entries WHERE key = $1",
     [key],
   );
   if (rows.length === 0) return null;
+  // Discard stale entries — users who haven't opened the app in weeks
+  // shouldn't see very old data on cold start
+  if (Date.now() - rows[0].updated_at > TAURI_CACHE_TTL_MS) return null;
   return JSON.parse(rows[0].data) as T;
 }
 

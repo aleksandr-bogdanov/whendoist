@@ -164,14 +164,23 @@ export function useOfflineSync() {
           });
           await removePendingWrite(entry.id);
           succeeded++;
-        } catch (e) {
-          // Log and skip failed entries — don't block the rest
-          console.warn(
-            `[offline-sync] Failed to replay queued mutation: ${entry.method} ${entry.url}`,
-            e,
-          );
-          await removePendingWrite(entry.id);
-          failed++;
+        } catch (e: unknown) {
+          const status = (e as { response?: { status?: number } })?.response?.status;
+          if (status && status >= 400 && status < 500) {
+            // Permanent failure (4xx) — discard, won't succeed on retry
+            console.warn(
+              `[offline-sync] Discarding failed mutation (${status}): ${entry.method} ${entry.url}`,
+            );
+            await removePendingWrite(entry.id);
+            failed++;
+          } else {
+            // Transient failure (5xx, network) — keep in queue for next drain
+            console.warn(
+              `[offline-sync] Transient failure, will retry: ${entry.method} ${entry.url}`,
+              e,
+            );
+            failed++;
+          }
         }
       }
 
@@ -188,13 +197,13 @@ export function useOfflineSync() {
 
       // After drain, invalidate all queries to get fresh server state
       queryClient.invalidateQueries();
-      setPendingWrites(0);
+      await updatePendingCount();
     } catch (e) {
       console.warn("[offline-sync] Write queue drain failed:", e);
     } finally {
       drainInProgressRef.current = false;
     }
-  }, []);
+  }, [updatePendingCount]);
 
   // --- Widget refresh on app backgrounding ---
   useEffect(() => {
@@ -251,6 +260,10 @@ async function persistToCache(queryKey: readonly unknown[], data: unknown) {
     const keyStr = String(queryKey[0] ?? "");
 
     if (keyStr === TASKS_KEY_PREFIX) {
+      // Only persist dashboard tasks — filtered/search queries should not
+      // overwrite the cache used for cold-start hydration
+      const dashboardKey = JSON.stringify(DASHBOARD_TASKS_PARAMS);
+      if (queryKey.length > 1 && JSON.stringify(queryKey[1]) !== dashboardKey) return;
       await setCachedData("tasks", data);
       // Push updated task data to native home screen widgets
       try {

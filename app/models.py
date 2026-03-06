@@ -378,6 +378,8 @@ class Task(Base):
         Index("ix_task_user_domain", "user_id", "domain_id"),
         Index("ix_task_parent", "parent_id"),
         Index("ix_task_user_parent", "user_id", "parent_id"),
+        # Push reminder query: tasks with pending reminders
+        Index("ix_task_reminder", "reminder_sent_at", "reminder_minutes_before", "status"),
     )
 
 

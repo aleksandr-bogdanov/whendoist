@@ -10,6 +10,7 @@
 
 import type { TaskResponse } from "@/api/model";
 import { isTauri } from "@/hooks/use-device";
+import { TAURI_IPC_TIMEOUT_MS } from "@/lib/tauri-constants";
 
 interface WidgetTask {
   title: string;
@@ -81,7 +82,7 @@ export async function updateWidgetData(
 
     await Promise.race([
       invoke("update_widget_data", { data }),
-      new Promise<void>((resolve) => setTimeout(resolve, 1_500)),
+      new Promise<void>((resolve) => setTimeout(resolve, TAURI_IPC_TIMEOUT_MS)),
     ]);
   } catch (e) {
     // Widget update failure is non-fatal — don't disrupt the app
@@ -101,7 +102,7 @@ export async function clearWidgetData(): Promise<void> {
     const { invoke } = await import("@tauri-apps/api/core");
     await Promise.race([
       invoke("clear_widget_data"),
-      new Promise<void>((resolve) => setTimeout(resolve, 1_500)),
+      new Promise<void>((resolve) => setTimeout(resolve, TAURI_IPC_TIMEOUT_MS)),
     ]);
   } catch (e) {
     console.warn("[tauri-widgets] Failed to clear widget data:", e);

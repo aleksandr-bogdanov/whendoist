@@ -267,7 +267,7 @@ const ActionButton = React.forwardRef<
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+        "inline-flex items-center gap-1.5 px-2 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-h-[44px]",
         "hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed",
         destructive && "text-destructive hover:bg-destructive/10",
       )}

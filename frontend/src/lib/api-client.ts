@@ -167,6 +167,7 @@ axios.interceptors.response.use(
       isRedirecting = true;
       if (isTauri) {
         import("./tauri-token-store").then(({ clearDeviceToken }) => clearDeviceToken());
+        import("./tauri-cache").then(({ clearAllCache }) => clearAllCache());
       }
       window.location.href = "/login";
       return Promise.reject(new AuthError("Session expired"));

@@ -14,7 +14,7 @@
  * setters. The title stays clean.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
   ClarityChipRow,
@@ -107,36 +107,39 @@ export function TaskFieldsBody({
   });
 
   // Smart input consumer (Approach A)
-  const smartCallbacks = {
-    onDomain: (id: number) => {
-      handlers.onDomainChange(id);
-      markDirty();
-    },
-    onImpact: (v: number) => {
-      handlers.onImpactChange(v);
-      markDirty();
-    },
-    onClarity: (v: string) => {
-      handlers.onClarityChange(v);
-      markDirty();
-    },
-    onDuration: (m: number) => {
-      handlers.onDurationChange(m);
-      markDirty();
-    },
-    onScheduledDate: (d: string) => {
-      handlers.onScheduledDateChange(d);
-      markDirty();
-    },
-    onScheduledTime: (t: string) => {
-      handlers.onScheduledTimeChange(t);
-      markDirty();
-    },
-    onDescription: (d: string) => {
-      handlers.onDescriptionChange(d);
-      markDirty();
-    },
-  };
+  const smartCallbacks = useMemo(
+    () => ({
+      onDomain: (id: number) => {
+        handlers.onDomainChange(id);
+        markDirty();
+      },
+      onImpact: (v: number) => {
+        handlers.onImpactChange(v);
+        markDirty();
+      },
+      onClarity: (v: string) => {
+        handlers.onClarityChange(v);
+        markDirty();
+      },
+      onDuration: (m: number) => {
+        handlers.onDurationChange(m);
+        markDirty();
+      },
+      onScheduledDate: (d: string) => {
+        handlers.onScheduledDateChange(d);
+        markDirty();
+      },
+      onScheduledTime: (t: string) => {
+        handlers.onScheduledTimeChange(t);
+        markDirty();
+      },
+      onDescription: (d: string) => {
+        handlers.onDescriptionChange(d);
+        markDirty();
+      },
+    }),
+    [handlers, markDirty],
+  );
 
   const {
     titleRef,

@@ -116,7 +116,15 @@ async def fire_and_forget_unsync_task(task_id: int, user_id: int) -> None:
                 await sync_service.unsync_task(task)
             await db.commit()
     except Exception as e:
-        logger.warning(f"GCal unsync failed for task {task_id}: {e}")
+        from app.auth.google import TokenRefreshError
+        from app.services.gcal_sync import CalendarGoneError
+
+        if isinstance(e, (CalendarGoneError, TokenRefreshError)):
+            _sync_disabled_users.add(user_id)
+            await _persist_sync_disable(user_id, str(e))
+            logger.warning(f"GCal sync auto-disabled for user {user_id}: {e}")
+        else:
+            logger.warning(f"GCal unsync failed for task {task_id}: {e}")
 
 
 async def fire_and_forget_sync_instance(instance_id: int, task_id: int, user_id: int) -> None:

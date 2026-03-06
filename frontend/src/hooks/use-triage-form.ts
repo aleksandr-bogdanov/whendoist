@@ -149,9 +149,10 @@ export function useTriageForm({
       const newTitle = e.target.value;
       const tokenStr = parsed.tokens.map((t) => t.raw).join(" ");
       const rebuilt = tokenStr ? `${tokenStr} ${newTitle}` : newTitle;
+      // Parse once and use result for both state update and display title
+      const result = parseTaskInput(rebuilt, domains);
       setInput(rebuilt);
 
-      const result = parseTaskInput(rebuilt, domains);
       const normalized = newTitle.replace(/\s{2,}/g, " ").trim();
       setDisplayTitle(normalized === result.title ? newTitle : result.title);
     },

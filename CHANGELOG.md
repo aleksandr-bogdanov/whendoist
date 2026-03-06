@@ -4,6 +4,48 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.64.3 — 2026-03-06
+
+### Fix: Audit findings — 30 verified fixes across security, data integrity, and UX
+
+**High severity:**
+- Failed offline mutations now retry on transient 5xx errors instead of being permanently discarded (data loss prevention)
+- Biometric IPC commands wrapped with timeout protection (30s for prompts, 1.5s for checks)
+
+**Medium severity:**
+- Push `reminder_sent_at` only set when at least one push succeeds (prevents permanent reminder loss on FCM outage)
+- Cache cleared on 401/session expiry to prevent cross-user data leak in Tauri
+- Global `MutationCache.onError` fallback added — silent 4xx errors now show toast
+- Added `onError` to 5 settings mutations (calendar, domain archive, snapshots)
+- `smartCallbacks` memoized in `TaskFieldsBody` (was creating new refs every render)
+- `formatDayHeader` now timezone-aware (was using browser local time)
+- Zustand `useUIStore` persist config gets `version: 1` for future migrations
+- Task cache key scoped to dashboard params (filtered queries no longer clobber cache)
+- Added `defaultPendingComponent` and `defaultErrorComponent` to router
+- Push token persisted to `tauri-plugin-store` (survives app restarts)
+
+**Low severity:**
+- Dev CORS origins (`localhost:5173/1420`) guarded behind `!is_production`
+- Push token field gets `max_length=500` validation
+- `fire_and_forget_unsync_task` now trips circuit breaker on 403/token errors
+- `reminder_sent_at` reset on task uncomplete
+- No-token users no longer get reminder permanently consumed
+- Composite index added for push reminder query
+- `data_version` lock contention logged at `warning` instead of `debug`
+- IPC timeout constant extracted to shared `tauri-constants.ts` (was duplicated in 5 files)
+- Circuit breakers get 30s cooldown (half-open pattern) instead of permanent disable
+- Cache TTL: entries older than 7 days discarded on cold-start hydration
+- `evaluateJavaScript` calls in Swift get error-logging completion handlers
+- Tab bar route matching uses exact + path-separator check (not bare `hasPrefix`)
+- `clear_encryption_key` requires biometric auth on mobile
+- `connect-src` CSP narrowed from `*.whendoist.com` to `api.whendoist.com`
+- Undo mutations get `onError` with cache invalidation fallback
+- Hardcoded `duration: 2000` toast removed (uses global default)
+- Touch targets increased to 44px minimum on mobile
+- Duplicated keyboard nav logic extracted to shared `use-autocomplete-nav.ts`
+
+---
+
 ## v0.64.2 — 2026-03-06
 
 ### Fix: Calendar column layout — greedy first-fit instead of round-robin

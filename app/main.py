@@ -191,14 +191,19 @@ app.add_middleware(CSRFMiddleware)
 # CORS for Tauri native app (desktop + mobile).
 # Web frontend is same-origin and doesn't need CORS.
 # Must be outside CSRF so OPTIONS preflight is handled before CSRF validation.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "tauri://localhost",  # macOS / iOS production
-        "https://tauri.localhost",  # Windows production
+_cors_origins = [
+    "tauri://localhost",  # macOS / iOS production
+    "https://tauri.localhost",  # Windows production
+]
+if not is_production:
+    _cors_origins += [
         "http://localhost:5173",  # dev mode (Vite)
         "http://localhost:1420",  # Tauri default dev port
-    ],
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["Authorization", "Content-Type"],
     allow_credentials=False,  # Tauri uses bearer tokens, not cookies

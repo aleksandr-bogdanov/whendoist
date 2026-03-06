@@ -16,7 +16,48 @@ if (isTauri) {
   import("@/lib/tauri-token-store").then((m) => m.loadDeviceToken());
 }
 
-const router = createRouter({ routeTree });
+function DefaultPendingComponent() {
+  return (
+    <div className="flex h-[var(--app-height,100vh)] items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
+}
+
+function DefaultErrorComponent({ error }: { error: Error }) {
+  const isChunkError =
+    error.message?.includes("Failed to fetch dynamically imported module") ||
+    error.message?.includes("Loading chunk") ||
+    error.message?.includes("Loading CSS chunk");
+
+  return (
+    <div className="flex h-[var(--app-height,100vh)] items-center justify-center p-8">
+      <div className="text-center space-y-4 max-w-sm">
+        <h1 className="text-lg font-semibold">
+          {isChunkError ? "New version available" : "Something went wrong"}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {isChunkError
+            ? "A newer version of Whendoist is available."
+            : error.message || "An unexpected error occurred."}
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          {isChunkError ? "Update" : "Reload"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const router = createRouter({
+  routeTree,
+  defaultPendingComponent: DefaultPendingComponent,
+  defaultErrorComponent: DefaultErrorComponent,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
