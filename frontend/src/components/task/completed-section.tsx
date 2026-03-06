@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
 import {
@@ -29,6 +30,7 @@ interface CompletedSectionProps {
 }
 
 export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedSectionProps) {
+  const { t } = useTranslation();
   const { showCompleted, toggleShowCompleted } = useUIStore();
   const { data: preferences } = useGetPreferencesApiV1PreferencesGet();
   const updatePrefs = useUpdatePreferencesApiV1PreferencesPut();
@@ -81,7 +83,7 @@ export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedS
           )}
         >
           <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          <span className="flex-1 text-left">Completed</span>
+          <span className="flex-1 text-left">{t("task.section.completed")}</span>
           <span className="text-xs text-muted-foreground tabular-nums">{filtered.length}</span>
 
           {/* Retention selector — inline in header */}
@@ -108,7 +110,7 @@ export function CompletedSection({ tasks, onSelectTask, onEditTask }: CompletedS
                           queryKey: getGetPreferencesApiV1PreferencesGetQueryKey(),
                         });
                       },
-                      onError: () => toast.error("Failed to save preference"),
+                      onError: () => toast.error(t("toast.failedToSavePreference")),
                     },
                   );
                 }}

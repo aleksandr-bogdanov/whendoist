@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost } from "@/api/queries/tasks/tasks";
@@ -64,6 +65,7 @@ export function DomainGroup({
   onEditTask,
   orderedIds,
 }: DomainGroupProps) {
+  const { t } = useTranslation();
   const { collapsedDomains, toggleCollapsedDomain, setMobileTab, selectTask, requestSubtaskAdd } =
     useUIStore();
   const { prefersTouch, hasTouch } = useDevice();
@@ -159,32 +161,37 @@ export function DomainGroup({
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-            toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
-              id: `complete-${task.id}`,
-              action: {
-                label: "Undo",
-                onClick: () => {
-                  toggleComplete.mutate(
-                    { taskId: task.id, data: null },
-                    {
-                      onSuccess: () =>
-                        queryClient.invalidateQueries({
-                          queryKey: dashboardTasksKey(),
-                        }),
-                    },
-                  );
+            toast.success(
+              isCompleted
+                ? t("toast.taskReopened", { title: task.title })
+                : t("toast.taskCompleted", { title: task.title }),
+              {
+                id: `complete-${task.id}`,
+                action: {
+                  label: t("toast.undo"),
+                  onClick: () => {
+                    toggleComplete.mutate(
+                      { taskId: task.id, data: null },
+                      {
+                        onSuccess: () =>
+                          queryClient.invalidateQueries({
+                            queryKey: dashboardTasksKey(),
+                          }),
+                      },
+                    );
+                  },
                 },
               },
-            });
+            );
           },
           onError: () => {
             queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-            toast.error("Failed to update task", { id: `complete-err-${task.id}` });
+            toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${task.id}` });
           },
         },
       );
     },
-    [queryClient, toggleComplete],
+    [queryClient, toggleComplete, t],
   );
 
   const handleSwipeSchedule = useCallback(
@@ -216,7 +223,7 @@ export function DomainGroup({
         onOpenChange={handleToggle}
         data-domain-group
         data-domain-icon={domain?.icon ?? ""}
-        data-domain-name={domain?.name ?? "Thoughts"}
+        data-domain-name={domain?.name ?? t("task.thoughts")}
         data-domain-count={String(tasks.length)}
         data-domain-color={domain?.color ?? ""}
         className="rounded-[12px] border border-l-2 border-l-[#6D5EF6]/20 bg-card overflow-hidden shadow-[var(--shadow-card)]"
@@ -253,7 +260,7 @@ export function DomainGroup({
               </>
             ) : (
               <span className="text-left truncate text-[0.95rem] text-muted-foreground">
-                Thoughts
+                {t("task.thoughts")}
               </span>
             )}
 
@@ -342,7 +349,7 @@ export function DomainGroup({
                       resetSmartInput();
                     }
                   }}
-                  placeholder="Task title... (#domain !high 30m)"
+                  placeholder={t("task.placeholder.taskTitle")}
                   className="w-full h-7 text-base sm:text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
                   disabled={createPending}
                 />
@@ -372,7 +379,7 @@ export function DomainGroup({
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
             >
               <Plus className="h-3 w-3" />
-              Add task
+              {t("task.action.addTask")}
             </button>
           )}
         </CollapsibleContent>

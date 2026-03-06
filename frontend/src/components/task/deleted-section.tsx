@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, RotateCcw, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { TaskResponse } from "@/api/model";
 import {
@@ -26,6 +27,7 @@ async function fetchArchivedWithCount(limit?: number) {
 }
 
 export function DeletedSection() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
@@ -42,7 +44,7 @@ export function DeletedSection() {
   const totalCount = data?.totalCount ?? 0;
   const hasMore = totalCount > tasks.length;
 
-  const handleRestore = (taskId: number, title: string) => {
+  const handleRestore = (taskId: number) => {
     restoreTask.mutate(
       { taskId },
       {
@@ -51,9 +53,9 @@ export function DeletedSection() {
           queryClient.invalidateQueries({ queryKey: getListTasksApiV1TasksGetQueryKey() });
           // Also invalidate our custom archived query
           queryClient.invalidateQueries({ queryKey: ["/api/v1/tasks", { status: "archived" }] });
-          toast.success(`Restored "${title}"`, { id: `restore-${taskId}` });
+          toast.success(t("toast.taskRestored"), { id: `restore-${taskId}` });
         },
-        onError: () => toast.error("Failed to restore task", { id: `restore-err-${taskId}` }),
+        onError: () => toast.error(t("toast.failedToRestoreTask"), { id: `restore-err-${taskId}` }),
       },
     );
   };
@@ -70,7 +72,7 @@ export function DeletedSection() {
           )}
         >
           <Trash2 className="h-4 w-4 text-muted-foreground" />
-          <span className="flex-1 text-left">Deleted</span>
+          <span className="flex-1 text-left">{t("task.section.deleted")}</span>
           {isOpen && totalCount > 0 && (
             <span className="text-xs text-muted-foreground tabular-nums">
               {hasMore ? `${tasks.length} of ${totalCount}` : totalCount}
@@ -88,7 +90,9 @@ export function DeletedSection() {
       <CollapsibleContent>
         <div className="pt-1">
           {tasks.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-muted-foreground">No deleted tasks</p>
+            <p className="px-3 py-2 text-sm text-muted-foreground">
+              {t("task.section.noDeletedTasks")}
+            </p>
           ) : (
             <>
               <AnimatePresence initial={false}>
@@ -109,11 +113,11 @@ export function DeletedSection() {
                         variant="ghost"
                         size="sm"
                         className="h-6 px-2 text-xs gap-1"
-                        onClick={() => handleRestore(task.id, task.title)}
+                        onClick={() => handleRestore(task.id)}
                         disabled={restoreTask.isPending}
                       >
                         <RotateCcw className="h-3 w-3" />
-                        Restore
+                        {t("task.action.restore")}
                       </Button>
                     </div>
                   </motion.div>
@@ -125,7 +129,7 @@ export function DeletedSection() {
                   className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-2 transition-colors"
                   onClick={() => setShowAll(true)}
                 >
-                  Show all {totalCount} deleted &rarr;
+                  {t("task.section.showAllDeleted", { count: totalCount })}
                 </button>
               )}
             </>

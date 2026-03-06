@@ -1,5 +1,6 @@
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useGetBuildInfoApiV1BuildInfoGet } from "@/api/queries/build/build";
 import { isTauri } from "@/hooks/use-device";
 import { axios } from "@/lib/api-client";
@@ -10,6 +11,7 @@ export const Route = createLazyFileRoute("/login")({
 });
 
 function LoginPage() {
+  const { t } = useTranslation();
   const buildInfo = useGetBuildInfoApiV1BuildInfoGet();
   const info = buildInfo.data as { demo_login_enabled?: boolean } | undefined;
   const demoEnabled = info?.demo_login_enabled ?? false;
@@ -126,15 +128,12 @@ function LoginPage() {
 
         {/* Value Proposition */}
         <div className="mb-8 text-center">
-          <p className="text-muted-foreground leading-relaxed mb-1.5">
-            Your calendar shows when you're busy.
-          </p>
-          <p className="text-muted-foreground leading-relaxed mb-2">
-            Your task list shows what to do.
-          </p>
+          <p className="text-muted-foreground leading-relaxed mb-1.5">{t("login.valueProp1")}</p>
+          <p className="text-muted-foreground leading-relaxed mb-2">{t("login.valueProp2")}</p>
           <p className="text-foreground font-medium whitespace-nowrap">
-            Whendoist shows <em className="not-italic font-semibold text-brand">when</em> to
-            actually do it.
+            Whendoist shows{" "}
+            <em className="not-italic font-semibold text-brand">{t("login.when")}</em> to actually
+            do it.
           </p>
         </div>
 
@@ -160,7 +159,7 @@ function LoginPage() {
               />
             </svg>
           </span>
-          <span>Continue with Google</span>
+          <span>{t("login.continueWithGoogle")}</span>
         </a>
 
         {/* Demo Login Section */}
@@ -168,7 +167,7 @@ function LoginPage() {
           <div className="mt-5 w-full">
             <div className="login-demo-divider mb-4">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                or
+                {t("login.or")}
               </span>
             </div>
             {isTauri ? (
@@ -179,12 +178,12 @@ function LoginPage() {
                 className="login-demo-btn"
               >
                 <span className="text-base leading-none">🧪</span>
-                <span>{demoLoading ? "Signing in..." : "Try Demo Account"}</span>
+                <span>{demoLoading ? t("login.signingIn") : t("login.tryDemo")}</span>
               </button>
             ) : (
               <a href="/auth/demo" className="login-demo-btn">
                 <span className="text-base leading-none">🧪</span>
-                <span>Try Demo Account</span>
+                <span>{t("login.tryDemo")}</span>
               </a>
             )}
           </div>
@@ -193,10 +192,10 @@ function LoginPage() {
         {/* Meta Block */}
         <div className="mt-4 text-center">
           <p className="text-xs text-muted-foreground mb-1.5 leading-snug">
-            Reads your calendar to find free time. Never edits events.
+            {t("login.trustStatement")}
           </p>
           <p className="text-[0.72rem] text-muted-foreground leading-snug tracking-wide">
-            Calendar-aware scheduling &middot; Todoist import &middot; Open source
+            {t("login.metaInfo")}
           </p>
         </div>
 
@@ -206,14 +205,14 @@ function LoginPage() {
             to="/terms"
             className="text-[0.68rem] text-muted-foreground hover:text-foreground px-3 py-2"
           >
-            Terms
+            {t("login.terms")}
           </Link>
           <span className="text-[0.68rem] text-muted-foreground"> &middot; </span>
           <Link
             to="/privacy"
             className="text-[0.68rem] text-muted-foreground hover:text-foreground px-3 py-2"
           >
-            Privacy
+            {t("login.privacy")}
           </Link>
         </footer>
       </div>

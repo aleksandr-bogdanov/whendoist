@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { BatchEditForm } from "@/components/batch/batch-edit-popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,6 +31,7 @@ import { resolveSelection, useSelectionStore } from "@/stores/selection-store";
 /* ------------------------------------------------------------------ */
 
 export function FloatingActionBar() {
+  const { t } = useTranslation();
   const selectedIds = useSelectionStore((s) => s.selectedIds);
   const clear = useSelectionStore((s) => s.clear);
   const queryClient = useQueryClient();
@@ -124,13 +126,18 @@ export function FloatingActionBar() {
   const handleDelete = useCallback(() => {
     const subtaskCount = tasks.reduce((sum, t) => sum + (t.subtasks?.length ?? 0), 0);
     if (subtaskCount > 0) {
-      if (!window.confirm(`Delete ${tasks.length} tasks and ${subtaskCount} subtasks?`)) return;
+      if (
+        !window.confirm(
+          t("task.deleteDialog.batchMessage", { taskCount: tasks.length, subtaskCount }),
+        )
+      )
+        return;
     } else if (tasks.length > 3) {
-      if (!window.confirm(`Delete ${tasks.length} tasks?`)) return;
+      if (!window.confirm(t("task.deleteDialog.batchSimple", { count: tasks.length }))) return;
     }
     batchDelete(queryClient, tasks);
     clear();
-  }, [tasks, queryClient, clear]);
+  }, [tasks, queryClient, clear, t]);
 
   const handleReschedule = useCallback(
     (date: Date | undefined) => {
@@ -173,14 +180,14 @@ export function FloatingActionBar() {
           type="button"
           onClick={clear}
           className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-          aria-label="Clear selection"
+          aria-label={t("batch.clearSelection")}
         >
           <X className="h-4 w-4" />
         </button>
 
         {/* Count label — use resolved count so stale/deleted IDs don't inflate the number */}
         <span className="px-1.5 text-muted-foreground font-medium tabular-nums whitespace-nowrap">
-          {tasks.length + instances.length} selected
+          {t("batch.selected", { count: tasks.length + instances.length })}
         </span>
 
         <Divider />
@@ -188,7 +195,7 @@ export function FloatingActionBar() {
         {/* Complete / Reopen */}
         <ActionButton
           icon={allCompleted ? Undo2 : Check}
-          label={allCompleted ? "Reopen" : "Complete"}
+          label={allCompleted ? t("batch.reopen") : t("batch.complete")}
           onClick={handleComplete}
         />
 
@@ -198,7 +205,7 @@ export function FloatingActionBar() {
             <PopoverTrigger asChild>
               <ActionButton
                 icon={CalendarDays}
-                label="Reschedule"
+                label={t("batch.reschedule")}
                 onClick={() => setRescheduleOpen(true)}
               />
             </PopoverTrigger>
@@ -210,13 +217,21 @@ export function FloatingActionBar() {
 
         {/* Unschedule — hidden if all completed or none scheduled */}
         {!allCompleted && anyScheduled && (
-          <ActionButton icon={CalendarX2} label="Unschedule" onClick={handleUnschedule} />
+          <ActionButton
+            icon={CalendarX2}
+            label={t("batch.unschedule")}
+            onClick={handleUnschedule}
+          />
         )}
 
         {/* Edit… — opens batch edit popover */}
         <Popover open={editOpen} onOpenChange={setEditOpen}>
           <PopoverTrigger asChild>
-            <ActionButton icon={Pencil} label="Edit…" onClick={() => setEditOpen(true)} />
+            <ActionButton
+              icon={Pencil}
+              label={t("batch.editMore")}
+              onClick={() => setEditOpen(true)}
+            />
           </PopoverTrigger>
           <PopoverContent side="top" avoidCollisions sideOffset={8} className="w-72">
             <BatchEditForm
@@ -233,11 +248,18 @@ export function FloatingActionBar() {
         <Divider />
 
         {/* Skip — only when instances are selected */}
-        {hasInstances && <ActionButton icon={FastForward} label="Skip" onClick={handleSkip} />}
+        {hasInstances && (
+          <ActionButton icon={FastForward} label={t("batch.skipInstances")} onClick={handleSkip} />
+        )}
 
         {/* Delete — tasks only (instances can't be deleted) */}
         {hasTasks && (
-          <ActionButton icon={Trash2} label="Delete" onClick={handleDelete} destructive />
+          <ActionButton
+            icon={Trash2}
+            label={t("batch.delete")}
+            onClick={handleDelete}
+            destructive
+          />
         )}
       </div>
     </div>

@@ -20,6 +20,7 @@ import { getGetMeApiV1MeGetQueryKey } from "@/api/queries/me/me";
 import { getListTasksApiV1TasksGetQueryKey } from "@/api/queries/tasks/tasks";
 import { isTauri } from "@/hooks/use-device";
 import { axios } from "@/lib/api-client";
+import i18n from "@/lib/i18n";
 import { queryClient } from "@/lib/query-client";
 import { DASHBOARD_TASKS_PARAMS } from "@/lib/query-keys";
 
@@ -185,12 +186,12 @@ export function useOfflineSync() {
       }
 
       if (succeeded > 0) {
-        toast.success(`Synced ${succeeded} offline change${succeeded > 1 ? "s" : ""}`, {
+        toast.success(i18n.t("crypto.offlineSynced", { count: succeeded }), {
           id: "offline-sync-drain",
         });
       }
       if (failed > 0) {
-        toast.warning(`${failed} offline change${failed > 1 ? "s" : ""} couldn't sync`, {
+        toast.warning(i18n.t("crypto.offlineSyncFailed", { count: failed }), {
           id: "offline-sync-fail",
         });
       }

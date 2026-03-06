@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { DomainResponse, SubtaskResponse, TaskResponse } from "@/api/model";
 import { useUpdateTaskApiV1TasksTaskIdPut } from "@/api/queries/tasks/tasks";
@@ -24,6 +25,7 @@ export function ParentTaskPicker({
   domains,
   onParentChanged,
 }: ParentTaskPickerProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -155,11 +157,11 @@ export function ParentTaskPicker({
           });
 
           if (newParentId !== null) {
-            announce("Task nested as subtask");
-            toast.success(`Made "${task.title}" a subtask of "${parentTitle}"`, {
+            announce(t("announce.taskNestedAsSubtask"));
+            toast.success(t("toast.madeSubtaskOf", { title: task.title, parent: parentTitle }), {
               id: `reparent-${task.id}`,
               action: {
-                label: "Undo",
+                label: t("toast.undo"),
                 onClick: () => {
                   setCurrentParentId(prevParentId);
                   queryClient.setQueryData(dashboardTasksKey(), previousTasks);
@@ -177,7 +179,7 @@ export function ParentTaskPicker({
                         queryClient.invalidateQueries({
                           queryKey: dashboardTasksKey(),
                         });
-                        toast.error("Undo failed");
+                        toast.error(t("toast.undoFailed"));
                       },
                     },
                   );
@@ -185,11 +187,11 @@ export function ParentTaskPicker({
               },
             });
           } else {
-            announce("Task promoted to top-level");
-            toast.success(`Promoted "${task.title}" to top-level`, {
+            announce(t("announce.taskPromotedToTopLevel"));
+            toast.success(t("toast.promotedToTopLevel", { title: task.title }), {
               id: `reparent-${task.id}`,
               action: {
-                label: "Undo",
+                label: t("toast.undo"),
                 onClick: () => {
                   setCurrentParentId(prevParentId);
                   queryClient.setQueryData(dashboardTasksKey(), previousTasks);
@@ -207,7 +209,7 @@ export function ParentTaskPicker({
                         queryClient.invalidateQueries({
                           queryKey: dashboardTasksKey(),
                         });
-                        toast.error("Undo failed");
+                        toast.error(t("toast.undoFailed"));
                       },
                     },
                   );
@@ -219,7 +221,7 @@ export function ParentTaskPicker({
         onError: () => {
           setCurrentParentId(prevParentId);
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to change parent task", {
+          toast.error(t("toast.failedToChangeParent"), {
             id: `reparent-err-${task.id}`,
           });
         },
@@ -266,7 +268,7 @@ export function ParentTaskPicker({
               <span className="truncate">{currentParent.title}</span>
             </>
           ) : (
-            <span className="text-muted-foreground">None (top-level)</span>
+            <span className="text-muted-foreground">{t("task.field.noneTopLevel")}</span>
           )}
         </span>
         <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
@@ -282,7 +284,7 @@ export function ParentTaskPicker({
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tasks..."
+              placeholder={t("task.searchTasks")}
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
             {search && (
@@ -307,7 +309,7 @@ export function ParentTaskPicker({
               )}
               onClick={() => handleSelect(null)}
             >
-              None (top-level)
+              {t("task.field.noneTopLevel")}
             </button>
 
             {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
@@ -347,7 +349,9 @@ export function ParentTaskPicker({
             ))}
 
             {totalFiltered === 0 && search && (
-              <div className="px-3 py-2 text-sm text-muted-foreground">No matching tasks</div>
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                {t("task.noMatchingTasks")}
+              </div>
             )}
           </div>
         </div>

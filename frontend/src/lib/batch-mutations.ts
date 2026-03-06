@@ -14,6 +14,7 @@ import {
   toggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   updateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
+import i18n from "@/lib/i18n";
 import { dashboardTasksKey } from "@/lib/query-keys";
 
 /* ------------------------------------------------------------------ */
@@ -59,12 +60,12 @@ export function executeBatch({
   queryClient.setQueryData<TaskResponse[]>(cacheKey, (old) => (old ? applyOptimistic(old) : old));
 
   // 2. Show toast with undo immediately
-  const noun = tasks.length === 1 ? "task" : "tasks";
+  const noun = tasks.length === 1 ? i18n.t("common.task") : i18n.t("common.tasks");
   const message = `${label} ${tasks.length} ${noun}`;
   const toastId = `batch-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
   const undoAction = {
-    label: "Undo",
+    label: i18n.t("toast.undo"),
     onClick: () => {
       // Fire per-task reverse mutations (don't restore full snapshot —
       // the cache may have been invalidated/refetched since the operation)
@@ -84,13 +85,24 @@ export function executeBatch({
     if (failed === tasks.length) {
       // All failed — rollback + replace toast with error
       if (snapshot) queryClient.setQueryData(cacheKey, snapshot);
-      toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
+      toast.error(i18n.t("batch.failedToAction", { action: label.toLowerCase(), noun }), {
+        id: toastId,
+      });
     } else if (failed > 0) {
       // Partial failure — update toast but preserve undo action
-      toast.warning(`${label} ${succeeded} of ${tasks.length} ${noun}. ${failed} failed.`, {
-        id: toastId,
-        action: undoAction,
-      });
+      toast.warning(
+        i18n.t("batch.partialFailure", {
+          label,
+          count: succeeded,
+          total: tasks.length,
+          noun,
+          failed,
+        }),
+        {
+          id: toastId,
+          action: undoAction,
+        },
+      );
       queryClient.invalidateQueries({ queryKey: cacheKey });
     } else {
       // All succeeded — reconcile with server
@@ -138,7 +150,7 @@ export function batchToggleComplete(
       }),
     mutateFn: (task) => toggleTaskCompleteApiV1TasksTaskIdToggleCompletePost(task.id, null),
     undoFn: (task) => toggleTaskCompleteApiV1TasksTaskIdToggleCompletePost(task.id, null),
-    label: completing ? "Completed" : "Reopened",
+    label: completing ? i18n.t("batch.completed") : i18n.t("batch.reopened"),
   });
 }
 
@@ -159,7 +171,7 @@ export function batchDelete(queryClient: QueryClient, tasks: TaskResponse[]) {
         ),
     mutateFn: (task) => deleteTaskApiV1TasksTaskIdDelete(task.id),
     undoFn: (task) => restoreTaskApiV1TasksTaskIdRestorePost(task.id),
-    label: "Deleted",
+    label: i18n.t("batch.deleted"),
   });
 }
 
@@ -181,7 +193,7 @@ export function batchUnschedule(queryClient: QueryClient, tasks: TaskResponse[])
         scheduled_date: task.scheduled_date,
         scheduled_time: task.scheduled_time,
       }),
-    label: "Unscheduled",
+    label: i18n.t("batch.unscheduled"),
   });
 }
 
@@ -216,7 +228,7 @@ export function batchEdit(
       }
       return updateTaskApiV1TasksTaskIdPut(task.id, restore);
     },
-    label: "Edited",
+    label: i18n.t("batch.edited"),
   });
 }
 
@@ -235,7 +247,7 @@ export function batchReschedule(queryClient: QueryClient, tasks: TaskResponse[],
         scheduled_date: task.scheduled_date,
         scheduled_time: task.scheduled_time,
       }),
-    label: "Rescheduled",
+    label: i18n.t("batch.rescheduled"),
   });
 }
 
@@ -303,12 +315,12 @@ function executeInstanceBatch(
   }
 
   // 2. Show toast with undo immediately
-  const noun = instances.length === 1 ? "instance" : "instances";
+  const noun = instances.length === 1 ? i18n.t("common.instance") : i18n.t("common.instances");
   const message = `${label} ${instances.length} ${noun}`;
   const toastId = `batch-instance-${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
   const undoAction = {
-    label: "Undo",
+    label: i18n.t("toast.undo"),
     onClick: () => {
       // Fire per-instance reverse mutations (don't restore full snapshot —
       // the cache may have been invalidated/refetched since the operation)
@@ -328,13 +340,24 @@ function executeInstanceBatch(
     if (failed === instances.length) {
       // All failed — rollback
       if (snapshots) restoreInstanceCaches(queryClient, snapshots);
-      toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
+      toast.error(i18n.t("batch.failedToAction", { action: label.toLowerCase(), noun }), {
+        id: toastId,
+      });
     } else if (failed > 0) {
       // Partial failure — preserve undo action
-      toast.warning(`${label} ${succeeded} of ${instances.length} ${noun}. ${failed} failed.`, {
-        id: toastId,
-        action: undoAction,
-      });
+      toast.warning(
+        i18n.t("batch.partialFailure", {
+          label,
+          count: succeeded,
+          total: instances.length,
+          noun,
+          failed,
+        }),
+        {
+          id: toastId,
+          action: undoAction,
+        },
+      );
       invalidateInstances(queryClient);
     } else {
       invalidateInstances(queryClient);
@@ -353,7 +376,7 @@ export function batchToggleCompleteInstances(
     instances,
     (inst) => toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id),
     (inst) => toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id),
-    completing ? "Completed" : "Reopened",
+    completing ? i18n.t("batch.completed") : i18n.t("batch.reopened"),
     (inst) => ({ ...inst, status: completing ? ("completed" as const) : ("pending" as const) }),
   );
 }
@@ -365,7 +388,7 @@ export function batchSkipInstances(queryClient: QueryClient, instances: Instance
     instances,
     (inst) => skipInstanceApiV1InstancesInstanceIdSkipPost(inst.id),
     (inst) => unskipInstanceApiV1InstancesInstanceIdUnskipPost(inst.id),
-    "Skipped",
+    i18n.t("batch.skipped"),
     (inst) => ({ ...inst, status: "skipped" as const }),
   );
 }
@@ -383,7 +406,7 @@ export function batchUnscheduleInstances(queryClient: QueryClient, instances: In
       scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
         scheduled_datetime: inst.scheduled_datetime,
       }),
-    "Unscheduled",
+    i18n.t("batch.unscheduled"),
     (inst) => ({ ...inst, scheduled_datetime: null }),
   );
 }
@@ -407,7 +430,7 @@ export function batchRescheduleInstances(
       scheduleInstanceApiV1InstancesInstanceIdSchedulePut(inst.id, {
         scheduled_datetime: inst.scheduled_datetime,
       }),
-    "Rescheduled",
+    i18n.t("batch.rescheduled"),
     (inst) => ({ ...inst, scheduled_datetime: datetime }),
   );
 }
@@ -523,8 +546,8 @@ export function batchToggleCompleteAll(
   }
 
   // 3. Single toast with single undo
-  const label = completing ? "Completed" : "Reopened";
-  const noun = totalCount === 1 ? "item" : "items";
+  const label = completing ? i18n.t("batch.completed") : i18n.t("batch.reopened");
+  const noun = totalCount === 1 ? i18n.t("common.item") : i18n.t("common.items");
   const message = `${label} ${totalCount} ${noun}`;
   const toastId = `batch-${label.toLowerCase()}-all-${Date.now()}`;
 
@@ -534,7 +557,7 @@ export function batchToggleCompleteAll(
     toggleInstanceCompleteApiV1InstancesInstanceIdToggleCompletePost(inst.id);
 
   const undoAction = {
-    label: "Undo",
+    label: i18n.t("toast.undo"),
     onClick: () => {
       // Fire per-item reverse mutations
       const undos = [...tasks.map(taskMutateFn), ...instances.map(instanceMutateFn)];
@@ -554,13 +577,24 @@ export function batchToggleCompleteAll(
     if (failed === totalCount) {
       if (taskSnapshot) queryClient.setQueryData(taskCacheKey, taskSnapshot);
       if (instanceSnapshots) restoreInstanceCaches(queryClient, instanceSnapshots);
-      toast.error(`Failed to ${label.toLowerCase()} ${noun}`, { id: toastId });
+      toast.error(i18n.t("batch.failedToAction", { action: label.toLowerCase(), noun }), {
+        id: toastId,
+      });
     } else if (failed > 0) {
       const succeeded = totalCount - failed;
-      toast.warning(`${label} ${succeeded} of ${totalCount} ${noun}. ${failed} failed.`, {
-        id: toastId,
-        action: undoAction,
-      });
+      toast.warning(
+        i18n.t("batch.partialFailure", {
+          label,
+          count: succeeded,
+          total: totalCount,
+          noun,
+          failed,
+        }),
+        {
+          id: toastId,
+          action: undoAction,
+        },
+      );
       queryClient.invalidateQueries({ queryKey: taskCacheKey });
       invalidateInstances(queryClient);
     } else {
@@ -606,12 +640,13 @@ export function batchUnscheduleAll(
   }
 
   // 3. Single toast with single undo
-  const noun = totalCount === 1 ? "item" : "items";
-  const message = `Unscheduled ${totalCount} ${noun}`;
+  const noun = totalCount === 1 ? i18n.t("common.item") : i18n.t("common.items");
+  const label = i18n.t("batch.unscheduled");
+  const message = `${label} ${totalCount} ${noun}`;
   const toastId = `batch-unschedule-all-${Date.now()}`;
 
   const undoAction = {
-    label: "Undo",
+    label: i18n.t("toast.undo"),
     onClick: () => {
       const undos = [
         ...tasks.map((task) =>
@@ -654,13 +689,22 @@ export function batchUnscheduleAll(
     if (failed === totalCount) {
       if (taskSnapshot) queryClient.setQueryData(taskCacheKey, taskSnapshot);
       if (instanceSnapshots) restoreInstanceCaches(queryClient, instanceSnapshots);
-      toast.error("Failed to unschedule items", { id: toastId });
+      toast.error(i18n.t("batch.failedToUnschedule"), { id: toastId });
     } else if (failed > 0) {
       const succeeded = totalCount - failed;
-      toast.warning(`Unscheduled ${succeeded} of ${totalCount} ${noun}. ${failed} failed.`, {
-        id: toastId,
-        action: undoAction,
-      });
+      toast.warning(
+        i18n.t("batch.partialFailure", {
+          label,
+          count: succeeded,
+          total: totalCount,
+          noun,
+          failed,
+        }),
+        {
+          id: toastId,
+          action: undoAction,
+        },
+      );
       queryClient.invalidateQueries({ queryKey: taskCacheKey });
       invalidateInstances(queryClient);
     } else {
@@ -708,12 +752,13 @@ export function batchRescheduleAll(
   }
 
   // 3. Single toast with single undo
-  const noun = totalCount === 1 ? "item" : "items";
-  const message = `Rescheduled ${totalCount} ${noun}`;
+  const noun = totalCount === 1 ? i18n.t("common.item") : i18n.t("common.items");
+  const label = i18n.t("batch.rescheduled");
+  const message = `${label} ${totalCount} ${noun}`;
   const toastId = `batch-reschedule-all-${Date.now()}`;
 
   const undoAction = {
-    label: "Undo",
+    label: i18n.t("toast.undo"),
     onClick: () => {
       const undos = [
         ...tasks.map((task) =>
@@ -751,13 +796,22 @@ export function batchRescheduleAll(
     if (failed === totalCount) {
       if (taskSnapshot) queryClient.setQueryData(taskCacheKey, taskSnapshot);
       if (instanceSnapshots) restoreInstanceCaches(queryClient, instanceSnapshots);
-      toast.error("Failed to reschedule items", { id: toastId });
+      toast.error(i18n.t("batch.failedToReschedule"), { id: toastId });
     } else if (failed > 0) {
       const succeeded = totalCount - failed;
-      toast.warning(`Rescheduled ${succeeded} of ${totalCount} ${noun}. ${failed} failed.`, {
-        id: toastId,
-        action: undoAction,
-      });
+      toast.warning(
+        i18n.t("batch.partialFailure", {
+          label,
+          count: succeeded,
+          total: totalCount,
+          noun,
+          failed,
+        }),
+        {
+          id: toastId,
+          action: undoAction,
+        },
+      );
       queryClient.invalidateQueries({ queryKey: taskCacheKey });
       invalidateInstances(queryClient);
     } else {

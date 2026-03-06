@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useDevice } from "@/hooks/use-device";
 
@@ -16,6 +17,7 @@ const HINT_DELAY_MS = 1500;
  * (c) Cmd+K palette hint shown once on first desktop visit
  */
 export function GestureDiscovery() {
+  const { t } = useTranslation();
   const { prefersTouch, hasTouch, hasMouse } = useDevice();
   const [showHint, setShowHint] = useState(false);
   const isTouchDevice = prefersTouch || hasTouch;
@@ -51,7 +53,7 @@ export function GestureDiscovery() {
       localStorage.setItem(LONGPRESS_HINT_KEY, "1");
 
       longPressTimerRef.current = window.setTimeout(() => {
-        toast.info("Tip: long-press any task for quick actions");
+        toast.info(t("gesture.longPressHint"));
       }, 500);
     };
 
@@ -69,7 +71,7 @@ export function GestureDiscovery() {
       document.removeEventListener("click", clickHandler);
       if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
     };
-  }, [isTouchDevice]);
+  }, [isTouchDevice, t]);
 
   // (c) Cmd+K hint: show once on desktop after a short delay
   useEffect(() => {
@@ -79,11 +81,11 @@ export function GestureDiscovery() {
     const timer = setTimeout(() => {
       localStorage.setItem(CMDK_HINT_KEY, "1");
       const shortcut = navigator.platform?.includes("Mac") ? "⌘K" : "Ctrl+K";
-      toast.info(`Tip: press ${shortcut} to search, create tasks, or run commands`);
+      toast.info(t("gesture.commandPaletteHint", { shortcut }));
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [hasMouse, prefersTouch]);
+  }, [hasMouse, prefersTouch, t]);
 
   return (
     <AnimatePresence>
@@ -96,7 +98,7 @@ export function GestureDiscovery() {
           className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.75rem)] left-4 right-4 z-50 rounded-xl bg-foreground/90 px-4 py-3 text-center text-sm text-background shadow-lg backdrop-blur-sm"
           onClick={() => setShowHint(false)}
         >
-          Swipe right to complete, left to schedule. Long-press for more.
+          {t("gesture.swipeHint")}
         </motion.div>
       )}
     </AnimatePresence>

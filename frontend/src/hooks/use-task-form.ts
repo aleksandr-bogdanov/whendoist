@@ -26,6 +26,7 @@ import { announce } from "@/components/live-announcer";
 import type { RecurrenceRule } from "@/components/task/recurrence-picker";
 import type { TaskFieldHandlers, TaskFieldValues } from "@/components/task/task-fields-body";
 import { useCrypto } from "@/hooks/use-crypto";
+import i18n from "@/lib/i18n";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { TOAST_DURATION_SHORT } from "@/lib/toast";
 import { useUIStore } from "@/stores/ui-store";
@@ -173,7 +174,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
   // ─── Save ────────────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
-      toast.error("Title is required");
+      toast.error(i18n.t("toast.titleRequired"));
       return;
     }
 
@@ -204,7 +205,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
         {
           onSuccess: () => {
             announce("Task updated");
-            toast.success("Task updated", {
+            toast.success(i18n.t("toast.taskUpdated"), {
               id: `save-${task.id}`,
               duration: TOAST_DURATION_SHORT,
             });
@@ -213,7 +214,8 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
             setDirty(false);
             onDone();
           },
-          onError: () => toast.error("Failed to update task", { id: `save-err-${task.id}` }),
+          onError: () =>
+            toast.error(i18n.t("toast.failedToUpdateTask"), { id: `save-err-${task.id}` }),
         },
       );
     } else {
@@ -238,12 +240,14 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
         {
           onSuccess: () => {
             announce("Task created");
-            toast.success("Task created", { duration: TOAST_DURATION_SHORT });
+            toast.success(i18n.t("toast.taskCreated", { title }), {
+              duration: TOAST_DURATION_SHORT,
+            });
             invalidateQueries();
             setDirty(false);
             onDone();
           },
-          onError: () => toast.error("Failed to create task"),
+          onError: () => toast.error(i18n.t("toast.failedToCreateTask")),
         },
       );
     }
@@ -278,16 +282,16 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
       { taskId: task.id },
       {
         onSuccess: () => {
-          toast.success("Task deleted", {
+          toast.success(i18n.t("toast.taskDeleted", { title: task.title }), {
             id: `delete-${task.id}`,
             action: {
-              label: "Undo",
+              label: i18n.t("toast.undo"),
               onClick: () => {
                 restoreMutation.mutate(
                   { taskId: task.id },
                   {
                     onSuccess: () => {
-                      toast.success("Task restored", { id: `restore-${task.id}` });
+                      toast.success(i18n.t("toast.taskRestored"), { id: `restore-${task.id}` });
                       invalidateQueries();
                     },
                   },
@@ -299,7 +303,8 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
           setShowDeleteConfirm(false);
           onDone();
         },
-        onError: () => toast.error("Failed to delete task", { id: `delete-err-${task.id}` }),
+        onError: () =>
+          toast.error(i18n.t("toast.failedToDeleteTask"), { id: `delete-err-${task.id}` }),
       },
     );
   }, [task, deleteMutation, restoreMutation, invalidateQueries, onDone]);
@@ -314,21 +319,27 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
         {
           onSuccess: () => {
             invalidateQueries();
-            toast.success(wasCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
-              id: `complete-${task.id}`,
-              action: {
-                label: "Undo",
-                onClick: () => {
-                  toggleCompleteMutation.mutate(
-                    { taskId: task.id, data: null },
-                    { onSuccess: () => invalidateQueries() },
-                  );
+            toast.success(
+              wasCompleted
+                ? i18n.t("toast.taskReopened", { title: task.title })
+                : i18n.t("toast.taskCompleted", { title: task.title }),
+              {
+                id: `complete-${task.id}`,
+                action: {
+                  label: i18n.t("toast.undo"),
+                  onClick: () => {
+                    toggleCompleteMutation.mutate(
+                      { taskId: task.id, data: null },
+                      { onSuccess: () => invalidateQueries() },
+                    );
+                  },
                 },
               },
-            });
+            );
             extraOnSuccess?.();
           },
-          onError: () => toast.error("Failed to update task", { id: `complete-err-${task.id}` }),
+          onError: () =>
+            toast.error(i18n.t("toast.failedToUpdateTask"), { id: `complete-err-${task.id}` }),
         },
       );
     },
@@ -345,11 +356,11 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
         onSuccess: (data) => {
           const count = (data as { completed_count?: number }).completed_count ?? 0;
           invalidateQueries();
-          toast.success(`Completed ${count} past instance(s)`, {
+          toast.success(i18n.t("toast.completedPastInstances", { count }), {
             duration: TOAST_DURATION_SHORT,
           });
         },
-        onError: () => toast.error("Failed to complete past instances"),
+        onError: () => toast.error(i18n.t("toast.failedToCompletePastInstances")),
       },
     );
   }, [task, batchComplete, invalidateQueries]);

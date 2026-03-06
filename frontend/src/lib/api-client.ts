@@ -12,6 +12,7 @@ import {
   ServerError,
   ValidationError,
 } from "./errors";
+import i18n from "./i18n";
 
 // Tauri production: absolute URL + bearer auth (direct to server)
 // Tauri dev: relative URL (Vite proxy forwards to server — iOS WKWebView can't reach external HTTPS)
@@ -67,12 +68,12 @@ axios.interceptors.request.use(async (config) => {
     if (isTauri && WRITE_METHODS.has((config.method ?? "").toLowerCase())) {
       const { addToWriteQueue } = await import("./tauri-cache");
       await addToWriteQueue(config.method!, config.url!, config.data);
-      toast.info("Saved offline — will sync when connected.", {
+      toast.info(i18n.t("errors.offlineQueued"), {
         id: "offline-queued",
       });
       throw new OfflineQueuedError("Mutation queued offline");
     }
-    toast.error("No internet connection. Changes will fail while offline.", {
+    toast.error(i18n.t("errors.offlineChangesWillFail"), {
       id: "offline-guard",
     });
     throw new NetworkError("Browser is offline");
@@ -128,7 +129,7 @@ let rateLimitIntervalId: ReturnType<typeof setInterval> | null = null;
 function showRateLimitCountdown(seconds: number) {
   if (rateLimitIntervalId) clearInterval(rateLimitIntervalId);
   let remaining = seconds;
-  toast.error(`Too many requests. Try again in ${remaining}s.`, {
+  toast.error(i18n.t("errors.rateLimited", { seconds: remaining }), {
     id: "rate-limit",
     duration: seconds * 1000 + 500,
   });
@@ -140,7 +141,7 @@ function showRateLimitCountdown(seconds: number) {
       toast.dismiss("rate-limit");
       return;
     }
-    toast.error(`Too many requests. Try again in ${remaining}s.`, {
+    toast.error(i18n.t("errors.rateLimited", { seconds: remaining }), {
       id: "rate-limit",
       duration: remaining * 1000 + 500,
     });
@@ -202,7 +203,7 @@ axios.interceptors.response.use(
     }
 
     if (status >= 500) {
-      toast.error("Something went wrong. Please try again.", {
+      toast.error(i18n.t("errors.serverError"), {
         id: "server-error",
       });
       return Promise.reject(new ServerError(error.message || "Server error"));

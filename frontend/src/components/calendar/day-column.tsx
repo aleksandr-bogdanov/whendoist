@@ -2,6 +2,7 @@ import { useDndMonitor, useDraggable } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarOff, Check, Pencil, SkipForward } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { EventResponse, InstanceResponse, TaskResponse } from "@/api/model";
 import {
@@ -92,6 +93,7 @@ export function DayColumn({
   onPlanExecute,
   timezone,
 }: DayColumnProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const columnRef = useRef<HTMLDivElement>(null);
   const isToday = centerDate === todayString(timezone);
@@ -613,10 +615,16 @@ export function DayColumn({
         ))}
 
         {/* Day separator: START OF {DAY} */}
-        <DaySeparator label={`START OF ${centerDayName}`} offset={boundaries.currentStart} />
+        <DaySeparator
+          label={t("calendar.startOfDay", { day: centerDayName })}
+          offset={boundaries.currentStart}
+        />
 
         {/* Day separator: END OF {DAY} */}
-        <DaySeparator label={`END OF ${centerDayName}`} offset={boundaries.currentEnd} />
+        <DaySeparator
+          label={t("calendar.endOfDay", { day: centerDayName })}
+          offset={boundaries.currentEnd}
+        />
 
         {/* Drop indicator when dragging over */}
         {isCalendarOver && (
@@ -678,7 +686,7 @@ export function DayColumn({
                   onPlanExecute?.(planSelection.start, planSelection.end);
                 }}
               >
-                Plan Tasks
+                {t("task.action.planTasks")}
               </button>
             )}
           </div>
@@ -782,6 +790,7 @@ function InstanceCard({
   onEditSeries?: () => void;
   orderedIds?: string[];
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const selectionId = instanceSelectionId(instance.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
@@ -829,10 +838,10 @@ function InstanceCard({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success(`Unscheduled "${instance.task_title}"`, {
+          toast.success(t("toast.taskUnscheduled", { title: instance.task_title }), {
             id: `unschedule-inst-${instance.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 queryClient.setQueryData(
                   getListInstancesApiV1InstancesGetQueryKey(),
@@ -851,7 +860,7 @@ function InstanceCard({
         },
         onError: () => {
           queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
-          toast.error("Failed to unschedule instance", {
+          toast.error(t("toast.failedToUnscheduleInstance"), {
             id: `unschedule-inst-err-${instance.id}`,
           });
         },
@@ -876,25 +885,30 @@ function InstanceCard({
             "en-US",
             { month: "short", day: "numeric" },
           );
-          toast.success(`Completed "${instance.task_title}" · ${dateHint}`, {
-            id: `complete-inst-${instance.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                uncompleteInstance.mutate(
-                  { instanceId: instance.id },
-                  {
-                    onSuccess: () => invalidateAll(),
-                    onError: () => toast.error("Undo failed"),
-                  },
-                );
+          toast.success(
+            t("toast.instanceCompleted", { title: instance.task_title, date: dateHint }),
+            {
+              id: `complete-inst-${instance.id}`,
+              action: {
+                label: t("toast.undo"),
+                onClick: () => {
+                  uncompleteInstance.mutate(
+                    { instanceId: instance.id },
+                    {
+                      onSuccess: () => invalidateAll(),
+                      onError: () => toast.error(t("toast.undoFailed")),
+                    },
+                  );
+                },
               },
             },
-          });
+          );
         },
         onError: () => {
           queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
-          toast.error("Failed to complete instance", { id: `complete-inst-err-${instance.id}` });
+          toast.error(t("toast.failedToCompleteInstance"), {
+            id: `complete-inst-err-${instance.id}`,
+          });
         },
       },
     );
@@ -917,25 +931,28 @@ function InstanceCard({
             "en-US",
             { month: "short", day: "numeric" },
           );
-          toast.success(`Skipped "${instance.task_title}" · ${dateHint}`, {
-            id: `skip-inst-${instance.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                unskipInstance.mutate(
-                  { instanceId: instance.id },
-                  {
-                    onSuccess: () => invalidateAll(),
-                    onError: () => toast.error("Undo failed"),
-                  },
-                );
+          toast.success(
+            t("toast.instanceSkipped", { title: instance.task_title, date: dateHint }),
+            {
+              id: `skip-inst-${instance.id}`,
+              action: {
+                label: t("toast.undo"),
+                onClick: () => {
+                  unskipInstance.mutate(
+                    { instanceId: instance.id },
+                    {
+                      onSuccess: () => invalidateAll(),
+                      onError: () => toast.error(t("toast.undoFailed")),
+                    },
+                  );
+                },
               },
             },
-          });
+          );
         },
         onError: () => {
           queryClient.setQueryData(getListInstancesApiV1InstancesGetQueryKey(), previousInstances);
-          toast.error("Failed to skip instance", { id: `skip-inst-err-${instance.id}` });
+          toast.error(t("toast.failedToSkipInstance"), { id: `skip-inst-err-${instance.id}` });
         },
       },
     );
@@ -1014,20 +1031,20 @@ function InstanceCard({
             {hasScheduledTime && (
               <ContextMenuItem onSelect={handleUnschedule} disabled={!isPending}>
                 <CalendarOff className="h-3.5 w-3.5 mr-2" />
-                Unschedule
+                {t("task.action.unschedule")}
               </ContextMenuItem>
             )}
             <ContextMenuItem onSelect={handleSkip} disabled={!isPending}>
               <SkipForward className="h-3.5 w-3.5 mr-2" />
-              Skip
+              {t("common.skip")}
             </ContextMenuItem>
             <ContextMenuItem onSelect={handleComplete} disabled={!isPending}>
               <Check className="h-3.5 w-3.5 mr-2" />
-              Complete
+              {t("task.action.complete")}
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => onEditSeries?.()}>
               <Pencil className="h-3.5 w-3.5 mr-2" />
-              Edit series
+              {t("task.action.editSeries")}
             </ContextMenuItem>
           </>
         )}

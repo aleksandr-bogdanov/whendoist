@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getRegisteredShortcuts } from "@/hooks/use-shortcuts";
 
@@ -17,6 +18,7 @@ const KEY_LABELS: Record<string, string> = {
 };
 
 export function ShortcutsHelp({ open, onOpenChange }: ShortcutsHelpProps) {
+  const { t } = useTranslation();
   const grouped = (() => {
     const all = getRegisteredShortcuts();
     const map = new Map<string, { key: string; description: string; displayKey?: string }[]>();
@@ -36,7 +38,7 @@ export function ShortcutsHelp({ open, onOpenChange }: ShortcutsHelpProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          <DialogTitle>{t("shortcuts.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 max-h-[60vh] overflow-y-auto">
           {[...grouped.entries()].map(([category, shortcuts]) => (

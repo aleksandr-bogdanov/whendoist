@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { useListDomainsApiV1DomainsGet } from "@/api/queries/domains/domains";
 import {
@@ -70,6 +71,7 @@ interface BatchEditFormProps {
 }
 
 export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFormProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const count = tasks.length;
   const instanceOnly = count === 0 && instanceCount > 0;
@@ -147,43 +149,38 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
     return (
       <div className="flex flex-col gap-3">
         <p className="text-sm font-medium">
-          {instanceCount} {instanceCount === 1 ? "instance" : "instances"} selected
+          {t("batch.instancesSelected", { count: instanceCount })}
         </p>
-        <p className="text-xs text-muted-foreground">
-          Instance fields are inherited from the parent task — edit the series instead.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("batch.instancesSkipped")}</p>
         <div className="flex justify-end pt-1">
           <button
             type="button"
             onClick={onDone}
             className="px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors"
           >
-            Close
+            {t("common.close")}
           </button>
         </div>
       </div>
     );
   }
 
-  const noun = count === 1 ? "task" : "tasks";
+  const noun = count === 1 ? t("common.task") : t("common.tasks");
 
   return (
     <div className="flex flex-col gap-3">
       {/* Header */}
-      <p className="text-sm font-medium">
-        Edit {count} {noun}
-      </p>
+      <p className="text-sm font-medium">{t("batch.editCount", { count, noun })}</p>
 
       {/* Note when mixed selection includes instances */}
       {instanceCount > 0 && (
         <p className="text-xs text-muted-foreground">
-          Applied to {count} {noun} ({instanceCount}{" "}
-          {instanceCount === 1 ? "instance" : "instances"} skipped).
+          {t("batch.appliedNote", { count, noun, instanceCount })}
         </p>
       )}
 
       {/* Impact (Priority) */}
-      <FieldRow label="Impact">
+      <FieldRow label={t("task.field.impact")}>
         <Select
           value={impact}
           onValueChange={(v) => {
@@ -192,7 +189,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
           }}
         >
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue placeholder={defaults.impact === MIXED ? "Mixed" : "\u2014"} />
+            <SelectValue placeholder={defaults.impact === MIXED ? t("common.mixed") : "\u2014"} />
           </SelectTrigger>
           <SelectContent position="popper" align="start">
             <SelectItem value={UNSET}>&mdash;</SelectItem>
@@ -206,7 +203,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
       </FieldRow>
 
       {/* Clarity */}
-      <FieldRow label="Clarity">
+      <FieldRow label={t("task.field.clarity")}>
         <Select
           value={clarity}
           onValueChange={(v) => {
@@ -215,7 +212,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
           }}
         >
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue placeholder={defaults.clarity === MIXED ? "Mixed" : "\u2014"} />
+            <SelectValue placeholder={defaults.clarity === MIXED ? t("common.mixed") : "\u2014"} />
           </SelectTrigger>
           <SelectContent position="popper" align="start">
             <SelectItem value={UNSET}>&mdash;</SelectItem>
@@ -229,7 +226,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
       </FieldRow>
 
       {/* Duration */}
-      <FieldRow label="Duration">
+      <FieldRow label={t("task.field.duration")}>
         <input
           type="text"
           value={durationInput}
@@ -243,13 +240,13 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
               handleApply();
             }
           }}
-          placeholder={defaults.duration === MIXED ? "Mixed" : "\u2014"}
+          placeholder={defaults.duration === MIXED ? t("common.mixed") : "\u2014"}
           className="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
         />
       </FieldRow>
 
       {/* Domain */}
-      <FieldRow label="Domain">
+      <FieldRow label={t("task.field.domain")}>
         <Select
           value={domainId}
           onValueChange={(v) => {
@@ -258,7 +255,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
           }}
         >
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue placeholder={defaults.domain === MIXED ? "Mixed" : "\u2014"} />
+            <SelectValue placeholder={defaults.domain === MIXED ? t("common.mixed") : "\u2014"} />
           </SelectTrigger>
           <SelectContent position="popper" align="start">
             <SelectItem value={UNSET}>&mdash;</SelectItem>
@@ -278,7 +275,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
           onClick={onDone}
           className="px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors"
         >
-          Cancel
+          {t("common.cancel")}
         </button>
         <button
           type="button"
@@ -286,7 +283,7 @@ export function BatchEditForm({ tasks, instanceCount = 0, onDone }: BatchEditFor
           disabled={!hasChanges}
           className="px-3 py-1.5 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Apply
+          {t("common.apply")}
         </button>
       </div>
     </div>

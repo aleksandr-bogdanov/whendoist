@@ -12,6 +12,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import {
@@ -99,6 +100,7 @@ export function PaletteTaskActions({
   onBack,
   onClose,
 }: PaletteTaskActionsProps) {
+  const { t } = useTranslation();
   const [subView, setSubView] = useState<"actions" | "domains">("actions");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [domainQuery, setDomainQuery] = useState("");
@@ -146,26 +148,31 @@ export function PaletteTaskActions({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success(isCompleted ? `Reopened "${task.title}"` : `Completed "${task.title}"`, {
-            id: `complete-${task.id}`,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                toggleComplete.mutate(
-                  { taskId: task.id, data: null },
-                  { onSuccess: () => invalidateAll() },
-                );
+          toast.success(
+            isCompleted
+              ? t("toast.taskReopened", { title: task.title })
+              : t("toast.taskCompleted", { title: task.title }),
+            {
+              id: `complete-${task.id}`,
+              action: {
+                label: t("toast.undo"),
+                onClick: () => {
+                  toggleComplete.mutate(
+                    { taskId: task.id, data: null },
+                    { onSuccess: () => invalidateAll() },
+                  );
+                },
               },
             },
-          });
+          );
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to update task", { id: `complete-err-${task.id}` });
+          toast.error(t("toast.failedToUpdateTask"), { id: `complete-err-${task.id}` });
         },
       },
     );
-  }, [task, isCompleted, queryClient, toggleComplete, closePalette, invalidateAll]);
+  }, [task, isCompleted, queryClient, toggleComplete, closePalette, invalidateAll, t]);
 
   const handleScheduleToday = useCallback(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -179,10 +186,10 @@ export function PaletteTaskActions({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success(`Scheduled "${task.title}" for today`, {
+          toast.success(t("toast.scheduledForToday", { title: task.title }), {
             id: `schedule-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 updateTask.mutate(
                   { taskId: task.id, data: { scheduled_date: task.scheduled_date ?? null } },
@@ -194,11 +201,11 @@ export function PaletteTaskActions({
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to schedule task", { id: `schedule-err-${task.id}` });
+          toast.error(t("toast.failedToScheduleTask"), { id: `schedule-err-${task.id}` });
         },
       },
     );
-  }, [task, queryClient, updateTask, closePalette, invalidateAll]);
+  }, [task, queryClient, updateTask, closePalette, invalidateAll, t]);
 
   const handleScheduleTomorrow = useCallback(() => {
     const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -212,10 +219,10 @@ export function PaletteTaskActions({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success(`Scheduled "${task.title}" for tomorrow`, {
+          toast.success(t("toast.scheduledForTomorrow", { title: task.title }), {
             id: `schedule-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 updateTask.mutate(
                   { taskId: task.id, data: { scheduled_date: task.scheduled_date ?? null } },
@@ -227,11 +234,11 @@ export function PaletteTaskActions({
         },
         onError: () => {
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to schedule task", { id: `schedule-err-${task.id}` });
+          toast.error(t("toast.failedToScheduleTask"), { id: `schedule-err-${task.id}` });
         },
       },
     );
-  }, [task, queryClient, updateTask, closePalette, invalidateAll]);
+  }, [task, queryClient, updateTask, closePalette, invalidateAll, t]);
 
   const handleMoveToDomain = useCallback(() => {
     setSubView("domains");
@@ -257,20 +264,20 @@ export function PaletteTaskActions({
       {
         onSuccess: () => {
           invalidateAll();
-          toast.success(`Deleted "${task.title}"`, {
+          toast.success(t("toast.taskDeleted", { title: task.title }), {
             id: `delete-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 restoreTask.mutate(
                   { taskId: task.id },
                   {
                     onSuccess: () => {
                       invalidateAll();
-                      toast.success("Task restored", { id: `restore-${task.id}` });
+                      toast.success(t("toast.taskRestored"), { id: `restore-${task.id}` });
                     },
                     onError: () =>
-                      toast.error("Failed to restore task", { id: `restore-err-${task.id}` }),
+                      toast.error(t("toast.failedToRestoreTask"), { id: `restore-err-${task.id}` }),
                   },
                 );
               },
@@ -278,11 +285,11 @@ export function PaletteTaskActions({
           });
         },
         onError: () => {
-          toast.error("Failed to delete task", { id: `delete-err-${task.id}` });
+          toast.error(t("toast.failedToDeleteTask"), { id: `delete-err-${task.id}` });
         },
       },
     );
-  }, [task, deleteTask, restoreTask, closePalette, invalidateAll]);
+  }, [task, deleteTask, restoreTask, closePalette, invalidateAll, t]);
 
   /* ---- Domain picker: move task to domain ---- */
   const handleSelectDomain = useCallback(
@@ -302,27 +309,32 @@ export function PaletteTaskActions({
         {
           onSuccess: () => {
             invalidateAll();
-            toast.success(`Moved "${task.title}" to ${targetDomain?.name ?? "no domain"}`, {
-              id: `move-${task.id}`,
-              action: {
-                label: "Undo",
-                onClick: () => {
-                  updateTask.mutate(
-                    { taskId: task.id, data: { domain_id: task.domain_id ?? null } },
-                    { onSuccess: () => invalidateAll() },
-                  );
+            toast.success(
+              targetDomain
+                ? t("toast.movedToDomain", { title: task.title, domain: targetDomain.name })
+                : t("toast.movedToNoDomain", { title: task.title }),
+              {
+                id: `move-${task.id}`,
+                action: {
+                  label: t("toast.undo"),
+                  onClick: () => {
+                    updateTask.mutate(
+                      { taskId: task.id, data: { domain_id: task.domain_id ?? null } },
+                      { onSuccess: () => invalidateAll() },
+                    );
+                  },
                 },
               },
-            });
+            );
           },
           onError: () => {
             queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-            toast.error("Failed to move task", { id: `move-err-${task.id}` });
+            toast.error(t("toast.failedToMoveTask"), { id: `move-err-${task.id}` });
           },
         },
       );
     },
-    [task, queryClient, updateTask, closePalette, invalidateAll],
+    [task, queryClient, updateTask, closePalette, invalidateAll, t],
   );
 
   /* ---- Build action list ---- */
@@ -330,39 +342,39 @@ export function PaletteTaskActions({
     () => [
       {
         id: "toggle-complete",
-        label: isCompleted ? "Uncomplete" : "Complete",
+        label: isCompleted ? t("search.actions.uncomplete") : t("search.actions.complete"),
         icon: isCompleted ? Undo2 : Check,
         shortcut: "C",
         handler: handleToggleComplete,
       },
       {
         id: "schedule-today",
-        label: "Schedule for today",
+        label: t("search.actions.scheduleToday"),
         icon: Calendar,
         handler: handleScheduleToday,
       },
       {
         id: "schedule-tomorrow",
-        label: "Schedule for tomorrow",
+        label: t("search.actions.scheduleTomorrow"),
         icon: CalendarPlus,
         handler: handleScheduleTomorrow,
       },
       {
         id: "move-domain",
-        label: "Move to domain...",
+        label: t("search.actions.moveToDomain"),
         icon: FolderInput,
         handler: handleMoveToDomain,
       },
       {
         id: "edit",
-        label: "Edit",
+        label: t("search.actions.edit"),
         icon: Pencil,
         shortcut: "E",
         handler: handleEdit,
       },
       {
         id: "delete",
-        label: "Delete",
+        label: t("search.actions.delete"),
         icon: Trash2,
         shortcut: "X",
         destructive: true,
@@ -377,6 +389,7 @@ export function PaletteTaskActions({
       handleMoveToDomain,
       handleEdit,
       handleDelete,
+      t,
     ],
   );
 
@@ -503,16 +516,16 @@ export function PaletteTaskActions({
         {/* Footer */}
         <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground flex items-center gap-3">
           <span>
-            <kbd className="font-mono">&uarr;&darr;</kbd> navigate
+            <kbd className="font-mono">&uarr;&darr;</kbd> {t("search.hint.navigate")}
           </span>
           <span>
-            <kbd className="font-mono">&crarr;</kbd> run
+            <kbd className="font-mono">&crarr;</kbd> {t("search.hint.run")}
           </span>
           <span>
-            <kbd className="font-mono">&larr;</kbd> back
+            <kbd className="font-mono">&larr;</kbd> {t("search.hint.back")}
           </span>
           <span>
-            <kbd className="font-mono">esc</kbd> close
+            <kbd className="font-mono">esc</kbd> {t("search.hint.close")}
           </span>
         </div>
       </div>
@@ -529,7 +542,7 @@ export function PaletteTaskActions({
         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-accent/50 transition-colors border-b cursor-pointer"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        <span className="truncate font-medium text-foreground">Move to domain</span>
+        <span className="truncate font-medium text-foreground">{t("search.moveToDomain")}</span>
       </button>
 
       {/* Domain search input */}
@@ -543,7 +556,7 @@ export function PaletteTaskActions({
             setSelectedIndex(0);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search domains..."
+          placeholder={t("search.searchDomains")}
           className="flex-1 h-9 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
         />
       </div>
@@ -551,7 +564,9 @@ export function PaletteTaskActions({
       {/* Domain list */}
       <div ref={listRef} className="max-h-[50vh] overflow-y-auto">
         {filteredDomains.length === 0 ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">No domains found</div>
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            {t("search.noDomains")}
+          </div>
         ) : (
           filteredDomains.map((d, idx) => (
             <button
@@ -577,7 +592,7 @@ export function PaletteTaskActions({
               )}
               <span className="flex-1 min-w-0 truncate">{d.name}</span>
               {d.id === task.domain_id && (
-                <span className="text-xs text-muted-foreground">current</span>
+                <span className="text-xs text-muted-foreground">{t("common.current")}</span>
               )}
             </button>
           ))
@@ -587,16 +602,16 @@ export function PaletteTaskActions({
       {/* Footer */}
       <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground flex items-center gap-3">
         <span>
-          <kbd className="font-mono">&uarr;&darr;</kbd> navigate
+          <kbd className="font-mono">&uarr;&darr;</kbd> {t("search.hint.navigate")}
         </span>
         <span>
-          <kbd className="font-mono">&crarr;</kbd> move
+          <kbd className="font-mono">&crarr;</kbd> {t("search.hint.move")}
         </span>
         <span>
-          <kbd className="font-mono">&larr;</kbd> back
+          <kbd className="font-mono">&larr;</kbd> {t("search.hint.back")}
         </span>
         <span>
-          <kbd className="font-mono">esc</kbd> close
+          <kbd className="font-mono">esc</kbd> {t("search.hint.close")}
         </span>
       </div>
     </div>

@@ -5,8 +5,20 @@
  */
 
 import type { DomainResponse, TaskResponse } from "@/api/model";
+import i18n from "@/lib/i18n";
 
 // Impact metadata matching app/constants.py
+export function getImpactLabel(impact: number): string {
+  const key: Record<number, string> = {
+    1: "task.impact.high",
+    2: "task.impact.mid",
+    3: "task.impact.low",
+    4: "task.impact.min",
+  };
+  return key[impact] ? i18n.t(key[impact]) : `P${impact}`;
+}
+
+/** @deprecated Use getImpactLabel() for i18n support */
 export const IMPACT_LABELS: Record<number, string> = {
   1: "High",
   2: "Mid",
@@ -41,6 +53,16 @@ export const CLARITY_TINTS: Record<string, string> = {
   brainstorm: "#F3ECFA",
 };
 
+export function getClarityLabel(clarity: string): string {
+  const key: Record<string, string> = {
+    autopilot: "task.clarity.autopilot",
+    normal: "task.clarity.normal",
+    brainstorm: "task.clarity.brainstorm",
+  };
+  return key[clarity] ? i18n.t(key[clarity]) : clarity;
+}
+
+/** @deprecated Use getClarityLabel() for i18n support */
 export const CLARITY_LABELS: Record<string, string> = {
   autopilot: "Autopilot",
   normal: "Normal",
@@ -48,6 +70,24 @@ export const CLARITY_LABELS: Record<string, string> = {
 };
 
 // Shared option arrays used by task-editor and attribute-pills
+export function getImpactOptions() {
+  return [
+    { value: 1, label: i18n.t("task.impact.p1") },
+    { value: 2, label: i18n.t("task.impact.p2") },
+    { value: 3, label: i18n.t("task.impact.p3") },
+    { value: 4, label: i18n.t("task.impact.p4") },
+  ] as const;
+}
+
+export function getClarityOptions() {
+  return [
+    { value: "autopilot", label: i18n.t("task.clarity.autopilot") },
+    { value: "normal", label: i18n.t("task.clarity.normal") },
+    { value: "brainstorm", label: i18n.t("task.clarity.brainstorm") },
+  ] as const;
+}
+
+/** @deprecated Use getImpactOptions() for i18n support */
 export const IMPACT_OPTIONS = [
   { value: 1, label: "P1 High" },
   { value: 2, label: "P2 Mid" },
@@ -55,6 +95,7 @@ export const IMPACT_OPTIONS = [
   { value: 4, label: "P4 Min" },
 ] as const;
 
+/** @deprecated Use getClarityOptions() for i18n support */
 export const CLARITY_OPTIONS = [
   { value: "autopilot", label: "Autopilot" },
   { value: "normal", label: "Normal" },
@@ -273,17 +314,18 @@ export function formatDate(dateStr: string | null): string {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  if (date.getTime() === today.getTime()) return "Today";
-  if (date.getTime() === tomorrow.getTime()) return "Tomorrow";
+  if (date.getTime() === today.getTime()) return i18n.t("date.today");
+  if (date.getTime() === tomorrow.getTime()) return i18n.t("date.tomorrow");
 
   const diff = date.getTime() - today.getTime();
   const days = Math.round(diff / (1000 * 60 * 60 * 24));
 
-  if (days < 0) return `${Math.abs(days)}d overdue`;
+  if (days < 0) return i18n.t("date.overdue", { days: Math.abs(days) });
+  const locale = i18n.resolvedLanguage ?? "en";
   if (days <= 7) {
-    return date.toLocaleDateString("en-US", { weekday: "short" });
+    return date.toLocaleDateString(locale, { weekday: "short" });
   }
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 /**
@@ -296,10 +338,12 @@ export function formatScheduleTarget(dateStr: string, timeStr?: string | null): 
   const [hStr, mStr] = timeStr.split(":");
   const hour = Number.parseInt(hStr, 10);
   const minutes = Number.parseInt(mStr, 10);
-  const h = hour % 12 || 12;
-  const ampm = hour < 12 ? "AM" : "PM";
-  const m = minutes.toString().padStart(2, "0");
-  return `${dateLabel} at ${h}:${m} ${ampm}`;
+  const locale = i18n.resolvedLanguage ?? "en";
+  const timeFormatted = new Date(2000, 0, 1, hour, minutes).toLocaleTimeString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${dateLabel} ${i18n.t("date.at")} ${timeFormatted}`;
 }
 
 /**

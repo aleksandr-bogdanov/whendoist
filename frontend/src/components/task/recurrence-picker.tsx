@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,6 +90,7 @@ export function RecurrencePicker({
   recurrenceEnd,
   onChange,
 }: RecurrencePickerProps) {
+  const { t } = useTranslation();
   const [preset, setPreset] = useState<Preset>(() => detectPreset(rule));
   const [customRule, setCustomRule] = useState<RecurrenceRule>(
     () => rule ?? { freq: "daily", interval: 1 },
@@ -138,14 +140,17 @@ export function RecurrencePicker({
     updateCustom({ days_of_week: next });
   };
 
-  const presets: { key: Preset; label: string }[] = [
-    { key: "none", label: "None" },
-    { key: "daily", label: "Daily" },
-    { key: "weekdays", label: "Weekdays" },
-    { key: "weekly", label: "Weekly" },
-    { key: "monthly", label: "Monthly" },
-    { key: "custom", label: "Custom" },
-  ];
+  const presets: { key: Preset; label: string }[] = useMemo(
+    () => [
+      { key: "none", label: t("task.recurrence.none") },
+      { key: "daily", label: t("task.recurrence.daily") },
+      { key: "weekdays", label: t("task.recurrence.weekdays") },
+      { key: "weekly", label: t("task.recurrence.weekly") },
+      { key: "monthly", label: t("task.recurrence.monthly") },
+      { key: "custom", label: t("task.recurrence.custom") },
+    ],
+    [t],
+  );
 
   return (
     <div className="space-y-3">
@@ -169,7 +174,7 @@ export function RecurrencePicker({
       {preset === "custom" && (
         <div className="space-y-3 rounded-md border p-3">
           <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Every</Label>
+            <Label className="text-xs whitespace-nowrap">{t("task.recurrence.every")}</Label>
             <Input
               type="number"
               min={1}
@@ -190,10 +195,10 @@ export function RecurrencePicker({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">day(s)</SelectItem>
-                <SelectItem value="weekly">week(s)</SelectItem>
-                <SelectItem value="monthly">month(s)</SelectItem>
-                <SelectItem value="yearly">year(s)</SelectItem>
+                <SelectItem value="daily">{t("task.recurrence.days")}</SelectItem>
+                <SelectItem value="weekly">{t("task.recurrence.weeks")}</SelectItem>
+                <SelectItem value="monthly">{t("task.recurrence.months")}</SelectItem>
+                <SelectItem value="yearly">{t("task.recurrence.years")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -201,7 +206,7 @@ export function RecurrencePicker({
           {/* Days of week (weekly) */}
           {customRule.freq === "weekly" && (
             <div className="space-y-1.5">
-              <Label className="text-xs">On days</Label>
+              <Label className="text-xs">{t("task.recurrence.onDays")}</Label>
               <div className="flex gap-1">
                 {DAYS_OF_WEEK.map((d, i) => (
                   <Button
@@ -222,7 +227,7 @@ export function RecurrencePicker({
           {/* Day of month (monthly) */}
           {customRule.freq === "monthly" && (
             <div className="flex items-center gap-2">
-              <Label className="text-xs whitespace-nowrap">On day</Label>
+              <Label className="text-xs whitespace-nowrap">{t("task.recurrence.onDay")}</Label>
               <Input
                 type="number"
                 min={1}
@@ -247,7 +252,7 @@ export function RecurrencePicker({
       {preset !== "none" && (
         <div className="flex gap-3">
           <div className="flex-1 space-y-1">
-            <Label className="text-xs">Start</Label>
+            <Label className="text-xs">{t("task.recurrence.start")}</Label>
             <Input
               type="date"
               value={start}
@@ -263,7 +268,7 @@ export function RecurrencePicker({
             />
           </div>
           <div className="flex-1 space-y-1">
-            <Label className="text-xs">End</Label>
+            <Label className="text-xs">{t("task.recurrence.end")}</Label>
             <Input
               type="date"
               value={end}

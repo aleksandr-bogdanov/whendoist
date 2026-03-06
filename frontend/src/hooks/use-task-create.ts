@@ -14,6 +14,7 @@ import {
   useDeleteTaskApiV1TasksTaskIdDelete,
 } from "@/api/queries/tasks/tasks";
 import { useCrypto } from "@/hooks/use-crypto";
+import i18n from "@/lib/i18n";
 import { dashboardTasksKey } from "@/lib/query-keys";
 
 /* ------------------------------------------------------------------ */
@@ -93,18 +94,19 @@ export function useTaskCreate(): {
           onSuccess: (created) => {
             queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
 
-            const label = options?.toastMessage ?? `Created "${input.title}"`;
+            const label =
+              options?.toastMessage ?? i18n.t("toast.taskCreated", { title: input.title });
             toast.success(label, {
               id: `create-${created.id}`,
               action: {
-                label: "Undo",
+                label: i18n.t("toast.undo"),
                 onClick: () => {
                   deleteMutation.mutate(
                     { taskId: created.id },
                     {
                       onSuccess: () =>
                         queryClient.invalidateQueries({ queryKey: dashboardTasksKey() }),
-                      onError: () => toast.error("Undo failed"),
+                      onError: () => toast.error(i18n.t("toast.undoFailed")),
                     },
                   );
                 },
@@ -114,7 +116,7 @@ export function useTaskCreate(): {
             options?.onSuccess?.(created);
           },
           onError: () => {
-            toast.error(options?.errorMessage ?? "Failed to create task");
+            toast.error(options?.errorMessage ?? i18n.t("toast.failedToCreateTask"));
             options?.onError?.();
           },
         },

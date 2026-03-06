@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { RotateCcw, X } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useDemoResetAuthDemoResetPost } from "@/api/queries/auth/auth";
 import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
@@ -8,6 +9,7 @@ import { useGetMeApiV1MeGet } from "@/api/queries/me/me";
 const DISMISSED_KEY = "demo-pill-dismissed";
 
 export function DemoPill() {
+  const { t } = useTranslation();
   const meQuery = useGetMeApiV1MeGet();
   const demoReset = useDemoResetAuthDemoResetPost();
   const queryClient = useQueryClient();
@@ -25,10 +27,10 @@ export function DemoPill() {
     demoReset.mutate(undefined, {
       onSuccess: () => {
         queryClient.invalidateQueries();
-        toast.success("Demo data reset");
+        toast.success(t("demo.dataReset"));
         setExpanded(false);
       },
-      onError: () => toast.error("Failed to reset demo data"),
+      onError: () => toast.error(t("demo.resetFailed")),
     });
   };
 
@@ -43,7 +45,7 @@ export function DemoPill() {
             className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 hover:bg-white/30 disabled:opacity-50"
           >
             <RotateCcw className="h-3 w-3" />
-            Reset data
+            {t("demo.resetData")}
           </button>
           <button
             type="button"
@@ -51,7 +53,7 @@ export function DemoPill() {
             className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 hover:bg-white/30"
           >
             <X className="h-3 w-3" />
-            Dismiss
+            {t("demo.dismiss")}
           </button>
         </div>
       ) : (
@@ -60,7 +62,7 @@ export function DemoPill() {
           onClick={() => setExpanded(true)}
           className="rounded-full bg-purple-600 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-purple-700"
         >
-          Demo
+          {t("demo.label")}
         </button>
       )}
     </div>

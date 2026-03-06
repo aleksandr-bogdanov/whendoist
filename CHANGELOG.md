@@ -4,6 +4,23 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.0 — 2026-03-06
+
+### Feat: Internationalization — 7-language support (EN, DE, FR, ES, IT, PT, RU)
+
+- Added `react-i18next` + `i18next` + `i18next-browser-languagedetector` for frontend i18n
+- Created 713 translation keys across 7 locale files (English as source of truth)
+- Translated ~60 component/route/hook/lib files — every user-facing string now uses `t()` or `i18n.t()`
+- Added Language section in Settings with 2-column grid switcher (auto-detects browser language)
+- Backend error messages mapped to i18n keys via `error-mapping.ts` (no backend changes needed)
+- Date/time formatting uses `date-fns` locales + `Intl.DateTimeFormat` with resolved language
+- Voice input (Web Speech API + Tauri native STT) auto-selects BCP-47 language code from i18n
+- Added Nunito Cyrillic font subset for Russian (`unicode-range` auto-downloads only when needed)
+- Added `check-translations` CI script to verify all locale files stay in sync
+- Locale persisted in localStorage + Zustand; `document.documentElement.lang` synced on change
+
+---
+
 ## v0.64.4 — 2026-03-06
 
 ### Fix: Self-hosted fonts not served in production

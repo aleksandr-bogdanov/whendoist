@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { isTauri } from "@/hooks/use-device";
+import i18n from "@/lib/i18n";
 
 // ─── Web Speech API type declarations ─────────────────────────────────────
 // TypeScript's DOM lib includes SpeechRecognitionResult/Alternative but not
@@ -96,10 +97,25 @@ const SpeechRecognitionImpl =
  */
 const needsNativeStt = isTauri && !SpeechRecognitionImpl;
 
+/** Map i18n language to BCP-47 speech recognition code */
+function getSpeechLang(): string {
+  const lang = i18n.resolvedLanguage ?? "en";
+  const map: Record<string, string> = {
+    en: "en-US",
+    de: "de-DE",
+    fr: "fr-FR",
+    es: "es-ES",
+    it: "it-IT",
+    pt: "pt-BR",
+    ru: "ru-RU",
+  };
+  return map[lang] ?? navigator.language ?? "en-US";
+}
+
 export interface UseVoiceInputOptions {
   /** Called with the full input text (prefix + transcript) on each recognition event. */
   onTranscript: (text: string) => void;
-  /** BCP-47 language code (default: browser locale or "en-US"). */
+  /** BCP-47 language code (default: derived from i18n language). */
   lang?: string;
 }
 
@@ -163,7 +179,7 @@ export function useVoiceInput({ onTranscript, lang }: UseVoiceInputOptions): Use
           try {
             const hasPermission = await ensureSttPermission();
             if (!hasPermission) {
-              toast.error("Microphone or speech recognition permission denied.");
+              toast.error(i18n.t("voice.permissionDenied"));
               return;
             }
 
@@ -176,7 +192,7 @@ export function useVoiceInput({ onTranscript, lang }: UseVoiceInputOptions): Use
             prefixRef.current = currentText.trimEnd();
             setIsListening(true);
 
-            const cleanup = await startSttSession(lang ?? navigator.language ?? "en-US", {
+            const cleanup = await startSttSession(lang ?? getSpeechLang(), {
               onResult: (transcript, _isFinal) => {
                 if (!mountedRef.current) return;
                 const prefix = prefixRef.current;
@@ -185,7 +201,7 @@ export function useVoiceInput({ onTranscript, lang }: UseVoiceInputOptions): Use
               },
               onError: (message) => {
                 if (!mountedRef.current) return;
-                toast.error(message || "Voice input failed.");
+                toast.error(message || i18n.t("voice.failedGeneric"));
                 setIsListening(false);
                 nativeCleanupRef.current = null;
               },
@@ -219,7 +235,7 @@ export function useVoiceInput({ onTranscript, lang }: UseVoiceInputOptions): Use
       prefixRef.current = currentText.trimEnd();
 
       const recognition = new SpeechRecognitionImpl();
-      recognition.lang = lang ?? navigator.language ?? "en-US";
+      recognition.lang = lang ?? getSpeechLang();
       recognition.interimResults = true;
       recognition.continuous = false;
       recognition.maxAlternatives = 1;
@@ -238,13 +254,13 @@ export function useVoiceInput({ onTranscript, lang }: UseVoiceInputOptions): Use
 
       recognition.onerror = (event) => {
         if (event.error === "not-allowed") {
-          toast.error("Microphone access denied. Check your browser permissions.");
+          toast.error(i18n.t("voice.micDenied"));
         } else if (event.error === "audio-capture") {
-          toast.error("No microphone found.");
+          toast.error(i18n.t("voice.noMic"));
         } else if (event.error === "network") {
-          toast.error("Speech recognition unavailable offline on this device.");
+          toast.error(i18n.t("voice.unavailableOffline"));
         } else if (event.error !== "aborted" && event.error !== "no-speech") {
-          toast.error("Voice input failed. Try again.");
+          toast.error(i18n.t("voice.failed"));
         }
         setIsListening(false);
       };

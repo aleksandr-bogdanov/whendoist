@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Drawer } from "vaul";
 import type { DomainResponse, SubtaskResponse, TaskResponse } from "@/api/model";
@@ -112,6 +113,7 @@ export function TaskEditDrawer({
   domains,
   parentTasks,
 }: TaskEditDrawerProps) {
+  const { t } = useTranslation();
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange} repositionInputs={false}>
       <Drawer.Portal>
@@ -124,7 +126,9 @@ export function TaskEditDrawer({
           )}
         >
           <div className="mx-auto mt-3 mb-1 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
-          <Drawer.Title className="sr-only">{task ? "Edit Task" : "New Task"}</Drawer.Title>
+          <Drawer.Title className="sr-only">
+            {task ? t("task.editTask") : t("task.newTask")}
+          </Drawer.Title>
 
           {open && (
             <DrawerBody
@@ -156,6 +160,7 @@ function DrawerBody({
   parentTasks: TaskResponse[];
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const form = useTaskForm({ task, onDone });
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const [descriptionFocused, setDescriptionFocused] = useState(false);
@@ -316,7 +321,7 @@ function DrawerBody({
             value={form.values.title}
             onChange={handleTitleChange}
             onKeyDown={handleTitleKeyDown}
-            placeholder="What needs to be done? (try #domain !high 30m)"
+            placeholder={t("task.field.titlePlaceholder")}
             className="w-full text-base bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden border-b border-border/40 focus:border-primary transition-colors"
             rows={1}
           />
@@ -340,7 +345,7 @@ function DrawerBody({
           )}
         >
           <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-            Domain
+            {t("task.field.domain")}
           </span>
           <div className="-mr-4 pr-4 overflow-x-auto scrollbar-hide touch-pan-x" data-vaul-no-drag>
             <DomainChipRow
@@ -357,7 +362,9 @@ function DrawerBody({
         {/* Parent task (edit mode only) */}
         {form.isEdit && task && parentTasks.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground shrink-0 w-14">Parent</span>
+            <span className="text-xs text-muted-foreground shrink-0 w-14">
+              {t("task.field.parent")}
+            </span>
             <button
               type="button"
               className={cn(
@@ -384,7 +391,7 @@ function DrawerBody({
                     );
                   })()
                 ) : (
-                  <span>None</span>
+                  <span>{t("task.field.none")}</span>
                 )}
               </span>
               <ChevronRight className="h-3 w-3 opacity-50 shrink-0 ml-1.5" />
@@ -399,7 +406,9 @@ function DrawerBody({
             flashTarget === "impact" && "animate-field-flash",
           )}
         >
-          <span className="text-xs text-muted-foreground shrink-0 w-14">Impact</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">
+            {t("task.field.impact")}
+          </span>
           <div className="flex-1">
             <ImpactButtonRow
               value={form.values.impact}
@@ -418,7 +427,9 @@ function DrawerBody({
             flashTarget === "schedule" && "animate-field-flash",
           )}
         >
-          <span className="text-xs text-muted-foreground shrink-0 w-14">When</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">
+            {t("task.field.when")}
+          </span>
           <div className="flex-1">
             <ScheduleButtonRow
               selectedDate={form.values.scheduledDate || null}
@@ -443,7 +454,9 @@ function DrawerBody({
             flashTarget === "duration" && "animate-field-flash",
           )}
         >
-          <span className="text-xs text-muted-foreground shrink-0 w-14">Duration</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">
+            {t("task.field.duration")}
+          </span>
           <div className="flex-1">
             <DurationPickerRow
               value={form.values.durationMinutes}
@@ -459,7 +472,9 @@ function DrawerBody({
         {/* Time — progressive disclosure: only when date is set */}
         {form.values.scheduledDate && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground shrink-0 w-14">Time</span>
+            <span className="text-xs text-muted-foreground shrink-0 w-14">
+              {t("task.field.time")}
+            </span>
             <div className="flex-1">
               <TimePickerField
                 value={form.values.scheduledTime}
@@ -475,7 +490,9 @@ function DrawerBody({
 
         {/* Recurrence */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground shrink-0 w-14">Repeat</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">
+            {t("task.field.repeat")}
+          </span>
           <div className="flex-1">
             <RecurrencePresetRow value={recurrence} onChange={handleRecurrenceChange} />
           </div>
@@ -488,7 +505,9 @@ function DrawerBody({
             flashTarget === "clarity" && "animate-field-flash",
           )}
         >
-          <span className="text-xs text-muted-foreground shrink-0 w-14">Clarity</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14">
+            {t("task.field.clarity")}
+          </span>
           <div className="flex-1">
             <ClarityChipRow
               value={form.values.clarity}
@@ -502,7 +521,9 @@ function DrawerBody({
 
         {/* Notes */}
         <div className="flex items-start gap-2 pt-1 border-t border-border/30">
-          <span className="text-xs text-muted-foreground shrink-0 w-14 pt-2">Notes</span>
+          <span className="text-xs text-muted-foreground shrink-0 w-14 pt-2">
+            {t("task.field.notes")}
+          </span>
           <div className="flex-1">
             {!descriptionFocused && form.values.description && hasLinks(form.values.description) ? (
               <button
@@ -546,7 +567,7 @@ function DrawerBody({
                   }, duration + 50);
                 }}
                 onBlur={() => setDescriptionFocused(false)}
-                placeholder="Add notes..."
+                placeholder={t("task.field.notesPlaceholder")}
                 rows={descriptionFocused || form.values.description ? 3 : 1}
                 className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-[13px] outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring transition-all"
                 data-vaul-no-drag
@@ -566,7 +587,7 @@ function DrawerBody({
               onClick={form.handleBatchComplete}
             >
               {form.isBatchCompleting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-              Complete {form.pendingPastCount} past instance(s)
+              {t("task.completePastInstances", { count: form.pendingPastCount })}
             </Button>
           </div>
         )}
@@ -579,7 +600,7 @@ function DrawerBody({
             onClick={() => setActivityOpen(true)}
           >
             <History className="h-3.5 w-3.5" />
-            <span>View activity</span>
+            <span>{t("task.action.viewActivity")}</span>
             <ChevronRight className="h-3 w-3 ml-auto opacity-50" />
           </button>
         )}
@@ -595,7 +616,7 @@ function DrawerBody({
             onClick={() => form.setShowDeleteConfirm(true)}
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
-            Delete
+            {t("task.action.delete")}
           </Button>
         )}
 
@@ -610,12 +631,12 @@ function DrawerBody({
             {task.status === "completed" || task.completed_at ? (
               <>
                 <RotateCcw className="h-3.5 w-3.5" />
-                Reopen
+                {t("task.action.reopen")}
               </>
             ) : (
               <>
                 <CheckCircle className="h-3.5 w-3.5" />
-                Complete
+                {t("task.action.complete")}
               </>
             )}
           </Button>
@@ -627,7 +648,7 @@ function DrawerBody({
           disabled={form.isSaving || !form.values.title.trim()}
         >
           {form.isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {form.isEdit ? "Save" : "Create Task"}
+          {form.isEdit ? t("common.save") : t("task.action.createTask")}
         </Button>
       </div>
 
@@ -643,7 +664,7 @@ function DrawerBody({
             )}
           >
             <div className="mx-auto mt-3 mb-2 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
-            <Drawer.Title className="sr-only">Pick a date</Drawer.Title>
+            <Drawer.Title className="sr-only">{t("task.triage.pickDate")}</Drawer.Title>
             <div className="px-2 pb-8">
               <Calendar
                 mode="single"
@@ -706,7 +727,9 @@ function DrawerBody({
               )}
             >
               <div className="mx-auto mt-3 mb-2 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
-              <Drawer.Title className="px-4 text-sm font-semibold mb-2">Activity</Drawer.Title>
+              <Drawer.Title className="px-4 text-sm font-semibold mb-2">
+                {t("task.section.activity")}
+              </Drawer.Title>
               <div className="overflow-y-auto px-4 pb-8">
                 {activityOpen && <TaskActivityPanel taskId={task.id} />}
               </div>
@@ -719,20 +742,20 @@ function DrawerBody({
       <Dialog open={form.showDeleteConfirm} onOpenChange={form.setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
+            <DialogTitle>{t("task.deleteDialog.title")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &ldquo;{task?.title}&rdquo;?
+              {t("task.deleteDialog.message", { title: task?.title })}
               {(task?.subtasks?.length ?? 0) > 0 &&
-                ` This will also delete ${task!.subtasks!.length} subtask(s).`}
+                ` ${t("task.deleteDialog.subtaskWarning", { count: task!.subtasks!.length })}`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => form.setShowDeleteConfirm(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={form.handleDelete} disabled={form.isDeleting}>
               {form.isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -764,6 +787,7 @@ function ParentPickerDrawer({
   onSearchChange: (s: string) => void;
   onParentChanged: (parentDomainId: number | null) => void;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const updateTask = useUpdateTaskApiV1TasksTaskIdPut();
 
@@ -857,13 +881,17 @@ function ParentPickerDrawer({
           queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
           const msg =
             newParentId !== null
-              ? `Made "${task.title}" a subtask of "${parentTitle}"`
-              : `Promoted "${task.title}" to top-level`;
-          announce(newParentId !== null ? "Task nested as subtask" : "Task promoted to top-level");
+              ? t("toast.madeSubtaskOf", { title: task.title, parent: parentTitle })
+              : t("toast.promotedToTopLevel", { title: task.title });
+          announce(
+            newParentId !== null
+              ? t("announce.taskNestedAsSubtask")
+              : t("announce.taskPromotedToTopLevel"),
+          );
           toast.success(msg, {
             id: `reparent-${task.id}`,
             action: {
-              label: "Undo",
+              label: t("toast.undo"),
               onClick: () => {
                 setCurrentParentId(prevParentId);
                 queryClient.setQueryData(dashboardTasksKey(), previousTasks);
@@ -874,7 +902,7 @@ function ParentPickerDrawer({
                       queryClient.invalidateQueries({ queryKey: dashboardTasksKey() }),
                     onError: () => {
                       queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
-                      toast.error("Undo failed");
+                      toast.error(t("toast.undoFailed"));
                     },
                   },
                 );
@@ -885,7 +913,7 @@ function ParentPickerDrawer({
         onError: () => {
           setCurrentParentId(prevParentId);
           queryClient.setQueryData(dashboardTasksKey(), previousTasks);
-          toast.error("Failed to change parent task", { id: `reparent-err-${task.id}` });
+          toast.error(t("toast.failedToChangeParent"), { id: `reparent-err-${task.id}` });
         },
       },
     );
@@ -904,7 +932,7 @@ function ParentPickerDrawer({
         >
           <div className="mx-auto mt-3 mb-2 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
           <Drawer.Title className="px-4 text-sm font-semibold mb-2">
-            Select parent task
+            {t("task.selectParent")}
           </Drawer.Title>
 
           {/* Search */}
@@ -914,7 +942,7 @@ function ParentPickerDrawer({
               <input
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search tasks..."
+                placeholder={t("task.searchTasks")}
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
               {search && (
@@ -939,7 +967,7 @@ function ParentPickerDrawer({
               )}
               onClick={() => handleSelect(null)}
             >
-              None (top-level)
+              {t("task.field.noneTopLevel")}
             </button>
 
             {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
@@ -979,7 +1007,9 @@ function ParentPickerDrawer({
             ))}
 
             {totalFiltered === 0 && search && (
-              <div className="px-3 py-2 text-sm text-muted-foreground">No matching tasks</div>
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                {t("task.noMatchingTasks")}
+              </div>
             )}
           </div>
         </Drawer.Content>
