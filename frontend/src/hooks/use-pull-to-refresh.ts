@@ -27,8 +27,10 @@ export function usePullToRefresh({
     if (indicatorRef.current) return indicatorRef.current;
     const el = document.createElement("div");
     el.className =
-      "pull-refresh-indicator fixed left-1/2 -translate-x-1/2 top-0 z-50 flex items-center justify-center rounded-full bg-primary text-primary-foreground h-8 w-8 text-xs shadow-lg transition-transform duration-200 pointer-events-none";
+      "pull-refresh-indicator fixed left-1/2 z-50 flex items-center justify-center rounded-full bg-primary text-primary-foreground h-8 w-8 text-xs shadow-lg pointer-events-none";
     el.textContent = "↓";
+    // Position below the notch/status bar safe area
+    el.style.top = "env(safe-area-inset-top, 0px)";
     el.style.transform = "translate(-50%, -40px)";
     document.body.appendChild(el);
     indicatorRef.current = el;
@@ -91,7 +93,7 @@ export function usePullToRefresh({
       if (pullDistanceRef.current >= threshold) {
         refreshingRef.current = true;
         indicator.textContent = "↻";
-        indicator.style.transform = "translate(-50%, 10px)";
+        indicator.style.transform = "translate(-50%, 8px)";
         indicator.classList.add("animate-spin");
         try {
           await onRefresh();

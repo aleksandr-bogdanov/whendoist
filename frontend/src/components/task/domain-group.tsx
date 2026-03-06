@@ -343,7 +343,7 @@ export function DomainGroup({
                     }
                   }}
                   placeholder="Task title... (#domain !high 30m)"
-                  className="w-full h-7 text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
+                  className="w-full h-7 text-base sm:text-sm bg-transparent border-b border-border outline-none focus:border-primary px-1"
                   disabled={createPending}
                 />
                 <SmartInputAutocomplete

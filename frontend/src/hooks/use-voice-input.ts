@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { isTauri } from "@/hooks/use-device";
 
 // ─── Web Speech API type declarations ─────────────────────────────────────
 // TypeScript's DOM lib includes SpeechRecognitionResult/Alternative but not
@@ -88,6 +89,13 @@ const SpeechRecognitionImpl =
     ? (window.SpeechRecognition ?? window.webkitSpeechRecognition)
     : undefined;
 
+/**
+ * On Tauri mobile (iOS WKWebView / Android WebView), Web Speech API is
+ * unavailable. We use tauri-plugin-stt for native speech recognition instead.
+ * Desktop Tauri has Web Speech API via Chromium, so it uses the existing path.
+ */
+const needsNativeStt = isTauri && !SpeechRecognitionImpl;
+
 export interface UseVoiceInputOptions {
   /** Called with the full input text (prefix + transcript) on each recognition event. */
   onTranscript: (text: string) => void;
@@ -125,13 +133,84 @@ export function useVoiceInput({ onTranscript, lang }: UseVoiceInputOptions): Use
   const onTranscriptRef = useRef(onTranscript);
   onTranscriptRef.current = onTranscript;
   const prefixRef = useRef("");
+  // Cleanup function for Tauri native STT session (async — returns Promise)
+  const nativeCleanupRef = useRef<(() => Promise<void>) | null>(null);
+  // Guards against unmount-during-async and double-tap races
+  const mountedRef = useRef(true);
+  const startingNativeRef = useRef(false);
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
+    if (needsNativeStt) {
+      nativeCleanupRef.current?.();
+      nativeCleanupRef.current = null;
+      // Defensive: don't rely solely on the state-change event chain
+      setIsListening(false);
+    } else {
+      recognitionRef.current?.stop();
+    }
   }, []);
 
   const startListening = useCallback(
     (currentText = "") => {
+      if (needsNativeStt) {
+        // Guard: prevent double-tap from starting concurrent sessions
+        if (startingNativeRef.current) return;
+        startingNativeRef.current = true;
+
+        // ── Tauri native STT path (iOS / Android) ──────────────────────
+        // Dynamic import keeps tauri-plugin-stt out of the web bundle
+        import("@/lib/tauri-stt").then(async ({ ensureSttPermission, startSttSession }) => {
+          try {
+            const hasPermission = await ensureSttPermission();
+            if (!hasPermission) {
+              toast.error("Microphone or speech recognition permission denied.");
+              return;
+            }
+
+            // Bail if unmounted during the permission check
+            if (!mountedRef.current) return;
+
+            // Tear down any existing session (awaited to avoid ALREADY_LISTENING)
+            await nativeCleanupRef.current?.();
+
+            prefixRef.current = currentText.trimEnd();
+            setIsListening(true);
+
+            const cleanup = await startSttSession(lang ?? navigator.language ?? "en-US", {
+              onResult: (transcript, _isFinal) => {
+                if (!mountedRef.current) return;
+                const prefix = prefixRef.current;
+                const combined = prefix ? `${prefix} ${transcript}` : transcript;
+                onTranscriptRef.current(combined);
+              },
+              onError: (message) => {
+                if (!mountedRef.current) return;
+                toast.error(message || "Voice input failed.");
+                setIsListening(false);
+                nativeCleanupRef.current = null;
+              },
+              onEnd: () => {
+                if (!mountedRef.current) return;
+                setIsListening(false);
+                nativeCleanupRef.current = null;
+              },
+            });
+
+            // If unmounted while startSttSession was running, clean up immediately
+            if (!mountedRef.current) {
+              cleanup();
+              return;
+            }
+
+            nativeCleanupRef.current = cleanup;
+          } finally {
+            startingNativeRef.current = false;
+          }
+        });
+        return;
+      }
+
+      // ── Web Speech API path (browsers / desktop Tauri) ─────────────
       if (!SpeechRecognitionImpl) return;
 
       // Tear down any existing instance
@@ -181,12 +260,14 @@ export function useVoiceInput({ onTranscript, lang }: UseVoiceInputOptions): Use
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       recognitionRef.current?.abort();
+      nativeCleanupRef.current?.();
     };
   }, []);
 
   return {
-    isSupported: !!SpeechRecognitionImpl,
+    isSupported: !!SpeechRecognitionImpl || needsNativeStt,
     isListening,
     startListening,
     stopListening,

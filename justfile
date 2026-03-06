@@ -84,11 +84,17 @@ backups:
 
 # Start Tauri Android dev (runs backend separately with `just dev-backend`)
 tauri-android:
-    cd frontend && npx tauri android dev
+    cd frontend && TAURI_DEV_HOST=$(ipconfig getifaddr en0) npx tauri android dev
 
-# Start Tauri iOS dev (physical device)
+# Start Tauri iOS dev (physical device — bundled build, fast)
+# Builds frontend first, serves via vite preview. Rebuild to pick up changes.
 tauri-ios:
-    cd frontend && npx tauri ios dev
+    cd frontend && npx vite build --mode development && TAURI_DEV_HOST=$(ipconfig getifaddr en0) npx tauri ios dev -c '{"build":{"beforeDevCommand":"npx vite preview --port 5173 --host 0.0.0.0"}}'
+
+# Start Tauri iOS dev with HMR (slow — unbundled modules over WiFi)
+# Only use when actively iterating on frontend code and need live reload.
+tauri-ios-hmr:
+    cd frontend && TAURI_DEV_HOST=$(ipconfig getifaddr en0) npx tauri ios dev
 
 # Start Tauri iOS dev on simulator
 tauri-ios-sim device="iPhone 17 Pro":

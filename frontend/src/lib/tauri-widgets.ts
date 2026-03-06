@@ -79,7 +79,10 @@ export async function updateWidgetData(
       tasks: widgetTasks,
     };
 
-    await invoke("update_widget_data", { data });
+    await Promise.race([
+      invoke("update_widget_data", { data }),
+      new Promise<void>((resolve) => setTimeout(resolve, 1_500)),
+    ]);
   } catch (e) {
     // Widget update failure is non-fatal — don't disrupt the app
     console.warn("[tauri-widgets] Failed to update widget data:", e);
@@ -96,7 +99,10 @@ export async function clearWidgetData(): Promise<void> {
 
   try {
     const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("clear_widget_data");
+    await Promise.race([
+      invoke("clear_widget_data"),
+      new Promise<void>((resolve) => setTimeout(resolve, 1_500)),
+    ]);
   } catch (e) {
     console.warn("[tauri-widgets] Failed to clear widget data:", e);
   }

@@ -1,4 +1,4 @@
-import { createLazyFileRoute, Link } from "@tanstack/react-router";
+import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useGetBuildInfoApiV1BuildInfoGet } from "@/api/queries/build/build";
 import { isTauri } from "@/hooks/use-device";
@@ -14,6 +14,7 @@ function LoginPage() {
   const info = buildInfo.data as { demo_login_enabled?: boolean } | undefined;
   const demoEnabled = info?.demo_login_enabled ?? false;
   const [demoLoading, setDemoLoading] = useState(false);
+  const navigate = useNavigate();
 
   /** Tauri: call demo-token API, store device tokens, navigate */
   const handleTauriDemoLogin = async () => {
@@ -22,7 +23,7 @@ function LoginPage() {
       const { data } = await axios.post("/api/v1/device/demo-token", { profile: "demo" });
       const { saveDeviceToken } = await import("@/lib/tauri-token-store");
       await saveDeviceToken(data);
-      window.location.href = "/thoughts";
+      navigate({ to: "/thoughts" });
     } catch {
       setDemoLoading(false);
     }

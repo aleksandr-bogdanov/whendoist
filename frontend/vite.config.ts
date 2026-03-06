@@ -15,13 +15,74 @@ export default defineConfig({
     strictPort: true,
     // Bind to all interfaces when running under Tauri so physical devices can reach the dev server
     host: isTauri ? "0.0.0.0" : undefined,
+    // Point HMR WebSocket at the Mac's LAN IP so physical iOS/Android devices can connect
+    hmr:
+      isTauri && process.env.TAURI_DEV_HOST
+        ? { host: process.env.TAURI_DEV_HOST, port: 5173 }
+        : undefined,
     proxy: isTauri
-      ? undefined
+      ? {
+          // Tauri dev: proxy to production (iOS WKWebView can't reach external HTTPS)
+          "/api": {
+            target: "https://whendoist.com",
+            changeOrigin: true,
+            secure: true,
+            // Restore POST body stripped by iOS WKWebView (encoded in X-Tauri-Body header)
+            configure: (proxy) => {
+              proxy.on("proxyReq", (proxyReq, req) => {
+                const encoded = req.headers["x-tauri-body"];
+                if (typeof encoded === "string") {
+                  const body = Buffer.from(encoded, "base64").toString();
+                  proxyReq.removeHeader("x-tauri-body");
+                  proxyReq.setHeader("Content-Length", Buffer.byteLength(body));
+                  proxyReq.write(body);
+                }
+              });
+            },
+          },
+          "/auth": {
+            target: "https://whendoist.com",
+            changeOrigin: true,
+            secure: true,
+          },
+        }
       : {
           "/api": "http://localhost:8000",
           "/auth": "http://localhost:8000",
         },
   },
+
+  // Tauri preview: same proxy as dev server (for `just tauri-ios-fast`)
+  preview: isTauri
+    ? {
+        port: 5173,
+        strictPort: true,
+        host: "0.0.0.0",
+        proxy: {
+          "/api": {
+            target: "https://whendoist.com",
+            changeOrigin: true,
+            secure: true,
+            configure: (proxy) => {
+              proxy.on("proxyReq", (proxyReq, req) => {
+                const encoded = req.headers["x-tauri-body"];
+                if (typeof encoded === "string") {
+                  const body = Buffer.from(encoded, "base64").toString();
+                  proxyReq.removeHeader("x-tauri-body");
+                  proxyReq.setHeader("Content-Length", Buffer.byteLength(body));
+                  proxyReq.write(body);
+                }
+              });
+            },
+          },
+          "/auth": {
+            target: "https://whendoist.com",
+            changeOrigin: true,
+            secure: true,
+          },
+        },
+      }
+    : {},
 
   // Tauri uses `ipc://localhost` on macOS, `https://tauri.localhost` on others
   clearScreen: false,
@@ -104,6 +165,31 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  // Pre-bundle heavy deps so the dev server sends fewer requests over WiFi to
+  // physical devices. Vite normally discovers these lazily, causing waterfalls.
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "@tanstack/react-query",
+      "@tanstack/react-router",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-collapsible",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-dropdown-menu",
+      "axios",
+      "zustand",
+      "sonner",
+      "lucide-react",
+      "motion/react",
+      "zod",
+      "recharts",
+    ],
   },
   build: {
     rollupOptions: {

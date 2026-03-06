@@ -29,12 +29,52 @@ type Database = {
 // Lazy singleton — avoids importing @tauri-apps/plugin-sql on web
 let db: Database | null = null;
 
-async function getDb(): Promise<Database> {
+/** Timeout for Tauri IPC SQL operations — prevents app freeze if IPC hangs (e.g. iOS dev mode) */
+const SQL_TIMEOUT_MS = 1_500;
+
+// Track if SQL plugin is known-broken to avoid repeated hanging IPC calls
+let sqlAvailable = true;
+
+// Deduplicate concurrent getDb() calls — prevents multiple Database.load() IPC requests
+let dbLoadPromise: Promise<Database | null> | null = null;
+
+/** Race a promise against a timeout — returns fallback if the promise doesn't settle in time */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
+async function getDb(): Promise<Database | null> {
   if (db) return db;
-  const { default: Database } = await import("@tauri-apps/plugin-sql");
-  db = await Database.load("sqlite:whendoist-cache.db");
-  await migrate(db);
-  return db;
+  if (!sqlAvailable) return null;
+  if (dbLoadPromise) return dbLoadPromise;
+  dbLoadPromise = loadDb();
+  return dbLoadPromise;
+}
+
+async function loadDb(): Promise<Database | null> {
+  try {
+    const { default: Database } = await import("@tauri-apps/plugin-sql");
+    const loaded = await withTimeout(
+      Database.load("sqlite:whendoist-cache.db"),
+      SQL_TIMEOUT_MS,
+      null as Database | null,
+    );
+    if (!loaded) {
+      sqlAvailable = false;
+      return null;
+    }
+    await withTimeout(migrate(loaded), SQL_TIMEOUT_MS, undefined);
+    db = loaded;
+    return db;
+  } catch {
+    sqlAvailable = false;
+    return null;
+  } finally {
+    dbLoadPromise = null;
+  }
 }
 
 async function migrate(database: Database): Promise<void> {
@@ -71,6 +111,7 @@ export async function initCache(): Promise<void> {
 export async function getCachedData<T>(key: string): Promise<T | null> {
   if (!isTauri) return null;
   const database = await getDb();
+  if (!database) return null;
   const rows = await database.select<{ data: string }>(
     "SELECT data FROM cache_entries WHERE key = $1",
     [key],
@@ -87,6 +128,7 @@ export async function setCachedData(
 ): Promise<void> {
   if (!isTauri) return;
   const database = await getDb();
+  if (!database) return;
   await database.execute(
     `INSERT INTO cache_entries (key, data, data_version, updated_at)
      VALUES ($1, $2, $3, $4)
@@ -99,6 +141,7 @@ export async function setCachedData(
 export async function getCachedDataVersion(): Promise<number | null> {
   if (!isTauri) return null;
   const database = await getDb();
+  if (!database) return null;
   const rows = await database.select<{ data_version: number | null }>(
     "SELECT data_version FROM cache_entries WHERE key = 'me'",
   );
@@ -114,6 +157,7 @@ export async function getCachedDataVersion(): Promise<number | null> {
 export async function addToWriteQueue(method: string, url: string, body?: unknown): Promise<void> {
   if (!isTauri) return;
   const database = await getDb();
+  if (!database) return;
   await database.execute(
     "INSERT INTO write_queue (method, url, body, created_at) VALUES ($1, $2, $3, $4)",
     [method, url, body ? JSON.stringify(body) : null, Date.now()],
@@ -124,6 +168,7 @@ export async function addToWriteQueue(method: string, url: string, body?: unknow
 export async function getPendingWrites(): Promise<WriteQueueEntry[]> {
   if (!isTauri) return [];
   const database = await getDb();
+  if (!database) return [];
   return database.select<WriteQueueEntry>(
     "SELECT id, method, url, body, created_at FROM write_queue ORDER BY id ASC",
   );
@@ -133,6 +178,7 @@ export async function getPendingWrites(): Promise<WriteQueueEntry[]> {
 export async function removePendingWrite(id: number): Promise<void> {
   if (!isTauri) return;
   const database = await getDb();
+  if (!database) return;
   await database.execute("DELETE FROM write_queue WHERE id = $1", [id]);
 }
 
@@ -140,6 +186,7 @@ export async function removePendingWrite(id: number): Promise<void> {
 export async function getPendingWriteCount(): Promise<number> {
   if (!isTauri) return 0;
   const database = await getDb();
+  if (!database) return 0;
   const rows = await database.select<{ count: number }>(
     "SELECT COUNT(*) as count FROM write_queue",
   );
@@ -150,6 +197,7 @@ export async function getPendingWriteCount(): Promise<number> {
 export async function clearWriteQueue(): Promise<void> {
   if (!isTauri) return;
   const database = await getDb();
+  if (!database) return;
   await database.execute("DELETE FROM write_queue");
 }
 
@@ -157,6 +205,7 @@ export async function clearWriteQueue(): Promise<void> {
 export async function clearAllCache(): Promise<void> {
   if (!isTauri) return;
   const database = await getDb();
+  if (!database) return;
   await database.execute("DELETE FROM cache_entries");
   await database.execute("DELETE FROM write_queue");
 }
