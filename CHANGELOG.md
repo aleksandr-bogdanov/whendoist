@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.64.4 — 2026-03-06
+
+### Fix: Self-hosted fonts not served in production
+
+- Added `/fonts/` static mount in FastAPI — font files existed in `dist/fonts/` but were never served, causing 404s and fallback to system fonts
+- Removed Google Fonts CDN domains from CSP (fonts are fully self-hosted now)
+- Updated security header test to assert Google Fonts domains are absent
+
+---
+
 ## v0.64.3 — 2026-03-06
 
 ### Fix: Audit findings — 30 verified fixes across security, data integrity, and UX

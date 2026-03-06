@@ -121,7 +121,8 @@ class TestAllowedDomainsInCSP:
         security_content = Path("app/middleware/security.py").read_text()
         assert "cdn.jsdelivr.net" not in security_content
 
-    def test_google_fonts_allowed_for_fonts(self):
-        """Google Fonts should be allowed for font-src."""
+    def test_google_fonts_removed_from_csp(self):
+        """Google Fonts CDN should NOT be in CSP (fonts are self-hosted)."""
         security_content = Path("app/middleware/security.py").read_text()
-        assert "fonts.gstatic.com" in security_content or "fonts.googleapis.com" in security_content
+        assert "fonts.gstatic.com" not in security_content
+        assert "fonts.googleapis.com" not in security_content
