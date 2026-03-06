@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.64.1 — 2026-03-06
+
+### Fix: CI — Rust build & flaky timezone test
+
+- Move `stt:default` permission from `default.json` to `mobile.json` (STT plugin is mobile-only, broke `cargo check` on Linux CI)
+- Pin `test_materialize_uses_timezone` to a fixed date in February to avoid DST boundary flakiness
+
+---
+
 ## v0.64.0 — 2026-03-06
 
 ### Feat: Tauri iOS — native UITabBar, STT, IPC hardening, lazy routes

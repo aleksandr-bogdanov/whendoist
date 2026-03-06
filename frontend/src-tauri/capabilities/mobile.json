@@ -4,5 +4,5 @@
   "description": "Mobile-only capabilities (biometric auth)",
   "windows": ["main"],
   "platforms": ["android", "iOS"],
-  "permissions": ["biometric:default"]
+  "permissions": ["biometric:default", "stt:default"]
 }
