@@ -39,7 +39,7 @@ async def bump_data_version(db: AsyncSession, user_id: int) -> None:
                 await db.execute(text("SET LOCAL statement_timeout = '2000'"))
                 await db.execute(update(User).where(User.id == user_id).values(data_version=User.data_version + 1))
         except Exception:
-            logger.debug("data_version bump skipped for user %d (lock contention)", user_id)
+            logger.warning("data_version bump skipped for user %d (lock contention)", user_id)
     else:
         # SQLite / other dialects — no contention risk, run directly
         await db.execute(update(User).where(User.id == user_id).values(data_version=User.data_version + 1))

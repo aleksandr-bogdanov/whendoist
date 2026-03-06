@@ -8,6 +8,7 @@
  */
 
 import { isTauri } from "@/hooks/use-device";
+import { TAURI_CIRCUIT_BREAKER_COOLDOWN_MS, TAURI_IPC_TIMEOUT_MS } from "@/lib/tauri-constants";
 
 interface TokenData {
   access_token: string;
@@ -17,14 +18,12 @@ interface TokenData {
 
 const STORE_KEY = "device_token";
 
-/** Timeout for Tauri IPC store operations — prevents app freeze if IPC hangs (e.g. iOS dev mode) */
-const STORE_TIMEOUT_MS = 1_500;
-
 // In-memory cache to avoid async store reads on every request
 let cachedToken: TokenData | null = null;
 
-// Track if the store is known-broken to avoid repeated hanging IPC calls
+// Circuit breaker with cooldown for retry
 let storeAvailable = true;
+let storeBrokeAt = 0;
 
 // Singleton store instance + dedup promise to avoid multiple concurrent IPC calls
 let storeInstance: Awaited<ReturnType<typeof createStore>> | null = null;
@@ -37,16 +36,24 @@ async function createStore() {
 
 async function getStore() {
   if (storeInstance) return storeInstance;
-  if (!storeAvailable) return null;
+  if (!storeAvailable) {
+    // Half-open: retry after cooldown
+    if (Date.now() - storeBrokeAt < TAURI_CIRCUIT_BREAKER_COOLDOWN_MS) return null;
+    storeAvailable = true;
+  }
   if (storeLoadPromise) return storeLoadPromise;
-  storeLoadPromise = withTimeout(createStore(), STORE_TIMEOUT_MS, null)
+  storeLoadPromise = withTimeout(createStore(), TAURI_IPC_TIMEOUT_MS, null)
     .then((s) => {
-      if (!s) storeAvailable = false;
+      if (!s) {
+        storeAvailable = false;
+        storeBrokeAt = Date.now();
+      }
       storeInstance = s;
       return s;
     })
     .catch(() => {
       storeAvailable = false;
+      storeBrokeAt = Date.now();
       return null;
     })
     .finally(() => {
@@ -70,8 +77,8 @@ export async function saveDeviceToken(data: TokenData): Promise<void> {
     try {
       const store = await getStore();
       if (!store) return;
-      await withTimeout(store.set(STORE_KEY, data), STORE_TIMEOUT_MS, undefined);
-      await withTimeout(store.save(), STORE_TIMEOUT_MS, undefined);
+      await withTimeout(store.set(STORE_KEY, data), TAURI_IPC_TIMEOUT_MS, undefined);
+      await withTimeout(store.save(), TAURI_IPC_TIMEOUT_MS, undefined);
     } catch {
       // Store save failed — token is still in memory for this session
     }
@@ -85,15 +92,17 @@ export async function loadDeviceToken(): Promise<TokenData | null> {
   try {
     const store = await getStore();
     if (!store) return null;
-    const data = await withTimeout(store.get<TokenData>(STORE_KEY), STORE_TIMEOUT_MS, null);
+    const data = await withTimeout(store.get<TokenData>(STORE_KEY), TAURI_IPC_TIMEOUT_MS, null);
     if (data === null && !cachedToken) {
-      // Timed out or no token — mark store as unavailable to avoid repeated hanging calls
+      // Timed out or no token — trip circuit breaker with cooldown
       storeAvailable = false;
+      storeBrokeAt = Date.now();
     }
     if (data) cachedToken = data;
     return data ?? null;
   } catch {
     storeAvailable = false;
+    storeBrokeAt = Date.now();
     return null;
   }
 }
@@ -105,8 +114,8 @@ export async function clearDeviceToken(): Promise<void> {
     try {
       const store = await getStore();
       if (!store) return;
-      await withTimeout(store.delete(STORE_KEY), STORE_TIMEOUT_MS, undefined);
-      await withTimeout(store.save(), STORE_TIMEOUT_MS, undefined);
+      await withTimeout(store.delete(STORE_KEY), TAURI_IPC_TIMEOUT_MS, undefined);
+      await withTimeout(store.save(), TAURI_IPC_TIMEOUT_MS, undefined);
     } catch {
       // Store may not exist yet — that's fine
     }

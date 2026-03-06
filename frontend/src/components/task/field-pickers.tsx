@@ -276,7 +276,7 @@ export function DurationPickerRow({ value, onChange, showCustom }: DurationPicke
           value={customInput}
           onChange={(e) => handleCustom(e.target.value)}
           placeholder="min"
-          className="h-8 w-14 rounded-md border border-input bg-transparent px-2 text-[13px] outline-none focus:ring-1 focus:ring-ring md:h-7 md:w-12 md:text-xs"
+          className="h-11 w-14 rounded-md border border-input bg-transparent px-2 text-[13px] outline-none focus:ring-1 focus:ring-ring md:h-7 md:w-12 md:text-xs"
         />
       )}
     </div>

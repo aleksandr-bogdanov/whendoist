@@ -6,9 +6,7 @@
  */
 
 import { isTauri } from "@/hooks/use-device";
-
-/** Timeout for Tauri IPC invoke calls — prevents app freeze if IPC hangs (e.g. iOS dev mode) */
-const INVOKE_TIMEOUT_MS = 1_500;
+import { TAURI_IPC_TIMEOUT_MS } from "@/lib/tauri-constants";
 
 /** Fire-and-forget invoke with timeout — swallows failures since notifications are non-critical */
 async function safeInvoke(command: string, args?: Record<string, unknown>): Promise<void> {
@@ -16,7 +14,7 @@ async function safeInvoke(command: string, args?: Record<string, unknown>): Prom
     const { invoke } = await import("@tauri-apps/api/core");
     await Promise.race([
       invoke(command, args),
-      new Promise<void>((resolve) => setTimeout(resolve, INVOKE_TIMEOUT_MS)),
+      new Promise<void>((resolve) => setTimeout(resolve, TAURI_IPC_TIMEOUT_MS)),
     ]);
   } catch {
     // Notification IPC failure is non-fatal

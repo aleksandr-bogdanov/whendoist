@@ -48,20 +48,26 @@ export function getDateRange(centerDate: string, daysAround: number): string[] {
   return dates;
 }
 
-/** Format a date for display in column header */
-export function formatDayHeader(dateStr: string): { dayName: string; dateLabel: string } {
+/** Format a date for display in column header. Uses timezone for Today/Tomorrow/Yesterday. */
+export function formatDayHeader(
+  dateStr: string,
+  tz?: string,
+): { dayName: string; dateLabel: string } {
   const date = parseDate(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const todayStr = toDateStringInTimezone(
+    new Date(),
+    tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
+  const todayDate = parseDate(todayStr);
+  const tomorrowDate = new Date(todayDate);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const yesterdayDate = new Date(todayDate);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
 
   let dayName: string;
-  if (date.getTime() === today.getTime()) dayName = "Today";
-  else if (date.getTime() === tomorrow.getTime()) dayName = "Tomorrow";
-  else if (date.getTime() === yesterday.getTime()) dayName = "Yesterday";
+  if (date.getTime() === todayDate.getTime()) dayName = "Today";
+  else if (date.getTime() === tomorrowDate.getTime()) dayName = "Tomorrow";
+  else if (date.getTime() === yesterdayDate.getTime()) dayName = "Yesterday";
   else dayName = date.toLocaleDateString("en-US", { weekday: "short" });
 
   const dateLabel = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });

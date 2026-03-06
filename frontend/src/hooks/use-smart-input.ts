@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type { DomainResponse } from "@/api/model";
+import { handleAutocompleteKeyDown } from "@/hooks/use-autocomplete-nav";
 import {
   type AutocompleteSuggestion,
   EMPTY_PARSED,
@@ -150,31 +151,16 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
    * When autocomplete is not active, returns `false` so the caller can handle Enter/submit.
    */
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent): boolean => {
-      if (acVisible && acSuggestions.length > 0) {
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          setAcSelectedIndex((i) => Math.min(i + 1, acSuggestions.length - 1));
-          return true;
-        }
-        if (e.key === "ArrowUp") {
-          e.preventDefault();
-          setAcSelectedIndex((i) => Math.max(i - 1, 0));
-          return true;
-        }
-        if (e.key === "Enter" || e.key === "Tab") {
-          e.preventDefault();
-          handleAcSelect(acSuggestions[acSelectedIndex]);
-          return true;
-        }
-        if (e.key === "Escape") {
-          e.preventDefault();
-          setAcVisible(false);
-          return true;
-        }
-      }
-      return false;
-    },
+    (e: React.KeyboardEvent): boolean =>
+      handleAutocompleteKeyDown(
+        e,
+        acVisible,
+        acSuggestions,
+        acSelectedIndex,
+        setAcSelectedIndex,
+        setAcVisible,
+        handleAcSelect,
+      ),
     [acVisible, acSuggestions, acSelectedIndex, handleAcSelect],
   );
 

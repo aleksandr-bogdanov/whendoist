@@ -20,6 +20,7 @@
  */
 
 import { isTauri } from "@/hooks/use-device";
+import { TAURI_IPC_TIMEOUT_MS } from "@/lib/tauri-constants";
 
 /** Route-to-tab-index mapping — must match the Swift `tabs` array order exactly.
  * /calendar is a virtual route — in the actual app it's /dashboard with mobileTab="calendar".
@@ -145,7 +146,7 @@ export async function setActiveTab(route: string, mobileTab?: string): Promise<v
     const { invoke } = await import("@tauri-apps/api/core");
     await Promise.race([
       invoke("plugin:native_tabbar|set_active_tab", { index }),
-      new Promise<void>((resolve) => setTimeout(resolve, 1_500)),
+      new Promise<void>((resolve) => setTimeout(resolve, TAURI_IPC_TIMEOUT_MS)),
     ]);
   } catch {
     // Invoke may fail if Rust doesn't route to Swift — cosmetic only

@@ -326,6 +326,7 @@ function GoogleCalendarSection() {
           queryClient.invalidateQueries({ queryKey: getGetCalendarsApiV1CalendarsGetQueryKey() });
           toast.success("Calendar updated");
         },
+        onError: () => toast.error("Failed to update calendar"),
       },
     );
   };
@@ -1360,6 +1361,7 @@ function DomainsSection() {
                           });
                           toast.success("Domain archived");
                         },
+                        onError: () => toast.error("Failed to archive domain"),
                       },
                     );
                   }}
@@ -1472,6 +1474,7 @@ function DataSection() {
                   });
                   toast.success("Snapshot setting updated");
                 },
+                onError: () => toast.error("Failed to update snapshot setting"),
               });
             }}
           />
@@ -1487,6 +1490,7 @@ function DataSection() {
                 });
                 toast.success("Snapshot created");
               },
+              onError: () => toast.error("Failed to create snapshot"),
             });
           }}
           disabled={createSnapshot.isPending}

@@ -98,14 +98,13 @@ async def process_due_reminders() -> dict[str, int]:
 
                 if not tokens:
                     stats["no_tokens"] += 1
-                    # Mark as sent so we don't retry every 60s for users with no devices
-                    await db.execute(
-                        update(Task).where(Task.id == task_id, Task.user_id == user_id).values(reminder_sent_at=now)
-                    )
+                    # Don't mark as sent — if user registers a device later,
+                    # the reminder can still fire (query only returns due reminders)
                     continue
 
                 # Send push to all registered devices
                 invalid_token_ids: list[int] = []
+                any_success = False
 
                 for token_id, token_str, token_platform in tokens:
                     push_result = await push_service.send_silent_push(
@@ -116,19 +115,23 @@ async def process_due_reminders() -> dict[str, int]:
                     )
                     if push_result.success:
                         stats["pushes_sent"] += 1
+                        any_success = True
                     else:
                         stats["pushes_failed"] += 1
                         if push_result.token_invalid:
                             invalid_token_ids.append(token_id)
 
-                # Clean up invalid tokens and mark reminder as sent (best-effort)
+                # Clean up invalid tokens
                 if invalid_token_ids:
                     await db.execute(delete(DeviceToken).where(DeviceToken.id.in_(invalid_token_ids)))
                     stats["tokens_cleaned"] += len(invalid_token_ids)
 
-                await db.execute(
-                    update(Task).where(Task.id == task_id, Task.user_id == user_id).values(reminder_sent_at=now)
-                )
+                # Only mark as sent if at least one push succeeded — transient
+                # failures (FCM outage) should be retried on the next cycle
+                if any_success:
+                    await db.execute(
+                        update(Task).where(Task.id == task_id, Task.user_id == user_id).values(reminder_sent_at=now)
+                    )
 
         await db.commit()
 

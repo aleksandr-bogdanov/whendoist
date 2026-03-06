@@ -205,6 +205,7 @@ export const useUIStore = create<UIState & UIActions>()(
     }),
     {
       name: "whendoist-ui",
+      version: 1,
       partialize: (state) => ({
         theme: state.theme,
         energyLevel: state.energyLevel,

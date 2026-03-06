@@ -173,8 +173,27 @@ pub fn has_stored_key(app: tauri::AppHandle) -> Result<bool, String> {
 }
 
 /// Clear the stored encryption key (e.g. when disabling biometric unlock).
+///
+/// On mobile: requires biometric authentication before clearing (prevents
+/// malicious JS from DoS-ing the user by forcing re-enrollment).
 #[tauri::command]
 pub fn clear_encryption_key(app: tauri::AppHandle) -> Result<(), String> {
+    #[cfg(mobile)]
+    {
+        use tauri_plugin_biometric::{AuthOptions, BiometricExt};
+
+        app.biometric()
+            .authenticate(
+                "Authenticate to clear encryption key".to_string(),
+                AuthOptions {
+                    allow_device_credential: false,
+                    confirmation_required: Some(true),
+                    ..Default::default()
+                },
+            )
+            .map_err(|e| format!("Biometric authentication failed: {e}"))?;
+    }
+
     use tauri_plugin_store::StoreExt;
 
     let store = app

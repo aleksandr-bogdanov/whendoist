@@ -11,6 +11,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import type { DomainResponse } from "@/api/model";
+import { handleAutocompleteKeyDown } from "@/hooks/use-autocomplete-nav";
 import {
   type AutocompleteSuggestion,
   getAutocompleteSuggestions,
@@ -172,32 +173,17 @@ export function useSmartInputConsumer(
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent): boolean => {
-      if (acVisible && acSuggestions.length > 0) {
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          setAcSelectedIndex((i) => Math.min(i + 1, acSuggestions.length - 1));
-          return true;
-        }
-        if (e.key === "ArrowUp") {
-          e.preventDefault();
-          setAcSelectedIndex((i) => Math.max(i - 1, 0));
-          return true;
-        }
-        if (e.key === "Enter" || e.key === "Tab") {
-          e.preventDefault();
-          // Autocomplete selection handled by parent via handleAcSelect
-          return true;
-        }
-        if (e.key === "Escape") {
-          e.preventDefault();
-          setAcVisible(false);
-          return true;
-        }
-      }
-      return false;
-    },
-    [acVisible, acSuggestions],
+    (e: React.KeyboardEvent): boolean =>
+      handleAutocompleteKeyDown(
+        e,
+        acVisible,
+        acSuggestions,
+        acSelectedIndex,
+        setAcSelectedIndex,
+        setAcVisible,
+        null, // Selection handled by parent via handleAcSelect
+      ),
+    [acVisible, acSuggestions, acSelectedIndex],
   );
 
   return {

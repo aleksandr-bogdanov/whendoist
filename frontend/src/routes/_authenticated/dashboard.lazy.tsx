@@ -408,7 +408,7 @@ function DashboardPage() {
                 instanceIds.length > 0 &&
                   `${instanceIds.length} instance${instanceIds.length !== 1 ? "s" : ""}`,
               ].filter(Boolean);
-              toast(`Selected ${parts.join(" and ")}`, { duration: 2000 });
+              toast(`Selected ${parts.join(" and ")}`);
             }
           },
         },

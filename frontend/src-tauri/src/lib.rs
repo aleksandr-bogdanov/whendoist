@@ -73,6 +73,22 @@ pub fn run() {
                 // Register for push notifications — this triggers the OS push
                 // registration flow. The resulting token is sent to the frontend
                 // via a Tauri event so it can register with our backend.
+                // Load previously persisted push token into memory
+                {
+                    use tauri_plugin_store::StoreExt;
+                    use tauri::Manager;
+                    if let Ok(store) = app.handle().store("push-token.json") {
+                        if let Some(serde_json::Value::String(saved)) = store.get("token") {
+                            if let Some(state) = app.handle().try_state::<PushTokenState>() {
+                                if let Ok(mut stored) = state.0.lock() {
+                                    *stored = Some(saved);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                let handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     let result = handle.notifications()
                         .register_for_push_notifications()
@@ -84,6 +100,14 @@ pub fn run() {
                             if let Some(state) = handle.try_state::<PushTokenState>() {
                                 if let Ok(mut stored) = state.0.lock() {
                                     *stored = Some(token.clone());
+                                }
+                            }
+                            // Persist to store so token survives app restarts
+                            {
+                                use tauri_plugin_store::StoreExt;
+                                if let Ok(store) = handle.store("push-token.json") {
+                                    store.set("token", serde_json::json!(token));
+                                    let _ = store.save();
                                 }
                             }
                             // Emit to frontend so the hook can register with backend

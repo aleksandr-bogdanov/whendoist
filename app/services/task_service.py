@@ -559,6 +559,7 @@ class TaskService:
 
         task.status = "pending"
         task.completed_at = None
+        task.reminder_sent_at = None  # Allow reminder to re-fire
         await self.db.flush()
         await log_activity(self.db, user_id=self.user_id, event_type="task_uncompleted", task_id=task.id)
         await bump_data_version(self.db, self.user_id)

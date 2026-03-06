@@ -105,6 +105,10 @@ export function ScheduledTaskCard({
                       queryClient.invalidateQueries({
                         queryKey: dashboardTasksKey(),
                       }),
+                    onError: () => {
+                      toast.error("Failed to undo — please refresh");
+                      queryClient.invalidateQueries({ queryKey: dashboardTasksKey() });
+                    },
                   },
                 );
               },
