@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.64.2 — 2026-03-06
+
+### Fix: Calendar column layout — greedy first-fit instead of round-robin
+
+- Replace naive `column = i % totalColumns` with greedy first-fit column assignment in calendar overlap algorithm
+- Items that form a transitive overlap chain (A→B→C where A and C don't overlap) now correctly reuse columns
+- Fixes tasks rendering in 3 columns when only 2 are ever concurrent at any moment
+- Applied to both `calculateOverlaps` (week view) and `calculateExtendedOverlaps` (day view)
+
+---
+
 ## v0.64.1 — 2026-03-06
 
 ### Fix: CI — Rust build & flaky timezone test
