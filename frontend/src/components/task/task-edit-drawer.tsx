@@ -120,7 +120,7 @@ export function TaskEditDrawer({
           className={cn(
             "fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl",
             "bg-background border-t border-border",
-            "max-h-[90vh] max-w-lg mx-auto",
+            "max-h-[90vh] max-w-lg mx-auto drawer-keyboard-aware",
           )}
         >
           <div className="mx-auto mt-3 mb-1 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
@@ -308,7 +308,7 @@ function DrawerBody({
   return (
     <>
       {/* Scrollable body */}
-      <div className="overflow-y-auto px-4 pb-2 space-y-2">
+      <div className="overflow-y-auto px-4 pb-2 space-y-2 drawer-scroll-keyboard">
         {/* Title — smart input (Approach A) */}
         <div className="relative">
           <textarea
@@ -525,7 +525,26 @@ function DrawerBody({
                   form.markDirty();
                 }}
                 onPaste={handleDescriptionPaste}
-                onFocus={() => setDescriptionFocused(true)}
+                onFocus={() => {
+                  setDescriptionFocused(true);
+                  // After keyboard animation settles, scroll the drawer body
+                  // to the bottom so notes is fully visible (it's near the end)
+                  const duration =
+                    Number.parseFloat(
+                      getComputedStyle(document.documentElement).getPropertyValue(
+                        "--keyboard-anim-duration",
+                      ) || "0.25",
+                    ) * 1000;
+                  setTimeout(() => {
+                    const scrollParent = descriptionRef.current?.closest(".overflow-y-auto");
+                    if (scrollParent) {
+                      scrollParent.scrollTo({
+                        top: scrollParent.scrollHeight,
+                        behavior: "smooth",
+                      });
+                    }
+                  }, duration + 50);
+                }}
                 onBlur={() => setDescriptionFocused(false)}
                 placeholder="Add notes..."
                 rows={descriptionFocused || form.values.description ? 3 : 1}
@@ -567,7 +586,7 @@ function DrawerBody({
       </div>
 
       {/* Sticky footer */}
-      <div className="border-t bg-background px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] flex items-center gap-2">
+      <div className="drawer-footer-keyboard border-t bg-background px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] flex items-center gap-2">
         {form.isEdit && (
           <Button
             variant="ghost"

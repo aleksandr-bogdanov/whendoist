@@ -31,8 +31,9 @@ export function useViewport() {
       resizeTimeout = setTimeout(updateViewportHeight, 100);
     };
 
-    // Keyboard detection
+    // Keyboard detection (skip when native bridge is active — it manages body.keyboard-visible)
     const handleKeyboardResize = () => {
+      if (document.documentElement.style.getPropertyValue("--keyboard-height")) return;
       const currentHeight = window.innerHeight;
       const heightDiff = initialHeightRef.current - currentHeight;
       document.body.classList.toggle("keyboard-open", heightDiff > 150);

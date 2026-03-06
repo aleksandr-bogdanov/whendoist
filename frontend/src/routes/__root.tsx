@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { useDevice } from "@/hooks/use-device";
 import { useGlobalKeyHandler } from "@/hooks/use-shortcuts";
 import { useViewport } from "@/hooks/use-viewport";
+import { isNativeTabBarAvailable } from "@/lib/tauri-native-tabbar";
 import { TOAST_DURATION } from "@/lib/toast";
 
 export const Route = createRootRoute({
@@ -26,11 +27,13 @@ function RootLayout() {
       </RootErrorBoundary>
       <Toaster
         richColors
-        position="bottom-center"
+        position={isNativeTabBarAvailable() ? "top-center" : "bottom-center"}
         offset={
-          isMobileViewport
-            ? "calc(env(safe-area-inset-bottom, 0px) + var(--nav-pill-mb) + var(--nav-pill-height) + 0.75rem)"
-            : undefined
+          isNativeTabBarAvailable()
+            ? "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 0.5rem)"
+            : isMobileViewport
+              ? "calc(env(safe-area-inset-bottom, 0px) + var(--nav-pill-mb) + var(--nav-pill-height) + 0.75rem)"
+              : undefined
         }
         toastOptions={{ duration: TOAST_DURATION }}
       />

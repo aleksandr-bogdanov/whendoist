@@ -479,13 +479,14 @@ function ThoughtsPage() {
                 )}
               </div>
 
-              {/* Sticky input */}
-              <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.5rem)] z-10 px-4 shrink-0 md:bottom-0 md:border-t md:bg-background md:py-3 md:px-5">
-                <div className="mx-auto flex max-w-2xl md:max-w-none gap-2 rounded-2xl backdrop-blur-[80px] backdrop-saturate-[2.2] bg-white/30 dark:bg-white/[0.10] p-2 shadow-lg ring-1 ring-inset ring-white/40 dark:ring-white/[0.15] border border-white/50 dark:border-white/[0.12] md:rounded-lg md:bg-transparent md:p-0 md:shadow-none md:ring-0 md:backdrop-blur-none md:backdrop-saturate-100 md:border-0">
+              {/* Sticky input — iOS-native inspired: subtle background, thin border, no heavy glass */}
+              <div className="keyboard-avoid-bottom sticky bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+0.5rem)] z-10 px-4 shrink-0 md:bottom-0 md:border-t md:bg-background md:py-3 md:px-5">
+                <div className="mx-auto flex max-w-2xl md:max-w-none items-center gap-1.5 rounded-xl bg-secondary/80 dark:bg-secondary/60 backdrop-blur-md p-1.5 ring-1 ring-border/50 dark:ring-border/30 md:rounded-lg md:bg-transparent md:p-0 md:ring-0 md:backdrop-blur-none">
                   <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="What's on your mind?"
+                    className="border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:border-0 h-10 text-[15px]"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -497,6 +498,7 @@ function ThoughtsPage() {
                   <Button
                     size="icon"
                     variant="ghost"
+                    className="shrink-0 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
                     onClick={handleSend}
                     disabled={!input.trim() || createTask.isPending}
                   >
@@ -510,7 +512,7 @@ function ThoughtsPage() {
               </div>
 
               {/* Scroll clearance (mobile only) */}
-              <div className="h-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+1rem)] shrink-0 md:hidden" />
+              <div className="keyboard-avoid-clearance h-[calc(env(safe-area-inset-bottom,0px)+var(--nav-pill-mb)+var(--nav-pill-height)+1rem)] shrink-0 md:hidden" />
             </div>
 
             {/* Bottom fade (mobile only) */}

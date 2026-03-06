@@ -66,6 +66,9 @@ node_modules/
 # Frontend build artifacts
 frontend/dist/
 
+# Tauri iOS build cache
+frontend/src-tauri/ios/.build/
+
 # Generated OpenAPI spec (orval fetches from running server)
 openapi.json
 
