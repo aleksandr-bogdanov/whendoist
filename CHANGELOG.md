@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.2 — 2026-03-07
+
+### Fix: Cyrillic font rendering — replace static weight-500 font with variable font
+
+- Replaced `nunito-cyrillic.woff2` with correct variable font (weight axis 200–1000)
+- Previous file was a static font locked at weight 500, making all Russian text appear too bold
+- No CSS changes needed — the `@font-face` declaration was already correct
+
+---
+
 ## v0.65.1 — 2026-03-06
 
 ### Fix: i18n audit — 120 missing translations, locale-aware date formatting
