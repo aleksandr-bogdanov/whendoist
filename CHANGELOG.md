@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.6 — 2026-03-09
+
+### Fix: Date abbreviations with time not parsed in quick add
+
+- `tom 9:00`, `tod 3pm`, `tmrw at 14:30` etc. now correctly parse both date and time
+- Previously only the abbreviation was matched (date only), and `9:00` was lost or misattributed to today by chrono-node
+- Added `parseTimeString()` helper and optional time capture group to `DATE_ABBR_PATTERN`
+- Chrono results that overlap with abbreviation matches are now skipped to prevent conflicts
+
+---
+
 ## v0.65.5 — 2026-03-09
 
 ### Fix: Right-click context menu not working on calendar task cards
