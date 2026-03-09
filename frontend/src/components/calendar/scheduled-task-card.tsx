@@ -266,6 +266,8 @@ export function ScheduledTaskCard({
             useSelectionStore.getState().clear();
             onClick?.();
           }}
+          {...dragListeners}
+          {...attributes}
         >
           {/* Selection overlay + badge */}
           {isMultiSelected && (
@@ -276,10 +278,7 @@ export function ScheduledTaskCard({
               </div>
             </>
           )}
-          {/* Drag handle — covers entire card, receives pointer events for dnd-kit */}
-          <div className="absolute inset-0" {...dragListeners} {...attributes} />
-          {/* Content — pointer-events-none so clicks/drags pass through to drag handle */}
-          <div className="relative pointer-events-none px-1.5 py-0.5">
+          <div className="relative px-1.5 py-0.5">
             <div className="flex items-center gap-1 truncate">
               <CheckCircle2 className="h-2.5 w-2.5 flex-shrink-0 text-primary" />
               <span

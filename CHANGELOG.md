@@ -4,13 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.65.4 — 2026-03-09
+## v0.65.5 — 2026-03-09
 
 ### Fix: Right-click context menu not working on calendar task cards
 
-- dnd-kit drag listeners on calendar cards intercepted right-click `pointerdown`, preventing Radix ContextMenu from triggering
-- Added left-click gate (`e.button === 0`) to drag listeners in `ScheduledTaskCard`, `AnytimeTaskPill`, and `DayColumn` instance cards
-- Also fixed `handlePlanPointerDown` (same issue) and always-crosshair cursor bug (identical ternary branches)
+- Removed absolute-inset drag overlay divs from `ScheduledTaskCard` and `DayColumn` instance cards — the overlay intercepted all pointer events before reaching the Radix ContextMenuTrigger
+- Moved dnd-kit drag listeners directly onto the button (matching the working task-item pattern)
+- Also fixed `handlePlanPointerDown` right-click issue and always-crosshair cursor bug
 
 ---
 
