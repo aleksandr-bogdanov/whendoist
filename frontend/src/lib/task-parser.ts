@@ -515,8 +515,9 @@ function formatDurationShort(minutes: number): string {
   return m > 0 ? `${h}h${m}m` : `${h}h`;
 }
 
-/** Abbreviations chrono-node doesn't handle natively */
-const DATE_ABBR_PATTERN = /\b(tmr|tmrw|tod|tom|yes|yest)\b/gi;
+/** Abbreviations chrono-node doesn't handle natively, with optional trailing time */
+const DATE_ABBR_PATTERN =
+  /\b(tmr|tmrw|tod|tom|yes|yest)(?:\s+(?:at\s+)?(\d{1,2}(?::\d{2})?(?:\s*[ap]m)?))?(?![a-zA-Z])/gi;
 
 /** Reject ambiguous chrono results (bare month names like "Jan", "May", "March"). */
 function isLikelyDate(result: chrono.ParsedResult): boolean {
@@ -544,6 +545,7 @@ function parseDateFromText(text: string): DateMatch | null {
   const allMatches: DateMatch[] = [];
 
   // 1. Handle short abbreviations (tod → today, tom/tmr/tmrw → tomorrow, yes/yest → yesterday)
+  //    Also captures optional trailing time: "tom 9:00", "tod at 3pm", "tmrw 14:30"
   for (const m of text.matchAll(DATE_ABBR_PATTERN)) {
     const abbr = m[1].toLowerCase();
     const d = new Date();
@@ -554,9 +556,16 @@ function parseDateFromText(text: string): DateMatch | null {
     } else {
       d.setDate(d.getDate() + 1); // tom, tmr, tmrw → tomorrow
     }
+
+    // Parse optional time from capture group 2 (e.g. "9:00", "3pm", "14:30")
+    let timeStr: string | null = null;
+    if (m[2]) {
+      timeStr = parseTimeString(m[2]);
+    }
+
     allMatches.push({
       date: toDateString(d),
-      time: null,
+      time: timeStr,
       matchedText: m[0],
       startIndex: m.index ?? 0,
       endIndex: (m.index ?? 0) + m[0].length,
@@ -564,8 +573,16 @@ function parseDateFromText(text: string): DateMatch | null {
   }
 
   // 2. Run chrono-node for natural language (today, tomorrow, next monday, jan 15 at 3pm, etc.)
+  //    Skip chrono results that overlap with abbreviation matches (abbr takes priority)
   for (const result of chrono.parse(text)) {
     if (!isLikelyDate(result)) continue;
+    const chronoStart = result.index;
+    const chronoEnd = result.index + result.text.length;
+    // Skip if this chrono result overlaps with any abbreviation match
+    const overlaps = allMatches.some(
+      (am) => chronoStart < am.endIndex && chronoEnd > am.startIndex,
+    );
+    if (overlaps) continue;
     const jsDate = result.start.date();
     let timeStr: string | null = null;
     if (result.start.isCertain("hour")) {
@@ -588,6 +605,23 @@ function parseDateFromText(text: string): DateMatch | null {
   //    "Plan tomorrow's party tom" → only "tom" (last) becomes the date.
   allMatches.sort((a, b) => a.startIndex - b.startIndex);
   return allMatches[allMatches.length - 1];
+}
+
+/** Parse a short time string like "9", "9:00", "3pm", "14:30" into "HH:MM" format. */
+function parseTimeString(raw: string): string | null {
+  const cleaned = raw.trim().toLowerCase();
+  const match = cleaned.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$/);
+  if (!match) return null;
+
+  let hour = Number.parseInt(match[1], 10);
+  const minute = match[2] ? Number.parseInt(match[2], 10) : 0;
+  const ampm = match[3];
+
+  if (ampm === "pm" && hour < 12) hour += 12;
+  if (ampm === "am" && hour === 12) hour = 0;
+  if (hour > 23 || minute > 59) return null;
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function formatDateLabel(date: string, time: string | null): string {
