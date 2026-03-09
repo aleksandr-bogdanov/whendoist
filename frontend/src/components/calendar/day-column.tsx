@@ -131,6 +131,7 @@ export function DayColumn({
   const handlePlanPointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (!isPlanMode || !columnRef.current) return;
+      if (e.button !== 0) return; // Left click only — don't steal right-click from context menu
       if ((e.target as HTMLElement).closest("[data-plan-button]")) return;
       const minutes = pointerToCurrentDayMinutes(e);
       if (minutes < 0 || minutes >= 24 * 60) return;
@@ -566,7 +567,7 @@ export function DayColumn({
       {/* Time grid — single 44-hour column */}
       <div
         ref={columnRef}
-        className={`relative flex-1 ${isPlanMode ? "cursor-crosshair" : "cursor-crosshair"}`}
+        className={`relative flex-1 ${isPlanMode ? "cursor-crosshair" : "cursor-default"}`}
         style={{ height: `${totalHeight}px`, touchAction: isPlanMode ? "none" : undefined }}
         onPointerDown={isPlanMode ? handlePlanPointerDown : lasso.onPointerDown}
         onPointerMove={isPlanMode ? handlePlanPointerMove : lasso.onPointerMove}
