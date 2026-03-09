@@ -47,6 +47,15 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
     data: { type: "anytime-task", taskId: task.id },
   });
 
+  // Gate drag to left-click only — right-click must reach Radix ContextMenu
+  const dragListeners = {
+    ...listeners,
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.button !== 0) return;
+      listeners?.onPointerDown?.(e as any);
+    },
+  };
+
   const handleUnschedule = () => {
     const prevDate = task.scheduled_date;
     queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
@@ -208,7 +217,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
             onClick?.();
           }}
           title={task.title}
-          {...listeners}
+          {...dragListeners}
           {...attributes}
         >
           <span className={isCompleted ? "line-through decoration-1" : ""}>
