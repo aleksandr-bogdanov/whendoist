@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.3 — 2026-03-09
+
+### Fix: Right-click context menu blocked by plan mode pointer capture
+
+- `handlePlanPointerDown` now checks `e.button !== 0` (left-click only), matching the lasso handler
+- Previously, right-clicking in plan mode called `e.preventDefault()` + `setPointerCapture()`, which swallowed the `contextmenu` event before Radix UI could show the menu
+- Fixed always-crosshair cursor bug: cursor is now `default` outside plan mode, `crosshair` only in plan mode
+
+---
+
 ## v0.65.2 — 2026-03-07
 
 ### Fix: Cyrillic font rendering — replace static weight-500 font with variable font
