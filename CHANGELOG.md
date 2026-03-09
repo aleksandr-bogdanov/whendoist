@@ -4,7 +4,7 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.65.3 — 2026-03-09
+## v0.65.4 — 2026-03-09
 
 ### Fix: Right-click context menu not working on calendar task cards
 
