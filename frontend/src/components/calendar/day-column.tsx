@@ -808,6 +808,15 @@ function InstanceCard({
     data: { type: "instance", instanceId: instance.id, instance },
   });
 
+  // Gate drag to left-click only — right-click must reach Radix ContextMenu
+  const dragListeners = {
+    ...listeners,
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.button !== 0) return;
+      listeners?.onPointerDown?.(e as any);
+    },
+  };
+
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const isCompleted = instance.status === "completed";
@@ -1007,7 +1016,7 @@ function InstanceCard({
             </>
           )}
           {/* Drag handle — covers entire card */}
-          <div className="absolute inset-0" {...listeners} {...attributes} />
+          <div className="absolute inset-0" {...dragListeners} {...attributes} />
           {/* Content — pointer-events-none so clicks/drags pass through */}
           <div className="relative pointer-events-none">
             <div className="flex items-center gap-1">

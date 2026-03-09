@@ -4,13 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.65.3 — 2026-03-09
+## v0.65.4 — 2026-03-09
 
-### Fix: Right-click context menu blocked by plan mode pointer capture
+### Fix: Right-click context menu not working on calendar task cards
 
-- `handlePlanPointerDown` now checks `e.button !== 0` (left-click only), matching the lasso handler
-- Previously, right-clicking in plan mode called `e.preventDefault()` + `setPointerCapture()`, which swallowed the `contextmenu` event before Radix UI could show the menu
-- Fixed always-crosshair cursor bug: cursor is now `default` outside plan mode, `crosshair` only in plan mode
+- dnd-kit drag listeners on calendar cards intercepted right-click `pointerdown`, preventing Radix ContextMenu from triggering
+- Added left-click gate (`e.button === 0`) to drag listeners in `ScheduledTaskCard`, `AnytimeTaskPill`, and `DayColumn` instance cards
+- Also fixed `handlePlanPointerDown` (same issue) and always-crosshair cursor bug (identical ternary branches)
 
 ---
 

@@ -65,6 +65,15 @@ export function ScheduledTaskCard({
     data: { type: "scheduled-task", taskId },
   });
 
+  // Gate drag to left-click only — right-click must reach Radix ContextMenu
+  const dragListeners = {
+    ...listeners,
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.button !== 0) return;
+      listeners?.onPointerDown?.(e as any);
+    },
+  };
+
   const width = `${100 / item.totalColumns}%`;
   const left = `${(item.column / item.totalColumns) * 100}%`;
   const impactColor = IMPACT_COLORS[impact] ?? IMPACT_COLORS[4];
@@ -268,7 +277,7 @@ export function ScheduledTaskCard({
             </>
           )}
           {/* Drag handle — covers entire card, receives pointer events for dnd-kit */}
-          <div className="absolute inset-0" {...listeners} {...attributes} />
+          <div className="absolute inset-0" {...dragListeners} {...attributes} />
           {/* Content — pointer-events-none so clicks/drags pass through to drag handle */}
           <div className="relative pointer-events-none px-1.5 py-0.5">
             <div className="flex items-center gap-1 truncate">
