@@ -190,41 +190,43 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <button
-          ref={setNodeRef}
-          type="button"
-          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing max-w-[180px] flex-shrink-0 ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
-          style={{
-            borderLeft: `3px solid ${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}`,
-            backgroundColor: `${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}1A`,
-          }}
-          data-selection-id={selectionId}
-          onClick={(e) => {
-            if (e.shiftKey) {
-              e.stopPropagation();
-              const additive = e.metaKey || e.ctrlKey;
-              useSelectionStore
-                .getState()
-                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
-              return;
-            }
-            if (e.metaKey || e.ctrlKey) {
-              e.stopPropagation();
-              useSelectionStore.getState().toggle(selectionId, "calendar");
-              return;
-            }
-            useSelectionStore.getState().clear();
-            onClick?.();
-          }}
-          title={task.title}
-          {...dragListeners}
-          {...attributes}
-        >
-          <span className={isCompleted ? "line-through decoration-1" : ""}>
-            {isMultiSelected && <Check className="inline h-2.5 w-2.5 mr-0.5 text-primary" />}
-            {task.title}
-          </span>
-        </button>
+        <div className="flex-shrink-0 max-w-[180px]">
+          <button
+            ref={setNodeRef}
+            type="button"
+            className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing w-full ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
+            style={{
+              borderLeft: `3px solid ${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}`,
+              backgroundColor: `${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}1A`,
+            }}
+            data-selection-id={selectionId}
+            onClick={(e) => {
+              if (e.shiftKey) {
+                e.stopPropagation();
+                const additive = e.metaKey || e.ctrlKey;
+                useSelectionStore
+                  .getState()
+                  .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+                return;
+              }
+              if (e.metaKey || e.ctrlKey) {
+                e.stopPropagation();
+                useSelectionStore.getState().toggle(selectionId, "calendar");
+                return;
+              }
+              useSelectionStore.getState().clear();
+              onClick?.();
+            }}
+            title={task.title}
+            {...dragListeners}
+            {...attributes}
+          >
+            <span className={isCompleted ? "line-through decoration-1" : ""}>
+              {isMultiSelected && <Check className="inline h-2.5 w-2.5 mr-0.5 text-primary" />}
+              {task.title}
+            </span>
+          </button>
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
         {isMultiSelected ? (

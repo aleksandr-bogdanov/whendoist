@@ -163,38 +163,40 @@ export function AnytimeInstancePill({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <button
-          type="button"
-          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-pointer max-w-[180px] flex-shrink-0 ${isDone ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
-          style={{
-            borderLeft: `3px solid ${impactColor}`,
-            backgroundColor: `${impactColor}1A`,
-          }}
-          data-selection-id={selectionId}
-          onClick={(e) => {
-            if (e.shiftKey) {
-              e.stopPropagation();
-              const additive = e.metaKey || e.ctrlKey;
-              useSelectionStore
-                .getState()
-                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
-              return;
-            }
-            if (e.metaKey || e.ctrlKey) {
-              e.stopPropagation();
-              useSelectionStore.getState().toggle(selectionId, "calendar");
-              return;
-            }
-            useSelectionStore.getState().clear();
-            parentTask && onTaskClick?.(parentTask);
-          }}
-          title={instance.task_title}
-        >
-          <span className={isDone ? "line-through decoration-1" : ""}>
-            {isMultiSelected && <Check className="inline h-2.5 w-2.5 mr-0.5 text-primary" />}↻{" "}
-            {instance.task_title}
-          </span>
-        </button>
+        <div className="flex-shrink-0 max-w-[180px]">
+          <button
+            type="button"
+            className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-pointer w-full ${isDone ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
+            style={{
+              borderLeft: `3px solid ${impactColor}`,
+              backgroundColor: `${impactColor}1A`,
+            }}
+            data-selection-id={selectionId}
+            onClick={(e) => {
+              if (e.shiftKey) {
+                e.stopPropagation();
+                const additive = e.metaKey || e.ctrlKey;
+                useSelectionStore
+                  .getState()
+                  .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+                return;
+              }
+              if (e.metaKey || e.ctrlKey) {
+                e.stopPropagation();
+                useSelectionStore.getState().toggle(selectionId, "calendar");
+                return;
+              }
+              useSelectionStore.getState().clear();
+              parentTask && onTaskClick?.(parentTask);
+            }}
+            title={instance.task_title}
+          >
+            <span className={isDone ? "line-through decoration-1" : ""}>
+              {isMultiSelected && <Check className="inline h-2.5 w-2.5 mr-0.5 text-primary" />}↻{" "}
+              {instance.task_title}
+            </span>
+          </button>
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
         {isMultiSelected ? (

@@ -235,67 +235,73 @@ export function ScheduledTaskCard({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <button
-          ref={setNodeRef}
-          type="button"
-          className={`absolute rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-inset ring-2 ring-primary z-[2]" : ""}`}
+        <div
+          className="absolute"
           style={{
             top: `${item.top}px`,
             height: `${Math.max(item.height, 18)}px`,
             width,
             left,
-            borderLeft: `3px solid ${impactColor}`,
-            backgroundColor: `${impactColor}2A`,
           }}
-          title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
-          data-selection-id={selectionId}
-          onClick={(e) => {
-            if (e.shiftKey) {
-              e.stopPropagation();
-              const additive = e.metaKey || e.ctrlKey;
-              useSelectionStore
-                .getState()
-                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
-              return;
-            }
-            if (e.metaKey || e.ctrlKey) {
-              e.stopPropagation();
-              useSelectionStore.getState().toggle(selectionId, "calendar");
-              return;
-            }
-            useSelectionStore.getState().clear();
-            onClick?.();
-          }}
-          {...dragListeners}
-          {...attributes}
         >
-          {/* Selection overlay + badge */}
-          {isMultiSelected && (
-            <>
-              <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
-              <div className="absolute top-1/2 -translate-y-1/2 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
-                <Check className="h-2 w-2" strokeWidth={3} />
-              </div>
-            </>
-          )}
-          <div className="relative px-1.5 py-0.5">
-            <div className="flex items-center gap-1 truncate">
-              <CheckCircle2 className="h-2.5 w-2.5 flex-shrink-0 text-primary" />
-              <span
-                className={`truncate font-medium ${isCompleted ? "line-through decoration-1" : ""}`}
-                style={{ color: impactColor }}
-              >
-                {title}
-              </span>
-            </div>
-            {item.height > 30 && (
-              <div className="truncate opacity-70 text-[10px]">
-                {timeLabel}
-                {durationMinutes ? ` - ${durationMinutes}m` : ""}
-              </div>
+          <button
+            ref={setNodeRef}
+            type="button"
+            className={`w-full h-full rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-inset ring-2 ring-primary z-[2]" : ""}`}
+            style={{
+              borderLeft: `3px solid ${impactColor}`,
+              backgroundColor: `${impactColor}2A`,
+            }}
+            title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
+            data-selection-id={selectionId}
+            onClick={(e) => {
+              if (e.shiftKey) {
+                e.stopPropagation();
+                const additive = e.metaKey || e.ctrlKey;
+                useSelectionStore
+                  .getState()
+                  .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+                return;
+              }
+              if (e.metaKey || e.ctrlKey) {
+                e.stopPropagation();
+                useSelectionStore.getState().toggle(selectionId, "calendar");
+                return;
+              }
+              useSelectionStore.getState().clear();
+              onClick?.();
+            }}
+            {...dragListeners}
+            {...attributes}
+          >
+            {/* Selection overlay + badge */}
+            {isMultiSelected && (
+              <>
+                <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
+                  <Check className="h-2 w-2" strokeWidth={3} />
+                </div>
+              </>
             )}
-          </div>
-        </button>
+            <div className="relative px-1.5 py-0.5">
+              <div className="flex items-center gap-1 truncate">
+                <CheckCircle2 className="h-2.5 w-2.5 flex-shrink-0 text-primary" />
+                <span
+                  className={`truncate font-medium ${isCompleted ? "line-through decoration-1" : ""}`}
+                  style={{ color: impactColor }}
+                >
+                  {title}
+                </span>
+              </div>
+              {item.height > 30 && (
+                <div className="truncate opacity-70 text-[10px]">
+                  {timeLabel}
+                  {durationMinutes ? ` - ${durationMinutes}m` : ""}
+                </div>
+              )}
+            </div>
+          </button>
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="min-w-[160px]">
         {isMultiSelected ? (

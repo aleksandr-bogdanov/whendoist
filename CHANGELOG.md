@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.7 — 2026-03-09
+
+### Fix: Calendar right-click context menu — wrapper div pattern
+
+- Right-click context menus didn't work on ANY calendar card (scheduled tasks, anytime pills, recurring instances)
+- Root cause: Radix UI's `asChild` uses `React.cloneElement` to add `onContextMenu` to the trigger child — when the child already has event handlers (`onClick`, `onPointerDown`), the composed handler doesn't dispatch correctly in React 19
+- Fix: wrap each card's `<button>` in a clean `<div>` as the ContextMenuTrigger child (matching the working task-item pattern), isolating Radix's handlers from the button's handlers
+- Affected: `scheduled-task-card.tsx`, `anytime-task-pill.tsx`, `anytime-instance-pill.tsx`, `day-column.tsx` (InstanceCard)
+
+---
+
 ## v0.65.6 — 2026-03-09
 
 ### Fix: Date abbreviations with time not parsed in quick add
