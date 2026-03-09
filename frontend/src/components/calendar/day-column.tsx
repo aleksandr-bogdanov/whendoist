@@ -1005,6 +1005,8 @@ function InstanceCard({
             useSelectionStore.getState().clear();
             onEditSeries?.();
           }}
+          {...dragListeners}
+          {...attributes}
         >
           {/* Selection overlay + badge */}
           {isMultiSelected && (
@@ -1015,10 +1017,7 @@ function InstanceCard({
               </div>
             </>
           )}
-          {/* Drag handle — covers entire card */}
-          <div className="absolute inset-0" {...dragListeners} {...attributes} />
-          {/* Content — pointer-events-none so clicks/drags pass through */}
-          <div className="relative pointer-events-none">
+          <div className="relative">
             <div className="flex items-center gap-1">
               <span className="text-xs text-muted-foreground">&#x21BB;</span>
               <span
