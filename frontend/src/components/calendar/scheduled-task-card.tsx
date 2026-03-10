@@ -10,15 +10,14 @@ import {
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
-import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
-import { announce } from "@/components/live-announcer";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+  CalendarBatchMenuItems,
+  CalendarContextMenuItem,
+  CalendarContextMenuPortal,
+  CalendarContextMenuSeparator,
+  useCalendarContextMenu,
+} from "@/components/calendar/calendar-context-menu";
+import { announce } from "@/components/live-announcer";
 import type { PositionedItem } from "@/lib/calendar-utils";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
@@ -56,6 +55,7 @@ export function ScheduledTaskCard({
   const toggleComplete = useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost();
   const deleteTask = useDeleteTaskApiV1TasksTaskIdDelete();
   const restoreTask = useRestoreTaskApiV1TasksTaskIdRestorePost();
+  const menu = useCalendarContextMenu();
 
   const selectionId = taskSelectionId(taskId);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
@@ -65,7 +65,7 @@ export function ScheduledTaskCard({
     data: { type: "scheduled-task", taskId },
   });
 
-  // Gate drag to left-click only — right-click must reach Radix ContextMenu
+  // Gate drag to left-click only — right-click must reach context menu
   const dragListeners = {
     ...listeners,
     onPointerDown: (e: React.PointerEvent) => {
@@ -79,6 +79,7 @@ export function ScheduledTaskCard({
   const impactColor = IMPACT_COLORS[impact] ?? IMPACT_COLORS[4];
 
   const handleUnschedule = () => {
+    menu.close();
     const tasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
     const prev = tasks?.find((t) => t.id === taskId);
     const prevDate = prev?.scheduled_date ?? null;
@@ -135,6 +136,7 @@ export function ScheduledTaskCard({
   };
 
   const handleComplete = () => {
+    menu.close();
     const previousTasks = queryClient.getQueryData<TaskResponse[]>(dashboardTasksKey());
 
     queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) => {
@@ -197,6 +199,7 @@ export function ScheduledTaskCard({
   };
 
   const handleDelete = () => {
+    menu.close();
     deleteTask.mutate(
       { taskId },
       {
@@ -233,104 +236,108 @@ export function ScheduledTaskCard({
   };
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <div
-          className="absolute"
+    <>
+      <div
+        className="absolute"
+        style={{
+          top: `${item.top}px`,
+          height: `${Math.max(item.height, 18)}px`,
+          width,
+          left,
+        }}
+      >
+        <button
+          ref={setNodeRef}
+          onContextMenu={menu.handleContextMenu}
+          type="button"
+          className={`w-full h-full rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-inset ring-2 ring-primary z-[2]" : ""}`}
           style={{
-            top: `${item.top}px`,
-            height: `${Math.max(item.height, 18)}px`,
-            width,
-            left,
+            borderLeft: `3px solid ${impactColor}`,
+            backgroundColor: `${impactColor}2A`,
           }}
+          title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
+          data-selection-id={selectionId}
+          onClick={(e) => {
+            if (e.shiftKey) {
+              e.stopPropagation();
+              const additive = e.metaKey || e.ctrlKey;
+              useSelectionStore
+                .getState()
+                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+              return;
+            }
+            if (e.metaKey || e.ctrlKey) {
+              e.stopPropagation();
+              useSelectionStore.getState().toggle(selectionId, "calendar");
+              return;
+            }
+            useSelectionStore.getState().clear();
+            onClick?.();
+          }}
+          {...dragListeners}
+          {...attributes}
         >
-          <button
-            ref={setNodeRef}
-            type="button"
-            className={`w-full h-full rounded-[6px] overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${isCompleted ? "opacity-50" : ""} ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-inset ring-2 ring-primary z-[2]" : ""}`}
-            style={{
-              borderLeft: `3px solid ${impactColor}`,
-              backgroundColor: `${impactColor}2A`,
-            }}
-            title={`${title}\n${timeLabel}${durationMinutes ? ` (${durationMinutes}m)` : ""}`}
-            data-selection-id={selectionId}
-            onClick={(e) => {
-              if (e.shiftKey) {
-                e.stopPropagation();
-                const additive = e.metaKey || e.ctrlKey;
-                useSelectionStore
-                  .getState()
-                  .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
-                return;
-              }
-              if (e.metaKey || e.ctrlKey) {
-                e.stopPropagation();
-                useSelectionStore.getState().toggle(selectionId, "calendar");
-                return;
-              }
-              useSelectionStore.getState().clear();
-              onClick?.();
-            }}
-            {...dragListeners}
-            {...attributes}
-          >
-            {/* Selection overlay + badge */}
-            {isMultiSelected && (
-              <>
-                <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
-                <div className="absolute top-1/2 -translate-y-1/2 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
-                  <Check className="h-2 w-2" strokeWidth={3} />
-                </div>
-              </>
-            )}
-            <div className="relative px-1.5 py-0.5">
-              <div className="flex items-center gap-1 truncate">
-                <CheckCircle2 className="h-2.5 w-2.5 flex-shrink-0 text-primary" />
-                <span
-                  className={`truncate font-medium ${isCompleted ? "line-through decoration-1" : ""}`}
-                  style={{ color: impactColor }}
-                >
-                  {title}
-                </span>
+          {/* Selection overlay + badge */}
+          {isMultiSelected && (
+            <>
+              <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+              <div className="absolute top-1/2 -translate-y-1/2 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
+                <Check className="h-2 w-2" strokeWidth={3} />
               </div>
-              {item.height > 30 && (
-                <div className="truncate opacity-70 text-[10px]">
-                  {timeLabel}
-                  {durationMinutes ? ` - ${durationMinutes}m` : ""}
-                </div>
-              )}
+            </>
+          )}
+          <div className="relative px-1.5 py-0.5">
+            <div className="flex items-center gap-1 truncate">
+              <CheckCircle2 className="h-2.5 w-2.5 flex-shrink-0 text-primary" />
+              <span
+                className={`truncate font-medium ${isCompleted ? "line-through decoration-1" : ""}`}
+                style={{ color: impactColor }}
+              >
+                {title}
+              </span>
             </div>
-          </button>
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="min-w-[160px]">
+            {item.height > 30 && (
+              <div className="truncate opacity-70 text-[10px]">
+                {timeLabel}
+                {durationMinutes ? ` - ${durationMinutes}m` : ""}
+              </div>
+            )}
+          </div>
+        </button>
+      </div>
+      <CalendarContextMenuPortal state={menu}>
         {isMultiSelected ? (
-          <BatchContextMenuItems />
+          <CalendarBatchMenuItems close={menu.close} />
         ) : (
           <>
-            <ContextMenuItem onSelect={() => onClick?.()}>
+            <CalendarContextMenuItem
+              onSelect={() => {
+                menu.close();
+                onClick?.();
+              }}
+            >
               <Pencil className="h-3.5 w-3.5 mr-2" />
               {t("task.action.edit")}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={handleUnschedule}>
+            </CalendarContextMenuItem>
+            <CalendarContextMenuItem onSelect={handleUnschedule}>
               <CalendarOff className="h-3.5 w-3.5 mr-2" />
               {t("task.action.unschedule")}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={handleComplete}>
+            </CalendarContextMenuItem>
+            <CalendarContextMenuItem onSelect={handleComplete}>
               <Check className="h-3.5 w-3.5 mr-2" />
               {isCompleted ? t("task.action.reopen") : t("task.action.complete")}
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
+            </CalendarContextMenuItem>
+            <CalendarContextMenuSeparator />
+            <CalendarContextMenuItem
               onSelect={handleDelete}
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5 mr-2" />
               {t("task.action.delete")}
-            </ContextMenuItem>
+            </CalendarContextMenuItem>
           </>
         )}
-      </ContextMenuContent>
-    </ContextMenu>
+      </CalendarContextMenuPortal>
+    </>
   );
 }

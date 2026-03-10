@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.8 — 2026-03-10
+
+### Fix: Calendar context menus — bypass Radix, use custom menu system
+
+- Radix ContextMenu clicks silently failed on all calendar cards (both `modal={true}` and `modal={false}`)
+- Root cause: unresolved event-chain conflict between Radix's DismissableLayer/FocusScope and the calendar's dnd-kit/lasso/carousel environment
+- Fix: replaced Radix ContextMenu with a lightweight custom system (`calendar-context-menu.tsx`) using `createPortal` + plain `<button>` elements
+- New: `useCalendarContextMenu()` hook, `CalendarContextMenuPortal`, `CalendarContextMenuItem`, `CalendarBatchMenuItems`
+- Affected: `scheduled-task-card.tsx`, `anytime-task-pill.tsx`, `anytime-instance-pill.tsx`, `day-column.tsx` (InstanceCard)
+
+---
+
+
 ## v0.65.7 — 2026-03-09
 
 ### Fix: Calendar right-click context menu — wrapper div pattern
