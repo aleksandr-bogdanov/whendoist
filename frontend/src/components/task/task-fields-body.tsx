@@ -142,8 +142,19 @@ export function TaskFieldsBody({
         handlers.onDescriptionChange(d);
         markDirty();
       },
+      onParent: (id: number) => {
+        handlers.onParentChange(id);
+        // Auto-sync domain to parent's domain
+        const parent = parentTasks?.find((t) => t.id === id);
+        if (parent?.domain_id != null && parent.domain_id !== values.domainId) {
+          handlers.onDomainChange(parent.domain_id);
+          setDomainFlash(true);
+          setTimeout(() => setDomainFlash(false), 650);
+        }
+        markDirty();
+      },
     }),
-    [handlers, markDirty],
+    [handlers, markDirty, parentTasks, values.domainId],
   );
 
   const {
@@ -155,7 +166,7 @@ export function TaskFieldsBody({
     acSelectedIndex,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
-  } = useSmartInputConsumer(domains, smartCallbacks, task?.title);
+  } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks);
 
   // Auto-resize title textarea
   // biome-ignore lint/correctness/useExhaustiveDependencies: title change triggers resize
