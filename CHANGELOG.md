@@ -4,11 +4,22 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.10 — 2026-03-10
+
+### Fix: Inline add autocomplete renders above input, not hidden below
+
+- Autocomplete dropdown for `!impact`, `?clarity`, `#domain` in subtask/task inline-add was invisible — it rendered below the input and got hidden under the next task item
+- Fix: added `position` prop to `SmartInputAutocomplete` (`"above"` | `"below"`), defaulting to `"below"` for backward compatibility
+- Subtask ghost row and domain group inline-add now use `position="above"` so the dropdown floats above the input, always visible
+- Combined with z-50 stacking context elevation on the wrapper div
+
+---
+
 ## v0.65.9 — 2026-03-10
 
-### Fix: Inline add autocomplete hidden behind next task
+### Fix: Inline add autocomplete z-index stacking context
 
-- Smart input autocomplete dropdown (for `!impact`, `?clarity`, `#domain`, etc.) was invisible when adding subtasks or tasks inline — the dropdown rendered behind the next task item
+- Smart input autocomplete dropdown was invisible when adding subtasks or tasks inline — the dropdown rendered behind the next task item
 - Root cause: CSS stacking context — the `z-50` on the dropdown only applied within its parent's stacking context, so sibling task items painted over it
 - Fix: elevate the input wrapper's z-index to `z-50` when autocomplete is visible, in both `subtask-ghost-row.tsx` and `domain-group.tsx`
 

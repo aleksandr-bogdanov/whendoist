@@ -129,6 +129,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
               visible={acVisible}
               selectedIndex={acSelectedIndex}
               onSelect={handleAcSelect}
+              position="above"
             />
           </div>
           {parsed.tokens.length > 0 && (

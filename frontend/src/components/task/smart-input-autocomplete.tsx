@@ -6,6 +6,8 @@ interface SmartInputAutocompleteProps {
   visible: boolean;
   selectedIndex: number;
   onSelect: (suggestion: AutocompleteSuggestion) => void;
+  /** Render above the input instead of below. Use for inline-add rows near the bottom of lists. */
+  position?: "above" | "below";
 }
 
 export function SmartInputAutocomplete({
@@ -13,6 +15,7 @@ export function SmartInputAutocomplete({
   visible,
   selectedIndex,
   onSelect,
+  position = "below",
 }: SmartInputAutocompleteProps) {
   const selectedRef = useRef<HTMLButtonElement>(null);
 
@@ -24,7 +27,7 @@ export function SmartInputAutocomplete({
   if (!visible || suggestions.length === 0) return null;
 
   return (
-    <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
+    <div className={`absolute left-0 right-0 z-50 max-h-48 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md ${position === "above" ? "bottom-full mb-1" : "top-full mt-1"}`}>
       {suggestions.map((s, i) => (
         <button
           key={`${s.type}-${s.value}`}
