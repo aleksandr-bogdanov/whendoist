@@ -27,7 +27,9 @@ export function SmartInputAutocomplete({
   if (!visible || suggestions.length === 0) return null;
 
   return (
-    <div className={`absolute left-0 right-0 z-50 max-h-48 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md ${position === "above" ? "bottom-full mb-1" : "top-full mt-1"}`}>
+    <div
+      className={`absolute left-0 right-0 z-50 max-h-48 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md ${position === "above" ? "bottom-full mb-1" : "top-full mt-1"}`}
+    >
       {suggestions.map((s, i) => (
         <button
           key={`${s.type}-${s.value}`}
