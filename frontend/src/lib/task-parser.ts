@@ -54,6 +54,10 @@ export interface AutocompleteSuggestion {
   icon?: string | null;
   colorClass?: string | null;
   secondaryLabel?: string | null;
+  /** Domain group header — rendered before this item when it differs from the previous. */
+  groupLabel?: string | null;
+  /** Badge text shown after the label (e.g. subtask count "·3"). */
+  badge?: string | null;
 }
 
 export interface AutocompleteResult {
@@ -596,32 +600,44 @@ export function getAutocompleteSuggestions(
       matches = [...prefixMatches, ...includesMatches];
     }
 
-    // Sort by domain name (grouped), then alphabetically by title within each domain
+    // Group by domain (matching ParentTaskSelect visual)
     const domainMap = new Map(domains.map((d) => [d.id, d]));
+
+    // Sort: by domain position, then parents-with-children first, then alphabetically
     matches.sort((a, b) => {
       const da = a.domain_id != null ? domainMap.get(a.domain_id) : null;
       const db = b.domain_id != null ? domainMap.get(b.domain_id) : null;
-      const nameA = da?.name ?? "";
-      const nameB = db?.name ?? "";
-      if (nameA !== nameB) return nameA.localeCompare(nameB);
+      const posA = da?.position ?? 999;
+      const posB = db?.position ?? 999;
+      if (posA !== posB) return posA - posB;
+      // Within same domain: tasks with subtasks first, then alphabetical
+      const scA = (a as { subtasks?: unknown[] }).subtasks?.length ?? 0;
+      const scB = (b as { subtasks?: unknown[] }).subtasks?.length ?? 0;
+      if (scA > 0 !== scB > 0) return scA > 0 ? -1 : 1;
       return a.title.localeCompare(b.title);
     });
 
-    return {
-      suggestions: matches.slice(0, 10).map((t) => {
-        const domain = t.domain_id != null ? domainMap.get(t.domain_id) : null;
-        return {
-          type: "parent" as const,
-          value: t.id,
-          label: t.title,
-          icon: domain?.icon ?? null,
-          secondaryLabel: domain?.name ?? null,
-        };
-      }),
-      triggerStart,
-      triggerEnd,
-      type: "parent",
-    };
+    // Build suggestions with group labels
+    let lastGroupLabel = "";
+    const suggestions: AutocompleteSuggestion[] = matches.slice(0, 20).map((t) => {
+      const domain = t.domain_id != null ? domainMap.get(t.domain_id) : null;
+      const groupLabel = domain ? `${domain.icon ?? ""} ${domain.name}`.trim() : "";
+      const showGroup = groupLabel !== lastGroupLabel;
+      lastGroupLabel = groupLabel;
+
+      const subtaskCount = (t as { subtasks?: unknown[] }).subtasks?.length ?? 0;
+
+      return {
+        type: "parent" as const,
+        value: t.id,
+        label: t.title,
+        icon: domain?.icon ?? null,
+        groupLabel: showGroup ? groupLabel : null,
+        badge: subtaskCount > 0 ? `·${subtaskCount}` : null,
+      };
+    });
+
+    return { suggestions, triggerStart, triggerEnd, type: "parent" };
   }
 
   // triggerChar === "?"

@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.15 — 2026-03-10
+
+### Fix: `^` autocomplete matches ParentTaskSelect visual
+
+- `^` autocomplete dropdown now renders domain-grouped sections with headers (icon + name), matching the Parent Task field picker
+- Subtask count badges shown next to tasks that have children (e.g. `·3`)
+- Tasks sorted by domain position, parents-with-children first, then alphabetically
+- Increased max results from 10 to 20
+
+---
+
 ## v0.65.14 — 2026-03-10
 
 ### Fix: `^` parent token in desktop editor title
