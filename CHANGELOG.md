@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.16 — 2026-03-10
+
+### Fix: `^` autocomplete — current domain first, matches ParentTaskSelect
+
+- Current domain's tasks shown first in `^` dropdown (matching ParentTaskSelect behavior)
+- `currentDomainId` threaded through `getAutocompleteSuggestions` → hooks → all editor surfaces
+- Quick add uses the parsed `#domain` token; editors use `values.domainId` from form state
+
+---
+
 ## v0.65.15 — 2026-03-10
 
 ### Fix: `^` autocomplete matches ParentTaskSelect visual

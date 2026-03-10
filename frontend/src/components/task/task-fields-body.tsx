@@ -166,7 +166,7 @@ export function TaskFieldsBody({
     acSelectedIndex,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
-  } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks);
+  } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks, values.domainId);
 
   // Auto-resize title textarea
   // biome-ignore lint/correctness/useExhaustiveDependencies: title change triggers resize

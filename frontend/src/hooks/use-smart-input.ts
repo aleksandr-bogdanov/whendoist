@@ -73,7 +73,13 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
 
       // Check for autocomplete trigger
       const cursorPos = e.target.selectionStart ?? value.length;
-      const acResult = getAutocompleteSuggestions(value, cursorPos, domains, parentTasks);
+      const acResult = getAutocompleteSuggestions(
+        value,
+        cursorPos,
+        domains,
+        parentTasks,
+        result.domainId,
+      );
       if (acResult && acResult.suggestions.length > 0) {
         setAcSuggestions(acResult.suggestions);
         setAcTriggerInfo({
