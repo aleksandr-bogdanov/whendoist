@@ -10,15 +10,14 @@ import {
   useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost,
   useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
-import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
-import { announce } from "@/components/live-announcer";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+  CalendarBatchMenuItems,
+  CalendarContextMenuItem,
+  CalendarContextMenuPortal,
+  CalendarContextMenuSeparator,
+  useCalendarContextMenu,
+} from "@/components/calendar/calendar-context-menu";
+import { announce } from "@/components/live-announcer";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 import { instanceSelectionId, useSelectionStore } from "@/stores/selection-store";
 
@@ -39,6 +38,7 @@ export function AnytimeInstancePill({
   const { t } = useTranslation();
   const selectionId = instanceSelectionId(instance.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
+  const menu = useCalendarContextMenu();
 
   const isCompleted = instance.status === "completed";
   const isSkipped = instance.status === "skipped";
@@ -161,11 +161,12 @@ export function AnytimeInstancePill({
   const impactColor = IMPACT_COLORS[instance.impact] ?? IMPACT_COLORS[4];
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
+    <>
+      <div className="flex-shrink-0 max-w-[180px]">
         <button
           type="button"
-          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-pointer max-w-[180px] flex-shrink-0 ${isDone ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
+          onContextMenu={menu.handleContextMenu}
+          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-pointer w-full ${isDone ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
           style={{
             borderLeft: `3px solid ${impactColor}`,
             backgroundColor: `${impactColor}1A`,
@@ -195,34 +196,49 @@ export function AnytimeInstancePill({
             {instance.task_title}
           </span>
         </button>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="min-w-[160px]">
+      </div>
+      <CalendarContextMenuPortal state={menu}>
         {isMultiSelected ? (
-          <BatchContextMenuItems />
+          <CalendarBatchMenuItems close={menu.close} />
         ) : (
           <>
             {parentTask && (
-              <ContextMenuItem onSelect={() => onTaskClick?.(parentTask)}>
+              <CalendarContextMenuItem
+                onSelect={() => {
+                  menu.close();
+                  onTaskClick?.(parentTask);
+                }}
+              >
                 <Pencil className="h-3.5 w-3.5 mr-2" />
                 {t("task.action.editSeries")}
-              </ContextMenuItem>
+              </CalendarContextMenuItem>
             )}
-            <ContextMenuItem onSelect={handleComplete}>
+            <CalendarContextMenuItem
+              onSelect={() => {
+                menu.close();
+                handleComplete();
+              }}
+            >
               <Check className="h-3.5 w-3.5 mr-2" />
               {isCompleted ? t("task.action.uncomplete") : t("task.action.complete")}
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem onSelect={handleSkip}>
+            </CalendarContextMenuItem>
+            <CalendarContextMenuSeparator />
+            <CalendarContextMenuItem
+              onSelect={() => {
+                menu.close();
+                handleSkip();
+              }}
+            >
               {isSkipped ? (
                 <Undo2 className="h-3.5 w-3.5 mr-2" />
               ) : (
                 <SkipForward className="h-3.5 w-3.5 mr-2" />
               )}
               {isSkipped ? t("common.unskip") : t("common.skip")}
-            </ContextMenuItem>
+            </CalendarContextMenuItem>
           </>
         )}
-      </ContextMenuContent>
-    </ContextMenu>
+      </CalendarContextMenuPortal>
+    </>
   );
 }

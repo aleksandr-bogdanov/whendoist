@@ -4,13 +4,25 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.65.7 — 2026-03-10
+## v0.65.9 — 2026-03-10
 
 ### Fix: Inline add autocomplete hidden behind next task
 
 - Smart input autocomplete dropdown (for `!impact`, `?clarity`, `#domain`, etc.) was invisible when adding subtasks or tasks inline — the dropdown rendered behind the next task item
 - Root cause: CSS stacking context — the `z-50` on the dropdown only applied within its parent's stacking context, so sibling task items painted over it
 - Fix: elevate the input wrapper's z-index to `z-50` when autocomplete is visible, in both `subtask-ghost-row.tsx` and `domain-group.tsx`
+
+---
+
+## v0.65.8 — 2026-03-10
+
+### Fix: Calendar context menus — bypass Radix, use custom menu system
+
+- Radix ContextMenu clicks silently failed on all calendar cards (both `modal={true}` and `modal={false}`)
+- Root cause: unresolved event-chain conflict between Radix's DismissableLayer/FocusScope and the calendar's dnd-kit/lasso/carousel environment
+- Fix: replaced Radix ContextMenu with a lightweight custom system (`calendar-context-menu.tsx`) using `createPortal` + plain `<button>` elements
+- New: `useCalendarContextMenu()` hook, `CalendarContextMenuPortal`, `CalendarContextMenuItem`, `CalendarBatchMenuItems`
+- Affected: `scheduled-task-card.tsx`, `anytime-task-pill.tsx`, `anytime-instance-pill.tsx`, `day-column.tsx` (InstanceCard)
 
 ---
 

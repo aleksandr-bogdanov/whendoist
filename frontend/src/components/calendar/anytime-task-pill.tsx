@@ -10,15 +10,14 @@ import {
   useToggleTaskCompleteApiV1TasksTaskIdToggleCompletePost,
   useUpdateTaskApiV1TasksTaskIdPut,
 } from "@/api/queries/tasks/tasks";
-import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
-import { announce } from "@/components/live-announcer";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+  CalendarBatchMenuItems,
+  CalendarContextMenuItem,
+  CalendarContextMenuPortal,
+  CalendarContextMenuSeparator,
+  useCalendarContextMenu,
+} from "@/components/calendar/calendar-context-menu";
+import { announce } from "@/components/live-announcer";
 import { dashboardTasksKey } from "@/lib/query-keys";
 import { IMPACT_COLORS } from "@/lib/task-utils";
 import { taskSelectionId, useSelectionStore } from "@/stores/selection-store";
@@ -34,6 +33,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
   const { t } = useTranslation();
   const selectionId = taskSelectionId(task.id);
   const isMultiSelected = useSelectionStore((s) => s.selectedIds.has(selectionId));
+  const menu = useCalendarContextMenu();
 
   const isCompleted = task.status === "completed";
   const queryClient = useQueryClient();
@@ -47,7 +47,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
     data: { type: "anytime-task", taskId: task.id },
   });
 
-  // Gate drag to left-click only — right-click must reach Radix ContextMenu
+  // Gate drag to left-click only — right-click must reach context menu
   const dragListeners = {
     ...listeners,
     onPointerDown: (e: React.PointerEvent) => {
@@ -57,6 +57,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
   };
 
   const handleUnschedule = () => {
+    menu.close();
     const prevDate = task.scheduled_date;
     queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) =>
@@ -96,6 +97,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
   };
 
   const handleComplete = () => {
+    menu.close();
     const isCompleted = task.status === "completed";
     queryClient.setQueryData<TaskResponse[]>(dashboardTasksKey(), (old) =>
       old?.map((t) =>
@@ -157,6 +159,7 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
   };
 
   const handleDelete = () => {
+    menu.close();
     deleteTask.mutate(
       { taskId: task.id },
       {
@@ -188,12 +191,13 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
   };
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
+    <>
+      <div className="flex-shrink-0 max-w-[180px]">
         <button
           ref={setNodeRef}
           type="button"
-          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing max-w-[180px] flex-shrink-0 ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
+          onContextMenu={menu.handleContextMenu}
+          className={`text-[11px] truncate rounded-full px-2 py-0.5 hover:bg-[rgba(109,94,246,0.04)] cursor-grab active:cursor-grabbing w-full ${isDragging ? "opacity-30" : ""} ${isCompleted ? "opacity-50" : ""} ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
           style={{
             borderLeft: `3px solid ${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}`,
             backgroundColor: `${IMPACT_COLORS[task.impact] ?? IMPACT_COLORS[4]}1A`,
@@ -225,35 +229,40 @@ export function AnytimeTaskPill({ task, onClick, orderedIds }: AnytimeTaskPillPr
             {task.title}
           </span>
         </button>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="min-w-[160px]">
+      </div>
+      <CalendarContextMenuPortal state={menu}>
         {isMultiSelected ? (
-          <BatchContextMenuItems />
+          <CalendarBatchMenuItems close={menu.close} />
         ) : (
           <>
-            <ContextMenuItem onSelect={() => onClick?.()}>
+            <CalendarContextMenuItem
+              onSelect={() => {
+                menu.close();
+                onClick?.();
+              }}
+            >
               <Pencil className="h-3.5 w-3.5 mr-2" />
               {t("task.action.edit")}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={handleUnschedule}>
+            </CalendarContextMenuItem>
+            <CalendarContextMenuItem onSelect={handleUnschedule}>
               <CalendarOff className="h-3.5 w-3.5 mr-2" />
               {t("task.action.unschedule")}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={handleComplete}>
+            </CalendarContextMenuItem>
+            <CalendarContextMenuItem onSelect={handleComplete}>
               <Check className="h-3.5 w-3.5 mr-2" />
               {isCompleted ? t("task.action.reopen") : t("task.action.complete")}
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem
+            </CalendarContextMenuItem>
+            <CalendarContextMenuSeparator />
+            <CalendarContextMenuItem
               onSelect={handleDelete}
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5 mr-2" />
               {t("task.action.delete")}
-            </ContextMenuItem>
+            </CalendarContextMenuItem>
           </>
         )}
-      </ContextMenuContent>
-    </ContextMenu>
+      </CalendarContextMenuPortal>
+    </>
   );
 }
