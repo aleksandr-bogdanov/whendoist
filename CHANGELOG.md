@@ -16,6 +16,7 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+
 ## v0.65.7 — 2026-03-09
 
 ### Fix: Calendar right-click context menu — wrapper div pattern
