@@ -18,11 +18,18 @@ import i18n from "@/lib/i18n";
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface ParsedToken {
-  type: "domain" | "impact" | "clarity" | "duration" | "date" | "description";
+  type: "domain" | "impact" | "clarity" | "duration" | "date" | "description" | "parent";
   raw: string;
   label: string;
   startIndex: number;
   endIndex: number;
+}
+
+/** Minimal type for parent task candidates passed into the parser. */
+export interface ParentTaskOption {
+  id: number;
+  title: string;
+  domain_id?: number | null;
 }
 
 export interface ParsedTaskMetadata {
@@ -35,27 +42,30 @@ export interface ParsedTaskMetadata {
   durationMinutes: number | null;
   scheduledDate: string | null;
   scheduledTime: string | null;
+  parentId: number | null;
+  parentName: string | null;
   tokens: ParsedToken[];
 }
 
 export interface AutocompleteSuggestion {
-  type: "domain" | "clarity" | "impact";
+  type: "domain" | "clarity" | "impact" | "parent";
   value: string | number;
   label: string;
   icon?: string | null;
   colorClass?: string | null;
+  secondaryLabel?: string | null;
 }
 
 export interface AutocompleteResult {
   suggestions: AutocompleteSuggestion[];
   triggerStart: number;
   triggerEnd: number;
-  type: "domain" | "clarity" | "impact";
+  type: "domain" | "clarity" | "impact" | "parent";
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const IMPACT_PATTERN = /!(high|mid|low|min|p[1-4])\b/gi;
+const IMPACT_PATTERN = /!(high|mid|low|min|p[1-4]|[1-4])\b/gi;
 const IMPACT_MAP: Record<string, number> = {
   high: 1,
   mid: 2,
@@ -65,6 +75,10 @@ const IMPACT_MAP: Record<string, number> = {
   p2: 2,
   p3: 3,
   p4: 4,
+  "1": 1,
+  "2": 2,
+  "3": 3,
+  "4": 4,
 };
 
 const IMPACT_LABEL_MAP: Record<number, string> = {
@@ -95,7 +109,7 @@ const DURATION_PATTERN =
 // ─── Triage token constants (exported for tapToken-based field pickers) ─────
 
 /** Non-global impact pattern for single-match replacement via tapToken. */
-export const IMPACT_TOKEN_PATTERN = /!(high|mid|low|min|p[1-4])\b/i;
+export const IMPACT_TOKEN_PATTERN = /!(high|mid|low|min|p[1-4]|[1-4])\b/i;
 
 /** Human-readable impact keywords by numeric level, for tapToken insertion. */
 export const IMPACT_KEYWORDS: Record<number, string> = {
@@ -131,6 +145,8 @@ export const EMPTY_PARSED: ParsedTaskMetadata = {
   durationMinutes: null,
   scheduledDate: null,
   scheduledTime: null,
+  parentId: null,
+  parentName: null,
   tokens: [],
 };
 
@@ -138,6 +154,7 @@ export function parseTaskInput(
   input: string,
   domains: DomainResponse[],
   dismissedTypes?: Set<string>,
+  parentTasks?: ParentTaskOption[],
 ): ParsedTaskMetadata {
   if (!input.trim()) return { ...EMPTY_PARSED };
 
@@ -244,6 +261,77 @@ export function parseTaskInput(
         endIndex: lastDomainMatch.end,
       });
       working = working.slice(0, lastDomainMatch.start) + working.slice(lastDomainMatch.end);
+    }
+  }
+
+  // Step 2.5: Parent (^TaskTitle) — greedy match against known task titles
+  let parentId: number | null = null;
+  let parentName: string | null = null;
+  if (!dismissed.has("parent") && parentTasks && parentTasks.length > 0) {
+    const sortedTasks = [...parentTasks].sort((a, b) => b.title.length - a.title.length);
+    let lastParentMatch: {
+      start: number;
+      end: number;
+      task: ParentTaskOption;
+      raw: string;
+    } | null = null;
+
+    for (let pos = 0; pos < working.length; pos++) {
+      if (working[pos] !== "^") continue;
+      if (pos > 0 && !/\s/.test(working[pos - 1])) continue;
+
+      const afterCaret = working.slice(pos + 1);
+      let matched = false;
+
+      // Try exact match against known task titles (longest first)
+      for (const t of sortedTasks) {
+        const tName = t.title.toLowerCase();
+        if (afterCaret.toLowerCase().startsWith(tName)) {
+          const charAfter = afterCaret[tName.length];
+          if (charAfter === undefined || /\s/.test(charAfter)) {
+            lastParentMatch = {
+              start: pos,
+              end: pos + 1 + t.title.length,
+              task: t,
+              raw: working.slice(pos, pos + 1 + t.title.length),
+            };
+            matched = true;
+            break;
+          }
+        }
+      }
+
+      // Fall back to prefix match on single word
+      if (!matched) {
+        const wordMatch = afterCaret.match(/^(\S+)/);
+        if (wordMatch) {
+          const query = wordMatch[1].toLowerCase();
+          const t = parentTasks.find(
+            (tt) => tt.title.toLowerCase() === query || tt.title.toLowerCase().startsWith(query),
+          );
+          if (t) {
+            lastParentMatch = {
+              start: pos,
+              end: pos + 1 + wordMatch[1].length,
+              task: t,
+              raw: working.slice(pos, pos + 1 + wordMatch[1].length),
+            };
+          }
+        }
+      }
+    }
+
+    if (lastParentMatch) {
+      parentId = lastParentMatch.task.id;
+      parentName = lastParentMatch.task.title;
+      tokens.push({
+        type: "parent",
+        raw: lastParentMatch.raw,
+        label: lastParentMatch.task.title,
+        startIndex: lastParentMatch.start,
+        endIndex: lastParentMatch.end,
+      });
+      working = working.slice(0, lastParentMatch.start) + working.slice(lastParentMatch.end);
     }
   }
 
@@ -356,6 +444,8 @@ export function parseTaskInput(
     description,
     domainId,
     domainName,
+    parentId,
+    parentName,
     impact,
     clarity,
     durationMinutes,
@@ -426,8 +516,9 @@ export function getAutocompleteSuggestions(
   input: string,
   cursorPos: number,
   domains: DomainResponse[],
+  parentTasks?: ParentTaskOption[],
 ): AutocompleteResult | null {
-  // Scan backwards from cursor to find @ or ? trigger
+  // Scan backwards from cursor to find trigger character
   let i = cursorPos - 1;
   while (i >= 0 && /[a-zA-Z0-9_-]/.test(input[i])) {
     i--;
@@ -436,7 +527,8 @@ export function getAutocompleteSuggestions(
   if (i < 0) return null;
 
   const triggerChar = input[i];
-  if (triggerChar !== "#" && triggerChar !== "?" && triggerChar !== "!") return null;
+  if (triggerChar !== "#" && triggerChar !== "?" && triggerChar !== "!" && triggerChar !== "^")
+    return null;
 
   // Ensure trigger is at start of input or preceded by whitespace
   if (i > 0 && !/\s/.test(input[i - 1])) return null;
@@ -472,15 +564,52 @@ export function getAutocompleteSuggestions(
   }
 
   if (triggerChar === "!") {
-    const filtered = prefix
-      ? IMPACT_SUGGESTIONS.filter((s) => s.label.toLowerCase().startsWith(prefix))
-      : IMPACT_SUGGESTIONS;
+    let filtered: AutocompleteSuggestion[];
+    if (!prefix) {
+      filtered = IMPACT_SUGGESTIONS;
+    } else if (/^[1-4]$/.test(prefix)) {
+      // Bare digit: show only the matching priority (1→High, 2→Mid, 3→Low, 4→Min)
+      filtered = [IMPACT_SUGGESTIONS[Number.parseInt(prefix, 10) - 1]];
+    } else {
+      filtered = IMPACT_SUGGESTIONS.filter((s) => s.label.toLowerCase().startsWith(prefix));
+    }
 
     return {
       suggestions: filtered,
       triggerStart,
       triggerEnd,
       type: "impact",
+    };
+  }
+
+  if (triggerChar === "^") {
+    if (!parentTasks || parentTasks.length === 0) return null;
+
+    let matches: ParentTaskOption[];
+    if (!prefix) {
+      matches = parentTasks;
+    } else {
+      const prefixMatches = parentTasks.filter((t) => t.title.toLowerCase().startsWith(prefix));
+      const includesMatches = parentTasks.filter(
+        (t) => !t.title.toLowerCase().startsWith(prefix) && t.title.toLowerCase().includes(prefix),
+      );
+      matches = [...prefixMatches, ...includesMatches];
+    }
+
+    return {
+      suggestions: matches.slice(0, 10).map((t) => {
+        const domain = t.domain_id != null ? domains.find((d) => d.id === t.domain_id) : null;
+        return {
+          type: "parent" as const,
+          value: t.id,
+          label: t.title,
+          icon: domain?.icon ?? null,
+          secondaryLabel: domain?.name ?? null,
+        };
+      }),
+      triggerStart,
+      triggerEnd,
+      type: "parent",
     };
   }
 

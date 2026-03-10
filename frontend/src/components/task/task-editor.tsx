@@ -44,6 +44,7 @@ import { useTaskForm } from "@/hooks/use-task-form";
 import { DASHBOARD_TASKS_PARAMS } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { ParentTaskPicker } from "./parent-task-picker";
+import { ParentTaskSelect } from "./parent-task-select";
 import { RecurrencePicker } from "./recurrence-picker";
 
 interface TaskEditorProps {
@@ -93,8 +94,19 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
         form.handlers.onDescriptionChange(d);
         form.markDirty();
       },
+      onParent: (id: number) => {
+        form.handlers.onParentChange(id);
+        // Auto-sync domain to parent's domain
+        const parent = parentTasks?.find((t) => t.id === id);
+        if (parent?.domain_id != null && parent.domain_id !== form.values.domainId) {
+          form.handlers.onDomainChange(parent.domain_id);
+          setDomainFlash(true);
+          setTimeout(() => setDomainFlash(false), 650);
+        }
+        form.markDirty();
+      },
     }),
-    [form.handlers, form.markDirty],
+    [form.handlers, form.markDirty, form.values.domainId, parentTasks],
   );
 
   const {
@@ -106,7 +118,7 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     acSelectedIndex,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
-  } = useSmartInputConsumer(domains, smartCallbacks);
+  } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks);
 
   // Auto-resize title textarea
   const resizeTitle = useCallback(() => {
@@ -223,23 +235,47 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
               />
             </EditorFieldRow>
 
-            {/* Parent task (edit mode only — immediate apply with undo) */}
-            {form.isEdit && task && parentTasks && parentTasks.length > 0 && (
-              <EditorFieldRow label={t("task.field.parent")}>
-                <ParentTaskPicker
-                  task={task}
-                  parentTasks={parentTasks}
-                  domains={domains}
-                  onParentChanged={(parentDomainId) => {
-                    // Auto-sync domain to match parent's domain
-                    if (parentDomainId !== null && parentDomainId !== form.values.domainId) {
-                      form.handlers.onDomainChange(parentDomainId);
-                      setDomainFlash(true);
-                      setTimeout(() => setDomainFlash(false), 650);
+            {/* Parent task — edit mode: immediate apply; create mode: form state */}
+            {parentTasks && parentTasks.length > 0 && (
+              <EditorFieldRow label={t("task.field.parent")} flash={flashTarget === "parent"}>
+                {form.isEdit && task ? (
+                  <ParentTaskPicker
+                    task={task}
+                    parentTasks={parentTasks}
+                    domains={domains}
+                    onParentChanged={(parentDomainId) => {
+                      // Auto-sync domain to match parent's domain
+                      if (parentDomainId !== null && parentDomainId !== form.values.domainId) {
+                        form.handlers.onDomainChange(parentDomainId);
+                        setDomainFlash(true);
+                        setTimeout(() => setDomainFlash(false), 650);
+                        form.markDirty();
+                      }
+                    }}
+                  />
+                ) : (
+                  <ParentTaskSelect
+                    selectedId={form.values.parentId}
+                    parentTasks={parentTasks}
+                    domains={domains}
+                    onChange={(parentId) => {
+                      form.handlers.onParentChange(parentId);
+                      // Auto-sync domain to parent's domain
+                      if (parentId !== null) {
+                        const parent = parentTasks?.find((t) => t.id === parentId);
+                        if (
+                          parent?.domain_id != null &&
+                          parent.domain_id !== form.values.domainId
+                        ) {
+                          form.handlers.onDomainChange(parent.domain_id);
+                          setDomainFlash(true);
+                          setTimeout(() => setDomainFlash(false), 650);
+                        }
+                      }
                       form.markDirty();
-                    }
-                  }}
-                />
+                    }}
+                  />
+                )}
               </EditorFieldRow>
             )}
 

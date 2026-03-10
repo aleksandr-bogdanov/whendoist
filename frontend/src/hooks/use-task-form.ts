@@ -107,6 +107,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState<number | null>(
     task?.reminder_minutes_before ?? null,
   );
+  const [parentId, setParentId] = useState<number | null>(task?.parent_id ?? null);
   const [dirty, setDirty] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -130,6 +131,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
       setRecurrenceStart(task.recurrence_start ?? null);
       setRecurrenceEnd(task.recurrence_end ?? null);
       setReminderMinutesBefore(task.reminder_minutes_before ?? null);
+      setParentId(task.parent_id ?? null);
     } else {
       setTitle("");
       setDescription("");
@@ -144,6 +146,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
       setRecurrenceStart(null);
       setRecurrenceEnd(null);
       setReminderMinutesBefore(null);
+      setParentId(null);
     }
     setDirty(false);
     setShowDeleteConfirm(false);
@@ -188,6 +191,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
         title: encrypted.title,
         description: encrypted.description,
         domain_id: domainId,
+        parent_id: parentId,
         impact,
         clarity,
         duration_minutes: durationMinutes,
@@ -223,6 +227,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
         title: encrypted.title!,
         description: encrypted.description,
         domain_id: domainId,
+        parent_id: parentId,
         impact,
         clarity,
         duration_minutes: durationMinutes,
@@ -255,6 +260,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
     title,
     description,
     domainId,
+    parentId,
     impact,
     clarity,
     durationMinutes,
@@ -370,6 +376,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
     title,
     description,
     domainId,
+    parentId,
     impact,
     clarity,
     durationMinutes,
@@ -389,6 +396,7 @@ export function useTaskForm({ task, onDone }: UseTaskFormOptions): UseTaskFormRe
       onTitleChange: setTitle,
       onDescriptionChange: setDescription,
       onDomainChange: setDomainId,
+      onParentChange: setParentId,
       onImpactChange: setImpact,
       onClarityChange: setClarity,
       onDurationChange: setDurationMinutes,

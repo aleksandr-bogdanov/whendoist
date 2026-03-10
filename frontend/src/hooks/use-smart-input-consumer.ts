@@ -15,6 +15,7 @@ import { handleAutocompleteKeyDown } from "@/hooks/use-autocomplete-nav";
 import {
   type AutocompleteSuggestion,
   getAutocompleteSuggestions,
+  type ParentTaskOption,
   type ParsedTaskMetadata,
   parseTaskInput,
 } from "@/lib/task-parser";
@@ -26,6 +27,7 @@ export type FlashTarget =
   | "duration"
   | "schedule"
   | "description"
+  | "parent"
   | null;
 
 export interface SmartInputConsumerCallbacks {
@@ -36,12 +38,14 @@ export interface SmartInputConsumerCallbacks {
   onScheduledDate?: (date: string) => void;
   onScheduledTime?: (time: string) => void;
   onDescription?: (desc: string) => void;
+  onParent?: (parentId: number, parentName: string) => void;
 }
 
 export function useSmartInputConsumer(
   domains: DomainResponse[],
   callbacks: SmartInputConsumerCallbacks,
   initialTitle?: string,
+  parentTasks?: ParentTaskOption[],
 ) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const [flashTarget, setFlashTarget] = useState<FlashTarget>(null);
@@ -52,7 +56,7 @@ export function useSmartInputConsumer(
   // as "previously seen" and won't be consumed on the first edit keystroke.
   const baselineSeeded = useRef(false);
   if (initialTitle && !baselineSeeded.current) {
-    prevParseRef.current = parseTaskInput(initialTitle, domains);
+    prevParseRef.current = parseTaskInput(initialTitle, domains, undefined, parentTasks);
     baselineSeeded.current = true;
   }
 
@@ -77,7 +81,7 @@ export function useSmartInputConsumer(
    */
   const processTitle = useCallback(
     (rawTitle: string): string => {
-      const parsed = parseTaskInput(rawTitle, domains);
+      const parsed = parseTaskInput(rawTitle, domains, undefined, parentTasks);
       const prev = prevParseRef.current;
 
       let cleanTitle = rawTitle;
@@ -122,6 +126,11 @@ export function useSmartInputConsumer(
         flash("description");
         consumed = true;
       }
+      if (parsed.parentId !== null && parsed.parentId !== prev?.parentId) {
+        callbacks.onParent?.(parsed.parentId, parsed.parentName ?? "");
+        flash("parent");
+        consumed = true;
+      }
 
       if (consumed) {
         // Use the parser's clean title (tokens stripped)
@@ -130,11 +139,13 @@ export function useSmartInputConsumer(
 
       // Update prev parse — but with a "clean" version so we don't re-trigger
       // on the same tokens
-      prevParseRef.current = consumed ? parseTaskInput(cleanTitle, domains) : parsed;
+      prevParseRef.current = consumed
+        ? parseTaskInput(cleanTitle, domains, undefined, parentTasks)
+        : parsed;
 
       // Autocomplete detection
       const cursorPos = titleRef.current?.selectionStart ?? rawTitle.length;
-      const acResult = getAutocompleteSuggestions(rawTitle, cursorPos, domains);
+      const acResult = getAutocompleteSuggestions(rawTitle, cursorPos, domains, parentTasks);
       if (acResult && acResult.suggestions.length > 0) {
         setAcSuggestions(acResult.suggestions);
         setAcTriggerInfo({
@@ -150,16 +161,25 @@ export function useSmartInputConsumer(
 
       return consumed ? cleanTitle : rawTitle;
     },
-    [domains, callbacks, flash],
+    [domains, callbacks, flash, parentTasks],
   );
 
   const handleAcSelect = useCallback(
     (suggestion: AutocompleteSuggestion, currentTitle: string): string => {
       if (!acTriggerInfo) return currentTitle;
 
-      const prefix = suggestion.type === "domain" ? "#" : suggestion.type === "impact" ? "!" : "?";
+      const prefix =
+        suggestion.type === "domain"
+          ? "#"
+          : suggestion.type === "impact"
+            ? "!"
+            : suggestion.type === "parent"
+              ? "^"
+              : "?";
       const insertText =
-        suggestion.type === "domain" ? suggestion.label : suggestion.label.toLowerCase();
+        suggestion.type === "domain" || suggestion.type === "parent"
+          ? suggestion.label
+          : suggestion.label.toLowerCase();
       const before = currentTitle.slice(0, acTriggerInfo.start);
       const after = currentTitle.slice(acTriggerInfo.end);
       const newTitle = `${before}${prefix}${insertText} ${after}`;

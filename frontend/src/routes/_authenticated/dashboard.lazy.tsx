@@ -682,7 +682,12 @@ function DashboardPage() {
         />
 
         {/* Quick Add Dialog */}
-        <TaskQuickAdd open={quickAddOpen} onOpenChange={setQuickAddOpen} domains={safedomains} />
+        <TaskQuickAdd
+          open={quickAddOpen}
+          onOpenChange={setQuickAddOpen}
+          domains={safedomains}
+          parentTasks={parentTasks}
+        />
 
         {/* Mobile gesture hints (first-time only) */}
         <GestureDiscovery />

@@ -37,12 +37,14 @@ import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
 import { hasLinks } from "@/lib/rich-text-parser";
 import { cn } from "@/lib/utils";
 import { ParentTaskPicker } from "./parent-task-picker";
+import { ParentTaskSelect } from "./parent-task-select";
 import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
 
 export interface TaskFieldValues {
   title: string;
   description: string;
   domainId: number | null;
+  parentId: number | null;
   impact: number;
   clarity: string;
   durationMinutes: number | null;
@@ -59,6 +61,7 @@ export interface TaskFieldHandlers {
   onTitleChange: (title: string) => void;
   onDescriptionChange: (description: string) => void;
   onDomainChange: (domainId: number | null) => void;
+  onParentChange: (parentId: number | null) => void;
   onImpactChange: (impact: number) => void;
   onClarityChange: (clarity: string) => void;
   onDurationChange: (minutes: number | null) => void;
@@ -225,22 +228,42 @@ export function TaskFieldsBody({
         />
       </FieldRow>
 
-      {/* Parent task (edit mode only) */}
-      {task && parentTasks && parentTasks.length > 0 && (
-        <FieldRow label={t("task.field.parent")}>
-          <ParentTaskPicker
-            task={task}
-            parentTasks={parentTasks}
-            domains={domains}
-            onParentChanged={(parentDomainId) => {
-              if (parentDomainId !== null && parentDomainId !== values.domainId) {
-                handlers.onDomainChange(parentDomainId);
-                setDomainFlash(true);
-                setTimeout(() => setDomainFlash(false), 650);
+      {/* Parent task — edit mode: immediate apply; create mode: form state */}
+      {parentTasks && parentTasks.length > 0 && (
+        <FieldRow label={t("task.field.parent")} flash={flashTarget === "parent"}>
+          {task ? (
+            <ParentTaskPicker
+              task={task}
+              parentTasks={parentTasks}
+              domains={domains}
+              onParentChanged={(parentDomainId) => {
+                if (parentDomainId !== null && parentDomainId !== values.domainId) {
+                  handlers.onDomainChange(parentDomainId);
+                  setDomainFlash(true);
+                  setTimeout(() => setDomainFlash(false), 650);
+                  markDirty();
+                }
+              }}
+            />
+          ) : (
+            <ParentTaskSelect
+              selectedId={values.parentId}
+              parentTasks={parentTasks}
+              domains={domains}
+              onChange={(parentId) => {
+                handlers.onParentChange(parentId);
+                if (parentId !== null) {
+                  const parent = parentTasks?.find((t) => t.id === parentId);
+                  if (parent?.domain_id != null && parent.domain_id !== values.domainId) {
+                    handlers.onDomainChange(parent.domain_id);
+                    setDomainFlash(true);
+                    setTimeout(() => setDomainFlash(false), 650);
+                  }
+                }
                 markDirty();
-              }
-            }}
-          />
+              }}
+            />
+          )}
         </FieldRow>
       )}
 
