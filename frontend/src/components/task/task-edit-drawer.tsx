@@ -248,6 +248,7 @@ function DrawerBody({
     acTriggerPrefix,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
+    closeAc,
   } = useSmartInputConsumer(
     domains,
     smartCallbacks,
@@ -330,12 +331,17 @@ function DrawerBody({
             value={form.values.title}
             onChange={handleTitleChange}
             onKeyDown={handleTitleKeyDown}
+            onBlur={closeAc}
             placeholder={t("task.field.titlePlaceholder")}
             className="w-full text-base bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden border-b border-border/40 focus:border-primary transition-colors"
             rows={1}
           />
           {acVisible && acTriggerType === "parent" && parentTasks.length > 0 ? (
-            <div className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md">
+            <div
+              role="listbox"
+              className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md"
+              onMouseDown={(e) => e.preventDefault()}
+            >
               <ParentTaskDropdown
                 parentTasks={parentTasks}
                 domains={domains}

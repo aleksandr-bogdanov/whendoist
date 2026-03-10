@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.18 — 2026-03-10
+
+### Fix: ^ parent autocomplete popup closes on click-outside
+
+- Added `closeAc` callback to both smart input hooks (`useSmartInput`, `useSmartInputConsumer`)
+- Wired `onBlur={closeAc}` on all input/textarea elements that render the ParentTaskDropdown
+- Added `onMouseDown preventDefault` on dropdown wrapper to prevent blur when clicking inside
+- Fixed `processTitle` autocomplete detection to use cleaned title after token consumption (prevents popup from re-opening after selecting a parent)
+
 ## v0.65.17 — 2026-03-10
 
 ### Refactor: Unified two-level parent task picker

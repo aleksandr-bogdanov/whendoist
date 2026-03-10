@@ -198,6 +198,9 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
     ? rawInput.slice(acTriggerInfo.start + 1, acTriggerInfo.end)
     : "";
 
+  /** Dismiss the autocomplete popup (e.g. on blur / click-outside). */
+  const closeAc = useCallback(() => setAcVisible(false), []);
+
   return {
     // Refs
     inputRef,
@@ -218,5 +221,6 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
     tapToken,
     setInput,
     reset,
+    closeAc,
   };
 }
