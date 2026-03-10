@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.19 — 2026-03-10
+
+### Fix: Inline add-task autocomplete not clipped by domain border
+
+- Toggle `overflow-hidden` → `overflow-visible` on domain group Collapsible when autocomplete is active
+- Dropdown now renders above the input without being cropped
+
 ## v0.65.18 — 2026-03-10
 
 ### Fix: ^ parent autocomplete popup closes on click-outside
