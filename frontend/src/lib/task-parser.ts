@@ -521,6 +521,7 @@ export function getAutocompleteSuggestions(
   cursorPos: number,
   domains: DomainResponse[],
   parentTasks?: ParentTaskOption[],
+  currentDomainId?: number | null,
 ): AutocompleteResult | null {
   // Scan backwards from cursor to find trigger character
   let i = cursorPos - 1;
@@ -603,8 +604,14 @@ export function getAutocompleteSuggestions(
     // Group by domain (matching ParentTaskSelect visual)
     const domainMap = new Map(domains.map((d) => [d.id, d]));
 
-    // Sort: by domain position, then parents-with-children first, then alphabetically
+    // Sort: current domain first, then by domain position, then parents-with-children first
     matches.sort((a, b) => {
+      // Current domain always first (matching ParentTaskSelect)
+      if (currentDomainId != null) {
+        const aIsCurrent = a.domain_id === currentDomainId;
+        const bIsCurrent = b.domain_id === currentDomainId;
+        if (aIsCurrent !== bIsCurrent) return aIsCurrent ? -1 : 1;
+      }
       const da = a.domain_id != null ? domainMap.get(a.domain_id) : null;
       const db = b.domain_id != null ? domainMap.get(b.domain_id) : null;
       const posA = da?.position ?? 999;

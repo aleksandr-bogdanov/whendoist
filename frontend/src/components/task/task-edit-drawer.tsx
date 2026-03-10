@@ -255,7 +255,13 @@ function DrawerBody({
     acSelectedIndex,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
-  } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks);
+  } = useSmartInputConsumer(
+    domains,
+    smartCallbacks,
+    task?.title,
+    parentTasks,
+    form.values.domainId,
+  );
 
   // Auto-resize title textarea
   const resizeTitle = useCallback(() => {

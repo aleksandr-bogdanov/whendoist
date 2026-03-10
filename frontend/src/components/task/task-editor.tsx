@@ -118,7 +118,13 @@ export function TaskEditor({ open, onOpenChange, task, domains, parentTasks }: T
     acSelectedIndex,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
-  } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks);
+  } = useSmartInputConsumer(
+    domains,
+    smartCallbacks,
+    task?.title,
+    parentTasks,
+    form.values.domainId,
+  );
 
   // Auto-resize title textarea
   const resizeTitle = useCallback(() => {

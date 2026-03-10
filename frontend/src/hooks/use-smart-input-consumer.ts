@@ -46,6 +46,7 @@ export function useSmartInputConsumer(
   callbacks: SmartInputConsumerCallbacks,
   initialTitle?: string,
   parentTasks?: ParentTaskOption[],
+  currentDomainId?: number | null,
 ) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const [flashTarget, setFlashTarget] = useState<FlashTarget>(null);
@@ -145,7 +146,13 @@ export function useSmartInputConsumer(
 
       // Autocomplete detection
       const cursorPos = titleRef.current?.selectionStart ?? rawTitle.length;
-      const acResult = getAutocompleteSuggestions(rawTitle, cursorPos, domains, parentTasks);
+      const acResult = getAutocompleteSuggestions(
+        rawTitle,
+        cursorPos,
+        domains,
+        parentTasks,
+        currentDomainId,
+      );
       if (acResult && acResult.suggestions.length > 0) {
         setAcSuggestions(acResult.suggestions);
         setAcTriggerInfo({
@@ -161,7 +168,7 @@ export function useSmartInputConsumer(
 
       return consumed ? cleanTitle : rawTitle;
     },
-    [domains, callbacks, flash, parentTasks],
+    [domains, callbacks, flash, parentTasks, currentDomainId],
   );
 
   const handleAcSelect = useCallback(
