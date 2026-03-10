@@ -99,7 +99,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
           className="py-1.5 space-y-1"
           style={{ marginLeft: `${depth * 24}px`, paddingLeft: 12 }}
         >
-          <div className="relative">
+          <div className={`relative ${acVisible ? "z-50" : ""}`}>
             <input
               ref={inputRef}
               type="text"
