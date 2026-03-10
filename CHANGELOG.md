@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.12 — 2026-03-10
+
+### Feat: Bare number priority syntax `!1`-`!4` + task parser test suite
+
+- `!1`, `!2`, `!3`, `!4` now work as priority shortcuts (interchangeable with `!high`/`!mid`/`!low`/`!min` and `!p1`-`!p4`), mimicking Todoist behavior
+- Autocomplete dropdown shows the matching priority when typing a bare digit (e.g. `!1` → High)
+- Added Vitest test infrastructure to frontend (`npm test` / `npm run test:watch`)
+- Added 104 comprehensive tests for the smart input parser: impact, clarity, duration, domain, parent, description, date/time, autocomplete, and edge cases
+
+---
+
 ## v0.65.11 — 2026-03-10
 
 ### Feat: Parent task selector in new task creation + `^` smart token
