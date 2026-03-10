@@ -193,6 +193,11 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
     [domains, parentTasks],
   );
 
+  // Compute the trigger prefix (text typed after the trigger character)
+  const acTriggerPrefix = acTriggerInfo
+    ? rawInput.slice(acTriggerInfo.start + 1, acTriggerInfo.end)
+    : "";
+
   return {
     // Refs
     inputRef,
@@ -203,6 +208,8 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
     acVisible,
     acSuggestions,
     acSelectedIndex,
+    acTriggerType: acTriggerInfo?.type ?? null,
+    acTriggerPrefix,
     // Handlers
     handleInputChange,
     handleAcSelect,

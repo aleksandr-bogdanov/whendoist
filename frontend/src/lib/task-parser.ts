@@ -521,7 +521,7 @@ export function getAutocompleteSuggestions(
   cursorPos: number,
   domains: DomainResponse[],
   parentTasks?: ParentTaskOption[],
-  currentDomainId?: number | null,
+  _currentDomainId?: number | null,
 ): AutocompleteResult | null {
   // Scan backwards from cursor to find trigger character
   let i = cursorPos - 1;
@@ -590,6 +590,7 @@ export function getAutocompleteSuggestions(
   if (triggerChar === "^") {
     if (!parentTasks || parentTasks.length === 0) return null;
 
+    // Filter by typed prefix
     let matches: ParentTaskOption[];
     if (!prefix) {
       matches = parentTasks;
@@ -601,48 +602,15 @@ export function getAutocompleteSuggestions(
       matches = [...prefixMatches, ...includesMatches];
     }
 
-    // Group by domain (matching ParentTaskSelect visual)
-    const domainMap = new Map(domains.map((d) => [d.id, d]));
+    // Simple alphabetical sort — visual grouping by domain is handled by ParentTaskDropdown
+    matches.sort((a, b) => a.title.localeCompare(b.title));
 
-    // Sort: current domain first, then by domain position, then parents-with-children first
-    matches.sort((a, b) => {
-      // Current domain always first (matching ParentTaskSelect)
-      if (currentDomainId != null) {
-        const aIsCurrent = a.domain_id === currentDomainId;
-        const bIsCurrent = b.domain_id === currentDomainId;
-        if (aIsCurrent !== bIsCurrent) return aIsCurrent ? -1 : 1;
-      }
-      const da = a.domain_id != null ? domainMap.get(a.domain_id) : null;
-      const db = b.domain_id != null ? domainMap.get(b.domain_id) : null;
-      const posA = da?.position ?? 999;
-      const posB = db?.position ?? 999;
-      if (posA !== posB) return posA - posB;
-      // Within same domain: tasks with subtasks first, then alphabetical
-      const scA = (a as { subtasks?: unknown[] }).subtasks?.length ?? 0;
-      const scB = (b as { subtasks?: unknown[] }).subtasks?.length ?? 0;
-      if (scA > 0 !== scB > 0) return scA > 0 ? -1 : 1;
-      return a.title.localeCompare(b.title);
-    });
-
-    // Build suggestions with group labels
-    let lastGroupLabel = "";
-    const suggestions: AutocompleteSuggestion[] = matches.slice(0, 20).map((t) => {
-      const domain = t.domain_id != null ? domainMap.get(t.domain_id) : null;
-      const groupLabel = domain ? `${domain.icon ?? ""} ${domain.name}`.trim() : "";
-      const showGroup = groupLabel !== lastGroupLabel;
-      lastGroupLabel = groupLabel;
-
-      const subtaskCount = (t as { subtasks?: unknown[] }).subtasks?.length ?? 0;
-
-      return {
-        type: "parent" as const,
-        value: t.id,
-        label: t.title,
-        icon: domain?.icon ?? null,
-        groupLabel: showGroup ? groupLabel : null,
-        badge: subtaskCount > 0 ? `·${subtaskCount}` : null,
-      };
-    });
+    // Minimal suggestions for keyboard nav (visual rendering is in ParentTaskDropdown)
+    const suggestions: AutocompleteSuggestion[] = matches.slice(0, 20).map((t) => ({
+      type: "parent" as const,
+      value: t.id,
+      label: t.title,
+    }));
 
     return { suggestions, triggerStart, triggerEnd, type: "parent" };
   }

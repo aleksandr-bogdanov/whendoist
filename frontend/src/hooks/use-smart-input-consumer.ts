@@ -213,6 +213,11 @@ export function useSmartInputConsumer(
     [acVisible, acSuggestions, acSelectedIndex],
   );
 
+  // Compute the trigger prefix (text typed after the trigger character)
+  const acTriggerPrefix = acTriggerInfo
+    ? (titleRef.current?.value ?? "").slice(acTriggerInfo.start + 1, acTriggerInfo.end)
+    : "";
+
   return {
     titleRef,
     flashTarget,
@@ -221,6 +226,8 @@ export function useSmartInputConsumer(
     acVisible,
     acSuggestions,
     acSelectedIndex,
+    acTriggerType: acTriggerInfo?.type ?? null,
+    acTriggerPrefix,
     handleAcSelect,
     handleKeyDown,
   };

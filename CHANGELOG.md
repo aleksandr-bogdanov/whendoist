@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.17 — 2026-03-10
+
+### Refactor: Unified two-level parent task picker
+
+- New shared `ParentTaskDropdown` component with domain chips (level 1) + filtered task list (level 2)
+- Replaces 5 separate parent picker implementations (desktop select, desktop picker, 2 mobile drawers, ^ autocomplete)
+- Domain chips pre-select the task's current domain; "All" tab shows all domains
+- `^` smart input autocomplete now renders the two-level dropdown instead of a flat grouped list
+- Simplified `getAutocompleteSuggestions` ^ branch (domain grouping moved to component)
+- Exposed `acTriggerType` and `acTriggerPrefix` from both smart input hooks
+
+---
+
 ## v0.65.16 — 2026-03-10
 
 ### Fix: `^` autocomplete — current domain first, matches ParentTaskSelect
