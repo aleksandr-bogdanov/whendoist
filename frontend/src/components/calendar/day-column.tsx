@@ -14,14 +14,13 @@ import {
   useUncompleteInstanceApiV1InstancesInstanceIdUncompletePost,
   useUnskipInstanceApiV1InstancesInstanceIdUnskipPost,
 } from "@/api/queries/instances/instances";
-import { BatchContextMenuItems } from "@/components/batch/batch-context-menu";
-import { useDndState } from "@/components/task/task-dnd-context";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+  CalendarBatchMenuItems,
+  CalendarContextMenuItem,
+  CalendarContextMenuPortal,
+  useCalendarContextMenu,
+} from "@/components/calendar/calendar-context-menu";
+import { useDndState } from "@/components/task/task-dnd-context";
 import {
   applyDelta,
   type BatchItem,
@@ -808,7 +807,9 @@ function InstanceCard({
     data: { type: "instance", instanceId: instance.id, instance },
   });
 
-  // Gate drag to left-click only — right-click must reach Radix ContextMenu
+  const menu = useCalendarContextMenu();
+
+  // Gate drag to left-click only — right-click must reach context menu
   const dragListeners = {
     ...listeners,
     onPointerDown: (e: React.PointerEvent) => {
@@ -970,101 +971,124 @@ function InstanceCard({
   };
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <div
-          className="absolute"
+    <>
+      <div
+        className="absolute"
+        style={{
+          top: `${item.top}px`,
+          height: `${item.height}px`,
+          width,
+          left,
+        }}
+      >
+        <button
+          ref={setNodeRef}
+          type="button"
+          onContextMenu={menu.handleContextMenu}
+          data-selection-id={selectionId}
+          className={`w-full h-full rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${
+            isSkipped || isCompleted ? "opacity-50" : ""
+          } ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-inset ring-2 ring-primary z-[2]" : ""}`}
           style={{
-            top: `${item.top}px`,
-            height: `${item.height}px`,
-            width,
-            left,
+            backgroundColor: `${impactColor}1A`,
+            borderLeft: `3px solid ${impactColor}`,
           }}
+          title={`${instance.task_title} (recurring)`}
+          onClick={(e) => {
+            if (e.shiftKey) {
+              e.stopPropagation();
+              const additive = e.metaKey || e.ctrlKey;
+              useSelectionStore
+                .getState()
+                .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
+              return;
+            }
+            if (e.metaKey || e.ctrlKey) {
+              e.stopPropagation();
+              useSelectionStore.getState().toggle(selectionId, "calendar");
+              return;
+            }
+            useSelectionStore.getState().clear();
+            onEditSeries?.();
+          }}
+          {...dragListeners}
+          {...attributes}
         >
-          <button
-            ref={setNodeRef}
-            type="button"
-            data-selection-id={selectionId}
-            className={`w-full h-full rounded-md px-1.5 py-0.5 overflow-hidden text-xs text-left cursor-grab active:cursor-grabbing shadow-sm hover:ring-1 hover:ring-primary/50 transition-shadow ${
-              isSkipped || isCompleted ? "opacity-50" : ""
-            } ${isDragging ? "opacity-50 ring-1 ring-primary" : ""} ${dimmed ? "opacity-60" : ""} ${isMultiSelected ? "ring-inset ring-2 ring-primary z-[2]" : ""}`}
-            style={{
-              backgroundColor: `${impactColor}1A`,
-              borderLeft: `3px solid ${impactColor}`,
-            }}
-            title={`${instance.task_title} (recurring)`}
-            onClick={(e) => {
-              if (e.shiftKey) {
-                e.stopPropagation();
-                const additive = e.metaKey || e.ctrlKey;
-                useSelectionStore
-                  .getState()
-                  .selectRange(selectionId, orderedIds ?? [], additive, "calendar");
-                return;
-              }
-              if (e.metaKey || e.ctrlKey) {
-                e.stopPropagation();
-                useSelectionStore.getState().toggle(selectionId, "calendar");
-                return;
-              }
-              useSelectionStore.getState().clear();
-              onEditSeries?.();
-            }}
-            {...dragListeners}
-            {...attributes}
-          >
-            {/* Selection overlay + badge */}
-            {isMultiSelected && (
-              <>
-                <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
-                <div className="absolute top-1/2 -translate-y-1/2 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
-                  <Check className="h-2 w-2" strokeWidth={3} />
-                </div>
-              </>
-            )}
-            <div className="relative">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">&#x21BB;</span>
-                <span
-                  className={`truncate font-medium ${isCompleted || isSkipped ? "line-through decoration-1" : ""}`}
-                  style={{ color: impactColor }}
-                >
-                  {instance.task_title}
-                </span>
+          {/* Selection overlay + badge */}
+          {isMultiSelected && (
+            <>
+              <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+              <div className="absolute top-1/2 -translate-y-1/2 left-1 z-10 flex items-center justify-center h-3.5 w-3.5 rounded-full bg-primary text-primary-foreground pointer-events-none">
+                <Check className="h-2 w-2" strokeWidth={3} />
               </div>
-              {item.height > 28 && (
-                <div className="text-[10px] text-muted-foreground truncate">{timeLabel}</div>
-              )}
+            </>
+          )}
+          <div className="relative">
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">&#x21BB;</span>
+              <span
+                className={`truncate font-medium ${isCompleted || isSkipped ? "line-through decoration-1" : ""}`}
+                style={{ color: impactColor }}
+              >
+                {instance.task_title}
+              </span>
             </div>
-          </button>
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="min-w-[160px]">
+            {item.height > 28 && (
+              <div className="text-[10px] text-muted-foreground truncate">{timeLabel}</div>
+            )}
+          </div>
+        </button>
+      </div>
+      <CalendarContextMenuPortal state={menu}>
         {isMultiSelected ? (
-          <BatchContextMenuItems />
+          <CalendarBatchMenuItems close={menu.close} />
         ) : (
           <>
-            {hasScheduledTime && (
-              <ContextMenuItem onSelect={handleUnschedule} disabled={!isPending}>
+            {hasScheduledTime && isPending && (
+              <CalendarContextMenuItem
+                onSelect={() => {
+                  menu.close();
+                  handleUnschedule();
+                }}
+              >
                 <CalendarOff className="h-3.5 w-3.5 mr-2" />
                 {t("task.action.unschedule")}
-              </ContextMenuItem>
+              </CalendarContextMenuItem>
             )}
-            <ContextMenuItem onSelect={handleSkip} disabled={!isPending}>
-              <SkipForward className="h-3.5 w-3.5 mr-2" />
-              {t("common.skip")}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={handleComplete} disabled={!isPending}>
-              <Check className="h-3.5 w-3.5 mr-2" />
-              {t("task.action.complete")}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={() => onEditSeries?.()}>
+            {isPending && (
+              <CalendarContextMenuItem
+                onSelect={() => {
+                  menu.close();
+                  handleSkip();
+                }}
+              >
+                <SkipForward className="h-3.5 w-3.5 mr-2" />
+                {t("common.skip")}
+              </CalendarContextMenuItem>
+            )}
+            {isPending && (
+              <CalendarContextMenuItem
+                onSelect={() => {
+                  menu.close();
+                  handleComplete();
+                }}
+              >
+                <Check className="h-3.5 w-3.5 mr-2" />
+                {t("task.action.complete")}
+              </CalendarContextMenuItem>
+            )}
+            <CalendarContextMenuItem
+              onSelect={() => {
+                menu.close();
+                onEditSeries?.();
+              }}
+            >
               <Pencil className="h-3.5 w-3.5 mr-2" />
               {t("task.action.editSeries")}
-            </ContextMenuItem>
+            </CalendarContextMenuItem>
           </>
         )}
-      </ContextMenuContent>
-    </ContextMenu>
+      </CalendarContextMenuPortal>
+    </>
   );
 }
