@@ -323,7 +323,7 @@ export function DomainGroup({
           {/* Inline add task */}
           {addingTask ? (
             <div className="px-3 py-1.5 space-y-1">
-              <div className="relative">
+              <div className={`relative ${acVisible ? "z-50" : ""}`}>
                 <input
                   ref={(el) => {
                     (addInputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
