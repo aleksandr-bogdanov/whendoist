@@ -70,6 +70,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains, parentTasks }: TaskQ
     handleKeyDown: handleAcKeyDown,
     reset: resetForm,
     setInput,
+    closeAc,
   } = useSmartInput({ domains, parentTasks });
 
   const {
@@ -159,6 +160,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains, parentTasks }: TaskQ
                 value={rawInput}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
+                onBlur={closeAc}
                 placeholder={t("task.quickAdd.placeholder")}
                 className="flex-1"
                 autoFocus
@@ -183,7 +185,11 @@ export function TaskQuickAdd({ open, onOpenChange, domains, parentTasks }: TaskQ
               )}
             </div>
             {acVisible && acTriggerType === "parent" && parentTasks ? (
-              <div className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md">
+              <div
+                role="listbox"
+                className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md"
+                onMouseDown={(e) => e.preventDefault()}
+              >
                 <ParentTaskDropdown
                   parentTasks={parentTasks}
                   domains={domains}

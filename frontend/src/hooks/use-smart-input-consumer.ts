@@ -144,10 +144,14 @@ export function useSmartInputConsumer(
         ? parseTaskInput(cleanTitle, domains, undefined, parentTasks)
         : parsed;
 
-      // Autocomplete detection
-      const cursorPos = titleRef.current?.selectionStart ?? rawTitle.length;
+      // Autocomplete detection — use clean title when tokens were consumed,
+      // otherwise the consumed token's trigger char would reopen the popup
+      const acInput = consumed ? cleanTitle : rawTitle;
+      const cursorPos = consumed
+        ? cleanTitle.length
+        : (titleRef.current?.selectionStart ?? rawTitle.length);
       const acResult = getAutocompleteSuggestions(
-        rawTitle,
+        acInput,
         cursorPos,
         domains,
         parentTasks,
@@ -218,6 +222,9 @@ export function useSmartInputConsumer(
     ? (titleRef.current?.value ?? "").slice(acTriggerInfo.start + 1, acTriggerInfo.end)
     : "";
 
+  /** Dismiss the autocomplete popup (e.g. on blur / click-outside). */
+  const closeAc = useCallback(() => setAcVisible(false), []);
+
   return {
     titleRef,
     flashTarget,
@@ -230,5 +237,6 @@ export function useSmartInputConsumer(
     acTriggerPrefix,
     handleAcSelect,
     handleKeyDown,
+    closeAc,
   };
 }

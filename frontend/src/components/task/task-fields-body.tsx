@@ -169,6 +169,7 @@ export function TaskFieldsBody({
     acTriggerPrefix,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
+    closeAc,
   } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks, values.domainId);
 
   // Auto-resize title textarea
@@ -213,12 +214,17 @@ export function TaskFieldsBody({
             value={values.title}
             onChange={handleTitleChange}
             onKeyDown={handleTitleKeyDown}
+            onBlur={closeAc}
             placeholder={t("task.field.titlePlaceholder")}
             className="w-full text-sm bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-2 px-3 resize-none overflow-hidden rounded-md border border-input focus:ring-1 focus:ring-ring transition-colors"
             rows={1}
           />
           {acVisible && acTriggerType === "parent" && parentTasks ? (
-            <div className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md">
+            <div
+              role="listbox"
+              className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md"
+              onMouseDown={(e) => e.preventDefault()}
+            >
               <ParentTaskDropdown
                 parentTasks={parentTasks}
                 domains={domains}
