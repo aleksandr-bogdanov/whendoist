@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.13 — 2026-03-10
+
+### Fix: `^` parent autocomplete sorted by domain
+
+- Parent task suggestions in `^` autocomplete now sorted by domain name (grouped), then alphabetically by title within each domain
+- Switched from repeated `domains.find()` to `Map` lookup for efficiency
+
+---
+
 ## v0.65.12 — 2026-03-10
 
 ### Feat: Bare number priority syntax `!1`-`!4` + task parser test suite

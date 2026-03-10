@@ -596,9 +596,20 @@ export function getAutocompleteSuggestions(
       matches = [...prefixMatches, ...includesMatches];
     }
 
+    // Sort by domain name (grouped), then alphabetically by title within each domain
+    const domainMap = new Map(domains.map((d) => [d.id, d]));
+    matches.sort((a, b) => {
+      const da = a.domain_id != null ? domainMap.get(a.domain_id) : null;
+      const db = b.domain_id != null ? domainMap.get(b.domain_id) : null;
+      const nameA = da?.name ?? "";
+      const nameB = db?.name ?? "";
+      if (nameA !== nameB) return nameA.localeCompare(nameB);
+      return a.title.localeCompare(b.title);
+    });
+
     return {
       suggestions: matches.slice(0, 10).map((t) => {
-        const domain = t.domain_id != null ? domains.find((d) => d.id === t.domain_id) : null;
+        const domain = t.domain_id != null ? domainMap.get(t.domain_id) : null;
         return {
           type: "parent" as const,
           value: t.id,
