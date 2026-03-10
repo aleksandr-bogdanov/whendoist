@@ -36,6 +36,7 @@ import { usePasteUrl } from "@/hooks/use-paste-url";
 import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
 import { hasLinks } from "@/lib/rich-text-parser";
 import { cn } from "@/lib/utils";
+import { ParentTaskDropdown } from "./parent-task-dropdown";
 import { ParentTaskPicker } from "./parent-task-picker";
 import { ParentTaskSelect } from "./parent-task-select";
 import { RecurrencePicker, type RecurrenceRule } from "./recurrence-picker";
@@ -164,6 +165,8 @@ export function TaskFieldsBody({
     acVisible,
     acSuggestions,
     acSelectedIndex,
+    acTriggerType,
+    acTriggerPrefix,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
   } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks, values.domainId);
@@ -214,16 +217,47 @@ export function TaskFieldsBody({
             className="w-full text-sm bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-2 px-3 resize-none overflow-hidden rounded-md border border-input focus:ring-1 focus:ring-ring transition-colors"
             rows={1}
           />
-          <SmartInputAutocomplete
-            suggestions={acSuggestions}
-            visible={acVisible}
-            selectedIndex={acSelectedIndex}
-            onSelect={(s) => {
-              const cleaned = handleAcSelect(s, values.title);
-              handlers.onTitleChange(cleaned);
-              markDirty();
-            }}
-          />
+          {acVisible && acTriggerType === "parent" && parentTasks ? (
+            <div className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md">
+              <ParentTaskDropdown
+                parentTasks={parentTasks}
+                domains={domains}
+                currentDomainId={values.domainId}
+                selectedId={values.parentId}
+                excludeTaskId={task?.id}
+                externalSearch={acTriggerPrefix}
+                showSearch={false}
+                onSelect={(taskId) => {
+                  const selected = parentTasks.find((t) => t.id === taskId);
+                  if (selected) {
+                    const suggestion = {
+                      type: "parent" as const,
+                      value: selected.id,
+                      label: selected.title,
+                    };
+                    const cleaned = handleAcSelect(suggestion, values.title);
+                    handlers.onTitleChange(cleaned);
+                    markDirty();
+                  } else {
+                    // "None" selected — clear parent
+                    handlers.onParentChange(null);
+                    markDirty();
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <SmartInputAutocomplete
+              suggestions={acSuggestions}
+              visible={acVisible}
+              selectedIndex={acSelectedIndex}
+              onSelect={(s) => {
+                const cleaned = handleAcSelect(s, values.title);
+                handlers.onTitleChange(cleaned);
+                markDirty();
+              }}
+            />
+          )}
         </div>
       </div>
 

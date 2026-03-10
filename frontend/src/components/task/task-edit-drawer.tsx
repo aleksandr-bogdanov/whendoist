@@ -6,16 +6,7 @@
  */
 
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  CheckCircle,
-  ChevronRight,
-  History,
-  Loader2,
-  RotateCcw,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react";
+import { CheckCircle, ChevronRight, History, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -37,6 +28,7 @@ import {
   ScheduleButtonRow,
   TimePickerField,
 } from "@/components/task/field-pickers";
+import { ParentTaskDropdown } from "@/components/task/parent-task-dropdown";
 import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -54,7 +46,6 @@ import { useSmartInputConsumer } from "@/hooks/use-smart-input-consumer";
 import { useTaskForm } from "@/hooks/use-task-form";
 import { DASHBOARD_TASKS_PARAMS, dashboardTasksKey } from "@/lib/query-keys";
 import { hasLinks } from "@/lib/rich-text-parser";
-import { groupParentTasks } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 
@@ -253,6 +244,8 @@ function DrawerBody({
     acVisible,
     acSuggestions,
     acSelectedIndex,
+    acTriggerType,
+    acTriggerPrefix,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
   } = useSmartInputConsumer(
@@ -341,16 +334,44 @@ function DrawerBody({
             className="w-full text-base bg-transparent outline-none caret-primary placeholder:text-muted-foreground py-1.5 resize-none overflow-hidden border-b border-border/40 focus:border-primary transition-colors"
             rows={1}
           />
-          <SmartInputAutocomplete
-            suggestions={acSuggestions}
-            visible={acVisible}
-            selectedIndex={acSelectedIndex}
-            onSelect={(s) => {
-              const cleaned = handleAcSelect(s, form.values.title);
-              form.handlers.onTitleChange(cleaned);
-              form.markDirty();
-            }}
-          />
+          {acVisible && acTriggerType === "parent" && parentTasks.length > 0 ? (
+            <div className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md">
+              <ParentTaskDropdown
+                parentTasks={parentTasks}
+                domains={domains}
+                currentDomainId={form.values.domainId}
+                selectedId={form.values.parentId}
+                excludeTaskId={task?.id}
+                externalSearch={acTriggerPrefix}
+                showSearch={false}
+                onSelect={(taskId) => {
+                  const selected = parentTasks.find((t) => t.id === taskId);
+                  if (selected) {
+                    const cleaned = handleAcSelect(
+                      { type: "parent", value: selected.id, label: selected.title },
+                      form.values.title,
+                    );
+                    form.handlers.onTitleChange(cleaned);
+                    form.markDirty();
+                  } else {
+                    form.handlers.onParentChange(null);
+                    form.markDirty();
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <SmartInputAutocomplete
+              suggestions={acSuggestions}
+              visible={acVisible}
+              selectedIndex={acSelectedIndex}
+              onSelect={(s) => {
+                const cleaned = handleAcSelect(s, form.values.title);
+                form.handlers.onTitleChange(cleaned);
+                form.markDirty();
+              }}
+            />
+          )}
         </div>
 
         {/* Domain */}
@@ -817,7 +838,6 @@ function ParentPickerDrawer({
   task,
   parentTasks,
   domains,
-  search,
   onSearchChange,
   onParentChanged,
 }: {
@@ -826,7 +846,7 @@ function ParentPickerDrawer({
   task: TaskResponse;
   parentTasks: TaskResponse[];
   domains: DomainResponse[];
-  search: string;
+  search?: string;
   onSearchChange: (s: string) => void;
   onParentChanged: (parentDomainId: number | null) => void;
 }) {
@@ -838,14 +858,6 @@ function ParentPickerDrawer({
   useEffect(() => {
     setCurrentParentId(task.parent_id);
   }, [task.parent_id]);
-
-  const taskGroups = useMemo(
-    () => groupParentTasks(parentTasks, task.domain_id, search, task.id, domains),
-    [parentTasks, task.id, task.domain_id, search, domains],
-  );
-
-  const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
-  const showLabels = !search && taskGroups.length > 1;
 
   const handleSelect = (newParentId: number | null) => {
     if (newParentId === currentParentId) {
@@ -978,82 +990,17 @@ function ParentPickerDrawer({
             {t("task.selectParent")}
           </Drawer.Title>
 
-          {/* Search */}
-          <div className="flex items-center gap-2 px-4 pb-2">
-            <div className="flex-1 flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-              <input
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={t("task.searchTasks")}
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => onSearchChange("")}
-                  className="p-1 text-muted-foreground active:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Task list */}
-          <div className="overflow-y-auto px-2 pb-8 space-y-0.5">
-            <button
-              type="button"
-              className={cn(
-                "w-full px-3 py-2.5 text-left text-sm rounded-lg transition-colors",
-                currentParentId === null && "bg-accent font-medium",
-              )}
-              onClick={() => handleSelect(null)}
-            >
-              {t("task.field.noneTopLevel")}
-            </button>
-
-            {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
-
-            {taskGroups.map((group, gi) => (
-              <div key={group.label}>
-                {gi > 0 && <div className="h-px bg-border mx-2 my-1" />}
-                {showLabels && (
-                  <div className="px-3 pt-2 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {group.label}
-                  </div>
-                )}
-                {group.tasks.map((t) => {
-                  const domain = t.domain_id ? domains.find((d) => d.id === t.domain_id) : null;
-                  const subtaskCount = t.subtasks?.length ?? 0;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className={cn(
-                        "w-full px-3 py-2.5 text-left text-sm rounded-lg flex items-center gap-2 transition-colors",
-                        currentParentId === t.id && "bg-accent font-medium",
-                      )}
-                      onClick={() => handleSelect(t.id)}
-                    >
-                      {domain?.icon && <span className="shrink-0">{domain.icon}</span>}
-                      <span className="truncate">{t.title}</span>
-                      {subtaskCount > 0 && (
-                        <span className="shrink-0 text-[10px] text-muted-foreground ml-auto">
-                          ·{subtaskCount}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
-
-            {totalFiltered === 0 && search && (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-                {t("task.noMatchingTasks")}
-              </div>
-            )}
+          <div className="overflow-y-auto pb-8">
+            <ParentTaskDropdown
+              parentTasks={parentTasks}
+              domains={domains}
+              currentDomainId={task.domain_id}
+              selectedId={currentParentId}
+              excludeTaskId={task.id}
+              onSelect={handleSelect}
+              showSearch
+              className="max-h-none [&>div:last-child]:max-h-none"
+            />
           </div>
         </Drawer.Content>
       </Drawer.Portal>
@@ -1071,7 +1018,6 @@ function CreateParentPickerDrawer({
   selectedParentId,
   parentTasks,
   domains,
-  search,
   onSearchChange,
   onSelect,
 }: {
@@ -1080,19 +1026,11 @@ function CreateParentPickerDrawer({
   selectedParentId: number | null;
   parentTasks: TaskResponse[];
   domains: DomainResponse[];
-  search: string;
+  search?: string;
   onSearchChange: (s: string) => void;
   onSelect: (parentId: number | null) => void;
 }) {
   const { t } = useTranslation();
-
-  const taskGroups = useMemo(
-    () => groupParentTasks(parentTasks, null, search, undefined, domains),
-    [parentTasks, search, domains],
-  );
-
-  const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
-  const showLabels = !search && taskGroups.length > 1;
 
   const handleSelect = (parentId: number | null) => {
     onSelect(parentId);
@@ -1116,80 +1054,15 @@ function CreateParentPickerDrawer({
             {t("task.selectParent")}
           </Drawer.Title>
 
-          <div className="flex items-center gap-2 px-4 pb-2">
-            <div className="flex-1 flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-              <input
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={t("task.searchTasks")}
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => onSearchChange("")}
-                  className="p-1 text-muted-foreground active:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="overflow-y-auto px-2 pb-8 space-y-0.5">
-            <button
-              type="button"
-              className={cn(
-                "w-full px-3 py-2.5 text-left text-sm rounded-lg transition-colors",
-                selectedParentId === null && "bg-accent font-medium",
-              )}
-              onClick={() => handleSelect(null)}
-            >
-              {t("task.field.noneTopLevel")}
-            </button>
-
-            {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
-
-            {taskGroups.map((group, gi) => (
-              <div key={group.label}>
-                {gi > 0 && <div className="h-px bg-border mx-2 my-1" />}
-                {showLabels && (
-                  <div className="px-3 pt-2 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {group.label}
-                  </div>
-                )}
-                {group.tasks.map((t) => {
-                  const domain = t.domain_id ? domains.find((d) => d.id === t.domain_id) : null;
-                  const subtaskCount = t.subtasks?.length ?? 0;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className={cn(
-                        "w-full px-3 py-2.5 text-left text-sm rounded-lg flex items-center gap-2 transition-colors",
-                        selectedParentId === t.id && "bg-accent font-medium",
-                      )}
-                      onClick={() => handleSelect(t.id)}
-                    >
-                      {domain?.icon && <span className="shrink-0">{domain.icon}</span>}
-                      <span className="truncate">{t.title}</span>
-                      {subtaskCount > 0 && (
-                        <span className="shrink-0 text-[10px] text-muted-foreground ml-auto">
-                          ·{subtaskCount}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
-
-            {totalFiltered === 0 && search && (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-                {t("task.noMatchingTasks")}
-              </div>
-            )}
+          <div className="overflow-y-auto pb-8">
+            <ParentTaskDropdown
+              parentTasks={parentTasks}
+              domains={domains}
+              selectedId={selectedParentId}
+              onSelect={handleSelect}
+              showSearch
+              className="max-h-none [&>div:last-child]:max-h-none"
+            />
           </div>
         </Drawer.Content>
       </Drawer.Portal>

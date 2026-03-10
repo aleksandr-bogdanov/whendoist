@@ -109,6 +109,7 @@
   "task.selectParent": "Select parent task",
   "task.searchTasks": "Search tasks...",
   "task.noMatchingTasks": "No matching tasks",
+  "task.allDomains": "All",
   "task.placeholder.taskTitle": "Task title... (#domain !high 30m)",
   "task.action.addTask": "Add task",
   "task.changeParent": "Change parent task",

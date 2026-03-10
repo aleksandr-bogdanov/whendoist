@@ -2,6 +2,7 @@ import { Loader2, Mic, MicOff, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
+import { ParentTaskDropdown } from "@/components/task/parent-task-dropdown";
 import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,6 +62,8 @@ export function TaskQuickAdd({ open, onOpenChange, domains, parentTasks }: TaskQ
     acVisible,
     acSuggestions,
     acSelectedIndex,
+    acTriggerType,
+    acTriggerPrefix,
     handleInputChange,
     handleAcSelect,
     handleDismissToken,
@@ -179,12 +182,35 @@ export function TaskQuickAdd({ open, onOpenChange, domains, parentTasks }: TaskQ
                 </Button>
               )}
             </div>
-            <SmartInputAutocomplete
-              suggestions={acSuggestions}
-              visible={acVisible}
-              selectedIndex={acSelectedIndex}
-              onSelect={handleAcSelect}
-            />
+            {acVisible && acTriggerType === "parent" && parentTasks ? (
+              <div className="absolute left-0 right-0 z-50 top-full mt-1 rounded-md border bg-popover text-popover-foreground shadow-md">
+                <ParentTaskDropdown
+                  parentTasks={parentTasks}
+                  domains={domains}
+                  currentDomainId={parsed.domainId}
+                  selectedId={parsed.parentId}
+                  externalSearch={acTriggerPrefix}
+                  showSearch={false}
+                  onSelect={(taskId) => {
+                    const selected = parentTasks.find((t) => t.id === taskId);
+                    if (selected) {
+                      handleAcSelect({
+                        type: "parent",
+                        value: selected.id,
+                        label: selected.title,
+                      });
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <SmartInputAutocomplete
+                suggestions={acSuggestions}
+                visible={acVisible}
+                selectedIndex={acSelectedIndex}
+                onSelect={handleAcSelect}
+              />
+            )}
           </div>
 
           {/* Metadata pills */}
