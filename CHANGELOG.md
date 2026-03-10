@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.14 — 2026-03-10
+
+### Fix: `^` parent token in desktop editor title
+
+- Wired `parentTasks` and `onParent` callback in `TaskFieldsBody` (used by `TaskDetailPanel`)
+- `^` token now triggers parent task autocomplete in desktop edit/create title fields, matching quick add and mobile drawer behavior
+- Auto-syncs child domain to parent's domain on selection
+
+---
+
 ## v0.65.13 — 2026-03-10
 
 ### Fix: `^` parent autocomplete sorted by domain
