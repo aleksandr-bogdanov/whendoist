@@ -45,6 +45,9 @@ export function SmartInputAutocomplete({
         >
           {s.icon && <span className="shrink-0">{s.icon}</span>}
           <span className={s.colorClass ?? ""}>{s.label}</span>
+          {s.secondaryLabel && (
+            <span className="text-muted-foreground text-[11px]">· {s.secondaryLabel}</span>
+          )}
           {i === selectedIndex && (
             <span className="ml-auto text-[10px] text-muted-foreground">Enter</span>
           )}

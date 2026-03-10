@@ -5,6 +5,7 @@ import {
   type AutocompleteSuggestion,
   EMPTY_PARSED,
   getAutocompleteSuggestions,
+  type ParentTaskOption,
   type ParsedTaskMetadata,
   type ParsedToken,
   parseTaskInput,
@@ -13,18 +14,22 @@ import {
 export interface UseSmartInputOptions {
   initialInput?: string;
   domains: DomainResponse[];
+  parentTasks?: ParentTaskOption[];
 }
 
 export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement = HTMLInputElement>({
   initialInput = "",
   domains,
+  parentTasks,
 }: UseSmartInputOptions) {
   const inputRef = useRef<E>(null);
 
   // Core state
   const [rawInput, setRawInput] = useState(initialInput);
   const [parsed, setParsed] = useState<ParsedTaskMetadata>(() =>
-    initialInput ? parseTaskInput(initialInput, domains) : { ...EMPTY_PARSED },
+    initialInput
+      ? parseTaskInput(initialInput, domains, undefined, parentTasks)
+      : { ...EMPTY_PARSED },
   );
   const [dismissedTokens, setDismissedTokens] = useState<Map<string, string>>(new Map());
 
@@ -63,12 +68,12 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
       setDismissedTokens(stillValid);
 
       // Parse metadata
-      const result = parseTaskInput(value, domains, new Set(stillValid.keys()));
+      const result = parseTaskInput(value, domains, new Set(stillValid.keys()), parentTasks);
       setParsed(result);
 
       // Check for autocomplete trigger
       const cursorPos = e.target.selectionStart ?? value.length;
-      const acResult = getAutocompleteSuggestions(value, cursorPos, domains);
+      const acResult = getAutocompleteSuggestions(value, cursorPos, domains, parentTasks);
       if (acResult && acResult.suggestions.length > 0) {
         setAcSuggestions(acResult.suggestions);
         setAcTriggerInfo({
@@ -82,22 +87,31 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
         setAcVisible(false);
       }
     },
-    [domains, dismissedTokens],
+    [domains, dismissedTokens, parentTasks],
   );
 
   const handleAcSelect = useCallback(
     (suggestion: AutocompleteSuggestion) => {
       if (!acTriggerInfo) return;
 
-      const prefix = suggestion.type === "domain" ? "#" : suggestion.type === "impact" ? "!" : "?";
+      const prefix =
+        suggestion.type === "domain"
+          ? "#"
+          : suggestion.type === "impact"
+            ? "!"
+            : suggestion.type === "parent"
+              ? "^"
+              : "?";
       const insertText =
-        suggestion.type === "domain" ? suggestion.label : suggestion.label.toLowerCase();
+        suggestion.type === "domain" || suggestion.type === "parent"
+          ? suggestion.label
+          : suggestion.label.toLowerCase();
       const before = rawInput.slice(0, acTriggerInfo.start);
       const after = rawInput.slice(acTriggerInfo.end);
       const newInput = `${before}${prefix}${insertText} ${after}`;
 
       setRawInput(newInput);
-      setParsed(parseTaskInput(newInput, domains));
+      setParsed(parseTaskInput(newInput, domains, undefined, parentTasks));
       setAcVisible(false);
 
       // Restore focus with cursor after inserted text
@@ -107,7 +121,7 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
         inputRef.current?.setSelectionRange(cursorPos, cursorPos);
       });
     },
-    [acTriggerInfo, rawInput, domains],
+    [acTriggerInfo, rawInput, domains, parentTasks],
   );
 
   const handleDismissToken = useCallback(
@@ -118,10 +132,10 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
         .replace(/\s{2,}/g, " ")
         .trim();
       setRawInput(newInput);
-      setParsed(parseTaskInput(newInput, domains));
+      setParsed(parseTaskInput(newInput, domains, undefined, parentTasks));
       setDismissedTokens(new Map());
     },
-    [rawInput, domains],
+    [rawInput, domains, parentTasks],
   );
 
   /** Insert or replace a token in rawInput by prefix+value, matching existingPattern. */
@@ -135,14 +149,14 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
         newInput = `${rawInput.trimEnd()} ${token} `;
       }
       setRawInput(newInput);
-      setParsed(parseTaskInput(newInput, domains));
+      setParsed(parseTaskInput(newInput, domains, undefined, parentTasks));
       setDismissedTokens(new Map());
       requestAnimationFrame(() => {
         inputRef.current?.focus();
         inputRef.current?.setSelectionRange(newInput.length, newInput.length);
       });
     },
-    [rawInput, domains],
+    [rawInput, domains, parentTasks],
   );
 
   /**
@@ -168,9 +182,9 @@ export function useSmartInput<E extends HTMLInputElement | HTMLTextAreaElement =
   const setInput = useCallback(
     (value: string) => {
       setRawInput(value);
-      setParsed(parseTaskInput(value, domains));
+      setParsed(parseTaskInput(value, domains, undefined, parentTasks));
     },
-    [domains],
+    [domains, parentTasks],
   );
 
   return {

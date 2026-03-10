@@ -232,8 +232,18 @@ function DrawerBody({
         form.handlers.onDescriptionChange(d);
         form.markDirty();
       },
+      onParent: (id: number) => {
+        form.handlers.onParentChange(id);
+        const parent = parentTasks.find((t) => t.id === id);
+        if (parent?.domain_id != null && parent.domain_id !== form.values.domainId) {
+          form.handlers.onDomainChange(parent.domain_id);
+          setDomainFlash(true);
+          setTimeout(() => setDomainFlash(false), 650);
+        }
+        form.markDirty();
+      },
     }),
-    [form.handlers, form.markDirty],
+    [form.handlers, form.markDirty, form.values.domainId, parentTasks],
   );
 
   const {
@@ -245,7 +255,7 @@ function DrawerBody({
     acSelectedIndex,
     handleAcSelect,
     handleKeyDown: handleSmartKeyDown,
-  } = useSmartInputConsumer(domains, smartCallbacks, task?.title);
+  } = useSmartInputConsumer(domains, smartCallbacks, task?.title, parentTasks);
 
   // Auto-resize title textarea
   const resizeTitle = useCallback(() => {
@@ -359,9 +369,14 @@ function DrawerBody({
           </div>
         </div>
 
-        {/* Parent task (edit mode only) */}
-        {form.isEdit && task && parentTasks.length > 0 && (
-          <div className="flex items-center gap-2">
+        {/* Parent task (both create and edit modes) */}
+        {parentTasks.length > 0 && (
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-lg",
+              flashTarget === "parent" && "animate-field-flash",
+            )}
+          >
             <span className="text-xs text-muted-foreground shrink-0 w-14">
               {t("task.field.parent")}
             </span>
@@ -369,7 +384,7 @@ function DrawerBody({
               type="button"
               className={cn(
                 "flex-1 flex items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors active:scale-95",
-                task.parent_id !== null
+                form.values.parentId !== null
                   ? "bg-primary/10 text-primary"
                   : "bg-secondary text-secondary-foreground active:bg-secondary/80",
               )}
@@ -379,9 +394,9 @@ function DrawerBody({
               }}
             >
               <span className="flex items-center gap-1.5 truncate min-w-0">
-                {task.parent_id !== null ? (
+                {form.values.parentId !== null ? (
                   (() => {
-                    const p = parentTasks.find((t) => t.id === task.parent_id);
+                    const p = parentTasks.find((t) => t.id === form.values.parentId);
                     const d = p?.domain_id ? domains.find((dm) => dm.id === p.domain_id) : null;
                     return (
                       <>
@@ -693,8 +708,8 @@ function DrawerBody({
         </Drawer.Portal>
       </Drawer.NestedRoot>
 
-      {/* Nested parent picker drawer (edit mode only) */}
-      {form.isEdit && task && (
+      {/* Nested parent picker drawer */}
+      {form.isEdit && task ? (
         <ParentPickerDrawer
           open={parentPickerOpen}
           onOpenChange={setParentPickerOpen}
@@ -710,6 +725,28 @@ function DrawerBody({
               setTimeout(() => setDomainFlash(false), 650);
               form.markDirty();
             }
+          }}
+        />
+      ) : (
+        <CreateParentPickerDrawer
+          open={parentPickerOpen}
+          onOpenChange={setParentPickerOpen}
+          selectedParentId={form.values.parentId}
+          parentTasks={parentTasks}
+          domains={domains}
+          search={parentSearch}
+          onSearchChange={setParentSearch}
+          onSelect={(parentId) => {
+            form.handlers.onParentChange(parentId);
+            if (parentId !== null) {
+              const parent = parentTasks.find((t) => t.id === parentId);
+              if (parent?.domain_id != null && parent.domain_id !== form.values.domainId) {
+                form.handlers.onDomainChange(parent.domain_id);
+                setDomainFlash(true);
+                setTimeout(() => setDomainFlash(false), 650);
+              }
+            }
+            form.markDirty();
           }}
         />
       )}
@@ -990,6 +1027,142 @@ function ParentPickerDrawer({
                       className={cn(
                         "w-full px-3 py-2.5 text-left text-sm rounded-lg flex items-center gap-2 transition-colors",
                         currentParentId === t.id && "bg-accent font-medium",
+                      )}
+                      onClick={() => handleSelect(t.id)}
+                    >
+                      {domain?.icon && <span className="shrink-0">{domain.icon}</span>}
+                      <span className="truncate">{t.title}</span>
+                      {subtaskCount > 0 && (
+                        <span className="shrink-0 text-[10px] text-muted-foreground ml-auto">
+                          ·{subtaskCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+
+            {totalFiltered === 0 && search && (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                {t("task.noMatchingTasks")}
+              </div>
+            )}
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.NestedRoot>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  CreateParentPickerDrawer — nested drawer for create-mode parent    */
+/* ------------------------------------------------------------------ */
+
+function CreateParentPickerDrawer({
+  open,
+  onOpenChange,
+  selectedParentId,
+  parentTasks,
+  domains,
+  search,
+  onSearchChange,
+  onSelect,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedParentId: number | null;
+  parentTasks: TaskResponse[];
+  domains: DomainResponse[];
+  search: string;
+  onSearchChange: (s: string) => void;
+  onSelect: (parentId: number | null) => void;
+}) {
+  const { t } = useTranslation();
+
+  const taskGroups = useMemo(
+    () => groupParentTasks(parentTasks, null, search, undefined, domains),
+    [parentTasks, search, domains],
+  );
+
+  const totalFiltered = taskGroups.reduce((n, g) => n + g.tasks.length, 0);
+  const showLabels = !search && taskGroups.length > 1;
+
+  const handleSelect = (parentId: number | null) => {
+    onSelect(parentId);
+    onOpenChange(false);
+    onSearchChange("");
+  };
+
+  return (
+    <Drawer.NestedRoot open={open} onOpenChange={onOpenChange}>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
+        <Drawer.Content
+          className={cn(
+            "fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl",
+            "bg-background border-t border-border",
+            "max-w-lg mx-auto max-h-[70vh] flex flex-col",
+          )}
+        >
+          <div className="mx-auto mt-3 mb-2 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
+          <Drawer.Title className="px-4 text-sm font-semibold mb-2">
+            {t("task.selectParent")}
+          </Drawer.Title>
+
+          <div className="flex items-center gap-2 px-4 pb-2">
+            <div className="flex-1 flex items-center gap-2 rounded-lg bg-secondary px-3 py-2">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                value={search}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder={t("task.searchTasks")}
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => onSearchChange("")}
+                  className="p-1 text-muted-foreground active:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-y-auto px-2 pb-8 space-y-0.5">
+            <button
+              type="button"
+              className={cn(
+                "w-full px-3 py-2.5 text-left text-sm rounded-lg transition-colors",
+                selectedParentId === null && "bg-accent font-medium",
+              )}
+              onClick={() => handleSelect(null)}
+            >
+              {t("task.field.noneTopLevel")}
+            </button>
+
+            {totalFiltered > 0 && <div className="h-px bg-border mx-2 my-1" />}
+
+            {taskGroups.map((group, gi) => (
+              <div key={group.label}>
+                {gi > 0 && <div className="h-px bg-border mx-2 my-1" />}
+                {showLabels && (
+                  <div className="px-3 pt-2 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {group.label}
+                  </div>
+                )}
+                {group.tasks.map((t) => {
+                  const domain = t.domain_id ? domains.find((d) => d.id === t.domain_id) : null;
+                  const subtaskCount = t.subtasks?.length ?? 0;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={cn(
+                        "w-full px-3 py-2.5 text-left text-sm rounded-lg flex items-center gap-2 transition-colors",
+                        selectedParentId === t.id && "bg-accent font-medium",
                       )}
                       onClick={() => handleSelect(t.id)}
                     >

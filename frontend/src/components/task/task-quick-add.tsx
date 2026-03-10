@@ -1,7 +1,7 @@
 import { Loader2, Mic, MicOff, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { DomainResponse } from "@/api/model";
+import type { DomainResponse, TaskResponse } from "@/api/model";
 import { SmartInputAutocomplete } from "@/components/task/smart-input-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +25,7 @@ interface TaskQuickAddProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   domains: DomainResponse[];
+  parentTasks?: TaskResponse[];
 }
 
 // ─── Pill colors per token type ─────────────────────────────────────────────
@@ -36,6 +37,7 @@ export const PILL_STYLES: Record<string, string> = {
   duration: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
   date: "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
   description: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  parent: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300",
 };
 
 export const PILL_ICONS: Record<string, string> = {
@@ -45,11 +47,12 @@ export const PILL_ICONS: Record<string, string> = {
   duration: "\u23F1", // stopwatch
   date: "\uD83D\uDCC5", // calendar
   description: "//",
+  parent: "\u21B3", // ↳
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps) {
+export function TaskQuickAdd({ open, onOpenChange, domains, parentTasks }: TaskQuickAddProps) {
   const { t } = useTranslation();
   const {
     inputRef,
@@ -64,7 +67,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
     handleKeyDown: handleAcKeyDown,
     reset: resetForm,
     setInput,
-  } = useSmartInput({ domains });
+  } = useSmartInput({ domains, parentTasks });
 
   const {
     isSupported: voiceSupported,
@@ -93,6 +96,7 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
         title: parsed.title.trim(),
         description: parsed.description,
         domain_id: parsed.domainId,
+        parent_id: parsed.parentId,
         impact: parsed.impact ?? undefined,
         clarity: parsed.clarity ?? undefined,
         duration_minutes: parsed.durationMinutes,
@@ -210,6 +214,9 @@ export function TaskQuickAdd({ open, onOpenChange, domains }: TaskQuickAddProps)
                 <p>
                   <Kbd>tomorrow</Kbd> / <Kbd>jan 15</Kbd> / <Kbd>feb 13 at 3</Kbd>{" "}
                   {t("task.quickAdd.hintSchedule")}
+                </p>
+                <p>
+                  <Kbd>^</Kbd> {t("task.quickAdd.hintParent")}
                 </p>
                 <p>
                   <Kbd>{"//"}</Kbd> {t("task.quickAdd.hintNotes")}

@@ -4,6 +4,21 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.11 — 2026-03-10
+
+### Feat: Parent task selector in new task creation + `^` smart token
+
+- Added `^` token to smart input: typing `^` triggers autocomplete dropdown with parent task search, fuzzy-filtered by title and grouped by domain
+- Works in all smart input surfaces: quick add dialog, task editor title (create + edit), and mobile drawer title
+- Parent task picker field now visible in create mode (was edit-only): dropdown selector with search, domain grouping, and domain auto-sync
+- New `ParentTaskSelect` component for create-mode parent selection (no API mutations, form-state only)
+- `CreateParentPickerDrawer` for mobile create-mode parent selection
+- Selecting a parent auto-syncs the child's domain to match (with field flash animation)
+- Parent pill shown in quick add metadata pills (`↳ Parent Name`, indigo color)
+- Added `^` syntax hint to quick add hints panel
+
+---
+
 ## v0.65.10 — 2026-03-10
 
 ### Fix: Inline add autocomplete renders above input, not hidden below

@@ -41,6 +41,7 @@
   "task.quickAdd.hintClarity": "? clarity",
   "task.quickAdd.hintDuration": "30m / 1h duration",
   "task.quickAdd.hintSchedule": "tomorrow / jan 15 scheduled datetime",
+  "task.quickAdd.hintParent": "^ parent task",
   "task.quickAdd.hintNotes": "// description",
   "task.field.title": "Title",
   "task.field.titlePlaceholder": "What needs to be done? (try #domain !high 30m)",
