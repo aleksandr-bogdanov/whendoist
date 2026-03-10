@@ -28,30 +28,46 @@ export function SmartInputAutocomplete({
 
   return (
     <div
-      className={`absolute left-0 right-0 z-50 max-h-48 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md ${position === "above" ? "bottom-full mb-1" : "top-full mt-1"}`}
+      className={`absolute left-0 right-0 z-50 max-h-60 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md py-1 ${position === "above" ? "bottom-full mb-1" : "top-full mt-1"}`}
     >
       {suggestions.map((s, i) => (
-        <button
-          key={`${s.type}-${s.value}`}
-          ref={i === selectedIndex ? selectedRef : undefined}
-          type="button"
-          className={`flex w-full items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors ${
-            i === selectedIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-          }`}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            onSelect(s);
-          }}
-        >
-          {s.icon && <span className="shrink-0">{s.icon}</span>}
-          <span className={s.colorClass ?? ""}>{s.label}</span>
-          {s.secondaryLabel && (
-            <span className="text-muted-foreground text-[11px]">· {s.secondaryLabel}</span>
+        <div key={`${s.type}-${s.value}`}>
+          {/* Domain group header */}
+          {s.groupLabel && (
+            <>
+              {i > 0 && <div className="h-px bg-border mx-2 my-1" />}
+              <div className="px-3 pt-1.5 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                {s.groupLabel}
+              </div>
+            </>
           )}
-          {i === selectedIndex && (
-            <span className="ml-auto text-[10px] text-muted-foreground">Enter</span>
-          )}
-        </button>
+          <button
+            ref={i === selectedIndex ? selectedRef : undefined}
+            type="button"
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors ${
+              i === selectedIndex ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
+            }`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onSelect(s);
+            }}
+          >
+            {s.icon && !s.groupLabel && <span className="shrink-0">{s.icon}</span>}
+            <span className={s.colorClass ?? ""}>{s.label}</span>
+            {s.secondaryLabel && (
+              <span className="text-muted-foreground text-[11px]">· {s.secondaryLabel}</span>
+            )}
+            {s.badge && (
+              <span className="shrink-0 text-[10px] text-muted-foreground ml-auto">{s.badge}</span>
+            )}
+            {i === selectedIndex && !s.badge && (
+              <span className="ml-auto text-[10px] text-muted-foreground">Enter</span>
+            )}
+            {i === selectedIndex && s.badge && (
+              <span className="text-[10px] text-muted-foreground ml-1">↵</span>
+            )}
+          </button>
+        </div>
       ))}
     </div>
   );
