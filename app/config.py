@@ -32,9 +32,6 @@ class Settings(BaseSettings):
     demo_login_enabled: bool = False
     demo_cleanup_max_age_hours: int = 24
 
-    # Legacy frontend toggle (serve Jinja2 templates instead of React SPA)
-    serve_legacy_frontend: bool = False
-
     # Sentry debug endpoint (only enable temporarily for testing)
     sentry_debug_enabled: bool = False
 

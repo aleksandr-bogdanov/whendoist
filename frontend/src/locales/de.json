@@ -767,7 +767,6 @@
   "settings.about.privacyPolicy": "Datenschutzrichtlinie",
   "settings.about.termsOfService": "Nutzungsbedingungen",
   "settings.about.github": "GitHub",
-  "settings.about.pwaDebug": "PWA Debug",
   "settings.activity.loadMore": "Mehr laden ({{remaining}} verbleibend)",
   "settings.encryption.registrationFailed": "Registrierung fehlgeschlagen",
 
