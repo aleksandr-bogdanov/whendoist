@@ -639,3 +639,24 @@ class TestReparentPromote:
         assert updated is not None
         # Position should be after sub1 and sub2
         assert updated.position > sub2.position
+
+    async def test_domain_change_cascades_to_children(self, pg_session: AsyncSession, task_service: TaskService):
+        """Moving a parent to a new domain cascades domain_id to its children."""
+        domain_a = await task_service.create_domain(name="Domain A")
+        domain_b = await task_service.create_domain(name="Domain B")
+        await pg_session.commit()
+
+        parent = await task_service.create_task(title="Parent", domain_id=domain_a.id)
+        await pg_session.commit()
+
+        child = await task_service.create_task(title="Child", parent_id=parent.id)
+        await pg_session.commit()
+        assert child.domain_id == domain_a.id
+
+        # Move parent to domain B
+        await task_service.update_task(parent.id, domain_id=domain_b.id)
+        await pg_session.commit()
+
+        # Refresh child to get updated domain_id
+        await pg_session.refresh(child)
+        assert child.domain_id == domain_b.id

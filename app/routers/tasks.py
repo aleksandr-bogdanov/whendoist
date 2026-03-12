@@ -1004,6 +1004,8 @@ async def batch_action_tasks(
                     batch_id=batch,
                 )
                 task.scheduled_date = data.scheduled_date
+                if task.reminder_minutes_before:
+                    task.reminder_sent_at = None
                 affected += 1
         elif data.action == "move":
             if data.domain_id is not None:
