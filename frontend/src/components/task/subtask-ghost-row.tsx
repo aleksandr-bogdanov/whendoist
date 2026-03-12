@@ -32,6 +32,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
     handleAcSelect,
     handleDismissToken,
     handleKeyDown: handleAcKeyDown,
+    closeAc,
     reset: resetSmartInput,
   } = useSmartInput({ domains: EMPTY_DOMAINS });
   const { create, isPending } = useTaskCreate();
@@ -116,6 +117,7 @@ export function SubtaskGhostRow({ parentTask, depth }: SubtaskGhostRowProps) {
                 }
               }}
               onBlur={() => {
+                closeAc();
                 if (!rawInput.trim()) {
                   handleCancel();
                 }

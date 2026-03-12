@@ -84,7 +84,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 - SQL injection prevented by SQLAlchemy ORM
 
 ### Output Encoding
-- Jinja2 auto-escaping enabled
+- React JSX auto-escaping (no dangerouslySetInnerHTML)
 - JSON serialization via Pydantic
 - No raw HTML interpolation
 

@@ -89,6 +89,7 @@ export function DomainGroup({
     handleAcSelect,
     handleDismissToken,
     handleKeyDown: handleAcKeyDown,
+    closeAc,
     reset: resetSmartInput,
   } = useSmartInput({ domains: allDomains });
   const { create: createTask, isPending: createPending } = useTaskCreate();
@@ -344,6 +345,7 @@ export function DomainGroup({
                     }
                   }}
                   onBlur={() => {
+                    closeAc();
                     if (!rawInput.trim()) {
                       setAddingTask(false);
                       resetSmartInput();

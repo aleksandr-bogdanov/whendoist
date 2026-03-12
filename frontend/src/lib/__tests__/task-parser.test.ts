@@ -695,3 +695,67 @@ describe("edge cases", () => {
     expect(r).toBeNull();
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PARENT EDGE CASES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe("parent edge cases", () => {
+  it("does not match ^ in the middle of a word (task^name)", () => {
+    const r = parseWithParents("task^Big Project rest");
+    expect(r.parentId).toBeNull();
+    expect(r.title).toContain("task^Big");
+  });
+
+  it("last-wins when multiple ^ tokens are present", () => {
+    const r = parseWithParents("^Big Project ^Side Quest");
+    // Last match should win — Side Quest
+    expect(r.parentId).toBe(20);
+    expect(r.parentName).toBe("Side Quest");
+  });
+
+  it("ignores ^ with no matching parent task", () => {
+    const r = parseWithParents("task ^nonexistent");
+    expect(r.parentId).toBeNull();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATE ABBREVIATION EDGE CASES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe("date abbreviation edge cases", () => {
+  it("parses tom9:00 (no space) with both date and time", () => {
+    const r = parse("meeting tom9:00");
+    expect(r.scheduledDate).not.toBeNull();
+    expect(r.scheduledTime).toBe("09:00");
+    expect(r.title).toBe("meeting");
+  });
+
+  it("parses tmr abbreviation", () => {
+    const r = parse("task tmr");
+    expect(r.scheduledDate).not.toBeNull();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FULL COMBINED INPUT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe("full combined input with all token types", () => {
+  it("parses every token type in a single input", () => {
+    const r = parseWithParents(
+      "Deploy API #Work !high ?auto 2h tom 3pm ^Big Project // deploy notes",
+    );
+    expect(r.title).toBe("Deploy API");
+    expect(r.domainId).toBe(1);
+    expect(r.impact).toBe(1);
+    expect(r.clarity).toBe("autopilot");
+    expect(r.durationMinutes).toBe(120);
+    expect(r.scheduledDate).not.toBeNull();
+    expect(r.scheduledTime).toBe("15:00");
+    expect(r.parentId).toBe(10);
+    expect(r.description).toBe("deploy notes");
+    expect(r.tokens.length).toBeGreaterThanOrEqual(6);
+  });
+});

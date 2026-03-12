@@ -155,8 +155,19 @@ export function useOfflineSync() {
 
       let succeeded = 0;
       let failed = 0;
+      const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+      const now = Date.now();
 
       for (const entry of entries) {
+        // Skip and discard entries older than 24 hours
+        if (now - entry.created_at > TTL_MS) {
+          console.warn(
+            `[offline-sync] Discarding stale mutation (${Math.round((now - entry.created_at) / 3600000)}h old): ${entry.method} ${entry.url}`,
+          );
+          await removePendingWrite(entry.id);
+          failed++;
+          continue;
+        }
         try {
           await axios({
             method: entry.method,
@@ -167,7 +178,7 @@ export function useOfflineSync() {
           succeeded++;
         } catch (e: unknown) {
           const status = (e as { response?: { status?: number } })?.response?.status;
-          if (status && status >= 400 && status < 500) {
+          if (status && status >= 400 && status < 500 && status !== 429) {
             // Permanent failure (4xx) — discard, won't succeed on retry
             console.warn(
               `[offline-sync] Discarding failed mutation (${status}): ${entry.method} ${entry.url}`,

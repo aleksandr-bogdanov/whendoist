@@ -11,7 +11,7 @@
  */
 
 import { Search, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DomainResponse, TaskResponse } from "@/api/model";
 import { cn } from "@/lib/utils";
@@ -127,13 +127,62 @@ export function ParentTaskDropdown({
   // Show domain chips only when there are multiple domains with tasks AND no active search
   const showDomainChips = domainsWithTasks.length > 1 && !search;
 
+  // Keyboard navigation: activeIndex tracks the focused item
+  // -1 = "None (top-level)", 0..N = filtered tasks
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
+
+  // Reset activeIndex when filtered list changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on list/domain/search change, not on setActiveIndex
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [filteredTasks, effectiveDomainId, search]);
+
+  // Build flat list: [null (top-level), ...filteredTask ids]
+  const flatItems = useMemo(() => {
+    const items: Array<number | null> = [null];
+    for (const t of filteredTasks) items.push(t.id);
+    return items;
+  }, [filteredTasks]);
+
+  const handleListKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIndex((prev) => Math.min(prev + 1, flatItems.length - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (activeIndex >= 0 && activeIndex < flatItems.length) {
+          onSelect(flatItems[activeIndex]);
+        }
+      }
+    },
+    [activeIndex, flatItems, onSelect],
+  );
+
+  // Scroll active item into view
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return;
+    const activeEl = listRef.current.querySelector("[data-active='true']");
+    activeEl?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
+
   return (
-    <div className={cn("flex flex-col", className)}>
+    // biome-ignore lint/a11y/useSemanticElements: fieldset adds unwanted border styling
+    <div role="group" className={cn("flex flex-col", className)} onKeyDown={handleListKeyDown}>
       {/* Domain chips */}
       {showDomainChips && (
-        <div className="flex gap-1 px-3 py-2 overflow-x-auto scrollbar-hide border-b">
+        <div
+          className="flex gap-1 px-3 py-2 overflow-x-auto scrollbar-hide border-b"
+          role="tablist"
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={effectiveDomainId === "all"}
             className={cn(
               "shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
               effectiveDomainId === "all"
@@ -149,6 +198,8 @@ export function ParentTaskDropdown({
             <button
               key={d.id}
               type="button"
+              role="tab"
+              aria-selected={effectiveDomainId === d.id}
               className={cn(
                 "shrink-0 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
                 effectiveDomainId === d.id
@@ -188,13 +239,17 @@ export function ParentTaskDropdown({
       )}
 
       {/* Task list */}
-      <div className="max-h-60 overflow-y-auto py-1">
+      <div ref={listRef} className="max-h-60 overflow-y-auto py-1" role="listbox">
         {/* None (top-level) */}
         <button
           type="button"
+          role="option"
+          aria-selected={selectedId === null}
+          data-active={activeIndex === 0}
           className={cn(
             "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer",
             selectedId === null && "bg-accent font-medium",
+            activeIndex === 0 && "ring-2 ring-inset ring-primary/50",
           )}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => onSelect(null)}
@@ -206,17 +261,21 @@ export function ParentTaskDropdown({
 
         {/* Show domain group headers when viewing "all" and not searching */}
         {effectiveDomainId === "all" && !search
-          ? renderGrouped(filteredTasks, domains, selectedId, onSelect)
-          : filteredTasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                domains={domains}
-                isSelected={selectedId === task.id}
-                showDomainIcon={effectiveDomainId === "all"}
-                onSelect={onSelect}
-              />
-            ))}
+          ? renderGrouped(filteredTasks, domains, selectedId, onSelect, activeIndex, flatItems)
+          : filteredTasks.map((task) => {
+              const itemIdx = flatItems.indexOf(task.id);
+              return (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  domains={domains}
+                  isSelected={selectedId === task.id}
+                  isActive={activeIndex === itemIdx}
+                  showDomainIcon={effectiveDomainId === "all"}
+                  onSelect={onSelect}
+                />
+              );
+            })}
 
         {filteredTasks.length === 0 && search && (
           <div className="px-3 py-2 text-sm text-muted-foreground">{t("task.noMatchingTasks")}</div>
@@ -232,6 +291,8 @@ function renderGrouped(
   domains: DomainResponse[],
   selectedId: number | null,
   onSelect: (taskId: number | null) => void,
+  activeIndex: number,
+  flatItems: Array<number | null>,
 ) {
   const domainMap = new Map(domains.map((d) => [d.id, d]));
   const groups = new Map<number | null, TaskResponse[]>();
@@ -258,16 +319,20 @@ function renderGrouped(
         <div className="px-3 pt-1.5 pb-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
           {label}
         </div>
-        {groupTasks.map((task) => (
-          <TaskRow
-            key={task.id}
-            task={task}
-            domains={domains}
-            isSelected={selectedId === task.id}
-            showDomainIcon={false}
-            onSelect={onSelect}
-          />
-        ))}
+        {groupTasks.map((task) => {
+          const itemIdx = flatItems.indexOf(task.id);
+          return (
+            <TaskRow
+              key={task.id}
+              task={task}
+              domains={domains}
+              isSelected={selectedId === task.id}
+              isActive={activeIndex === itemIdx}
+              showDomainIcon={false}
+              onSelect={onSelect}
+            />
+          );
+        })}
       </div>
     );
   });
@@ -277,12 +342,14 @@ function TaskRow({
   task,
   domains,
   isSelected,
+  isActive,
   showDomainIcon,
   onSelect,
 }: {
   task: TaskResponse;
   domains: DomainResponse[];
   isSelected: boolean;
+  isActive: boolean;
   showDomainIcon: boolean;
   onSelect: (taskId: number) => void;
 }) {
@@ -291,9 +358,13 @@ function TaskRow({
   return (
     <button
       type="button"
+      role="option"
+      aria-selected={isSelected}
+      data-active={isActive || undefined}
       className={cn(
         "w-full px-3 py-1.5 text-left text-sm hover:bg-accent transition-colors cursor-pointer flex items-center gap-1.5",
         isSelected && "bg-accent font-medium",
+        isActive && "ring-2 ring-inset ring-primary/50",
       )}
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => onSelect(task.id)}

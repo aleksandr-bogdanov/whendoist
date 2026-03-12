@@ -18,7 +18,7 @@ lint:
     uv run ruff check .
 
 fmt:
-    uv run black .
+    uv run ruff format .
     uv run ruff check --fix .
 
 sync:
