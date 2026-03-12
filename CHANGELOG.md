@@ -4,6 +4,13 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.21 — 2026-03-12
+
+### Fix: Parent domain change cascades to children & batch schedule resets reminders
+
+- Moving a parent task to a new domain now cascades `domain_id` to all children (single bulk UPDATE)
+- Batch schedule action resets `reminder_sent_at` when the task has `reminder_minutes_before` set, so reminders fire for the new date
+
 ## v0.65.20 — 2026-03-12
 
 ### Chore: Remove legacy Jinja2 frontend

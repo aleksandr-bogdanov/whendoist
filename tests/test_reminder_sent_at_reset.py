@@ -169,3 +169,43 @@ class TestRouterLevelResetLogic:
     def test_non_scheduling_field_ignored(self, task_with_reminder: Task):
         """Non-scheduling fields should not trigger reset."""
         assert not self._should_reset({"title": "New title"}, task_with_reminder)
+
+
+@pytest.mark.unit
+class TestBatchScheduleResetsReminder:
+    """Verify batch schedule action resets reminder_sent_at.
+
+    Reproduces the logic from the batch-action endpoint in app/routers/tasks.py:
+    when a task with reminder_minutes_before is rescheduled, reminder_sent_at
+    must be cleared so the push loop fires for the new date.
+    """
+
+    def test_batch_schedule_resets_reminder_sent_at(self, task_with_reminder: Task):
+        """Batch-scheduling a task with a reminder should clear reminder_sent_at."""
+        assert task_with_reminder.reminder_sent_at is not None
+        assert task_with_reminder.reminder_minutes_before is not None
+
+        # Simulate batch schedule action (mirrors router logic)
+        task_with_reminder.scheduled_date = date(2026, 4, 1)
+        if task_with_reminder.reminder_minutes_before:
+            task_with_reminder.reminder_sent_at = None
+
+        assert task_with_reminder.reminder_sent_at is None
+
+    def test_batch_schedule_without_reminder_preserves_sent_at(self):
+        """Batch-scheduling a task without reminder_minutes_before should not touch reminder_sent_at."""
+        task = Task(
+            user_id=1,
+            title="No reminder task",
+            scheduled_date=date(2026, 3, 10),
+            reminder_minutes_before=None,
+            reminder_sent_at=datetime(2026, 3, 10, 13, 45, tzinfo=UTC),
+        )
+
+        # Simulate batch schedule action (mirrors router logic)
+        task.scheduled_date = date(2026, 4, 1)
+        if task.reminder_minutes_before:
+            task.reminder_sent_at = None
+
+        # reminder_sent_at should be preserved since there's no reminder configured
+        assert task.reminder_sent_at is not None

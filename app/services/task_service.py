@@ -7,7 +7,7 @@ All operations are user-scoped (multi-tenant).
 
 from datetime import UTC, date, datetime, time
 
-from sqlalchemy import Select, case, func, select
+from sqlalchemy import Select, case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -500,6 +500,14 @@ class TaskService:
                     if not domain:
                         continue  # Skip unowned domain_id silently
                 setattr(task, field, value)
+
+        # Cascade domain change to children
+        if "domain_id" in kwargs and task.domain_id != _old_vals.get("domain_id"):
+            await self.db.execute(
+                update(Task)
+                .where(Task.parent_id == task.id, Task.user_id == self.user_id)
+                .values(domain_id=task.domain_id)
+            )
 
         await self.db.flush()
         _new_vals: dict[str, object] = {f: getattr(task, f) for f in _log_fields if hasattr(task, f)}
