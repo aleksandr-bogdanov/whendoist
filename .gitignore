@@ -53,8 +53,6 @@ Thumbs.db
 # Worktrees
 .worktrees/
 
-# Build artifacts (generated during CI release)
-static/build-manifest.json
 
 # Claude Code (keep skills tracked, ignore everything else)
 .claude/*

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="static/img/w-icon-512.png" alt="Whendoist" width="120">
+  <img src="frontend/public/favicon.svg" alt="Whendoist" width="120">
 </p>
 
 <p align="center">
