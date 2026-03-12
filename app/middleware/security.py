@@ -25,10 +25,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        # Legacy Jinja2 templates use inline event handlers (onclick etc.)
-        # which can't use nonces — fall back to 'unsafe-inline' for those pages
-        is_legacy = getattr(request.state, "legacy_template", False)
-        script_src = "'self' 'unsafe-inline'" if is_legacy else f"'self' 'nonce-{nonce}'"
+        script_src = f"'self' 'nonce-{nonce}'"
 
         # Content Security Policy
         csp = (

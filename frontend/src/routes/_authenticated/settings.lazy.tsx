@@ -1850,14 +1850,6 @@ function AboutSection() {
         >
           {t("settings.about.github")}
         </a>
-        <a
-          href="/static/debug-pwa.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-muted-foreground hover:underline"
-        >
-          {t("settings.about.pwaDebug")}
-        </a>
       </div>
     </SettingsCard>
   );

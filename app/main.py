@@ -301,9 +301,6 @@ async def readiness_check():
     )
 
 
-# Mount static files (images, OG assets, and legacy CSS/JS/vendor when enabled)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 # Include routers
 # Auth router (no /api prefix - uses /auth)
 app.include_router(auth.router)
@@ -314,88 +311,69 @@ app.include_router(api.router)
 # API v1 routes at /api/v1/*
 app.include_router(api_v1.router)
 
-if settings.serve_legacy_frontend:
-    # --- Legacy Jinja2 frontend ---
-    from app.routers import pages
+# --- React SPA serving ---
 
-    # Service worker from static/
-    @app.get("/sw.js", include_in_schema=False)
-    async def service_worker():
-        sw_path = Path("static/sw.js")
-        if sw_path.exists():
-            return FileResponse(
-                sw_path,
-                media_type="application/javascript",
-                headers={"Service-Worker-Allowed": "/"},
-            )
-        return JSONResponse({"error": "Service worker not found"}, status_code=404)
 
-    # Pages router (must be last — it has catch-all-ish routes like / and /dashboard)
-    app.include_router(pages.router)
+# Service worker from frontend/dist/
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    spa_sw = Path("frontend/dist/sw.js")
+    if spa_sw.exists():
+        return FileResponse(
+            spa_sw,
+            media_type="application/javascript",
+            headers={"Service-Worker-Allowed": "/"},
+        )
+    return JSONResponse({"error": "Service worker not found"}, status_code=404)
 
-else:
-    # --- React SPA serving ---
-    # Service worker from frontend/dist/
-    @app.get("/sw.js", include_in_schema=False)
-    async def service_worker():
-        spa_sw = Path("frontend/dist/sw.js")
-        if spa_sw.exists():
-            return FileResponse(
-                spa_sw,
-                media_type="application/javascript",
-                headers={"Service-Worker-Allowed": "/"},
-            )
-        return JSONResponse({"error": "Service worker not found"}, status_code=404)
 
-    # Mount SPA static assets (Vite's hashed JS/CSS bundles)
-    _spa_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
-    if _spa_dist.exists():
-        _spa_assets = _spa_dist / "assets"
-        if _spa_assets.exists():
-            app.mount("/assets", StaticFiles(directory=str(_spa_assets)), name="spa-assets")
+# Mount SPA static assets (Vite's hashed JS/CSS bundles)
+_spa_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if _spa_dist.exists():
+    _spa_assets = _spa_dist / "assets"
+    if _spa_assets.exists():
+        app.mount("/assets", StaticFiles(directory=str(_spa_assets)), name="spa-assets")
 
-        # Serve PWA icons from frontend/dist/icons/
-        _spa_icons = _spa_dist / "icons"
-        if _spa_icons.exists():
-            app.mount("/icons", StaticFiles(directory=str(_spa_icons)), name="spa-icons")
+    # Serve PWA icons from frontend/dist/icons/
+    _spa_icons = _spa_dist / "icons"
+    if _spa_icons.exists():
+        app.mount("/icons", StaticFiles(directory=str(_spa_icons)), name="spa-icons")
 
-        # Serve illustrations from frontend/dist/illustrations/
-        _spa_illustrations = _spa_dist / "illustrations"
-        if _spa_illustrations.exists():
-            app.mount("/illustrations", StaticFiles(directory=str(_spa_illustrations)), name="spa-illustrations")
+    # Serve illustrations from frontend/dist/illustrations/
+    _spa_illustrations = _spa_dist / "illustrations"
+    if _spa_illustrations.exists():
+        app.mount("/illustrations", StaticFiles(directory=str(_spa_illustrations)), name="spa-illustrations")
 
-        # Serve self-hosted fonts from frontend/dist/fonts/
-        _spa_fonts = _spa_dist / "fonts"
-        if _spa_fonts.exists():
-            app.mount("/fonts", StaticFiles(directory=str(_spa_fonts)), name="spa-fonts")
+    # Serve self-hosted fonts from frontend/dist/fonts/
+    _spa_fonts = _spa_dist / "fonts"
+    if _spa_fonts.exists():
+        app.mount("/fonts", StaticFiles(directory=str(_spa_fonts)), name="spa-fonts")
 
-        # Serve additional root-level SPA files (manifest, registerSW.js, workbox, etc.)
-        @app.get("/manifest.webmanifest", include_in_schema=False)
-        async def spa_manifest():
-            manifest_path = _spa_dist / "manifest.webmanifest"
-            if manifest_path.exists():
-                return FileResponse(str(manifest_path), media_type="application/manifest+json")
+    # Serve additional root-level SPA files (manifest, registerSW.js, workbox, etc.)
+    @app.get("/manifest.webmanifest", include_in_schema=False)
+    async def spa_manifest():
+        manifest_path = _spa_dist / "manifest.webmanifest"
+        if manifest_path.exists():
+            return FileResponse(str(manifest_path), media_type="application/manifest+json")
+        raise HTTPException(status_code=404)
+
+    @app.get("/registerSW.js", include_in_schema=False)
+    async def spa_register_sw():
+        path = _spa_dist / "registerSW.js"
+        if path.exists():
+            return FileResponse(str(path), media_type="application/javascript")
+        raise HTTPException(status_code=404)
+
+    # SPA fallback: all non-API, non-auth, non-static routes serve index.html
+    # This MUST be registered AFTER all other routes
+    _index_html_template = (_spa_dist / "index.html").read_text()
+
+    @app.get("/{path:path}", include_in_schema=False)
+    async def spa_fallback(request: Request, path: str):
+        # Don't catch API, auth, health, or metrics routes
+        if path.startswith(("api/", "auth/", "assets/", "icons/", "illustrations/", "health", "ready", "metrics")):
             raise HTTPException(status_code=404)
-
-        @app.get("/registerSW.js", include_in_schema=False)
-        async def spa_register_sw():
-            path = _spa_dist / "registerSW.js"
-            if path.exists():
-                return FileResponse(str(path), media_type="application/javascript")
-            raise HTTPException(status_code=404)
-
-        # SPA fallback: all non-API, non-auth, non-static routes serve index.html
-        # This MUST be registered AFTER all other routes
-        _index_html_template = (_spa_dist / "index.html").read_text()
-
-        @app.get("/{path:path}", include_in_schema=False)
-        async def spa_fallback(request: Request, path: str):
-            # Don't catch API, auth, static, health, or metrics routes
-            if path.startswith(
-                ("api/", "auth/", "static/", "assets/", "icons/", "illustrations/", "health", "ready", "metrics")
-            ):
-                raise HTTPException(status_code=404)
-            # Inject CSP nonce into inline script tags
-            nonce = getattr(request.state, "csp_nonce", "")
-            html = _index_html_template.replace("<script>", f'<script nonce="{nonce}">')
-            return HTMLResponse(html)
+        # Inject CSP nonce into inline script tags
+        nonce = getattr(request.state, "csp_nonce", "")
+        html = _index_html_template.replace("<script>", f'<script nonce="{nonce}">')
+        return HTMLResponse(html)

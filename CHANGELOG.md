@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.20 — 2026-03-12
+
+### Chore: Remove legacy Jinja2 frontend
+
+- Deleted all legacy files: `app/templates/`, `app/routers/pages.py`, `static/` (CSS, JS, vendor, images, service worker, manifest)
+- Removed `SERVE_LEGACY_FRONTEND` toggle from config and conditional routing from `main.py`
+- Removed `jinja2` dependency
+- Simplified CSP middleware: always nonce-based (no more `unsafe-inline` fallback)
+- Archived `docs/LEGACY-FRONTEND.md` to `docs/plans/`
+- Git tag `legacy-frontend-final` preserves the full working state before removal
+
 ## v0.65.19 — 2026-03-10
 
 ### Fix: Inline add-task autocomplete not clipped by domain border
