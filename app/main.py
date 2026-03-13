@@ -20,7 +20,7 @@ from app.middleware.csrf import CSRFMiddleware
 from app.middleware.rate_limit import limiter
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
-from app.routers import api, auth
+from app.routers import api, auth, oauth
 from app.routers import v1 as api_v1
 from app.sentry_integration import init_sentry
 
@@ -305,11 +305,29 @@ async def readiness_check():
 # Auth router (no /api prefix - uses /auth)
 app.include_router(auth.router)
 
+# OAuth 2.1 provider (for MCP and third-party integrations)
+app.include_router(oauth.router)
+
 # Todoist/Calendar API (has its own /api prefix internally)
 app.include_router(api.router)
 
 # API v1 routes at /api/v1/*
 app.include_router(api_v1.router)
+
+
+# OAuth 2.0 Authorization Server Metadata (RFC 8414)
+@app.get("/.well-known/oauth-authorization-server", include_in_schema=False)
+async def oauth_metadata():
+    from app.routers.oauth import get_oauth_metadata
+
+    return JSONResponse(get_oauth_metadata())
+
+
+# MCP (Model Context Protocol) server — mounted as ASGI sub-app
+# NOTE: E402 suppressed — this import must happen after app is created
+from app.routers.mcp_server import create_mcp_app  # noqa: E402
+
+app.mount("/mcp", create_mcp_app())
 
 # --- React SPA serving ---
 
@@ -371,7 +389,21 @@ if _spa_dist.exists():
     @app.get("/{path:path}", include_in_schema=False)
     async def spa_fallback(request: Request, path: str):
         # Don't catch API, auth, health, or metrics routes
-        if path.startswith(("api/", "auth/", "assets/", "icons/", "illustrations/", "health", "ready", "metrics")):
+        if path.startswith(
+            (
+                "api/",
+                "auth/",
+                "oauth/",
+                "mcp/",
+                ".well-known/",
+                "assets/",
+                "icons/",
+                "illustrations/",
+                "health",
+                "ready",
+                "metrics",
+            )
+        ):
             raise HTTPException(status_code=404)
         # Inject CSP nonce into inline script tags
         nonce = getattr(request.state, "csp_nonce", "")

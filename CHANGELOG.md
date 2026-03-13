@@ -4,6 +4,20 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.0 — 2026-03-13
+
+### Feat: MCP server integration + OAuth 2.1 provider
+
+- **MCP server** mounted at `/mcp` — exposes 12 task management tools (list, create, update, complete, search, analytics, batch create, etc.) over MCP HTTP transport
+- **OAuth 2.1 provider** — dynamic client registration, authorization code + PKCE, consent page, token exchange/refresh. Reuses existing device auth tokens.
+- OAuth endpoints: `POST /oauth/register`, `GET/POST /oauth/authorize`, `POST /oauth/token`, `GET /.well-known/oauth-authorization-server`
+- E2E encryption check: MCP tools return clear error for users with encryption enabled (server can't read ciphertext)
+- CSRF exemptions for OAuth endpoints (protected by PKCE + client_secret instead)
+- New DB tables: `oauth_clients`, `oauth_authorization_codes`
+- Google OAuth callback supports `oauth_return_to` cookie for post-login redirect to consent page
+
+---
+
 ## v0.65.22 — 2026-03-12
 
 ### Fix: Frontend audit fixes (M3–M8, L1–L4, L8–L9)
