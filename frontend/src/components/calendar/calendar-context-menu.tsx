@@ -1,10 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { CalendarX2, Check, FastForward, Pencil, Trash2, Undo2 } from "lucide-react";
 import {
   type ReactNode,
   type RefObject,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -83,6 +85,7 @@ export function useCalendarContextMenu(): CalendarContextMenuState {
       document.addEventListener("pointerdown", handlePointerDown, { capture: true });
       document.addEventListener("keydown", handleKeyDown, { capture: true });
       window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+      window.addEventListener("resize", handleScroll);
     }, 0);
 
     return () => {
@@ -90,8 +93,19 @@ export function useCalendarContextMenu(): CalendarContextMenuState {
       document.removeEventListener("pointerdown", handlePointerDown, { capture: true });
       document.removeEventListener("keydown", handleKeyDown, { capture: true });
       window.removeEventListener("scroll", handleScroll, { capture: true });
+      window.removeEventListener("resize", handleScroll);
     };
   }, [open]);
+
+  // Close on route change
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathnameRef = useRef(pathname);
+  useEffect(() => {
+    if (pathnameRef.current !== pathname) {
+      pathnameRef.current = pathname;
+      close();
+    }
+  }, [pathname, close]);
 
   return { open, position, handleContextMenu, close, menuRef };
 }
@@ -109,6 +123,30 @@ interface CalendarContextMenuPortalProps {
  */
 export function CalendarContextMenuPortal({ state, children }: CalendarContextMenuPortalProps) {
   const { open, position, menuRef } = state;
+  const [clampedPos, setClampedPos] = useState<Position>(position);
+
+  // Clamp menu to viewport edges after measuring its dimensions
+  useLayoutEffect(() => {
+    if (!open) return;
+    // Start at raw position; will clamp after render
+    setClampedPos(position);
+    // Use rAF to measure after the portal has rendered
+    const raf = requestAnimationFrame(() => {
+      const el = menuRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const padding = 8;
+      let { x, y } = position;
+      if (x + rect.width > window.innerWidth - padding) {
+        x = Math.max(padding, window.innerWidth - rect.width - padding);
+      }
+      if (y + rect.height > window.innerHeight - padding) {
+        y = Math.max(padding, window.innerHeight - rect.height - padding);
+      }
+      setClampedPos({ x, y });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [open, position, menuRef]);
 
   if (!open) return null;
 
@@ -117,7 +155,7 @@ export function CalendarContextMenuPortal({ state, children }: CalendarContextMe
       ref={menuRef}
       role="menu"
       className="fixed z-50 min-w-[160px] origin-top-left animate-in fade-in-0 zoom-in-95 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-      style={{ left: position.x, top: position.y }}
+      style={{ left: clampedPos.x, top: clampedPos.y }}
       // Prevent this menu from triggering calendar interactions underneath
       onPointerDown={(e) => e.stopPropagation()}
     >

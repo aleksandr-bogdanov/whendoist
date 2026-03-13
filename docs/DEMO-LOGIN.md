@@ -134,11 +134,7 @@ Demo login bypasses OAuth — works on any domain.
 |------|------|
 | `app/services/demo_service.py` | Core service: user creation, seeding, reset |
 | `app/routers/auth.py` | Routes: `GET /auth/demo`, `POST /auth/demo/reset` |
-| `app/routers/pages.py` | Passes `is_demo_user` flag to all templates |
 | `app/config.py` | `demo_login_enabled` setting |
 | `app/constants.py` | `DEMO_EMAIL_SUFFIX`, `DEMO_VALID_PROFILES` |
-| `app/templates/base.html` | Floating pill HTML + JS |
-| `app/templates/login.html` | "Try Demo Account" button |
-| `static/css/dashboard.css` | `.demo-pill` styles |
-| `static/css/login.css` | Demo button styles |
+| `frontend/src/routes/login.tsx` | "Try Demo Account" button (React SPA) |
 | `tests/test_demo_service.py` | Unit tests |

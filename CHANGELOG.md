@@ -4,6 +4,23 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.65.22 — 2026-03-12
+
+### Fix: Frontend audit fixes (M3–M8, L1–L4, L8–L9)
+
+- Offline queue no longer discards 429 (rate-limited) mutations as permanent failures
+- Offline write queue entries older than 24h are discarded during drain
+- ParentTaskDropdown: ARIA roles (`listbox`/`option`/`tablist`/`tab`) + ArrowUp/ArrowDown/Enter keyboard navigation
+- Calendar context menu closes on window resize and route change
+- Calendar context menu clamps to viewport edges (no off-screen overflow)
+- Added `task.allDomains` and `task.quickAdd.hintParent` translations to all 6 non-English locales
+- Locale files lazy-loaded via dynamic `import()` — only detected language loaded at startup
+- Parser: `tom9:00` (no space) now captures both date and time
+- Added parser tests for `^` edge cases, `tom9:00`, `tmr`, and full combined input
+- `closeAc()` added to onBlur in subtask-ghost-row and domain-group inline inputs
+- Updated stale docs: SECURITY.md (React JSX, not Jinja2), DEMO-LOGIN.md (removed legacy file refs)
+- Removed `black` formatter from dev deps and justfile; `ruff format` is the sole formatter
+
 ## v0.65.21 — 2026-03-12
 
 ### Fix: Parent domain change cascades to children & batch schedule resets reminders

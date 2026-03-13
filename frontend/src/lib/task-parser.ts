@@ -648,7 +648,7 @@ function formatDurationShort(minutes: number): string {
 
 /** Abbreviations chrono-node doesn't handle natively, with optional trailing time */
 const DATE_ABBR_PATTERN =
-  /\b(tmr|tmrw|tod|tom|yes|yest)(?:\s+(?:at\s+)?(\d{1,2}(?::\d{2})?(?:\s*[ap]m)?))?(?![a-zA-Z])/gi;
+  /\b(tmr|tmrw|tod|tom|yes|yest)(?:\s*(?:at\s+)?(\d{1,2}(?::\d{2})?(?:\s*[ap]m)?))?(?![a-zA-Z])/gi;
 
 /** Reject ambiguous chrono results (bare month names like "Jan", "May", "March"). */
 function isLikelyDate(result: chrono.ParsedResult): boolean {
