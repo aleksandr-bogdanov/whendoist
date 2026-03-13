@@ -617,3 +617,48 @@ class DeviceToken(Base):
     user: Mapped["User"] = relationship(back_populates="device_tokens")
 
     __table_args__ = (UniqueConstraint("user_id", "token", name="uq_device_token_user_token"),)
+
+
+# =============================================================================
+# OAuth 2.1 Models (MCP Integration)
+# =============================================================================
+
+
+class OAuthClient(Base):
+    """
+    Dynamically registered OAuth client (RFC 7591).
+
+    Clients register via POST /oauth/register and receive a client_id + client_secret.
+    Used by MCP clients (Claude Code, Claude Desktop, etc.) to authorize access.
+    """
+
+    __tablename__ = "oauth_clients"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    client_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    client_secret_hash: Mapped[str] = mapped_column(String(64))  # SHA-256 hex
+    client_name: Mapped[str] = mapped_column(String(255))
+    redirect_uris: Mapped[list[str]] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class OAuthAuthorizationCode(Base):
+    """
+    Temporary OAuth authorization code (10 minute TTL).
+
+    Single-use: consumed when exchanged for tokens at POST /oauth/token.
+    Stores PKCE code_challenge for S256 verification.
+    """
+
+    __tablename__ = "oauth_authorization_codes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)  # SHA-256 hex
+    client_id: Mapped[str] = mapped_column(String(64), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    redirect_uri: Mapped[str] = mapped_column(Text)
+    code_challenge: Mapped[str] = mapped_column(String(128))
+    code_challenge_method: Mapped[str] = mapped_column(String(10), default="S256")
+    scope: Mapped[str] = mapped_column(String(50), default="tasks")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -30,6 +30,11 @@ CSRF_EXEMPT_PATHS = {
     # refresh uses refresh_token in body (no session)
     "/api/v1/device/token",
     "/api/v1/device/refresh",
+    # OAuth 2.1 provider: authorize form has its own PKCE + state protection,
+    # token endpoint uses client_secret + code_verifier (not session)
+    "/oauth/authorize",
+    "/oauth/token",
+    "/oauth/register",
 }
 
 # Methods that require CSRF validation

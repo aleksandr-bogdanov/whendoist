@@ -213,6 +213,7 @@ async def google_callback(
     db: AsyncSession = Depends(get_db),
     google_oauth_state: str | None = Cookie(default=None),
     oauth_return_to_wizard: str | None = Cookie(default=None),
+    oauth_return_to: str | None = Cookie(default=None),
     oauth_gcal_write_scope: str | None = Cookie(default=None),
 ) -> Response:
     """Handle Google OAuth callback."""
@@ -288,9 +289,13 @@ async def google_callback(
     redirect_url = "/settings?gcal_auto_enable=true" if has_write_scope else "/dashboard"
     if oauth_return_to_wizard:
         redirect_url = "/dashboard"
+    # OAuth authorization flow: return to the consent page after login
+    if oauth_return_to:
+        redirect_url = oauth_return_to
     response = RedirectResponse(url=redirect_url, status_code=303)
     response.delete_cookie("google_oauth_state")
     response.delete_cookie("oauth_return_to_wizard")
+    response.delete_cookie("oauth_return_to")
     response.delete_cookie("oauth_gcal_write_scope")
     return response
 
