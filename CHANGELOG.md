@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.5 — 2026-03-14
+
+### Fix: OAuth token endpoint accepts form-urlencoded + wordmark alignment
+
+- **Token endpoint**: Now accepts `application/x-www-form-urlencoded` (required by OAuth 2.1 / RFC 6749 §4.1.3) in addition to JSON — was returning 422 to all standard OAuth clients including Claude Code MCP
+- **Wordmark alignment**: Fixed W icon position using BRAND.md Small size specs — `align-items: flex-end`, 17×15px icon, 2px offset, 1px gap, white text on dark background
+
+---
+
 ## v0.66.4 — 2026-03-14
 
 ### Fix: Redesign OAuth consent pages to match brand + fix deny button

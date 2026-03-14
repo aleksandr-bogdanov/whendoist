@@ -177,13 +177,13 @@ _AUTHORIZE_HTML = """<!DOCTYPE html>
             padding: 2rem; max-width: 420px; width: 100%;
         }}
         .brand {{
-            display: flex; align-items: center; gap: 0.5rem;
+            display: inline-flex; align-items: flex-end;
             margin-bottom: 1.5rem; padding-bottom: 1.25rem;
-            border-bottom: 1px solid #262626;
+            border-bottom: 1px solid #262626; width: 100%;
         }}
-        .brand svg {{ flex-shrink: 0; }}
+        .brand svg {{ flex-shrink: 0; margin-bottom: 2px; margin-right: 1px; }}
         .brand span {{
-            font-size: 1.1rem; font-weight: 500; color: #e5e5e5;
+            font-size: 1.25rem; font-weight: 500; color: #FFFFFF;
             line-height: 1;
         }}
         h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.625rem; }}
@@ -218,7 +218,7 @@ _AUTHORIZE_HTML = """<!DOCTYPE html>
 <body>
     <div class="card">
         <div class="brand">
-            <svg viewBox="38 40 180 160" width="24" height="21">
+            <svg viewBox="38 40 180 160" width="17" height="15">
                 <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF"
                       transform="rotate(-8 62 120)"/>
                 <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
@@ -278,14 +278,14 @@ _LOGIN_REDIRECT_HTML = """<!DOCTYPE html>
             padding: 2rem; max-width: 420px; width: 100%; text-align: center;
         }}
         .brand {{
-            display: inline-flex; align-items: center; gap: 0.5rem;
+            display: inline-flex; align-items: flex-end;
             margin-bottom: 1.5rem; padding-bottom: 1.25rem;
             border-bottom: 1px solid #262626; width: 100%;
             justify-content: center;
         }}
-        .brand svg {{ flex-shrink: 0; }}
+        .brand svg {{ flex-shrink: 0; margin-bottom: 2px; margin-right: 1px; }}
         .brand span {{
-            font-size: 1.1rem; font-weight: 500; color: #e5e5e5;
+            font-size: 1.25rem; font-weight: 500; color: #FFFFFF;
             line-height: 1;
         }}
         h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }}
@@ -303,7 +303,7 @@ _LOGIN_REDIRECT_HTML = """<!DOCTYPE html>
 <body>
     <div class="card">
         <div class="brand">
-            <svg viewBox="38 40 180 160" width="24" height="21">
+            <svg viewBox="38 40 180 160" width="17" height="15">
                 <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF"
                       transform="rotate(-8 62 120)"/>
                 <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
@@ -475,10 +475,28 @@ async def authorize_submit(
 @limiter.limit(AUTH_LIMIT)
 async def token_exchange(
     request: Request,
-    body: TokenRequest,
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
-    """Exchange authorization code for tokens, or refresh existing tokens."""
+    """Exchange authorization code for tokens, or refresh existing tokens.
+
+    Accepts both application/x-www-form-urlencoded (OAuth 2.1 spec, RFC 6749 §4.1.3)
+    and application/json for flexibility.
+    """
+    content_type = request.headers.get("content-type", "")
+    if "form" in content_type.lower():
+        form = await request.form()
+        body = TokenRequest(
+            grant_type=str(form.get("grant_type", "")),
+            code=str(form["code"]) if form.get("code") else None,
+            code_verifier=str(form["code_verifier"]) if form.get("code_verifier") else None,
+            redirect_uri=str(form["redirect_uri"]) if form.get("redirect_uri") else None,
+            client_id=str(form["client_id"]) if form.get("client_id") else None,
+            client_secret=str(form["client_secret"]) if form.get("client_secret") else None,
+            refresh_token=str(form["refresh_token"]) if form.get("refresh_token") else None,
+        )
+    else:
+        body = TokenRequest.model_validate(await request.json())
+
     if body.grant_type == "authorization_code":
         return await _handle_authorization_code(body, db)
     elif body.grant_type == "refresh_token":
