@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.6 — 2026-03-14
+
+### Fix: Use self-hosted fonts in OAuth pages (CSP blocked Google Fonts)
+
+- **Fonts**: Replaced Google Fonts CDN links with self-hosted `@font-face` declarations using `/fonts/nunito-latin.woff2` and `/fonts/quicksand-latin.woff2` — CSP `font-src 'self'` was blocking external font loading
+- **Typography**: Body text now uses Nunito (app body font), Quicksand reserved for wordmark only — matching the main app's font hierarchy
+
+---
+
 ## v0.66.5 — 2026-03-14
 
 ### Fix: OAuth token endpoint accepts form-urlencoded + wordmark alignment

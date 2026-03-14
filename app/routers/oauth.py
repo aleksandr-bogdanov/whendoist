@@ -160,14 +160,18 @@ _AUTHORIZE_HTML = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Authorize — Whendoist</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap"
-          rel="stylesheet">
     <style>
+        @font-face {{
+            font-family: 'Nunito'; font-style: normal; font-weight: 400 700;
+            font-display: swap; src: url('/fonts/nunito-latin.woff2') format('woff2');
+        }}
+        @font-face {{
+            font-family: 'Quicksand'; font-style: normal; font-weight: 500 700;
+            font-display: swap; src: url('/fonts/quicksand-latin.woff2') format('woff2');
+        }}
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
-            font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #0a0a0a; color: #e5e5e5;
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; padding: 1rem;
@@ -183,26 +187,27 @@ _AUTHORIZE_HTML = """<!DOCTYPE html>
         }}
         .brand svg {{ flex-shrink: 0; margin-bottom: 2px; margin-right: 1px; }}
         .brand span {{
+            font-family: 'Quicksand', sans-serif;
             font-size: 1.25rem; font-weight: 500; color: #FFFFFF;
             line-height: 1;
         }}
-        h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.625rem; }}
+        h1 {{ font-size: 1.25rem; font-weight: 700; margin-bottom: 0.625rem; }}
         .desc {{ color: #a3a3a3; font-size: 0.9rem; line-height: 1.5; }}
-        .client-name {{ color: #167BFF; font-weight: 600; }}
+        .client-name {{ color: #167BFF; font-weight: 700; }}
         .scope {{
             background: rgba(109, 94, 246, 0.08); border: 1px solid rgba(109, 94, 246, 0.2);
             border-radius: 8px; padding: 0.875rem 1rem; margin: 1.25rem 0;
             font-size: 0.85rem; color: #c4b5fd;
         }}
-        .scope strong {{ color: #e5e5e5; display: block; margin-bottom: 0.375rem; font-weight: 600; }}
+        .scope strong {{ color: #e5e5e5; display: block; margin-bottom: 0.375rem; font-weight: 700; }}
         .scope ul {{ list-style: none; padding: 0; }}
         .scope li {{ padding: 0.15rem 0; }}
         .scope li::before {{ content: '\\2713\\0020'; color: #6D5EF6; font-weight: 700; }}
         .buttons {{ display: flex; gap: 0.75rem; margin-top: 1.5rem; }}
         button {{
             flex: 1; padding: 0.7rem 1rem; border-radius: 8px; border: none;
-            font-family: 'Quicksand', sans-serif;
-            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.9rem; font-weight: 700; cursor: pointer;
             transition: background 0.15s ease, border-color 0.15s ease;
         }}
         .approve {{ background: #6D5EF6; color: white; }}
@@ -261,14 +266,18 @@ _LOGIN_REDIRECT_HTML = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — Whendoist</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap"
-          rel="stylesheet">
     <style>
+        @font-face {{
+            font-family: 'Nunito'; font-style: normal; font-weight: 400 700;
+            font-display: swap; src: url('/fonts/nunito-latin.woff2') format('woff2');
+        }}
+        @font-face {{
+            font-family: 'Quicksand'; font-style: normal; font-weight: 500 700;
+            font-display: swap; src: url('/fonts/quicksand-latin.woff2') format('woff2');
+        }}
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
-            font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #0a0a0a; color: #e5e5e5;
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; padding: 1rem;
@@ -285,16 +294,17 @@ _LOGIN_REDIRECT_HTML = """<!DOCTYPE html>
         }}
         .brand svg {{ flex-shrink: 0; margin-bottom: 2px; margin-right: 1px; }}
         .brand span {{
+            font-family: 'Quicksand', sans-serif;
             font-size: 1.25rem; font-weight: 500; color: #FFFFFF;
             line-height: 1;
         }}
-        h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }}
+        h1 {{ font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }}
         p {{ color: #a3a3a3; margin-bottom: 1.5rem; font-size: 0.875rem; line-height: 1.5; }}
         a {{
             display: inline-block; padding: 0.7rem 1.75rem; border-radius: 8px;
             background: #167BFF; color: white; text-decoration: none;
-            font-family: 'Quicksand', sans-serif;
-            font-size: 0.9rem; font-weight: 600;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.9rem; font-weight: 700;
             transition: background 0.15s ease;
         }}
         a:hover {{ background: #1268D9; }}
