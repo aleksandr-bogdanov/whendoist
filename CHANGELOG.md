@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.11 — 2026-03-14
+
+### Chore: Add MCP request/response logging
+
+- Log all MCP requests (method, path, session ID, auth status) and response status at INFO level
+- Helps debug Claude Code MCP connection failures in production
+
+---
+
 ## v0.66.10 — 2026-03-14
 
 ### Fix: MCP lifespan initialization + endpoint routing

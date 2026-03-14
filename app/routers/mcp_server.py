@@ -11,6 +11,7 @@ User context: Passed via contextvars, set by auth middleware.
 import contextvars
 import json
 import logging
+from collections.abc import MutableMapping
 from datetime import date, timedelta
 from typing import Any
 
@@ -51,7 +52,12 @@ class MCPAuthMiddleware:
 
         # Extract Authorization header
         headers = dict(scope.get("headers", []))
+        method = scope.get("method", "?")
+        path = scope.get("path", "?")
+        mcp_session = headers.get(b"mcp-session-id", b"").decode()
         auth_value = headers.get(b"authorization", b"").decode()
+
+        logger.info(f"MCP {method} {path} | session={mcp_session or 'none'} | auth={'yes' if auth_value else 'no'}")
 
         if not auth_value.startswith("Bearer "):
             response = JSONResponse(
@@ -66,6 +72,7 @@ class MCPAuthMiddleware:
         user_id = verify_access_token(token)
 
         if not user_id:
+            logger.warning(f"MCP auth failed: invalid token (len={len(token)})")
             response = JSONResponse(
                 {"error": "invalid_token", "error_description": "Token expired or invalid"},
                 status_code=401,
@@ -74,10 +81,25 @@ class MCPAuthMiddleware:
             await response(scope, receive, send)
             return
 
+        logger.info(f"MCP auth OK: user_id={user_id}")
+
+        # Capture response status for logging
+        response_status = 0
+
+        async def logging_send(message: MutableMapping[str, Any]) -> None:
+            nonlocal response_status
+            if message.get("type") == "http.response.start":
+                response_status = message.get("status", 0)
+            await send(message)
+
         # Set user context for MCP tools
         token_var = _current_user_id.set(user_id)
         try:
-            await self.app(scope, receive, send)
+            await self.app(scope, receive, logging_send)
+            logger.info(f"MCP {method} {path} -> {response_status}")
+        except Exception:
+            logger.exception(f"MCP {method} {path} -> exception")
+            raise
         finally:
             _current_user_id.reset(token_var)
 
