@@ -143,12 +143,13 @@ See [E2E Encryption Compatibility](#e2e-encryption-compatibility) for details.
 
 ## Available Tools
 
-Both servers expose the same 12 core tools. The local server adds 2 encryption tools.
+Both servers expose the same 13 core tools. The local server adds 2 encryption tools.
 
 ### Core Tools
 
 | Tool | Description |
 |------|-------------|
+| `whoami` | Show authenticated user identity (email, name, data_version) |
 | `list_tasks` | Query tasks with filters (domain, status, date, clarity, impact, recurrence) |
 | `create_task` | Create a new task with full metadata |
 | `complete_task` | Mark a task as completed |

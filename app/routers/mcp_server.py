@@ -22,7 +22,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.database import async_session_factory
-from app.models import UserPreferences
+from app.models import Task, User, UserPreferences
 from app.routers.device_auth import verify_access_token
 from app.services.task_service import TaskService
 
@@ -241,6 +241,23 @@ mcp = FastMCP(
 
 
 @mcp.tool()
+async def whoami() -> str:
+    """Show the authenticated user's identity. Useful for debugging."""
+    user_id = _get_user_id()
+    async with async_session_factory() as db:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return f"Authenticated as user_id={user_id} but user not found in database!"
+        return (
+            f"user_id: {user_id}\n"
+            f"email: {user.email}\n"
+            f"name: {user.name or user.email}\n"
+            f"data_version: {user.data_version}"
+        )
+
+
+@mcp.tool()
 async def list_tasks(
     domain: str | None = None,
     status: str = "pending",
@@ -369,12 +386,25 @@ async def create_task(
             scheduled_time=parsed_time,
             description=description,
         )
+        task_id = task.id
+        task_title = task.title
+        logger.info(f"MCP create_task: pre-commit task_id={task_id} user_id={user_id}")
         await db.commit()
+        logger.info(f"MCP create_task: post-commit task_id={task_id}")
 
-        domain_name = ""
-        if task.domain:
-            domain_name = f" in #{task.domain.name}"
-        return f"Created task [id:{task.id}]: {task.title}{domain_name}"
+    # Verify with a fresh session that the task actually persisted
+    async with async_session_factory() as verify_db:
+        result = await verify_db.execute(select(Task).where(Task.id == task_id))
+        persisted = result.scalar_one_or_none()
+        if persisted:
+            logger.info(
+                f"MCP create_task: VERIFIED task_id={task_id} "
+                f"user_id={persisted.user_id} status={persisted.status} title={persisted.title!r}"
+            )
+        else:
+            logger.error(f"MCP create_task: FAILED VERIFICATION — task_id={task_id} not found after commit!")
+
+    return f"Created task [id:{task_id}]: {task_title}"
 
 
 @mcp.tool()
@@ -391,8 +421,23 @@ async def complete_task(task_id: int) -> str:
         task = await svc.complete_task(task_id)
         if not task:
             return f"Task {task_id} not found or not owned by you."
+        logger.info(f"MCP complete_task: pre-commit task_id={task_id} user_id={user_id}")
         await db.commit()
-        return f"Completed task [id:{task_id}]: {task.title}"
+        logger.info(f"MCP complete_task: post-commit task_id={task_id}")
+
+    # Verify completion persisted
+    async with async_session_factory() as verify_db:
+        result = await verify_db.execute(select(Task).where(Task.id == task_id))
+        persisted = result.scalar_one_or_none()
+        if persisted:
+            logger.info(
+                f"MCP complete_task: VERIFIED task_id={task_id} "
+                f"status={persisted.status} completed_at={persisted.completed_at}"
+            )
+        else:
+            logger.error(f"MCP complete_task: FAILED VERIFICATION — task_id={task_id} not found!")
+
+    return f"Completed task [id:{task_id}]: {task.title}"
 
 
 @mcp.tool()

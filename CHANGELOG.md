@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.13 — 2026-03-14
+
+### Fix: MCP mutation verification + whoami diagnostic tool
+
+- Add `whoami` MCP tool to verify authenticated user identity (email, name, data_version)
+- Add post-commit verification logging to `create_task` and `complete_task` — re-reads data with a fresh session after commit to confirm persistence
+- Diagnoses: MCP tools return success but data doesn't appear in UI
+
+---
+
 ## v0.66.12 — 2026-03-14
 
 ### Fix: MCP 421 — DNS rebinding protection rejects production Host header
