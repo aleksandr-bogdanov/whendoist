@@ -1186,11 +1186,10 @@ async def get_analytics() -> str:
 
 
 @mcp.tool()
-async def get_recent_completions(days: int = 7, limit: int = 20) -> str:
-    """Get recently completed tasks and instances.
+async def get_recent_completions(limit: int = 20) -> str:
+    """Get recently completed tasks and instances, most recent first.
 
     Args:
-        days: Look back this many days (default 7).
         limit: Max results (default 20).
     """
     user_id = _get_user_id()
@@ -1207,9 +1206,9 @@ async def get_recent_completions(days: int = 7, limit: int = 20) -> str:
         completions = await svc.get_recent_completions(limit=limit)
 
     if not completions:
-        return f"No completions in the last {days} days."
+        return "No recent completions."
 
-    lines = [f"Recent completions (last {days} days, up to {limit}):"]
+    lines = [f"Recent completions ({len(completions)}):"]
     for c in completions:
         instance_tag = " (recurring)" if c.get("is_instance") else ""
         lines.append(
