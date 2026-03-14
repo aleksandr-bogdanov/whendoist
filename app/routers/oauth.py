@@ -16,7 +16,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -153,6 +153,29 @@ async def register_client(
 # =============================================================================
 # Authorization Endpoint
 # =============================================================================
+
+# Redirect page used instead of 302 for OAuth callbacks.
+# CSP form-action blocks 302 redirects from form submissions to localhost
+# (Chrome checks the entire redirect chain against form-action).
+# A page-initiated redirect via meta refresh + JS avoids this restriction.
+_OAUTH_REDIRECT_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0;url={url}">
+    <title>Redirecting…</title>
+    <style>
+        body {{ font-family: sans-serif; background: #0a0a0a; color: #a3a3a3;
+               display: flex; align-items: center; justify-content: center;
+               min-height: 100vh; text-align: center; }}
+        a {{ color: #167BFF; }}
+    </style>
+</head>
+<body>
+    <p>Redirecting… <a href="{url}">Click here</a> if not redirected.</p>
+    <script nonce="{nonce}">window.location.replace("{url}");</script>
+</body>
+</html>"""
 
 _AUTHORIZE_HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -434,7 +457,8 @@ async def authorize_submit(
         deny_url = f"{redirect_uri}{sep}error=access_denied"
         if state:
             deny_url += f"&state={state}"
-        return RedirectResponse(deny_url, status_code=302)
+        nonce = getattr(request.state, "csp_nonce", "")
+        return HTMLResponse(_OAUTH_REDIRECT_HTML.format(url=deny_url, nonce=nonce))
 
     # Validate user
     user_id = get_user_id(request)
@@ -468,12 +492,14 @@ async def authorize_submit(
 
     logger.info(f"OAuth authorization code issued for user {user_id}, client {str(client_id)[:8]}…")
 
-    # Redirect with code
+    # Redirect with code — use HTML redirect instead of 302 because
+    # CSP form-action blocks 302 redirect chains to localhost
     sep = "&" if "?" in str(redirect_uri) else "?"
     approve_url = f"{redirect_uri}{sep}code={code}"
     if state:
         approve_url += f"&state={state}"
-    return RedirectResponse(approve_url, status_code=302)
+    nonce = getattr(request.state, "csp_nonce", "")
+    return HTMLResponse(_OAUTH_REDIRECT_HTML.format(url=approve_url, nonce=nonce))
 
 
 # =============================================================================
