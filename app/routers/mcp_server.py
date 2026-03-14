@@ -12,7 +12,7 @@ import contextvars
 import json
 import logging
 from collections.abc import MutableMapping
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -22,7 +22,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.database import async_session_factory
-from app.models import Task, User, UserPreferences
+from app.models import User, UserPreferences
 from app.routers.device_auth import verify_access_token
 from app.services.task_service import TaskService
 
@@ -213,6 +213,12 @@ async def _check_encryption(user_id: int) -> str | None:
     return None
 
 
+def _resolve_domain_name(domains: list, name: str) -> int | None:
+    """Resolve a domain name to its ID (case-insensitive). Returns None if not found."""
+    match = next((d for d in domains if d.name.lower() == name.lower()), None)
+    return match.id if match else None
+
+
 # =============================================================================
 # MCP Server
 # =============================================================================
@@ -236,25 +242,11 @@ mcp = FastMCP(
 
 
 # =============================================================================
-# Tier 1 Tools
+# Task CRUD
 # =============================================================================
-
-
-@mcp.tool()
-async def whoami() -> str:
-    """Show the authenticated user's identity. Useful for debugging."""
-    user_id = _get_user_id()
-    async with async_session_factory() as db:
-        result = await db.execute(select(User).where(User.id == user_id))
-        user = result.scalar_one_or_none()
-        if not user:
-            return f"Authenticated as user_id={user_id} but user not found in database!"
-        return (
-            f"user_id: {user_id}\n"
-            f"email: {user.email}\n"
-            f"name: {user.name or user.email}\n"
-            f"data_version: {user.data_version}"
-        )
+# list_tasks, create_task, update_task, complete_task, delete_task,
+# archive_task, restore_task, get_archived_tasks, search_tasks,
+# batch_create_tasks, batch_update_tasks, batch_complete_tasks
 
 
 @mcp.tool()
@@ -388,23 +380,87 @@ async def create_task(
         )
         task_id = task.id
         task_title = task.title
-        logger.info(f"MCP create_task: pre-commit task_id={task_id} user_id={user_id}")
+        logger.info(f"MCP create_task: task_id={task_id} user_id={user_id}")
         await db.commit()
-        logger.info(f"MCP create_task: post-commit task_id={task_id}")
-
-    # Verify with a fresh session that the task actually persisted
-    async with async_session_factory() as verify_db:
-        result = await verify_db.execute(select(Task).where(Task.id == task_id))
-        persisted = result.scalar_one_or_none()
-        if persisted:
-            logger.info(
-                f"MCP create_task: VERIFIED task_id={task_id} "
-                f"user_id={persisted.user_id} status={persisted.status} title={persisted.title!r}"
-            )
-        else:
-            logger.error(f"MCP create_task: FAILED VERIFICATION — task_id={task_id} not found after commit!")
 
     return f"Created task [id:{task_id}]: {task_title}"
+
+
+@mcp.tool()
+async def update_task(
+    task_id: int,
+    title: str | None = None,
+    domain: str | None = None,
+    impact: int | None = None,
+    clarity: str | None = None,
+    duration_minutes: int | None = None,
+    scheduled_date: str | None = None,
+    scheduled_time: str | None = None,
+    description: str | None = None,
+    parent_id: int | None = None,
+) -> str:
+    """Update an existing task. Only provided fields are changed.
+
+    Args:
+        task_id: The task ID to update (required).
+        title: New title.
+        domain: New domain name (resolved to ID).
+        impact: New priority: 1=high, 2=mid, 3=low, 4=minimal.
+        clarity: New energy mode: autopilot, normal, brainstorm.
+        duration_minutes: New time estimate in minutes.
+        scheduled_date: New date (YYYY-MM-DD), or empty string to clear.
+        scheduled_time: New time (HH:MM), or empty string to clear.
+        description: New description/notes.
+        parent_id: ID of parent task to make this a subtask, or 0 to promote to top-level.
+    """
+    user_id = _get_user_id()
+    enc_error = await _check_encryption(user_id)
+    if enc_error:
+        return enc_error
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+
+        kwargs: dict[str, Any] = {}
+        if title is not None:
+            kwargs["title"] = title
+        if impact is not None:
+            kwargs["impact"] = impact
+        if clarity is not None:
+            kwargs["clarity"] = clarity
+        if duration_minutes is not None:
+            kwargs["duration_minutes"] = duration_minutes
+        if description is not None:
+            kwargs["description"] = description
+        if parent_id is not None:
+            kwargs["parent_id"] = parent_id if parent_id != 0 else None
+
+        if domain is not None:
+            domains = await svc.get_domains(include_archived=True)
+            match = next((d for d in domains if d.name.lower() == domain.lower()), None)
+            if match:
+                kwargs["domain_id"] = match.id
+            else:
+                return f"Domain '{domain}' not found."
+
+        if scheduled_date is not None:
+            from datetime import date as date_type
+
+            kwargs["scheduled_date"] = date_type.fromisoformat(scheduled_date) if scheduled_date else None
+
+        if scheduled_time is not None:
+            from datetime import time as time_type
+
+            kwargs["scheduled_time"] = time_type.fromisoformat(scheduled_time) if scheduled_time else None
+
+        if not kwargs:
+            return "Nothing to update -- provide at least one field."
+
+        task = await svc.update_task(task_id, **kwargs)
+        if not task:
+            return f"Task {task_id} not found or not owned by you."
+        await db.commit()
+        return f"Updated task [id:{task_id}]: {task.title}"
 
 
 @mcp.tool()
@@ -421,21 +477,8 @@ async def complete_task(task_id: int) -> str:
         task = await svc.complete_task(task_id)
         if not task:
             return f"Task {task_id} not found or not owned by you."
-        logger.info(f"MCP complete_task: pre-commit task_id={task_id} user_id={user_id}")
+        logger.info(f"MCP complete_task: task_id={task_id} user_id={user_id}")
         await db.commit()
-        logger.info(f"MCP complete_task: post-commit task_id={task_id}")
-
-    # Verify completion persisted
-    async with async_session_factory() as verify_db:
-        result = await verify_db.execute(select(Task).where(Task.id == task_id))
-        persisted = result.scalar_one_or_none()
-        if persisted:
-            logger.info(
-                f"MCP complete_task: VERIFIED task_id={task_id} "
-                f"status={persisted.status} completed_at={persisted.completed_at}"
-            )
-        else:
-            logger.error(f"MCP complete_task: FAILED VERIFICATION — task_id={task_id} not found!")
 
     return f"Completed task [id:{task_id}]: {task.title}"
 
@@ -461,6 +504,418 @@ async def delete_task(task_id: int) -> str:
 
 
 @mcp.tool()
+async def archive_task(task_id: int) -> str:
+    """Archive a task (soft delete). Can be restored later.
+
+    Args:
+        task_id: The task ID to archive.
+    """
+    user_id = _get_user_id()
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+        task = await svc.archive_task(task_id)
+        if not task:
+            return f"Task {task_id} not found or not owned by you."
+        await db.commit()
+        logger.info(f"MCP archive_task: task_id={task_id} user_id={user_id}")
+
+    return f"Archived task [id:{task_id}]: {task.title}"
+
+
+@mcp.tool()
+async def restore_task(task_id: int) -> str:
+    """Restore an archived task back to pending.
+
+    Args:
+        task_id: The task ID to restore.
+    """
+    user_id = _get_user_id()
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+        task = await svc.restore_task(task_id)
+        if not task:
+            return f"Task {task_id} not found, not owned by you, or not archived."
+        await db.commit()
+        logger.info(f"MCP restore_task: task_id={task_id} user_id={user_id}")
+
+    return f"Restored task [id:{task_id}]: {task.title}"
+
+
+@mcp.tool()
+async def get_archived_tasks(
+    domain: str | None = None,
+    limit: int = 50,
+) -> str:
+    """List archived tasks.
+
+    Args:
+        domain: Filter by domain name (case-insensitive).
+        limit: Max results, default 50.
+    """
+    user_id = _get_user_id()
+    enc_error = await _check_encryption(user_id)
+    if enc_error:
+        return enc_error
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+
+        domain_id = None
+        if domain:
+            domains = await svc.get_domains(include_archived=True)
+            match = next((d for d in domains if d.name.lower() == domain.lower()), None)
+            if not match:
+                available = ", ".join(d.name for d in domains if not d.is_archived)
+                return f"Domain '{domain}' not found. Available: {available}"
+            domain_id = match.id
+
+        tasks = await svc.get_tasks(status="archived", domain_id=domain_id, limit=limit)
+
+        if not tasks:
+            return "No archived tasks found."
+
+        lines = [_format_task(_task_to_dict(t)) for t in tasks]
+        return f"{len(tasks)} archived task(s):\n\n" + "\n".join(lines)
+
+
+@mcp.tool()
+async def search_tasks(query: str, include_completed: bool = False) -> str:
+    """Search tasks by title keyword.
+
+    Args:
+        query: Search term to match against task titles.
+        include_completed: Also search completed tasks (default: false).
+    """
+    user_id = _get_user_id()
+    enc_error = await _check_encryption(user_id)
+    if enc_error:
+        return enc_error
+
+    query_lower = query.lower()
+    all_matches: list[dict] = []
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+
+        for status in ["pending"] + (["completed"] if include_completed else []):
+            tasks = await svc.get_tasks(status=status, limit=200)
+            matches = [_task_to_dict(t) for t in tasks if query_lower in t.title.lower()]
+            all_matches.extend(matches)
+
+    if not all_matches:
+        return f"No tasks matching '{query}'."
+
+    lines = [_format_task(t) for t in all_matches]
+    return f"{len(all_matches)} task(s) matching '{query}':\n\n" + "\n".join(lines)
+
+
+@mcp.tool()
+async def batch_create_tasks(tasks_json: str) -> str:
+    """Create multiple tasks at once. Useful for goal decomposition.
+
+    Args:
+        tasks_json: JSON array of task objects. Each supports:
+            title (required), domain, impact, clarity, duration_minutes,
+            scheduled_date, scheduled_time, description.
+    """
+    user_id = _get_user_id()
+    enc_error = await _check_encryption(user_id)
+    if enc_error:
+        return enc_error
+
+    try:
+        tasks_list = json.loads(tasks_json)
+    except json.JSONDecodeError as e:
+        return f"Invalid JSON: {e}"
+
+    if not isinstance(tasks_list, list):
+        return "Expected a JSON array of task objects."
+
+    created: list[str] = []
+    errors: list[str] = []
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+        # Pre-fetch domains for name resolution
+        all_domains = await svc.get_domains(include_archived=True)
+        domain_map = {d.name.lower(): d.id for d in all_domains}
+
+        for i, task_data in enumerate(tasks_list):
+            if not isinstance(task_data, dict) or "title" not in task_data:
+                errors.append(f"Item {i}: missing 'title'")
+                continue
+
+            try:
+                from datetime import date as date_type
+                from datetime import time as time_type
+
+                domain_id = None
+                if "domain" in task_data:
+                    domain_id = domain_map.get(task_data["domain"].lower())
+
+                parsed_date = None
+                if task_data.get("scheduled_date"):
+                    parsed_date = date_type.fromisoformat(task_data["scheduled_date"])
+
+                parsed_time = None
+                if task_data.get("scheduled_time"):
+                    parsed_time = time_type.fromisoformat(task_data["scheduled_time"])
+
+                task = await svc.create_task(
+                    title=task_data["title"],
+                    domain_id=domain_id,
+                    impact=task_data.get("impact", 4),
+                    clarity=task_data.get("clarity", "normal"),
+                    duration_minutes=task_data.get("duration_minutes"),
+                    scheduled_date=parsed_date,
+                    scheduled_time=parsed_time,
+                    description=task_data.get("description"),
+                )
+                created.append(f"[id:{task.id}] {task.title}")
+            except Exception as e:
+                errors.append(f"'{task_data['title']}': {e}")
+
+        await db.commit()
+
+    lines = [f"Created {len(created)} task(s):"]
+    for c in created:
+        lines.append(f"  + {c}")
+    if errors:
+        lines.append(f"\n{len(errors)} error(s):")
+        for e in errors:
+            lines.append(f"  x {e}")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+async def batch_update_tasks(
+    task_ids: str,
+    impact: int | None = None,
+    clarity: str | None = None,
+    domain: str | None = None,
+    status: str | None = None,
+) -> str:
+    """Update multiple tasks at once. Only provided fields are changed.
+
+    Args:
+        task_ids: Comma-separated task IDs (e.g. "1,2,3").
+        impact: New priority: 1=high, 2=mid, 3=low, 4=minimal.
+        clarity: New energy mode: autopilot, normal, brainstorm.
+        domain: New domain name (resolved to ID).
+        status: New status: pending, completed, archived.
+    """
+    user_id = _get_user_id()
+    enc_error = await _check_encryption(user_id)
+    if enc_error:
+        return enc_error
+
+    try:
+        ids = [int(x.strip()) for x in task_ids.split(",") if x.strip()]
+    except ValueError:
+        return "Invalid task_ids format. Use comma-separated integers (e.g. '1,2,3')."
+
+    if not ids:
+        return "No task IDs provided."
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+
+        kwargs: dict[str, Any] = {}
+        if impact is not None:
+            kwargs["impact"] = impact
+        if clarity is not None:
+            kwargs["clarity"] = clarity
+        if status is not None:
+            kwargs["status"] = status
+
+        if domain is not None:
+            domains = await svc.get_domains(include_archived=True)
+            domain_id = _resolve_domain_name(domains, domain)
+            if domain_id is None:
+                return f"Domain '{domain}' not found."
+            kwargs["domain_id"] = domain_id
+
+        if not kwargs:
+            return "Nothing to update -- provide at least one field."
+
+        updated = 0
+        errors: list[str] = []
+        for tid in ids:
+            try:
+                task = await svc.update_task(tid, **kwargs)
+                if task:
+                    updated += 1
+                else:
+                    errors.append(f"id:{tid} not found")
+            except Exception as e:
+                errors.append(f"id:{tid} {e}")
+
+        await db.commit()
+        logger.info(f"MCP batch_update_tasks: updated={updated} errors={len(errors)} user_id={user_id}")
+
+    result = f"Updated {updated} task(s)."
+    if errors:
+        result += f" {len(errors)} error(s): " + "; ".join(errors)
+    return result
+
+
+@mcp.tool()
+async def batch_complete_tasks(task_ids: str) -> str:
+    """Complete multiple tasks at once.
+
+    Args:
+        task_ids: Comma-separated task IDs (e.g. "1,2,3").
+    """
+    user_id = _get_user_id()
+
+    try:
+        ids = [int(x.strip()) for x in task_ids.split(",") if x.strip()]
+    except ValueError:
+        return "Invalid task_ids format. Use comma-separated integers (e.g. '1,2,3')."
+
+    if not ids:
+        return "No task IDs provided."
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+        completed = 0
+        errors: list[str] = []
+        for tid in ids:
+            try:
+                task = await svc.complete_task(tid)
+                if task:
+                    completed += 1
+                else:
+                    errors.append(f"id:{tid} not found")
+            except Exception as e:
+                errors.append(f"id:{tid} {e}")
+
+        await db.commit()
+        logger.info(f"MCP batch_complete_tasks: completed={completed} errors={len(errors)} user_id={user_id}")
+
+    result = f"Completed {completed} task(s)."
+    if errors:
+        result += f" {len(errors)} error(s): " + "; ".join(errors)
+    return result
+
+
+# =============================================================================
+# Recurring Instances
+# =============================================================================
+# complete_instance, skip_instance, unskip_instance, reschedule_instance
+
+
+@mcp.tool()
+async def complete_instance(instance_id: int) -> str:
+    """Complete a specific recurring task instance.
+
+    Args:
+        instance_id: The instance ID (shown as inst:ID in schedule output).
+    """
+    user_id = _get_user_id()
+
+    async with async_session_factory() as db:
+        from app.services.preferences_service import PreferencesService
+        from app.services.recurrence_service import RecurrenceService
+
+        timezone = await PreferencesService(db, user_id).get_timezone()
+        svc = RecurrenceService(db, user_id, timezone=timezone)
+        instance = await svc.complete_instance(instance_id)
+        if not instance:
+            return f"Instance {instance_id} not found or not owned by you."
+        await db.commit()
+
+    return f"Completed instance [inst:{instance_id}]"
+
+
+@mcp.tool()
+async def skip_instance(instance_id: int) -> str:
+    """Skip a specific recurring task instance.
+
+    Args:
+        instance_id: The instance ID to skip (shown as inst:ID in schedule output).
+    """
+    user_id = _get_user_id()
+
+    async with async_session_factory() as db:
+        from app.services.preferences_service import PreferencesService
+        from app.services.recurrence_service import RecurrenceService
+
+        timezone = await PreferencesService(db, user_id).get_timezone()
+        svc = RecurrenceService(db, user_id, timezone=timezone)
+        instance = await svc.skip_instance(instance_id)
+        if not instance:
+            return f"Instance {instance_id} not found or not owned by you."
+        await db.commit()
+        logger.info(f"MCP skip_instance: instance_id={instance_id} user_id={user_id}")
+
+    return f"Skipped instance [inst:{instance_id}]"
+
+
+@mcp.tool()
+async def unskip_instance(instance_id: int) -> str:
+    """Unskip a recurring task instance (revert to pending).
+
+    Args:
+        instance_id: The instance ID to unskip (shown as inst:ID in schedule output).
+    """
+    user_id = _get_user_id()
+
+    async with async_session_factory() as db:
+        from app.services.preferences_service import PreferencesService
+        from app.services.recurrence_service import RecurrenceService
+
+        timezone = await PreferencesService(db, user_id).get_timezone()
+        svc = RecurrenceService(db, user_id, timezone=timezone)
+        instance = await svc.unskip_instance(instance_id)
+        if not instance:
+            return f"Instance {instance_id} not found or not owned by you."
+        await db.commit()
+        logger.info(f"MCP unskip_instance: instance_id={instance_id} user_id={user_id}")
+
+    return f"Unskipped instance [inst:{instance_id}] — now pending"
+
+
+@mcp.tool()
+async def reschedule_instance(instance_id: int, new_date: str) -> str:
+    """Reschedule a recurring task instance to a different date.
+
+    Args:
+        instance_id: The instance ID to reschedule.
+        new_date: New date (YYYY-MM-DD).
+    """
+    user_id = _get_user_id()
+
+    async with async_session_factory() as db:
+        from app.services.preferences_service import PreferencesService
+        from app.services.recurrence_service import RecurrenceService
+
+        timezone = await PreferencesService(db, user_id).get_timezone()
+        svc = RecurrenceService(db, user_id, timezone=timezone)
+
+        parsed_date = date.fromisoformat(new_date)
+        # schedule_instance expects a datetime — combine date with midnight
+        new_dt = datetime.combine(parsed_date, datetime.min.time())
+
+        instance = await svc.schedule_instance(instance_id, new_dt)
+        if not instance:
+            return f"Instance {instance_id} not found or not owned by you."
+        await db.commit()
+        logger.info(f"MCP reschedule_instance: instance_id={instance_id} new_date={new_date} user_id={user_id}")
+
+    return f"Rescheduled instance [inst:{instance_id}] to {new_date}"
+
+
+# =============================================================================
+# Domains
+# =============================================================================
+# list_domains, create_domain, update_domain, archive_domain
+
+
+@mcp.tool()
 async def list_domains() -> str:
     """List all domains (projects/life areas) in whendoist."""
     user_id = _get_user_id()
@@ -481,6 +936,85 @@ async def list_domains() -> str:
             lines.append(f"- [id:{d.id}] {d.name}{archived}")
 
         return f"{len(domains)} domain(s):\n\n" + "\n".join(lines)
+
+
+@mcp.tool()
+async def create_domain(name: str) -> str:
+    """Create a new domain (project/life area).
+
+    Args:
+        name: Domain name (e.g. "Side Project", "Freelance").
+    """
+    user_id = _get_user_id()
+    enc_error = await _check_encryption(user_id)
+    if enc_error:
+        return enc_error
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+        domain = await svc.create_domain(name=name)
+        await db.commit()
+        return f"Created domain [id:{domain.id}]: {domain.name}"
+
+
+@mcp.tool()
+async def update_domain(
+    domain_id: int,
+    name: str | None = None,
+    color: str | None = None,
+    icon: str | None = None,
+) -> str:
+    """Update a domain's properties.
+
+    Args:
+        domain_id: The domain ID to update (required).
+        name: New domain name.
+        color: New color (hex string, e.g. "#FF5733").
+        icon: New icon (emoji).
+    """
+    user_id = _get_user_id()
+    enc_error = await _check_encryption(user_id)
+    if enc_error:
+        return enc_error
+
+    if name is None and color is None and icon is None:
+        return "Nothing to update -- provide at least one field."
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+        domain = await svc.update_domain(domain_id, name=name, color=color, icon=icon)
+        if not domain:
+            return f"Domain {domain_id} not found or not owned by you."
+        await db.commit()
+        logger.info(f"MCP update_domain: domain_id={domain_id} user_id={user_id}")
+
+    return f"Updated domain [id:{domain_id}]: {domain.name}"
+
+
+@mcp.tool()
+async def archive_domain(domain_id: int) -> str:
+    """Archive a domain (soft delete).
+
+    Args:
+        domain_id: The domain ID to archive.
+    """
+    user_id = _get_user_id()
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+        domain = await svc.archive_domain(domain_id)
+        if not domain:
+            return f"Domain {domain_id} not found or not owned by you."
+        await db.commit()
+        logger.info(f"MCP archive_domain: domain_id={domain_id} user_id={user_id}")
+
+    return f"Archived domain [id:{domain_id}]: {domain.name}"
+
+
+# =============================================================================
+# Schedule & Analytics
+# =============================================================================
+# get_schedule, get_overdue, get_analytics, get_recent_completions
 
 
 @mcp.tool()
@@ -559,88 +1093,6 @@ async def get_schedule(
         lines.append("\nNothing scheduled.")
 
     return "\n".join(lines)
-
-
-# =============================================================================
-# Tier 2 Tools
-# =============================================================================
-
-
-@mcp.tool()
-async def update_task(
-    task_id: int,
-    title: str | None = None,
-    domain: str | None = None,
-    impact: int | None = None,
-    clarity: str | None = None,
-    duration_minutes: int | None = None,
-    scheduled_date: str | None = None,
-    scheduled_time: str | None = None,
-    description: str | None = None,
-    parent_id: int | None = None,
-) -> str:
-    """Update an existing task. Only provided fields are changed.
-
-    Args:
-        task_id: The task ID to update (required).
-        title: New title.
-        domain: New domain name (resolved to ID).
-        impact: New priority: 1=high, 2=mid, 3=low, 4=minimal.
-        clarity: New energy mode: autopilot, normal, brainstorm.
-        duration_minutes: New time estimate in minutes.
-        scheduled_date: New date (YYYY-MM-DD), or empty string to clear.
-        scheduled_time: New time (HH:MM), or empty string to clear.
-        description: New description/notes.
-        parent_id: ID of parent task to make this a subtask, or 0 to promote to top-level.
-    """
-    user_id = _get_user_id()
-    enc_error = await _check_encryption(user_id)
-    if enc_error:
-        return enc_error
-
-    async with async_session_factory() as db:
-        svc = TaskService(db, user_id)
-
-        kwargs: dict[str, Any] = {}
-        if title is not None:
-            kwargs["title"] = title
-        if impact is not None:
-            kwargs["impact"] = impact
-        if clarity is not None:
-            kwargs["clarity"] = clarity
-        if duration_minutes is not None:
-            kwargs["duration_minutes"] = duration_minutes
-        if description is not None:
-            kwargs["description"] = description
-        if parent_id is not None:
-            kwargs["parent_id"] = parent_id if parent_id != 0 else None
-
-        if domain is not None:
-            domains = await svc.get_domains(include_archived=True)
-            match = next((d for d in domains if d.name.lower() == domain.lower()), None)
-            if match:
-                kwargs["domain_id"] = match.id
-            else:
-                return f"Domain '{domain}' not found."
-
-        if scheduled_date is not None:
-            from datetime import date as date_type
-
-            kwargs["scheduled_date"] = date_type.fromisoformat(scheduled_date) if scheduled_date else None
-
-        if scheduled_time is not None:
-            from datetime import time as time_type
-
-            kwargs["scheduled_time"] = time_type.fromisoformat(scheduled_time) if scheduled_time else None
-
-        if not kwargs:
-            return "Nothing to update -- provide at least one field."
-
-        task = await svc.update_task(task_id, **kwargs)
-        if not task:
-            return f"Task {task_id} not found or not owned by you."
-        await db.commit()
-        return f"Updated task [id:{task_id}]: {task.title}"
 
 
 @mcp.tool()
@@ -734,168 +1186,84 @@ async def get_analytics() -> str:
 
 
 @mcp.tool()
-async def search_tasks(query: str, include_completed: bool = False) -> str:
-    """Search tasks by title keyword.
+async def get_recent_completions(days: int = 7, limit: int = 20) -> str:
+    """Get recently completed tasks and instances.
 
     Args:
-        query: Search term to match against task titles.
-        include_completed: Also search completed tasks (default: false).
+        days: Look back this many days (default 7).
+        limit: Max results (default 20).
     """
     user_id = _get_user_id()
     enc_error = await _check_encryption(user_id)
     if enc_error:
         return enc_error
 
-    query_lower = query.lower()
-    all_matches: list[dict] = []
-
     async with async_session_factory() as db:
-        svc = TaskService(db, user_id)
+        from app.services.analytics_service import AnalyticsService
+        from app.services.preferences_service import PreferencesService
 
-        for status in ["pending"] + (["completed"] if include_completed else []):
-            tasks = await svc.get_tasks(status=status, limit=200)
-            matches = [_task_to_dict(t) for t in tasks if query_lower in t.title.lower()]
-            all_matches.extend(matches)
+        timezone = await PreferencesService(db, user_id).get_timezone()
+        svc = AnalyticsService(db, user_id, timezone=timezone)
+        completions = await svc.get_recent_completions(limit=limit)
 
-    if not all_matches:
-        return f"No tasks matching '{query}'."
+    if not completions:
+        return f"No completions in the last {days} days."
 
-    lines = [_format_task(t) for t in all_matches]
-    return f"{len(all_matches)} task(s) matching '{query}':\n\n" + "\n".join(lines)
-
-
-# =============================================================================
-# Tier 3 Tools
-# =============================================================================
-
-
-@mcp.tool()
-async def batch_create_tasks(tasks_json: str) -> str:
-    """Create multiple tasks at once. Useful for goal decomposition.
-
-    Args:
-        tasks_json: JSON array of task objects. Each supports:
-            title (required), domain, impact, clarity, duration_minutes,
-            scheduled_date, scheduled_time, description.
-    """
-    user_id = _get_user_id()
-    enc_error = await _check_encryption(user_id)
-    if enc_error:
-        return enc_error
-
-    try:
-        tasks_list = json.loads(tasks_json)
-    except json.JSONDecodeError as e:
-        return f"Invalid JSON: {e}"
-
-    if not isinstance(tasks_list, list):
-        return "Expected a JSON array of task objects."
-
-    created: list[str] = []
-    errors: list[str] = []
-
-    async with async_session_factory() as db:
-        svc = TaskService(db, user_id)
-        # Pre-fetch domains for name resolution
-        all_domains = await svc.get_domains(include_archived=True)
-        domain_map = {d.name.lower(): d.id for d in all_domains}
-
-        for i, task_data in enumerate(tasks_list):
-            if not isinstance(task_data, dict) or "title" not in task_data:
-                errors.append(f"Item {i}: missing 'title'")
-                continue
-
-            try:
-                from datetime import date as date_type
-                from datetime import time as time_type
-
-                domain_id = None
-                if "domain" in task_data:
-                    domain_id = domain_map.get(task_data["domain"].lower())
-
-                parsed_date = None
-                if task_data.get("scheduled_date"):
-                    parsed_date = date_type.fromisoformat(task_data["scheduled_date"])
-
-                parsed_time = None
-                if task_data.get("scheduled_time"):
-                    parsed_time = time_type.fromisoformat(task_data["scheduled_time"])
-
-                task = await svc.create_task(
-                    title=task_data["title"],
-                    domain_id=domain_id,
-                    impact=task_data.get("impact", 4),
-                    clarity=task_data.get("clarity", "normal"),
-                    duration_minutes=task_data.get("duration_minutes"),
-                    scheduled_date=parsed_date,
-                    scheduled_time=parsed_time,
-                    description=task_data.get("description"),
-                )
-                created.append(f"[id:{task.id}] {task.title}")
-            except Exception as e:
-                errors.append(f"'{task_data['title']}': {e}")
-
-        await db.commit()
-
-    lines = [f"Created {len(created)} task(s):"]
-    for c in created:
-        lines.append(f"  + {c}")
-    if errors:
-        lines.append(f"\n{len(errors)} error(s):")
-        for e in errors:
-            lines.append(f"  x {e}")
+    lines = [f"Recent completions (last {days} days, up to {limit}):"]
+    for c in completions:
+        instance_tag = " (recurring)" if c.get("is_instance") else ""
+        lines.append(
+            f"  [{c.get('completed_at_display', '?')}] {c['title']}{instance_tag}  #{c.get('domain_name', 'Thoughts')}"
+        )
 
     return "\n".join(lines)
 
 
+# =============================================================================
+# User Context
+# =============================================================================
+# whoami, get_preferences
+
+
 @mcp.tool()
-async def complete_instance(instance_id: int) -> str:
-    """Complete a specific recurring task instance.
-
-    Args:
-        instance_id: The instance ID (shown as inst:ID in schedule output).
-    """
+async def whoami() -> str:
+    """Show the authenticated user's identity. Useful for debugging."""
     user_id = _get_user_id()
-
     async with async_session_factory() as db:
-        from app.models import TaskInstance
-
-        result = await db.execute(
-            select(TaskInstance).where(
-                TaskInstance.id == instance_id,
-                TaskInstance.user_id == user_id,
-            )
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return f"Authenticated as user_id={user_id} but user not found in database!"
+        return (
+            f"user_id: {user_id}\n"
+            f"email: {user.email}\n"
+            f"name: {user.name or user.email}\n"
+            f"data_version: {user.data_version}"
         )
-        instance = result.scalar_one_or_none()
-        if not instance:
-            return f"Instance {instance_id} not found or not owned by you."
-
-        from datetime import UTC, datetime
-
-        instance.status = "completed"
-        instance.completed_at = datetime.now(UTC)
-        await db.commit()
-
-        return f"Completed instance [inst:{instance_id}]"
 
 
 @mcp.tool()
-async def create_domain(name: str) -> str:
-    """Create a new domain (project/life area).
-
-    Args:
-        name: Domain name (e.g. "Side Project", "Freelance").
-    """
+async def get_preferences() -> str:
+    """Get user preferences (timezone, display settings). Helps understand user context for scheduling."""
     user_id = _get_user_id()
-    enc_error = await _check_encryption(user_id)
-    if enc_error:
-        return enc_error
 
     async with async_session_factory() as db:
-        svc = TaskService(db, user_id)
-        domain = await svc.create_domain(name=name)
-        await db.commit()
-        return f"Created domain [id:{domain.id}]: {domain.name}"
+        from app.services.preferences_service import PreferencesService
+
+        svc = PreferencesService(db, user_id)
+        prefs = await svc.get_preferences()
+
+    lines = ["User preferences:"]
+    lines.append(f"  timezone: {prefs.timezone or 'not set'}")
+    if prefs.secondary_timezone:
+        lines.append(f"  secondary_timezone: {prefs.secondary_timezone}")
+    lines.append(f"  show_completed_in_planner: {prefs.show_completed_in_planner}")
+    lines.append(f"  completed_retention_days: {prefs.completed_retention_days}")
+    lines.append(f"  show_completed_in_list: {prefs.show_completed_in_list}")
+    lines.append(f"  show_scheduled_in_list: {prefs.show_scheduled_in_list}")
+    lines.append(f"  encryption_enabled: {prefs.encryption_enabled}")
+
+    return "\n".join(lines)
 
 
 # =============================================================================
