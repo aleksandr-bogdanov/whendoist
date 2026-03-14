@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.7 — 2026-03-14
+
+### Fix: OAuth approve/deny buttons silently blocked by CSP form-action
+
+- **Root cause**: CSP `form-action 'self'` blocks the entire redirect chain from form submissions. When the form POSTs to `/oauth/authorize` and the server responds with a 302 to `http://localhost:PORT/callback`, Chrome checks the redirect target against `form-action` — `localhost` doesn't match `'self'` (`https://whendoist.com`), so Chrome silently drops the redirect
+- **Fix**: Replaced 302 `RedirectResponse` with an HTML redirect page using `<meta http-equiv="refresh">` + `window.location.replace()`. Page-initiated redirects are not subject to `form-action` restrictions
+- **Impact**: Both approve and deny buttons were completely non-functional — clicking them did nothing visible
+
+---
+
 ## v0.66.6 — 2026-03-14
 
 ### Fix: Use self-hosted fonts in OAuth pages (CSP blocked Google Fonts)
