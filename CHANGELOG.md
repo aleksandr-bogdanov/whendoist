@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.8 — 2026-03-14
+
+### Fix: MCP server endpoint was at /mcp/mcp instead of /mcp
+
+- **Root cause**: FastMCP defaults `streamable_http_path="/mcp"`, and the main app mounts at `app.mount("/mcp", ...)`, resulting in the actual endpoint being at `/mcp/mcp`. Claude Code connects to `/mcp` which returned 405
+- **Fix**: Set `streamable_http_path="/"` in the FastMCP constructor so the internal path is `/`, making the full path `/mcp` as expected
+
+---
+
 ## v0.66.7 — 2026-03-14
 
 ### Fix: OAuth approve/deny buttons silently blocked by CSP form-action
