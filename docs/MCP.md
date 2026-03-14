@@ -143,7 +143,7 @@ See [E2E Encryption Compatibility](#e2e-encryption-compatibility) for details.
 
 ## Available Tools
 
-Both servers expose the same 13 core tools. The local server adds 2 encryption tools.
+Both servers expose the same 14 core tools. The local server adds 2 encryption tools.
 
 ### Core Tools
 
@@ -153,6 +153,7 @@ Both servers expose the same 13 core tools. The local server adds 2 encryption t
 | `list_tasks` | Query tasks with filters (domain, status, date, clarity, impact, recurrence) |
 | `create_task` | Create a new task with full metadata |
 | `complete_task` | Mark a task as completed |
+| `delete_task` | Permanently delete a task |
 | `update_task` | Update any task properties |
 | `list_domains` | List all domains (projects/life areas) |
 | `create_domain` | Create a new domain |
