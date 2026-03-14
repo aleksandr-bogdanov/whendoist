@@ -577,6 +577,7 @@ async def update_task(
     scheduled_date: str | None = None,
     scheduled_time: str | None = None,
     description: str | None = None,
+    parent_id: int | None = None,
 ) -> str:
     """Update an existing task. Only provided fields are changed.
 
@@ -590,6 +591,7 @@ async def update_task(
         scheduled_date: New date (YYYY-MM-DD), or empty string to clear.
         scheduled_time: New time (HH:MM), or empty string to clear.
         description: New description/notes.
+        parent_id: ID of parent task to make this a subtask, or 0 to promote to top-level.
     """
     user_id = _get_user_id()
     enc_error = await _check_encryption(user_id)
@@ -610,6 +612,8 @@ async def update_task(
             kwargs["duration_minutes"] = duration_minutes
         if description is not None:
             kwargs["description"] = description
+        if parent_id is not None:
+            kwargs["parent_id"] = parent_id if parent_id != 0 else None
 
         if domain is not None:
             domains = await svc.get_domains(include_archived=True)
