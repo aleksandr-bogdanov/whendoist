@@ -139,6 +139,25 @@ See the [Encryption Guide](docs/ENCRYPTION.md) for technical details.
 
 ---
 
+## 🤖 MCP Integration
+
+Connect AI assistants (Claude Code, Claude Desktop, etc.) to Whendoist via [MCP](https://modelcontextprotocol.io/). Manage tasks, view schedules, and track analytics directly from conversation.
+
+### Two options
+
+| | Built-in (Remote) | Local (Open Source) |
+|---|---|---|
+| **Runs on** | Whendoist's server | Your machine |
+| **Auth** | OAuth 2.1 with PKCE | Device tokens |
+| **E2E encryption** | Not supported | Fully supported |
+| **Setup** | Connect via OAuth flow | [Clone repo](https://github.com/aleksandr-bogdanov/whendoist-mcp), run setup script |
+
+**14 tools** for task management: list, create, update, complete, schedule, search, analytics, batch operations, and more.
+
+See the [MCP Guide](docs/MCP.md) for setup instructions and architecture details.
+
+---
+
 ## 📅 Calendar Integration
 
 Whendoist doesn't just show your calendar — it **syncs back to it**. Two options depending on your setup:
@@ -260,6 +279,8 @@ Both skills enforce the full project workflow: root cause analysis, `ruff format
 | [Security Guide](docs/SECURITY.md) | Authentication, rate limiting, headers |
 | [Encryption Guide](docs/ENCRYPTION.md) | E2E encryption details |
 | [Demo Login](docs/DEMO-LOGIN.md) | Demo accounts for testing and previews |
+| **Integrations** | |
+| [MCP Guide](docs/MCP.md) | AI assistant integration via Model Context Protocol |
 | **Architecture** | |
 | [Recurring Tasks](#-recurring-tasks) | How repeating tasks, instances, and editing work |
 | [Subtasks](docs/SUBTASKS.md) | Three-level hierarchy, container model, enforced constraints |
