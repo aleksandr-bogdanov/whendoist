@@ -161,31 +161,31 @@ _AUTHORIZE_HTML = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Authorize — Whendoist</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0a0a0a; color: #e5e5e5;
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; padding: 1rem;
-        }
-        .card {
+        }}
+        .card {{
             background: #171717; border: 1px solid #262626; border-radius: 12px;
             padding: 2rem; max-width: 400px; width: 100%;
-        }
-        h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
-        .client-name { color: #60a5fa; font-weight: 600; }
-        .scope { background: #1e293b; border-radius: 6px; padding: 0.75rem; margin: 1rem 0;
-                 font-size: 0.875rem; color: #94a3b8; }
-        .scope strong { color: #e5e5e5; }
-        .buttons { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
-        button {
+        }}
+        h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }}
+        .client-name {{ color: #60a5fa; font-weight: 600; }}
+        .scope {{ background: #1e293b; border-radius: 6px; padding: 0.75rem; margin: 1rem 0;
+                 font-size: 0.875rem; color: #94a3b8; }}
+        .scope strong {{ color: #e5e5e5; }}
+        .buttons {{ display: flex; gap: 0.75rem; margin-top: 1.5rem; }}
+        button {{
             flex: 1; padding: 0.625rem 1rem; border-radius: 8px; border: none;
             font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s;
-        }
-        button:hover { opacity: 0.85; }
-        .approve { background: #2563eb; color: white; }
-        .deny { background: #262626; color: #a3a3a3; border: 1px solid #404040; }
-        .user { font-size: 0.8rem; color: #737373; margin-top: 1rem; }
+        }}
+        button:hover {{ opacity: 0.85; }}
+        .approve {{ background: #2563eb; color: white; }}
+        .deny {{ background: #262626; color: #a3a3a3; border: 1px solid #404040; }}
+        .user {{ font-size: 0.8rem; color: #737373; margin-top: 1rem; }}
     </style>
 </head>
 <body>
@@ -220,25 +220,25 @@ _LOGIN_REDIRECT_HTML = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Required — Whendoist</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0a0a0a; color: #e5e5e5;
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; padding: 1rem;
-        }
-        .card {
+        }}
+        .card {{
             background: #171717; border: 1px solid #262626; border-radius: 12px;
             padding: 2rem; max-width: 400px; width: 100%; text-align: center;
-        }
-        h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; }
-        p { color: #a3a3a3; margin-bottom: 1.5rem; font-size: 0.875rem; }
-        a {
+        }}
+        h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; }}
+        p {{ color: #a3a3a3; margin-bottom: 1.5rem; font-size: 0.875rem; }}
+        a {{
             display: inline-block; padding: 0.625rem 1.5rem; border-radius: 8px;
             background: #2563eb; color: white; text-decoration: none;
             font-size: 0.875rem; font-weight: 500;
-        }
-        a:hover { opacity: 0.85; }
+        }}
+        a:hover {{ opacity: 0.85; }}
     </style>
 </head>
 <body>
