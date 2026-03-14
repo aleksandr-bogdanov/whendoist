@@ -4,21 +4,23 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
-## v0.66.9 — 2026-03-14
+## v0.66.10 — 2026-03-14
 
-### Fix: MCP endpoint unreachable without trailing slash
+### Fix: MCP lifespan initialization + endpoint routing
 
-- **Root cause**: `create_mcp_app()` wrapped the MCP ASGI app inside `Starlette(routes=[Mount("/", ...)])`. When `app.mount("/mcp")` strips the prefix from a request to `/mcp` (no trailing slash), the remaining path is `""` (empty), which `Mount("/")` does not match — it only matches paths starting with `/`. Requests to `/mcp/` (trailing slash) worked because the remaining path was `/`
-- **Fix**: Apply `MCPAuthMiddleware` directly to the MCP ASGI app instead of wrapping in a Starlette sub-app. Also changed SPA fallback to exclude `"mcp"` prefix (not just `"mcp/"`)
+- **Root cause 1**: FastAPI's catch-all SPA route `@app.get("/{path:path}")` matches `/mcp`, causing POST/DELETE to return 405 before `app.mount("/mcp")` is reached
+- **Root cause 2**: When dispatching via middleware (bypassing the router), ASGI lifespan events were not forwarded to the MCP sub-app, so FastMCP's task group was never initialized
+- **Fix**: `_MCPDispatchMiddleware` intercepts `/mcp` HTTP requests before the router and forwards ASGI lifespan events to the MCP sub-app concurrently
+- Added 9 unit tests for MCP endpoint routing and authentication
 
 ---
 
-## v0.66.8 — 2026-03-14
+## v0.66.8–0.66.9 — 2026-03-14
 
-### Fix: MCP server endpoint was at /mcp/mcp instead of /mcp
+### Fix: MCP server endpoint path corrections
 
-- **Root cause**: FastMCP defaults `streamable_http_path="/mcp"`, and the main app mounts at `app.mount("/mcp", ...)`, resulting in the actual endpoint being at `/mcp/mcp`. Claude Code connects to `/mcp` which returned 405
-- **Fix**: Set `streamable_http_path="/"` in the FastMCP constructor so the internal path is `/`, making the full path `/mcp` as expected
+- v0.66.8: Fixed `/mcp/mcp` → `/mcp` (set `streamable_http_path="/"`)
+- v0.66.9: Removed unnecessary Starlette sub-app wrapper, fixed SPA fallback prefix
 
 ---
 
