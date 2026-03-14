@@ -2,6 +2,7 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.types import ASGIApp
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app import __version__
@@ -323,11 +325,36 @@ async def oauth_metadata():
     return JSONResponse(get_oauth_metadata())
 
 
-# MCP (Model Context Protocol) server — mounted as ASGI sub-app
+# MCP (Model Context Protocol) server — dispatched via middleware
+# We can't use app.mount("/mcp") because FastAPI's catch-all SPA route
+# @app.get("/{path:path}") matches the path "/mcp" first, causing POST/DELETE
+# to return 405 (method not allowed) before the mount is ever reached.
+# Instead, we intercept /mcp requests at the middleware level.
 # NOTE: E402 suppressed — this import must happen after app is created
 from app.routers.mcp_server import create_mcp_app  # noqa: E402
 
-app.mount("/mcp", create_mcp_app())
+_mcp_app = create_mcp_app()
+
+
+class _MCPDispatchMiddleware:
+    """Route /mcp requests to the MCP ASGI app, bypassing FastAPI's router."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: dict, receive: Any, send: Any) -> None:
+        if scope["type"] == "http" and scope["path"].rstrip("/") == "/mcp":
+            # Rewrite path to "/" — FastMCP expects streamable_http_path="/"
+            mcp_scope = dict(scope)
+            mcp_scope["path"] = "/"
+            mcp_scope["root_path"] = scope.get("root_path", "") + "/mcp"
+            await _mcp_app(mcp_scope, receive, send)
+        else:
+            await self.app(scope, receive, send)
+
+
+# Add as innermost middleware so security headers, request ID, etc. still apply
+app.add_middleware(_MCPDispatchMiddleware)
 
 # --- React SPA serving ---
 
@@ -394,7 +421,7 @@ if _spa_dist.exists():
                 "api/",
                 "auth/",
                 "oauth/",
-                "mcp/",
+                "mcp",
                 ".well-known/",
                 "assets/",
                 "icons/",

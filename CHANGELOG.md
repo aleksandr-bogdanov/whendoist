@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.9 — 2026-03-14
+
+### Fix: MCP endpoint unreachable without trailing slash
+
+- **Root cause**: `create_mcp_app()` wrapped the MCP ASGI app inside `Starlette(routes=[Mount("/", ...)])`. When `app.mount("/mcp")` strips the prefix from a request to `/mcp` (no trailing slash), the remaining path is `""` (empty), which `Mount("/")` does not match — it only matches paths starting with `/`. Requests to `/mcp/` (trailing slash) worked because the remaining path was `/`
+- **Fix**: Apply `MCPAuthMiddleware` directly to the MCP ASGI app instead of wrapping in a Starlette sub-app. Also changed SPA fallback to exclude `"mcp"` prefix (not just `"mcp/"`)
+
+---
+
 ## v0.66.8 — 2026-03-14
 
 ### Fix: MCP server endpoint was at /mcp/mcp instead of /mcp

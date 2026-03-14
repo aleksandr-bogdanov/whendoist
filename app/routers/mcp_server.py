@@ -16,10 +16,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from sqlalchemy import select
-from starlette.applications import Starlette
-from starlette.middleware import Middleware
 from starlette.responses import JSONResponse
-from starlette.routing import Mount
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.database import async_session_factory
@@ -812,14 +809,13 @@ async def create_domain(name: str) -> str:
 def create_mcp_app() -> ASGIApp:
     """Create the MCP ASGI application with auth middleware.
 
-    Returns a Starlette app that wraps FastMCP's streamable HTTP transport
-    with bearer token authentication.
+    Returns the MCP ASGI app wrapped with bearer token authentication.
+
+    Note: We apply MCPAuthMiddleware directly to the MCP ASGI app rather than
+    wrapping it in a Starlette(routes=[Mount("/", ...)]) — a Mount("/") only
+    matches paths starting with "/", not the empty string "" that results when
+    the outer app.mount("/mcp") strips the prefix from a request to "/mcp"
+    (no trailing slash). Applying the middleware directly avoids this mismatch.
     """
     mcp_http_app = mcp.streamable_http_app()
-
-    # Wrap with auth middleware
-    app = Starlette(
-        routes=[Mount("/", app=mcp_http_app)],
-        middleware=[Middleware(MCPAuthMiddleware)],
-    )
-    return app
+    return MCPAuthMiddleware(mcp_http_app)
