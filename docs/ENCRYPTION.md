@@ -167,6 +167,23 @@ They just can't see *what* the tasks are about.
 
 ---
 
+## MCP (AI Assistant) Compatibility
+
+If you use MCP to connect an AI assistant to Whendoist, encryption affects which server you can use:
+
+| MCP Server | E2E Support | Why |
+|------------|-------------|-----|
+| **Built-in (remote)** | No | Server-side — can't access your key |
+| **[Local (open source)](https://github.com/aleksandr-bogdanov/whendoist-mcp)** | Yes | Runs on your machine, holds key in memory |
+
+The local MCP server implements the same PBKDF2 + AES-256-GCM crypto as the browser. When you use the `unlock_encryption` tool, it derives the key from your passphrase locally, verifies it against the stored test value, and transparently encrypts/decrypts all task content flowing through MCP.
+
+The key never leaves the local process — same security model as the browser.
+
+See the [MCP Guide](MCP.md) for full details.
+
+---
+
 ## Known Limitations
 
 ### The sessionStorage question
@@ -290,4 +307,4 @@ Even a weak 6-character passphrase would take years to crack at this iteration c
 
 ---
 
-*Last updated: January 2026 (v0.25.0)*
+*Last updated: March 2026 (v0.66.0)*

@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.1 — 2026-03-14
+
+### Docs: MCP integration guide, README, and encryption docs
+
+- **New:** `docs/MCP.md` — comprehensive guide covering both MCP options (built-in remote + open-source local), architecture diagrams, OAuth flow, E2E encryption compatibility
+- **README** — added MCP integration section with comparison table, linked to MCP guide and [whendoist-mcp](https://github.com/aleksandr-bogdanov/whendoist-mcp) repo
+- **Encryption docs** — added MCP compatibility section explaining why E2E users need the local server
+
+---
+
 ## v0.66.0 — 2026-03-13
 
 ### Feat: MCP server integration + OAuth 2.1 provider
