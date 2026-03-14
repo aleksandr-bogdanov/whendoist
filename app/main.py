@@ -1,9 +1,11 @@
 import logging
 import time
+from collections.abc import MutableMapping
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
+import anyio
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -337,13 +339,19 @@ _mcp_app = create_mcp_app()
 
 
 class _MCPDispatchMiddleware:
-    """Route /mcp requests to the MCP ASGI app, bypassing FastAPI's router."""
+    """Route /mcp requests to the MCP ASGI app, bypassing FastAPI's router.
+
+    Also forwards ASGI lifespan events to the MCP sub-app so that FastMCP's
+    StreamableHTTPSessionManager.run() is called (initializes the task group).
+    """
 
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
     async def __call__(self, scope: dict, receive: Any, send: Any) -> None:
-        if scope["type"] == "http" and scope["path"].rstrip("/") == "/mcp":
+        if scope["type"] == "lifespan":
+            await self._handle_lifespan(scope, receive, send)
+        elif scope["type"] == "http" and scope["path"].rstrip("/") == "/mcp":
             # Rewrite path to "/" — FastMCP expects streamable_http_path="/"
             mcp_scope = dict(scope)
             mcp_scope["path"] = "/"
@@ -351,6 +359,55 @@ class _MCPDispatchMiddleware:
             await _mcp_app(mcp_scope, receive, send)
         else:
             await self.app(scope, receive, send)
+
+    async def _handle_lifespan(self, scope: dict, receive: Any, send: Any) -> None:
+        """Forward lifespan to both the main app and MCP app concurrently."""
+        # Run MCP app's lifespan in a background task so its task group stays
+        # alive for the duration of the server. Coordinate startup/shutdown
+        # via events so the main app's lifespan runs in lockstep.
+        mcp_startup = anyio.Event()
+        mcp_shutdown = anyio.Event()
+        mcp_error: BaseException | None = None
+
+        async def _run_mcp_lifespan() -> None:
+            nonlocal mcp_error
+
+            async def mcp_receive() -> dict:
+                # First call: send startup
+                if not mcp_startup.is_set():
+                    return {"type": "lifespan.startup"}
+                # Then wait for shutdown signal
+                await mcp_shutdown.wait()
+                return {"type": "lifespan.shutdown"}
+
+            async def mcp_send(message: MutableMapping[str, Any]) -> None:
+                nonlocal mcp_error
+                if message["type"] == "lifespan.startup.complete":
+                    mcp_startup.set()
+                elif message["type"] == "lifespan.startup.failed":
+                    mcp_error = RuntimeError(message.get("message", "MCP startup failed"))
+                    mcp_startup.set()  # Unblock even on failure
+
+            try:
+                await _mcp_app(scope, mcp_receive, mcp_send)
+            except Exception as exc:
+                mcp_error = exc
+                mcp_startup.set()  # Unblock on exception
+
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(_run_mcp_lifespan)
+
+            # Wait for MCP to finish startup before starting the main app
+            await mcp_startup.wait()
+            if mcp_error:
+                logger.error(f"MCP lifespan startup failed: {mcp_error}")
+
+            try:
+                # Run the main app's lifespan normally
+                await self.app(scope, receive, send)
+            finally:
+                # Signal MCP to shut down
+                mcp_shutdown.set()
 
 
 # Add as innermost middleware so security headers, request ID, etc. still apply
