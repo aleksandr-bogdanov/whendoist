@@ -205,6 +205,8 @@ mcp = FastMCP(
         "clarity/energy modes (autopilot, normal, brainstorm), optional scheduling (date + time), "
         "and duration estimates in minutes."
     ),
+    # Main app mounts this at /mcp, so internal path must be / to avoid /mcp/mcp
+    streamable_http_path="/",
 )
 
 
