@@ -143,26 +143,60 @@ See [E2E Encryption Compatibility](#e2e-encryption-compatibility) for details.
 
 ## Available Tools
 
-Both servers expose the same 14 core tools. The local server adds 2 encryption tools.
+Both servers expose the same 26 core tools. The local server adds 2 encryption tools.
 
 ### Core Tools
+
+#### Task CRUD
+
+| Tool | Description |
+|------|-------------|
+| `list_tasks` | Query tasks with filters (domain, status, date, clarity, impact, recurrence) |
+| `create_task` | Create a new task with full metadata (title, domain, impact, clarity, schedule, etc.) |
+| `update_task` | Update any task properties (only provided fields change) |
+| `complete_task` | Mark a task as completed |
+| `delete_task` | Permanently delete a task |
+| `archive_task` | Archive a task (soft delete, can be restored) |
+| `restore_task` | Restore an archived task back to pending |
+| `get_archived_tasks` | List archived tasks with optional domain filter |
+| `search_tasks` | Search tasks by title keyword |
+| `batch_create_tasks` | Create multiple tasks at once (JSON array) |
+| `batch_update_tasks` | Update multiple tasks at once (comma-separated IDs) |
+| `batch_complete_tasks` | Complete multiple tasks at once (comma-separated IDs) |
+
+#### Recurring Instances
+
+| Tool | Description |
+|------|-------------|
+| `complete_instance` | Complete a specific recurring task instance |
+| `skip_instance` | Skip a recurring task instance |
+| `unskip_instance` | Revert a skipped instance to pending |
+| `reschedule_instance` | Move a recurring instance to a different date |
+
+#### Domains
+
+| Tool | Description |
+|------|-------------|
+| `list_domains` | List all domains (projects/life areas) |
+| `create_domain` | Create a new domain |
+| `update_domain` | Update domain name, color, or icon |
+| `archive_domain` | Archive a domain (soft delete) |
+
+#### Schedule & Analytics
+
+| Tool | Description |
+|------|-------------|
+| `get_schedule` | View scheduled tasks and recurring instances for a date range |
+| `get_overdue` | Find overdue tasks and past recurring instances |
+| `get_analytics` | Completion streaks, velocity, domain breakdown (last 30 days) |
+| `get_recent_completions` | Recently completed tasks and instances (configurable lookback) |
+
+#### User Context
 
 | Tool | Description |
 |------|-------------|
 | `whoami` | Show authenticated user identity (email, name, data_version) |
-| `list_tasks` | Query tasks with filters (domain, status, date, clarity, impact, recurrence) |
-| `create_task` | Create a new task with full metadata |
-| `complete_task` | Mark a task as completed |
-| `delete_task` | Permanently delete a task |
-| `update_task` | Update any task properties |
-| `list_domains` | List all domains (projects/life areas) |
-| `create_domain` | Create a new domain |
-| `get_schedule` | View scheduled tasks and recurring instances for a date range |
-| `get_overdue` | Find overdue tasks and past recurring instances |
-| `get_analytics` | Completion streaks, velocity, domain breakdown |
-| `search_tasks` | Search tasks by title keyword |
-| `batch_create_tasks` | Create multiple tasks at once |
-| `complete_instance` | Complete a specific recurring task instance |
+| `get_preferences` | Get user preferences (timezone, display settings, encryption status) |
 
 ### Encryption Tools (local server only)
 
@@ -258,4 +292,4 @@ Three issues were discovered deploying the built-in MCP server. These are alread
 
 ---
 
-*Last updated: March 2026 (v0.66.12)*
+*Last updated: March 2026 (v0.66.16)*

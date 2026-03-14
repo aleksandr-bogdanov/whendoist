@@ -4,6 +4,19 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.16 — 2026-03-14
+
+### Feat: Complete MCP tool coverage
+
+- Add 12 new MCP tools: `archive_task`, `restore_task`, `get_archived_tasks`, `batch_update_tasks`, `batch_complete_tasks`, `skip_instance`, `unskip_instance`, `reschedule_instance`, `update_domain`, `archive_domain`, `get_recent_completions`, `get_preferences`
+- Total MCP tools: 26 (was 14)
+- Refactor `complete_instance` to use `RecurrenceService` instead of raw SQL
+- Remove temporary verification logging from `create_task` and `complete_task`
+- Organize `mcp_server.py` with clear section headers: Task CRUD, Recurring Instances, Domains, Schedule & Analytics, User Context
+- Add comprehensive unit tests for all new tool patterns (archive/restore round-trip, batch ops, skip/unskip, domain management, preferences, recent completions)
+
+---
+
 ## v0.66.15 — 2026-03-14
 
 ### Fix: Support `parent_id` in MCP `update_task`
