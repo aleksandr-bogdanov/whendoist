@@ -39,6 +39,8 @@ def init_sentry() -> bool:
 
     environment = os.environ.get("ENVIRONMENT", "development")
 
+    from slowapi.errors import RateLimitExceeded
+
     sentry_sdk.init(
         dsn=dsn,
         environment=environment,
@@ -57,6 +59,8 @@ def init_sentry() -> bool:
         send_default_pii=False,
         # Don't send IP addresses
         before_send=_scrub_sensitive_data,
+        # Don't report expected client errors
+        ignore_errors=[RateLimitExceeded],
     )
 
     logger.info(f"Sentry initialized for environment: {environment}")

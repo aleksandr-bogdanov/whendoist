@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 
 from fastapi import HTTPException
 from fastapi.exceptions import RequestValidationError
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -40,7 +41,7 @@ async def get_db() -> AsyncGenerator[AsyncSession]:
     async with async_session_factory() as session:
         try:
             yield session
-        except (HTTPException, RequestValidationError):
+        except (HTTPException, RequestValidationError, RateLimitExceeded):
             raise
         except Exception as e:
             logger.exception(f"Database session error: {type(e).__name__}: {e}")

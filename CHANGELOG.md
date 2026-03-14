@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.2 — 2026-03-14
+
+### Fix: Handle Google Calendar 403 errors and suppress expected Sentry noise
+
+- **Google Calendar 403**: `get_calendars`, `toggle_calendar`, and `set_calendar_selections` endpoints now catch 403 responses and return a proper HTTP 403 with reauth guidance instead of leaking unhandled exceptions to Sentry (fixes #645, #646)
+- **RateLimitExceeded**: Excluded from `get_db()` error logging and added to Sentry `ignore_errors` — rate limit 429 responses are expected behavior, not errors (fixes #676)
+- **Transient issues closed**: #654 (DB statement timeout) and #673 (DNS resolution failure) — infrastructure-level, no code fix needed
+
+---
+
 ## v0.66.1 — 2026-03-14
 
 ### Docs: MCP integration guide, README, and encryption docs

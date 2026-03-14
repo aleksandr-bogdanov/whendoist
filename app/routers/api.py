@@ -7,6 +7,7 @@ Provides JSON API for Todoist projects, Google Calendar events, and calendar man
 import logging
 from datetime import UTC, date, datetime, timedelta
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -168,8 +169,16 @@ async def get_calendars(
     result = await db.execute(select(GoogleCalendarSelection).where(GoogleCalendarSelection.user_id == user.id))
     selections = {s.calendar_id: s for s in result.scalars().all()}
 
-    async with GoogleCalendarClient(db, google_token) as client:
-        calendars = await client.list_calendars()
+    try:
+        async with GoogleCalendarClient(db, google_token) as client:
+            calendars = await client.list_calendars()
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 403:
+            raise HTTPException(
+                status_code=403,
+                detail="Google Calendar access denied. Please reconnect your Google account.",
+            ) from e
+        raise
 
     # Token refresh commits internally; no explicit commit needed here
 
@@ -215,8 +224,16 @@ async def toggle_calendar(
         selection.enabled = not selection.enabled
     else:
         # Need to get calendar name
-        async with GoogleCalendarClient(db, google_token) as client:
-            calendars = await client.list_calendars()
+        try:
+            async with GoogleCalendarClient(db, google_token) as client:
+                calendars = await client.list_calendars()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 403:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Google Calendar access denied. Please reconnect your Google account.",
+                ) from e
+            raise
         cal = next((c for c in calendars if c.id == calendar_id), None)
         if not cal:
             raise HTTPException(status_code=404, detail="Calendar not found")
@@ -257,8 +274,16 @@ async def set_calendar_selections(
         raise HTTPException(status_code=400, detail="Google Calendar not connected")
 
     # Get all available calendars
-    async with GoogleCalendarClient(db, google_token) as client:
-        calendars = await client.list_calendars()
+    try:
+        async with GoogleCalendarClient(db, google_token) as client:
+            calendars = await client.list_calendars()
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 403:
+            raise HTTPException(
+                status_code=403,
+                detail="Google Calendar access denied. Please reconnect your Google account.",
+            ) from e
+        raise
     calendar_map = {c.id: c for c in calendars}
 
     # Get existing selections
