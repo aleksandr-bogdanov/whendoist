@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.12 — 2026-03-14
+
+### Fix: MCP 421 — DNS rebinding protection rejects production Host header
+
+- **Root cause**: FastMCP 1.26.0's DNS rebinding protection validates Host headers against an allowlist (default: localhost only). Requests with `Host: whendoist.com` → 421 Misdirected Request
+- **Fix**: `TransportSecuritySettings(allowed_hosts=["whendoist.com", "localhost", "127.0.0.1"])`
+
+---
+
 ## v0.66.11 — 2026-03-14
 
 ### Chore: Add MCP request/response logging

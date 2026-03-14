@@ -16,6 +16,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from sqlalchemy import select
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -226,6 +227,11 @@ mcp = FastMCP(
     ),
     # Main app mounts this at /mcp, so internal path must be / to avoid /mcp/mcp
     streamable_http_path="/",
+    # Allow production domain — FastMCP's DNS rebinding protection rejects
+    # Host headers that aren't in the allowlist (default: localhost only)
+    transport_security=TransportSecuritySettings(
+        allowed_hosts=["whendoist.com", "localhost", "127.0.0.1"],
+    ),
 )
 
 
