@@ -222,10 +222,20 @@ This is the same security model as the browser:
 └─────────────┘     └───────────────────────────────────┘
 ```
 
-- FastMCP mounted as ASGI sub-app via Starlette
+- FastMCP's Streamable HTTP ASGI app, dispatched via `_MCPDispatchMiddleware` in `app/main.py`
 - `MCPAuthMiddleware` validates Bearer tokens, sets user ID in `contextvars`
 - Tools use `async_session_factory()` for direct DB access
 - OAuth reuses Whendoist's device auth token infrastructure (itsdangerous signed tokens)
+
+#### Deployment pitfalls (solved)
+
+Three issues were discovered deploying the built-in MCP server. These are already fixed but documented here for context:
+
+1. **SPA catch-all vs MCP routing** — FastAPI's `@app.get("/{path:path}")` SPA fallback matches `/mcp` for method checking, causing POST/DELETE to return 405 before `app.mount("/mcp")` is reached. **Fix:** `_MCPDispatchMiddleware` intercepts `/mcp` requests at the middleware level, bypassing the router.
+
+2. **ASGI lifespan forwarding** — When dispatching via middleware instead of `app.mount()`, ASGI lifespan events must be explicitly forwarded to the MCP sub-app. Without this, FastMCP's `StreamableHTTPSessionManager.run()` is never called and the task group stays uninitialized → `RuntimeError`. **Fix:** The middleware forwards lifespan startup/shutdown to the MCP app concurrently.
+
+3. **DNS rebinding protection** — FastMCP 1.26.0 validates `Host` headers against an allowlist (default: localhost only). Production requests with `Host: whendoist.com` are rejected with 421 Misdirected Request. **Fix:** `TransportSecuritySettings(allowed_hosts=["whendoist.com", "localhost", "127.0.0.1"])`.
 
 ### Local server
 
@@ -246,4 +256,4 @@ This is the same security model as the browser:
 
 ---
 
-*Last updated: March 2026 (v0.66.0)*
+*Last updated: March 2026 (v0.66.12)*
