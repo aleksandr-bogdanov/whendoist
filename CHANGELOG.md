@@ -4,6 +4,17 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.4 — 2026-03-14
+
+### Fix: Redesign OAuth consent pages to match brand + fix deny button
+
+- **Brand redesign**: OAuth authorize and login pages now use Quicksand font, W icon wordmark, brand clarity colors (Executable Blue `#167BFF`, Defined Purple `#6D5EF6`), tint-based hover states, and proper border-radius scale per BRAND.md
+- **Deny button fix**: Added explicit `action="/oauth/authorize"` to the form — without it, the form posted to the full URL including query params, which could cause issues in some browsers
+- **Scope display**: Permissions now shown as a bulleted list with purple checkmarks instead of a single line
+- **Approve button**: Uses Defined Purple (`#6D5EF6`) per brand rule "purple for success states"
+
+---
+
 ## v0.66.3 — 2026-03-14
 
 ### Fix: OAuth consent page 500 error — CSS braces breaking `str.format()`

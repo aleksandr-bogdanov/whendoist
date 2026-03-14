@@ -160,43 +160,85 @@ _AUTHORIZE_HTML = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Authorize — Whendoist</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #0a0a0a; color: #e5e5e5;
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; padding: 1rem;
         }}
         .card {{
             background: #171717; border: 1px solid #262626; border-radius: 12px;
-            padding: 2rem; max-width: 400px; width: 100%;
+            padding: 2rem; max-width: 420px; width: 100%;
         }}
-        h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }}
-        .client-name {{ color: #60a5fa; font-weight: 600; }}
-        .scope {{ background: #1e293b; border-radius: 6px; padding: 0.75rem; margin: 1rem 0;
-                 font-size: 0.875rem; color: #94a3b8; }}
-        .scope strong {{ color: #e5e5e5; }}
+        .brand {{
+            display: flex; align-items: center; gap: 0.5rem;
+            margin-bottom: 1.5rem; padding-bottom: 1.25rem;
+            border-bottom: 1px solid #262626;
+        }}
+        .brand svg {{ flex-shrink: 0; }}
+        .brand span {{
+            font-size: 1.1rem; font-weight: 500; color: #e5e5e5;
+            line-height: 1;
+        }}
+        h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.625rem; }}
+        .desc {{ color: #a3a3a3; font-size: 0.9rem; line-height: 1.5; }}
+        .client-name {{ color: #167BFF; font-weight: 600; }}
+        .scope {{
+            background: rgba(109, 94, 246, 0.08); border: 1px solid rgba(109, 94, 246, 0.2);
+            border-radius: 8px; padding: 0.875rem 1rem; margin: 1.25rem 0;
+            font-size: 0.85rem; color: #c4b5fd;
+        }}
+        .scope strong {{ color: #e5e5e5; display: block; margin-bottom: 0.375rem; font-weight: 600; }}
+        .scope ul {{ list-style: none; padding: 0; }}
+        .scope li {{ padding: 0.15rem 0; }}
+        .scope li::before {{ content: '\\2713\\0020'; color: #6D5EF6; font-weight: 700; }}
         .buttons {{ display: flex; gap: 0.75rem; margin-top: 1.5rem; }}
         button {{
-            flex: 1; padding: 0.625rem 1rem; border-radius: 8px; border: none;
-            font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s;
+            flex: 1; padding: 0.7rem 1rem; border-radius: 8px; border: none;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
         }}
-        button:hover {{ opacity: 0.85; }}
-        .approve {{ background: #2563eb; color: white; }}
+        .approve {{ background: #6D5EF6; color: white; }}
+        .approve:hover {{ background: #5B4CD4; }}
         .deny {{ background: #262626; color: #a3a3a3; border: 1px solid #404040; }}
-        .user {{ font-size: 0.8rem; color: #737373; margin-top: 1rem; }}
+        .deny:hover {{ background: #2a2a2a; border-color: #525252; color: #d4d4d4; }}
+        .user {{
+            font-size: 0.775rem; color: #525252; margin-top: 1.25rem;
+            padding-top: 1rem; border-top: 1px solid #262626;
+        }}
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Authorize access</h1>
-        <p><span class="client-name">{client_name}</span> wants to access your whendoist account.</p>
-        <div class="scope">
-            <strong>Permissions requested:</strong><br>
-            Read and write your tasks, domains, and schedule
+        <div class="brand">
+            <svg viewBox="38 40 180 160" width="24" height="21">
+                <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF"
+                      transform="rotate(-8 62 120)"/>
+                <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0"
+                      transform="rotate(8 194 120)"/>
+            </svg>
+            <span>hendoist</span>
         </div>
-        <form method="POST">
+        <h1>Authorize access</h1>
+        <p class="desc"><span class="client-name">{client_name}</span> wants to access
+           your Whendoist account.</p>
+        <div class="scope">
+            <strong>Permissions requested</strong>
+            <ul>
+                <li>Read and write your tasks</li>
+                <li>Read and write your domains</li>
+                <li>Read your schedule</li>
+            </ul>
+        </div>
+        <form method="POST" action="/oauth/authorize">
             <input type="hidden" name="client_id" value="{client_id}">
             <input type="hidden" name="redirect_uri" value="{redirect_uri}">
             <input type="hidden" name="code_challenge" value="{code_challenge}">
@@ -218,32 +260,59 @@ _LOGIN_REDIRECT_HTML = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Required — Whendoist</title>
+    <title>Sign In — Whendoist</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #0a0a0a; color: #e5e5e5;
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; padding: 1rem;
         }}
         .card {{
             background: #171717; border: 1px solid #262626; border-radius: 12px;
-            padding: 2rem; max-width: 400px; width: 100%; text-align: center;
+            padding: 2rem; max-width: 420px; width: 100%; text-align: center;
         }}
-        h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; }}
-        p {{ color: #a3a3a3; margin-bottom: 1.5rem; font-size: 0.875rem; }}
+        .brand {{
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            margin-bottom: 1.5rem; padding-bottom: 1.25rem;
+            border-bottom: 1px solid #262626; width: 100%;
+            justify-content: center;
+        }}
+        .brand svg {{ flex-shrink: 0; }}
+        .brand span {{
+            font-size: 1.1rem; font-weight: 500; color: #e5e5e5;
+            line-height: 1;
+        }}
+        h1 {{ font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }}
+        p {{ color: #a3a3a3; margin-bottom: 1.5rem; font-size: 0.875rem; line-height: 1.5; }}
         a {{
-            display: inline-block; padding: 0.625rem 1.5rem; border-radius: 8px;
-            background: #2563eb; color: white; text-decoration: none;
-            font-size: 0.875rem; font-weight: 500;
+            display: inline-block; padding: 0.7rem 1.75rem; border-radius: 8px;
+            background: #167BFF; color: white; text-decoration: none;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 0.9rem; font-weight: 600;
+            transition: background 0.15s ease;
         }}
-        a:hover {{ opacity: 0.85; }}
+        a:hover {{ background: #1268D9; }}
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Login required</h1>
+        <div class="brand">
+            <svg viewBox="38 40 180 160" width="24" height="21">
+                <rect x="48" y="40" width="28" height="160" rx="14" fill="#167BFF"
+                      transform="rotate(-8 62 120)"/>
+                <rect x="114" y="72" width="28" height="127.3" rx="14" fill="#6D5EF6"/>
+                <rect x="180" y="40" width="28" height="160" rx="14" fill="#A020C0"
+                      transform="rotate(8 194 120)"/>
+            </svg>
+            <span>hendoist</span>
+        </div>
+        <h1>Sign in required</h1>
         <p>You need to sign in to authorize this application.</p>
         <a href="{login_url}">Sign in with Google</a>
     </div>
