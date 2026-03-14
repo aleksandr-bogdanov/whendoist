@@ -4,6 +4,16 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.3 — 2026-03-14
+
+### Fix: OAuth consent page 500 error — CSS braces breaking `str.format()`
+
+- **Root cause**: `_AUTHORIZE_HTML` and `_LOGIN_REDIRECT_HTML` templates contain CSS with literal `{` `}` braces, but use Python `str.format()` for variable interpolation — Python interprets CSS rules like `{ margin: 0; }` as named placeholders, throwing `KeyError: ' margin'`
+- **Fix**: Doubled all CSS braces to `{{` `}}` in both HTML template strings so `str.format()` treats them as literal characters
+- **Impact**: MCP OAuth flow was completely broken — every `GET /oauth/authorize` returned 500 (Sentry issues WHENDOIST-1R, WHENDOIST-1S)
+
+---
+
 ## v0.66.2 — 2026-03-14
 
 ### Fix: Handle Google Calendar 403 errors and suppress expected Sentry noise
