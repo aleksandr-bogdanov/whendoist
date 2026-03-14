@@ -441,6 +441,26 @@ async def complete_task(task_id: int) -> str:
 
 
 @mcp.tool()
+async def delete_task(task_id: int) -> str:
+    """Permanently delete a task. This cannot be undone.
+
+    Args:
+        task_id: The task ID to delete.
+    """
+    user_id = _get_user_id()
+
+    async with async_session_factory() as db:
+        svc = TaskService(db, user_id)
+        deleted = await svc.delete_task(task_id)
+        if not deleted:
+            return f"Task {task_id} not found or not owned by you."
+        await db.commit()
+        logger.info(f"MCP delete_task: task_id={task_id} user_id={user_id}")
+
+    return f"Deleted task [id:{task_id}]"
+
+
+@mcp.tool()
 async def list_domains() -> str:
     """List all domains (projects/life areas) in whendoist."""
     user_id = _get_user_id()

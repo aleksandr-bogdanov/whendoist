@@ -4,6 +4,14 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.14 — 2026-03-14
+
+### Feat: Add `delete_task` MCP tool
+
+- Permanently deletes a task via MCP (uses existing `TaskService.delete_task`)
+
+---
+
 ## v0.66.13 — 2026-03-14
 
 ### Fix: MCP mutation verification + whoami diagnostic tool
