@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.15 — 2026-03-14
+
+### Fix: Support `parent_id` in MCP `update_task`
+
+- Expose `parent_id` parameter in MCP `update_task` tool (was already supported by `TaskService`)
+- Pass `0` to promote a subtask to top-level, or a task ID to reparent
+
+---
+
 ## v0.66.14 — 2026-03-14
 
 ### Feat: Add `delete_task` MCP tool
