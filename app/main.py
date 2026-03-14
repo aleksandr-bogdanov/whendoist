@@ -394,7 +394,7 @@ if _spa_dist.exists():
                 "api/",
                 "auth/",
                 "oauth/",
-                "mcp/",
+                "mcp",
                 ".well-known/",
                 "assets/",
                 "icons/",
