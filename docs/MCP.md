@@ -189,7 +189,7 @@ Both servers expose the same 26 core tools. The local server adds 2 encryption t
 | `get_schedule` | View scheduled tasks and recurring instances for a date range |
 | `get_overdue` | Find overdue tasks and past recurring instances |
 | `get_analytics` | Completion streaks, velocity, domain breakdown (last 30 days) |
-| `get_recent_completions` | Recently completed tasks and instances (configurable lookback) |
+| `get_recent_completions` | Recently completed tasks and instances, most recent first |
 
 #### User Context
 

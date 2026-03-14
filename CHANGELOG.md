@@ -4,6 +4,15 @@ Development history of Whendoist. Per-patch details in git history.
 
 ---
 
+## v0.66.17 — 2026-03-14
+
+### Fix: Remove misleading `days` parameter from `get_recent_completions`
+
+- The `days` param was cosmetic — the service uses a fixed 365-day lookback, not the `days` value
+- Removed the param; tool now just takes `limit` (default 20)
+
+---
+
 ## v0.66.16 — 2026-03-14
 
 ### Feat: Complete MCP tool coverage
